@@ -1,70 +1,104 @@
-import { UserButton } from '@clerk/nextjs';
+'use client';
+
+import { UserButton, useUser } from '@clerk/nextjs';
 import Link from 'next/link';
+import { Menu } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+import { useState } from 'react';
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+const navLinks = [
+  { href: '/', label: 'Goals' },
+  { href: '/workouts', label: 'Workouts' },
+  { href: '/calendar', label: 'Calendar' },
+  { href: '/plan', label: 'Plan' },
+  { href: '/admin', label: 'Admin' },
+];
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const { isLoaded } = useUser();
+  const [open, setOpen] = useState(false);
+
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div>Loading...</div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Navigation */}
-      <nav className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex">
-              {/* Logo */}
-              <div className="flex-shrink-0 flex items-center">
-                <Link href="/" className="text-xl font-bold text-gray-900">
-                  Coach
-                </Link>
-              </div>
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex h-16 items-center">
+          {/* Mobile menu button */}
+          <Sheet open={open} onOpenChange={setOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="mr-2 md:hidden">
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Toggle menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left">
+              <SheetHeader>
+                <SheetTitle>Coach</SheetTitle>
+              </SheetHeader>
+              <nav className="flex flex-col space-y-4 mt-4">
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setOpen(false)}
+                    className="text-lg transition-colors hover:text-foreground/80 text-foreground/60"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </nav>
+            </SheetContent>
+          </Sheet>
 
-              {/* Navigation Links */}
-              <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+          {/* Desktop menu */}
+          <div className="mr-4 hidden md:flex">
+            <Link href="/" className="mr-6 flex items-center space-x-2">
+              <span className="font-bold text-xl">
+                Coach
+              </span>
+            </Link>
+            <nav className="flex items-center space-x-6 text-sm font-medium">
+              {navLinks.map((link) => (
                 <Link
-                  href="/"
-                  className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                  key={link.href}
+                  href={link.href}
+                  className="transition-colors hover:text-foreground/80 text-foreground/60"
                 >
-                  Dashboard
+                  {link.label}
                 </Link>
-                <Link
-                  href="/plan"
-                  className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-                >
-                  Training Plans
-                </Link>
-                <Link
-                  href="/calendar"
-                  className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-                >
-                  Calendar
-                </Link>
-                <Link
-                  href="/strava"
-                  className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-                >
-                  Strava
-                </Link>
-                <Link
-                  href="/admin"
-                  className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-                >
-                  Admin
-                </Link>
-              </div>
-            </div>
+              ))}
+            </nav>
+          </div>
 
-            {/* User Button */}
-            <div className="flex items-center">
-              <UserButton afterSignOutUrl="/sign-in" />
-            </div>
+          {/* Mobile logo */}
+          <Link href="/" className="flex md:hidden mr-auto items-center">
+            <span className="font-bold text-xl">Coach</span>
+          </Link>
+
+          {/* Right side */}
+          <div className="flex items-center ml-auto space-x-2">
+            <UserButton afterSignOutUrl="/sign-in" />
           </div>
         </div>
-      </nav>
+      </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      <main className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {children}
       </main>
     </div>

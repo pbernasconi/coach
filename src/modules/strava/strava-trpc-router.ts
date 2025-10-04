@@ -6,6 +6,7 @@
 import { z } from 'zod';
 import { router, publicProcedure } from '@/server/trpc';
 import StravaService from './strava-service';
+import { StravaPersister } from './strava-persister';
 
 // Initialize service
 const stravaService = new StravaService({
@@ -15,6 +16,20 @@ const stravaService = new StravaService({
 });
 
 export const stravaRouter = router({
+  /**
+   * Get user's Strava connections
+   */
+  getConnections: publicProcedure
+    .input(
+      z.object({
+        userId: z.string().min(1),
+      })
+    )
+    .query(async ({ input }) => {
+      const connection = await StravaPersister.getConnectionByUserId(input.userId);
+      return { connections: connection ? [connection] : [] };
+    }),
+
   /**
    * Get OAuth authorization URL
    */
@@ -138,5 +153,78 @@ export const stravaRouter = router({
         input.updates
       );
       return updated;
+    }),
+
+  /**
+   * Sync activities from Strava to database
+   */
+  syncActivities: publicProcedure
+    .input(
+      z.object({
+        userId: z.string().min(1),
+        monthsBack: z.number().optional().default(6),
+      })
+    )
+    .mutation(async ({ input }) => {
+      // Get user's Strava connection
+      const connection = await StravaPersister.getConnectionByUserId(input.userId);
+
+      if (!connection) {
+        throw new Error('Strava connection not found');
+      }
+
+      // Calculate date range (6 months back from now)
+      const after = Math.floor(Date.now() / 1000) - (input.monthsBack * 30 * 24 * 60 * 60);
+
+      // Fetch all activities from Strava
+      let page = 1;
+      let totalSynced = 0;
+      let hasMore = true;
+
+      while (hasMore) {
+        const activities = await stravaService.getAthleteActivities(connection.accessToken, {
+          after,
+          page,
+          perPage: 200, // Max allowed by Strava API
+        });
+
+        if (activities.length === 0) {
+          hasMore = false;
+          break;
+        }
+
+        // Save activities to database
+        for (const activity of activities) {
+          await StravaPersister.upsertActivity(input.userId, activity);
+          totalSynced++;
+        }
+
+        page++;
+      }
+
+      return {
+        success: true,
+        totalSynced,
+        message: `Successfully synced ${totalSynced} activities from the last ${input.monthsBack} months`
+      };
+    }),
+
+  /**
+   * Get user's activities from database
+   */
+  getUserActivities: publicProcedure
+    .input(
+      z.object({
+        userId: z.string().min(1),
+        limit: z.number().optional().default(50),
+        offset: z.number().optional().default(0),
+      })
+    )
+    .query(async ({ input }) => {
+      const activities = await StravaPersister.getUserActivities(input.userId, {
+        limit: input.limit,
+        offset: input.offset,
+      });
+      return { activities };
     }),
 });

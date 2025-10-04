@@ -11,13 +11,13 @@ import {
   UserGoalsPersister,
 } from './training-plan-persister';
 import { CalendarEventPersister } from '../calendar/calendar-persister';
-import type { TrainingPlan, UserGoals, NewTrainingPlan } from '@/db/schema';
+import type { TrainingPlan, UserGoals, NewTrainingPlan, CalendarEvent, StravaActivity } from '@/db/schema';
 
 interface GeneratePlanInput {
   userId: string;
   weekStartDate: Date;
   calendarConnectionId?: string;
-  stravaActivities?: any[]; // Recent Strava activities
+  stravaActivities?: StravaActivity[]; // Recent Strava activities
 }
 
 interface GeneratedPlanResult {
@@ -42,7 +42,7 @@ class TrainingPlanService {
     const userGoals = await UserGoalsPersister.findByUserId(userId);
 
     // 2. Fetch calendar availability if connection provided
-    let calendarEvents: any[] = [];
+    let calendarEvents: CalendarEvent[] = [];
     if (calendarConnectionId) {
       calendarEvents = await CalendarEventPersister.findByConnectionIdInTimeRange(
         calendarConnectionId,
@@ -100,8 +100,14 @@ class TrainingPlanService {
   /**
    * Build AI prompt for training plan generation
    */
-  private buildPrompt(context: any): string {
-    const { goals, calendarEvents, recentActivities, weekStartDate, weekEndDate } = context;
+  private buildPrompt(context: Record<string, unknown>): string {
+    const { goals, calendarEvents, recentActivities, weekStartDate, weekEndDate } = context as {
+      goals: UserGoals | null;
+      calendarEvents: CalendarEvent[];
+      recentActivities: StravaActivity[];
+      weekStartDate: Date;
+      weekEndDate: Date;
+    };
 
     return `You are an expert endurance sports coach specializing in running and cycling training plans.
 
@@ -118,11 +124,11 @@ ${goals ? JSON.stringify(goals, null, 2) : 'General fitness improvement'}
 ${calendarEvents.length > 0 ? JSON.stringify(calendarEvents, null, 2) : 'No calendar constraints provided'}
 
 **Recent Activities (from Strava):**
-${recentActivities.length > 0 ? JSON.stringify(recentActivities.map((a: any) => ({
-  type: a.type || a.sport_type,
+${recentActivities.length > 0 ? JSON.stringify(recentActivities.map((a: StravaActivity) => ({
+  type: a.type || a.sportType,
   distance: a.distance,
-  duration: a.moving_time || a.elapsed_time,
-  date: a.start_date,
+  duration: a.movingTime || a.elapsedTime,
+  date: a.startDate,
 })), null, 2) : 'No recent activities available'}
 
 **Instructions:**
@@ -175,7 +181,7 @@ Generate the training plan now:`;
     return UserGoalsPersister.upsert({
       userId,
       ...goals,
-    } as any);
+    });
   }
 
   /**

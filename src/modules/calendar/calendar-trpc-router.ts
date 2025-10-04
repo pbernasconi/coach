@@ -4,166 +4,100 @@
  */
 
 import { z } from 'zod';
-import { router, publicProcedure } from '@/server/trpc';
+import { publicProcedure, router } from '@/server/trpc';
 import CalendarService from './calendar-service';
 
-// Initialize service
-const calendarService = new CalendarService({
-  clientId: process.env.GOOGLE_CLIENT_ID!,
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-  redirectUri: process.env.GOOGLE_REDIRECT_URI!,
-});
-
-export const calendarRouter = router({
-  /**
-   * Get OAuth authorization URL
-   */
+export const calendarTrpcRouter = router({
   getAuthUrl: publicProcedure
-    .input(
-      z.object({
-        userId: z.string().min(1),
-      })
-    )
+    .input(z.object({ userId: z.string() }))
     .query(({ input }) => {
-      const authUrl = calendarService.getAuthorizationUrl(input.userId);
+      const authUrl = CalendarService.getAuthorizationUrl(input.userId);
       return { authUrl };
     }),
 
-  /**
-   * Connect Google Calendar (exchange code for tokens)
-   */
-  connect: publicProcedure
-    .input(
-      z.object({
-        code: z.string().min(1),
-        userId: z.string().min(1),
-      })
-    )
-    .mutation(async ({ input }) => {
-      const connection = await calendarService.connectCalendar(
-        input.code,
-        input.userId
-      );
-
-      return {
-        connection: {
-          id: connection.id,
-          googleEmail: connection.googleEmail,
-          isActive: connection.isActive,
-          lastSyncedAt: connection.lastSyncedAt,
-          createdAt: connection.createdAt,
-        },
-      };
-    }),
-
-  /**
-   * Get user's calendar connections
-   */
   getConnections: publicProcedure
-    .input(
-      z.object({
-        userId: z.string().min(1),
-      })
-    )
+    .input(z.object({ userId: z.string() }))
     .query(async ({ input }) => {
-      const connections = await calendarService.getUserConnections(input.userId);
+      const connections = await CalendarService.getUserConnections(input.userId);
+      return { connections };
+    }),
 
+  syncNow: publicProcedure
+    .input(z.object({ userId: z.string() }))
+    .mutation(async ({ input }) => {
+      const connections = await CalendarService.getUserConnections(input.userId);
+      let successfulSyncs = 0;
+      let failedSyncs = 0;
+
+      for (const connection of connections) {
+        try {
+          await CalendarService.syncCalendarEvents(connection.id);
+          successfulSyncs++;
+        } catch (error) {
+          console.error(`Failed to sync calendar for connection ${connection.id}:`, error);
+          failedSyncs++;
+        }
+      }
       return {
-        connections: connections.map((conn) => ({
-          id: conn.id,
-          googleEmail: conn.googleEmail,
-          isActive: conn.isActive,
-          lastSyncedAt: conn.lastSyncedAt,
-          createdAt: conn.createdAt,
-        })),
+        success: failedSyncs === 0,
+        successfulSyncs,
+        failedSyncs,
       };
     }),
 
-  /**
-   * Sync calendar events
-   */
-  syncEvents: publicProcedure
+  getAllUserEvents: publicProcedure
     .input(
       z.object({
-        connectionId: z.string().min(1),
-        startDate: z.date().optional(),
-        endDate: z.date().optional(),
-        calendarId: z.string().optional(),
-      })
-    )
-    .mutation(async ({ input }) => {
-      const result = await calendarService.syncCalendarEvents(input.connectionId, {
-        startDate: input.startDate,
-        endDate: input.endDate,
-        calendarId: input.calendarId,
-      });
-
-      return result;
-    }),
-
-  /**
-   * Get events for a connection
-   */
-  getEvents: publicProcedure
-    .input(
-      z.object({
-        connectionId: z.string().min(1),
+        userId: z.string(),
         startTime: z.date(),
         endTime: z.date(),
       })
     )
     .query(async ({ input }) => {
-      const events = await calendarService.getEvents(
-        input.connectionId,
-        input.startTime,
-        input.endTime
-      );
+      const connections = await CalendarService.getUserConnections(input.userId);
+      const allEvents = [];
+
+      for (const connection of connections) {
+        const events = await CalendarService.getEvents(
+          connection.id,
+          input.startTime,
+          input.endTime
+        );
+        allEvents.push(...events);
+      }
+      return { events: allEvents };
+    }),
+
+  deleteConnection: publicProcedure
+    .input(z.object({ connectionId: z.string() }))
+    .mutation(async ({ input }) => {
+      await CalendarService.deleteCalendarConnection(input.connectionId);
+      return { success: true };
+    }),
+
+  debugEvents: publicProcedure
+    .input(z.object({ userId: z.string() }))
+    .query(async ({ input }) => {
+      const connections = await CalendarService.getUserConnections(input.userId);
+      const allEvents = [];
+
+      for (const connection of connections) {
+        const events = await CalendarService.getEvents(
+          connection.id,
+          new Date('2024-09-01'),
+          new Date('2024-10-01')
+        );
+        allEvents.push(...events);
+      }
 
       return {
-        events: events.map((event) => ({
-          id: event.id,
-          googleEventId: event.googleEventId,
-          summary: event.summary,
-          description: event.description,
-          location: event.location,
-          startTime: event.startTime,
-          endTime: event.endTime,
-          isAllDay: event.isAllDay,
-          status: event.status,
-          attendees: event.attendees,
-          organizer: event.organizer,
-          htmlLink: event.htmlLink,
-          hangoutLink: event.hangoutLink,
-          conferenceData: event.conferenceData,
+        totalEvents: allEvents.length,
+        septemberEvents: allEvents,
+        firstFive: allEvents.slice(0, 5).map(e => ({
+          summary: e.summary,
+          start: e.startTime,
+          end: e.endTime,
         })),
       };
-    }),
-
-  /**
-   * Disconnect calendar (soft delete)
-   */
-  disconnect: publicProcedure
-    .input(
-      z.object({
-        connectionId: z.string().min(1),
-      })
-    )
-    .mutation(async ({ input }) => {
-      await calendarService.disconnectCalendar(input.connectionId);
-      return { success: true };
-    }),
-
-  /**
-   * Delete calendar connection permanently
-   */
-  deleteConnection: publicProcedure
-    .input(
-      z.object({
-        connectionId: z.string().min(1),
-      })
-    )
-    .mutation(async ({ input }) => {
-      await calendarService.deleteCalendarConnection(input.connectionId);
-      return { success: true };
     }),
 });

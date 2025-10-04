@@ -7,6 +7,4 @@ export default defineConfig({
   dbCredentials: {
     url: process.env.DATABASE_URL!,
   },
-  // Neon-specific configuration
-  driver: 'pglite',
 });

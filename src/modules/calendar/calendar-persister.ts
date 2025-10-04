@@ -45,6 +45,13 @@ export namespace CalendarConnectionPersister {
       .where(eq(calendarConnections.userId, userId));
   }
 
+  export async function findAllActive(): Promise<CalendarConnection[]> {
+    return db
+      .select()
+      .from(calendarConnections)
+      .where(eq(calendarConnections.isActive, true));
+  }
+
   export async function findByGoogleAccountId(
     googleAccountId: string
   ): Promise<CalendarConnection | null> {
@@ -160,14 +167,16 @@ export namespace CalendarEventPersister {
     startTime: Date,
     endTime: Date
   ): Promise<CalendarEvent[]> {
+    // Find events that overlap with the time range
+    // Event overlaps if: event.start < range.end AND event.end > range.start
     return db
       .select()
       .from(calendarEvents)
       .where(
         and(
           eq(calendarEvents.connectionId, connectionId),
-          gte(calendarEvents.startTime, startTime),
-          lte(calendarEvents.endTime, endTime)
+          lte(calendarEvents.startTime, endTime), // Event starts before range ends
+          gte(calendarEvents.endTime, startTime)  // Event ends after range starts
         )
       )
       .orderBy(desc(calendarEvents.startTime));

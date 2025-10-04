@@ -97,6 +97,7 @@ export interface StravaTokenResponse {
   refresh_token: string;
   access_token: string;
   athlete: StravaAthlete;
+  scope: string;
 }
 
 export interface StravaRefreshTokenResponse {

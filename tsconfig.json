@@ -23,5 +23,11 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+    "src/modules/**/calendar-routes.ts",
+    "src/modules/**/calendar-controller.ts",
+    "src/modules/**/strava-routes.ts",
+    "src/modules/**/strava-controller.ts"
+  ]
 }

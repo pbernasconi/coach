@@ -1,5 +1,32 @@
-import { pgTable, text, timestamp, jsonb, integer, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, jsonb, integer, boolean, unique } from 'drizzle-orm/pg-core';
 import { createId } from '@paralleldrive/cuid2';
+
+/**
+ * Users
+ * Core user profiles synced from Clerk
+ */
+export const users = pgTable('users', {
+  id: text('id').primaryKey(), // Clerk user ID
+  email: text('email').notNull().unique(),
+  firstName: text('first_name'),
+  lastName: text('last_name'),
+  imageUrl: text('image_url'),
+
+  // Profile
+  fullName: text('full_name'),
+  username: text('username'),
+
+  // Preferences
+  timezone: text('timezone').default('UTC'),
+
+  // Status
+  isActive: boolean('is_active').notNull().default(true),
+
+  // Metadata
+  createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow(),
+  lastLoginAt: timestamp('last_login_at', { mode: 'date' }),
+});
 
 /**
  * Google Calendar Connections
@@ -221,7 +248,102 @@ export const userGoals = pgTable('user_goals', {
   updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow(),
 });
 
+/**
+ * Strava Connections
+ * Stores OAuth credentials for each user's Strava connection
+ */
+export const stravaConnections = pgTable('strava_connections', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  userId: text('user_id').notNull().unique(),
+  athleteId: integer('athlete_id').notNull(),
+
+  // OAuth credentials
+  accessToken: text('access_token').notNull(),
+  refreshToken: text('refresh_token').notNull(),
+  expiresAt: integer('expires_at').notNull(), // Unix timestamp
+
+  // Scope
+  scope: text('scope').notNull(),
+
+  // Status
+  isActive: boolean('is_active').notNull().default(true),
+  lastSyncedAt: timestamp('last_synced_at', { mode: 'date' }),
+
+  // Metadata
+  createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow(),
+});
+
+/**
+ * Strava Activities
+ * Stores synced activities from Strava
+ */
+export const stravaActivities = pgTable('strava_activities', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => createId()),
+
+  // Relationship
+  userId: text('user_id').notNull(),
+  connectionId: text('connection_id')
+    .notNull()
+    .references(() => stravaConnections.id, { onDelete: 'cascade' }),
+
+  // Strava identifiers
+  stravaActivityId: integer('strava_activity_id').notNull(),
+
+  // Activity details
+  name: text('name').notNull(),
+  type: text('type').notNull(), // Run, Ride, Swim, etc.
+  sportType: text('sport_type').notNull(),
+
+  // Metrics
+  distance: integer('distance').notNull(), // meters
+  movingTime: integer('moving_time').notNull(), // seconds
+  elapsedTime: integer('elapsed_time').notNull(), // seconds
+  totalElevationGain: integer('total_elevation_gain'), // meters
+
+  // Timing
+  startDate: timestamp('start_date', { mode: 'date' }).notNull(),
+  startDateLocal: timestamp('start_date_local', { mode: 'date' }).notNull(),
+  timezone: text('timezone'),
+
+  // Speed
+  averageSpeed: integer('average_speed'), // m/s * 100 for precision
+  maxSpeed: integer('max_speed'), // m/s * 100 for precision
+
+  // Other metrics (nullable)
+  averageCadence: integer('average_cadence'),
+  averageWatts: integer('average_watts'),
+  averageHeartrate: integer('average_heartrate'),
+  maxHeartrate: integer('max_heartrate'),
+  kilojoules: integer('kilojoules'),
+
+  // Social
+  kudosCount: integer('kudos_count').notNull().default(0),
+  commentCount: integer('comment_count').notNull().default(0),
+
+  // Map data
+  summaryPolyline: text('summary_polyline'),
+
+  // Full raw activity data for reference
+  rawActivityData: jsonb('raw_activity_data'),
+
+  // Timestamps
+  createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow(),
+}, (table) => ({
+  userActivityUnique: unique('strava_activities_user_activity_unique').on(
+    table.userId,
+    table.stravaActivityId,
+  ),
+}));
+
 // Types
+export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
 export type CalendarConnection = typeof calendarConnections.$inferSelect;
 export type NewCalendarConnection = typeof calendarConnections.$inferInsert;
 export type CalendarEvent = typeof calendarEvents.$inferSelect;
@@ -234,3 +356,7 @@ export type TrainingPlanActivity = typeof trainingPlanActivities.$inferSelect;
 export type NewTrainingPlanActivity = typeof trainingPlanActivities.$inferInsert;
 export type UserGoals = typeof userGoals.$inferSelect;
 export type NewUserGoals = typeof userGoals.$inferInsert;
+export type StravaConnection = typeof stravaConnections.$inferSelect;
+export type NewStravaConnection = typeof stravaConnections.$inferInsert;
+export type StravaActivity = typeof stravaActivities.$inferSelect;
+export type NewStravaActivity = typeof stravaActivities.$inferInsert;

@@ -3,7 +3,7 @@
  * Business logic for Google Calendar integration
  */
 
-import { google, calendar_v3 } from 'googleapis';
+import { google } from 'googleapis';
 import {
   CalendarConnectionPersister,
   CalendarEventPersister,
@@ -206,21 +206,44 @@ class CalendarService {
       const timeMin = options.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
       const timeMax = options.endDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
 
+      // Optimize: Only fetch events modified since last sync (incremental sync)
+      const lastSync = connection.lastSyncedAt;
+      const updatedMin = lastSync ? lastSync.toISOString() : undefined;
+
       // Fetch events from Google Calendar
       const response = await calendar.events.list({
         calendarId,
         timeMin: timeMin.toISOString(),
         timeMax: timeMax.toISOString(),
+        updatedMin, // Key optimization: only fetch changed events
         maxResults: 2500,
         singleEvents: true,
         orderBy: 'startTime',
+        showDeleted: true, // Include deleted events to detect deletions
       });
 
       const googleEvents = response.data.items || [];
 
       // Process each event
       for (const googleEvent of googleEvents) {
-        if (!googleEvent.id || !googleEvent.start) continue;
+        if (!googleEvent.id) continue;
+
+        // Handle deleted events
+        if (googleEvent.status === 'cancelled') {
+          const existingEvent = await CalendarEventPersister.findByGoogleEventId(
+            googleEvent.id,
+            connectionId
+          );
+
+          if (existingEvent) {
+            await CalendarEventPersister.deleteByGoogleEventId(googleEvent.id, connectionId);
+            eventsDeleted++;
+          }
+          continue;
+        }
+
+        // Skip events without start time
+        if (!googleEvent.start) continue;
 
         const startTime = googleEvent.start.dateTime
           ? new Date(googleEvent.start.dateTime)
@@ -231,6 +254,17 @@ class CalendarService {
           : googleEvent.end?.date
           ? new Date(googleEvent.end.date)
           : new Date(startTime.getTime() + 60 * 60 * 1000);
+
+        // Debug logging for date parsing
+        if (eventsCreated < 3) {
+          console.log('Event date debug:', {
+            summary: googleEvent.summary,
+            googleStart: googleEvent.start,
+            parsedStart: startTime,
+            googleEnd: googleEvent.end,
+            parsedEnd: endTime,
+          });
+        }
 
         const eventData: Omit<NewCalendarEvent, 'id' | 'createdAt' | 'updatedAt'> = {
           connectionId,
@@ -343,4 +377,10 @@ class CalendarService {
   }
 }
 
-export default CalendarService;
+const calendarService = new CalendarService({
+  clientId: process.env.GOOGLE_CLIENT_ID!,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+  redirectUri: `${process.env.BASE_URL}/api/auth/google/callback`,
+});
+
+export default calendarService;

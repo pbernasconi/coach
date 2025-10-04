@@ -1,57 +1,12 @@
 /**
  * Strava Persister
  * Database operations for Strava-related data
- *
- * NOTE: This is a placeholder implementation. You'll need to:
- * 1. Set up Drizzle ORM and database connection
- * 2. Define database schemas for strava_connections and strava_activities tables
- * 3. Import the actual database instance and schema definitions
  */
 
+import { db } from '@/db';
+import { stravaConnections, stravaActivities, type StravaConnection } from '@/db/schema';
+import { eq, desc } from 'drizzle-orm';
 import type { StravaAuthCredentials } from './strava-types';
-
-/**
- * Database schema types (to be defined with Drizzle)
- */
-interface StravaConnection {
-  id: string;
-  userId: string;
-  athleteId: number;
-  accessToken: string;
-  refreshToken: string;
-  expiresAt: number;
-  scope: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-interface StravaActivityRecord {
-  id: string;
-  userId: string;
-  stravaActivityId: number;
-  name: string;
-  type: string;
-  sportType: string;
-  distance: number;
-  movingTime: number;
-  elapsedTime: number;
-  totalElevationGain: number;
-  startDate: Date;
-  startDateLocal: Date;
-  timezone: string;
-  averageSpeed: number;
-  maxSpeed: number;
-  averageCadence: number | null;
-  averageWatts: number | null;
-  averageHeartrate: number | null;
-  maxHeartrate: number | null;
-  kilojoules: number | null;
-  kudosCount: number;
-  commentCount: number;
-  summaryPolyline: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
 
 /**
  * Strava Persister namespace
@@ -66,57 +21,49 @@ export namespace StravaPersister {
     credentials: StravaAuthCredentials,
     scope: string
   ): Promise<StravaConnection> {
-    // TODO: Implement with Drizzle ORM
-    // Example:
-    // const [connection] = await db
-    //   .insert(stravaConnections)
-    //   .values({
-    //     userId,
-    //     athleteId: credentials.athleteId,
-    //     accessToken: credentials.accessToken,
-    //     refreshToken: credentials.refreshToken,
-    //     expiresAt: credentials.expiresAt,
-    //     scope,
-    //     updatedAt: new Date(),
-    //   })
-    //   .onConflictDoUpdate({
-    //     target: stravaConnections.userId,
-    //     set: {
-    //       athleteId: credentials.athleteId,
-    //       accessToken: credentials.accessToken,
-    //       refreshToken: credentials.refreshToken,
-    //       expiresAt: credentials.expiresAt,
-    //       scope,
-    //       updatedAt: new Date(),
-    //     },
-    //   })
-    //   .returning();
-    // return connection;
-
-    throw new Error('Database not configured. Implement with Drizzle ORM.');
+    console.log('upsertConnection called with scope:', scope);
+    const [connection] = await db
+      .insert(stravaConnections)
+      .values({
+        userId: userId,
+        athleteId: credentials.athleteId,
+        accessToken: credentials.accessToken,
+        refreshToken: credentials.refreshToken,
+        expiresAt: credentials.expiresAt,
+        scope: scope,
+        updatedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: stravaConnections.userId,
+        set: {
+          athleteId: credentials.athleteId,
+          accessToken: credentials.accessToken,
+          refreshToken: credentials.refreshToken,
+          expiresAt: credentials.expiresAt,
+          scope: scope,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return connection;
   }
 
   /**
    * Get Strava connection by user ID
    */
   export async function getConnectionByUserId(userId: string): Promise<StravaConnection | null> {
-    // TODO: Implement with Drizzle ORM
-    // Example:
-    // const [connection] = await db
-    //   .select()
-    //   .from(stravaConnections)
-    //   .where(eq(stravaConnections.userId, userId))
-    //   .limit(1);
-    // return connection ?? null;
-
-    throw new Error('Database not configured. Implement with Drizzle ORM.');
+    const [connection] = await db
+      .select()
+      .from(stravaConnections)
+      .where(eq(stravaConnections.userId, userId))
+      .limit(1);
+    return connection ?? null;
   }
 
   /**
    * Get Strava connection by athlete ID
    */
   export async function getConnectionByAthleteId(
-    athleteId: number
   ): Promise<StravaConnection | null> {
     // TODO: Implement with Drizzle ORM
     // Example:
@@ -134,8 +81,6 @@ export namespace StravaPersister {
    * Update connection tokens (after refresh)
    */
   export async function updateConnectionTokens(
-    userId: string,
-    credentials: StravaAuthCredentials
   ): Promise<void> {
     // TODO: Implement with Drizzle ORM
     // Example:
@@ -155,7 +100,7 @@ export namespace StravaPersister {
   /**
    * Delete Strava connection
    */
-  export async function deleteConnection(userId: string): Promise<void> {
+  export async function deleteConnection(): Promise<void> {
     // TODO: Implement with Drizzle ORM
     // Example:
     // await db
@@ -170,36 +115,85 @@ export namespace StravaPersister {
    */
   export async function upsertActivity(
     userId: string,
-    activity: Partial<StravaActivityRecord>
-  ): Promise<StravaActivityRecord> {
-    // TODO: Implement with Drizzle ORM
-    // Example:
-    // const [saved] = await db
-    //   .insert(stravaActivities)
-    //   .values({
-    //     ...activity,
-    //     userId,
-    //     updatedAt: new Date(),
-    //   })
-    //   .onConflictDoUpdate({
-    //     target: [stravaActivities.userId, stravaActivities.stravaActivityId],
-    //     set: {
-    //       ...activity,
-    //       updatedAt: new Date(),
-    //     },
-    //   })
-    //   .returning();
-    // return saved;
+    activity: Record<string, unknown>
+  ): Promise<Record<string, unknown>> {
+    const connection = await getConnectionByUserId(userId);
+    if (!connection) {
+      throw new Error('Strava connection not found');
+    }
 
-    throw new Error('Database not configured. Implement with Drizzle ORM.');
+    // Helper to ensure we return undefined for null/undefined values
+    const toNullableInt = (val: unknown): number | undefined => {
+      return val != null ? Math.round(val as number) : undefined;
+    };
+
+    // Build the values object
+    const values = {
+        userId: userId,
+        connectionId: connection.id,
+        stravaActivityId: activity.id as number,
+        name: activity.name as string,
+        type: activity.type as string,
+        sportType: activity.sport_type as string,
+        distance: Math.round(activity.distance as number),
+        movingTime: activity.moving_time as number,
+        elapsedTime: activity.elapsed_time as number,
+        totalElevationGain: toNullableInt(activity.total_elevation_gain),
+        startDate: new Date(activity.start_date as string),
+        startDateLocal: new Date(activity.start_date_local as string),
+        timezone: (activity.timezone as string) || undefined,
+        averageSpeed: activity.average_speed != null ? Math.round((activity.average_speed as number) * 100) : undefined,
+        maxSpeed: activity.max_speed != null ? Math.round((activity.max_speed as number) * 100) : undefined,
+        averageCadence: toNullableInt(activity.average_cadence),
+        averageWatts: toNullableInt(activity.average_watts),
+        averageHeartrate: toNullableInt(activity.average_heartrate),
+        maxHeartrate: toNullableInt(activity.max_heartrate),
+        kilojoules: toNullableInt(activity.kilojoules),
+        kudosCount: (activity.kudos_count as number) ?? 0,
+        commentCount: (activity.comment_count as number) ?? 0,
+        summaryPolyline: ((activity.map as Record<string, unknown>)?.summary_polyline as string) || undefined,
+        rawActivityData: activity,
+        updatedAt: new Date(),
+      };
+
+    // Remove any undefined values
+    const cleanedValues = Object.fromEntries(
+      Object.entries(values).filter(([, v]) => v !== undefined)
+    ) as typeof values;
+
+    const [saved] = await db
+      .insert(stravaActivities)
+      .values(cleanedValues)
+      .onConflictDoUpdate({
+        target: [stravaActivities.userId, stravaActivities.stravaActivityId],
+        set: {
+          name: activity.name as string,
+          distance: Math.round(activity.distance as number),
+          movingTime: activity.moving_time as number,
+          elapsedTime: activity.elapsed_time as number,
+          totalElevationGain: toNullableInt(activity.total_elevation_gain),
+          averageSpeed: activity.average_speed != null ? Math.round((activity.average_speed as number) * 100) : undefined,
+          maxSpeed: activity.max_speed != null ? Math.round((activity.max_speed as number) * 100) : undefined,
+          averageCadence: toNullableInt(activity.average_cadence),
+          averageWatts: toNullableInt(activity.average_watts),
+          averageHeartrate: toNullableInt(activity.average_heartrate),
+          maxHeartrate: toNullableInt(activity.max_heartrate),
+          kilojoules: toNullableInt(activity.kilojoules),
+          kudosCount: (activity.kudos_count as number) ?? 0,
+          commentCount: (activity.comment_count as number) ?? 0,
+          rawActivityData: activity,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+
+    return saved;
   }
 
   /**
    * Get activity by Strava activity ID
    */
   export async function getActivityByStravaId(
-    userId: string,
-    stravaActivityId: number
   ): Promise<StravaActivityRecord | null> {
     // TODO: Implement with Drizzle ORM
     // Example:
@@ -230,40 +224,24 @@ export namespace StravaPersister {
       endDate?: Date;
       type?: string;
     } = {}
-  ): Promise<StravaActivityRecord[]> {
-    // TODO: Implement with Drizzle ORM
-    // Example:
-    // const query = db
-    //   .select()
-    //   .from(stravaActivities)
-    //   .where(eq(stravaActivities.userId, userId))
-    //   .orderBy(desc(stravaActivities.startDate));
-    //
-    // if (options.startDate) {
-    //   query.where(gte(stravaActivities.startDate, options.startDate));
-    // }
-    // if (options.endDate) {
-    //   query.where(lte(stravaActivities.startDate, options.endDate));
-    // }
-    // if (options.type) {
-    //   query.where(eq(stravaActivities.type, options.type));
-    // }
-    // if (options.limit) {
-    //   query.limit(options.limit);
-    // }
-    // if (options.offset) {
-    //   query.offset(options.offset);
-    // }
-    //
-    // return query;
+  ): Promise<Record<string, unknown>[]> {
+    const { limit = 50, offset = 0 } = options;
 
-    throw new Error('Database not configured. Implement with Drizzle ORM.');
+    const activities = await db
+      .select()
+      .from(stravaActivities)
+      .where(eq(stravaActivities.userId, userId))
+      .orderBy(desc(stravaActivities.startDate))
+      .limit(limit)
+      .offset(offset);
+
+    return activities;
   }
 
   /**
    * Delete activity
    */
-  export async function deleteActivity(userId: string, stravaActivityId: number): Promise<void> {
+  export async function deleteActivity(): Promise<void> {
     // TODO: Implement with Drizzle ORM
     // Example:
     // await db
@@ -281,7 +259,7 @@ export namespace StravaPersister {
   /**
    * Get activity count by user
    */
-  export async function getActivityCount(userId: string): Promise<number> {
+  export async function getActivityCount(): Promise<number> {
     // TODO: Implement with Drizzle ORM
     // Example:
     // const [result] = await db
