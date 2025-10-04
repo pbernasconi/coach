@@ -187,7 +187,7 @@ export async function syncActivities(req: Request, res: Response, next: NextFunc
           kilojoules: activity.kilojoules,
           kudosCount: activity.kudos_count,
           commentCount: activity.comment_count,
-          summaryPolyline: activity.map.summary_polyline,
+          summaryPolyline: null,
         })
       )
     );
