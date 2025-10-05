@@ -72,7 +72,6 @@ class TrainingPlanService {
       model: anthropic(this.aiModel),
       prompt,
       temperature: 0.7,
-      maxTokens: 4000,
     });
 
     // 5. Parse and save plan

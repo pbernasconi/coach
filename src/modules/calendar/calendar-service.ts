@@ -202,13 +202,21 @@ class CalendarService {
 
       const calendarId = options.calendarId || 'primary';
 
-      // Default to syncing last 30 days if no dates provided
-      const timeMin = options.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      // Default to syncing last 90 days if no dates provided
+      const timeMin = options.startDate || new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
       const timeMax = options.endDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
 
       // Optimize: Only fetch events modified since last sync (incremental sync)
       const lastSync = connection.lastSyncedAt;
       const updatedMin = lastSync ? lastSync.toISOString() : undefined;
+
+      console.log('Syncing calendar events:', {
+        connectionId,
+        timeMin: timeMin.toISOString(),
+        timeMax: timeMax.toISOString(),
+        lastSync: connection.lastSyncedAt?.toISOString(),
+        updatedMin,
+      });
 
       // Fetch events from Google Calendar
       const response = await calendar.events.list({
@@ -223,6 +231,18 @@ class CalendarService {
       });
 
       const googleEvents = response.data.items || [];
+
+      console.log('Google Calendar API returned:', {
+        totalEvents: googleEvents.length,
+        firstEvent: googleEvents[0] ? {
+          summary: googleEvents[0].summary,
+          start: googleEvents[0].start,
+        } : null,
+        lastEvent: googleEvents[googleEvents.length - 1] ? {
+          summary: googleEvents[googleEvents.length - 1].summary,
+          start: googleEvents[googleEvents.length - 1].start,
+        } : null,
+      });
 
       // Process each event
       for (const googleEvent of googleEvents) {

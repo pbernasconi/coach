@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, jsonb, integer, boolean, unique } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, jsonb, integer, boolean, bigint, real } from 'drizzle-orm/pg-core';
 import { createId } from '@paralleldrive/cuid2';
 
 /**
@@ -291,55 +291,44 @@ export const stravaActivities = pgTable('strava_activities', {
     .notNull()
     .references(() => stravaConnections.id, { onDelete: 'cascade' }),
 
-  // Strava identifiers
-  stravaActivityId: integer('strava_activity_id').notNull(),
+  // // Strava identifiers
+  stravaActivityId: text('strava_activity_id').notNull(),
 
-  // Activity details
-  name: text('name').notNull(),
-  type: text('type').notNull(), // Run, Ride, Swim, etc.
-  sportType: text('sport_type').notNull(),
+  // // Activity details
+  name: text('name'),
+  type: text('type'), // Run, Ride, Swim, etc.
+  sportType: text('sport_type'),
 
   // Metrics
-  distance: integer('distance').notNull(), // meters
-  movingTime: integer('moving_time').notNull(), // seconds
-  elapsedTime: integer('elapsed_time').notNull(), // seconds
-  totalElevationGain: integer('total_elevation_gain'), // meters
+  distance: real('distance'), // meters
+  movingTime: integer('moving_time'), // seconds
+  elapsedTime: integer('elapsed_time'), // seconds
+  totalElevationGain: real('total_elevation_gain'), // meters
 
   // Timing
-  startDate: timestamp('start_date', { mode: 'date' }).notNull(),
-  startDateLocal: timestamp('start_date_local', { mode: 'date' }).notNull(),
+  startDate: timestamp('start_date', { mode: 'date' }),
+  startDateLocal: timestamp('start_date_local', { mode: 'date' }),
   timezone: text('timezone'),
 
   // Speed
-  averageSpeed: integer('average_speed'), // m/s * 100 for precision
-  maxSpeed: integer('max_speed'), // m/s * 100 for precision
+  averageSpeed: real('average_speed'), // m/s
+  maxSpeed: real('max_speed'), // m/s
 
   // Other metrics (nullable)
-  averageCadence: integer('average_cadence'),
-  averageWatts: integer('average_watts'),
-  averageHeartrate: integer('average_heartrate'),
+  averageCadence: real('average_cadence'),
+  averageWatts: real('average_watts'),
+  averageHeartrate: real('average_heartrate'),
   maxHeartrate: integer('max_heartrate'),
-  kilojoules: integer('kilojoules'),
+  kilojoules: real('kilojoules'),
 
   // Social
-  kudosCount: integer('kudos_count').notNull().default(0),
-  commentCount: integer('comment_count').notNull().default(0),
-
-  // Map data
-  summaryPolyline: text('summary_polyline'),
-
-  // Full raw activity data for reference
-  rawActivityData: jsonb('raw_activity_data'),
+  kudosCount: integer('kudos_count').default(0),
+  commentCount: integer('comment_count').default(0),
 
   // Timestamps
-  createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
-  updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow(),
-}, (table) => ({
-  userActivityUnique: unique('strava_activities_user_activity_unique').on(
-    table.userId,
-    table.stravaActivityId,
-  ),
-}));
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow(),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow(),
+});
 
 // Types
 export type User = typeof users.$inferSelect;

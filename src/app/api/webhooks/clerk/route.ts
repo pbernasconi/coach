@@ -59,11 +59,11 @@ export async function POST(req: Request) {
 
   try {
     if (eventType === 'user.created' || eventType === 'user.updated') {
-      await authService.syncUserFromClerk(evt.data);
+      await authService.syncUserFromClerk(evt.data as any);
       console.log(`User ${evt.data.id} synced to database`);
     } else if (eventType === 'user.deleted') {
       if (evt.data.id) {
-        await authService.deleteUserAccount(evt.data.id);
+        await authService.deleteUserAccount(evt.data.id as string);
         console.log(`User ${evt.data.id} deleted from database`);
       }
     }

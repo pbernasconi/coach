@@ -6,6 +6,7 @@
 import { z } from 'zod';
 import { publicProcedure, router } from '@/server/trpc';
 import CalendarService from './calendar-service';
+import { CalendarConnectionPersister } from './calendar-persister';
 
 export const calendarTrpcRouter = router({
   getAuthUrl: publicProcedure
@@ -23,15 +24,28 @@ export const calendarTrpcRouter = router({
     }),
 
   syncNow: publicProcedure
-    .input(z.object({ userId: z.string() }))
+    .input(z.object({ userId: z.string(), fullResync: z.boolean().optional() }))
     .mutation(async ({ input }) => {
       const connections = await CalendarService.getUserConnections(input.userId);
       let successfulSyncs = 0;
       let failedSyncs = 0;
 
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - 90); // Last 90 days
+      const endDate = new Date();
+      endDate.setFullYear(endDate.getFullYear() + 1); // 1 year ahead
+
       for (const connection of connections) {
         try {
-          await CalendarService.syncCalendarEvents(connection.id);
+          // If fullResync, clear lastSyncedAt to force full sync
+          if (input.fullResync) {
+            await CalendarConnectionPersister.updateLastSyncedAt(connection.id, null);
+          }
+
+          await CalendarService.syncCalendarEvents(connection.id, {
+            startDate,
+            endDate,
+          });
           successfulSyncs++;
         } catch (error) {
           console.error(`Failed to sync calendar for connection ${connection.id}:`, error);

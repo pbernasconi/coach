@@ -27,14 +27,14 @@ export interface StravaAthlete {
 }
 
 export interface StravaActivity {
-  id: number;
+  id: number; // Changed from string to number
   resource_state: number;
   athlete: {
     id: number;
     resource_state: number;
   };
   name: string;
-  distance: number;
+  distance: number; // float
   moving_time: number;
   elapsed_time: number;
   total_elevation_gain: number;
@@ -70,10 +70,12 @@ export interface StravaActivity {
   average_speed: number;
   max_speed: number;
   average_cadence: number | null;
+  average_temp?: number | null; // Added optional field
   average_watts: number | null;
+  max_watts?: number | null; // Added optional field
   weighted_average_watts: number | null;
   kilojoules: number | null;
-  device_watts: boolean;
+  device_watts?: boolean; // Made optional since not all activities have power data
   has_heartrate: boolean;
   average_heartrate: number | null;
   max_heartrate: number | null;

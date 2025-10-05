@@ -15,6 +15,27 @@
       "when": 1759619761953,
       "tag": "0001_pink_invaders",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1759622560118,
+      "tag": "0002_legal_madame_hydra",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1759622773395,
+      "tag": "0003_many_corsair",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1759622917576,
+      "tag": "0004_crazy_korvac",
+      "breakpoints": true
     }
   ]
 }

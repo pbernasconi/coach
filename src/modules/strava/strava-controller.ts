@@ -166,29 +166,7 @@ export async function syncActivities(req: Request, res: Response, next: NextFunc
     // Save activities to database
     const savedActivities = await Promise.all(
       activities.map((activity) =>
-        StravaPersister.upsertActivity(userId, {
-          stravaActivityId: activity.id,
-          name: activity.name,
-          type: activity.type,
-          sportType: activity.sport_type,
-          distance: activity.distance,
-          movingTime: activity.moving_time,
-          elapsedTime: activity.elapsed_time,
-          totalElevationGain: activity.total_elevation_gain,
-          startDate: new Date(activity.start_date),
-          startDateLocal: new Date(activity.start_date_local),
-          timezone: activity.timezone,
-          averageSpeed: activity.average_speed,
-          maxSpeed: activity.max_speed,
-          averageCadence: activity.average_cadence,
-          averageWatts: activity.average_watts,
-          averageHeartrate: activity.average_heartrate,
-          maxHeartrate: activity.max_heartrate,
-          kilojoules: activity.kilojoules,
-          kudosCount: activity.kudos_count,
-          commentCount: activity.comment_count,
-          summaryPolyline: null,
-        })
+        StravaPersister.upsertActivity(userId, activity)
       )
     );
 

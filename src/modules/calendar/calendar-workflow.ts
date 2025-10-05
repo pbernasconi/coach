@@ -4,14 +4,8 @@
  */
 
 import { inngest } from '@/lib/inngest';
-import CalendarService from './calendar-service';
+import calendarService from './calendar-service';
 import { CalendarConnectionPersister } from './calendar-persister';
-
-const calendarService = new CalendarService({
-  clientId: process.env.GOOGLE_CLIENT_ID!,
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-  redirectUri: process.env.GOOGLE_REDIRECT_URI!,
-});
 
 /**
  * Automatic 6-hour calendar sync for all active connections

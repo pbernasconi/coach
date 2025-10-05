@@ -5,8 +5,8 @@
 
 import { db } from '@/db';
 import { stravaConnections, stravaActivities, type StravaConnection } from '@/db/schema';
-import { eq, desc } from 'drizzle-orm';
-import type { StravaAuthCredentials } from './strava-types';
+import { eq, desc, and } from 'drizzle-orm';
+import type { StravaActivity, StravaAuthCredentials } from './strava-types';
 
 /**
  * Strava Persister namespace
@@ -115,86 +115,97 @@ export namespace StravaPersister {
    */
   export async function upsertActivity(
     userId: string,
-    activity: Record<string, unknown>
-  ): Promise<Record<string, unknown>> {
+    activity: StravaActivity
+  ): Promise<typeof stravaActivities.$inferSelect> {
     const connection = await getConnectionByUserId(userId);
     if (!connection) {
       throw new Error('Strava connection not found');
     }
 
-    // Helper to ensure we return undefined for null/undefined values
-    const toNullableInt = (val: unknown): number | undefined => {
-      return val != null ? Math.round(val as number) : undefined;
-    };
+    console.log('upsertActivity called with activity:', activity);
 
-    // Build the values object
-    const values = {
-        userId: userId,
-        connectionId: connection.id,
-        stravaActivityId: activity.id as number,
-        name: activity.name as string,
-        type: activity.type as string,
-        sportType: activity.sport_type as string,
-        distance: Math.round(activity.distance as number),
-        movingTime: activity.moving_time as number,
-        elapsedTime: activity.elapsed_time as number,
-        totalElevationGain: toNullableInt(activity.total_elevation_gain),
-        startDate: new Date(activity.start_date as string),
-        startDateLocal: new Date(activity.start_date_local as string),
-        timezone: (activity.timezone as string) || undefined,
-        averageSpeed: activity.average_speed != null ? Math.round((activity.average_speed as number) * 100) : undefined,
-        maxSpeed: activity.max_speed != null ? Math.round((activity.max_speed as number) * 100) : undefined,
-        averageCadence: toNullableInt(activity.average_cadence),
-        averageWatts: toNullableInt(activity.average_watts),
-        averageHeartrate: toNullableInt(activity.average_heartrate),
-        maxHeartrate: toNullableInt(activity.max_heartrate),
-        kilojoules: toNullableInt(activity.kilojoules),
-        kudosCount: (activity.kudos_count as number) ?? 0,
-        commentCount: (activity.comment_count as number) ?? 0,
-        summaryPolyline: ((activity.map as Record<string, unknown>)?.summary_polyline as string) || undefined,
-        rawActivityData: activity,
-        updatedAt: new Date(),
-      };
+    // Convert activity ID to string
+    const activityIdStr = String(activity.id);
+    console.log('Activity ID type:', typeof activityIdStr, 'value:', activityIdStr);
 
-    // Remove any undefined values
-    const cleanedValues = Object.fromEntries(
-      Object.entries(values).filter(([, v]) => v !== undefined)
-    ) as typeof values;
+    // Build the values object - map all Strava fields to our schema
+    const values: typeof stravaActivities.$inferInsert = {
+      userId: userId,
+      connectionId: connection.id,
+      stravaActivityId: activityIdStr,
 
-    const [saved] = await db
-      .insert(stravaActivities)
-      .values(cleanedValues)
-      .onConflictDoUpdate({
-        target: [stravaActivities.userId, stravaActivities.stravaActivityId],
-        set: {
-          name: activity.name as string,
-          distance: Math.round(activity.distance as number),
-          movingTime: activity.moving_time as number,
-          elapsedTime: activity.elapsed_time as number,
-          totalElevationGain: toNullableInt(activity.total_elevation_gain),
-          averageSpeed: activity.average_speed != null ? Math.round((activity.average_speed as number) * 100) : undefined,
-          maxSpeed: activity.max_speed != null ? Math.round((activity.max_speed as number) * 100) : undefined,
-          averageCadence: toNullableInt(activity.average_cadence),
-          averageWatts: toNullableInt(activity.average_watts),
-          averageHeartrate: toNullableInt(activity.average_heartrate),
-          maxHeartrate: toNullableInt(activity.max_heartrate),
-          kilojoules: toNullableInt(activity.kilojoules),
-          kudosCount: (activity.kudos_count as number) ?? 0,
-          commentCount: (activity.comment_count as number) ?? 0,
-          rawActivityData: activity,
-          updatedAt: new Date(),
-        },
-      })
-      .returning();
+      // // Activity details
+      name: activity.name,
+      type: activity.type,
+      sportType: activity.sport_type,
 
-    return saved;
+      // Metrics
+      distance: activity.distance,
+      movingTime: activity.moving_time,
+      elapsedTime: activity.elapsed_time,
+      totalElevationGain: activity.total_elevation_gain,
+
+      // Timing
+      startDate: new Date(activity.start_date),
+      startDateLocal: new Date(activity.start_date_local),
+      timezone: activity.timezone,
+
+      // // Speed (convert from m/s to m/s * 100 for precision)
+      averageSpeed: activity.average_speed,
+      maxSpeed: activity.max_speed,
+
+    //   // // Other metrics
+      averageCadence: activity.average_cadence,
+      averageWatts: activity.average_watts,
+      averageHeartrate: activity.average_heartrate,
+      maxHeartrate: activity.max_heartrate,
+      kilojoules: activity.kilojoules,
+
+     // // Social
+     kudosCount: activity.kudos_count,
+     commentCount: activity.comment_count,
+   };
+
+    console.log('values:', values);
+
+    // Check if activity already exists
+    const [existing] = await db
+      .select()
+      .from(stravaActivities)
+      .where(
+        and(
+          eq(stravaActivities.userId, userId),
+          eq(stravaActivities.stravaActivityId, activityIdStr)
+        )
+      )
+      .limit(1);
+
+    if (existing) {
+      // Update existing activity using the primary key instead of activity ID
+      console.log('Updating existing activity with ID:', activityIdStr);
+      const [updated] = await db
+        .update(stravaActivities)
+        .set({ ...values, updatedAt: new Date() })
+        .where(eq(stravaActivities.id, existing.id))
+        .returning();
+
+      return updated;
+    } else {
+      // Insert new activity
+      const [inserted] = await db
+        .insert(stravaActivities)
+        .values(values)
+        .returning();
+
+      return inserted;
+    }
   }
 
   /**
    * Get activity by Strava activity ID
    */
   export async function getActivityByStravaId(
-  ): Promise<StravaActivityRecord | null> {
+  ): Promise<(typeof stravaActivities.$inferSelect) | null> {
     // TODO: Implement with Drizzle ORM
     // Example:
     // const [activity] = await db
@@ -220,18 +231,18 @@ export namespace StravaPersister {
     options: {
       limit?: number;
       offset?: number;
-      startDate?: Date;
+      stravaActivityId?: string;
       endDate?: Date;
       type?: string;
     } = {}
-  ): Promise<Record<string, unknown>[]> {
+  ): Promise<(typeof stravaActivities.$inferSelect)[]> {
     const { limit = 50, offset = 0 } = options;
 
     const activities = await db
       .select()
       .from(stravaActivities)
       .where(eq(stravaActivities.userId, userId))
-      .orderBy(desc(stravaActivities.startDate))
+      .orderBy(desc(stravaActivities.stravaActivityId))
       .limit(limit)
       .offset(offset);
 

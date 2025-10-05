@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { router, publicProcedure } from '@/server/trpc';
 import StravaService from './strava-service';
 import { StravaPersister } from './strava-persister';
+import { StravaActivity } from '@/db/schema';
 
 // Initialize service
 const stravaService = new StravaService({
@@ -162,15 +163,33 @@ export const stravaRouter = router({
     .input(
       z.object({
         userId: z.string().min(1),
-        monthsBack: z.number().optional().default(6),
+        monthsBack: z.number().optional().default(1),
       })
     )
     .mutation(async ({ input }) => {
       // Get user's Strava connection
-      const connection = await StravaPersister.getConnectionByUserId(input.userId);
+      let connection = await StravaPersister.getConnectionByUserId(input.userId);
 
       if (!connection) {
         throw new Error('Strava connection not found');
+      }
+
+      // Check if token is expired and refresh if needed
+      const now = Math.floor(Date.now() / 1000);
+      if (connection.expiresAt <= now) {
+        const refreshed = await stravaService.refreshAccessToken(connection.refreshToken);
+
+        // Update connection with new tokens
+        connection = await StravaPersister.upsertConnection(
+          input.userId,
+          {
+            accessToken: refreshed.access_token,
+            refreshToken: refreshed.refresh_token,
+            expiresAt: refreshed.expires_at,
+            athleteId: connection.athleteId,
+          },
+          connection.scope
+        );
       }
 
       // Calculate date range (6 months back from now)
@@ -193,7 +212,6 @@ export const stravaRouter = router({
           break;
         }
 
-        // Save activities to database
         for (const activity of activities) {
           await StravaPersister.upsertActivity(input.userId, activity);
           totalSynced++;

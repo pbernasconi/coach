@@ -60,13 +60,18 @@ export async function GET(request: NextRequest) {
     // Exchange code for tokens
     const tokenResponse = await stravaService.exchangeAuthorizationCode(code);
 
+    // Use scope from token response, fallback to URL scope, or use default
+    const scopeToSave = tokenResponse.scope || scope || 'read,activity:read_all';
+
     console.log('Token response:', {
       athleteId: tokenResponse.athlete.id,
       scopeFromUrl: scope,
+      scopeFromToken: tokenResponse.scope,
+      scopeToSave,
       expiresAt: tokenResponse.expires_at,
     });
 
-    // Save connection to database (use scope from URL, not token response)
+    // Save connection to database
     await StravaPersister.upsertConnection(
       userId,
       {
@@ -75,7 +80,7 @@ export async function GET(request: NextRequest) {
         expiresAt: tokenResponse.expires_at,
         athleteId: tokenResponse.athlete.id,
       },
-      scope
+      scopeToSave
     );
 
     // Redirect back to admin page with success message

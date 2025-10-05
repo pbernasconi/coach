@@ -84,7 +84,7 @@ export namespace CalendarConnectionPersister {
 
   export async function updateLastSyncedAt(
     id: string,
-    lastSyncedAt: Date
+    lastSyncedAt: Date | null
   ): Promise<CalendarConnection> {
     const [updated] = await db
       .update(calendarConnections)
