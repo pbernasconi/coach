@@ -4,13 +4,16 @@
  */
 
 import { generateText } from 'ai';
-import { anthropic } from '@ai-sdk/anthropic';
+import { openai } from '@ai-sdk/openai';
 import {
   TrainingPlanPersister,
   TrainingPlanActivityPersister,
   UserGoalsPersister,
 } from './training-plan-persister';
 import { CalendarEventPersister } from '../calendar/calendar-persister';
+import weatherService from '../weather/weather-service';
+import { USER_LOCATION } from '../user-profile/user-profile-config';
+import type { WeatherForecast } from '../weather/weather-types';
 import type { TrainingPlan, UserGoals, NewTrainingPlan, CalendarEvent, StravaActivity } from '@/db/schema';
 
 interface GeneratePlanInput {
@@ -26,7 +29,7 @@ interface GeneratedPlanResult {
 }
 
 class TrainingPlanService {
-  private aiModel = 'claude-3-5-sonnet-20241022';
+  private aiModel = 'gpt-4o';
 
   /**
    * Generate a new weekly training plan using AI
@@ -51,7 +54,26 @@ class TrainingPlanService {
       );
     }
 
-    // 3. Build context for AI
+    // 3. Fetch weather forecast for the planned week (best-effort)
+    let weather: WeatherForecast | null = null;
+    try {
+      const daysSpan = Math.max(
+        1,
+        Math.min(16, Math.ceil((weekEndDate.getTime() - Date.now()) / 86_400_000) + 1),
+      );
+      weather = await weatherService.getForecast({
+        latitude: USER_LOCATION.latitude,
+        longitude: USER_LOCATION.longitude,
+        label: USER_LOCATION.label,
+        timezone: USER_LOCATION.timezone,
+        unit: USER_LOCATION.temperatureUnit,
+        days: daysSpan,
+      });
+    } catch (err) {
+      console.warn('Weather fetch failed; generating plan without it.', err);
+    }
+
+    // 4. Build context for AI
     const context = {
       goals: userGoals,
       calendarEvents: calendarEvents.map((e) => ({
@@ -61,15 +83,16 @@ class TrainingPlanService {
         isAllDay: e.isAllDay,
       })),
       recentActivities: stravaActivities.slice(0, 10), // Last 10 activities
+      weather,
       weekStartDate,
       weekEndDate,
     };
 
-    // 4. Generate training plan with Claude
+    // 5. Generate training plan with Claude
     const prompt = this.buildPrompt(context);
 
     const { text } = await generateText({
-      model: anthropic(this.aiModel),
+      model: openai(this.aiModel),
       prompt,
       temperature: 0.7,
     });
@@ -100,10 +123,11 @@ class TrainingPlanService {
    * Build AI prompt for training plan generation
    */
   private buildPrompt(context: Record<string, unknown>): string {
-    const { goals, calendarEvents, recentActivities, weekStartDate, weekEndDate } = context as {
+    const { goals, calendarEvents, recentActivities, weather, weekStartDate, weekEndDate } = context as {
       goals: UserGoals | null;
       calendarEvents: CalendarEvent[];
       recentActivities: StravaActivity[];
+      weather: WeatherForecast | null;
       weekStartDate: Date;
       weekEndDate: Date;
     };
@@ -129,6 +153,9 @@ ${recentActivities.length > 0 ? JSON.stringify(recentActivities.map((a: StravaAc
   duration: a.movingTime || a.elapsedTime,
   date: a.startDate,
 })), null, 2) : 'No recent activities available'}
+
+**Weather Forecast:**
+${weather ? weatherService.formatForPrompt(weather) : 'No forecast available'}
 
 **Instructions:**
 1. Create a balanced weekly training plan with specific workouts for each day
