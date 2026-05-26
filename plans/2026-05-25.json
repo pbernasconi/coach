@@ -1,0 +1,95 @@
+{
+  "weekStart": "2026-05-25",
+  "weekEnd": "2026-05-31",
+  "planFile": "plans/2026-05-25.md",
+  "athlete": "Paolo",
+  "snapshotAtCreation": {
+    "ctl": 44.9,
+    "atl": 51.4,
+    "tsb": -6.5,
+    "weeklyTss": 352
+  },
+  "events": [
+    {
+      "title": "🏋️ Strength — heavy barbell",
+      "start": "2026-05-26T07:30:00",
+      "end": "2026-05-26T08:15:00",
+      "workoutType": "strength-heavy",
+      "description": "From plans/2026-05-25.md\n\nWarmup: 15 min stairclimber\nSquat: 3 × 225 lb × 5\nSingle-leg deadlift: 3 × 8 each side\nCalf raises: 3 × 135 lb × 15\nBulgarian split squats: 3 × 53 lb × 6"
+    },
+    {
+      "title": "🚴 Bike Z2 endurance",
+      "start": "2026-05-27T07:00:00",
+      "end": "2026-05-27T08:30:00",
+      "workoutType": "ride-z2",
+      "description": "From plans/2026-05-25.md\n\n75-90 min, HR 130-145 / 170-195W (Z2).\nWind 27 kph — pick a sheltered route or move to Zwift.\nAM before 3:30pm meetings."
+    },
+    {
+      "title": "🏋️ Strength — dumbbells (upper)",
+      "start": "2026-05-28T09:30:00",
+      "end": "2026-05-28T10:05:00",
+      "workoutType": "strength-dumbbell",
+      "description": "From plans/2026-05-25.md\n\nCondensed Hotel Gym Lift template, upper-body emphasis.\nDB bench, DB row, DB Romanian DL, core finisher.\nKeep legs fresh for Bike Club PM."
+    },
+    {
+      "title": "🏃 Tempo Run (10/20/15)",
+      "start": "2026-05-29T07:00:00",
+      "end": "2026-05-29T07:45:00",
+      "workoutType": "run-tempo",
+      "description": "From plans/2026-05-25.md\n\n10 min easy WU → 20 min @ HR 155-165 / ~5:00/km tempo → 15 min easy CD.\nGate: only execute if TSB ≥ -5 in AM. Otherwise easy Z2 30 min."
+    },
+    {
+      "title": "🧘 Mobility walk + stretch",
+      "start": "2026-05-30T09:00:00",
+      "end": "2026-05-30T09:20:00",
+      "workoutType": "recovery",
+      "description": "From plans/2026-05-25.md\n\n20 min walk + stretch. Recovery day.\nAl Hertz Bday — hydrate, eat well."
+    },
+    {
+      "title": "🚴 Long Ride Z2 (key session)",
+      "start": "2026-05-31T08:00:00",
+      "end": "2026-05-31T10:30:00",
+      "workoutType": "ride-long",
+      "description": "From plans/2026-05-25.md\n\n120-150 min Z2 long ride.\nHR 130-145 / 170-200W.\nPleasant weather forecast (11-20°C, partly cloudy, light wind).\nTarget TSS ~120-140."
+    }
+  ],
+  "calendarEvents": [
+    {
+      "id": "52p7omp45qmmksb9a37mm8mdl8",
+      "htmlLink": "https://www.google.com/calendar/event?eid=NTJwN29tcDQ1cW1ta3NiOWEzN21tOG1kbDggcGFvbG8uZW5yaWNvLmJlcm5hc2NvbmlAbQ",
+      "title": "🏋️ Strength — heavy barbell",
+      "start": "2026-05-26T07:30:00"
+    },
+    {
+      "id": "4tpuub38sgm37abqqm9eo8ih74",
+      "htmlLink": "https://www.google.com/calendar/event?eid=NHRwdXViMzhzZ20zN2FicXFtOWVvOGloNzQgcGFvbG8uZW5yaWNvLmJlcm5hc2NvbmlAbQ",
+      "title": "🚴 Bike Z2 endurance",
+      "start": "2026-05-27T07:00:00"
+    },
+    {
+      "id": "8carj1abosnu2gl5vbau5t0qsk",
+      "htmlLink": "https://www.google.com/calendar/event?eid=OGNhcmoxYWJvc251MmdsNXZiYXU1dDBxc2sgcGFvbG8uZW5yaWNvLmJlcm5hc2NvbmlAbQ",
+      "title": "🏋️ Strength — dumbbells (upper)",
+      "start": "2026-05-28T09:30:00"
+    },
+    {
+      "id": "6h44md6l69b03dccq0dnqsu3v0",
+      "htmlLink": "https://www.google.com/calendar/event?eid=Nmg0NG1kNmw2OWIwM2RjY3EwZG5xc3UzdjAgcGFvbG8uZW5yaWNvLmJlcm5hc2NvbmlAbQ",
+      "title": "🏃 Tempo Run (10/20/15)",
+      "start": "2026-05-29T07:00:00"
+    },
+    {
+      "id": "d0ovi0gf08sr4joulm8vjc7a18",
+      "htmlLink": "https://www.google.com/calendar/event?eid=ZDBvdmkwZ2YwOHNyNGpvdWxtOHZqYzdhMTggcGFvbG8uZW5yaWNvLmJlcm5hc2NvbmlAbQ",
+      "title": "🧘 Mobility walk + stretch",
+      "start": "2026-05-30T09:00:00"
+    },
+    {
+      "id": "nv5693iaiu7cmk8q23kmn5hrj0",
+      "htmlLink": "https://www.google.com/calendar/event?eid=bnY1NjkzaWFpdTdjbWs4cTIza21uNWhyajAgcGFvbG8uZW5yaWNvLmJlcm5hc2NvbmlAbQ",
+      "title": "🚴 Long Ride Z2 (key session)",
+      "start": "2026-05-31T08:00:00"
+    }
+  ],
+  "calendarSyncedAt": "2026-05-26T05:16:54.340Z"
+}
