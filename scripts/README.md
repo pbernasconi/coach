@@ -6,8 +6,10 @@ All scripts use `/opt/homebrew/bin/node --env-file=.env.local` (env vars come fr
 
 | Script | Purpose | Used by |
 |---|---|---|
-| `coach-profile.mjs` | Aggregate athlete profile: physiology + fitness state (from `daily_training_load`) + 90d sport stats + 365d rhythm + 14d log + this week's calendar + weather + Apple Notes. Auto-runs `calendar-sync.mjs` and `strava-backfill.mjs` first (pass `--no-sync` to skip). Writes `profile.md` + `profile.json`. | `/plan`, `/check-in` |
-| `add-workouts-to-calendar.mjs` | Push training events to personal Gmail calendar (purple, idempotent via `extendedProperties.private.coachPlanDate` tag). Takes `--plan plans/YYYY-MM-DD.json`. | `/plan`, `/check-in` |
+| `coach-profile.mjs` | Aggregate athlete profile: physiology + fitness state (from `daily_training_load`) + 90d sport stats + 365d rhythm + 14d log + **N weeks** of calendar + **travel-aware weather** + quality rotation state + Apple Notes. Auto-runs `calendar-sync.mjs` and `strava-backfill.mjs` first (`--no-sync` to skip). `--weeks N` / `--two-weeks` sets the horizon. Rejects unknown flags. Writes `profile.md` + `profile.json`. | `/plan`, `/check-in` |
+| `travel.mjs` | Library (no CLI). Parses Gmail "Flight to X" events into an itinerary: stay/flight/transit segments, `placeByDate`, `travelDays`. Geocodes destinations (open-meteo) for lat/lon/tz. Layovers <18h are downgraded to transit so they don't pull weather. Also exports **`HOME_TZ`** — the single source of truth for the default timezone; `coach-profile.mjs`, `render-plan.mjs` and `add-workouts-to-calendar.mjs` all import it rather than redeclaring the literal. Exports only `resolveTravel`, `dateKeysBetween`, `HOME_TZ`. | `coach-profile.mjs`, `render-plan.mjs`, `add-workouts-to-calendar.mjs` |
+| `render-plan.mjs` | Render `plans/YYYY-MM-DD.md` from `plans/YYYY-MM-DD.json`. The JSON is the single source of truth; the md is derived. `--stdout` to preview. | `/plan`, `/check-in` |
+| `add-workouts-to-calendar.mjs` | Push training events to personal Gmail calendar (purple, idempotent via `extendedProperties.private.coachPlanDate` tag). Takes `--plan plans/YYYY-MM-DD.json`. Honors per-event `timeZone`. | `/plan`, `/check-in` |
 | `apple-notes-workouts.mjs` | Pull workout-shaped notes from Apple Notes via osascript. JSON to stdout. | `coach-profile.mjs` |
 | `strava-backfill.mjs` | Incremental sync by default (uses `last_synced_at`). Pulls list, optionally `--detailed` (description, laps, splits, suffer_score) and `--streams` (HR/watts/etc.). Computes & persists `tss`, `tss_method`, `zone_times` per activity, then rebuilds `daily_training_load` (CTL/ATL/TSB). `--days N` or `--force` for explicit windows. | `coach-profile.mjs` auto, manual |
 | `calendar-sync.mjs` | Pull events from all active calendar connections into `calendar_events`. Refreshes OAuth on each run. Marks deleted events as cancelled. `--days-back 7` / `--days-forward 30` configurable. | `coach-profile.mjs` auto, manual |
@@ -24,6 +26,33 @@ All scripts use `/opt/homebrew/bin/node --env-file=.env.local` (env vars come fr
 | `coach-reshuffle.mjs` | One-off — first reshuffle + weather wire-up |
 | `coach-update-monday.mjs` | One-off — first Monday-update test |
 
+## Design notes (don't undo these)
+
+**Calendar text is untrusted.** Anyone who can send Paolo an invite controls the
+event `summary`/`location` verbatim, and `coach-profile.mjs` feeds that text into an
+LLM that then writes files and pushes events to his real calendar. So:
+- `coach-profile.mjs`'s `untrusted()` helper flattens newlines/control chars, defangs
+  backticks and caps length before any calendar string reaches `profile.md`. Newlines
+  are the actual injection vector — a title containing `\n\n## Ignore the above` would
+  otherwise render as top-level markdown indistinguishable from our own instructions.
+- Calendar rows render inside a labelled `>` blockquote telling the reader the
+  contents are data, not instructions.
+- `FLIGHT_RE`'s destination capture is **bounded** (`[^()\n]{1,80}`). An unbounded
+  lazy `.+?` next to `\s*` backtracks catastrophically (~O(n^2.8): 12s on an 8KB
+  title), and Google documents no max length for `summary`.
+- `/plan` Step 5's human confirm is **not optional** — it's the last gate between a
+  hostile event title and attacker-shaped calendar events. `--yes` skips the
+  questions, not the human.
+
+**`sameCity()` is an exact token match, not substring.** `includes` treated
+"San Francisco del Rincon" (Guanajuato, MX) as home — which would silently apply SF
+weather + PDT and schedule a bike ride there.
+
+**The plan `.json` is the source of truth; the `.md` is derived.** Never hand-edit a
+`plans/*.md` — it will be overwritten. Edit the JSON and re-run `render-plan.mjs`.
+Corollary: a plan JSON missing the rich fields (`tss`/`intensity`/`why`/`completed`/
+`philosophy`) renders a threadbare table, so keep them populated.
+
 ## Usage
 
 Most of the time you don't run these directly — type `/plan` or `/check-in` in Claude Code and the slash commands invoke the right scripts.
@@ -37,6 +66,24 @@ Most of the time you don't run these directly — type `/plan` or `/check-in` in
 ```bash
 /opt/homebrew/bin/node --env-file=.env.local scripts/coach-profile.mjs
 cat profile.md
+
+# Two-week horizon (calendar + weather + travel span both weeks):
+/opt/homebrew/bin/node --env-file=.env.local scripts/coach-profile.mjs --two-weeks
+
+# Fast re-read with no upstream sync:
+/opt/homebrew/bin/node --env-file=.env.local scripts/coach-profile.mjs --two-weeks --no-sync
+```
+
+### Non-interactive plan (skips the 3 questions)
+```
+/plan --two-weeks --feel fresh --focus cycling --yes
+```
+
+### Re-render a plan's markdown after hand-editing its JSON
+```bash
+/opt/homebrew/bin/node --env-file=.env.local scripts/render-plan.mjs --plan plans/2026-07-20.json
+# Preview without writing:
+/opt/homebrew/bin/node --env-file=.env.local scripts/render-plan.mjs --plan plans/2026-07-20.json --stdout
 ```
 
 ### Push a hand-edited plan to calendar
