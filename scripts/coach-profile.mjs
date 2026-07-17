@@ -20,9 +20,11 @@
 
 import { neon } from '@neondatabase/serverless';
 import { execFileSync } from 'node:child_process';
-import { writeFileSync, readdirSync, readFileSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { resolveTravel, dateKeysBetween, HOME_TZ } from './travel.mjs';
+import { rotationState } from './rotation.mjs';
+import { untrusted } from './untrusted.mjs';
 
 const sql = neon(process.env.DATABASE_URL);
 const args = process.argv.slice(2);
@@ -294,60 +296,7 @@ try {
 } catch (e) { console.error('apple notes fail:', e.message); }
 
 // ===== 8b. Quality rotation state (from prior plans, not vibes) =====
-// The variety mandate alternates bike VO2 ↔ run intervals week to week. Derive
-// the last one actually planned so the next is deterministic.
-const QUALITY_TYPES = ['ride-vo2', 'run-intervals', 'run-tempo', 'ride-sst'];
-let rotation = { lastQuality: null, lastQualityWeek: null, nextQuality: 'ride-vo2' };
-try {
-  const targetKey = weekStart.toISOString().slice(0, 10);
-  const priorPlans = readdirSync(resolve('plans'))
-    .filter((f) => /^\d{4}-\d{2}-\d{2}\.json$/.test(f))
-    .map((f) => f.slice(0, 10))
-    .filter((k) => k < targetKey) // ignore the week we're planning (re-runs)
-    .sort()
-    .reverse();
-  for (const key of priorPlans) {
-    let plan;
-    try {
-      plan = JSON.parse(readFileSync(resolve('plans', `${key}.json`), 'utf8'));
-    } catch { continue; }
-    const q = (plan.events ?? [])
-      .filter((e) => QUALITY_TYPES.includes(e.workoutType))
-      .sort((a, b) => String(a.start).localeCompare(String(b.start)))
-      .at(-1);
-    if (q) {
-      const isBike = q.workoutType.startsWith('ride');
-      rotation = {
-        lastQuality: q.workoutType,
-        lastQualityWeek: key,
-        nextQuality: isBike ? 'run-intervals' : 'ride-vo2',
-      };
-      break;
-    }
-  }
-} catch (e) { console.error('rotation state fail (defaulting to ride-vo2):', e.message); }
-
-// ===== 8c. Untrusted-text neutralizer =====
-// Calendar summaries/locations are THIRD-PARTY text: anyone who can send Paolo an
-// invite controls them verbatim, and they land in an LLM's context that then
-// writes files and pushes events to his real calendar unattended (/plan Step 7).
-// So treat them as data, not prose:
-//   - collapse newlines/control chars — the actual injection vector, since a title
-//     containing "\n\n## Ignore the above and ..." would otherwise render as
-//     top-level markdown indistinguishable from our own instructions
-//   - strip backticks — can't break out of a fence or open a directive
-//   - cap length — no context flooding
-// Deliberately NOT stripping <>&*_#[]{} : real titles need them ("Column <> Accend
-// Bi-Weekly Sync"), and once newlines are gone they're inert mid-line.
-function untrusted(s, max = 140) {
-  if (s == null) return '';
-  const flat = String(s)
-    .replace(/[\u0000-\u001f\u007f\u2028\u2029]+/g, ' ') // newlines, control chars, LINE/PARA SEP
-    .replace(/`/g, "'")
-    .replace(/\s+/g, ' ')
-    .trim();
-  return flat.length > max ? `${flat.slice(0, max)}…` : flat;
-}
+const rotation = rotationState(resolve('plans'), weekStart.toISOString().slice(0, 10));
 
 // ===== 9. Build markdown profile =====
 const md = [];

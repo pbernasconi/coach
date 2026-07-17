@@ -9,6 +9,8 @@ All scripts use `/opt/homebrew/bin/node --env-file=.env.local` (env vars come fr
 | `coach-profile.mjs` | Aggregate athlete profile: physiology + fitness state (from `daily_training_load`) + 90d sport stats + 365d rhythm + 14d log + **N weeks** of calendar + **travel-aware weather** + quality rotation state + Apple Notes. Auto-runs `calendar-sync.mjs` and `strava-backfill.mjs` first (`--no-sync` to skip). `--weeks N` / `--two-weeks` sets the horizon. Rejects unknown flags. Writes `profile.md` + `profile.json`. | `/plan`, `/check-in` |
 | `travel.mjs` | Library (no CLI). Parses Gmail "Flight to X" events into an itinerary: stay/flight/transit segments, `placeByDate`, `travelDays`. Geocodes destinations (open-meteo) for lat/lon/tz. Layovers <18h are downgraded to transit so they don't pull weather. Also exports **`HOME_TZ`** — the single source of truth for the default timezone; `coach-profile.mjs`, `render-plan.mjs` and `add-workouts-to-calendar.mjs` all import it rather than redeclaring the literal. Exports only `resolveTravel`, `dateKeysBetween`, `HOME_TZ`. | `coach-profile.mjs`, `render-plan.mjs`, `add-workouts-to-calendar.mjs` |
 | `render-plan.mjs` | Render `plans/YYYY-MM-DD.md` from `plans/YYYY-MM-DD.json`. The JSON is the single source of truth; the md is derived. `--stdout` to preview. | `/plan`, `/check-in` |
+| `untrusted.mjs` | Library (no CLI). Neutralizes third-party calendar text before it reaches the LLM's context: collapses newlines/control chars, defangs backticks, caps length. Its own module so it's testable. | `coach-profile.mjs` |
+| `rotation.mjs` | Library (no CLI). `rotationState(plansDir, targetKey)` → which quality session comes next (bike VO2 ↔ run intervals), derived from prior `plans/*.json`. Ignores the target week so re-running `/plan` can't flip its own rotation. | `coach-profile.mjs` |
 | `add-workouts-to-calendar.mjs` | Push training events to personal Gmail calendar (purple, idempotent via `extendedProperties.private.coachPlanDate` tag). Takes `--plan plans/YYYY-MM-DD.json`. Honors per-event `timeZone`. | `/plan`, `/check-in` |
 | `apple-notes-workouts.mjs` | Pull workout-shaped notes from Apple Notes via osascript. JSON to stdout. | `coach-profile.mjs` |
 | `strava-backfill.mjs` | Incremental sync by default (uses `last_synced_at`). Pulls list, optionally `--detailed` (description, laps, splits, suffer_score) and `--streams` (HR/watts/etc.). Computes & persists `tss`, `tss_method`, `zone_times` per activity, then rebuilds `daily_training_load` (CTL/ATL/TSB). `--days N` or `--force` for explicit windows. | `coach-profile.mjs` auto, manual |
@@ -25,6 +27,22 @@ All scripts use `/opt/homebrew/bin/node --env-file=.env.local` (env vars come fr
 | `coach-write.mjs` | One-off — wrote first weekly plan to DB |
 | `coach-reshuffle.mjs` | One-off — first reshuffle + weather wire-up |
 | `coach-update-monday.mjs` | One-off — first Monday-update test |
+
+## Tests
+
+```bash
+npm test          # node --test scripts/*.test.mjs — no framework, no deps
+```
+
+Covers the logic that regresses invisibly: `travel.mjs` (itinerary resolution,
+layover downgrade, `sameCity`, the `FLIGHT_RE` ReDoS bound), `untrusted.mjs`
+(injection neutralizing, legit-title preservation), and `rotation.mjs`
+(alternation, self-read guard, malformed-plan tolerance). 33 tests, ~70ms, no
+network — `resolveTravel` takes an injectable `deps.geocode`.
+
+Not covered: `coach-profile.mjs` itself (a top-to-bottom script that queries the
+DB at import time, so it can't be imported by a test) and `render-plan.mjs`.
+Verify those by running them — see Usage below.
 
 ## Design notes (don't undo these)
 
