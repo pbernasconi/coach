@@ -1,0 +1,134 @@
+{
+  "weekStart": "2026-07-06",
+  "weekEnd": "2026-07-12",
+  "planFile": "plans/2026-07-06.md",
+  "athlete": "Paolo",
+  "snapshotAtCreation": {
+    "ctl": 73.6,
+    "atl": 69.9,
+    "tsb": 3.7,
+    "weeklyTss": 438.6
+  },
+  "events": [
+    {
+      "title": "🚴 Threshold A — 6×5' @ Z4 (Workout 1)",
+      "start": "2026-07-05T18:30:00",
+      "end": "2026-07-05T20:00:00",
+      "workoutType": "ride-threshold",
+      "description": "From plans/2026-07-06.md\n\n30' WU (trim to 20' if chasing daylight)\n6 × 5' @ top of Z4 — 270-290W, HR → 168-180; 2' easy between\n10-15' top of Z2 (195-210W) lactate clearance\nEasy home, ~90 min total. Zwift OK.\nEnd with a few left in the tank. Hit it → next time 7×5."
+    },
+    {
+      "title": "🚴 Aerobic Z2 + 6×7s sprints",
+      "start": "2026-07-06T07:00:00",
+      "end": "2026-07-06T08:00:00",
+      "workoutType": "ride-z2",
+      "description": "From plans/2026-07-06.md\n\n60' mostly Z2 (HR 122-153 / 155-210W)\n6 × 6-8s sprints, ≥3' full spin between\nFog 12-17°C — sheltered route or Zwift. Recovery focus, workout tomorrow."
+    },
+    {
+      "title": "🏃 VO2 A run — 4×3'/3' (Workout 2)",
+      "start": "2026-07-07T07:00:00",
+      "end": "2026-07-07T08:00:00",
+      "workoutType": "run-vo2",
+      "description": "From plans/2026-07-06.md\n\n15' easy WU\n4 × 3' hard (~3:55-4:05/km, best sustainable) / 3' easy jog\n10-15' high Z2 (~5:10-5:20/km) — mandatory in VO2 A\nEasy to ~55'. Before 1PM Dr appt.\nHit it → next time 5×3."
+    },
+    {
+      "title": "🏋️ Strength — heavy barbell",
+      "start": "2026-07-07T08:30:00",
+      "end": "2026-07-07T09:15:00",
+      "workoutType": "strength-heavy",
+      "description": "From plans/2026-07-06.md\n\nApple Notes June 23 template:\nWarmup: stairclimbers\nSquat 3×5 @ 225-255 lb\nSingle-leg deadlift 3×8 @ 75 lb\nPullups 3×8\nCalf raises 3×15 @ 135 lb\nLift goes after the workout per plan structure."
+    },
+    {
+      "title": "🏃 Aerobic run Z1 + 4×20s strides",
+      "start": "2026-07-08T07:00:00",
+      "end": "2026-07-08T07:45:00",
+      "workoutType": "run-easy",
+      "description": "From plans/2026-07-06.md\n\n40-45' Z1/low Z2 (HR <145, ~5:45-6:15/km)\n4 × 20s strides, 3' between\nTruly easy — Thursday is a workout."
+    },
+    {
+      "title": "🚴 VO2 B via Bike Club — 3×[6×30/30] (Workout 3)",
+      "start": "2026-07-09T13:30:00",
+      "end": "2026-07-09T15:30:00",
+      "workoutType": "ride-vo2",
+      "description": "From plans/2026-07-06.md\n\nBike club ride IS the workout.\nIf mellow/solo: 15' WU, 3 × [6 × 30s hard ~310-330W / 30s easy], 5' easy between sets, 10-15' top Z2 after.\nIf spirited group ride: let the surges be the VO2 work — don't stack 30/30s on top.\nBack for 5:30 Linear sync."
+    },
+    {
+      "title": "🏋️ Strength — dumbbells (power) + optional yoga/spin",
+      "start": "2026-07-10T08:00:00",
+      "end": "2026-07-10T08:45:00",
+      "workoutType": "strength-dumbbell",
+      "description": "From plans/2026-07-06.md\n\nHotel Lift power template:\nWarmup circuit ×3 (stairclimbers, air squats, burpees, split jumps)\nBox split jumps 3×5; seated box jumps ×3\nSL DB RDL 3×8; pistol squats 3×8; SL calf raises 3×8\n~50% 1RM, explosive, not to failure.\nOptional 20-30' Z1 spin or yoga. Legs fresh for Saturday."
+    },
+    {
+      "title": "🚴 Long ride — 3.5-4h, 60-75' high Z2 (key session)",
+      "start": "2026-07-11T08:00:00",
+      "end": "2026-07-11T12:00:00",
+      "workoutType": "ride-long",
+      "description": "From plans/2026-07-06.md\n\n3.5-4h mostly Z1/Z2\n60-75' block at high Z2 (195-210W) — progressing the high-Z2 time from Jul 3's 4h aerobic ride.\nNo workout inside — the week wasn't light.\n14-22°C overcast, best day of the week."
+    },
+    {
+      "title": "🏃 Long run — 90', last 15' Z2",
+      "start": "2026-07-12T08:00:00",
+      "end": "2026-07-12T09:30:00",
+      "workoutType": "run-long",
+      "description": "From plans/2026-07-06.md\n\n90' mostly Z1, last 15' solid Z2 (~5:15/km).\nSunday long workout → Monday 7/13 starts next week aerobic.\nNext rotation slot: Workout 4 (Threshold B)."
+    }
+  ],
+  "calendarEvents": [
+    {
+      "id": "9q3e4javjh7gbuejh6d4vujmfs",
+      "htmlLink": "https://www.google.com/calendar/event?eid=OXEzZTRqYXZqaDdnYnVlamg2ZDR2dWptZnMgcGFvbG8uZW5yaWNvLmJlcm5hc2NvbmlAbQ",
+      "title": "🚴 Threshold A — 6×5' @ Z4 (Workout 1)",
+      "start": "2026-07-05T18:30:00"
+    },
+    {
+      "id": "e5sf2onsihp36535hokr1ngako",
+      "htmlLink": "https://www.google.com/calendar/event?eid=ZTVzZjJvbnNpaHAzNjUzNWhva3Ixbmdha28gcGFvbG8uZW5yaWNvLmJlcm5hc2NvbmlAbQ",
+      "title": "🚴 Aerobic Z2 + 6×7s sprints",
+      "start": "2026-07-06T07:00:00"
+    },
+    {
+      "id": "kdpmgld16ccg9818bvqcmvq5fs",
+      "htmlLink": "https://www.google.com/calendar/event?eid=a2RwbWdsZDE2Y2NnOTgxOGJ2cWNtdnE1ZnMgcGFvbG8uZW5yaWNvLmJlcm5hc2NvbmlAbQ",
+      "title": "🏃 VO2 A run — 4×3'/3' (Workout 2)",
+      "start": "2026-07-07T07:00:00"
+    },
+    {
+      "id": "rua0sqi228si5nn6v4f1mbtnj0",
+      "htmlLink": "https://www.google.com/calendar/event?eid=cnVhMHNxaTIyOHNpNW5uNnY0ZjFtYnRuajAgcGFvbG8uZW5yaWNvLmJlcm5hc2NvbmlAbQ",
+      "title": "🏋️ Strength — heavy barbell",
+      "start": "2026-07-07T08:30:00"
+    },
+    {
+      "id": "muaartgi7dpq1s1vqv27ivr5c0",
+      "htmlLink": "https://www.google.com/calendar/event?eid=bXVhYXJ0Z2k3ZHBxMXMxdnF2MjdpdnI1YzAgcGFvbG8uZW5yaWNvLmJlcm5hc2NvbmlAbQ",
+      "title": "🏃 Aerobic run Z1 + 4×20s strides",
+      "start": "2026-07-08T07:00:00"
+    },
+    {
+      "id": "kdshtjeuvjfuii6bh2a6033iho",
+      "htmlLink": "https://www.google.com/calendar/event?eid=a2RzaHRqZXV2amZ1aWk2YmgyYTYwMzNpaG8gcGFvbG8uZW5yaWNvLmJlcm5hc2NvbmlAbQ",
+      "title": "🚴 VO2 B via Bike Club — 3×[6×30/30] (Workout 3)",
+      "start": "2026-07-09T13:30:00"
+    },
+    {
+      "id": "s0f9usupva0hdrnlf6j1v8kfag",
+      "htmlLink": "https://www.google.com/calendar/event?eid=czBmOXVzdXB2YTBoZHJubGY2ajF2OGtmYWcgcGFvbG8uZW5yaWNvLmJlcm5hc2NvbmlAbQ",
+      "title": "🏋️ Strength — dumbbells (power) + optional yoga/spin",
+      "start": "2026-07-10T08:00:00"
+    },
+    {
+      "id": "et898g0njlngs820o059m560ss",
+      "htmlLink": "https://www.google.com/calendar/event?eid=ZXQ4OThnMG5qbG5nczgyMG8wNTltNTYwc3MgcGFvbG8uZW5yaWNvLmJlcm5hc2NvbmlAbQ",
+      "title": "🚴 Long ride — 3.5-4h, 60-75' high Z2 (key session)",
+      "start": "2026-07-11T08:00:00"
+    },
+    {
+      "id": "5f4kbbnbvbpqvu267pr1b2cgjc",
+      "htmlLink": "https://www.google.com/calendar/event?eid=NWY0a2JibmJ2YnBxdnUyNjdwcjFiMmNnamMgcGFvbG8uZW5yaWNvLmJlcm5hc2NvbmlAbQ",
+      "title": "🏃 Long run — 90', last 15' Z2",
+      "start": "2026-07-12T08:00:00"
+    }
+  ],
+  "calendarSyncedAt": "2026-07-06T00:57:57.492Z"
+}

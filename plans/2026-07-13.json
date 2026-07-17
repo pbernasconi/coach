@@ -1,0 +1,94 @@
+{
+  "weekStart": "2026-07-13",
+  "weekEnd": "2026-07-19",
+  "title": "build week — bank the bike before Lisbon",
+  "planFile": "plans/2026-07-13.md",
+  "snapshotAtCreation": {
+    "ctl": 72.6,
+    "atl": 58.8,
+    "tsb": 13.8,
+    "weeklyTss": 355.3,
+    "trend": "detraining (ramp -4.2/wk)"
+  },
+  "context": [
+    "Not racing Saturday (Pescadero is on the calendar but skipped) → normal build week, not a taper.",
+    "Next week is a Lisbon travel week with no bike → this is the last chance to ride hard for ~10 days.",
+    "⚠️ Rotation deviation: wk of 07-06 was also ride-vo2, so this week breaks bike↔run alternation. Deliberate — losing bike access next week outweighs strict rotation. Next week returns to run-intervals."
+  ],
+  "constraints": [
+    "Evenings are booked all week (Nopa Thu, Date night Thu 7:30pm, Local Edition Sat) → all sessions morning/midday",
+    "Thu 07-16 Bike Club 1:30–3:30pm is optional — skipped in favour of the dumbbell lift"
+  ],
+  "completed": [
+    { "day": "2026-07-13", "session": "🏋️ Heavy barbell lift", "detail": "59min, HR 105", "tss": 38, "note": "Apple Notes squat template" },
+    { "day": "2026-07-15", "session": "🏃 Run 10.2km", "detail": "57min, HR 151, 341W NP", "tss": 141.8, "note": "Midweek aerobic run" },
+    { "day": "2026-07-16", "session": "🏋️ Dumbbell lift", "detail": "60min, HR 108", "tss": 41.9, "note": "Completed 2/wk strength split ✓" }
+  ],
+  "philosophy": [
+    "Cyclist's goal week: get one last bike VO2 + one long endurance ride in before a ~10-day bike drought in Lisbon.",
+    "Fresh form (TSB +14) → safe to hit real intensity Friday.",
+    "Strength stays 2/wk (Mon heavy barbell + Thu dumbbell, >24h apart) — don't drop strength to add cardio."
+  ],
+  "events": [
+    {
+      "title": "🚴 Bike VO2 intervals",
+      "start": "2026-07-17T08:00:00",
+      "timeZone": "America/Los_Angeles",
+      "end": "2026-07-17T09:15:00",
+      "workoutType": "ride-vo2",
+      "tss": 85,
+      "intensity": "5×3min Z5 @ 300–320W",
+      "why": "Last bike quality before ~10 days off the bike; TSB +14 supports it",
+      "description": "15' WU. Main: 5×3min @ 300–320W (Z5, HR pushing 168–182), 3' easy spin between. 10' CD. Zwift OK. Last bike quality before ~10 days off the bike (Lisbon). Sub 2×20' SST @ 235–250W if legs are cooked from yesterday's lift. ~85 TSS."
+    },
+    {
+      "title": "🚴 Long endurance ride (Z2)",
+      "start": "2026-07-18T09:00:00",
+      "timeZone": "America/Los_Angeles",
+      "end": "2026-07-18T11:30:00",
+      "workoutType": "ride-long",
+      "tss": 150,
+      "intensity": "Z2, 170–200W / HR <153",
+      "why": "Last real ride before the Lisbon bike drought — bank the aerobic time",
+      "description": "2.5h steady Z2, 170–200W / HR <153. Last real ride before Lisbon travel week — bank the aerobic time. AM fog possible (12–17°C), dress in layers. ~150 TSS."
+    },
+    {
+      "title": "🏃 Easy recovery run",
+      "start": "2026-07-19T09:00:00",
+      "timeZone": "America/Los_Angeles",
+      "end": "2026-07-19T09:45:00",
+      "workoutType": "run-easy",
+      "tss": 50,
+      "intensity": "Z1–Z2, 5:50–6:10/km",
+      "why": "Flush the legs after the long ride",
+      "description": "45' Z1–Z2, 5:50–6:10/km, fully conversational. Flush the legs after the long ride. Keep it genuinely easy. ~50 TSS."
+    }
+  ],
+  "calendarEvents": [
+    {
+      "id": "hl86rjhqd3acv3hi7g3p8593lg",
+      "htmlLink": "https://www.google.com/calendar/event?eid=aGw4NnJqaHFkM2FjdjNoaTdnM3A4NTkzbGcgcGFvbG8uZW5yaWNvLmJlcm5hc2NvbmlAbQ",
+      "title": "🏋️ Dumbbell lift (Hotel Gym template)",
+      "start": "2026-07-16T12:00:00"
+    },
+    {
+      "id": "hhu5lmdacrb9scm8fi4c7e3edg",
+      "htmlLink": "https://www.google.com/calendar/event?eid=aGh1NWxtZGFjcmI5c2NtOGZpNGM3ZTNlZGcgcGFvbG8uZW5yaWNvLmJlcm5hc2NvbmlAbQ",
+      "title": "🚴 Bike VO2 intervals",
+      "start": "2026-07-17T08:00:00"
+    },
+    {
+      "id": "v91f7vvsg267klbt75i1oeh56o",
+      "htmlLink": "https://www.google.com/calendar/event?eid=djkxZjd2dnNnMjY3a2xidDc1aTFvZWg1Nm8gcGFvbG8uZW5yaWNvLmJlcm5hc2NvbmlAbQ",
+      "title": "🚴 Long endurance ride (Z2)",
+      "start": "2026-07-18T09:00:00"
+    },
+    {
+      "id": "qv2v5cd84umultl20naqgma4ak",
+      "htmlLink": "https://www.google.com/calendar/event?eid=cXYydjVjZDg0dW11bHRsMjBuYXFnbWE0YWsgcGFvbG8uZW5yaWNvLmJlcm5hc2NvbmlAbQ",
+      "title": "🏃 Easy recovery run",
+      "start": "2026-07-19T09:00:00"
+    }
+  ],
+  "calendarSyncedAt": "2026-07-17T05:06:38.016Z"
+}
