@@ -158,8 +158,12 @@ function buildItinerary(flights, home, horizonStart, horizonEnd) {
 /**
  * Main entry. Returns the itinerary plus a date → place map for the horizon.
  * A date with no stay segment covering midday is a pure travel day (no weather).
+ *
+ * `deps.geocode` is injectable so tests can resolve destinations without hitting
+ * the network; defaults to the real open-meteo lookup.
  */
-export async function resolveTravel(events, home, horizonStart, horizonEnd) {
+export async function resolveTravel(events, home, horizonStart, horizonEnd, deps = {}) {
+  const geocodeFn = deps.geocode ?? geocode;
   const flights = parseFlights(events);
   const trips = detectTripEvents(events);
   const segments = buildItinerary(flights, home, horizonStart, horizonEnd);
@@ -167,7 +171,7 @@ export async function resolveTravel(events, home, horizonStart, horizonEnd) {
   // Geocode any destination we don't already know (home is pre-resolved).
   for (const s of segments) {
     if (s.kind === 'flight' || !s.place?.unresolved) continue;
-    const g = await geocode(s.place.label);
+    const g = await geocodeFn(s.place.label);
     s.place = g ?? { ...s.place, lat: null, lon: null, tz: home.tz, geocodeFailed: true };
   }
 
