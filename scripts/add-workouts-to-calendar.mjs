@@ -30,12 +30,13 @@
 
 import { readFileSync, writeFileSync, chmodSync } from 'node:fs';
 import { resolve, relative } from 'node:path';
+import { HOME_TZ } from './travel.mjs';
 
 const CRED_PATH = '/Users/paolo/.claude/skills/google-calendar/.credentials/personal-gmail.json';
 const PLANS_DIR = resolve('plans');
 const CALENDAR_ID = 'paolo.enrico.bernasconi@gmail.com';
 const COLOR_ID = '3'; // Grape / purple
-const DEFAULT_TZ = 'America/Los_Angeles';
+const DEFAULT_TZ = HOME_TZ; // single source of truth: scripts/travel.mjs
 
 const CLIENT_ID = process.env.GCAL_CLIENT_ID || process.env.GOOGLE_CLIENT_ID;
 const CLIENT_SECRET = process.env.GCAL_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET;
