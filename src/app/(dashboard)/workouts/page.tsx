@@ -55,12 +55,14 @@ export default function WorkoutsPage() {
     });
   };
 
-  const formatDistance = (meters: number) => {
+  const formatDistance = (meters: number | null) => {
+    if (meters == null) return '-';
     const km = meters / 1000;
     return `${km.toFixed(2)} km`;
   };
 
-  const formatDuration = (seconds: number) => {
+  const formatDuration = (seconds: number | null) => {
+    if (seconds == null) return '-';
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     if (hours > 0) {
@@ -69,7 +71,8 @@ export default function WorkoutsPage() {
     return `${minutes}m`;
   };
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: Date | null) => {
+    if (!date) return '-';
     return new Date(date).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
