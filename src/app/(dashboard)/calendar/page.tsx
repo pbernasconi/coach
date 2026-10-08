@@ -185,7 +185,7 @@ export default function CalendarPage() {
   };
 
   const eventStyleGetter = (event: CalendarEvent) => {
-    const baseColor = event.resource?.color || '#3B82F6';
+    const baseColor = typeof event.resource?.color === 'string' ? event.resource.color : '#3B82F6';
 
     return {
       style: {
