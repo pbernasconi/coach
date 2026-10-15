@@ -42,5 +42,5 @@ published 180×180 size, from
 https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/7455efae41b330c265e7cd4b78dfa848e7ce5ebd/<path>
 ```
 
-and shows the credit "© Gym visual" (linking to <https://gymvisual.com/>) on every screen that displays them.
+Lift is a personal app, so its screens show no credit; this file is the record of where the media comes from.
 Their use is governed by Gym visual's terms: <https://gymvisual.com/content/3-terms-and-conditions-of-use>

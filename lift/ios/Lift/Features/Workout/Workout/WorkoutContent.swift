@@ -76,9 +76,6 @@ private struct WorkoutBody: View {
                         send: send
                     )
                 }
-                if workout.exercises.contains(where: { $0.catalogID != nil }) {
-                    MediaAttribution()  // the credit for the exercise thumbnails
-                }
             }
             .pageGutter()
             .padding(.bottom, Space.xxl)

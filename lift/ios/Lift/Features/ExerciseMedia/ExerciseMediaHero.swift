@@ -21,7 +21,6 @@ struct ExerciseMediaHero: View {
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(Text("\(name) animation"))
                 .accessibilityAddTraits(.isImage)
-            MediaAttribution()
         }
     }
 

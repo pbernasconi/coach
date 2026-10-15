@@ -40,14 +40,10 @@ private struct CatalogList: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Space.sm) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(verbatim: count)
-                    .font(theme.font(.footnote).weight(.semibold))
-                    .foregroundStyle(theme.palette.textSecondary)
-                Spacer(minLength: Space.md)
-                MediaAttribution()
-            }
-            .padding(.horizontal, Space.lg)
+            Text(verbatim: count)
+                .font(theme.font(.footnote).weight(.semibold))
+                .foregroundStyle(theme.palette.textSecondary)
+                .padding(.horizontal, Space.lg)
             if rows.isEmpty {
                 EmptyState(
                     symbol: "magnifyingglass",

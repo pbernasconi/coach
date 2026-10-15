@@ -4,8 +4,7 @@ import SwiftUI
 import UIKit
 
 /// A small rounded still of an exercise for list rows: a skeleton while it loads, a figure symbol when it cannot.
-/// The 180 px still is downsampled off the main actor to the pixels the tile needs. The screen showing it carries
-/// the "© Gym visual" credit (`MediaAttribution`) once, for all its thumbnails.
+/// The 180 px still is downsampled off the main actor to the pixels the tile needs.
 struct ExerciseThumbnail: View {
     @Environment(\.displayScale) private var displayScale
     @State private var decoded: DecodedThumbnail?

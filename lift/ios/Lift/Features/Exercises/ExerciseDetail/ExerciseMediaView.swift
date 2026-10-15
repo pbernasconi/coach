@@ -3,8 +3,8 @@ import KoboTokens
 import LiftCore
 import SwiftUI
 
-/// The top of the exercise detail screen: the exercise's animation (its first frame, still, under Reduce Motion) with
-/// the "© Gym visual" credit, or a placeholder when the exercise has no catalog media.
+/// The top of the exercise detail screen: the exercise's animation (its first frame, still, under Reduce Motion),
+/// or a placeholder when the exercise has no catalog media.
 struct ExerciseMediaView: View {
     @Environment(\.koboTheme) private var theme
     let name: String
