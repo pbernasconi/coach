@@ -78,18 +78,20 @@ private struct SkeletonPreviewRow: View {
     }
 }
 
-#Preview("Skeleton") {
-    VStack(spacing: Space.xl) {
-        SkeletonPreviewRow().skeletonBreath()
-        SkeletonPreviewRow().shimmering()
-        Text("Redacted text shimmers too").redacted(reason: .placeholder).shimmering()
+#if DEBUG
+    #Preview("Skeleton") {
+        VStack(spacing: Space.xl) {
+            SkeletonPreviewRow().skeletonBreath()
+            SkeletonPreviewRow().shimmering()
+            Text("Redacted text shimmers too").redacted(reason: .placeholder).shimmering()
+        }
     }
-}
 
-#Preview("Skeleton, dark") {
-    SkeletonPreviewRow().shimmering().preferredColorScheme(.dark)
-}
+    #Preview("Skeleton, dark") {
+        SkeletonPreviewRow().shimmering().preferredColorScheme(.dark)
+    }
 
-#Preview("Skeleton, AX3") {
-    SkeletonPreviewRow().skeletonBreath().dynamicTypeSize(.accessibility3)
-}
+    #Preview("Skeleton, AX3") {
+        SkeletonPreviewRow().skeletonBreath().dynamicTypeSize(.accessibility3)
+    }
+#endif

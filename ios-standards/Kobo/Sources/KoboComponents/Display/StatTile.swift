@@ -135,6 +135,8 @@ private struct StatTilePreviews: View {
     }
 }
 
-#Preview("Stat tile") { StatTilePreviews() }
-#Preview("Stat tile, dark") { StatTilePreviews().preferredColorScheme(.dark) }
-#Preview("Stat tile, AX3") { StatTilePreviews().dynamicTypeSize(.accessibility3) }
+#if DEBUG
+    #Preview("Stat tile") { StatTilePreviews() }
+    #Preview("Stat tile, dark") { StatTilePreviews().preferredColorScheme(.dark) }
+    #Preview("Stat tile, AX3") { StatTilePreviews().dynamicTypeSize(.accessibility3) }
+#endif

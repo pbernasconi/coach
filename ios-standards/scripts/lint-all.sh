@@ -57,6 +57,9 @@ else skip "swiftlint" "run scripts/install-tools.sh --swiftlint"; fi
 while IFS= read -r check; do
   step "$(basename "$(dirname "$(dirname "$check")")") catalog coverage" "$check"
 done < <(find . -path ./.tools -prune -o -path '*/scripts/catalog-coverage.sh' -print)
+while IFS= read -r check; do
+  step "$(basename "$(dirname "$(dirname "$check")")") conformance (CONVENTIONS rules)" "$check"
+done < <(find . -path ./.tools -prune -o -path '*/scripts/conformance.sh' -print)
 if [ "$(uname)" = "Linux" ] && have swift; then
   while IFS= read -r check; do
     step "$(basename "$(dirname "$(dirname "$check")")") logic tests (Linux)" "$check"

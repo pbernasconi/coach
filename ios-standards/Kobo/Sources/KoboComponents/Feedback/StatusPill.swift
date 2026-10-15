@@ -65,6 +65,8 @@ private struct StatusPillPreviews: View {
     }
 }
 
-#Preview("Status pill") { StatusPillPreviews() }
-#Preview("Status pill, dark") { StatusPillPreviews().preferredColorScheme(.dark) }
-#Preview("Status pill, AX3") { StatusPillPreviews().dynamicTypeSize(.accessibility3) }
+#if DEBUG
+    #Preview("Status pill") { StatusPillPreviews() }
+    #Preview("Status pill, dark") { StatusPillPreviews().preferredColorScheme(.dark) }
+    #Preview("Status pill, AX3") { StatusPillPreviews().dynamicTypeSize(.accessibility3) }
+#endif

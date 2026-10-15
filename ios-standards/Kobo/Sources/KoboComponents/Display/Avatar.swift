@@ -54,6 +54,11 @@ public struct Avatar: View {
         self.tone = tone
     }
 
+    /// Fixed-size initials font: scales with the disc, not Dynamic Type (rule 9 exception, documented above).
+    private func initialsFont(side: CGFloat) -> Font {
+        .system(size: side * Self.initialsRatio, weight: .semibold, design: theme.typography.design)
+    }
+
     public var body: some View {
         let side = diameter.points
         let colors = theme.palette.status(tone ?? Monogram.tone(for: name))
@@ -69,7 +74,7 @@ public struct Avatar: View {
             }
             // The disc has a fixed size, so the initials scale with it rather than with Dynamic Type (rule 9
             // exception, see above), with a side inset that keeps wide letters ("MW") inside the circle.
-            .font(.system(size: side * Self.initialsRatio, weight: .semibold, design: theme.typography.design))
+            .font(initialsFont(side: side))
             .lineLimit(1)
             .minimumScaleFactor(Self.initialsMinimumScale)
             .padding(.horizontal, side * Self.initialsInsetRatio)
@@ -125,6 +130,8 @@ private struct AvatarPreviews: View {
     }
 }
 
-#Preview("Avatar") { AvatarPreviews() }
-#Preview("Avatar, dark") { AvatarPreviews().preferredColorScheme(.dark) }
-#Preview("Avatar, AX3") { AvatarPreviews().dynamicTypeSize(.accessibility3) }
+#if DEBUG
+    #Preview("Avatar") { AvatarPreviews() }
+    #Preview("Avatar, dark") { AvatarPreviews().preferredColorScheme(.dark) }
+    #Preview("Avatar, AX3") { AvatarPreviews().dynamicTypeSize(.accessibility3) }
+#endif

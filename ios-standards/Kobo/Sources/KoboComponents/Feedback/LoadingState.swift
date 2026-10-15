@@ -78,17 +78,19 @@ public struct LoadingState: View {
     }
 }
 
-#Preview("Loading") {
-    VStack {
-        LoadingState()
-        LoadingState("Loading your plan")
+#if DEBUG
+    #Preview("Loading") {
+        VStack {
+            LoadingState()
+            LoadingState("Loading your plan")
+        }
     }
-}
 
-#Preview("Loading, dark") {
-    LoadingState("Loading your plan").preferredColorScheme(.dark)
-}
+    #Preview("Loading, dark") {
+        LoadingState("Loading your plan").preferredColorScheme(.dark)
+    }
 
-#Preview("Loading, AX3") {
-    LoadingState("Loading your plan").dynamicTypeSize(.accessibility3)
-}
+    #Preview("Loading, AX3") {
+        LoadingState("Loading your plan").dynamicTypeSize(.accessibility3)
+    }
+#endif

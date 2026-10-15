@@ -99,33 +99,35 @@ public struct CountdownRing: View {
     }
 }
 
-#Preview("Countdown ring") {
-    let now = Date.now
-    HStack(spacing: Space.xl) {
-        CountdownRing(start: now, end: now.addingTimeInterval(180), accessibilityLabel: "Rest")
-            .frame(width: Size.thumbnail * 2, height: Size.thumbnail * 2)
-        CountdownRing(
-            start: now.addingTimeInterval(-50),
-            end: now.addingTimeInterval(10),
-            showsTotal: false,
-            tone: .warning
-        )
-        .frame(width: Size.thumbnail, height: Size.thumbnail)
+#if DEBUG
+    #Preview("Countdown ring") {
+        let now = Date.now
+        HStack(spacing: Space.xl) {
+            CountdownRing(start: now, end: now.addingTimeInterval(180), accessibilityLabel: "Rest")
+                .frame(width: Size.thumbnail * 2, height: Size.thumbnail * 2)
+            CountdownRing(
+                start: now.addingTimeInterval(-50),
+                end: now.addingTimeInterval(10),
+                showsTotal: false,
+                tone: .warning
+            )
+            .frame(width: Size.thumbnail, height: Size.thumbnail)
+        }
+        .padding()
     }
-    .padding()
-}
 
-#Preview("Countdown ring, dark") {
-    let now = Date.now
-    CountdownRing(start: now, end: now.addingTimeInterval(90))
-        .frame(width: Size.thumbnail * 2, height: Size.thumbnail * 2)
-        .koboTheme(.lift)
-        .preferredColorScheme(.dark)
-}
+    #Preview("Countdown ring, dark") {
+        let now = Date.now
+        CountdownRing(start: now, end: now.addingTimeInterval(90))
+            .frame(width: Size.thumbnail * 2, height: Size.thumbnail * 2)
+            .koboTheme(.lift)
+            .preferredColorScheme(.dark)
+    }
 
-#Preview("Countdown ring, AX3") {
-    let now = Date.now
-    CountdownRing(start: now, end: now.addingTimeInterval(180))
-        .frame(width: Size.thumbnail * 2, height: Size.thumbnail * 2)
-        .dynamicTypeSize(.accessibility3)
-}
+    #Preview("Countdown ring, AX3") {
+        let now = Date.now
+        CountdownRing(start: now, end: now.addingTimeInterval(180))
+            .frame(width: Size.thumbnail * 2, height: Size.thumbnail * 2)
+            .dynamicTypeSize(.accessibility3)
+    }
+#endif

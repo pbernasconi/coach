@@ -2,7 +2,7 @@ import Foundation
 import KoboTokens
 
 /// The initials and tint rules behind `Avatar`. Pure, so every client gives a name the same monogram and colour.
-public enum Monogram {
+nonisolated public enum Monogram {
     /// The tones an avatar may take. Danger is left out on purpose: a red person reads as an error.
     public static let tones: [Tone] = [.accent, .info, .success, .warning, .neutral]
 

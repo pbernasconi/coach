@@ -51,6 +51,8 @@ private struct AnimatedNumberPreview: View {
     }
 }
 
-#Preview("Animated number") { AnimatedNumberPreview() }
-#Preview("Animated number, dark") { AnimatedNumberPreview().preferredColorScheme(.dark) }
-#Preview("Animated number, AX3") { AnimatedNumberPreview().dynamicTypeSize(.accessibility3) }
+#if DEBUG
+    #Preview("Animated number") { AnimatedNumberPreview() }
+    #Preview("Animated number, dark") { AnimatedNumberPreview().preferredColorScheme(.dark) }
+    #Preview("Animated number, AX3") { AnimatedNumberPreview().dynamicTypeSize(.accessibility3) }
+#endif
