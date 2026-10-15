@@ -23,7 +23,8 @@ import Testing
         let overview = WorkoutOverview(
             detail: detailWithNotes(),
             days: DayCalendar(calendar: SessionBuilder.calendar),
-            previous: [:]
+            previous: [:],
+            gym: .standard
         )
         #expect(overview.note == "Short on time\nNo lunges")
         #expect(overview.warmUpNote == "5 min rower")
@@ -34,7 +35,8 @@ import Testing
         let overview = WorkoutOverview(
             detail: detailWithNotes(),
             days: DayCalendar(calendar: SessionBuilder.calendar),
-            previous: [:]
+            previous: [:],
+            gym: .standard
         )
         #expect(overview.exercises.first?.note == "Elbows in")
         #expect(overview.exercises.first?.progression == "Next time: 102.5 kg")
