@@ -6,7 +6,7 @@
 set -euo pipefail
 APP="$1"
 OUT="$2"
-SCREENS="${SCREENS:-week:-tab,week workout:-open,workout history:-tab,history exercises:-tab,exercises exercise:-tab,exercises,-open,exercise settings:-tab,settings}"
+SCREENS="${SCREENS:-week:-tab,week workout:-open,workout history:-tab,history import:-tab,history,-open,import exercises:-tab,exercises exercise:-tab,exercises,-open,exercise catalog:-tab,exercises,-open,catalog settings:-tab,settings}"
 mkdir -p "$OUT"
 UDID="${SIM_UDID:-$("$(dirname "$0")/simulator.sh")}"
 BUNDLE="$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$APP/Info.plist")"
@@ -16,6 +16,11 @@ xcrun simctl bootstatus "$UDID" -b >/dev/null
 xcrun simctl install "$UDID" "$APP"
 xcrun simctl status_bar "$UDID" override --time 9:41 --batteryState charged --batteryLevel 100 \
   --cellularBars 4 --wifiBars 3 || true
+
+# Warm-up launch: a fresh simulator shows first-boot notices (for example Apple Intelligence) for a few seconds.
+xcrun simctl launch "$UDID" "$BUNDLE" -demo >/dev/null
+sleep 20
+xcrun simctl terminate "$UDID" "$BUNDLE" 2>/dev/null || true
 
 shoot() { # variant appearance content-size
   xcrun simctl ui "$UDID" appearance "$2"
