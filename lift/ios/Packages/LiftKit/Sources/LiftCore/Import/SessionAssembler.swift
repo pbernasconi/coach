@@ -10,20 +10,27 @@ struct SessionAssembler {
     func session(from draft: SessionDraft, issues: inout [ImportIssue]) -> Session {
         let id = makeID()
         var exercises: [SessionExercise] = []
+        var notes = draft.notes
         for item in draft.exercises {
             guard !item.sets.isEmpty else {
-                issues.append(ImportIssue(line: item.line, kind: .headerWithoutSets, text: item.text))
+                if SessionNoteHeuristic.isSessionNote(item, library: library) {
+                    notes += SessionNoteHeuristic.notes(of: item)
+                } else {
+                    issues.append(ImportIssue(line: item.line, kind: .headerWithoutSets, text: item.text))
+                }
                 continue
             }
             exercises.append(exercise(from: item, isPast: draft.isPast))
         }
+        // Stable, so notes read on one line keep their order.
+        let sessionNotes = notes.enumerated().sorted { ($0.element.line, $0.offset) < ($1.element.line, $1.offset) }
         return Session(
             id: id,
             date: draft.day,
             title: draft.title,
             exercises: exercises,
             warmUpNote: Self.joined(draft.warmUpLines),
-            note: Self.joined(draft.notes),
+            note: Self.joined(sessionNotes.map(\.element.text)),
             unitsAtLog: Self.dominantUnit(exercises),
             createdAt: reference,
             updatedAt: reference
