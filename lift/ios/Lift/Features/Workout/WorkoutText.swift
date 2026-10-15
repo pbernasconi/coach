@@ -85,6 +85,15 @@ nonisolated enum WorkoutText {
         String(localized: "Next time: \(self.weight(weight))")
     }
 
+    /// An exercise's note to show, one line per note line. Lines about next time are left out when the next-time weight
+    /// they gave already shows as the progression hint. Nil when nothing is left.
+    static func exerciseNote(_ note: String?, hasHint: Bool) -> String? {
+        let lines = (note ?? "").split(whereSeparator: \.isNewline)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty && !(hasHint && $0.localizedCaseInsensitiveContains("next time")) }
+        return lines.isEmpty ? nil : lines.joined(separator: "\n")
+    }
+
     /// "Set 2" for working sets, "Warm-up 1" and so on for the others.
     static func setTitle(number: Int, kind: SetKind) -> String {
         switch kind {

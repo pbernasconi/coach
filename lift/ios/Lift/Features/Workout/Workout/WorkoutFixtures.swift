@@ -12,7 +12,8 @@
             reps: String,
             kg weight: String,
             previous: String? = nil,
-            status: SetStatus = .planned
+            status: SetStatus = .planned,
+            note: String? = nil
         ) -> WorkoutSetItem {
             WorkoutSetItem(
                 id: .fixture(id),
@@ -23,7 +24,8 @@
                 badge: "\(number)",
                 weight: weight,
                 reps: reps,
-                previous: previous
+                previous: previous,
+                note: note
             )
         }
 
@@ -46,7 +48,7 @@
                     reps: "5",
                     previous: "5 × 60"
                 ),
-                set(21, 1, reps: "5", kg: "87.5", previous: "5 × 85", status: .done),
+                set(21, 1, reps: "5", kg: "87.5", previous: "5 × 85", status: .done, note: "Paused at the bottom"),
                 set(22, 2, reps: "6", kg: "87.5", previous: "5 × 85"),
                 set(23, 3, reps: "5", kg: "87.5", previous: "4 × 85"),
             ],
@@ -66,7 +68,8 @@
                 set(32, 2, reps: "8", kg: "65", previous: "8 × 62.5", status: .done),
                 set(33, 3, reps: "8", kg: "65", previous: "7 × 62.5", status: .skipped),
             ],
-            libraryID: ExerciseLibrary.seedID(3)
+            libraryID: ExerciseLibrary.seedID(3),
+            note: "Straps on the last set"
         )
 
         private static let curl = WorkoutExercise(
@@ -84,7 +87,9 @@
             dayTitle: "Thursday, 5 March",
             loggedSets: 4,
             totalSets: 9,
-            exercises: [squat, romanian, curl]
+            exercises: [squat, romanian, curl],
+            note: "Short on time, skipped the lunges",
+            warmUpNote: "5 min rower"
         )
 
         static let fixtureDefault = WorkoutState(

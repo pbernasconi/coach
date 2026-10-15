@@ -26,6 +26,10 @@ nonisolated struct WorkoutOverview: Equatable, Sendable {
     var loggedSets: Int
     var totalSets: Int
     var exercises: [WorkoutExercise]
+    /// What was written for the whole session ("Short on time"); nil when nothing was.
+    var note: String?
+    /// What was written about the session's warm-up ("5 min rower"); nil when nothing was.
+    var warmUpNote: String?
 }
 
 /// One exercise section: name, plain hint lines and its sets.
@@ -47,6 +51,8 @@ nonisolated struct WorkoutExercise: Equatable, Sendable, Identifiable {
     var catalogID: String?
     /// The unit of the weight column ("KG" or "LB" in the column header).
     var unit: WeightUnit = .kg
+    /// What was written about the exercise ("Elbows in"), without a next-time line `progression` already shows.
+    var note: String?
 }
 
 /// One set row.
@@ -67,6 +73,8 @@ nonisolated struct WorkoutSetItem: Equatable, Sendable, Identifiable {
     var reps: String = "—"
     /// The same set last time ("5 × 85"); nil when there is none.
     var previous: String?
+    /// What was written about this set ("paused"); nil when nothing was.
+    var note: String?
 }
 
 /// The weight and reps editor for one set. Done saves the values only; it never logs the set.

@@ -31,8 +31,12 @@ struct SetRow: View {
     let onRemove: () -> Void
 
     var body: some View {
-        Group {
+        VStack(alignment: .leading, spacing: Space.xxs) {
             if dynamicTypeSize.isAccessibilitySize { stacked } else { grid }
+            if let note = item.note {
+                SetNoteLine(note: note, indent: dynamicTypeSize.isAccessibilitySize ? 0 : badgeWidth + Space.sm)
+                    .padding(.bottom, Space.xs)
+            }
         }
         .padding(.horizontal, SetGridWidth.inset)
         .padding(.vertical, Space.xxs)
