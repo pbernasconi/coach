@@ -13,7 +13,7 @@ public enum WorkoutSummarizer {
             duration: duration(session, done: done),
             setsLogged: done.count,
             volume: Weight((volume * 100).rounded() / 100, unit),
-            bests: bests(session, earlier: earlier)
+            bests: WorkoutBests.bests(session, earlier: earlier, unit: unit)
         )
     }
 
@@ -39,45 +39,5 @@ public enum WorkoutSummarizer {
         }
         let seconds = end.timeIntervalSince(start)
         return seconds > 0 ? seconds : nil
-    }
-
-    private static func bests(_ session: Session, earlier: [UUID: [LoggedSet]]) -> [PersonalBest] {
-        var seen: Set<UUID> = []
-        return session.exercises.flatMap { exercise -> [PersonalBest] in
-            guard let id = exercise.exerciseID, seen.insert(id).inserted else { return [] }
-            let before = earlier[id] ?? []
-            guard before.contains(where: \.isDone) else { return [] }
-            let now = session.exercises.filter { $0.exerciseID == id }.flatMap(\.sets)
-            let mode = exercise.loadMode
-            let candidates: [(PersonalBest.Kind, Weight?, Weight?)] = [
-                (
-                    .estimatedOneRepMax, OneRepMax.best(in: now, loadMode: mode),
-                    OneRepMax.best(in: before, loadMode: mode)
-                ),
-                (.weight, heaviest(now), heaviest(before)),
-            ]
-            return candidates.compactMap { kind, value, previous in
-                guard let value, let previous, isHeavier(value, than: previous) else { return nil }
-                return PersonalBest(
-                    exerciseID: id,
-                    exerciseName: exercise.displayName,
-                    kind: kind,
-                    value: value,
-                    previous: previous
-                )
-            }
-        }
-    }
-
-    private static func heaviest(_ sets: [LoggedSet]) -> Weight? {
-        sets.filter { $0.isDone && $0.kind != .warmUp }
-            .compactMap { $0.actual?.weight }
-            .filter { $0.value > 0 }
-            .max { $0.converted(to: .kg).value < $1.converted(to: .kg).value }
-    }
-
-    /// Strictly heavier, ignoring rounding noise from unit conversion (under 0.01 kg).
-    private static func isHeavier(_ value: Weight, than other: Weight) -> Bool {
-        value.converted(to: .kg).value - other.converted(to: .kg).value > 0.01
     }
 }

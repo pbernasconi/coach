@@ -19,25 +19,57 @@ public struct WorkoutSummary: Hashable, Sendable {
     }
 }
 
-/// A record beaten in a workout: a higher estimated one-rep max, or a heavier load than ever logged before.
+/// One exercise's records beaten in a workout: a heavier set than ever logged before, a higher estimated one-rep max,
+/// or both. One per exercise, so the summary lists each exercise once.
 public struct PersonalBest: Hashable, Sendable {
-    public enum Kind: String, Hashable, Sendable {
-        case estimatedOneRepMax
-        case weight
+    /// A new record and the best before this workout.
+    public struct Record: Hashable, Sendable {
+        public var value: Weight
+        public var previous: Weight
+
+        public init(value: Weight, previous: Weight) {
+            self.value = value
+            self.previous = previous
+        }
+    }
+
+    /// The set the summary shows under the headline: its load and reps.
+    public struct TopSet: Hashable, Sendable {
+        /// Nil for a bodyweight set with no added load.
+        public var weight: Weight?
+        public var reps: Int
+
+        public init(weight: Weight?, reps: Int) {
+            self.weight = weight
+            self.reps = reps
+        }
     }
 
     public var exerciseID: UUID
     public var exerciseName: String
-    public var kind: Kind
-    public var value: Weight
-    /// The best before this workout.
-    public var previous: Weight
+    /// The heaviest set when it beat every earlier one; nil when it did not.
+    public var heaviest: Record?
+    /// The best estimated one-rep max when it beat the earlier best (both rounded, see `WorkoutBests.estimateStep`);
+    /// nil when it did not.
+    public var estimatedOneRepMax: Record?
+    /// The heaviest set when it is a record, otherwise the set behind the best estimate.
+    public var topSet: TopSet
+    /// The workout's best estimated one-rep max, rounded; nil when no set gives one (more than 12 reps).
+    public var estimate: Weight?
 
-    public init(exerciseID: UUID, exerciseName: String, kind: Kind, value: Weight, previous: Weight) {
+    public init(
+        exerciseID: UUID,
+        exerciseName: String,
+        heaviest: Record?,
+        estimatedOneRepMax: Record?,
+        topSet: TopSet,
+        estimate: Weight?
+    ) {
         self.exerciseID = exerciseID
         self.exerciseName = exerciseName
-        self.kind = kind
-        self.value = value
-        self.previous = previous
+        self.heaviest = heaviest
+        self.estimatedOneRepMax = estimatedOneRepMax
+        self.topSet = topSet
+        self.estimate = estimate
     }
 }

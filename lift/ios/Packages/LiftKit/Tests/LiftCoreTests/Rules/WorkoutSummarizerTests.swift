@@ -92,18 +92,22 @@ import Testing
         #expect(summary.volume == .kg(0))
     }
 
-    @Test func beatingEarlierSetsIsABest() {
-        let squat = Self.exercise(Self.squatID, [Self.set(5, .kg(105), minute: 0)])
-        let curl = Self.exercise(Self.curlID, [Self.set(8, .kg(12), minute: 4)])
+    @Test func beatingEarlierSetsIsOneBestPerExercise() throws {
+        let squat = Self.exercise(Self.squatID, [Self.set(5, .kg(100), minute: 0), Self.set(5, .kg(105), minute: 4)])
+        let curl = Self.exercise(Self.curlID, [Self.set(8, .kg(12), minute: 8)])
         let earlier = [
             Self.squatID: [Self.set(5, .kg(100), minute: 0)],
             Self.curlID: [Self.set(12, .kg(12), minute: 0)],
         ]
         let summary = WorkoutSummarizer.summarize(Self.session([squat, curl]), earlier: earlier, unit: .kg)
-        #expect(summary.bests.map(\.kind) == [.estimatedOneRepMax, .weight])
-        #expect(summary.bests.map(\.exerciseID) == [Self.squatID, Self.squatID])
-        #expect(summary.bests.last?.value == .kg(105))
-        #expect(summary.bests.last?.previous == .kg(100))
+        let best = try #require(summary.bests.first)
+        #expect(summary.bests.count == 1)
+        #expect(best.exerciseID == Self.squatID)
+        #expect(best.heaviest == PersonalBest.Record(value: .kg(105), previous: .kg(100)))
+        // 105 × (1 + 5/30) = 122.5; 100 × (1 + 5/30) = 116.67, rounded to 116.5.
+        #expect(best.estimatedOneRepMax == PersonalBest.Record(value: .kg(122.5), previous: .kg(116.5)))
+        #expect(best.topSet == PersonalBest.TopSet(weight: .kg(105), reps: 5))
+        #expect(best.estimate == .kg(122.5))
     }
 
     @Test func aFirstTimeIsNotABest() {

@@ -14,20 +14,30 @@ nonisolated enum WorkoutSummaryText {
         weight.value.formatted(.number.precision(.fractionLength(0)))
     }
 
-    /// One best: "Estimated 1RM · was 116.7 kg" and "122.5 kg".
+    /// One exercise's records as one row: the headline is the heavier set when there is one, otherwise the estimate;
+    /// the detail is the set behind it and the estimated 1RM, "65 kg × 5 · est. 1RM 76 kg (was 73)".
     static func best(_ best: PersonalBest, unit: WeightUnit) -> WorkoutBestItem {
-        let kind =
-            switch best.kind {
-            case .estimatedOneRepMax: String(localized: "Estimated 1RM")
-            case .weight: String(localized: "Heaviest set")
-            }
-        let previous = weight(best.previous, unit: unit)
+        let headline = best.heaviest?.value ?? best.estimatedOneRepMax?.value ?? best.estimate
         return WorkoutBestItem(
-            id: "\(best.exerciseID.uuidString)-\(best.kind.rawValue)",
+            id: best.exerciseID.uuidString,
             exercise: best.exerciseName,
-            detail: String(localized: "\(kind) · was \(previous)"),
-            value: weight(best.value, unit: unit)
+            detail: detail(best, unit: unit),
+            value: headline.map { weight($0, unit: unit) } ?? ""
         )
+    }
+
+    /// "65 kg × 5 · est. 1RM 76 kg (was 73)"; the estimate part is left out when no set gives one.
+    static func detail(_ best: PersonalBest, unit: WeightUnit) -> String {
+        let reps = best.topSet.reps
+        let set =
+            best.topSet.weight.map { String(localized: "\(weight($0, unit: unit)) × \(reps)") }
+            ?? String(localized: "Bodyweight × \(reps)")
+        guard let estimate = best.estimate.map({ weight($0, unit: unit) }) else { return set }
+        guard let previous = best.estimatedOneRepMax?.previous else {
+            return String(localized: "\(set) · est. 1RM \(estimate)")
+        }
+        let was = WorkoutText.number(previous.converted(to: unit).rounded(toStep: WorkoutBests.estimateStep).value)
+        return String(localized: "\(set) · est. 1RM \(estimate) (was \(was))")
     }
 
     /// A load in `unit`, to a tenth.

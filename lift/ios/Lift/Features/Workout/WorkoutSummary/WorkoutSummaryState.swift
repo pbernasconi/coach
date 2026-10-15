@@ -23,12 +23,12 @@ nonisolated struct WorkoutSummaryOverview: Equatable, Sendable {
     var bests: [WorkoutBestItem]
 }
 
-/// One record beaten in the workout.
+/// One exercise's records in the workout, as one row.
 nonisolated struct WorkoutBestItem: Equatable, Sendable, Identifiable {
     var id: String
     var exercise: String
-    /// "Estimated 1RM · was 116.7 kg".
+    /// "65 kg × 5 · est. 1RM 76 kg (was 73)": the set behind the record and the estimated 1RM.
     var detail: String
-    /// "122.5 kg".
+    /// The headline: the heavier set's load ("65 kg"), or the estimate when no set was heavier.
     var value: String
 }
