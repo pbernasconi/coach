@@ -4,11 +4,12 @@ import LiftCore
 
 /// Writes planned exercises and sets into a session inside the caller's transaction: one session exercise per slot,
 /// stamped with the library exercise's name, load mode and equipment (DATA-6), and `slot.sets` planned sets whose
-/// target `SlotPlanner` works out from the exercise's last two logged sessions.
+/// target `SlotPlanner` works out from the exercise's last two logged sessions, in load steps `gym` can make.
 struct SessionBuilder {
     let store: StoreWriter
     let db: Database
     let stamp: Date
+    let gym: GymSetup
 
     /// Inserts a session named after `template` on `day` with the template's exercises and planned sets.
     func session(from template: TemplateRecord, on day: LocalDay, unit: WeightUnit) throws -> SessionRecord {
@@ -81,7 +82,7 @@ struct SessionBuilder {
             for: slot,
             last: last,
             previous: previous,
-            increment: (equipment ?? .other).defaultIncrement(in: unit),
+            increment: gym.increment(for: equipment, in: unit),
             unit: unit
         )
         for index in 0..<max(1, slot.sets) {

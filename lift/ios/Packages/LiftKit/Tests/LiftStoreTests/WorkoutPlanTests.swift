@@ -64,6 +64,19 @@ import Testing
         #expect(squat.sets.map(\.target.weight) == Array(repeating: .kg(expected), count: 3))
     }
 
+    @Test func theIncreaseIsAStepThePlatesCanMake() async throws {
+        var gym = GymSetup.standard
+        for index in gym.kg.plates.indices where gym.kg.plates[index].size < 5 {
+            gym.kg.plates[index].isAvailable = false  // no plate under 5 kg: 10 kg jumps
+        }
+        let store = try TestStore.make(gym: gym)
+        _ = try await store.loggedSquats(reps: [5, 5, 5], weight: .kg(100))
+        let template = try await lowerA(store)
+        let session = try await store.plans.createSession(from: template.id, on: Self.thursday, unit: .kg)
+        let squat = try #require(try await detail(session.id, store).items.first)
+        #expect(squat.sets.map(\.target.weight) == Array(repeating: .kg(110), count: 3))
+    }
+
     @Test func aRemovedTemplateCannotPlanASession() async throws {
         let store = try TestStore.make()
         let template = try await lowerA(store)

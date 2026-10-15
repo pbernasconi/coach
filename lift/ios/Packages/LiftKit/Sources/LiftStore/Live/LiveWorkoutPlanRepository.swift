@@ -2,29 +2,40 @@ import Foundation
 import GRDB
 import LiftCore
 
-/// GRDB-backed `WorkoutPlanRepository`.
+/// GRDB-backed `WorkoutPlanRepository`. Planned barbell loads go up in steps the person's plates can make (`gym`, read
+/// at each write, so a change in Settings applies to the next plan).
 public struct LiveWorkoutPlanRepository: WorkoutPlanRepository {
     private let store: StoreWriter
+    private let gym: @Sendable () -> GymSetup
 
-    public init(database: LiftDatabase, now: @escaping @Sendable () -> Date, makeID: @escaping @Sendable () -> UUID) {
+    public init(
+        database: LiftDatabase,
+        now: @escaping @Sendable () -> Date,
+        makeID: @escaping @Sendable () -> UUID,
+        gym: @escaping @Sendable () -> GymSetup = { .standard }
+    ) {
         store = StoreWriter(writer: database.writer, now: now, makeID: makeID)
+        self.gym = gym
     }
 
     public func createSession(from templateID: UUID, on day: LocalDay, unit: WeightUnit) async throws
         -> SessionRecord
     {
         let store = store
+        let gym = gym()
         return try await store.transaction { db, stamp in
             let template = try TemplateQueries.liveTemplate(db, id: templateID)
-            return try SessionBuilder(store: store, db: db, stamp: stamp).session(from: template, on: day, unit: unit)
+            let builder = SessionBuilder(store: store, db: db, stamp: stamp, gym: gym)
+            return try builder.session(from: template, on: day, unit: unit)
         }
     }
 
     public func addExercise(_ exercise: Exercise, to sessionID: UUID) async throws -> SessionExerciseRecord {
         let store = store
+        let gym = gym()
         return try await store.transaction { db, stamp in
             let session = try SessionQueries.liveSession(db, id: sessionID)
-            let builder = SessionBuilder(store: store, db: db, stamp: stamp)
+            let builder = SessionBuilder(store: store, db: db, stamp: stamp, gym: gym)
             let last = try builder.history(of: exercise.id, excluding: sessionID).last
             let slot = SlotPlanner.slot(id: store.makeID(), exercise: exercise, last: last)
             guard let added = try builder.append([slot], to: session).first else {
@@ -36,6 +47,7 @@ public struct LiveWorkoutPlanRepository: WorkoutPlanRepository {
 
     public func changeTemplate(of sessionID: UUID, to templateID: UUID) async throws -> TemplateChangeUndo {
         let store = store
+        let gym = gym()
         return try await store.transaction { db, stamp in
             guard let detail = try SessionQueries.detail(db, id: sessionID) else {
                 throw AppError(.notFound, detail: "session \(sessionID)")
@@ -52,7 +64,7 @@ public struct LiveWorkoutPlanRepository: WorkoutPlanRepository {
             session.templateID = template.id
             session = try store.updateRow(session, at: stamp, db)
             let slots = try TemplateQueries.liveSlots(db, templateID: templateID).map(\.slot)
-            let added = try SessionBuilder(store: store, db: db, stamp: stamp).append(slots, to: session)
+            let added = try SessionBuilder(store: store, db: db, stamp: stamp, gym: gym).append(slots, to: session)
             return TemplateChangeUndo(
                 sessionID: sessionID,
                 previousTitle: detail.session.title,
@@ -85,6 +97,7 @@ public struct LiveWorkoutPlanRepository: WorkoutPlanRepository {
 
     public func planNextWeek(from weekStart: LocalDay) async throws -> WeekPlanUndo {
         let store = store
+        let gym = gym()
         return try await store.transaction { db, stamp in
             let source = try Self.sessions(db, from: weekStart, through: weekStart.adding(days: 6))
             var taken = Set(
@@ -96,7 +109,7 @@ public struct LiveWorkoutPlanRepository: WorkoutPlanRepository {
                 guard let templateID = session.templateID, !taken.contains(day),
                     let template = try TemplateRecord.fetchOne(db, key: templateID), template.deletedAt == nil
                 else { continue }
-                let planned = try SessionBuilder(store: store, db: db, stamp: stamp)
+                let planned = try SessionBuilder(store: store, db: db, stamp: stamp, gym: gym)
                     .session(from: template, on: day, unit: session.unitsAtLog)
                 created.append(planned.id)
                 taken.insert(day)

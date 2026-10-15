@@ -1,4 +1,5 @@
 import Foundation
+import LiftCore
 import LiftStore
 
 /// An in-memory database with every live repository wired to one `IDSequence` and one `ManualNow`.
@@ -13,11 +14,12 @@ public struct TestStore: Sendable {
     public let templates: LiveTemplateRepository
     public let plans: LiveWorkoutPlanRepository
 
-    public static func make() throws -> TestStore {
-        try TestStore(database: .inMemory(), ids: IDSequence(), now: ManualNow())
+    /// A fresh store; `gym` is the plates that planned barbell loads must fit.
+    public static func make(gym: GymSetup = .standard) throws -> TestStore {
+        try TestStore(database: .inMemory(), ids: IDSequence(), now: ManualNow(), gym: gym)
     }
 
-    public init(database: LiftDatabase, ids: IDSequence, now: ManualNow) {
+    public init(database: LiftDatabase, ids: IDSequence, now: ManualNow, gym: GymSetup = .standard) {
         self.database = database
         self.ids = ids
         self.now = now
@@ -28,6 +30,6 @@ public struct TestStore: Sendable {
         sets = LiveSetRepository(database: database, now: clock, makeID: makeID)
         outbox = LiveOutboxRepository(database: database)
         templates = LiveTemplateRepository(database: database, now: clock, makeID: makeID)
-        plans = LiveWorkoutPlanRepository(database: database, now: clock, makeID: makeID)
+        plans = LiveWorkoutPlanRepository(database: database, now: clock, makeID: makeID, gym: { gym })
     }
 }
