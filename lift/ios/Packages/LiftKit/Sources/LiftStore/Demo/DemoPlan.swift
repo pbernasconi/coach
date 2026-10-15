@@ -57,15 +57,29 @@ enum DemoPlan {
     /// The days the demo templates are made from.
     static let days = [upper, lower]
 
-    /// Three past weeks of two sessions, then two upcoming sessions planned from the templates.
-    static let slots: [Slot] = [
-        Slot(dayOffset: -20, day: lower, week: 0, startMinute: 7 * 60 + 5),
-        Slot(dayOffset: -17, day: upper, week: 0, startMinute: 18 * 60 + 20),
-        Slot(dayOffset: -13, day: lower, week: 1, startMinute: 7 * 60 + 12),
-        Slot(dayOffset: -10, day: upper, week: 1, startMinute: 18 * 60 + 35),
-        Slot(dayOffset: -6, day: lower, week: 2, startMinute: 6 * 60 + 58),
-        Slot(dayOffset: -3, day: upper, week: 2, startMinute: 18 * 60 + 10),
-        Slot(dayOffset: 1, day: lower, week: 3),
-        Slot(dayOffset: 4, day: upper, week: 3),
-    ]
+    /// The progression week of each of the nine weeks before the last three, oldest first: loads climb, with a few
+    /// repeated weeks, so the progress charts and the weekly volume have three months of made-up history.
+    static let earlierWeeks = [-6, -5, -5, -4, -3, -3, -2, -1, -1]
+
+    /// Those nine weeks: the same two sessions a week, at the same made-up times as the last three.
+    static let earlierSlots: [Slot] = earlierWeeks.enumerated().flatMap { index, week in
+        let back = 7 * (earlierWeeks.count - index)
+        return [
+            Slot(dayOffset: -20 - back, day: lower, week: week, startMinute: 7 * 60 + 5),
+            Slot(dayOffset: -17 - back, day: upper, week: week, startMinute: 18 * 60 + 20),
+        ]
+    }
+
+    /// Twelve past weeks of two sessions, then two upcoming sessions planned from the templates.
+    static let slots: [Slot] =
+        earlierSlots + [
+            Slot(dayOffset: -20, day: lower, week: 0, startMinute: 7 * 60 + 5),
+            Slot(dayOffset: -17, day: upper, week: 0, startMinute: 18 * 60 + 20),
+            Slot(dayOffset: -13, day: lower, week: 1, startMinute: 7 * 60 + 12),
+            Slot(dayOffset: -10, day: upper, week: 1, startMinute: 18 * 60 + 35),
+            Slot(dayOffset: -6, day: lower, week: 2, startMinute: 6 * 60 + 58),
+            Slot(dayOffset: -3, day: upper, week: 2, startMinute: 18 * 60 + 10),
+            Slot(dayOffset: 1, day: lower, week: 3),
+            Slot(dayOffset: 4, day: upper, week: 3),
+        ]
 }
