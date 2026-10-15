@@ -79,7 +79,8 @@ enum CompositionRoot {
     /// The live ActivityKit rest countdown, or one that does nothing when Live Activities are off for Lift.
     private static func restActivity() -> any RestActivityController {
         ActivityAuthorizationInfo().areActivitiesEnabled
-            ? LiveRestActivityController() : DisabledRestActivityController()
+            ? LiveRestActivityController(store: AppGroupRestSnapshotStore(bundle: .main))
+            : DisabledRestActivityController()
     }
 
     private static func info(isDemo: Bool) -> AppInfo {

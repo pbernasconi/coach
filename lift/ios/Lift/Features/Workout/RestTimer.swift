@@ -5,8 +5,8 @@ import Foundation
 nonisolated struct RestTimer: Equatable, Sendable {
     /// The rest used when an exercise has no rest time of its own.
     static let defaultSeconds = 90
-    /// What +30s adds.
-    static let extensionSeconds = 30
+    /// What +30s adds, here and on the Lock Screen.
+    static let extensionSeconds = RestSnapshot.extensionSeconds
 
     /// Which start this is. A new start gets a new number, so the screen restarts its ticking task.
     let run: Int
@@ -44,6 +44,13 @@ nonisolated struct RestTimer: Equatable, Sendable {
         var next = self
         next.remaining = min(remaining, seconds)
         return next
+    }
+
+    /// One second later, taking in the rest as it stands outside the app: time added there (+30s on the Lock Screen)
+    /// is added here, and no more time is shown than the wall clock has left (the ticks stop while the app is in the
+    /// background). Nil once the rest is over.
+    func ticked(following rest: RestSnapshot, at now: Date) -> RestTimer? {
+        extended(by: max(0, rest.totalSeconds - total)).ticked()?.capped(at: rest.secondsLeft(at: now))
     }
 
     /// The time left as "1:30" or "0:05".

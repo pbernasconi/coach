@@ -1,12 +1,15 @@
 import Foundation
 
-/// The current rest's end on the wall clock and its Live Activity. The Workout ViewModel owns one and keeps the
-/// in-app `RestTimer`; this keeps the Lock Screen and the Dynamic Island in step with it.
+/// The current rest on the wall clock and its Live Activity. The Workout ViewModel owns one and keeps the in-app
+/// `RestTimer`; this keeps the Lock Screen and the Dynamic Island in step with it, and it with them: their +30s and Skip
+/// change the rest while Lift is in the background, and the next tick here picks that up.
 final class RestActivitySession {
     private let controller: any RestActivityController
     private let now: @Sendable () -> Date
-    /// When the current rest is over; nil while there is none.
-    private(set) var endsAt: Date?
+    /// The current rest; nil while there is none.
+    private(set) var rest: RestSnapshot?
+    /// The rest shows as a Live Activity, so its buttons may change it outside the app.
+    private var isShownOutside = false
 
     init(controller: any RestActivityController, now: @escaping @Sendable () -> Date) {
         self.controller = controller
@@ -20,35 +23,51 @@ final class RestActivitySession {
 
     /// A rest of `seconds` from now. Shows the Live Activity when the logged set is known.
     func start(seconds: Int, activity: RestActivityStart?) {
-        let endsAt = now().addingTimeInterval(TimeInterval(seconds))
-        self.endsAt = endsAt
+        let rest = RestSnapshot(endsAt: now().addingTimeInterval(TimeInterval(seconds)), totalSeconds: seconds)
+        self.rest = rest
+        isShownOutside = activity != nil
         guard let activity else { return }
         let state = RestActivityAttributes.ContentState(
-            endsAt: endsAt,
+            endsAt: rest.endsAt,
             totalSeconds: seconds,
             nextSetLabel: activity.nextSetLabel
         )
         controller.start(activity.attributes, state: state)
     }
 
-    /// +30s: moves the end by `seconds`; `totalSeconds` is the whole rest now.
-    func extend(by seconds: Int, totalSeconds: Int) {
-        guard let current = endsAt else { return }
-        let endsAt = current.addingTimeInterval(TimeInterval(seconds))
-        self.endsAt = endsAt
-        controller.update(endsAt: endsAt, totalSeconds: totalSeconds)
+    /// +30s: `seconds` more on the rest as it stands, including time added on the Lock Screen. Returns the longer rest,
+    /// or nil when there is none left to extend.
+    func extend(by seconds: Int) -> RestSnapshot? {
+        guard let current = follow(), let next = current.extended(by: seconds, at: now()) else { return nil }
+        rest = next
+        controller.update(endsAt: next.endsAt, totalSeconds: next.totalSeconds)
+        return next
+    }
+
+    /// The in-app countdown one second on, following the rest outside the app (`RestTimer.ticked(following:at:)`).
+    /// Nil once the rest is over, or after a Skip on the Lock Screen.
+    func tick(_ timer: RestTimer) -> RestTimer? {
+        guard let rest = follow() else { return nil }
+        return timer.ticked(following: rest, at: now())
     }
 
     /// Skip, zero or leaving: removes the Live Activity. Does nothing while there is no rest.
     func end() {
-        guard endsAt != nil else { return }
-        endsAt = nil
+        guard rest != nil else { return }
+        rest = nil
         controller.end()
     }
 
-    /// Whole seconds left on the wall clock, rounded up; 0 while there is no rest.
-    var secondsLeft: Int {
-        guard let endsAt else { return 0 }
-        return Int(endsAt.timeIntervalSince(now()).rounded(.up))
+    /// The rest as it stands now: as the Live Activity's buttons left it when it shows outside the app. A Skip there
+    /// ends it here as well.
+    private func follow() -> RestSnapshot? {
+        guard let rest else { return nil }
+        guard isShownOutside else { return rest }
+        guard let outside = controller.currentRest() else {
+            end()
+            return nil
+        }
+        self.rest = outside
+        return outside
     }
 }

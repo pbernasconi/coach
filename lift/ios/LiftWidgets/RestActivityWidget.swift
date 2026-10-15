@@ -3,7 +3,8 @@ import SwiftUI
 import WidgetKit
 
 /// The rest countdown on the Lock Screen and in the Dynamic Island. The system counts down to `endsAt`, so the
-/// timer stays right while Lift is in the background; the app only starts, extends and ends it.
+/// timer stays right while Lift is in the background. The app starts, extends and ends it; its own +30s and Skip run App
+/// Intents in the background that change the shared rest the app follows.
 struct RestActivityWidget: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: RestActivityAttributes.self) { context in

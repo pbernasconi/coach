@@ -1,0 +1,80 @@
+import Foundation
+import LiftCore
+import LiftStore
+import LiftTesting
+import Testing
+
+@testable import Lift
+
+/// The in-app rest bar follows the Live Activity's +30s and Skip, which change the shared rest while Lift is in the
+/// background (`RecordingRestActivityController.lockScreenExtend` and `lockScreenSkip`). A manual wall clock and a
+/// clock that never really sleeps (TEST-3); made-up sessions only (TEST-8).
+@MainActor
+@Suite struct WorkoutLockScreenRestTests {
+    let planned = SessionBuilder.session(id: 1, on: Fixtures.monday, done: 0, planned: 3)
+    let activity = RecordingRestActivityController()
+    let now = ManualNow()
+    let clock = ImmediateClock()
+
+    /// A view model that has logged the first set, so a 90 s rest is running.
+    func resting() async -> WorkoutViewModel {
+        let vm = WorkoutViewModel(
+            sessionID: planned.id,
+            sessions: FakeSessionDetailRepository(emissions: [planned]),
+            sets: RecordingSetRepository(result: planned.items[0].sets[0]),
+            router: RecordingNavigator(),
+            clock: clock,
+            restActivity: activity,
+            catalog: FakeExerciseCatalog(),
+            history: FakeExerciseHistoryRepository(emissions: [[]]),
+            now: { [now] in now() },
+            calendar: SessionBuilder.calendar
+        )
+        await vm.run()
+        await vm.send(.setLogTapped(planned.items[0].sets[0].id))?.value
+        return vm
+    }
+
+    @Test func timeAddedOnTheLockScreenShowsInTheApp() async {
+        let vm = await resting()
+        now.advance(seconds: 10)
+        activity.lockScreenExtend(at: now())
+
+        await vm.runRestTimer()
+
+        #expect(clock.sleepCount == 1 + 110)  // the first tick finds 80 + 30 s left on the wall clock
+        #expect(vm.state.rest == nil)
+    }
+
+    @Test func skipOnTheLockScreenEndsTheRestBarOnTheNextTick() async {
+        let vm = await resting()
+        activity.lockScreenSkip()
+
+        await vm.runRestTimer()
+
+        #expect(clock.sleepCount == 1)
+        #expect(vm.state.rest == nil)
+        #expect(activity.calls.last == .end)  // the controller lets go of the ended activity
+    }
+
+    @Test func restExtendTappedAddsToTimeAddedOnTheLockScreen() async {
+        let vm = await resting()
+        activity.lockScreenExtend(at: now())
+
+        vm.send(.restExtendTapped)
+
+        #expect(vm.state.rest?.total == 150)
+        #expect(vm.state.rest?.remaining == 150)
+        #expect(activity.calls.last == .update(endsAt: ManualNow.start.addingTimeInterval(150), totalSeconds: 150))
+    }
+
+    @Test func restExtendTappedAfterTheRestIsOverOnTheWallClockDoesNothing() async {
+        let vm = await resting()
+        now.advance(seconds: 95)
+
+        vm.send(.restExtendTapped)
+
+        #expect(vm.state.rest?.total == 90)
+        #expect(activity.calls.count == 1)  // only the start
+    }
+}

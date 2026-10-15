@@ -74,8 +74,8 @@ final class WorkoutViewModel {
     }
 
     /// Counts the rest down once a second on the injected clock. The Screen restarts it for each new rest
-    /// (`.task(id: state.rest?.run)`), and cancelling it stops the countdown. Each tick also catches up with the wall
-    /// clock, so the bar matches the Live Activity after the app was in the background. Reaching zero ends the rest.
+    /// (`.task(id: state.rest?.run)`), and cancelling it stops the countdown. Each tick also follows the Live Activity
+    /// (the wall clock, and its +30s and Skip while the app was in the background). Reaching zero ends the rest.
     func runRestTimer() async {
         while let rest = state.rest {
             do {
@@ -84,7 +84,7 @@ final class WorkoutViewModel {
                 return
             }
             guard let current = state.rest, current.run == rest.run else { return }
-            state.rest = current.ticked()?.capped(at: restActivity.secondsLeft)
+            state.rest = restActivity.tick(current)
             if state.rest == nil { endRest() }
         }
     }
@@ -209,10 +209,10 @@ final class WorkoutViewModel {
         restActivity.start(seconds: seconds, activity: activity)
     }
 
+    /// +30s, on top of any time added on the Lock Screen meanwhile.
     private func extendRest() {
-        guard let rest = state.rest?.extended(by: RestTimer.extensionSeconds) else { return }
-        state.rest = rest
-        restActivity.extend(by: RestTimer.extensionSeconds, totalSeconds: rest.total)
+        guard let rest = state.rest, let next = restActivity.extend(by: RestTimer.extensionSeconds) else { return }
+        state.rest = rest.extended(by: next.totalSeconds - rest.total)
     }
 
     /// Skip or zero: the countdown goes away in the app and on the Live Activity.
