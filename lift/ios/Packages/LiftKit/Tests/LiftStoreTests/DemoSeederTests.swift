@@ -22,7 +22,7 @@ import Testing
         )
         let ids = try await seeder.seed(today: Fixtures.monday, calendar: Self.calendar)
         var stream = store.sessions.observeSessions(
-            from: Fixtures.monday.adding(days: -30),
+            from: Fixtures.monday.adding(days: -90),
             through: Fixtures.monday.adding(days: 30)
         )
         .makeAsyncIterator()
@@ -33,10 +33,11 @@ import Testing
 
     @Test func pastSessionsAreLoggedAndUpcomingOnesArePlanned() async throws {
         let (_, details) = try await seeded()
-        #expect(details.count == 8)
+        #expect(details.count == 26)
         let past = details.filter { $0.session.day < Fixtures.monday }
         let upcoming = details.filter { $0.session.day > Fixtures.monday }
-        #expect(past.count == 6)
+        #expect(past.count == 24)
+        #expect(past.first?.session.day == Fixtures.monday.adding(days: -83))
         #expect(upcoming.count == 2)
         #expect(past.allSatisfy { $0.domain.allSets.allSatisfy(\.isDone) })
         #expect(upcoming.allSatisfy { $0.domain.allSets.allSatisfy { $0.actual == nil } })
@@ -52,7 +53,7 @@ import Testing
         let squatLoads = details.compactMap { detail in
             detail.items.first { $0.exercise.exerciseID == Fixtures.squat.id }?.sets.first?.target.weight?.value
         }
-        #expect(squatLoads == [80, 82.5, 85, 87.5])
+        #expect(squatLoads == [65, 67.5, 67.5, 70, 72.5, 72.5, 75, 77.5, 77.5, 80, 82.5, 85, 87.5])
     }
 
     @Test func upperAAndLowerATemplatesPlanEverySession() async throws {
