@@ -2,7 +2,7 @@ import KoboTokens
 import SwiftUI
 
 // The labelled `title:` initialisers of `MiniPlayerBar`, kept so code written before 0.1 still compiles. Every other
-// Kobo component takes its localized title unlabelled (`MiniPlayerBar("Rest", …)`), as SwiftUI does.
+// Kobo component takes its localized title unlabelled (`MiniPlayerBar("Break", …)`), as SwiftUI does.
 extension MiniPlayerBar {
     /// A bar with a localized title and subtitle.
     @available(*, deprecated, renamed: "init(_:subtitle:chrome:action:leading:trailing:)")

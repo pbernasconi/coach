@@ -20,9 +20,9 @@ struct PatternsDemo: View {
                 LoadableView(phase.state, onRetry: { phase = .loaded }) { items in
                     VStack(alignment: .leading) { ForEach(items) { Text($0.name) } }
                 } placeholder: {
-                    LoadingState("Loading exercises")
+                    LoadingState("Loading recipes")
                 } empty: {
-                    LoadableEmptyView("No exercises", systemImage: "dumbbell", message: "Add one from the library.")
+                    LoadableEmptyView("No recipes", systemImage: "fork.knife", message: "Add one from the library.")
                 } failed: { message, retry in
                     LoadableFailedView(message: message, retry: retry)
                 }
@@ -36,11 +36,11 @@ struct PatternsDemo: View {
             }
             .frame(height: Size.minTouch * 6)
         case .confirm:
-            Button("Delete workout", role: .destructive) { confirming = true }
+            Button("Delete recipe", role: .destructive) { confirming = true }
                 .buttonStyle(.kobo(.destructive))
                 .koboConfirm(
                     isPresented: $confirming,
-                    .destructive(title: "Delete this workout?", confirmLabel: "Delete") {}
+                    .destructive(title: "Delete this recipe?", confirmLabel: "Delete") {}
                 )
         default: EmptyView()
         }
@@ -56,8 +56,8 @@ enum DemoPhase: String, CaseIterable, Identifiable {
         switch self {
         case .loading: .loading
         case .empty: .empty
-        case .loaded: .loaded(["Back squat", "Bench press", "Barbell row"].map(DemoItem.init))
-        case .failed: .failed("Couldn't load exercises.", retryLabel: "Try again")
+        case .loaded: .loaded(["Lemon risotto", "Miso soup", "Shakshuka"].map(DemoItem.init))
+        case .failed: .failed("Couldn't load recipes.", retryLabel: "Try again")
         }
     }
 }

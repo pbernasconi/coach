@@ -100,8 +100,8 @@ import Testing
     }
 
     @Test func anEditAboveTheTopIsRefusedAndShakes() {
-        let weight = NumberEntryRules(range: 0...500, decimalPlaces: 1)
-        var field = NumberEntryText(number: 50, rules: weight, separators: Self.separators("en_US"))
+        let amount = NumberEntryRules(range: 0...500, decimalPlaces: 1)
+        var field = NumberEntryText(number: 50, rules: amount, separators: Self.separators("en_US"))
         #expect(field.press(.digit(5)) == .init(number: 50, valueChanged: false, shakes: true))
         #expect(field.text == "50")
         #expect(field.press(.digit(0)) == .init(number: 500, valueChanged: true, shakes: false))
@@ -113,8 +113,8 @@ import Testing
     }
 
     @Test func commitRaisesALowValueAndRounds() {
-        let plates = NumberEntryRules(range: 20...500, decimalPlaces: 1)
-        var field = NumberEntryText(number: nil, rules: plates, separators: Self.separators("en_US"))
+        let amounts = NumberEntryRules(range: 20...500, decimalPlaces: 1)
+        var field = NumberEntryText(number: nil, rules: amounts, separators: Self.separators("en_US"))
         #expect(field.press(.digit(5)) == .init(number: 5, valueChanged: true, shakes: false))
         #expect(field.commit() == .init(number: 20, valueChanged: true, shakes: false))
         #expect(field.text == "20")
@@ -122,8 +122,8 @@ import Testing
     }
 
     @Test func anOutsideValueReplacesTheTextUnlessItEchoes() {
-        let weight = NumberEntryRules(range: 0...500, decimalPlaces: 1)
-        var field = NumberEntryText(number: nil, rules: weight, separators: Self.separators("en_US"))
+        let amount = NumberEntryRules(range: 0...500, decimalPlaces: 1)
+        var field = NumberEntryText(number: nil, rules: amount, separators: Self.separators("en_US"))
         field.text = "102."
         _ = field.normalize()
         field.sync(102)

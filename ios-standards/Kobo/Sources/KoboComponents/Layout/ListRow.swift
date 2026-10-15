@@ -7,7 +7,7 @@ import SwiftUI
 /// whole row inside a `ListSection` (the card clips it) and is an inset rounded rectangle on the canvas or in a sheet,
 /// where a full-bleed fill would look like a selection; every tap shows it once, however quick (`ListRowButtonStyle`).
 ///
-///     ListRow("Units", value: "kg", action: openUnits) { Image(systemName: "scalemass").accessibilityHidden(true) }
+///     ListRow("Units", value: "km", action: openUnits) { Image(systemName: "ruler").accessibilityHidden(true) }
 ///
 /// For a trailing slot with no leading one, pass `leading: { EmptyView() }`. Interactive trailing
 /// controls (a `Toggle`) belong in rows without an action, so buttons never nest. Titles from user data use the
@@ -194,9 +194,9 @@ extension ListRow where Leading == EmptyView, Trailing == EmptyView {
                     ListRow("Static title")
                     ListRow("With subtitle", subtitle: "A longer secondary line that wraps", value: "Value")
                     ListRow("Tappable", action: {})
-                    ListRow(verbatim: "Bench press", subtitle: "3 × 8", value: "80 kg", action: {})
-                    ListRow("Leading icon", value: "kg", action: {}) {
-                        Image(systemName: "scalemass").accessibilityHidden(true)
+                    ListRow(verbatim: "Book flights", subtitle: "Due Friday", value: "30 min", action: {})
+                    ListRow("Leading icon", value: "km", action: {}) {
+                        Image(systemName: "ruler").accessibilityHidden(true)
                     }
                     ListRow("Toggle trailing") {
                         EmptyView()

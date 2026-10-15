@@ -28,7 +28,7 @@ extension Loadable {
     /// A failure with localized copy, resolved from the app's bundle now. `Loadable` stores the resolved strings so it
     /// stays `Equatable`, `Sendable` and testable without SwiftUI; use `.failed(message:retryLabel:)` for runtime copy.
     ///
-    ///     state.workouts = .failed("Couldn't load your workouts.", retryLabel: "Reload")
+    ///     state.notes = .failed("Couldn't load your notes.", retryLabel: "Reload")
     public nonisolated static func failed(
         _ message: LocalizedStringResource,
         retryLabel: LocalizedStringResource? = nil
@@ -42,12 +42,12 @@ extension Loadable {
 /// they follow the theme: `LoadingState` (a spinner that says so when a wait runs long), `LoadableEmptyView` (an
 /// `EmptyState`) and `LoadableFailedView` (an `ErrorState`-style failure that VoiceOver announces).
 ///
-///     LoadableView(state.workouts, onRetry: { send(.retryTapped) }) { rows in
-///         WorkoutList(rows: rows)
+///     LoadableView(state.notes, onRetry: { send(.retryTapped) }) { rows in
+///         NoteList(rows: rows)
 ///     } placeholder: {
-///         WorkoutList.skeleton
+///         NoteList.skeleton
 ///     } empty: {
-///         LoadableEmptyView("No workouts yet", systemImage: "dumbbell")
+///         LoadableEmptyView("No notes yet", systemImage: "note.text")
 ///     }
 public struct LoadableView<Value: Equatable & Sendable, Loaded: View, Placeholder: View, Empty: View, Failed: View>:
     View
@@ -206,7 +206,7 @@ public struct LoadableEmptyView: View {
         let state: Loadable<[String]>
 
         var body: some View {
-            LoadableView(state, emptyTitle: "No workouts yet", emptySystemImage: "dumbbell", onRetry: {}) { names in
+            LoadableView(state, emptyTitle: "No notes yet", emptySystemImage: "note.text", onRetry: {}) { names in
                 VStack(alignment: .leading, spacing: Space.sm) {
                     ForEach(Array(names.enumerated()), id: \.offset) { _, name in
                         Text(name)
@@ -221,7 +221,7 @@ public struct LoadableEmptyView: View {
         let fixtures: [(String, Loadable<[String]>)] = [
             ("Loading", .loading),
             ("Empty", .empty),
-            ("Loaded", .loaded(["Push day", "Pull day"])),
+            ("Loaded", .loaded(["Grocery list", "Reading notes"])),
             ("Failed", .failed("The server did not answer.", retryLabel: "Reload")),
         ]
         StateGallery(fixtures) { state in

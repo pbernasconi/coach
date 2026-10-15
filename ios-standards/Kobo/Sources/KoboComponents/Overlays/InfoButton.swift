@@ -1,14 +1,14 @@
 import KoboTokens
 import SwiftUI
 
-/// The ⓘ beside a term people may not know ("Training load", "RPE"). The glyph lays out at its own small size, while
+/// The ⓘ beside a term people may not know ("Focus score", "ETA"). The glyph lays out at its own small size, while
 /// its 44pt target reaches into the space around it, so the line it sits on keeps its height.
 ///
-///     HStack { Text("Training load"); InfoButton("Training load", message: "How hard the last seven days were.") }
-///     InfoButton(accessibilityLabel: "About rest timers") { showsRestHelp = true }
+///     HStack { Text("Focus score"); InfoButton("Focus score", message: "How much quiet time the last seven days had.") }
+///     InfoButton(accessibilityLabel: "About timers") { showsTimerHelp = true }
 ///
 /// The `title:message:` form owns its `InfoSheet`, the way a `Menu` owns its list, and VoiceOver reads it as
-/// "About Training load". The `accessibilityLabel:action:` form only reports the tap.
+/// "About Focus score". The `accessibilityLabel:action:` form only reports the tap.
 public struct InfoButton: View {
     @Environment(\.koboTheme) private var theme
     @ScaledMetric(relativeTo: .body) private var glyphSize = Size.iconSm
@@ -17,7 +17,7 @@ public struct InfoButton: View {
     private let explainer: InfoButtonExplainer?
     private let action: (() -> Void)?
 
-    /// An ⓘ that runs `action`; the label says what it explains ("About rest timers").
+    /// An ⓘ that runs `action`; the label says what it explains ("About timers").
     public init(accessibilityLabel: LocalizedStringKey, action: @escaping () -> Void) {
         label = Text(accessibilityLabel)
         explainer = nil
@@ -80,16 +80,16 @@ private struct InfoButtonExplainer {
         var body: some View {
             VStack(alignment: .leading, spacing: Space.lg) {
                 HStack(spacing: Space.xs) {
-                    Text("Training load").font(theme.font(.headline))
+                    Text("Focus score").font(theme.font(.headline))
                     InfoButton(
-                        "Training load",
-                        message: "Training load adds up how hard each session was over the last seven days.",
-                        learnMore: URL(string: "https://example.com/training-load")
+                        "Focus score",
+                        message: "Focus score adds up the uninterrupted time in each of the last seven days.",
+                        learnMore: URL(string: "https://example.com/focus-score")
                     )
                 }
                 HStack(spacing: Space.xs) {
-                    Text("RPE").font(theme.font(.footnote)).foregroundStyle(theme.palette.textSecondary)
-                    InfoButton(accessibilityLabel: "About RPE") { taps += 1 }
+                    Text("ETA").font(theme.font(.footnote)).foregroundStyle(theme.palette.textSecondary)
+                    InfoButton(accessibilityLabel: "About ETA") { taps += 1 }
                 }
                 Text(verbatim: "Custom taps: \(taps)").font(theme.font(.footnote))
             }

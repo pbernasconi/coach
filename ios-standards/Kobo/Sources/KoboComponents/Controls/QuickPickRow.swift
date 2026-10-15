@@ -1,12 +1,12 @@
 import KoboTokens
 import SwiftUI
 
-/// A row of equal-width chips for one-tap values, such as the weights around the current one or common rep counts.
+/// A row of equal-width chips for one-tap values, such as the amounts around the current one or common counts.
 /// The chip matching `selection` is highlighted; a value not in the row highlights none. At accessibility text sizes
 /// the chips wrap instead of squeezing. The row is one container named by `title`; each chip carries the selected trait.
 ///
-///     QuickPickRow("Reps", values: [5, 6, 8, 10, 12], selection: $reps) { "\($0)" }
-///     QuickPickRow(verbatim: exercise.name, values: weights, selection: $weight, format: .number)
+///     QuickPickRow("Guests", values: [1, 2, 4, 6, 8], selection: $guests) { "\($0)" }
+///     QuickPickRow(verbatim: recipe.name, values: amounts, selection: $amount, format: .number)
 public struct QuickPickRow<Value: Hashable & Sendable>: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     private let title: Text
@@ -26,7 +26,7 @@ public struct QuickPickRow<Value: Hashable & Sendable>: View {
         self.init(title: Text(title), values: values, selection: selection, feedback: feedback, label: label)
     }
 
-    /// A row named as is (an exercise name), whose chip titles come from `label`. Values must be unique.
+    /// A row named as is (a recipe name), whose chip titles come from `label`. Values must be unique.
     public init(
         verbatim title: String,
         values: [Value],
@@ -121,16 +121,16 @@ private struct QuickPickItem<Value: Hashable & Sendable>: Identifiable {
 #if DEBUG
     private struct QuickPickGallery: View {
         @Environment(\.koboTheme) private var theme
-        @State private var reps = 8
-        @State private var weight = 60.0
+        @State private var guests = 8
+        @State private var price = 60.0
 
         var body: some View {
             VStack(alignment: .leading, spacing: Space.lg) {
-                QuickPickRow("Reps", values: [5, 6, 7, 8, 9, 10, 11, 12], selection: $reps, format: .number)
+                QuickPickRow("Guests", values: [5, 6, 7, 8, 9, 10, 11, 12], selection: $guests, format: .number)
                 QuickPickRow(
-                    "Weight",
-                    values: StepperField.nearbyValues(around: weight, step: 2.5, in: 20...200),
-                    selection: $weight
+                    "Price",
+                    values: StepperField.nearbyValues(around: price, step: 2.5, in: 20...200),
+                    selection: $price
                 ) { $0.formatted(.number.precision(.fractionLength(0...1))) }
             }
             .padding(Space.gutter)

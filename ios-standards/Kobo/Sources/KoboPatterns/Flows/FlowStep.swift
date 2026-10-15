@@ -7,7 +7,7 @@ import SwiftUI
 /// a banner. The bar shows the flow's quiet title, the ✕ with its leave confirmation (`FlowExitAction`) where the
 /// step position shows it, and the back control. Put it inside the app's `NavigationStack`; push later steps.
 ///
-///     FlowStep("Paste your notes", subtitle: "Copy a workout log and paste it here.", flowTitle: "Import notes",
+///     FlowStep("Paste your notes", subtitle: "Copy a task list and paste it here.", flowTitle: "Import notes",
 ///              primary: FlowStepAction("Continue", isEnabled: !text.isEmpty, disabledHint: "Paste some notes first",
 ///                                      action: next),
 ///              submitState: parse,
@@ -108,7 +108,7 @@ public struct FlowStep<Content: View>: View {
             NavigationStack {
                 FlowStep(
                     "Paste your notes",
-                    subtitle: "Copy a workout log from Notes and paste it here.",
+                    subtitle: "Copy a task list from Notes and paste it here.",
                     flowTitle: "Import notes",
                     primary: FlowStepAction(
                         "Continue",
@@ -120,7 +120,7 @@ public struct FlowStep<Content: View>: View {
                     submitState: parse,
                     exit: FlowExitAction(hasUnsavedProgress: !text.isEmpty) {}
                 ) {
-                    Button("Paste sample") { text = "Mon 14 Oct\nBench 3x8 80kg\nRow 3x10 60kg" }
+                    Button("Paste sample") { text = "Mon 14 Oct\nCall the plumber 30m\nPay rent 5m" }
                         .buttonStyle(.kobo(.secondary))
                     Text(verbatim: text.isEmpty ? "Nothing pasted yet" : text)
                 }

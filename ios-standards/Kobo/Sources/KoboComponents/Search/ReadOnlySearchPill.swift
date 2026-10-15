@@ -63,15 +63,15 @@ extension View {
     private struct SearchFieldGallery: View {
         @Environment(\.koboTheme) private var theme
         @State private var query = ""
-        @State private var filled = "squat"
+        @State private var filled = "soup"
         @FocusState private var isFocused: Bool
 
         var body: some View {
             VStack(spacing: Space.lg) {
-                SearchField(text: $query, prompt: "Search exercises")
+                SearchField(text: $query, prompt: "Search recipes")
                 SearchField(text: $filled, onCancel: { filled = "" }).focused(by: $isFocused)
                 SearchField(verbatim: "", prompt: "Search history") {}
-                SearchField(verbatim: "Bench press", prompt: "Search history", onClear: {}) {}
+                SearchField(verbatim: "Miso soup", prompt: "Search history", onClear: {}) {}
             }
             .padding(Space.gutter)
             .frame(maxHeight: .infinity, alignment: .top)

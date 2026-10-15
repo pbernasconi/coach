@@ -7,7 +7,7 @@ import SwiftUI
 /// An active filter chip can carry a clear control: pass `onClear` and the selected chip shows a trailing ✕ with its
 /// own 44pt target. VoiceOver gets one element with a "Clear …" action instead of a second button.
 ///
-///     Chip("Barbell", systemImage: "dumbbell", isSelected: filter == .barbell) { filter = .barbell }
+///     Chip("Vegetarian", systemImage: "leaf", isSelected: filter == .vegetarian) { filter = .vegetarian }
 ///     Chip(verbatim: tag.name, isSelected: true, onClear: { remove(tag) }) { edit(tag) }
 public struct Chip: View {
     private let title: Text
@@ -163,8 +163,8 @@ struct ChipStyle: ButtonStyle {
         var body: some View {
             VStack(alignment: .leading, spacing: Space.sm) {
                 HStack(spacing: Space.sm) {
-                    Chip("Barbell", systemImage: "dumbbell", isSelected: selected) { selected.toggle() }
-                    Chip("Machine", isSelected: !selected) { selected.toggle() }
+                    Chip("Vegetarian", systemImage: "leaf", isSelected: selected) { selected.toggle() }
+                    Chip("Any diet", isSelected: !selected) { selected.toggle() }
                 }
                 HStack(spacing: Space.sm) {
                     Chip("Done", systemImage: "checkmark", tone: .success, isSelected: true) {}

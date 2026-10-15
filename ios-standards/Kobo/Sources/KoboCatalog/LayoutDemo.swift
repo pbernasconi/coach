@@ -14,28 +14,28 @@ struct LayoutDemo: View {
     var body: some View {
         switch component {
         case .card:
-            CardSection("Today") { Text("Lower A · 5 exercises") }
+            CardSection("Today") { Text("Kitchen remodel · 5 tasks") }
         case .listRow:
             VStack(spacing: 0) {
-                ListRow(verbatim: "Back squat", subtitle: "3 × 8", value: "135 lb", action: {})
-                ListRow(verbatim: "Romanian deadlift", subtitle: "3 × 10", value: "115 lb", action: {}) {
-                    Thumbnail(systemName: "figure.strengthtraining.traditional", side: Size.minTouch)
+                ListRow(verbatim: "Book flights", subtitle: "Due Friday", value: "30 min", action: {})
+                ListRow(verbatim: "Renew passport", subtitle: "Due in 3 weeks", value: "1 h", action: {}) {
+                    Thumbnail(systemName: "doc.text", side: Size.minTouch)
                 }
             }
         case .listSection:
-            ListSection("Settings", footer: "Sets log after the rest timer.") {
-                ListRow("Units", value: "lb", action: {})
-                ListRow("Rest timer", value: "2:00", action: {})
+            ListSection("Settings", footer: "Applies to new tasks.") {
+                ListRow("Units", value: "km", action: {})
+                ListRow("Default timer", value: "25:00", action: {})
             }
         case .keyValueList:
-            KeyValueRow("Units", value: "lb")
+            KeyValueRow("Units", value: "km")
             KeyValueList(
-                "Last session",
+                "Last trip",
                 items: [
-                    KeyValueItem("Top set", value: "155 × 6"),
-                    KeyValueItem(verbatim: "Grip", value: "Hook"),
-                    KeyValueItem("Volume", value: "9,840 lb"),
-                    KeyValueItem("Change", value: "+5 lb", valueTone: .success),
+                    KeyValueItem("Nights", value: "4"),
+                    KeyValueItem(verbatim: "Stay", value: "Guesthouse"),
+                    KeyValueItem("Distance", value: "1,240 km"),
+                    KeyValueItem("Under budget", value: "€60", valueTone: .success),
                 ]
             )
         case .sectionHeader:
@@ -45,27 +45,27 @@ struct LayoutDemo: View {
                 Text("Above"); Separator(leadingInset: Space.lg); Text("Below")
             }
         case .collapsible:
-            Collapsible("Warm-up sets", subtitle: "3 sets", isExpanded: $expanded) {
-                Text("45 × 10 · 95 × 5 · 115 × 3")
+            Collapsible("Packing list", subtitle: "3 items", isExpanded: $expanded) {
+                Text("Passport · Charger · Umbrella")
             }
         case .pinnedFooter:
             ScrollView { Text("Scrolling content").frame(maxWidth: .infinity, minHeight: Size.minTouch * 4) }
                 .frame(height: Size.minTouch * 5)
-                .pinnedFooter { Button("Start workout") {}.buttonStyle(.kobo(.primary, width: .full)) }
+                .pinnedFooter { Button("Save trip") {}.buttonStyle(.kobo(.primary, width: .full)) }
         case .sheetHeader:
             SheetHeader(
-                "Edit set",
-                subtitle: "Back squat",
+                "Edit task",
+                subtitle: "Book flights",
                 onClose: {},
                 confirm: SheetHeaderAction(accessibilityLabel: "Save") {}
             )
         case .dayStrip:
             DayStrip(items: sampleDays, today: today, week: $week, onSelect: { _ in })
         case .segmentedProgress:
-            SegmentedProgress(done: 1, planned: 1, minimum: 2, goal: 3, accessibilityLabel: "Sessions this week")
+            SegmentedProgress(done: 1, planned: 1, minimum: 2, goal: 3, accessibilityLabel: "Tasks this week")
         case .miniPlayerBar:
-            MiniPlayerBar(verbatim: "Back squat", subtitle: "Set 2 of 3 · 1:24", chrome: .floating, action: {}) {
-                Image(systemName: "figure.strengthtraining.traditional").accessibilityHidden(true)
+            MiniPlayerBar(verbatim: "Focus timer", subtitle: "Write the report · 18:24", chrome: .floating, action: {}) {
+                Image(systemName: "timer").accessibilityHidden(true)
             }
         default: EmptyView()
         }

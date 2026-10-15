@@ -5,7 +5,7 @@ import SwiftUI
 public struct Typography: Sendable, Equatable {
     public enum Role: String, Sendable, CaseIterable {
         case largeTitle, title, title2, headline, body, callout, subheadline, footnote, caption
-        /// Big numbers (timers, weights): the Large Title size (34 pt at the default text size, scaling with the
+        /// Big numbers (timers, totals): the Large Title size (34 pt at the default text size, scaling with the
         /// `largeTitle` style), bold, tabular digits. The system family draws it rounded; a custom family keeps its own
         /// design at the same size. Components that need a bigger number scale it themselves.
         case display

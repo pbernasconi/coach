@@ -6,7 +6,7 @@ import SwiftUI
 /// or autocorrection, as the system search field. The caller filters (and debounces) as `text` changes. A screen that
 /// is a searchable list uses `koboSearchable` instead; the read-only form opens a search mode on a tap.
 ///
-///     SearchField(text: $query, prompt: "Search exercises")
+///     SearchField(text: $query, prompt: "Search recipes")
 ///     SearchField(text: $query, onCancel: { query = ""; focus = false }).focused(by: $focus)
 ///     SearchField(verbatim: committedQuery, prompt: "Search history", onClear: clear) { isSearching = true }
 public struct SearchField: View {

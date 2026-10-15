@@ -8,7 +8,7 @@
     struct FlowsImportNotesPreview: View {
         private enum Step: Hashable { case review, done }
 
-        static let sample = "Mon 14 Oct\nBench press 3x8 80kg\nBent-over row 3x10 60kg\nPlank 3x45s"
+        static let sample = "Mon 14 Oct\nCall the plumber 30m\nPay rent 5m\nWrite the report 2h"
 
         @State private var path: [Step] = []
         @State private var text = ""
@@ -29,7 +29,7 @@
         private var paste: some View {
             FlowStep(
                 "Paste your notes",
-                subtitle: "Copy a workout log from Notes and paste it here.",
+                subtitle: "Copy a task list from Notes and paste it here.",
                 flowTitle: "Import notes",
                 primary: FlowStepAction("Continue", isEnabled: !text.isEmpty, disabledHint: "Paste some notes first") {
                     path.append(.review)
@@ -37,7 +37,7 @@
                 secondary: FlowStepAction("Use the sample") { text = Self.sample },
                 exit: FlowExitAction(hasUnsavedProgress: !text.isEmpty) { text = "" }
             ) {
-                KoboTextArea("Notes", text: $text, prompt: "Mon 14 Oct, Bench 3x8 80kg…")
+                KoboTextArea("Notes", text: $text, prompt: "Mon 14 Oct, Call the plumber 30m…")
             }
         }
 
@@ -45,8 +45,8 @@
             ReviewScaffold(
                 "Check the import",
                 flowTitle: "Import notes",
-                summary: ReviewSummary(verbatim: "1 workout", caption: "Ready to import", note: "3 exercises, 9 sets"),
-                submit: ReviewSubmit("Import workout", state: importState) {
+                summary: ReviewSummary(verbatim: "3 tasks", caption: "Ready to import", note: "1 list, about 2 h 35 min"),
+                submit: ReviewSubmit("Import tasks", state: importState) {
                     importState.send(.submit)
                     importState.send(.succeed)
                     path.append(.done)
@@ -54,9 +54,9 @@
                 exit: FlowExitAction(hasUnsavedProgress: true) { path = [] }
             ) {
                 ReviewSection(verbatim: "Mon 14 Oct", onEdit: { path = [] }) {
-                    ReviewRow(verbatim: "Bench press", value: "3 × 8 · 80 kg")
-                    ReviewRow(verbatim: "Bent-over row", value: "3 × 10 · 60 kg")
-                    ReviewRow(verbatim: "Plank", value: "3 × 45 s")
+                    ReviewRow(verbatim: "Call the plumber", value: "30 min")
+                    ReviewRow(verbatim: "Pay rent", value: "5 min")
+                    ReviewRow(verbatim: "Write the report", value: "2 h")
                 }
                 ReviewDisclosure("Show the pasted text", subtitle: "4 lines") { Text(verbatim: text) }
             }
@@ -66,8 +66,8 @@
             OutcomeScaffold(
                 phase: .success,
                 title: "Notes imported",
-                detail: "Your workout is in your history.",
-                facts: [OutcomeFact(verbatim: "Workouts", value: "1"), OutcomeFact(verbatim: "Sets", value: "9")],
+                detail: "Your tasks are in your inbox.",
+                facts: [OutcomeFact(verbatim: "Lists", value: "1"), OutcomeFact(verbatim: "Tasks", value: "3")],
                 primary: OutcomeAction("Done") {
                     path = []
                     text = ""
@@ -77,25 +77,25 @@
         }
     }
 
-    /// The outcome after a finished workout, with share text.
-    struct FlowsWorkoutFinishedPreview: View {
+    /// The outcome after a saved trip, with share text.
+    struct FlowsTripSavedPreview: View {
         let phase: OutcomePhase
         private let facts = [
-            OutcomeFact(verbatim: "Duration", value: "1 h 12 min"),
-            OutcomeFact(verbatim: "Sets", value: "18"),
-            OutcomeFact(verbatim: "Volume", value: "6,420 kg"),
+            OutcomeFact(verbatim: "Duration", value: "4 days"),
+            OutcomeFact(verbatim: "Stops", value: "6"),
+            OutcomeFact(verbatim: "Distance", value: "320 km"),
         ]
 
         var body: some View {
             NavigationStack {
                 OutcomeScaffold(
                     phase: phase,
-                    title: phase == .pending ? "Saving your workout" : "Workout finished",
-                    detail: phase == .pending ? nil : "Upper A is in your history. Next up: Lower A on Thursday.",
+                    title: phase == .pending ? "Saving your trip" : "Trip saved",
+                    detail: phase == .pending ? nil : "Lisbon is in your trips. Next up: Porto on Thursday.",
                     facts: phase == .pending ? [] : facts,
                     primary: OutcomeAction("Done") {},
-                    secondary: OutcomeAction("View workout") {},
-                    shareText: OutcomeShareText.text(title: "Workout finished", status: "Upper A", facts: facts)
+                    secondary: OutcomeAction("View trip") {},
+                    shareText: OutcomeShareText.text(title: "Trip saved", status: "Lisbon", facts: facts)
                 )
             }
         }
@@ -106,9 +106,9 @@
         FlowsImportNotesPreview().koboTheme(.amber).preferredColorScheme(.dark)
     }
     #Preview("Import notes flow · AX3") { FlowsImportNotesPreview().dynamicTypeSize(.accessibility3) }
-    #Preview("Workout finished") { FlowsWorkoutFinishedPreview(phase: .success) }
-    #Preview("Workout saving · dark") { FlowsWorkoutFinishedPreview(phase: .pending).preferredColorScheme(.dark) }
-    #Preview("Workout finished · AX3, Amber") {
-        FlowsWorkoutFinishedPreview(phase: .success).koboTheme(.amber).dynamicTypeSize(.accessibility3)
+    #Preview("Trip saved") { FlowsTripSavedPreview(phase: .success) }
+    #Preview("Trip saving · dark") { FlowsTripSavedPreview(phase: .pending).preferredColorScheme(.dark) }
+    #Preview("Trip saved · AX3, Amber") {
+        FlowsTripSavedPreview(phase: .success).koboTheme(.amber).dynamicTypeSize(.accessibility3)
     }
 #endif

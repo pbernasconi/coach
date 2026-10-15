@@ -140,12 +140,12 @@ private struct NoticeBannerPreviews: View {
             NoticeBanner(
                 tone: .warning,
                 title: "Notifications are off",
-                message: "Turn them on to hear when rest is over.",
+                message: "Turn them on to hear when a timer ends.",
                 action: .init("Open Settings") {},
                 onDismiss: {}
             )
-            NoticeBanner(tone: .danger, verbatim: "Couldn't sync “Push day”", onDismiss: {})
-            NoticeBanner(tone: .success, symbol: "trophy.fill", title: "New personal record")
+            NoticeBanner(tone: .danger, verbatim: "Couldn't sync “Garden plan”", onDismiss: {})
+            NoticeBanner(tone: .success, symbol: "star.fill", title: "New longest streak")
         }
         .padding()
     }

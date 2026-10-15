@@ -2,7 +2,7 @@
   "sourceLanguage" : "en",
   "strings" : {
     "%@ %@" : {
-      "comment" : "StepperField spoken value: the formatted number, then the unit (\"12.5 kg\").",
+      "comment" : "StepperField spoken value: the formatted number, then the unit (\"12.5 km\").",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -50,7 +50,7 @@
       }
     },
     "%@ – %@" : {
-      "comment" : "RangeSlider shown range: the lower value, then the upper value (\"40 kg – 120 kg\").",
+      "comment" : "RangeSlider shown range: the lower value, then the upper value (\"40 km – 120 km\").",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -62,7 +62,7 @@
       }
     },
     "%@, %@" : {
-      "comment" : "Field spoken value: the value, then its error message (\"135 lb, Too heavy\").",
+      "comment" : "Field spoken value: the value, then its error message (\"12 km, Too far\").",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -158,7 +158,7 @@
       }
     },
     "About %@" : {
-      "comment" : "InfoButton accessibility label naming the term it explains (\"About Training load\").",
+      "comment" : "InfoButton accessibility label naming the term it explains (\"About Focus score\").",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -302,7 +302,7 @@
       }
     },
     "Clear %@" : {
-      "comment" : "Chip VoiceOver action that clears an active filter chip (\"Clear Barbell\").",
+      "comment" : "Chip VoiceOver action that clears an active filter chip (\"Clear Vegetarian\").",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -698,7 +698,7 @@
       }
     },
     "Maximum %@" : {
-      "comment" : "RangeSlider upper thumb spoken label, with the slider title (\"Maximum Weight\").",
+      "comment" : "RangeSlider upper thumb spoken label, with the slider title (\"Maximum Distance\").",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -722,7 +722,7 @@
       }
     },
     "Minimum %@" : {
-      "comment" : "RangeSlider lower thumb spoken label, with the slider title (\"Minimum Weight\").",
+      "comment" : "RangeSlider lower thumb spoken label, with the slider title (\"Minimum Distance\").",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {

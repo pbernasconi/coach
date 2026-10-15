@@ -3,7 +3,7 @@ import SwiftUI
 
 /// A small disc with a glyph, for the corner of a `Thumbnail` (a play glyph on a video): Liquid Glass under a glass
 /// theme, the raised surface under a `.solid` one. Decorative: say what it means in the thumbnail's or the row's label
-/// ("Bench press, has video").
+/// ("Lemon risotto, has video").
 public struct ThumbnailBadge: View {
     private let systemName: String
     @Environment(\.koboTheme) private var theme

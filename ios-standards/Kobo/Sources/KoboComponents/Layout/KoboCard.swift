@@ -36,7 +36,7 @@ enum CardShadow {
 
 /// A titled card: an optional header above a `.koboCard()` that holds the content.
 ///
-///     CardSection("This week") { Text("3 workouts") }
+///     CardSection("This week") { Text("3 tasks done") }
 public struct CardSection<Header: View, Content: View>: View {
     @Environment(\.koboTheme) private var theme
     private let padding: CGFloat
@@ -86,7 +86,7 @@ extension CardSection where Header == Text? {
                     Text("A plain card with some text that wraps onto a second line.")
                         .koboCard()
                     CardSection("This week") {
-                        Text("3 workouts")
+                        Text("3 tasks done")
                         Text("2 h 40 min")
                     }
                     CardSection(padding: Space.md) {

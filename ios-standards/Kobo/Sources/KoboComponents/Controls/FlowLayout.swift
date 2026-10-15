@@ -60,12 +60,12 @@ public struct FlowLayout: Layout {
 
         var body: some View {
             FlowLayout {
-                KoboTag("Legs", tone: .accent)
-                KoboTag("Hypertrophy", tone: .info, systemImage: "chart.bar")
-                KoboTag("Deload week", tone: .warning, systemImage: "exclamationmark.triangle")
-                KoboTag("PR", tone: .success, systemImage: "trophy")
+                KoboTag("Home", tone: .accent)
+                KoboTag("Weekly review", tone: .info, systemImage: "chart.bar")
+                KoboTag("Overdue", tone: .warning, systemImage: "exclamationmark.triangle")
+                KoboTag("Done", tone: .success, systemImage: "checkmark")
                 KoboTag("Skipped", tone: .danger, systemImage: "xmark")
-                KoboTag("Bodyweight")
+                KoboTag("Someday")
             }
             .padding(Space.gutter)
             .background(theme.palette.canvas)

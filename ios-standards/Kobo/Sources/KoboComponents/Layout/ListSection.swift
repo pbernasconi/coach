@@ -7,7 +7,7 @@ import SwiftUI
 ///
 ///     ListSection("Account") {
 ///         ListRow("Profile", action: openProfile)
-///         ListRow("Units", value: "kg", action: openUnits)
+///         ListRow("Units", value: "km", action: openUnits)
 ///     }
 public struct ListSection<Header: View, Content: View, Footer: View>: View {
     @Environment(\.koboTheme) private var theme
@@ -110,8 +110,8 @@ private struct ListSectionSeparator: ViewModifier {
                         ListRow("Profile", subtitle: "Name, photo", action: {}) {
                             Image(systemName: "person.crop.circle").accessibilityHidden(true)
                         }
-                        ListRow("Units", value: "kg", action: {}) {
-                            Image(systemName: "scalemass").accessibilityHidden(true)
+                        ListRow("Units", value: "km", action: {}) {
+                            Image(systemName: "ruler").accessibilityHidden(true)
                         }
                         ListRow("Version", value: "1.0")
                     }

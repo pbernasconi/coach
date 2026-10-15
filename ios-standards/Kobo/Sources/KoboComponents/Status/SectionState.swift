@@ -7,7 +7,7 @@ import SwiftUI
 /// `announces` speaks its text to VoiceOver when it appears, and again if a retry fails.
 ///
 ///     SectionState(verbatim: "Couldn't load recent activity.", announces: true, onRetry: reload)
-///     SectionState("No sessions this week", message: "Plan one from the Library tab.")
+///     SectionState("No events this week", message: "Plan one from the Calendar tab.")
 public struct SectionState: View {
     @Environment(\.koboTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -106,7 +106,7 @@ public struct SectionState: View {
                 SectionState(verbatim: "Couldn't load recent activity.", isRetrying: isRetrying, announces: true) {
                     isRetrying.toggle()
                 }
-                SectionState("No sessions this week", message: "Plan one from the Library tab.")
+                SectionState("No events this week", message: "Plan one from the Calendar tab.")
                 SectionState("You don't have access to this shared plan")
             }
             .padding(Space.gutter)

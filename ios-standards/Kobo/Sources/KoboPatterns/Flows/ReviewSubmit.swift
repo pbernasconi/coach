@@ -6,8 +6,8 @@ import SwiftUI
 /// banner, error haptic), a hint while it is disabled, fine print under it, and a banner slot for a confirmation the
 /// person should read before submitting ("2 lines will be skipped").
 ///
-///     ReviewSubmit(verbatim: "Import 3 workouts", state: importState,
-///                  footnote: "Imported workouts count toward this week's goal.",
+///     ReviewSubmit(verbatim: "Import 12 tasks", state: importState,
+///                  footnote: "Imported tasks count toward this week's goal.",
 ///                  banner: FlowStepBanner(tone: .warning, title: "2 lines couldn't be read")) { start() }
 public struct ReviewSubmit {
     let action: FlowStepAction
@@ -34,7 +34,7 @@ public struct ReviewSubmit {
         self.banner = banner
     }
 
-    /// A submit whose words are shown as is ("Import 3 workouts").
+    /// A submit whose words are shown as is ("Import 12 tasks").
     public init(
         verbatim title: String,
         isEnabled: Bool = true,

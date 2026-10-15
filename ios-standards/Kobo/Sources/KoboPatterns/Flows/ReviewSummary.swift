@@ -2,12 +2,12 @@ import KoboComponents
 import KoboTokens
 import SwiftUI
 
-/// The hero at the top of a review: the one figure the person is about to confirm ("3 workouts"), a caption over it
+/// The hero at the top of a review: the one figure the person is about to confirm ("12 tasks"), a caption over it
 /// ("Ready to import"), an optional note under a hairline ("From Mon 7 Oct to Mon 14 Oct"), an optional symbol, and
 /// an optional edit link back to the step that set it. Pass `onEdit: nil` while a submit runs, so nothing changes
 /// under it.
 ///
-///     ReviewSummary(verbatim: "3 workouts", caption: "Ready to import", note: "14 sets across 3 days",
+///     ReviewSummary(verbatim: "12 tasks", caption: "Ready to import", note: "From 3 lists",
 ///                   symbol: "square.and.arrow.down", onEdit: { step = .paste })
 public struct ReviewSummary {
     let value: Text

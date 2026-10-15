@@ -7,8 +7,8 @@ import SwiftUI
 /// and the selected trait. At accessibility sizes the illustration moves above the text. `ChoiceCardGroup` lays out a
 /// set of them over one binding.
 ///
-///     ChoiceCard("Strength", description: "Heavy sets of 3 to 6", systemImage: "scalemass", isSelected: goal == .strength) {
-///         goal = .strength
+///     ChoiceCard("Relaxed", description: "Two stops a day", systemImage: "cup.and.saucer", isSelected: pace == .relaxed) {
+///         pace = .relaxed
 ///     }
 ///     ChoiceCard(verbatim: plan.name, isSelected: picked, mode: .multiple, action: toggle) { PlanArt(plan) }
 public struct ChoiceCard<Illustration: View>: View {
@@ -178,39 +178,39 @@ extension ChoiceCard where Illustration == EmptyView {
 #if DEBUG
     private struct ChoiceCardGallery: View {
         @Environment(\.koboTheme) private var theme
-        @State private var goal = "strength"
-        @State private var addCardio = true
+        @State private var pace = "relaxed"
+        @State private var addDayTrip = true
 
         var body: some View {
             ScrollView {
                 VStack(spacing: Space.md) {
                     ChoiceCard(
-                        "Strength",
-                        description: "Heavy sets of 3 to 6 reps",
-                        systemImage: "scalemass",
-                        isSelected: goal == "strength"
+                        "Relaxed",
+                        description: "Two stops a day, long lunches",
+                        systemImage: "cup.and.saucer",
+                        isSelected: pace == "relaxed"
                     ) {
-                        goal = "strength"
+                        pace = "relaxed"
                     }
                     ChoiceCard(
-                        "Muscle",
-                        description: "Moderate sets of 8 to 12 reps",
-                        systemImage: "figure.arms.open",
-                        isSelected: goal == "muscle"
+                        "Packed",
+                        description: "Five stops a day, early starts",
+                        systemImage: "map",
+                        isSelected: pace == "packed"
                     ) {
-                        goal = "muscle"
+                        pace = "packed"
                     }
                     ChoiceCard(
-                        "Add a cardio finisher",
-                        description: "Ten minutes after each session",
-                        isSelected: addCardio,
+                        "Add a day trip",
+                        description: "One extra day outside the city",
+                        isSelected: addDayTrip,
                         mode: .multiple
                     ) {
-                        addCardio.toggle()
+                        addDayTrip.toggle()
                     }
                     ChoiceCard(
-                        verbatim: "Powerlifting meet prep",
-                        description: "Ask your coach to unlock",
+                        verbatim: "Guided tour",
+                        description: "Ask your host to unlock",
                         isSelected: false
                     ) {}
                     .disabled(true)

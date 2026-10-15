@@ -1,7 +1,7 @@
 import KoboTokens
 import SwiftUI
 
-// `ListRow` initialisers whose title and subtitle are shown as is (exercise names, user data), one per slot shape.
+// `ListRow` initialisers whose title and subtitle are shown as is (task titles, user data), one per slot shape.
 extension ListRow {
     /// A static row with leading and trailing slots and a title shown as is.
     public init(

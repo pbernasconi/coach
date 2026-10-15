@@ -4,10 +4,10 @@ import SwiftUI
 /// A form field that picks one of a few plain values from a native menu: the label above, the chosen title (or the
 /// placeholder) in a field box with an up-down caret, and the helper or error line under it, like `SelectField`. The
 /// menu shows a check beside the current choice, and a change plays the selection haptic. Use it for short lists with
-/// no subtitles (side, grip, tempo); for long or described lists use `SelectField`.
+/// no subtitles (size, side, format); for long or described lists use `SelectField`.
 ///
-///     MenuSelectField("Grip", selection: $grip, options: grips, placeholder: "Choose a grip")
-///     MenuSelectField(verbatim: exercise.name, selection: $side, options: sides, helper: "For single-arm work")
+///     MenuSelectField("Size", selection: $size, options: sizes, placeholder: "Choose a size")
+///     MenuSelectField(verbatim: document.name, selection: $side, options: sides, helper: "For printed copies")
 public struct MenuSelectField<Value: Hashable & Sendable>: View {
     private let label: Text
     private let selection: Binding<Value?>
@@ -136,36 +136,36 @@ public struct MenuSelectField<Value: Hashable & Sendable>: View {
 #if DEBUG
     private struct MenuSelectFieldGallery: View {
         @Environment(\.koboTheme) private var theme
-        @State private var grip: String?
+        @State private var size: String?
         @State private var side = "both"
-        @State private var rest = 120
+        @State private var snooze = 120
 
-        private let grips = [
-            ChoiceOption("overhand", title: "Overhand"),
-            ChoiceOption("neutral", title: "Neutral"),
-            ChoiceOption("mixed", title: "Mixed", systemImage: "arrow.left.arrow.right"),
+        private let sizes = [
+            ChoiceOption("small", title: "Small"),
+            ChoiceOption("medium", title: "Medium"),
+            ChoiceOption("large", title: "Large", systemImage: "arrow.up.left.and.arrow.down.right"),
         ]
         private let sides = [
             ChoiceOption("both", title: "Both sides"),
-            ChoiceOption("left", title: "Left first"),
-            ChoiceOption("right", title: "Right first"),
+            ChoiceOption("front", title: "Front only"),
+            ChoiceOption("back", title: "Back only"),
         ]
 
         var body: some View {
             ScrollView {
                 FieldGroup {
                     MenuSelectField(
-                        "Grip",
-                        selection: $grip,
-                        options: grips,
-                        placeholder: "Choose a grip",
-                        error: grip == nil ? .message("Pick a grip") : .none
+                        "Size",
+                        selection: $size,
+                        options: sizes,
+                        placeholder: "Choose a size",
+                        error: size == nil ? .message("Pick a size") : .none
                     )
-                    MenuSelectField("Side", selection: $side, options: sides, helper: "For single-arm work")
+                    MenuSelectField("Print", selection: $side, options: sides, helper: "For printed copies")
                     MenuSelectField(
-                        verbatim: "Rest after this set",
-                        selection: $rest,
-                        options: SelectionSamples.restChoices
+                        verbatim: "Snooze for",
+                        selection: $snooze,
+                        options: SelectionSamples.timerChoices
                     )
                     MenuSelectField("Locked", selection: $side, options: sides).disabled(true)
                 }

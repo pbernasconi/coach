@@ -2,15 +2,15 @@ import KoboComponents
 import KoboTokens
 import SwiftUI
 
-/// A flow step whose job is one value (a weight, a duration, a count): the value's entry is the largest thing on the
+/// A flow step whose job is one value (a distance, a duration, a count): the value's entry is the largest thing on the
 /// step, right under its heading, with the rest of the step below it and the next action pinned above the keyboard.
-/// The heading names the value ("Body weight"), so nothing repeats it. The body scrolls, so with the keyboard up the
+/// The heading names the value ("Daily distance"), so nothing repeats it. The body scrolls, so with the keyboard up the
 /// footer stays on the keyboard and the body gives way.
 ///
-///     ValueStep("Body weight", subtitle: "Used to estimate calories.", flowTitle: "Set up Lift",
-///               next: FlowStepAction("Continue", isEnabled: weight > 0, disabledHint: "Enter your weight",
+///     ValueStep("Daily distance", subtitle: "Used to plan your walks.", flowTitle: "Set up Atlas",
+///               next: FlowStepAction("Continue", isEnabled: distance > 0, disabledHint: "Enter a distance",
 ///                                    action: next)) {
-///         StepperField("Body weight", value: $weight, in: 30...250, step: 0.5, unit: "kg")
+///         StepperField("Daily distance", value: $distance, in: 0.5...50, step: 0.5, unit: "km")
 ///     } below: {
 ///         SegmentedPicker(…)
 ///     }
@@ -115,18 +115,18 @@ struct ValueStepBody<Entry: View, Below: View>: View {
 
 #if DEBUG
     private struct ValueStepPreview: View {
-        @State private var weight = 72.5
+        @State private var distance = 5.5
 
         var body: some View {
             NavigationStack {
                 ValueStep(
-                    "Body weight",
-                    subtitle: "Used to estimate the calories of a workout.",
-                    flowTitle: "Set up Lift",
-                    next: FlowStepAction("Continue", isEnabled: weight > 0) {},
+                    "Daily distance",
+                    subtitle: "Used to plan the length of each walk.",
+                    flowTitle: "Set up Atlas",
+                    next: FlowStepAction("Continue", isEnabled: distance > 0) {},
                     exit: FlowExitAction {}
                 ) {
-                    StepperField("Body weight", value: $weight, in: 30...250, step: 0.5, unit: "kg")
+                    StepperField("Daily distance", value: $distance, in: 0.5...50, step: 0.5, unit: "km")
                 } below: {
                     Text("You can change it later in Settings.").font(.footnote).foregroundStyle(.secondary)
                 }

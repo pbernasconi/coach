@@ -4,7 +4,7 @@ import SwiftUI
 /// The button look of Kobo: a capsule in one of six variants and three sizes. It keeps the system `Button`, so
 /// accessibility, keyboard and pointer behaviour stay native.
 ///
-///     Button("Start workout", action: start).buttonStyle(.kobo(.primary, width: .full))
+///     Button("Get started", action: start).buttonStyle(.kobo(.primary, width: .full))
 ///     Button("Skip", action: skip).buttonStyle(.kobo(.glass, size: .compact))
 ///
 /// A press shrinks the capsule a little and veils its fill on `Motion.instant`. While `isLoading`, a spinner replaces

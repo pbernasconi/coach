@@ -6,7 +6,7 @@ import SwiftUI
 /// Size it with `.frame`; it stays square. VoiceOver reads it as one element: `accessibilityLabel` (or the centre's
 /// text) and the progress as a percentage.
 ///
-///     ProgressRing(progress: done / total, tone: .success, accessibilityLabel: "Sets done") {
+///     ProgressRing(progress: done / total, tone: .success, accessibilityLabel: "Tasks done") {
 ///         Text("\(done)/\(total)").font(theme.font(.headline))
 ///     }
 ///     .frame(width: Size.thumbnail, height: Size.thumbnail)
@@ -22,7 +22,7 @@ public struct ProgressRing<Center: View>: View {
     /// - Parameters:
     ///   - progress: 0...1; values outside are clamped.
     ///   - trackColor: the unfilled ring; the sunken surface when `nil`.
-    ///   - accessibilityLabel: what the ring measures ("Sets done"); the centre's text when `nil`.
+    ///   - accessibilityLabel: what the ring measures ("Tasks done"); the centre's text when `nil`.
     public init(
         progress: Double,
         lineWidth: CGFloat = Space.sm,
@@ -35,7 +35,7 @@ public struct ProgressRing<Center: View>: View {
         self.init(progress, lineWidth, .tone(tone), trackColor, label, center())
     }
 
-    /// A ring whose accessibility label is shown as is (it names user data: "Push day progress").
+    /// A ring whose accessibility label is shown as is (it names user data: "Garden plan progress").
     public init(
         progress: Double,
         lineWidth: CGFloat = Space.sm,

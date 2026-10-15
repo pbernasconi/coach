@@ -10,7 +10,7 @@ import SwiftUI
 ///     ProgressFlowStep("Import notes", step: 2, of: 3, stepLabel: "Review",
 ///                      primary: FlowStepAction("Import", action: submit), submitState: submit,
 ///                      onBack: { step = 1 }) {
-///         ReviewSection("Workouts") { … }
+///         ReviewSection("Tasks") { … }
 ///     }
 ///
 /// Pass `onBack` when the steps live inside one screen and the flow decides where back goes; leave it `nil` when each
@@ -122,7 +122,7 @@ public struct ProgressFlowStep<Content: View>: View {
                     exit: FlowExitAction(hasUnsavedProgress: !name.isEmpty) {},
                     onBack: { step = max(step - 1, 1) }
                 ) {
-                    Button("Fill a name") { name = "Strength base" }.buttonStyle(.kobo(.secondary))
+                    Button("Fill a name") { name = "Spring cleaning" }.buttonStyle(.kobo(.secondary))
                     Text(verbatim: name.isEmpty ? "No name yet" : name)
                 }
                 .environment(\.flowStepPosition, step == 1 ? .first : .laterInModal)

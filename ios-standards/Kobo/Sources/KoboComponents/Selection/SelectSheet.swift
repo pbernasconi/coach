@@ -8,11 +8,11 @@ import SwiftUI
 /// disc fills first; a multiple choice stays open until the person closes it. `SelectField` and `MultiSelectField` use
 /// it; use it directly for a choice opened from a button or a toolbar.
 ///
-///     .koboSheet(isPresented: $choosingRest, title: "Default rest") {
-///         SelectSheet(options: restOptions, selection: $rest)
+///     .koboSheet(isPresented: $choosingTimer, title: "Default timer") {
+///         SelectSheet(options: timerOptions, selection: $timer)
 ///     }
-///     .koboSheet(isPresented: $filtering, title: "Equipment", detents: [.large]) {
-///         SelectSheet(options: equipment, selection: $equipment)   // Set<String>: check rows
+///     .koboSheet(isPresented: $filtering, title: "Amenities", detents: [.large]) {
+///         SelectSheet(options: amenities, selection: $amenities)   // Set<String>: check rows
 ///     }
 public struct SelectSheet<Value: Hashable & Sendable>: View {
     private enum Mode {
@@ -156,28 +156,28 @@ public struct SelectSheet<Value: Hashable & Sendable>: View {
 #if DEBUG
     private struct SelectSheetGallery: View {
         @Environment(\.koboTheme) private var theme
-        @State private var choosingRest = true
+        @State private var choosingTimer = true
         @State private var filtering = false
-        @State private var rest = 90
-        @State private var equipment: Set<String> = ["barbell"]
+        @State private var timer = 90
+        @State private var amenities: Set<String> = ["wifi"]
 
         var body: some View {
             VStack(spacing: Space.lg) {
-                Button("Default rest: \(rest) s") { choosingRest = true }
-                Button("Equipment (\(equipment.count))") { filtering = true }
+                Button("Default timer: \(timer) s") { choosingTimer = true }
+                Button("Amenities (\(amenities.count))") { filtering = true }
             }
             .buttonStyle(.kobo(.secondary))
             .padding(Space.gutter)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(theme.palette.canvas)
-            .koboSheet(isPresented: $choosingRest, title: "Default rest") {
-                SelectSheet(options: SelectionSamples.restPresets, selection: $rest)
+            .koboSheet(isPresented: $choosingTimer, title: "Default timer") {
+                SelectSheet(options: SelectionSamples.timerPresets, selection: $timer)
             }
-            .koboSheet(isPresented: $filtering, title: "Equipment", detents: [.large]) {
+            .koboSheet(isPresented: $filtering, title: "Amenities", detents: [.large]) {
                 SelectSheet(
-                    options: SelectionSamples.equipment,
-                    selection: $equipment,
-                    searchPrompt: "Search equipment"
+                    options: SelectionSamples.amenities,
+                    selection: $amenities,
+                    searchPrompt: "Search amenities"
                 )
             }
         }

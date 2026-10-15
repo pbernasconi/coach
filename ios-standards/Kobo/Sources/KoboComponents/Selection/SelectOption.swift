@@ -3,12 +3,12 @@ import SwiftUI
 
 /// One choice in a `SelectField`, `SelectSheet`, `RadioGroup` or `ChoiceCardGroup`: a value, its title, an optional
 /// subtitle and SF Symbol, and whether it can be chosen. Search reads the title, the subtitle and `keywords` (extra
-/// terms such as a short code: "DB" finds Dumbbells).
+/// terms such as a short code: "WC" finds Bathroom).
 ///
 /// Titles written in code are a `LocalizedStringResource` rather than a `LocalizedStringKey`, because search needs
 /// the translated string as well as the `Text`; a string literal works for both. Runtime values use `verbatim:`.
 ///
-///     SelectOption("db", title: "Dumbbells", subtitle: "Pairs from 2 to 40 kg", systemImage: "dumbbell")
+///     SelectOption("wifi", title: "Wi-Fi", subtitle: "Fibre, 500 Mbit/s", systemImage: "wifi")
 ///     SelectOption(template.id, verbatim: template.name, isEnabled: !template.isArchived)
 ///     equipment.map { SelectOption($0) }   // from ChoiceOptions (title not searchable; add keywords)
 public struct SelectOption<Value: Hashable & Sendable>: Identifiable {

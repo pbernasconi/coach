@@ -88,8 +88,8 @@ public struct InlineNotice: View {
             VStack(spacing: Space.lg) {
                 InlineNotice("We'll email a receipt to the address on file.")
                 InlineNotice("Your plan restarts on Monday.", tone: .info)
-                InlineNotice(tone: .warning, verbatimLines: ["Two sessions overlap.", "Rest days are below two."])
-                InlineNotice("This exercise needs equipment you don't have.", tone: .danger)
+                InlineNotice(tone: .warning, verbatimLines: ["Two events overlap.", "Free days are below two."])
+                InlineNotice("This recipe needs an oven you don't have.", tone: .danger)
                 InlineNotice("Notifications are off.", tone: .warning, action: .init("Open Settings") {})
             }
             .padding(Space.gutter)

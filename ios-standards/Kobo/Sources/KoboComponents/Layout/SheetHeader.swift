@@ -11,7 +11,7 @@ public struct SheetHeaderAction {
         self.init(label: Text(accessibilityLabel), isEnabled: isEnabled, action: action)
     }
 
-    /// An action whose accessibility label is shown as is, because it names user data ("Save Push day").
+    /// An action whose accessibility label is shown as is, because it names user data ("Save Garden plan").
     public init(verbatimAccessibilityLabel: String, isEnabled: Bool = true, action: @escaping () -> Void) {
         self.init(label: Text(verbatim: verbatimAccessibilityLabel), isEnabled: isEnabled, action: action)
     }
@@ -27,7 +27,7 @@ public struct SheetHeaderAction {
 /// optional subtitle, and an optional prominent confirm (checkmark) button. Under a `.solid` theme the buttons are
 /// flat circles (`KoboButtonStyle` `.secondary` and `.primary` at `.icon` size) instead of glass.
 ///
-///     SheetHeader("Edit set", onClose: dismiss, confirm: SheetHeaderAction(accessibilityLabel: "Save", action: save))
+///     SheetHeader("Edit task", onClose: dismiss, confirm: SheetHeaderAction(accessibilityLabel: "Save", action: save))
 public struct SheetHeader: View {
     @Environment(\.koboTheme) private var theme
     @ScaledMetric(relativeTo: .body) private var buttonSize = Size.minTouch
@@ -151,8 +151,8 @@ private struct SheetHeaderButtonLook: ViewModifier {
             VStack(spacing: Space.xxl) {
                 SheetHeader("Library", onClose: {})
                 SheetHeader(
-                    "Edit set",
-                    subtitle: "Bench press · set 2",
+                    "Edit task",
+                    subtitle: "Book flights · step 2",
                     closeAccessibilityLabel: "Cancel",
                     onClose: {},
                     confirm: SheetHeaderAction(accessibilityLabel: "Save") {}

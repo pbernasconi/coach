@@ -153,7 +153,7 @@ public struct ErrorState: View {
     }
 
     #Preview("Error, AX3") {
-        ErrorState(verbatim: "Couldn't load “Push day”", message: "Check your connection and try again.") {}
+        ErrorState(verbatim: "Couldn't load “Garden plan”", message: "Check your connection and try again.") {}
             .dynamicTypeSize(.accessibility3)
     }
 #endif

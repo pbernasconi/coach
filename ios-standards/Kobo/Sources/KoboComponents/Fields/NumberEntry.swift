@@ -6,14 +6,14 @@ import SwiftUI
 /// separator and grouping. An edit above the range is refused with a shake and the error haptic; a value below it is
 /// kept while typing and raised on commit (Done, focus loss, a step, or leaving the screen).
 ///
-///     NumberEntry("Weight", value: $weight, in: 0...1000, decimalPlaces: 1, step: 2.5, unit: "lb", input: .keypad)
-///     NumberEntry("Reps", value: $reps, in: 1...50, step: 1)
+///     NumberEntry("Distance", value: $distance, in: 0...1000, decimalPlaces: 1, step: 2.5, unit: "km", input: .keypad)
+///     NumberEntry("Guests", value: $guests, in: 1...50, step: 1)
 public struct NumberEntry: View {
     /// How the user types the number.
     public enum Input: Sendable, Hashable {
         /// The system number or decimal pad, with a Done bar.
         case keyboard
-        /// An on-screen keypad under the value, for screens that stay open (a gym logger).
+        /// An on-screen keypad under the value, for screens that stay open (a scorekeeper or a till).
         case keypad
     }
 

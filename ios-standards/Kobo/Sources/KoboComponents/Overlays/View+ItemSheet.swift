@@ -5,8 +5,8 @@ extension View {
     /// Presents a sheet while `item` is non-nil, for a screen whose state says what is open (`destination: Editor?`).
     /// The caller's item stays the source of truth: no view needs `Binding(get:set:)`.
     ///
-    ///     .itemSheet(item: state.editing, onDismiss: { send(.editorDismissed) }) { set in
-    ///         KoboSheet(verbatim: set.name) { … }
+    ///     .itemSheet(item: state.editing, onDismiss: { send(.editorDismissed) }) { item in
+    ///         KoboSheet(verbatim: item.name) { … }
     ///     }
     ///
     /// - A swipe, or the sheet's own close, calls `onDismiss`. A caller that clears or swaps the item is not called
@@ -73,33 +73,33 @@ struct ItemPresenter<Item: Identifiable, Presented: View>: ViewModifier {
 }
 
 #if DEBUG
-    private struct ItemSheetPreviewSet: Identifiable, Equatable {
+    private struct ItemSheetPreviewItem: Identifiable, Equatable {
         let id: Int
         var name: String
-        var reps: Int
+        var quantity: Int
     }
 
     private struct ItemSheetPreview: View {
         @Environment(\.koboTheme) private var theme
-        @State private var editing: ItemSheetPreviewSet?
+        @State private var editing: ItemSheetPreviewItem?
         @State private var log = "Nothing open"
-        private let sets = [
-            ItemSheetPreviewSet(id: 1, name: "Bench press", reps: 8),
-            ItemSheetPreviewSet(id: 2, name: "Back squat", reps: 5),
+        private let items = [
+            ItemSheetPreviewItem(id: 1, name: "Lemons", quantity: 8),
+            ItemSheetPreviewItem(id: 2, name: "Tomatoes", quantity: 5),
         ]
 
         var body: some View {
             VStack(spacing: Space.lg) {
-                ForEach(sets) { set in
-                    Button(set.name) { editing = set }
+                ForEach(items) { item in
+                    Button(item.name) { editing = item }
                 }
                 Text(verbatim: log).foregroundStyle(theme.palette.textSecondary)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(theme.palette.canvas)
-            .itemSheet(item: editing, onDismiss: { editing = nil }, onDidClose: { log = "Closed" }) { set in
-                KoboSheet(verbatim: set.name, subtitle: "\(set.reps) reps") {
-                    Button("Add a rep") { editing?.reps += 1 }
+            .itemSheet(item: editing, onDismiss: { editing = nil }, onDidClose: { log = "Closed" }) { item in
+                KoboSheet(verbatim: item.name, subtitle: "\(item.quantity) in the basket") {
+                    Button("Add one") { editing?.quantity += 1 }
                 }
             }
         }

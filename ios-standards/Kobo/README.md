@@ -3,7 +3,7 @@
 Kobo (工房) is Japanese for a workshop or atelier: the place where well-made things are built.
 
 A reusable SwiftUI component library for iOS 26 and macOS 26. It started from the parts of an earlier app, a small app
-and the Lift prototype that kept being rebuilt: a calm token set, Liquid Glass controls, a rest-timer ring, a
+and an early prototype that kept being rebuilt: a calm token set, Liquid Glass controls, a countdown ring, a
 week strip, toasts with undo, skeletons and loadable screens.
 
 It knows nothing about any one app. Apps bring a `Theme` and their own domain composites; Kobo brings
@@ -38,12 +38,12 @@ WindowGroup { RootView().koboTheme(.amber) }
 // A screen
 ScreenScaffold("Week") {
     DayStrip(items: days, today: today, week: $week, onSelect: select)
-    SegmentedProgress(done: 1, planned: 1, minimum: 2, goal: 3, accessibilityLabel: "Sessions this week")
+    SegmentedProgress(done: 1, planned: 1, minimum: 2, goal: 3, accessibilityLabel: "Tasks this week")
     ListSection("Today") {
-        ListRow(verbatim: exercise.name, subtitle: "3 × 8", value: "135 lb", action: open)
+        ListRow(verbatim: task.title, subtitle: "Due Friday", value: "30 min", action: open)
     }
 } footer: {
-    Button("Start workout", action: start).buttonStyle(.glassProminent)
+    Button("Plan the week", action: plan).buttonStyle(.glassProminent)
 }
 .toastHost(toasts)
 ```

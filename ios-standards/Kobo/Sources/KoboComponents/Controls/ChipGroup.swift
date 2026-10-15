@@ -4,8 +4,8 @@ import SwiftUI
 /// A wrapping group of chips with single or multiple selection. Each chip carries the selected trait; the group is
 /// one accessibility container named by `title`.
 ///
-///     ChipGroup("Equipment", options: equipment, selection: $filters, mode: .multiple)
-///     ChipGroup("Split", options: splits, selection: $split)
+///     ChipGroup("Diet", options: diets, selection: $filters, mode: .multiple)
+///     ChipGroup("Meal", options: meals, selection: $meal)
 ///     ChipGroup(verbatim: category.name, options: tags, selection: $tags)
 public struct ChipGroup<Value: Hashable & Sendable>: View {
     private let title: Text
@@ -139,26 +139,26 @@ public struct ChipGroup<Value: Hashable & Sendable>: View {
 #if DEBUG
     private struct ChipGroupGallery: View {
         @Environment(\.koboTheme) private var theme
-        @State private var equipment: Set<String> = ["barbell", "cable"]
-        @State private var split = "upper"
+        @State private var diets: Set<String> = ["vegetarian", "quick"]
+        @State private var meal = "lunch"
 
-        private let equipmentOptions = [
-            ChoiceOption("barbell", title: "Barbell", systemImage: "dumbbell"),
-            ChoiceOption("dumbbell", title: "Dumbbells"),
-            ChoiceOption("cable", title: "Cable"),
-            ChoiceOption("machine", title: "Machine"),
-            ChoiceOption("bodyweight", title: "Bodyweight", systemImage: "figure.strengthtraining.functional"),
+        private let dietOptions = [
+            ChoiceOption("vegetarian", title: "Vegetarian", systemImage: "leaf"),
+            ChoiceOption("vegan", title: "Vegan"),
+            ChoiceOption("quick", title: "Under 30 min"),
+            ChoiceOption("budget", title: "Budget"),
+            ChoiceOption("nooven", title: "No oven", systemImage: "flame"),
         ]
-        private let splitOptions = [
-            ChoiceOption("upper", title: "Upper"),
-            ChoiceOption("lower", title: "Lower"),
-            ChoiceOption("full", title: "Full body"),
+        private let mealOptions = [
+            ChoiceOption("breakfast", title: "Breakfast"),
+            ChoiceOption("lunch", title: "Lunch"),
+            ChoiceOption("dinner", title: "Dinner"),
         ]
 
         var body: some View {
             VStack(alignment: .leading, spacing: Space.lg) {
-                ChipGroup("Equipment", options: equipmentOptions, selection: $equipment)
-                ChipGroup("Split", options: splitOptions, selection: $split)
+                ChipGroup("Diet", options: dietOptions, selection: $diets)
+                ChipGroup("Meal", options: mealOptions, selection: $meal)
             }
             .padding(Space.gutter)
             .background(theme.palette.canvas)

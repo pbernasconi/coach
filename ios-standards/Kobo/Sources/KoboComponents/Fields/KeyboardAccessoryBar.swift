@@ -5,8 +5,8 @@ import SwiftUI
 /// Done button. Attach it to a field with `.keyboardAccessoryBar(onPrevious:onNext:onDone:)`, which puts it in the
 /// system keyboard toolbar (iOS), or place the view itself above a custom keypad.
 ///
-///     KoboTextField("Reps", text: $reps).keyboardType(.numberPad)
-///         .keyboardAccessoryBar(onNext: { focus = .weight }, onDone: { focus = nil })
+///     KoboTextField("Guests", text: $guests).keyboardType(.numberPad)
+///         .keyboardAccessoryBar(onNext: { focus = .notes }, onDone: { focus = nil })
 public struct KeyboardAccessoryBar: View {
     private let onPrevious: (() -> Void)?
     private let onNext: (() -> Void)?

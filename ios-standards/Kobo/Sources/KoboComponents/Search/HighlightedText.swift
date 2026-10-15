@@ -4,7 +4,7 @@ import SwiftUI
 /// Text with the parts that match a search in bold, so a result shows why it matched. Matching ignores case and
 /// diacritics and works word by word (`SearchMatch`): "creme bru" bolds "Crème" and "brû" in "Crème brûlée".
 ///
-///     HighlightedText(exercise.name, query: query)
+///     HighlightedText(recipe.name, query: query)
 ///     HighlightedText(result.element.name, ranges: result.match.ranges)
 public struct HighlightedText: View {
     private let text: String
@@ -42,10 +42,10 @@ public struct HighlightedText: View {
 
         var body: some View {
             VStack(alignment: .leading, spacing: Space.md) {
-                HighlightedText("Incline Bench Press", query: "bench inc")
+                HighlightedText("Mushroom Risotto", query: "risotto mush")
                 HighlightedText("Crème brûlée", query: "creme bru")
-                HighlightedText("Romanian Deadlift", query: "")
-                HighlightedText("Front squat", query: "squat")
+                HighlightedText("Lemon Tart", query: "")
+                HighlightedText("Miso soup", query: "soup")
                     .font(theme.font(.headline))
                     .foregroundStyle(theme.palette.textSecondary)
             }

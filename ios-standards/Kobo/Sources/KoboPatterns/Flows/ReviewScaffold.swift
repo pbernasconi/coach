@@ -7,11 +7,11 @@ import SwiftUI
 /// fine print (`ReviewSubmit`). Edit links in the summary, the sections and the rows jump back to earlier steps.
 ///
 ///     ReviewScaffold("Check the import", flowTitle: "Import notes",
-///                    summary: ReviewSummary(verbatim: "3 workouts", caption: "Ready to import"),
-///                    submit: ReviewSubmit(verbatim: "Import 3 workouts", state: importState, action: start),
+///                    summary: ReviewSummary(verbatim: "12 tasks", caption: "Ready to import"),
+///                    submit: ReviewSubmit(verbatim: "Import 12 tasks", state: importState, action: start),
 ///                    exit: FlowExitAction(hasUnsavedProgress: true, action: close)) {
 ///         ReviewSection("Mon 14 Oct", onEdit: editText) {
-///             ReviewRow(verbatim: "Bench press", value: "3 × 8 · 80 kg")
+///             ReviewRow(verbatim: "Call the plumber", value: "Due Fri · 30 min")
 ///         }
 ///         ReviewDisclosure("Show the pasted text") { Text(verbatim: pasted) }
 ///     }
@@ -108,17 +108,17 @@ public struct ReviewScaffold<Sections: View>: View {
                 ReviewScaffold(
                     "Check the import",
                     flowTitle: "Import notes",
-                    summary: ReviewSummary(verbatim: "3 workouts", caption: "Ready to import", onEdit: {}),
+                    summary: ReviewSummary(verbatim: "12 tasks", caption: "Ready to import", onEdit: {}),
                     submit: ReviewSubmit(
-                        "Import workouts",
+                        "Import tasks",
                         state: state,
-                        footnote: "Imported workouts count toward this week's goal.",
+                        footnote: "Imported tasks count toward this week's goal.",
                         banner: FlowStepBanner(tone: .warning, title: "2 lines couldn't be read")
                     ) { state.send(.submit) },
                     exit: FlowExitAction(hasUnsavedProgress: true) {}
                 ) {
                     ReviewSection("Mon 14 Oct", onEdit: {}) {
-                        ReviewRow(verbatim: "Bench press", value: "3 × 8 · 80 kg")
+                        ReviewRow(verbatim: "Call the plumber", value: "Due Fri · 30 min")
                     }
                     Button("Fail the import") { state.send(.fail(message: "Couldn't save. Try again.")) }
                 }

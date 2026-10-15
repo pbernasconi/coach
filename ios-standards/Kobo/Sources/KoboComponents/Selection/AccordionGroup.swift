@@ -7,7 +7,7 @@ import SwiftUI
 /// the sections. The caller owns which one is open, so a screen can open one from code.
 ///
 ///     AccordionGroup(days, expanded: $openDay, title: \.name, subtitle: { $0.summary }) { day in
-///         ForEach(day.exercises) { Text(verbatim: $0.name) }
+///         ForEach(day.stops) { Text(verbatim: $0.name) }
 ///     }
 public struct AccordionGroup<Data: RandomAccessCollection, Content: View>: View
 where Data.Element: Identifiable, Data.Element.ID: Sendable {
@@ -74,49 +74,49 @@ where Data.Element: Identifiable, Data.Element.ID: Sendable {
         let id: String
         let name: String
         let summary: String
-        let exercises: [String]
+        let items: [String]
     }
 
     private struct AccordionGroupGallery: View {
         @Environment(\.koboTheme) private var theme
-        @State private var openDay: String? = "push"
-        @State private var openSetting: String? = "rest"
+        @State private var openDay: String? = "lisbon"
+        @State private var openSetting: String? = "timer"
         private let days = [
             AccordionDay(
-                id: "push",
-                name: "Push",
-                summary: "5 exercises · 55 min",
-                exercises: ["Bench press", "Overhead press", "Dips"]
+                id: "lisbon",
+                name: "Lisbon",
+                summary: "3 stops · 6 h",
+                items: ["Castle walk", "Tram 28", "Dinner in Alfama"]
             ),
             AccordionDay(
-                id: "pull",
-                name: "Pull",
-                summary: "4 exercises · 45 min",
-                exercises: ["Deadlift", "Pull-up", "Row"]
+                id: "sintra",
+                name: "Sintra",
+                summary: "3 stops · 5 h",
+                items: ["Palace gardens", "Hilltop castle", "Old town"]
             ),
             AccordionDay(
-                id: "legs",
-                name: "Legs",
-                summary: "4 exercises · 60 min",
-                exercises: ["Back squat", "Romanian deadlift"]
+                id: "coast",
+                name: "Coast",
+                summary: "2 stops · 4 h",
+                items: ["Beach morning", "Seafood lunch"]
             ),
         ]
         private let settings = [
-            AccordionDay(id: "rest", name: "Rest timer", summary: "", exercises: ["Auto-start after a set"]),
-            AccordionDay(id: "units", name: "Units", summary: "", exercises: ["Kilograms"]),
+            AccordionDay(id: "timer", name: "Default timer", summary: "", items: ["Starts when you open a task"]),
+            AccordionDay(id: "units", name: "Units", summary: "", items: ["Kilometres"]),
         ]
 
         var body: some View {
             ScrollView {
                 VStack(spacing: Space.xxl) {
                     AccordionGroup(days, expanded: $openDay, title: \.name, subtitle: { $0.summary }) { day in
-                        Text(verbatim: day.exercises.joined(separator: "\n"))
+                        Text(verbatim: day.items.joined(separator: "\n"))
                             .font(theme.font(.body))
                             .foregroundStyle(theme.palette.textSecondary)
                     }
                     .koboCard()
                     AccordionGroup(settings, expanded: $openSetting, mode: .exactlyOne, title: \.name) { setting in
-                        Text(verbatim: setting.exercises.joined(separator: ", ")).font(theme.font(.body))
+                        Text(verbatim: setting.items.joined(separator: ", ")).font(theme.font(.body))
                     }
                     .koboCard()
                 }

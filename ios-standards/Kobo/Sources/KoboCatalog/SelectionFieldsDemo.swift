@@ -79,7 +79,7 @@ struct SelectionFieldsDemo: View {
     private var themes: [ThemeChoice<String>] {
         [
             ThemeChoice("default", title: "Default", theme: .system),
-            ThemeChoice("lift", title: "Lift", theme: .amber),
+            ThemeChoice("amber", title: "Amber", theme: .amber),
             ThemeChoice("flat", verbatim: "Flat", theme: Theme(palette: .amber, surfaceStyle: .solid)),
         ]
     }

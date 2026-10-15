@@ -6,10 +6,10 @@ import SwiftUI
 /// put it at the root of any `.sheet` content.
 ///
 ///     let save = SheetHeaderAction(accessibilityLabel: "Save", action: save)
-///     KoboSheet("Edit set", hasChanges: draft != saved, confirm: save) {
-///         StepperField("Weight", value: $draft.weight, in: 0...500, step: 2.5, unit: "kg")
+///     KoboSheet("Edit trip", hasChanges: draft != saved, confirm: save) {
+///         StepperField("Distance", value: $draft.distance, in: 0...500, step: 2.5, unit: "km")
 ///     } footer: {
-///         Button("Delete set", role: .destructive, action: delete)
+///         Button("Delete trip", role: .destructive, action: delete)
 ///     }
 ///
 /// With `hasChanges`, the swipe down is locked and the close button asks "Discard changes?" first.

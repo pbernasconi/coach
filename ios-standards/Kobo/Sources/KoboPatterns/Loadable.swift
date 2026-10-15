@@ -1,7 +1,7 @@
 /// The states of something loaded, which exclude each other. Use it instead of `isLoading`, `error` and
 /// `data` side by side. Apps can adopt it in their screen state, or map their own type to it at the edge.
 ///
-///     var workouts: Loadable<[WorkoutRow]> = .loading
+///     var notes: Loadable<[NoteRow]> = .loading
 public nonisolated enum Loadable<Value: Equatable & Sendable>: Equatable, Sendable {
     /// No value yet; show a placeholder.
     case loading

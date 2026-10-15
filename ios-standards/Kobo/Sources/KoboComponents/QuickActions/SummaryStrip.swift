@@ -1,12 +1,12 @@
 import KoboTokens
 import SwiftUI
 
-/// A quiet horizontal strip of label and value stats ("Sessions 3 · Time 2 h 40 · Volume 12 t") on the sunken fill,
+/// A quiet horizontal strip of label and value stats ("Trips 3 · Time 2 h 40 · Distance 12 km") on the sunken fill,
 /// with hairlines between them. Values use monospaced digits. At accessibility sizes the strip turns into rows, label
-/// leading and value trailing. Each stat reads as one VoiceOver element: "Sessions, 3".
+/// leading and value trailing. Each stat reads as one VoiceOver element: "Trips, 3".
 ///
 ///     SummaryStrip([
-///         .init("Sessions", value: "3"),
+///         .init("Trips", value: "3"),
 ///         .init("Time", value: duration.formatted(.units(allowed: [.hours, .minutes]))),
 ///     ])
 public struct SummaryStrip: View {
@@ -87,9 +87,9 @@ public struct SummaryStrip: View {
         var body: some View {
             VStack(spacing: Space.lg) {
                 SummaryStrip([
-                    .init("Sessions", value: "3"), .init("Time", value: "2 h 40"), .init("Volume", value: "12 t"),
+                    .init("Trips", value: "3"), .init("Time", value: "2 h 40"), .init("Distance", value: "12 km"),
                 ])
-                SummaryStrip([.init("Streak", value: "5 weeks"), .init(verbatim: "Best lift", value: "140 kg")])
+                SummaryStrip([.init("Streak", value: "5 weeks"), .init(verbatim: "Longest trip", value: "9 days")])
             }
             .padding(Space.gutter)
             .screenCanvas()

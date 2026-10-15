@@ -84,7 +84,7 @@ extension TonalCardRow where Trailing == EmptyView {
                 TonalCardRow("Health sync", systemImage: "heart", action: {}) {
                     StatusPill("Off", tone: .neutral)
                 }
-                TonalCardRow("Units", systemImage: "scalemass", action: {})
+                TonalCardRow("Units", systemImage: "ruler", action: {})
             }
             .padding(Space.gutter)
             .screenCanvas()

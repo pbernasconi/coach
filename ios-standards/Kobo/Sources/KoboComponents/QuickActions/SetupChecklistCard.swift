@@ -109,7 +109,7 @@ public struct SetupChecklistCard: View {
             SetupChecklistStep(
                 id: "plan",
                 title: "Plan your first week",
-                caption: "Choose three sessions.",
+                caption: "Choose three focus days.",
                 isDone: false
             ),
             SetupChecklistStep(id: "notify", title: "Turn on reminders", isDone: false),

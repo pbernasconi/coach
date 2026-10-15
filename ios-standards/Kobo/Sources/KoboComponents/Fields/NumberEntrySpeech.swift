@@ -43,31 +43,31 @@ extension View {
 #if DEBUG
     private struct NumberEntryGallery: View {
         @Environment(\.koboTheme) private var theme
-        @State private var weight = 102.5
-        @State private var reps: Double?
-        @State private var bodyWeight: Double? = 182.4
+        @State private var distance = 102.5
+        @State private var guests: Double?
+        @State private var roomSize: Double? = 182.4
 
         var body: some View {
             ScrollView {
                 VStack(spacing: Space.xxl) {
                     NumberEntry(
-                        "Weight",
-                        value: $weight,
+                        "Distance",
+                        value: $distance,
                         in: 0...1000,
                         decimalPlaces: 1,
                         step: 2.5,
-                        unit: "lb",
-                        caption: "Last time 100 lb × 8",
+                        unit: "km",
+                        caption: "Last time 100 km",
                         input: .keypad
                     )
-                    NumberEntry("Reps", value: $reps, in: 1...50, step: 1)
+                    NumberEntry("Guests", value: $guests, in: 1...50, step: 1)
                     NumberEntry(
-                        "Body weight",
-                        value: $bodyWeight,
+                        "Room size",
+                        value: $roomSize,
                         in: 50...400,
                         decimalPlaces: 1,
-                        unit: "lb",
-                        error: .message("Enter a weight between 50 and 400 lb")
+                        unit: "m²",
+                        error: .message("Enter a size between 50 and 400 m²")
                     )
                 }
                 .padding(Space.gutter)

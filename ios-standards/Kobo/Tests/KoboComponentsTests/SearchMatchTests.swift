@@ -21,8 +21,8 @@ import Testing
     }
 
     @Test func everyTokenMustMatch() {
-        #expect(matched("Incline Bench Press", "bench inc") == ["Inc", "Bench"])
-        #expect(SearchMatch("Incline Bench Press", query: "bench squat") == nil)
+        #expect(matched("Wild Mushroom Risotto", "risotto mush") == ["Mush", "Risotto"])
+        #expect(SearchMatch("Wild Mushroom Risotto", query: "risotto soup") == nil)
     }
 
     @Test func aBlankQueryMatchesNothing() {
@@ -32,29 +32,29 @@ import Testing
 
     @Test func aWordStartIsPreferredOverAnEarlierMidWordHit() {
         #expect(matched("Pressure press", "press").count == 1)
-        let text = "Overhead press"
+        let text = "Arrowhead lake"
         let match = SearchMatch(text, query: "head")
         #expect(match.map { String(text[$0.ranges[0]]) } == "head")
     }
 
     @Test func overlappingRangesMerge() {
-        #expect(matched("Bench press", "ben bench") == ["Bench"])
+        #expect(matched("Basil pesto", "bas basil") == ["Basil"])
     }
 
     @Test func exactBeatsPrefixBeatsWordStartBeatsInside() {
-        let exact = SearchMatch("Squat", query: "squat")?.score ?? 0
-        let prefix = SearchMatch("Squat jump", query: "squat")?.score ?? 0
-        let word = SearchMatch("Front squat", query: "squat")?.score ?? 0
-        let inside = SearchMatch("Backsquat", query: "squat")?.score ?? 0
+        let exact = SearchMatch("Tea", query: "tea")?.score ?? 0
+        let prefix = SearchMatch("Tea party", query: "tea")?.score ?? 0
+        let word = SearchMatch("Green tea", query: "tea")?.score ?? 0
+        let inside = SearchMatch("Steam", query: "tea")?.score ?? 0
         #expect(exact > prefix)
         #expect(prefix > word)
         #expect(word > inside)
     }
 
     @Test func rankedKeepsMatchesBestFirstAndStable() {
-        let names = ["Backsquat", "Front squat", "Squat", "Bench press", "Box squat"]
-        let ranked = SearchMatch.ranked(names, query: "squat") { $0 }.map(\.element)
-        #expect(ranked == ["Squat", "Box squat", "Front squat", "Backsquat"])
+        let names = ["Steam", "Green tea", "Tea", "Basil pesto", "Mint tea"]
+        let ranked = SearchMatch.ranked(names, query: "tea") { $0 }.map(\.element)
+        #expect(ranked == ["Tea", "Mint tea", "Green tea", "Steam"])
         #expect(SearchMatch.ranked(names, query: " ") { $0 }.map(\.element) == names)
     }
 }

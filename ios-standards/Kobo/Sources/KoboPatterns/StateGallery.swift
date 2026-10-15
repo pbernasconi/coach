@@ -14,7 +14,7 @@
     ///
     ///     #Preview("All states") {
     ///         StateGallery([("Default", .default), ("Loading", .loading), ("Error", .error)]) { state in
-    ///             WorkoutsContent(state: state, send: { _ in })
+    ///             NotesContent(state: state, send: { _ in })
     ///         }
     ///     }
     public struct StateGallery<Fixture, Content: View>: View {

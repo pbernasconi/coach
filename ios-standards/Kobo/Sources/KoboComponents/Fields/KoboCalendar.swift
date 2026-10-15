@@ -7,7 +7,7 @@ import SwiftUI
 /// `@Environment(\.calendar)`. Without a `maxDate` it pages up to 12 months past today.
 ///
 ///     KoboCalendar(selection: $date, today: today, bounds: DateBounds(minDate: today))
-///     KoboCalendar(today: today, markers: workouts.map { DayItem(date: $0.date, marker: .done(.accent)) }) { open($0) }
+///     KoboCalendar(today: today, markers: trips.map { DayItem(date: $0.date, marker: .done(.accent)) }) { open($0) }
 public struct KoboCalendar: View {
     @Environment(\.koboTheme) private var theme
     @Environment(\.calendar) private var calendar

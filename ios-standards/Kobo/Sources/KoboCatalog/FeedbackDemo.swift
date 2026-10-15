@@ -14,9 +14,9 @@ struct FeedbackDemo: View {
         switch component {
         case .toast:
             VStack(alignment: .leading, spacing: Space.sm) {
-                Button("Show toast") { toasts.show(Toast("Set logged", tone: .success)) }
+                Button("Show toast") { toasts.show(Toast("Task added", tone: .success)) }
                 Button("Show toast with undo") {
-                    toasts.show(Toast("Set deleted", action: Toast.Action("Undo") {}))
+                    toasts.show(Toast("Task deleted", action: Toast.Action("Undo") {}))
                 }
             }
             .buttonStyle(.kobo(.secondary))
@@ -32,10 +32,10 @@ struct FeedbackDemo: View {
             }
             .skeletonBreath()
         case .shimmer:
-            Text("Back squat · 3 × 8 · 135 lb").redacted(reason: .placeholder).shimmering()
+            Text("Book flights · Due Friday · 30 min").redacted(reason: .placeholder).shimmering()
         case .loadingState: LoadingState("Loading history")
         case .emptyState:
-            EmptyState(symbol: "dumbbell", title: "No workouts yet", message: "Plan a day to get started.") {
+            EmptyState(symbol: "checklist", title: "No tasks yet", message: "Plan a day to get started.") {
                 Button("Plan a day") {}.buttonStyle(.kobo(.primary))
             }
         case .emptyStateArt:
@@ -49,8 +49,8 @@ struct FeedbackDemo: View {
             if bannerVisible {
                 NoticeBanner(
                     tone: .info,
-                    title: "Deload week",
-                    message: "Weights are 10% lighter this week.",
+                    title: "Quiet week",
+                    message: "Reminders are paused until Monday.",
                     action: NoticeBanner.Action("Details") {},
                     onDismiss: { bannerVisible = false }
                 )

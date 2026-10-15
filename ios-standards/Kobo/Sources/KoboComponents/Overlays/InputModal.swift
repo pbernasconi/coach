@@ -157,7 +157,7 @@ extension View {
         @State private var draft = 90
 
         var body: some View {
-            Button("Rest time: \(saved) s") {
+            Button("Snooze: \(saved) s") {
                 draft = saved
                 isPresented = true
             }
@@ -165,8 +165,8 @@ extension View {
             .background(theme.palette.canvas)
             .inputModal(
                 isPresented: $isPresented,
-                title: "Rest time",
-                subtitle: "Between sets",
+                title: "Snooze length",
+                subtitle: "For every reminder",
                 isSaveEnabled: draft > 0,
                 hasChanges: draft != saved,
                 onSave: { saved = draft }

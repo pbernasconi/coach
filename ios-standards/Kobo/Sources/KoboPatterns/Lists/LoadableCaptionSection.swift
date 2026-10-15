@@ -2,15 +2,15 @@ import KoboComponents
 import KoboTokens
 import SwiftUI
 
-/// A read rendered inside a card the caller owns (a "Last session" preview in a `.koboCard()`). The content shows when
+/// A read rendered inside a card the caller owns (a "Last trip" preview in a `.koboCard()`). The content shows when
 /// loaded; every other phase is a small caption: ghost bars while loading, the empty caption, or the failure with a
 /// quiet "Try again" (`SectionState`). A failed read never reads as empty. `LoadableSection` is the variant that draws
 /// its own `ListSection`.
 ///
 ///     VStack(alignment: .leading) {
-///         Text("Last session").font(.headline)
-///         LoadableCaptionSection(state.last, emptyCaption: "No sessions yet", onRetry: retry) { session in
-///             SessionSummary(session)
+///         Text("Last trip").font(.headline)
+///         LoadableCaptionSection(state.last, emptyCaption: "No trips yet", onRetry: retry) { trip in
+///             TripSummary(trip)
 ///         }
 ///     }
 ///     .koboCard()
@@ -89,14 +89,14 @@ private struct CaptionRhythm: ViewModifier {
 #if DEBUG
     private struct LoadableCaptionSectionGallery: View {
         private let states: [Loadable<String>] = [
-            .loading, .loaded("Lower A · 52 min"), .empty, .failed(message: "Offline"),
+            .loading, .loaded("Lisbon · 4 days"), .empty, .failed(message: "Offline"),
         ]
 
         var body: some View {
             ScrollView {
                 VStack(spacing: Space.lg) {
                     ForEach(Array(states.enumerated()), id: \.offset) { _, state in
-                        LoadableCaptionSection(state, emptyCaption: "No sessions yet", onRetry: {}) { text in
+                        LoadableCaptionSection(state, emptyCaption: "No trips yet", onRetry: {}) { text in
                             Text(verbatim: text).padding(.vertical, Space.md)
                         }
                         .koboCard()
