@@ -2,10 +2,12 @@
 # CI's simulator, booted from a cached snapshot when there is one. A first boot of a new simulator spends
 # minutes setting up its data and keeps the machine busy for minutes more; booting a copy of a simulator's
 # data that has booted before skips most of that.
-#   scripts/ci-simulator.sh pick   picks the iPhone simulator (scripts/simulator.sh) and writes SIM_UDID and
-#                                  SIM_CACHE_KEY (image, runtime, device type) to GITHUB_ENV
-#   scripts/ci-simulator.sh boot   moves a restored snapshot (~/sim-data) in as the simulator's data if there is
-#                                  one, then boots it and launches Settings once, in the background
+#   scripts/ci-simulator.sh key    writes SIM_CACHE_KEY and SIM_CACHE_PREFIX (the runner image) to GITHUB_ENV and starts
+#                                  CoreSimulatorService in the background
+#   scripts/ci-simulator.sh boot   picks the iPhone simulator (scripts/simulator.sh; SIM_UDID to GITHUB_ENV),
+#                                  moves a restored snapshot (~/sim-data) in as its data if there is one, then
+#                                  boots it and launches Settings once, in the background
+#   scripts/ci-simulator.sh install <app>  installs the app once the simulator has booted
 #   scripts/ci-simulator.sh ready  waits for the background boot (and briefly for the warm-up launch) and prints
 #                                  how long they took
 #   scripts/ci-simulator.sh pack   shuts the simulator down and moves its data to ~/sim-data, for actions/cache
@@ -36,22 +38,20 @@ wait_booted() {
   return 1
 }
 case "$1" in
-  pick)
-    udid="$("$(dirname "$0")/simulator.sh")"
-    device="$(xcrun simctl list devices -j | python3 -c '
-import json, sys
-udid = sys.argv[1]
-for runtime, items in json.load(sys.stdin)["devices"].items():
-    for d in items:
-        if d["udid"] == udid:
-            print(runtime.split(".")[-1] + "-" + d["deviceTypeIdentifier"].split(".")[-1])
-' "$udid")"
+  key)
+    # The snapshot's key: the runner image decides the runtimes and devices, and so the simulator pick below.
+    # SIM_CACHE_PREFIX also matches older snapshot keys of the same image.
+    prefix="sim-${ImageOS:-macos}-${ImageVersion:-0}-"
     {
-      echo "SIM_UDID=$udid"
-      echo "SIM_CACHE_KEY=sim-${ImageOS:-macos}-${ImageVersion:-0}-$device-v1"
+      echo "SIM_CACHE_PREFIX=$prefix"
+      echo "SIM_CACHE_KEY=${prefix}v2"
     } >>"$GITHUB_ENV"
+    # Starts CoreSimulatorService (tens of seconds on a fresh runner) while the snapshot downloads.
+    xcrun simctl list devices >/dev/null 2>&1 &
     ;;
   boot)
+    SIM_UDID="$("$(dirname "$0")/simulator.sh")"
+    echo "SIM_UDID=$SIM_UDID" >>"$GITHUB_ENV"
     data="$HOME/Library/Developer/CoreSimulator/Devices/$SIM_UDID/data"
     if [ -d "$SNAPSHOT" ]; then
       rm -rf "$data"
@@ -69,6 +69,16 @@ for runtime, items in json.load(sys.stdin)["devices"].items():
       xcrun simctl terminate "$SIM_UDID" com.apple.Preferences >/dev/null 2>&1 || true
       echo "warm-up launch done after $((SECONDS - start)) s, at $(date -u +%T)" >"$RUNNER_TEMP/warmed"
     ) >/dev/null 2>&1 &
+    ;;
+  install)
+    # Installs the app as soon as the simulator has booted, while the warm-up launch may still run.
+    for ((i = 0; i < 600; i++)); do
+      [ -f "$RUNNER_TEMP/booted" ] && break
+      sleep 1
+    done
+    [ -f "$RUNNER_TEMP/booted" ] || wait_booted
+    xcrun simctl install "$SIM_UDID" "$2"
+    echo "installed at $(date -u +%T)"
     ;;
   ready)
     # Waits for the boot (at most 10 minutes, then asks simctl), then up to 60 s more for the warm-up launch.
@@ -88,7 +98,8 @@ for runtime, items in json.load(sys.stdin)["devices"].items():
     xcrun simctl shutdown "$SIM_UDID" 2>/dev/null || true
     rm -rf "$data/Library/Logs" "$data/var/db/diagnostics" "$data/var/db/uuidtext" "$data/tmp"
     du -sh "$data"
+    du -sk "$data"/* "$data"/*/* 2>/dev/null | sort -n | tail -n 15
     mv "$data" "$SNAPSHOT"
     ;;
-  *) echo "usage: $0 pick|boot|ready|pack" >&2 && exit 2 ;;
+  *) echo "usage: $0 key|boot|install <app>|ready|pack" >&2 && exit 2 ;;
 esac
