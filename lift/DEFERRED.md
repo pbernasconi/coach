@@ -5,10 +5,16 @@ already done around it. The build keeps going around these; nothing here blocks 
 
 ## Needs your accounts or devices
 
-- **Apple developer details (TestFlight).** Needed: the bundle ID you want (placeholder `com.example.lift`),
-  your Team ID, an App Store Connect app record, and an App Store Connect API key (issuer ID, key ID, `.p8`)
-  saved as GitHub secrets `ASC_ISSUER_ID`, `ASC_KEY_ID` and `ASC_KEY_P8`. Until then CI builds and tests on
-  the simulator only.
+- **Apple developer details (TestFlight).** The upload pipeline is built (`.github/workflows/testflight.yml`)
+  and skips itself until these exist. In GitHub → Settings → Secrets and variables → Actions (repository level,
+  or the `testflight` environment):
+  - Variables: `APPLE_TEAM_ID` (your Team ID, Membership page) and `LIFT_BUNDLE_ID` (e.g. `com.yourname.lift`;
+    register it as an App ID, plus `<id>.widgets` for the Live Activity extension).
+  - Secrets: `ASC_KEY_ID`, `ASC_ISSUER_ID` and `ASC_KEY_P8` (the contents of the `.p8`), from App Store Connect →
+    Users and Access → Integrations → App Store Connect API, role App Manager.
+  - Create the app record in App Store Connect with that bundle ID.
+  Every push to `main` that touches the app then archives with automatic signing and uploads a build numbered by
+  the CI run.
 - **Real-device check.** Haptics (an earlier app found `.sensoryFeedback` silent on an iOS 26 device), Liquid
   Glass rendering, and the rest-timer Live Activity can only be confirmed on your iPhone.
 
@@ -34,6 +40,13 @@ already done around it. The build keeps going around these; nothing here blocks 
 - **Tabs:** Week, History, Exercises, Settings.
 - **Units:** kg by default; lb available in Settings.
 - **Plates and bar:** made-up defaults until you list your gym's plates and bars.
+
+## Smaller gaps (no input needed; noted so nothing is lost)
+
+- Notes import drops session notes, warm-up notes, next-time hints and set notes (the store has no fields for them
+  yet), and logged imported sets are stamped with the import time rather than the workout date.
+- A Share extension for sending a note straight to Lift is not built yet (the import flow is ready for it).
+- The Live Activity has no +30s or Skip buttons on the lock screen yet (needs App Intents).
 
 ## Product decisions to make
 
