@@ -8,26 +8,66 @@ import SwiftUI
 ///     .craftConfirm(isPresented: $confirmingDelete, .destructive(
 ///         title: "Delete this workout?", message: "Its sets will be removed from your history.",
 ///         confirmLabel: "Delete", perform: { send(.deleteConfirmed) }))
+///
+/// Copy is held as `Text`, like SwiftUI's own labels: literals localize from the app's bundle, and the `verbatim:`
+/// initialisers show a title and message as is. Button labels stay localized in both.
 public struct ConfirmationAction {
     /// Whether confirming destroys something; destructive confirms are drawn in red by the system.
     public enum Role: Sendable, Equatable {
         case standard, destructive
     }
 
-    public var title: String
-    public var message: String?
-    public var confirmLabel: String
-    public var cancelLabel: String?
+    public var title: Text
+    public var message: Text?
+    public var confirmLabel: Text
+    public var cancelLabel: Text?
     public var role: Role
     public var perform: () -> Void
 
-    /// - Parameter cancelLabel: overrides the system "Cancel" title.
+    /// - Parameter cancelLabel: overrides the library's "Cancel" title.
     public init(
-        title: String,
-        message: String? = nil,
-        confirmLabel: String,
-        cancelLabel: String? = nil,
+        title: LocalizedStringKey,
+        message: LocalizedStringKey? = nil,
+        confirmLabel: LocalizedStringKey,
+        cancelLabel: LocalizedStringKey? = nil,
         role: Role = .standard,
+        perform: @escaping () -> Void
+    ) {
+        self.init(
+            texts: Text(title),
+            message: message.map { Text($0) },
+            confirmLabel: Text(confirmLabel),
+            cancelLabel: cancelLabel.map { Text($0) },
+            role: role,
+            perform: perform
+        )
+    }
+
+    /// A confirmation whose title and message are shown as is (they name user data).
+    public init(
+        verbatim title: String,
+        message: String? = nil,
+        confirmLabel: LocalizedStringKey,
+        cancelLabel: LocalizedStringKey? = nil,
+        role: Role = .standard,
+        perform: @escaping () -> Void
+    ) {
+        self.init(
+            texts: Text(verbatim: title),
+            message: message.map { Text(verbatim: $0) },
+            confirmLabel: Text(confirmLabel),
+            cancelLabel: cancelLabel.map { Text($0) },
+            role: role,
+            perform: perform
+        )
+    }
+
+    private init(
+        texts title: Text,
+        message: Text?,
+        confirmLabel: Text,
+        cancelLabel: Text?,
+        role: Role,
         perform: @escaping () -> Void
     ) {
         self.title = title
@@ -40,14 +80,32 @@ public struct ConfirmationAction {
 
     /// A confirmation whose action cannot be undone.
     public static func destructive(
-        title: String,
-        message: String? = nil,
-        confirmLabel: String,
-        cancelLabel: String? = nil,
+        title: LocalizedStringKey,
+        message: LocalizedStringKey? = nil,
+        confirmLabel: LocalizedStringKey,
+        cancelLabel: LocalizedStringKey? = nil,
         perform: @escaping () -> Void
     ) -> ConfirmationAction {
         ConfirmationAction(
             title: title,
+            message: message,
+            confirmLabel: confirmLabel,
+            cancelLabel: cancelLabel,
+            role: .destructive,
+            perform: perform
+        )
+    }
+
+    /// A confirmation that cannot be undone, whose title and message are shown as is.
+    public static func destructive(
+        verbatim title: String,
+        message: String? = nil,
+        confirmLabel: LocalizedStringKey,
+        cancelLabel: LocalizedStringKey? = nil,
+        perform: @escaping () -> Void
+    ) -> ConfirmationAction {
+        ConfirmationAction(
+            verbatim: title,
             message: message,
             confirmLabel: confirmLabel,
             cancelLabel: cancelLabel,
@@ -64,11 +122,14 @@ extension View {
     /// visible, the confirm button carries the destructive role when needed, and Cancel is always present.
     public func craftConfirm(isPresented: Binding<Bool>, _ action: ConfirmationAction) -> some View {
         confirmationDialog(action.title, isPresented: isPresented, titleVisibility: .visible) {
-            Button(action.confirmLabel, role: action.buttonRole, action: action.perform)
-            Button(action.cancelLabel ?? String(localized: "Cancel"), role: .cancel) {}
+            Button(role: action.buttonRole, action: action.perform) { action.confirmLabel }
+            Button(role: .cancel) {
+            } label: {
+                action.cancelLabel ?? Text("Cancel", bundle: .module)
+            }
         } message: {
             if let message = action.message {
-                Text(message)
+                message
             }
         }
     }

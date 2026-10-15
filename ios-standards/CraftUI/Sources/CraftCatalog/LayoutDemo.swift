@@ -16,8 +16,8 @@ struct LayoutDemo: View {
             CardSection("Today") { Text("Lower A · 5 exercises") }
         case .listRow:
             VStack(spacing: 0) {
-                ListRow("Back squat", subtitle: "3 × 8", value: "135 lb", action: {})
-                ListRow("Romanian deadlift", subtitle: "3 × 10", value: "115 lb", action: {}) {
+                ListRow(verbatim: "Back squat", subtitle: "3 × 8", value: "135 lb", action: {})
+                ListRow(verbatim: "Romanian deadlift", subtitle: "3 × 10", value: "115 lb", action: {}) {
                     Thumbnail(systemName: "figure.strengthtraining.traditional", side: Size.minTouch)
                 }
             }
@@ -32,6 +32,7 @@ struct LayoutDemo: View {
                 "Last session",
                 items: [
                     KeyValueItem("Top set", value: "155 × 6"),
+                    KeyValueItem(verbatim: "Grip", value: "Hook"),
                     KeyValueItem("Volume", value: "9,840 lb"),
                     KeyValueItem("Change", value: "+5 lb", valueTone: .success),
                 ]
@@ -54,7 +55,6 @@ struct LayoutDemo: View {
             SheetHeader(
                 "Edit set",
                 subtitle: "Back squat",
-                closeAccessibilityLabel: "Close",
                 onClose: {},
                 confirm: SheetHeaderAction(accessibilityLabel: "Save") {}
             )
@@ -63,7 +63,7 @@ struct LayoutDemo: View {
         case .segmentedProgress:
             SegmentedProgress(done: 1, planned: 1, required: 0, goal: 3, accessibilityLabel: "Sessions this week")
         case .miniPlayerBar:
-            MiniPlayerBar(title: "Back squat", subtitle: "Set 2 of 3 · 1:24", chrome: .floating, action: {}) {
+            MiniPlayerBar(verbatim: "Back squat", subtitle: "Set 2 of 3 · 1:24", chrome: .floating, action: {}) {
                 Image(systemName: "figure.strengthtraining.traditional").accessibilityHidden(true)
             }
         default: EmptyView()

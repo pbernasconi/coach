@@ -27,14 +27,17 @@ cat >"$WORK/Sources/CraftTokens/LinuxStandIns.swift" <<'SWIFT'
 public enum Tone: String, Sendable, CaseIterable { case neutral, accent, success, warning, danger, info }
 public enum Motion {}
 SWIFT
-# Foundation on Linux has no interpolated String(localized:); keep the text, drop the lookup.
+# Foundation on Linux has no String(localized:) (nor LocalizedStringResource); keep the text, drop the lookup,
+# including the library's own `String(localized: "Close", bundle: .module)` form.
 while IFS= read -r f; do
   src="$(readlink "$f")"; rm "$f"
-  sed 's/String(localized: \("[^"]*"\))/\1/g' "$src" >"$f"
+  sed 's/String(localized: \("[^"]*"\)\(, bundle: \.module\)\{0,1\})/\1/g' "$src" >"$f"
 done < <(grep -Rl 'String(localized:' "$WORK/Sources" || true)
 
-# Same targets and strict settings as the real manifest, minus platforms and the SwiftUI-only token tests.
-sed -e 's/platforms: \[[^]]*\],//' -e '/name: "CraftTokensTests"/d' "$ROOT/Package.swift" >"$WORK/Package.swift"
+# Same targets and strict settings as the real manifest, minus platforms, resources (the String Catalogs are only
+# read through the stripped lookups) and the SwiftUI-only token tests.
+sed -e 's/platforms: \[[^]]*\],//' -e '/resources: \[/d' -e '/name: "CraftTokensTests"/d' \
+  "$ROOT/Package.swift" >"$WORK/Package.swift"
 
 cd "$WORK"
 set +e

@@ -95,7 +95,14 @@ extension Thumbnail where Content == Image {
         @ViewBuilder badge: () -> Badge
     ) {
         let glyph = Image(systemName: systemName)
-        self.init(tone: tone, side: side, fillsTile: false, label: accessibilityLabel.map { Text($0) }, content: glyph, badge: badge())
+        self.init(
+            tone: tone,
+            side: side,
+            fillsTile: false,
+            label: accessibilityLabel.map { Text($0) },
+            content: glyph,
+            badge: badge()
+        )
     }
 
     /// A tile showing a picture cropped to fill it, with a corner badge.
@@ -107,7 +114,14 @@ extension Thumbnail where Content == Image {
         @ViewBuilder badge: () -> Badge
     ) {
         let picture = image.resizable()
-        self.init(tone: tone, side: side, fillsTile: true, label: accessibilityLabel.map { Text($0) }, content: picture, badge: badge())
+        self.init(
+            tone: tone,
+            side: side,
+            fillsTile: true,
+            label: accessibilityLabel.map { Text($0) },
+            content: picture,
+            badge: badge()
+        )
     }
 }
 
@@ -125,8 +139,12 @@ extension Thumbnail where Content == Image, Badge == EmptyView {
     }
 
     /// A tile showing a picture cropped to fill it.
-    public init(image: Image, tone: Tone = .neutral, side: CGFloat = Size.thumbnail, accessibilityLabel: LocalizedStringKey? = nil)
-    {
+    public init(
+        image: Image,
+        tone: Tone = .neutral,
+        side: CGFloat = Size.thumbnail,
+        accessibilityLabel: LocalizedStringKey? = nil
+    ) {
         self.init(image: image, tone: tone, side: side, accessibilityLabel: accessibilityLabel) { EmptyView() }
     }
 }

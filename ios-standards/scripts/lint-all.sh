@@ -85,8 +85,8 @@ if have typos; then step "typos" typos; else skip "typos" "not installed"; fi
 if have detect-secrets; then
   scan_secrets() { local files; mapfile -t files < <(git ls-files); detect-secrets-hook --baseline .secrets.baseline "${files[@]}"; }
   [ -f .secrets.baseline ] || detect-secrets scan --exclude-files '\.tools/' > .secrets.baseline
-  step "detect-secrets" scan_secrets
-else skip "detect-secrets" "not installed"; fi
+  step "detect-secrets" scan_secrets  # pragma: allowlist secret
+else skip "detect-secrets" "not installed"; fi  # pragma: allowlist secret
 
 # 11. macOS-only deep checks.
 if [ "$DEEP" = 1 ]; then

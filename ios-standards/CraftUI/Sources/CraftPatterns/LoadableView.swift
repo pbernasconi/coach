@@ -4,12 +4,35 @@ import SwiftUI
 
 /// A retry button's title and action, handed to a `LoadableView`'s failed slot.
 public struct LoadableRetry {
-    public let label: String
+    public let label: Text
     public let action: () -> Void
 
-    public init(label: String, action: @escaping () -> Void) {
+    /// A retry with a localized title.
+    public init(_ label: LocalizedStringKey, action: @escaping () -> Void) {
+        self.init(label: Text(label), action: action)
+    }
+
+    /// A retry whose title is shown as is.
+    public init(verbatim label: String, action: @escaping () -> Void) {
+        self.init(label: Text(verbatim: label), action: action)
+    }
+
+    init(label: Text, action: @escaping () -> Void) {
         self.label = label
         self.action = action
+    }
+}
+
+extension Loadable {
+    /// A failure with localized copy, resolved from the app's bundle now. `Loadable` stores the resolved strings so it
+    /// stays `Equatable`, `Sendable` and testable without SwiftUI; use `.failed(message:retryLabel:)` for runtime copy.
+    ///
+    ///     state.workouts = .failed("Couldn't load your workouts.", retryLabel: "Reload")
+    public nonisolated static func failed(
+        _ message: LocalizedStringResource,
+        retryLabel: LocalizedStringResource? = nil
+    ) -> Loadable {
+        .failed(message: String(localized: message), retryLabel: retryLabel.map { String(localized: $0) })
     }
 }
 
@@ -68,7 +91,10 @@ public struct LoadableView<Value: Equatable & Sendable, Loaded: View, Placeholde
 
     private func retry(label: String?) -> LoadableRetry? {
         guard let onRetry else { return nil }
-        return LoadableRetry(label: label ?? String(localized: "Try again"), action: onRetry)
+        return LoadableRetry(
+            label: label.map { Text(verbatim: $0) } ?? Text("Try again", bundle: .module),
+            action: onRetry
+        )
     }
 }
 
@@ -104,7 +130,7 @@ where Placeholder == ProgressView<EmptyView, EmptyView>, Empty == LoadableEmptyV
     /// Only the loaded slot custom; standard spinner, empty and failure views.
     public init(
         _ state: Loadable<Value>,
-        emptyTitle: String,
+        emptyTitle: LocalizedStringKey,
         emptySystemImage: String = "tray",
         onRetry: (() -> Void)? = nil,
         @ViewBuilder loaded: @escaping (Value) -> Loaded
@@ -127,12 +153,16 @@ public struct LoadableFailedView: View {
 
     public var body: some View {
         ContentUnavailableView {
-            Label(String(localized: "Couldn't load"), systemImage: "exclamationmark.triangle")
+            Label {
+                Text("Couldn't load", bundle: .module)
+            } icon: {
+                Image(systemName: "exclamationmark.triangle")
+            }
         } description: {
-            Text(message)
+            Text(verbatim: message)
         } actions: {
             if let retry {
-                Button(retry.label, action: retry.action)
+                Button(action: retry.action) { retry.label }
                     .buttonStyle(.glassProminent)
             }
         }
@@ -141,21 +171,33 @@ public struct LoadableFailedView: View {
 
 /// The standard empty view: an icon, a title and an optional message.
 public struct LoadableEmptyView: View {
-    private let title: String
+    private let title: Text
     private let systemImage: String
-    private let message: String?
+    private let message: Text?
 
-    public init(_ title: String, systemImage: String = "tray", message: String? = nil) {
-        self.title = title
+    /// An empty view with localized copy.
+    public init(_ title: LocalizedStringKey, systemImage: String = "tray", message: LocalizedStringKey? = nil) {
+        self.title = Text(title)
         self.systemImage = systemImage
-        self.message = message
+        self.message = message.map { Text($0) }
+    }
+
+    /// An empty view whose copy is shown as is (a search term, user data).
+    public init(verbatim title: String, systemImage: String = "tray", message: String? = nil) {
+        self.title = Text(verbatim: title)
+        self.systemImage = systemImage
+        self.message = message.map { Text(verbatim: $0) }
     }
 
     public var body: some View {
         ContentUnavailableView {
-            Label(title, systemImage: systemImage)
+            Label {
+                title
+            } icon: {
+                Image(systemName: systemImage)
+            }
         } description: {
-            if let message { Text(message) }
+            if let message { message }
         }
     }
 }
@@ -181,7 +223,7 @@ public struct LoadableEmptyView: View {
             ("Loading", .loading),
             ("Empty", .empty),
             ("Loaded", .loaded(["Push day", "Pull day"])),
-            ("Failed", .failed(message: "The server did not answer.", retryLabel: "Reload")),
+            ("Failed", .failed("The server did not answer.", retryLabel: "Reload")),
         ]
         StateGallery(fixtures) { state in
             LoadableViewPreview(state: state)

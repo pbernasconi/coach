@@ -24,16 +24,36 @@ public enum ScreenHeaderStyle: Sendable, Equatable {
 ///     }
 public struct ScreenScaffold<Content: View, Toolbar: View, Footer: View>: View {
     @Environment(\.craftTheme) private var theme
-    private let title: String
-    private let subtitle: String?
-    private let kicker: String?
+    private let title: Text
+    private let subtitle: Text?
+    private let kicker: Text?
     private let headerStyle: ScreenHeaderStyle
     private let content: Content
     private let toolbar: Toolbar
     private let footer: Footer
 
+    /// A screen with a localized title, toolbar buttons and a pinned footer.
     public init(
-        _ title: String,
+        _ title: LocalizedStringKey,
+        subtitle: LocalizedStringKey? = nil,
+        kicker: LocalizedStringKey? = nil,
+        headerStyle: ScreenHeaderStyle = .navigationBar,
+        @ViewBuilder content: () -> Content,
+        @ViewBuilder toolbar: () -> Toolbar,
+        @ViewBuilder footer: () -> Footer
+    ) {
+        self.init(
+            header: ScaffoldTexts(title, subtitle: subtitle, kicker: kicker),
+            headerStyle: headerStyle,
+            content: content(),
+            toolbar: toolbar(),
+            footer: footer()
+        )
+    }
+
+    /// A screen whose title, subtitle and kicker are shown as is (a record's name), with toolbar and footer.
+    public init(
+        verbatim title: String,
         subtitle: String? = nil,
         kicker: String? = nil,
         headerStyle: ScreenHeaderStyle = .navigationBar,
@@ -41,13 +61,24 @@ public struct ScreenScaffold<Content: View, Toolbar: View, Footer: View>: View {
         @ViewBuilder toolbar: () -> Toolbar,
         @ViewBuilder footer: () -> Footer
     ) {
-        self.title = title
-        self.subtitle = subtitle
-        self.kicker = kicker
+        self.init(
+            header: ScaffoldTexts(verbatim: title, subtitle: subtitle, kicker: kicker),
+            headerStyle: headerStyle,
+            content: content(),
+            toolbar: toolbar(),
+            footer: footer()
+        )
+    }
+
+    /// The one place every initialiser lands.
+    init(header: ScaffoldTexts, headerStyle: ScreenHeaderStyle, content: Content, toolbar: Toolbar, footer: Footer) {
+        self.title = header.title
+        self.subtitle = header.subtitle
+        self.kicker = header.kicker
         self.headerStyle = headerStyle
-        self.content = content()
-        self.toolbar = toolbar()
-        self.footer = footer()
+        self.content = content
+        self.toolbar = toolbar
+        self.footer = footer
     }
 
     public var body: some View {
@@ -71,136 +102,6 @@ public struct ScreenScaffold<Content: View, Toolbar: View, Footer: View>: View {
         .background(theme.palette.canvas)
         .modifier(ScaffoldNavigation(style: headerStyle, title: title, toolbar: toolbar))
         .pinnedFooter(isPresented: Footer.self != EmptyView.self) { footer }
-    }
-}
-
-extension ScreenScaffold where Footer == EmptyView {
-    /// A screen with toolbar buttons and no footer.
-    public init(
-        _ title: String,
-        subtitle: String? = nil,
-        kicker: String? = nil,
-        headerStyle: ScreenHeaderStyle = .navigationBar,
-        @ViewBuilder content: () -> Content,
-        @ViewBuilder toolbar: () -> Toolbar
-    ) {
-        self.init(
-            title,
-            subtitle: subtitle,
-            kicker: kicker,
-            headerStyle: headerStyle,
-            content: content,
-            toolbar: toolbar,
-            footer: { EmptyView() }
-        )
-    }
-}
-
-extension ScreenScaffold where Toolbar == EmptyView {
-    /// A screen with a pinned footer and no toolbar buttons.
-    public init(
-        _ title: String,
-        subtitle: String? = nil,
-        kicker: String? = nil,
-        headerStyle: ScreenHeaderStyle = .navigationBar,
-        @ViewBuilder content: () -> Content,
-        @ViewBuilder footer: () -> Footer
-    ) {
-        self.init(
-            title,
-            subtitle: subtitle,
-            kicker: kicker,
-            headerStyle: headerStyle,
-            content: content,
-            toolbar: { EmptyView() },
-            footer: footer
-        )
-    }
-}
-
-extension ScreenScaffold where Toolbar == EmptyView, Footer == EmptyView {
-    /// A screen with only content.
-    public init(
-        _ title: String,
-        subtitle: String? = nil,
-        kicker: String? = nil,
-        headerStyle: ScreenHeaderStyle = .navigationBar,
-        @ViewBuilder content: () -> Content
-    ) {
-        self.init(
-            title,
-            subtitle: subtitle,
-            kicker: kicker,
-            headerStyle: headerStyle,
-            content: content,
-            toolbar: { EmptyView() },
-            footer: { EmptyView() }
-        )
-    }
-}
-
-/// The kicker, title (inline style only), subtitle and inline toolbar.
-private struct ScaffoldHeader<Toolbar: View>: View {
-    @Environment(\.craftTheme) private var theme
-    let title: String
-    let subtitle: String?
-    let kicker: String?
-    let showsTitle: Bool
-    let toolbar: Toolbar
-
-    var body: some View {
-        HStack(alignment: .top, spacing: Space.md) {
-            VStack(alignment: .leading, spacing: Space.xxs) {
-                if let kicker {
-                    Text(kicker)
-                        .font(theme.font(.footnote).weight(.semibold))
-                        .foregroundStyle(theme.palette.accentText)
-                        .textCase(.uppercase)
-                }
-                if showsTitle {
-                    Text(title)
-                        .font(theme.font(.largeTitle))
-                        .foregroundStyle(theme.palette.textPrimary)
-                        .accessibilityAddTraits(.isHeader)
-                }
-                if let subtitle {
-                    Text(subtitle)
-                        .font(theme.font(.subheadline))
-                        .foregroundStyle(theme.palette.textSecondary)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            if showsTitle {
-                HStack(spacing: Space.sm) { toolbar }
-                    .buttonStyle(.glass)
-                    .buttonBorderShape(.circle)
-                    .labelStyle(.iconOnly)
-            }
-        }
-        .padding(.top, showsTitle ? Space.lg : 0)
-    }
-}
-
-/// Navigation title and toolbar for `.navigationBar`; nothing for `.inline`.
-private struct ScaffoldNavigation<Toolbar: View>: ViewModifier {
-    let style: ScreenHeaderStyle
-    let title: String
-    let toolbar: Toolbar
-
-    func body(content: Content) -> some View {
-        switch style {
-        case .navigationBar:
-            content
-                .navigationTitle(title)
-                #if os(iOS)
-                    .navigationBarTitleDisplayMode(.large)
-                #endif
-                .toolbar {
-                    ToolbarItemGroup(placement: .primaryAction) { toolbar }
-                }
-        case .inline:
-            content
-        }
     }
 }
 

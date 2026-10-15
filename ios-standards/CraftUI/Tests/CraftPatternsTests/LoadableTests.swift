@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 
 @testable import CraftPatterns
@@ -33,4 +34,13 @@ import Testing
     @Test func failedRetryLabelDefaultsToNil() {
         #expect(Loadable<Int>.failed(message: "x") == .failed(message: "x", retryLabel: nil))
     }
+
+    #if canImport(SwiftUI)  // the LocalizedStringResource overload lives in a SwiftUI file
+        @Test func localizedFailureStoresTheResolvedCopy() {
+            #expect(
+                Loadable<Int>.failed("Offline", retryLabel: "Reload")
+                    == .failed(message: "Offline", retryLabel: "Reload")
+            )
+        }
+    #endif
 }

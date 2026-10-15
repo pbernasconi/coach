@@ -27,11 +27,13 @@ let package = Package(
         .target(
             name: "CraftComponents",
             dependencies: ["CraftTokens"],
+            resources: [.process("Resources")],  // the library's own strings (Localizable.xcstrings)
             swiftSettings: strict + [.defaultIsolation(MainActor.self)]
         ),
         .target(
             name: "CraftPatterns",
             dependencies: ["CraftTokens", "CraftComponents"],
+            resources: [.process("Resources")],  // the library's own strings (Localizable.xcstrings)
             swiftSettings: strict + [.defaultIsolation(MainActor.self)]
         ),
         .target(

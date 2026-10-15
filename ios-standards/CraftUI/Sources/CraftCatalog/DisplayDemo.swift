@@ -31,7 +31,7 @@ struct DisplayDemo: View {
             }
         case .statTile:
             HStack(spacing: Space.md) {
-                StatTile(label: "Volume", value: volume, unit: "lb", delta: StatDelta("+8%", tone: .success))
+                StatTile(label: "Volume", value: volume, unit: "lb", delta: StatDelta(verbatim: "+8%", tone: .success))
                 StatTile(label: "Sessions", value: "2", delta: StatDelta("on track", tone: .neutral))
             }
         case .avatar:

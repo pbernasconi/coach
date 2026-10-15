@@ -15,7 +15,7 @@ public enum MiniPlayerChrome: Sendable, Equatable {
 ///
 ///     TabView { … }
 ///         .tabViewBottomAccessory {
-///             MiniPlayerBar(title: "Push day", subtitle: "12:40 · Bench press", action: open) {
+///             MiniPlayerBar(verbatim: workout.name, subtitle: elapsed, action: open) {
 ///                 Image(systemName: "dumbbell")
 ///             } trailing: {
 ///                 Button("Open", action: open)
@@ -23,23 +23,41 @@ public enum MiniPlayerChrome: Sendable, Equatable {
 ///         }
 public struct MiniPlayerBar<Leading: View, Trailing: View>: View {
     @Environment(\.craftTheme) private var theme
-    private let title: String
-    private let subtitle: String?
+    private let title: Text
+    private let subtitle: Text?
     private let chrome: MiniPlayerChrome
     private let action: () -> Void
     private let leading: Leading
     private let trailing: Trailing
 
+    /// A bar with a localized title and subtitle.
     public init(
-        title: String,
+        title: LocalizedStringKey,
+        subtitle: LocalizedStringKey? = nil,
+        chrome: MiniPlayerChrome = .accessory,
+        action: @escaping () -> Void,
+        @ViewBuilder leading: () -> Leading,
+        @ViewBuilder trailing: () -> Trailing
+    ) {
+        self.title = Text(title)
+        self.subtitle = subtitle.map { Text($0) }
+        self.chrome = chrome
+        self.action = action
+        self.leading = leading()
+        self.trailing = trailing()
+    }
+
+    /// A bar whose title and subtitle are shown as is (a workout name, a running time).
+    public init(
+        verbatim title: String,
         subtitle: String? = nil,
         chrome: MiniPlayerChrome = .accessory,
         action: @escaping () -> Void,
         @ViewBuilder leading: () -> Leading,
         @ViewBuilder trailing: () -> Trailing
     ) {
-        self.title = title
-        self.subtitle = subtitle
+        self.title = Text(verbatim: title)
+        self.subtitle = subtitle.map { Text(verbatim: $0) }
         self.chrome = chrome
         self.action = action
         self.leading = leading()
@@ -64,12 +82,12 @@ public struct MiniPlayerBar<Leading: View, Trailing: View>: View {
                     leading
                         .foregroundStyle(theme.palette.accentText)
                     VStack(alignment: .leading, spacing: 0) {
-                        Text(title)
+                        title
                             .font(theme.font(.subheadline).weight(.semibold))
                             .foregroundStyle(theme.palette.textPrimary)
                             .lineLimit(1)
                         if let subtitle {
-                            Text(subtitle)
+                            subtitle
                                 .font(theme.font(.footnote).monospacedDigit())
                                 .foregroundStyle(theme.palette.textSecondary)
                                 .lineLimit(1)
@@ -89,16 +107,34 @@ public struct MiniPlayerBar<Leading: View, Trailing: View>: View {
 }
 
 extension MiniPlayerBar where Trailing == EmptyView {
-    /// A bar with a leading slot and no trailing button.
+    /// A bar with a localized title, a leading slot and no trailing button.
     public init(
-        title: String,
-        subtitle: String? = nil,
+        title: LocalizedStringKey,
+        subtitle: LocalizedStringKey? = nil,
         chrome: MiniPlayerChrome = .accessory,
         action: @escaping () -> Void,
         @ViewBuilder leading: () -> Leading
     ) {
         self.init(
             title: title,
+            subtitle: subtitle,
+            chrome: chrome,
+            action: action,
+            leading: leading,
+            trailing: { EmptyView() }
+        )
+    }
+
+    /// A bar with a title shown as is, a leading slot and no trailing button.
+    public init(
+        verbatim title: String,
+        subtitle: String? = nil,
+        chrome: MiniPlayerChrome = .accessory,
+        action: @escaping () -> Void,
+        @ViewBuilder leading: () -> Leading
+    ) {
+        self.init(
+            verbatim: title,
             subtitle: subtitle,
             chrome: chrome,
             action: action,
@@ -113,7 +149,8 @@ extension MiniPlayerBar where Trailing == EmptyView {
         let chrome: MiniPlayerChrome
 
         var body: some View {
-            MiniPlayerBar(title: "Push day", subtitle: "12:40 · Bench press, set 3 of 5", chrome: chrome, action: {}) {
+            MiniPlayerBar(verbatim: "Push day", subtitle: "12:40 · Bench press, set 3 of 5", chrome: chrome, action: {})
+            {
                 Image(systemName: "dumbbell.fill").accessibilityHidden(true)
             } trailing: {
                 Button("Open") {}

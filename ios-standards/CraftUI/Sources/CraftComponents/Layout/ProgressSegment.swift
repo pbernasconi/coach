@@ -27,9 +27,9 @@ public nonisolated enum ProgressSegment: Hashable, Sendable, CaseIterable, Ident
         }
     }
 
-    /// "x of y": done segments of all segments.
-    static func accessibilityValue(for segments: [ProgressSegment]) -> String {
+    /// "x of y": done segments of all segments, from the library's catalog (`Bundle.module` is main-actor isolated).
+    @MainActor static func accessibilityValue(for segments: [ProgressSegment]) -> String {
         let done = segments.filter { $0 == .done }.count
-        return String(localized: "\(done) of \(segments.count)")
+        return String(localized: "\(done) of \(segments.count)", bundle: .module)
     }
 }

@@ -95,11 +95,11 @@ public struct DayStrip: View {
         style.calendar = calendar
         style.timeZone = calendar.timeZone
         var parts = [day.date.formatted(style)]
-        if isToday { parts.append(String(localized: "Today")) }
+        if isToday { parts.append(String(localized: "Today", bundle: .module)) }
         switch day.marker {
         case .none: break
-        case .planned: parts.append(String(localized: "Planned"))
-        case .done: parts.append(String(localized: "Done"))
+        case .planned: parts.append(String(localized: "Planned", bundle: .module))
+        case .done: parts.append(String(localized: "Done", bundle: .module))
         }
         return parts.joined(separator: ", ")
     }

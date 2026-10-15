@@ -10,14 +10,14 @@ public struct SegmentedProgress: View {
     @Environment(\.craftTheme) private var theme
     @ScaledMetric(relativeTo: .body) private var height = Space.sm
     private let segments: [ProgressSegment]
-    private let accessibilityLabel: String
+    private let accessibilityLabel: LocalizedStringKey
 
-    public init(segments: [ProgressSegment], accessibilityLabel: String) {
+    public init(segments: [ProgressSegment], accessibilityLabel: LocalizedStringKey) {
         self.segments = segments
         self.accessibilityLabel = accessibilityLabel
     }
 
-    public init(done: Int, planned: Int = 0, required: Int = 0, goal: Int, accessibilityLabel: String) {
+    public init(done: Int, planned: Int = 0, required: Int = 0, goal: Int, accessibilityLabel: LocalizedStringKey) {
         self.init(
             segments: ProgressSegment.segments(done: done, planned: planned, required: required, goal: goal),
             accessibilityLabel: accessibilityLabel
@@ -34,7 +34,7 @@ public struct SegmentedProgress: View {
         .craftAnimation(.state, value: segments)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(accessibilityLabel))
-        .accessibilityValue(Text(ProgressSegment.accessibilityValue(for: segments)))
+        .accessibilityValue(Text(verbatim: ProgressSegment.accessibilityValue(for: segments)))
     }
 
     @ViewBuilder

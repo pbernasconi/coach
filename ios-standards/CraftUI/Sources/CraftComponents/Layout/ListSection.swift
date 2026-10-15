@@ -49,9 +49,23 @@ public struct ListSection<Header: View, Content: View, Footer: View>: View {
 }
 
 extension ListSection where Header == Text?, Footer == Text? {
-    /// A section with an optional plain title and footer note.
-    public init(_ title: String? = nil, footer: String? = nil, @ViewBuilder content: () -> Content) {
-        self.init(content: content, header: { title.map { Text($0) } }, footer: { footer.map { Text($0) } })
+    /// A section with an optional localized title and footer note.
+    public init(
+        _ title: LocalizedStringKey? = nil,
+        footer: LocalizedStringKey? = nil,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.init(title: title.map { Text($0) }, footer: footer.map { Text($0) }, content: content)
+    }
+
+    /// A section whose title and footer are shown as is (user data).
+    public init(verbatim title: String, footer: String? = nil, @ViewBuilder content: () -> Content) {
+        self.init(title: Text(verbatim: title), footer: footer.map { Text(verbatim: $0) }, content: content)
+    }
+
+    /// A section with ready-made title and footer texts.
+    init(title: Text?, footer: Text?, @ViewBuilder content: () -> Content) {
+        self.init(content: content, header: { title }, footer: { footer })
     }
 }
 
