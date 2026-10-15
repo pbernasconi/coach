@@ -60,10 +60,7 @@ private struct AppShell: View {
         .environment(\.calendar, dependencies.calendar)
         .task {
             await dependencies.prepare()
-            if let opening = options.opening {
-                let sessionID = opening == .workout ? await dependencies.upcomingSessionID() : nil
-                openedRoute = options.initialRoute(upcomingSessionID: sessionID)
-            }
+            openedRoute = await dependencies.openingRoute(for: options)
             if options.opensImportSample {
                 dependencies.importFlow.present(text: ImportSample.note, readsOnOpen: true)
             } else {
@@ -135,9 +132,12 @@ private struct TabRootScreen: View {
             WeekScreen(
                 viewModel: WeekViewModel(
                     sessions: dependencies.sessions,
+                    templates: dependencies.templates,
+                    plans: dependencies.plans,
                     router: router,
                     now: dependencies.now,
-                    calendar: dependencies.calendar
+                    calendar: dependencies.calendar,
+                    unit: dependencies.info.unit
                 )
             )
         case .history:

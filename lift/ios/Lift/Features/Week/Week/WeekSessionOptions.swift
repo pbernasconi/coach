@@ -2,7 +2,7 @@ import KoboComponents
 import SwiftUI
 
 extension View {
-    /// The lift sheet for a planned session: move, push a week or remove. Each choice applies at once and the screen
+    /// The lift sheet for a planned session: move, change the workout, push a week or remove. Each choice applies at once and the screen
     /// offers Undo in a toast, so nothing here asks for confirmation (product rule).
     func weekSessionOptions(target: WeekSessionRef?, send: @escaping (WeekAction) -> Void) -> some View {
         modifier(WeekSessionOptions(target: target, send: send))
@@ -28,6 +28,11 @@ private struct WeekSessionOptions: ViewModifier {
             ) {
                 if let id = shown?.id {
                     ActionSheetItem("Move to another day", systemImage: "calendar") { send(.moveTapped(id)) }
+                    if shown?.canChangeWorkout == true {
+                        ActionSheetItem("Change workout", systemImage: "arrow.triangle.2.circlepath") {
+                            send(.changeWorkoutTapped(id))
+                        }
+                    }
                     ActionSheetItem("Push to next week", systemImage: "arrow.right.to.line") {
                         send(.pushToNextWeekTapped(id))
                     }

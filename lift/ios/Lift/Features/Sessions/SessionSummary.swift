@@ -15,6 +15,8 @@ nonisolated struct SessionSummary: Equatable, Sendable, Identifiable {
     let isDone: Bool
     /// The first line of the session's note ("Short on time, no lunges"), or nil.
     let note: String?
+    /// The template the session was planned from, if any.
+    let templateID: UUID?
 
     init(
         id: UUID,
@@ -24,7 +26,8 @@ nonisolated struct SessionSummary: Equatable, Sendable, Identifiable {
         loggedSets: Int,
         totalSets: Int,
         isDone: Bool,
-        note: String? = nil
+        note: String? = nil,
+        templateID: UUID? = nil
     ) {
         self.id = id
         self.day = day
@@ -34,6 +37,7 @@ nonisolated struct SessionSummary: Equatable, Sendable, Identifiable {
         self.totalSets = totalSets
         self.isDone = isDone
         self.note = note
+        self.templateID = templateID
     }
 
     init(detail: SessionDetail) {
@@ -47,7 +51,8 @@ nonisolated struct SessionSummary: Equatable, Sendable, Identifiable {
             loggedSets: sets.count(where: { $0.status == .done }),
             totalSets: sets.count,
             isDone: detail.session.finishedAt != nil || allHandled,
-            note: SessionText.notePreview(detail.session.note)
+            note: SessionText.notePreview(detail.session.note),
+            templateID: detail.session.templateID
         )
     }
 

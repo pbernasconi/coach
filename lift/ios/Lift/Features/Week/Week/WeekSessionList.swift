@@ -30,13 +30,19 @@ struct WeekSessionList: View {
         case .loading:
             LoadingState()
         case .empty:
-            EmptyState(symbol: "calendar", title: "No workouts", message: "Nothing is planned for this week.")
+            EmptyState(symbol: "calendar", title: "No workouts", message: "Nothing is planned for this week.") {
+                Button("Add workout", systemImage: "plus") { send(.addWorkoutTapped(nil)) }
+                    .buttonStyle(.kobo(.primary))
+            }
         case .failed:
             ErrorState(title: "Workouts could not be loaded")
         case .loaded(let sections):
             ForEach(sections) { section in
                 WeekDaySectionView(section: section, send: send)
                     .id(section.id)
+            }
+            if state.canPlanNextWeek {
+                WeekPlanNextRow(send: send)
             }
         }
     }
@@ -63,6 +69,9 @@ private struct WeekDaySectionView: View {
             ForEach(section.sessions) { session in
                 WeekSessionRow(session: session, send: send)
             }
+            if section.isSelected {
+                ListRow("Add workout", action: { send(.addWorkoutTapped(section.id)) }) { WeekRowMark(kind: .add) }
+            }
         } header: {
             header
         }
@@ -82,5 +91,22 @@ private struct WeekDaySectionView: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(section.isSelected ? .isSelected : [])
+    }
+}
+
+/// "Plan next week": copies the visible week's template days a week forward, with Undo in a toast.
+private struct WeekPlanNextRow: View {
+    let send: (WeekAction) -> Void
+
+    var body: some View {
+        ListSection {
+            ListRow(
+                "Plan next week",
+                subtitle: "Copy this week's template workouts to the same days",
+                action: { send(.planNextWeekTapped) }
+            ) {
+                WeekRowMark(kind: .plan)
+            }
+        }
     }
 }

@@ -18,6 +18,7 @@ struct WeekContent: View {
             .screenCanvas()
             .tabRootHeader { AppHeader("Week") }
             .weekSessionOptions(target: state.optionsTarget, send: send)
+            .weekTemplatePickers(state: state, send: send)
             .koboSheet(
                 item: .action(state.moveTarget) { if $0 == nil { send(.destinationDismissed) } },
                 title: { String(localized: "Move \($0.title)") },

@@ -59,9 +59,10 @@ struct WeekSessionRow: View {
 }
 
 /// The leading mark of a week row: the accent disc with a check once done (a fill, so the bright accent), an open
-/// ring while planned, and a dashed ring on a day with nothing planned. Decorative; the row says the rest.
+/// ring while planned, a dashed ring on a day with nothing planned, and accent glyphs on the Add workout and Plan
+/// next week rows. Decorative; the row says the rest.
 struct WeekRowMark: View {
-    enum Kind { case done, planned, empty }
+    enum Kind { case done, planned, empty, add, plan }
 
     @Environment(\.koboTheme) private var theme
     let kind: Kind
@@ -79,6 +80,12 @@ struct WeekRowMark: View {
             case .empty:
                 Image(systemName: "circle.dashed")
                     .foregroundStyle(theme.palette.textTertiary)
+            case .add:
+                Image(systemName: "plus.circle")
+                    .foregroundStyle(theme.palette.accentText)
+            case .plan:
+                Image(systemName: "calendar.badge.plus")
+                    .foregroundStyle(theme.palette.accentText)
             }
         }
         .font(theme.font(.body))
