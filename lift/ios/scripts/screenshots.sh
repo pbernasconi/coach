@@ -22,7 +22,7 @@ trap 'rm -rf "$TMP"' EXIT
 
 xcrun simctl boot "$UDID" 2>/dev/null || true
 xcrun simctl bootstatus "$UDID" -b >/dev/null
-xcrun simctl install "$UDID" "$APP"
+[ "${SKIP_INSTALL:-0}" = 1 ] || xcrun simctl install "$UDID" "$APP"
 xcrun simctl status_bar "$UDID" override --time 9:41 --batteryState charged --batteryLevel 100 \
   --cellularBars 4 --wifiBars 3 || true
 
