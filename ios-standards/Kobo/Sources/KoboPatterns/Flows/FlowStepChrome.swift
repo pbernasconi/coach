@@ -3,7 +3,7 @@ import KoboTokens
 import SwiftUI
 
 /// What every flow step shares around its scrolling body: the canvas, the measured height for the banner cap, the
-/// pinned material footer, the quiet bar title and the exit toolbar.
+/// pinned material footer, the inline bar title and the exit toolbar.
 struct FlowStepChrome: ViewModifier {
     @Environment(\.koboTheme) private var theme
     @State private var stepHeight: CGFloat = 0

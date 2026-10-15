@@ -4,7 +4,7 @@ import SwiftUI
 
 /// One step of a multi-step task: a step heading (title and subtitle) over scrolling content, and a pinned footer with
 /// the primary action (enabled and loading states), an optional secondary action, the "why is this disabled" hint and
-/// a banner. The bar shows the flow's quiet title, the ✕ with its leave confirmation (`FlowExitAction`) where the
+/// a banner. The bar shows the flow's inline title, the ✕ with its leave confirmation (`FlowExitAction`) where the
 /// step position shows it, and the back control. Put it inside the app's `NavigationStack`; push later steps.
 ///
 ///     FlowStep("Paste your notes", subtitle: "Copy a task list and paste it here.", flowTitle: "Import notes",
