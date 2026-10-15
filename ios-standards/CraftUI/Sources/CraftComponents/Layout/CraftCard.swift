@@ -1,0 +1,102 @@
+import CraftTokens
+import SwiftUI
+
+public extension View {
+    /// Places the view on a rounded surface card: surface fill, continuous corners and a subtle shadow
+    /// in light mode only (dark mode separates by tone).
+    ///
+    ///     VStack { … }.craftCard()
+    func craftCard(padding: CGFloat = Space.lg) -> some View {
+        modifier(CraftCardModifier(padding: padding))
+    }
+}
+
+private struct CraftCardModifier: ViewModifier {
+    @Environment(\.craftTheme) private var theme
+    @Environment(\.colorScheme) private var colorScheme
+    let padding: CGFloat
+
+    func body(content: Content) -> some View {
+        content
+            .padding(padding)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(theme.palette.surface, in: RoundedRectangle(cornerRadius: Radius.lg, style: .continuous))
+            .shadow(color: shadowColor, radius: Space.sm, y: Space.xxs)
+    }
+
+    private var shadowColor: Color {
+        colorScheme == .dark ? .clear : theme.palette.textPrimary.opacity(CardShadow.opacity)
+    }
+}
+
+/// The light-mode card shadow strength (a maths constant, not a colour).
+enum CardShadow {
+    static let opacity: Double = 0.06
+}
+
+/// A titled card: an optional header above a `.craftCard()` that holds the content.
+///
+///     CardSection("This week") { Text("3 workouts") }
+public struct CardSection<Header: View, Content: View>: View {
+    @Environment(\.craftTheme) private var theme
+    private let padding: CGFloat
+    private let header: Header
+    private let content: Content
+
+    /// A card with a custom header slot.
+    public init(
+        padding: CGFloat = Space.lg,
+        @ViewBuilder content: () -> Content,
+        @ViewBuilder header: () -> Header
+    ) {
+        self.padding = padding
+        self.content = content()
+        self.header = header()
+    }
+
+    public var body: some View {
+        VStack(alignment: .leading, spacing: Space.sm) {
+            header
+                .font(theme.font(.headline))
+                .foregroundStyle(theme.palette.textPrimary)
+                .accessibilityAddTraits(.isHeader)
+            VStack(alignment: .leading, spacing: Space.md) { content }
+                .craftCard(padding: padding)
+        }
+    }
+}
+
+public extension CardSection where Header == Text? {
+    /// A card with an optional plain title.
+    init(_ title: String? = nil, padding: CGFloat = Space.lg, @ViewBuilder content: () -> Content) {
+        self.init(padding: padding, content: content) { title.map { Text($0) } }
+    }
+}
+
+#if DEBUG
+private struct CardPreview: View {
+    var body: some View {
+        ScrollView {
+            VStack(spacing: Space.xl) {
+                Text("A plain card with some text that wraps onto a second line.")
+                    .craftCard()
+                CardSection("This week") {
+                    Text("3 workouts")
+                    Text("2 h 40 min")
+                }
+                CardSection(padding: Space.md) {
+                    Text("Compact padding")
+                } header: {
+                    Label("Custom header", systemImage: "star")
+                }
+            }
+            .padding(Space.gutter)
+        }
+        .background(Theme.system.palette.canvas)
+    }
+}
+
+#Preview("Light") { CardPreview() }
+#Preview("Dark") { CardPreview().preferredColorScheme(.dark) }
+#Preview("AX3") { CardPreview().dynamicTypeSize(.accessibility3) }
+#endif
