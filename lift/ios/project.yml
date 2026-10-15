@@ -26,8 +26,8 @@ settings:
     # The coach web app's origin for sync (https://…), copied into Info.plist as LiftSyncBaseURL. Empty keeps sync
     # off; the TestFlight job can pass it (xcodebuild LIFT_SYNC_BASE_URL=https://…). Demo data never syncs.
     LIFT_SYNC_BASE_URL: ""
-    # The App Group the app shares with LiftWidgets (the rest Live Activity's +30s and Skip). Each target's
-    # entitlements and Info.plist (LiftAppGroup) take it from here.
+    # The App Group the app shares with LiftWidgets (the rest Live Activity's +30s and Skip) and LiftShare (the shared
+    # note inbox). Each target's entitlements and Info.plist (LiftAppGroup) take it from here.
     LIFT_APP_GROUP: group.$(LIFT_BUNDLE_ID)
 targets:
   Lift:
@@ -45,6 +45,7 @@ targets:
       - package: Kobo
         products: [KoboTokens, KoboComponents, KoboPatterns]
       - target: LiftWidgets                           # embedded in PlugIns/; draws the rest Live Activity
+      - target: LiftShare                             # embedded in PlugIns/; Share a note from Apple Notes
     entitlements:
       path: Lift/Lift.entitlements
       properties:
@@ -59,6 +60,10 @@ targets:
         ITSAppUsesNonExemptEncryption: false
         LiftSyncBaseURL: $(LIFT_SYNC_BASE_URL)
         LiftAppGroup: $(LIFT_APP_GROUP)
+        # lift://import opens Import from Notes (AppLink.swift).
+        CFBundleURLTypes:
+          - CFBundleURLName: $(LIFT_BUNDLE_ID)
+            CFBundleURLSchemes: [lift]
   LiftWidgets:
     type: app-extension
     platform: iOS
@@ -85,6 +90,34 @@ targets:
         CFBundleDisplayName: Lift
         LiftAppGroup: $(LIFT_APP_GROUP)
         NSExtension: { NSExtensionPointIdentifier: com.apple.widgetkit-extension }
+  LiftShare:
+    type: app-extension
+    platform: iOS
+    sources:
+      - LiftShare
+      # Compiled by both the app and the extension: the App Group, the note inbox and the lift://import link.
+      - Lift/App/AppGroup.swift
+      - Lift/App/AppLink.swift
+      - Lift/Features/Import/NoteInbox.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(LIFT_BUNDLE_ID).share   # must start with the app's bundle id
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: $(inherited) LIFT_EXTENSION
+    entitlements:
+      path: LiftShare/LiftShare.entitlements
+      properties:
+        com.apple.security.application-groups: [$(LIFT_APP_GROUP)]
+    info:
+      path: LiftShare/Info.plist
+      properties:
+        CFBundleDisplayName: Lift
+        LiftAppGroup: $(LIFT_APP_GROUP)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.share-services
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShareViewController
+          NSExtensionAttributes:
+            NSExtensionActivationRule:
+              NSExtensionActivationSupportsText: true
   LiftTests:
     type: bundle.unit-test
     platform: iOS
