@@ -18,9 +18,9 @@ nonisolated enum CodeInputLogic {
         let kept: [Character] =
             switch mode {
             case .oneTimeCode, .pin:
-                text.filter(NumberGrouping.isDigit).map { $0 }
+                Array(text.filter(NumberGrouping.isDigit))
             case .alphanumeric:
-                text.uppercased().filter { $0.isASCII && ($0.isLetter || $0.isNumber) }.map { $0 }
+                Array(text.uppercased().filter { $0.isASCII && ($0.isLetter || $0.isNumber) })
             }
         return String(kept.prefix(max(length, 0)))
     }

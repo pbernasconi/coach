@@ -60,7 +60,9 @@ struct KoboCalendarDay: View {
     private var numberColor: Color {
         if isSelected { return theme.palette.onAccent }
         if isDisabled || !isInMonth { return theme.palette.textTertiary }
-        if case .done(let tone) = marker { return tone == .accent ? theme.palette.accentText : theme.palette.status(tone).ink }
+        if case .done(let tone) = marker {
+            return tone == .accent ? theme.palette.accentText : theme.palette.status(tone).ink
+        }
         return isToday ? theme.palette.accentText : theme.palette.textPrimary
     }
 

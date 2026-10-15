@@ -76,7 +76,7 @@ public final class ToastCenter {
 
     private func startTimer(for id: Toast.ID) {
         guard let remaining = countdown?.remaining else { return }
-        ran = Self.stopwatch(clock)
+        ran = clock.stopwatch()
         let clock = clock
         timer = Task { [weak self] in
             do {
@@ -99,10 +99,12 @@ public final class ToastCenter {
         countdown = nil
         current = nil
     }
+}
 
-    /// Starts a stopwatch on `clock`: the closure reads the time since the start.
-    private static func stopwatch<C: Clock<Duration>>(_ clock: C) -> () -> Duration {
-        let start = clock.now
-        return { start.duration(to: clock.now) }
+extension Clock where Duration == Swift.Duration {
+    /// Starts a stopwatch on this clock: the closure reads the time since the start.
+    fileprivate func stopwatch() -> () -> Swift.Duration {
+        let start = now
+        return { start.duration(to: now) }
     }
 }

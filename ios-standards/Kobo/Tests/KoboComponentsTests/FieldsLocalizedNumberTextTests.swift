@@ -18,26 +18,36 @@ import Testing
         #expect(Self.separators("fr_FR").decimal == ",")
     }
 
+    /// One pasted text, the region's marks and the number it means.
+    struct Paste: Sendable, CustomTestStringConvertible {
+        let text: String
+        let decimal: Character
+        let grouping: Character
+        let number: Double
+
+        var testDescription: String { text }
+    }
+
     @Test(arguments: [
-        ("12,50", ",", ".", 12.5),
-        ("1.234,56", ",", ".", 1234.56),
-        ("1,234.56", ".", ",", 1234.56),
-        ("12,5", ".", ",", 12.5),
-        ("12.50", ".", ",", 12.5),
-        ("$1,234.56", ".", ",", 1234.56),
-        ("1\u{a0}234,56", ",", "\u{202f}", 1234.56),
-        ("1\u{202f}234,56", ",", "\u{202f}", 1234.56),
-        ("12,345", ".", ",", 12345),
-        ("1,234,567", ".", ",", 1_234_567),
-        ("$1,234.56", ",", ".", 1234.56),
-        ("1.234", ",", ".", 1234),
-        ("12,5", ",", ".", 12.5),
-        ("1\u{2019}234.50", ".", "\u{2019}", 1234.5),
-    ] as [(String, Character, Character, Double)])
-    func aPasteReadsInTheRegionsStyle(text: String, decimal: Character, grouping: Character, number: Double) {
-        let separators = LocalizedNumberText.Separators(decimal: decimal, grouping: grouping)
-        let typed = LocalizedNumberText.applied(previous: "", typed: text, separators: separators, maxDecimals: 2)
-        #expect(NumberEntryLogic.number(NumberEntryLogic.sanitize(typed, rules: Self.money).value) == number)
+        Paste(text: "12,50", decimal: ",", grouping: ".", number: 12.5),
+        Paste(text: "1.234,56", decimal: ",", grouping: ".", number: 1234.56),
+        Paste(text: "1,234.56", decimal: ".", grouping: ",", number: 1234.56),
+        Paste(text: "12,5", decimal: ".", grouping: ",", number: 12.5),
+        Paste(text: "12.50", decimal: ".", grouping: ",", number: 12.5),
+        Paste(text: "$1,234.56", decimal: ".", grouping: ",", number: 1234.56),
+        Paste(text: "1\u{a0}234,56", decimal: ",", grouping: "\u{202f}", number: 1234.56),
+        Paste(text: "1\u{202f}234,56", decimal: ",", grouping: "\u{202f}", number: 1234.56),
+        Paste(text: "12,345", decimal: ".", grouping: ",", number: 12345),
+        Paste(text: "1,234,567", decimal: ".", grouping: ",", number: 1_234_567),
+        Paste(text: "$1,234.56", decimal: ",", grouping: ".", number: 1234.56),
+        Paste(text: "1.234", decimal: ",", grouping: ".", number: 1234),
+        Paste(text: "12,5", decimal: ",", grouping: ".", number: 12.5),
+        Paste(text: "1\u{2019}234.50", decimal: ".", grouping: "\u{2019}", number: 1234.5),
+    ])
+    func aPasteReadsInTheRegionsStyle(paste: Paste) {
+        let separators = LocalizedNumberText.Separators(decimal: paste.decimal, grouping: paste.grouping)
+        let typed = LocalizedNumberText.applied(previous: "", typed: paste.text, separators: separators, maxDecimals: 2)
+        #expect(NumberEntryLogic.number(NumberEntryLogic.sanitize(typed, rules: Self.money).value) == paste.number)
     }
 
     @Test(arguments: [
@@ -70,7 +80,9 @@ import Testing
 
     @Test func theFieldGroupsAsTheUserTypes() {
         var field = NumberEntryText(number: nil, rules: Self.money, separators: Self.separators("en_US"))
-        for (typed, shown) in [("1", "1"), ("12", "12"), ("1234", "1,234"), ("1,234.", "1,234."), ("1,234.5", "1,234.5")] {
+        for (typed, shown) in [
+            ("1", "1"), ("12", "12"), ("1234", "1,234"), ("1,234.", "1,234."), ("1,234.5", "1,234.5"),
+        ] {
             field.text = typed
             _ = field.normalize()
             #expect(field.text == shown)
@@ -81,7 +93,9 @@ import Testing
         field.text = "1,23"
         _ = field.normalize()
         #expect(field.text == "123")
-        #expect(NumberEntryText(number: 1250.05, rules: Self.money, separators: Self.separators("en_US")).text == "1,250.05")
+        #expect(
+            NumberEntryText(number: 1250.05, rules: Self.money, separators: Self.separators("en_US")).text == "1,250.05"
+        )
         #expect(NumberEntryText(number: 2, rules: Self.money, separators: Self.separators("en_US")).text == "2")
     }
 

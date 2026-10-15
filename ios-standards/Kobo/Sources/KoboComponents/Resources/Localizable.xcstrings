@@ -25,6 +25,18 @@
         }
       }
     },
+    "%@ copied" : {
+      "comment" : "Copy confirmation naming the value (\"Setup key copied\").",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ copied"
+          }
+        }
+      }
+    },
     "%@ new" : {
       "comment" : "CountBadge spoken count, the badge text then \"new\" (\"3 new\", \"99+ new\").",
       "extractionState" : "manual",
@@ -33,6 +45,42 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ new"
+          }
+        }
+      }
+    },
+    "%@, %@" : {
+      "comment" : "Field spoken value: the value, then its error message (\"135 lb, Too heavy\").",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, %@"
+          }
+        }
+      }
+    },
+    "%lld characters left" : {
+      "comment" : "Character counter near a long limit: characters still allowed (\"20 characters left\").",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld character left"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld characters left"
+                }
+              }
+            }
           }
         }
       }
@@ -49,6 +97,18 @@
         }
       }
     },
+    "%lld of %lld entered" : {
+      "comment" : "CodeInput spoken value of a PIN: characters entered of the code length (\"3 of 6 entered\").",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld of %lld entered"
+          }
+        }
+      }
+    },
     "%lld of %lld steps done" : {
       "comment" : "SetupChecklistCard progress bar accessibility label (\"1 of 3 steps done\").",
       "extractionState" : "manual",
@@ -61,6 +121,18 @@
         }
       }
     },
+    "%lld/%lld" : {
+      "comment" : "Character counter under a text area: characters typed of the limit (\"12/40\").",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld/%lld"
+          }
+        }
+      }
+    },
     "About %@" : {
       "comment" : "InfoButton accessibility label naming the term it explains (\"About Training load\").",
       "extractionState" : "manual",
@@ -69,6 +141,42 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "About %@"
+          }
+        }
+      }
+    },
+    "At least %lld characters" : {
+      "comment" : "Password rule checklist line (minimum length).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "At least %lld characters"
+          }
+        }
+      }
+    },
+    "At least one number" : {
+      "comment" : "Password rule checklist line (a digit).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "At least one number"
+          }
+        }
+      }
+    },
+    "At least one symbol" : {
+      "comment" : "Password rule checklist line (a symbol).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "At least one symbol"
           }
         }
       }
@@ -109,6 +217,66 @@
         }
       }
     },
+    "Cancel search" : {
+      "comment" : "Accessibility label of the round cancel button beside a search field.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel search"
+          }
+        }
+      }
+    },
+    "Character limit reached" : {
+      "comment" : "VoiceOver announcement when a text area reaches its character limit.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Character limit reached"
+          }
+        }
+      }
+    },
+    "Clear %@" : {
+      "comment" : "Chip VoiceOver action that clears an active filter chip (\"Clear Barbell\").",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear %@"
+          }
+        }
+      }
+    },
+    "Clear search" : {
+      "comment" : "Accessibility label of the clear button inside a search field.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear search"
+          }
+        }
+      }
+    },
+    "Clear text" : {
+      "comment" : "Accessibility label of the clear button inside a text field.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear text"
+          }
+        }
+      }
+    },
     "Close" : {
       "comment" : "Accessibility label of the close button (CloseButton, SheetHeader).",
       "extractionState" : "manual",
@@ -133,6 +301,54 @@
         }
       }
     },
+    "Copied" : {
+      "comment" : "Copy confirmation with no named value.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copied"
+          }
+        }
+      }
+    },
+    "Copy" : {
+      "comment" : "Accessibility action and label of a copy control with no named value.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy"
+          }
+        }
+      }
+    },
+    "Copy %@" : {
+      "comment" : "Accessibility action and label of a copy control (\"Copy setup key\").",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy %@"
+          }
+        }
+      }
+    },
+    "Decimal point" : {
+      "comment" : "Accessibility label of the decimal key on the NumberEntry keypad.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Decimal point"
+          }
+        }
+      }
+    },
     "Decrease" : {
       "comment" : "StepperField minus button accessibility label.",
       "extractionState" : "manual",
@@ -141,6 +357,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Decrease"
+          }
+        }
+      }
+    },
+    "Delete" : {
+      "comment" : "Accessibility label of the delete key on the NumberEntry keypad.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete"
           }
         }
       }
@@ -205,6 +433,30 @@
         }
       }
     },
+    "Earliest: %@" : {
+      "comment" : "DateField quick pick for the earliest allowed day (\"Earliest: Sep 3\").",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Earliest: %@"
+          }
+        }
+      }
+    },
+    "Enter a real date" : {
+      "comment" : "DateField error for a typed date that does not exist (31 April).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter a real date"
+          }
+        }
+      }
+    },
     "Expanded" : {
       "comment" : "Collapsible accessibility value when the content is shown.",
       "extractionState" : "manual",
@@ -213,6 +465,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Expanded"
+          }
+        }
+      }
+    },
+    "Format: %@" : {
+      "comment" : "DateField helper line before a complete date: the typed shape (\"Format: MM/DD/YYYY\").",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Format: %@"
           }
         }
       }
@@ -249,6 +513,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hide"
+          }
+        }
+      }
+    },
+    "Hide password" : {
+      "comment" : "Accessibility label of the reveal button of a password field while the password shows.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide password"
+          }
+        }
+      }
+    },
+    "Hide value" : {
+      "comment" : "Accessibility label of the reveal button of a masked CopyableValue while it shows.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide value"
           }
         }
       }
@@ -325,6 +613,18 @@
         }
       }
     },
+    "Met" : {
+      "comment" : "Accessibility value of a password rule the password meets.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Met"
+          }
+        }
+      }
+    },
     "More options" : {
       "comment" : "Accessibility label of the SetupChecklistCard \"…\" menu.",
       "extractionState" : "manual",
@@ -333,6 +633,42 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "More options"
+          }
+        }
+      }
+    },
+    "Next field" : {
+      "comment" : "Keyboard accessory bar button that moves focus to the next field.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next field"
+          }
+        }
+      }
+    },
+    "Next month" : {
+      "comment" : "Calendar button that pages to the next month.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next month"
+          }
+        }
+      }
+    },
+    "No date selected" : {
+      "comment" : "Accessibility value of the calendar button of an empty DateField.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No date selected"
           }
         }
       }
@@ -361,14 +697,14 @@
         }
       }
     },
-    "of %@" : {
-      "comment" : "CountdownRing total under the time left (\"of 3:00\").",
+    "Not met" : {
+      "comment" : "Accessibility value of a password rule the password does not meet yet.",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "of %@"
+            "value" : "Not met"
           }
         }
       }
@@ -393,6 +729,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "On"
+          }
+        }
+      }
+    },
+    "Open calendar" : {
+      "comment" : "Accessibility label of the calendar button inside a DateField.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open calendar"
           }
         }
       }
@@ -433,6 +781,30 @@
         }
       }
     },
+    "Previous field" : {
+      "comment" : "Keyboard accessory bar button that moves focus to the previous field.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previous field"
+          }
+        }
+      }
+    },
+    "Previous month" : {
+      "comment" : "Calendar button that pages to the previous month.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previous month"
+          }
+        }
+      }
+    },
     "Profile" : {
       "comment" : "HeaderProfileButton title and label when there is no name.",
       "extractionState" : "manual",
@@ -457,6 +829,18 @@
         }
       }
     },
+    "Search" : {
+      "comment" : "Default prompt of a search field.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search"
+          }
+        }
+      }
+    },
     "Show" : {
       "comment" : "RevealableValue button label that reveals the value.",
       "extractionState" : "manual",
@@ -465,6 +849,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Show"
+          }
+        }
+      }
+    },
+    "Show password" : {
+      "comment" : "Accessibility label of the reveal button of a password field while the password is hidden.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show password"
+          }
+        }
+      }
+    },
+    "Show value" : {
+      "comment" : "Accessibility label of the reveal button of a masked CopyableValue while it is hidden.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show value"
           }
         }
       }
@@ -489,6 +897,42 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Still working on it…"
+          }
+        }
+      }
+    },
+    "That date is too early" : {
+      "comment" : "DateField error for a typed date before the first allowed day.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That date is too early"
+          }
+        }
+      }
+    },
+    "That date is too late" : {
+      "comment" : "DateField error for a typed date after the last allowed day.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That date is too late"
+          }
+        }
+      }
+    },
+    "That date isn't available" : {
+      "comment" : "DateField error for a typed date the caller turned off.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That date isn't available"
           }
         }
       }
@@ -529,6 +973,18 @@
         }
       }
     },
+    "Tomorrow" : {
+      "comment" : "DateField quick pick for tomorrow.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tomorrow"
+          }
+        }
+      }
+    },
     "Try again" : {
       "comment" : "ErrorState retry button title when the caller gives none.",
       "extractionState" : "manual",
@@ -541,6 +997,18 @@
         }
       }
     },
+    "Upper and lowercase letters" : {
+      "comment" : "Password rule checklist line (mixed case).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upper and lowercase letters"
+          }
+        }
+      }
+    },
     "Your edits will be lost." : {
       "comment" : "Message of the discard-changes confirmation.",
       "extractionState" : "manual",
@@ -549,6 +1017,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Your edits will be lost."
+          }
+        }
+      }
+    },
+    "of %@" : {
+      "comment" : "CountdownRing total under the time left (\"of 3:00\").",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "of %@"
           }
         }
       }

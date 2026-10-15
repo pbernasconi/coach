@@ -41,15 +41,17 @@ import Testing
         #expect(NumberEntryLogic.sanitize("123", rules: reps) == .init(value: "12", rejected: true))
     }
 
-    @Test(arguments: [
-        ("", nil),
-        ("0.", 0.0),
-        ("12", 12.0),
-        ("12.5", 12.5),
-        ("12.34", 12.34),
-        ("0.05", 0.05),
-        ("999999999.99", 999_999_999.99),
-    ] as [(String, Double?)])
+    @Test(
+        arguments: [
+            ("", nil),
+            ("0.", 0.0),
+            ("12", 12.0),
+            ("12.5", 12.5),
+            ("12.34", 12.34),
+            ("0.05", 0.05),
+            ("999999999.99", 999_999_999.99),
+        ] as [(String, Double?)]
+    )
     func canonicalTextReadsAsANumber(value: String, number: Double?) {
         #expect(NumberEntryLogic.number(value) == number)
     }
@@ -106,8 +108,12 @@ import Testing
             value = NumberEntryLogic.pressing(key, on: value, rules: Self.weight).value
         }
         #expect(value == "102.5")
-        #expect(NumberEntryLogic.pressing(.decimal, on: value, rules: Self.weight) == .init(value: value, rejected: true))
-        #expect(NumberEntryLogic.pressing(.digit(7), on: value, rules: Self.weight) == .init(value: "102.5", rejected: true))
+        #expect(
+            NumberEntryLogic.pressing(.decimal, on: value, rules: Self.weight) == .init(value: value, rejected: true)
+        )
+        #expect(
+            NumberEntryLogic.pressing(.digit(7), on: value, rules: Self.weight) == .init(value: "102.5", rejected: true)
+        )
         #expect(NumberEntryLogic.pressing(.delete, on: value, rules: Self.weight).value == "102.")
         #expect(NumberEntryLogic.pressing(.delete, on: "", rules: Self.weight) == .init(value: "", rejected: true))
         #expect(NumberEntryLogic.pressing(.decimal, on: "", rules: Self.weight).value == "0.")
@@ -126,6 +132,8 @@ import Testing
         #expect(NumberEntrySizing.fittedScale(contentWidth: 400, availableWidth: 0) == 1)
         #expect(NumberEntrySizing.fittedScale(contentWidth: 0, availableWidth: 343) == 1)
         #expect(NumberEntrySizing.fittedScale(contentWidth: 686, availableWidth: 343) == 0.5)
-        #expect(NumberEntrySizing.fittedScale(contentWidth: 10_000, availableWidth: 343) == NumberEntrySizing.minimumScale)
+        #expect(
+            NumberEntrySizing.fittedScale(contentWidth: 10_000, availableWidth: 343) == NumberEntrySizing.minimumScale
+        )
     }
 }

@@ -51,10 +51,10 @@ import Testing
     // MARK: Monogram
 
     @Test(arguments: [
-        ("Ada Lovelace", "AL"),
-        ("ada", "A"),
-        ("Grace Brewster Murray Hopper", "GH"),
-        ("Jean-Luc Picard", "JP"),
+        ("Maya Chen", "MC"),
+        ("maya", "M"),
+        ("Omar Ibrahim Nour Haddad", "OH"),
+        ("Jean-Luc Moreau", "JM"),
         ("  ", ""),
         ("", ""),
         ("& Co", "C"),
@@ -66,13 +66,18 @@ import Testing
     }
 
     @Test func monogramToneIsStableAndNeverDanger() {
-        #expect(Monogram.tone(for: "Ada Lovelace") == Monogram.tone(for: "  ada lovelace "))
-        for name in ["Ada", "Grace", "Alan", "Katherine", "Margaret", ""] {
+        #expect(Monogram.tone(for: "Maya Chen") == Monogram.tone(for: "  maya chen "))
+        for name in ["Maya", "Omar", "Sam", "Élodie", "Priya", ""] {
             #expect(Monogram.tone(for: name) != .danger)
         }
     }
 
     #if canImport(SwiftUI)  // the type lives in a SwiftUI file
+        @Test func largeEmptyStateArtShrinksWhenSpaceIsTight() {
+            #expect(EmptyStateArt.largeSide(compact: true) < EmptyStateArt.largeSide(compact: false))
+            #expect(EmptyStateArt.largeSide(compact: true) > Size.thumbnail)
+        }
+
         @Test func avatarDiametersGrow() {
             let sizes = Avatar.Diameter.allCases.map(\.points)
             #expect(sizes == sizes.sorted())

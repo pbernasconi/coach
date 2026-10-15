@@ -42,12 +42,12 @@ public struct KoboCalendar: View {
 
     private var grid: MonthGrid { MonthGrid(calendar: calendar) }
     private var upper: Date { grid.upperBound(maxDate: bounds.maxDate, today: today) }
-    private var month: Date {
+    private var currentMonth: Date {
         shownMonth ?? grid.clampMonth(selection ?? today, minDate: bounds.minDate, maxDate: upper)
     }
 
     public var body: some View {
-        let month = month
+        let month = currentMonth
         let markers = markerLookup
         VStack(spacing: Space.sm) {
             header(month)
@@ -78,7 +78,10 @@ public struct KoboCalendar: View {
     }
 
     private var markerLookup: [Date: DayMarker] {
-        Dictionary(markers.map { (calendar.startOfDay(for: $0.date), $0.marker) }, uniquingKeysWith: { _, last in last })
+        Dictionary(
+            markers.map { (calendar.startOfDay(for: $0.date), $0.marker) },
+            uniquingKeysWith: { _, last in last }
+        )
     }
 
     private func header(_ month: Date) -> some View {
