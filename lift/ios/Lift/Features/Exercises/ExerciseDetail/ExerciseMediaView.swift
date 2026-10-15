@@ -3,37 +3,33 @@ import KoboTokens
 import LiftCore
 import SwiftUI
 
-/// The top of the exercise detail screen: the exercise's animation (its first frame, still, under Reduce Motion),
-/// or a placeholder when the exercise has no catalog media.
+/// The overview at the top of the exercise detail screen: the animation (its first frame, still, under Reduce Motion)
+/// or a placeholder when the exercise has no catalog media, beside its muscles and equipment.
 struct ExerciseMediaView: View {
-    @Environment(\.koboTheme) private var theme
-    let name: String
+    let item: ExerciseDetailItem
     let media: ExerciseMedia?
     /// The loaded animation behind `media`.
     let animation: MediaImage
 
     var body: some View {
-        Group {
+        ExerciseOverview {
             if media != nil {
-                ExerciseMediaHero(animation: animation, name: name)
+                ExerciseMediaHero(animation: animation, name: item.name)
             } else {
-                placeholder
-                    .padding(.vertical, Space.xxl)
+                ExerciseMediaPlaceholder()
+            }
+        } facts: {
+            if !item.primary.isEmpty {
+                ExerciseFact("Primary") { MuscleTags(muscles: item.primary, style: .tonal) }
+            }
+            if !item.secondary.isEmpty {
+                ExerciseFact("Secondary") { MuscleTags(muscles: item.secondary, style: .outline) }
+            }
+            if !item.equipment.isEmpty {
+                ExerciseFact("Equipment") {
+                    KoboTag(verbatim: item.equipment, tone: .neutral, systemImage: "dumbbell.fill")
+                }
             }
         }
-        .koboCard()
-    }
-
-    private var placeholder: some View {
-        VStack(spacing: Space.sm) {
-            Image(systemName: "figure.strengthtraining.traditional")
-                .font(theme.font(.largeTitle))
-                .foregroundStyle(theme.palette.textTertiary)
-                .accessibilityHidden(true)
-            Text("No illustration yet")
-                .font(theme.font(.subheadline))
-                .foregroundStyle(theme.palette.textSecondary)
-        }
-        .frame(maxWidth: .infinity)
     }
 }
