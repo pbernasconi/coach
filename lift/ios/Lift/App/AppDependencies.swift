@@ -24,7 +24,15 @@ final class AppDependencies {
     /// The bundled exercise catalog and its media.
     let catalog: any ExerciseCatalogProviding
     let calendar: Calendar
-    let info: AppInfo
+    /// The install's facts, with the weight unit as the person prefers it now.
+    var info: AppInfo {
+        var info = baseInfo
+        info.unit = units.unit
+        return info
+    }
+    /// The preferred weight unit; Settings changes it, and new sessions and templates read it when they are made.
+    let units: any UnitPreference
+    private let baseInfo: AppInfo
     /// The clipboard, for the import flow's Paste button.
     let pasteboard: any TextPasteboard
     /// The local changes waiting to be pushed; the sync coordinator watches its count.
@@ -53,6 +61,7 @@ final class AppDependencies {
         catalog: any ExerciseCatalogProviding,
         calendar: Calendar,
         info: AppInfo,
+        units: any UnitPreference,
         pasteboard: any TextPasteboard,
         outbox: any OutboxRepository,
         sync: any Syncing,
@@ -70,7 +79,8 @@ final class AppDependencies {
         self.mediaLoader = mediaLoader
         self.catalog = catalog
         self.calendar = calendar
-        self.info = info
+        self.baseInfo = info
+        self.units = units
         self.pasteboard = pasteboard
         self.outbox = outbox
         self.sync = sync

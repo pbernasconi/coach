@@ -14,6 +14,7 @@ import Testing
     let router = RecordingNavigator()
     let now = ManualNow()
     let health = RecordingHealthRecorder(status: .notSaved)
+    let units = InMemoryUnitSettings(.kg)
 
     func makeViewModel(_ dataSource: AppInfo.DataSource = .device, unit: WeightUnit = .kg) -> SettingsViewModel {
         let now = now
@@ -21,6 +22,7 @@ import Testing
             info: AppInfo(version: "0.1.0", build: "7", unit: unit, dataSource: dataSource),
             sync: sync,
             health: health,
+            units: units,
             now: { now() },
             router: router
         )
@@ -98,6 +100,7 @@ import Testing
 
         #expect(task == nil)
         #expect(vm.state.unit == .lb)
+        #expect(units.unit == .lb)  // saved, so new sessions and templates use it
     }
 
     @Test func acknowledgementsTappedOpensTheList() {

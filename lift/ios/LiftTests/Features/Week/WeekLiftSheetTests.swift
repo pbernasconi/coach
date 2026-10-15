@@ -38,7 +38,7 @@ import Testing
             router: router,
             now: SessionBuilder.now,
             calendar: calendar,
-            unit: .kg
+            units: InMemoryUnitSettings(.kg)
         )
         await vm.run()
         return (vm, repository)

@@ -18,6 +18,7 @@ nonisolated struct AppInfo: Equatable, Sendable {
 
     var version: String
     var build: String
+    /// The preferred weight unit when it was read (`AppDependencies.info` reads it fresh each time).
     var unit: WeightUnit
     var dataSource: DataSource
 }

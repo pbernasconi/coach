@@ -150,7 +150,7 @@ private struct TabRootScreen: View {
                     router: router,
                     now: dependencies.now,
                     calendar: dependencies.calendar,
-                    unit: dependencies.info.unit
+                    units: dependencies.units
                 )
             )
         case .history:
@@ -179,6 +179,7 @@ private struct TabRootScreen: View {
                     info: dependencies.info,
                     sync: dependencies.sync,
                     health: dependencies.health,
+                    units: dependencies.units,
                     now: dependencies.now,
                     router: router
                 )

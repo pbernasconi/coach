@@ -19,18 +19,23 @@ struct WeekPlanEdits {
     let sessions: any SessionRepository
     let plans: any WorkoutPlanRepository
     let templates: any TemplateRepository
-    /// The unit new sessions are logged in.
-    let unit: WeightUnit
+    /// The preferred unit, read when a session is made: new sessions are logged in it.
+    let units: any UnitPreference
     let days: DayCalendar
 
     func add(_ template: WeekTemplateChoice, on day: LocalDay) async throws -> WeekNotice {
-        _ = try await plans.createSession(from: template.id, on: day, unit: unit)
+        _ = try await plans.createSession(from: template.id, on: day, unit: units.unit)
         return WeekNotice(String(localized: "Added \(template.name) on \(days.shortTitle(of: day))"))
     }
 
     /// An empty session named "Workout" on `day`; returns its id.
     func addBlank(on day: LocalDay) async throws -> UUID {
-        try await sessions.createSession(on: day, title: String(localized: "Workout"), unit: unit, templateID: nil).id
+        try await sessions.createSession(
+            on: day,
+            title: String(localized: "Workout"),
+            unit: units.unit,
+            templateID: nil
+        ).id
     }
 
     /// Swaps the session's exercises; a session with a logged set keeps them and says so.

@@ -29,7 +29,7 @@ final class WeekViewModel {
         router: any Navigating,
         now: @escaping @Sendable () -> Date,
         calendar: Calendar,
-        unit: WeightUnit
+        units: any UnitPreference
     ) {
         self.sessions = sessions
         self.templates = templates
@@ -37,7 +37,7 @@ final class WeekViewModel {
         self.now = now
         let days = DayCalendar(calendar: calendar)
         self.days = days
-        self.edits = WeekPlanEdits(sessions: sessions, plans: plans, templates: templates, unit: unit, days: days)
+        self.edits = WeekPlanEdits(sessions: sessions, plans: plans, templates: templates, units: units, days: days)
     }
 
     /// Observes every session in the strip's range and the templates; started by the Screen's `.task` (SCR-4).

@@ -37,6 +37,8 @@ import Testing
         )
     }
 
+    let units = InMemoryUnitSettings(.kg)
+
     func loaded(plans: FakeWorkoutPlanRepository = FakeWorkoutPlanRepository()) async -> WeekViewModel {
         let vm = WeekViewModel(
             sessions: FakeSessionRepository(emissions: [[planned]]),
@@ -46,7 +48,7 @@ import Testing
             router: router,
             now: SessionBuilder.now,
             calendar: calendar,
-            unit: .kg
+            units: units
         )
         await vm.run()
         return vm
@@ -66,6 +68,16 @@ import Testing
         #expect(vm.state.destination == .add(WeekAddDay(id: monday, dayTitle: days.longTitle(of: monday))))
         vm.send(.addWorkoutTapped(thursday))
         #expect(vm.state.addTarget?.id == thursday)
+    }
+
+    @Test func aDayIsPlannedInTheUnitPreferredNow() async {
+        let plans = FakeWorkoutPlanRepository()
+        let vm = await loaded(plans: plans)
+        units.unit = .lb  // changed in Settings while Week stays open
+
+        await vm.send(.templatePicked(upperID, on: thursday))?.value
+
+        #expect(plans.calls == [.createSession(upperID, on: thursday, unit: .lb)])
     }
 
     @Test func templatePickedPlansTheDayFromTheTemplate() async {
@@ -90,7 +102,7 @@ import Testing
             router: router,
             now: SessionBuilder.now,
             calendar: calendar,
-            unit: .kg
+            units: InMemoryUnitSettings(.kg)
         )
         await vm.run()
 
@@ -191,7 +203,7 @@ import Testing
             router: router,
             now: SessionBuilder.now,
             calendar: calendar,
-            unit: .kg
+            units: InMemoryUnitSettings(.kg)
         )
         await vm.run()
         #expect(vm.state.sessions == .empty)

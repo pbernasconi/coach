@@ -57,6 +57,7 @@ enum CompositionRoot {
             catalog: LiveExerciseCatalog(loader: mediaLoader),
             calendar: .autoupdatingCurrent,
             info: info(source: source),
+            units: units(source: source),
             pasteboard: SystemPasteboard(),
             outbox: LiveOutboxRepository(database: database),
             sync: makeSync(database: database, isSaved: source.isSaved, now: now, makeID: makeID),
@@ -96,15 +97,25 @@ enum CompositionRoot {
         )
     }
 
+    /// The saved unit preference on this iPhone (the locale's until one is picked); kg in memory for demo data, which is
+    /// logged in kg.
+    private static func units(source: AppInfo.DataSource) -> any UnitPreference {
+        guard source.isSaved else { return InMemoryUnitSettings(.kg) }
+        return UserDefaultsUnitSettings.standard(fallback: localUnit)
+    }
+
+    private static var localUnit: WeightUnit {
+        Locale.autoupdatingCurrent.measurementSystem == .us ? .lb : .kg
+    }
+
     private static func info(source: AppInfo.DataSource) -> AppInfo {
         let bundle = Bundle.main
         let version = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
         let build = bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String
-        let localUnit: WeightUnit = Locale.autoupdatingCurrent.measurementSystem == .us ? .lb : .kg
         return AppInfo(
             version: version ?? "0",
             build: build ?? "0",
-            unit: source.isSaved ? localUnit : .kg,  // the demo data is logged in kg
+            unit: source.isSaved ? localUnit : .kg,  // replaced by the `units` preference in AppDependencies.info
             dataSource: source
         )
     }
