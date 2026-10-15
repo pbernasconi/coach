@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Hands the build job's test products to the simulator jobs of the same CI run, through a run artifact.
-#   scripts/ci-products.sh pack <archive>     Lift.app (with its test bundle) and the .xctestrun from
-#                                             build/lift/Build/Products into a zstd tarball
+#   scripts/ci-products.sh pack app <archive>    Lift.app from build/lift/Build/Products into a zstd tarball
+#   scripts/ci-products.sh pack tests <archive>  the same plus the .xctestrun (after build-for-testing, Lift.app
+#                                                holds the test bundle)
 #   scripts/ci-products.sh fetch <name> <dir> waits until the run has the artifact <name>, then downloads and
 #                                             unpacks it into <dir>; fails as soon as the build job fails
 # fetch needs GH_TOKEN (actions: read), GITHUB_REPOSITORY and GITHUB_RUN_ID. The simulator jobs start with the
@@ -9,11 +10,13 @@
 set -euo pipefail
 case "$1" in
   pack)
+    archive="$3"
     cd "$(dirname "$0")/../../../build/lift/Build/Products"
-    extra=()
-    [ -d Debug-iphonesimulator/PackageFrameworks ] && extra+=(Debug-iphonesimulator/PackageFrameworks)
-    tar -cf - ./*.xctestrun Debug-iphonesimulator/Lift.app "${extra[@]}" | zstd -q -1 -T0 -o "$2"
-    ls -l "$2"
+    files=(Debug-iphonesimulator/Lift.app)
+    [ -d Debug-iphonesimulator/PackageFrameworks ] && files+=(Debug-iphonesimulator/PackageFrameworks)
+    [ "$2" = tests ] && files+=(./*.xctestrun)
+    tar -cf - "${files[@]}" | zstd -q -1 -T0 -o "$archive"
+    ls -l "$archive"
     ;;
   fetch)
     name="$2"
@@ -38,5 +41,5 @@ case "$1" in
     echo "timed out waiting for $name" >&2
     exit 1
     ;;
-  *) echo "usage: $0 pack <archive> | fetch <name> <dir>" >&2 && exit 2 ;;
+  *) echo "usage: $0 pack app|tests <archive> | fetch <name> <dir>" >&2 && exit 2 ;;
 esac
