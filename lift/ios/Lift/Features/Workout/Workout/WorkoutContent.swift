@@ -35,7 +35,7 @@ struct WorkoutContent: View {
             }
         }
         .koboSheet(
-            item: .action(state.editor) { if $0 == nil { send(.editorDismissed) } },
+            item: Binding<SetEditor?>.action(state.editor) { if $0 == nil { send(.editorDismissed) } },
             title: \.title,
             hasChanges: state.editor?.hasChanges ?? false
         ) { editor in
