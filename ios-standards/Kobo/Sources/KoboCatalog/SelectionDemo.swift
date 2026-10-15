@@ -112,7 +112,7 @@ struct SelectionDemo: View {
 }
 
 /// A titled group of sample items for accordion demos.
-struct DemoSection: Identifiable, Equatable, Sendable {
+nonisolated struct DemoSection: Identifiable, Equatable, Sendable {
     let id: String
     let name: String
     let detail: String
