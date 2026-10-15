@@ -26,6 +26,16 @@ struct WorkoutScreen: View {
             let viewModel = viewModel
             let undo = Toast.Action("Undo") { viewModel.send(.removeUndoTapped(setID)) }
             toasts.show(Toast("Set removed", action: undo))
+        case .exerciseRemoved(let id):
+            let viewModel = viewModel
+            let undo = Toast.Action("Undo") { viewModel.send(.exerciseRemoveUndoTapped(id)) }
+            toasts.show(Toast("Exercise removed", action: undo))
+        case .discarded(let change):
+            let viewModel = viewModel
+            let undo = Toast.Action("Undo") { viewModel.send(.discardUndoTapped(change)) }
+            toasts.show(Toast("Workout discarded", action: undo))
+        case .savedAsTemplate(let name):
+            toasts.show(Toast(verbatim: String(localized: "Saved as template \(name)")))
         case .failed:
             toasts.show(Toast("Could not save. Try again.", tone: .danger))
         }

@@ -14,6 +14,7 @@ struct RouteScreen: View {
                     sessionID: sessionID,
                     sessions: dependencies.sessions,
                     sets: dependencies.sets,
+                    templates: dependencies.templates,
                     router: router,
                     clock: dependencies.clock,
                     restActivity: dependencies.restActivity,
@@ -55,6 +56,8 @@ struct RouteScreen: View {
             .id(route)
         case .acknowledgements:
             AcknowledgementsScreen(viewModel: AcknowledgementsViewModel(items: Acknowledgement.bundled))
+        case .templates, .template, .exercisePicker, .workoutSummary:
+            PlanRouteScreen(route: route, dependencies: dependencies, router: router)
         }
     }
 }

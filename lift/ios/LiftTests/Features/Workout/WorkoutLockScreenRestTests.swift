@@ -22,6 +22,7 @@ import Testing
             sessionID: planned.id,
             sessions: FakeSessionDetailRepository(emissions: [planned]),
             sets: RecordingSetRepository(result: planned.items[0].sets[0]),
+            templates: FakeTemplateRepository(),
             router: RecordingNavigator(),
             clock: clock,
             restActivity: activity,

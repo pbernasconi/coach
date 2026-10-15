@@ -1,4 +1,5 @@
 import Foundation
+import LiftStore
 
 /// Every user intent on the Workout screen, named for what happened (SCR-1).
 nonisolated enum WorkoutAction: Equatable, Sendable {
@@ -25,4 +26,27 @@ nonisolated enum WorkoutAction: Equatable, Sendable {
     case howToTapped(exerciseID: UUID)
     /// An exercise section with a catalog entry appeared: load its still once.
     case thumbnailNeeded(catalogID: String)
+    /// "Add exercise": opens the exercise picker for this session.
+    case addExerciseTapped
+    /// The "…" in the navigation bar: Save as template and Discard workout.
+    case workoutOptionsTapped
+    /// An exercise's "…": move it or remove it.
+    case exerciseOptionsTapped(UUID)
+    case optionsDismissed
+    case exerciseMoveUpTapped(UUID)
+    case exerciseMoveDownTapped(UUID)
+    /// Removes the exercise at once and offers Undo (product rule).
+    case exerciseRemoveTapped(UUID)
+    /// Undo on the "Exercise removed" toast.
+    case exerciseRemoveUndoTapped(UUID)
+    /// Marks the session finished (planned sets stay planned) and opens its summary.
+    case finishTapped
+    /// "View summary" on a finished session.
+    case summaryTapped
+    /// Removes the session at once; the toast offers Undo. The only destructive path on this screen.
+    case discardTapped
+    /// Undo on the "Workout discarded" toast.
+    case discardUndoTapped(RescheduleUndo)
+    /// A new template from this session's exercises, named like it.
+    case saveAsTemplateTapped
 }

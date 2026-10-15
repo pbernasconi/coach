@@ -41,8 +41,8 @@ struct WorkoutExerciseSection: View {
         }
     }
 
-    /// Thumbnail, name and target, and How to in one row; at accessibility sizes the name wraps between the thumbnail
-    /// and How to (all three top-aligned) and the target takes the full width under them.
+    /// Thumbnail, name and target, How to and "…" in one row; at accessibility sizes the name wraps between the thumbnail
+    /// and the buttons (all top-aligned) and the target takes the full width under them.
     private var header: some View {
         VStack(alignment: .leading, spacing: Space.sm) {
             if dynamicTypeSize.isAccessibilitySize {
@@ -50,6 +50,7 @@ struct WorkoutExerciseSection: View {
                     thumbnailView
                     name.frame(maxWidth: .infinity, alignment: .leading)
                     howTo
+                    WorkoutExerciseOptionsButton(exercise: exercise, send: send)
                 }
                 target
             } else {
@@ -57,6 +58,7 @@ struct WorkoutExerciseSection: View {
                     thumbnailView
                     title.frame(maxWidth: .infinity, alignment: .leading)
                     howTo
+                    WorkoutExerciseOptionsButton(exercise: exercise, send: send)
                 }
             }
             if exercise.warmUp != nil || exercise.plates != nil || exercise.progression != nil || exercise.note != nil {

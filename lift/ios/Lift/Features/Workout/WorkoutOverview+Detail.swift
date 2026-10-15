@@ -17,7 +17,10 @@ extension WorkoutOverview {
                 return WorkoutExercise(item: item, unit: detail.session.unitsAtLog, previous: last)
             },
             note: detail.session.note,
-            warmUpNote: detail.session.warmUpNote
+            warmUpNote: detail.session.warmUpNote,
+            started: (detail.session.startedAt ?? sets.filter { $0.status == .done }.compactMap(\.completedAt).min())
+                .map(days.started(at:)),
+            isFinished: detail.session.finishedAt != nil
         )
     }
 }
