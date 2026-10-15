@@ -1,4 +1,5 @@
 import CraftTokens
+import Foundation
 import SwiftUI
 
 extension View {
@@ -6,6 +7,30 @@ extension View {
     /// announced to VoiceOver. Attach it once, near the root of a window.
     public func toastHost(_ center: ToastCenter) -> some View {
         modifier(ToastHostModifier(center: center))
+    }
+}
+
+extension Toast {
+    /// A toast with a localized message, resolved from the app's bundle now.
+    ///
+    /// - Parameter duration: `nil` picks `defaultDuration(hasAction:)`: longer when there is an action to reach.
+    nonisolated public init(
+        _ message: LocalizedStringResource,
+        tone: Tone = .neutral,
+        symbol: String? = nil,
+        action: Action? = nil,
+        duration: Duration? = nil,
+        id: UUID = UUID()
+    ) {
+        let message = String(localized: message)
+        self.init(verbatim: message, tone: tone, symbol: symbol, action: action, duration: duration, id: id)
+    }
+}
+
+extension Toast.Action {
+    /// An action with a localized label ("Undo"), resolved from the app's bundle now.
+    nonisolated public init(_ label: LocalizedStringResource, perform: @escaping @MainActor @Sendable () -> Void) {
+        self.init(verbatim: String(localized: label), perform: perform)
     }
 }
 
@@ -55,7 +80,7 @@ struct ToastCapsule: View {
             message
             if let action = toast.action {
                 Button(action: onAction) {
-                    Text(action.label)
+                    Text(verbatim: action.label)
                         .font(theme.font(.subheadline).weight(.bold))
                         .foregroundStyle(theme.palette.accentText)
                         .padding(.horizontal, Space.md)
@@ -79,7 +104,7 @@ struct ToastCapsule: View {
             Image(systemName: toast.resolvedSymbol)
                 .foregroundStyle(theme.palette.status(toast.tone).ink)
                 .accessibilityHidden(true)
-            Text(toast.message)
+            Text(verbatim: toast.message)
                 .font(theme.font(.subheadline).weight(.semibold))
                 .foregroundStyle(theme.palette.textPrimary)
                 .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
@@ -88,7 +113,7 @@ struct ToastCapsule: View {
         .padding(.vertical, Space.sm)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isStaticText)
-        .accessibilityAction(named: Text("Dismiss"), onDismiss)
+        .accessibilityAction(named: Text("Dismiss", bundle: .module), onDismiss)
     }
 }
 
@@ -131,7 +156,8 @@ private struct ToastSurface<S: Shape>: ViewModifier {
 }
 
 #Preview("Capsule, AX3") {
-    ToastCapsule(toast: Toast("Set deleted from Bench Press", action: .init("Undo") {}), onDismiss: {}, onAction: {})
+    let toast = Toast(verbatim: "Set deleted from Bench Press", action: .init("Undo") {})
+    ToastCapsule(toast: toast, onDismiss: {}, onAction: {})
         .padding()
         .dynamicTypeSize(.accessibility3)
 }

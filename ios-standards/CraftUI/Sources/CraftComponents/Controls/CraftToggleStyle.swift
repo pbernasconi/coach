@@ -23,7 +23,7 @@ public struct CraftToggleStyle: ToggleStyle {
             }
         }
         .buttonStyle(PressFeedbackStyle(.highlight))
-        .accessibilityValue(configuration.isOn ? Text("On") : Text("Off"))
+        .accessibilityValue(configuration.isOn ? Text("On", bundle: .module) : Text("Off", bundle: .module))
         .accessibilityAddTraits(Self.toggleTrait)
         .craftFeedback(trigger: configuration.isOn) { _, isOn in HapticFeedback.toggle(isOn) }
     }

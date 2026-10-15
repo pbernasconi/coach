@@ -47,7 +47,7 @@ public struct Avatar: View {
                 if initials.isEmpty {
                     Image(systemName: "person.fill")
                 } else {
-                    Text(initials)
+                    Text(verbatim: initials)
                 }
             }
             // The disc has a fixed size, so the initials scale with it rather than with Dynamic Type.
@@ -68,7 +68,7 @@ public struct Avatar: View {
 
     private var accessibilityName: Text {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? Text("Person") : Text(trimmed)
+        return trimmed.isEmpty ? Text("Person", bundle: .module) : Text(verbatim: trimmed)
     }
 }
 

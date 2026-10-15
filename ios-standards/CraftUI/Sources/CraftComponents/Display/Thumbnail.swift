@@ -11,7 +11,7 @@ public struct Thumbnail<Content: View, Badge: View>: View {
     private let tone: Tone
     private let side: CGFloat
     private let fillsTile: Bool
-    private let label: String?
+    private let label: Text?
     private let content: Content
     private let badge: Badge
     @Environment(\.craftTheme) private var theme
@@ -20,7 +20,7 @@ public struct Thumbnail<Content: View, Badge: View>: View {
     public init(
         tone: Tone = .neutral,
         side: CGFloat = Size.thumbnail,
-        accessibilityLabel: String? = nil,
+        accessibilityLabel: LocalizedStringKey? = nil,
         @ViewBuilder content: () -> Content,
         @ViewBuilder badge: () -> Badge
     ) {
@@ -28,13 +28,13 @@ public struct Thumbnail<Content: View, Badge: View>: View {
             tone: tone,
             side: side,
             fillsTile: false,
-            label: accessibilityLabel,
+            label: accessibilityLabel.map { Text($0) },
             content: content(),
             badge: badge()
         )
     }
 
-    fileprivate init(tone: Tone, side: CGFloat, fillsTile: Bool, label: String?, content: Content, badge: Badge) {
+    fileprivate init(tone: Tone, side: CGFloat, fillsTile: Bool, label: Text?, content: Content, badge: Badge) {
         self.tone = tone
         self.side = side
         self.fillsTile = fillsTile
@@ -62,7 +62,7 @@ public struct Thumbnail<Content: View, Badge: View>: View {
             badge.padding(Space.xs)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(label.map { Text($0) } ?? Text(verbatim: ""))
+        .accessibilityLabel(label ?? Text(verbatim: ""))
         .accessibilityAddTraits(.isImage)
         .accessibilityHidden(label == nil)
     }
@@ -78,7 +78,7 @@ extension Thumbnail where Badge == EmptyView {
     public init(
         tone: Tone = .neutral,
         side: CGFloat = Size.thumbnail,
-        accessibilityLabel: String? = nil,
+        accessibilityLabel: LocalizedStringKey? = nil,
         @ViewBuilder content: () -> Content
     ) {
         self.init(tone: tone, side: side, accessibilityLabel: accessibilityLabel, content: content) { EmptyView() }
@@ -91,11 +91,11 @@ extension Thumbnail where Content == Image {
         systemName: String,
         tone: Tone = .neutral,
         side: CGFloat = Size.thumbnail,
-        accessibilityLabel: String? = nil,
+        accessibilityLabel: LocalizedStringKey? = nil,
         @ViewBuilder badge: () -> Badge
     ) {
         let glyph = Image(systemName: systemName)
-        self.init(tone: tone, side: side, fillsTile: false, label: accessibilityLabel, content: glyph, badge: badge())
+        self.init(tone: tone, side: side, fillsTile: false, label: accessibilityLabel.map { Text($0) }, content: glyph, badge: badge())
     }
 
     /// A tile showing a picture cropped to fill it, with a corner badge.
@@ -103,11 +103,11 @@ extension Thumbnail where Content == Image {
         image: Image,
         tone: Tone = .neutral,
         side: CGFloat = Size.thumbnail,
-        accessibilityLabel: String? = nil,
+        accessibilityLabel: LocalizedStringKey? = nil,
         @ViewBuilder badge: () -> Badge
     ) {
         let picture = image.resizable()
-        self.init(tone: tone, side: side, fillsTile: true, label: accessibilityLabel, content: picture, badge: badge())
+        self.init(tone: tone, side: side, fillsTile: true, label: accessibilityLabel.map { Text($0) }, content: picture, badge: badge())
     }
 }
 
@@ -117,7 +117,7 @@ extension Thumbnail where Content == Image, Badge == EmptyView {
         systemName: String,
         tone: Tone = .neutral,
         side: CGFloat = Size.thumbnail,
-        accessibilityLabel: String? = nil
+        accessibilityLabel: LocalizedStringKey? = nil
     ) {
         self.init(systemName: systemName, tone: tone, side: side, accessibilityLabel: accessibilityLabel) {
             EmptyView()
@@ -125,7 +125,7 @@ extension Thumbnail where Content == Image, Badge == EmptyView {
     }
 
     /// A tile showing a picture cropped to fill it.
-    public init(image: Image, tone: Tone = .neutral, side: CGFloat = Size.thumbnail, accessibilityLabel: String? = nil)
+    public init(image: Image, tone: Tone = .neutral, side: CGFloat = Size.thumbnail, accessibilityLabel: LocalizedStringKey? = nil)
     {
         self.init(image: image, tone: tone, side: side, accessibilityLabel: accessibilityLabel) { EmptyView() }
     }

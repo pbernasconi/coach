@@ -81,8 +81,8 @@ public struct AsyncButton<Label: View>: View {
     }
 
     private var accessibilityValue: Text {
-        if phase == .succeeded { return Text("Done") }
-        return phase.showsSpinner ? Text("In progress") : Text(verbatim: "")
+        if phase == .succeeded { return Text("Done", bundle: .module) }
+        return phase.showsSpinner ? Text("In progress", bundle: .module) : Text(verbatim: "")
     }
 
     private func tap() {

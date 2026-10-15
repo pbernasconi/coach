@@ -6,13 +6,13 @@ import SwiftUI
 struct FeedbackStateLayout<Actions: View>: View {
     let symbol: String
     let symbolTone: Tone
-    let title: String
-    let message: String?
+    let title: Text
+    let message: Text?
     let actions: Actions
     @Environment(\.craftTheme) private var theme
     @ScaledMetric(relativeTo: .largeTitle) private var discSide = Size.thumbnail
 
-    init(symbol: String, symbolTone: Tone, title: String, message: String?, actions: Actions) {
+    init(symbol: String, symbolTone: Tone, title: Text, message: Text?, actions: Actions) {
         self.symbol = symbol
         self.symbolTone = symbolTone
         self.title = title
@@ -20,7 +20,7 @@ struct FeedbackStateLayout<Actions: View>: View {
         self.actions = actions
     }
 
-    init(symbol: String, symbolTone: Tone, title: String, message: String?, @ViewBuilder actions: () -> Actions) {
+    init(symbol: String, symbolTone: Tone, title: Text, message: Text?, @ViewBuilder actions: () -> Actions) {
         self.init(symbol: symbol, symbolTone: symbolTone, title: title, message: message, actions: actions())
     }
 
@@ -33,12 +33,12 @@ struct FeedbackStateLayout<Actions: View>: View {
                 .background(theme.palette.status(symbolTone).soft, in: Circle())
                 .accessibilityHidden(true)
             VStack(spacing: Space.sm) {
-                Text(title)
+                title
                     .font(theme.font(.title2))
                     .foregroundStyle(theme.palette.textPrimary)
                     .accessibilityAddTraits(.isHeader)
                 if let message {
-                    Text(message)
+                    message
                         .font(theme.font(.body))
                         .foregroundStyle(theme.palette.textSecondary)
                 }

@@ -8,24 +8,33 @@ import SwiftUI
 public struct KeyValueRow: View {
     @Environment(\.craftTheme) private var theme
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    private let key: String
+    private let key: Text
     private let value: String
     private let valueTone: Tone?
 
+    /// A localized label and a value shown as is.
+    ///
     /// - Parameter valueTone: tints the value (for example `.success`); the text still carries the meaning.
-    public init(_ key: String, value: String, valueTone: Tone? = nil) {
-        self.key = key
+    public init(_ key: LocalizedStringKey, value: String, valueTone: Tone? = nil) {
+        self.key = Text(key)
+        self.value = value
+        self.valueTone = valueTone
+    }
+
+    /// A label and a value both shown as is (user-defined fields).
+    public init(verbatim key: String, value: String, valueTone: Tone? = nil) {
+        self.key = Text(verbatim: key)
         self.value = value
         self.valueTone = valueTone
     }
 
     public var body: some View {
         layout {
-            Text(key)
+            key
                 .font(theme.font(.body))
                 .foregroundStyle(theme.palette.textSecondary)
                 .frame(maxWidth: dynamicTypeSize.isAccessibilitySize ? nil : .infinity, alignment: .leading)
-            Text(value)
+            Text(verbatim: value)
                 .font(theme.font(.numeric))
                 .foregroundStyle(valueColor)
                 .multilineTextAlignment(dynamicTypeSize.isAccessibilitySize ? .leading : .trailing)

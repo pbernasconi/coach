@@ -93,7 +93,7 @@ public struct StepperField: View {
     public var body: some View {
         let current = StepperMath.clamped(value.wrappedValue, to: range)
         HStack(spacing: Space.md) {
-            IconButton("minus", accessibilityLabel: "Decrease", style: .tonal, size: .large) { move(.down) }
+            IconButton("minus", label: Text("Decrease", bundle: .module), style: .tonal, size: .large) { move(.down) }
                 .disabled(!StepperMath.canStep(current, by: step, .down, in: range))
             VStack(spacing: Space.xxs) {
                 Text(verbatim: format(current))
@@ -118,7 +118,7 @@ public struct StepperField: View {
                 @unknown default: break
                 }
             }
-            IconButton("plus", accessibilityLabel: "Increase", style: .tonal, size: .large) { move(.up) }
+            IconButton("plus", label: Text("Increase", bundle: .module), style: .tonal, size: .large) { move(.up) }
                 .disabled(!StepperMath.canStep(current, by: step, .up, in: range))
         }
         .buttonRepeatBehavior(.enabled)
@@ -137,7 +137,7 @@ public struct StepperField: View {
 
     private func spokenValue(_ current: Double) -> Text {
         guard let unit else { return Text(verbatim: format(current)) }
-        return Text("\(format(current)) \(Text(unit))")
+        return Text("\(format(current)) \(Text(unit))", bundle: .module)
     }
 }
 

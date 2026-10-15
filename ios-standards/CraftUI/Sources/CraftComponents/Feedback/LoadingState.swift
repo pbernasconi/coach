@@ -4,12 +4,17 @@ import SwiftUI
 /// A centred spinner with an optional caption, for a wait whose result has no known shape.
 /// When the shape is known, draw `Skeleton`s instead.
 public struct LoadingState: View {
-    private let label: String?
+    private let label: Text?
     @Environment(\.craftTheme) private var theme
 
     /// - Parameter label: a short caption ("Loading your plan"); VoiceOver reads "Loading" without one.
-    public init(_ label: String? = nil) {
-        self.label = label
+    public init(_ label: LocalizedStringKey? = nil) {
+        self.label = label.map { Text($0) }
+    }
+
+    /// A caption shown as is (a name from user data); an empty one reads as no caption.
+    public init(verbatim label: String) {
+        self.label = label.isEmpty ? nil : Text(verbatim: label)
     }
 
     public var body: some View {
@@ -18,7 +23,7 @@ public struct LoadingState: View {
                 .controlSize(.large)
                 .tint(theme.palette.accent)
             if let label {
-                Text(label)
+                label
                     .font(theme.font(.subheadline))
                     .foregroundStyle(theme.palette.textSecondary)
                     .multilineTextAlignment(.center)
@@ -28,12 +33,8 @@ public struct LoadingState: View {
         .padding(Space.xxl)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(spokenLabel)
+        .accessibilityLabel(label ?? Text("Loading", bundle: .module))
         .accessibilityAddTraits(.updatesFrequently)
-    }
-
-    private var spokenLabel: Text {
-        if let label, !label.isEmpty { Text(label) } else { Text("Loading") }
     }
 }
 

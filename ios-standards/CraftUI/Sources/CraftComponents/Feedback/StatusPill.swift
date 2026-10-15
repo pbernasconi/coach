@@ -6,15 +6,22 @@ import SwiftUI
 ///
 ///     StatusPill("Completed", tone: .success)
 public struct StatusPill: View {
-    private let label: String
+    private let label: Text
     private let tone: Tone
     private let symbol: String?
     @Environment(\.craftTheme) private var theme
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     /// - Parameter symbol: an SF Symbol; `nil` uses the tone's glyph.
-    public init(_ label: String, tone: Tone, symbol: String? = nil) {
-        self.label = label
+    public init(_ label: LocalizedStringKey, tone: Tone, symbol: String? = nil) {
+        self.label = Text(label)
+        self.tone = tone
+        self.symbol = symbol
+    }
+
+    /// A pill whose label is shown as is (user data, numbers).
+    public init(verbatim label: String, tone: Tone, symbol: String? = nil) {
+        self.label = Text(verbatim: label)
         self.tone = tone
         self.symbol = symbol
     }
@@ -25,7 +32,7 @@ public struct StatusPill: View {
             Image(systemName: symbol ?? tone.feedbackSymbol)
                 .imageScale(.small)
                 .accessibilityHidden(true)
-            Text(label)
+            label
                 .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
         }
         .font(theme.font(.caption).weight(.semibold))
@@ -41,7 +48,7 @@ private struct StatusPillPreviews: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Space.sm) {
             ForEach(Tone.allCases, id: \.rawValue) { tone in
-                StatusPill(tone.rawValue.capitalized, tone: tone)
+                StatusPill(verbatim: tone.rawValue.capitalized, tone: tone)
             }
             StatusPill("Personal record", tone: .accent, symbol: "trophy.fill")
         }
