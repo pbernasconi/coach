@@ -37,6 +37,11 @@ struct FeedbackDemo: View {
             EmptyState(symbol: "dumbbell", title: "No workouts yet", message: "Plan a day to get started.") {
                 Button("Plan a day") {}.buttonStyle(.kobo(.primary))
             }
+        case .emptyStateArt:
+            HStack(spacing: Space.lg) {
+                EmptyStateArt(systemImage: "tray")
+                EmptyStateArt(systemImage: "calendar.badge.plus", tone: .accent, scale: .large)
+            }
         case .errorState:
             ErrorState(title: "Couldn't sync", message: "Changes are saved on this phone.", retryLabel: "Try again") {}
         case .noticeBanner:

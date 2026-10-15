@@ -26,10 +26,20 @@ struct CatalogDetail: View {
     @ViewBuilder private var demo: some View {
         switch component.section {
         case .controls: ControlsDemo(component: component)
+        case .selection: SelectionDemo(component: component)
+        case .fields: FieldsDemo(component: component)
+        case .search: SearchDemo(component: component)
         case .feedback: FeedbackDemo(component: component)
+        case .status: StatusDemo(component: component)
         case .display: DisplayDemo(component: component)
         case .layout: LayoutDemo(component: component)
+        case .navigation: NavigationDemo(component: component)
+        case .overlays: OverlaysDemo(component: component)
+        case .quickActions: QuickActionsDemo(component: component)
+        case .utilities: UtilitiesDemo(component: component)
         case .patterns: PatternsDemo(component: component)
+        case .lists: ListsDemo(component: component)
+        case .flows: FlowsDemo(component: component)
         }
     }
 }
