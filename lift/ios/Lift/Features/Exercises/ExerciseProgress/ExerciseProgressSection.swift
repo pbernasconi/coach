@@ -9,6 +9,9 @@ enum ExerciseProgressMetrics {
     static let pickerWidth: CGFloat = 200
     /// The plot's height at the default text size; it grows with Dynamic Type so axis labels keep their room.
     static let plotHeight: CGFloat = 168
+    /// The largest text size of the range picker: past it the four short segments would stack four rows high; at this
+    /// size they still read clearly in one row.
+    static let pickerTypeSize = DynamicTypeSize.xxxLarge
 }
 
 /// "Progress" on an exercise page: the range picker, the best estimated one-rep max and its change (or the touched
@@ -37,6 +40,7 @@ struct ExerciseProgressSection: View {
                     selection: .action(progress.range) { rangeChanged($0) },
                     options: ProgressRange.allCases.map { ChoiceOption($0, verbatim: ExerciseProgressText.title($0)) }
                 )
+                .dynamicTypeSize(...ExerciseProgressMetrics.pickerTypeSize)
                 .frame(maxWidth: dynamicTypeSize.isAccessibilitySize ? .infinity : ExerciseProgressMetrics.pickerWidth)
             }
         }
