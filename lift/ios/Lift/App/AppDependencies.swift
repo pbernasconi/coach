@@ -95,7 +95,7 @@ final class AppDependencies {
                     templates: templates,
                     plans: plans
                 )
-                try await seeder.seed(today: LocalDay(now(), calendar: calendar))
+                try await seeder.seed(today: LocalDay(now(), calendar: calendar), calendar: calendar)
             }
         } catch {
             AppLog.launch.error("Preparing data failed: \(String(describing: error), privacy: .private)")

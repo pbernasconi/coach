@@ -5,6 +5,12 @@ import LiftTesting
 import Testing
 
 @Suite struct DemoSeederTests {
+    private static let calendar: Calendar = {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC") ?? calendar.timeZone
+        return calendar
+    }()
+
     private func seeded() async throws -> (TestStore, [SessionDetail]) {
         let store = try TestStore.make()
         let seeder = DemoSeeder(
@@ -14,7 +20,7 @@ import Testing
             templates: store.templates,
             plans: store.plans
         )
-        let ids = try await seeder.seed(today: Fixtures.monday)
+        let ids = try await seeder.seed(today: Fixtures.monday, calendar: Self.calendar)
         var stream = store.sessions.observeSessions(
             from: Fixtures.monday.adding(days: -30),
             through: Fixtures.monday.adding(days: 30)
@@ -67,5 +73,22 @@ import Testing
         let progress = WeekPlan.progress(sessions: week.map(\.domain))
         #expect(progress.done == 0)
         #expect(progress.planned == 2)
+    }
+
+    @Test func pastSessionsAreFinishedWithMadeUpTimesOnTheirDay() async throws {
+        let (_, details) = try await seeded()
+        let past = details.filter { $0.session.day < Fixtures.monday }
+        for detail in past {
+            let start = try #require(detail.session.startedAt)
+            let finish = try #require(detail.session.finishedAt)
+            #expect(LocalDay(start, calendar: Self.calendar) == detail.session.day)
+            #expect((35 * 60...70 * 60).contains(finish.timeIntervalSince(start)))
+            let stamps = detail.items.flatMap(\.sets).compactMap(\.completedAt)
+            #expect(stamps.count == detail.items.flatMap(\.sets).count)
+            #expect(stamps == stamps.sorted())
+            #expect(stamps.allSatisfy { $0 > start && $0 < finish })
+        }
+        let summary = WorkoutSummarizer.summarize(try #require(past.last).domain, earlier: [:], unit: .kg)
+        #expect((summary.duration ?? 0) > 35 * 60)
     }
 }
