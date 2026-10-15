@@ -265,6 +265,17 @@ and a second reader (web dashboard, coach scripts).
   `.glassEffect` after layout and appearance modifiers, and let the system adapt it for Reduce
   Transparency and Increase Contrast; never override its opacity by hand.
 
+- `UI-11` **MUST** Kobo (`ios-standards/Kobo`) is the component library for every app. Screens are built from
+  Kobo components, patterns and tokens; an app adds only domain composites (a set row, a workout screen) that
+  are assembled from Kobo parts. Before writing any reusable view, check the Kobo catalogue and reference; if
+  it is missing and would be useful to a second app, build it in Kobo first (with previews, tests, a catalogue
+  entry and a reference page), then use it. Never fork or restyle a Kobo component inside an app; change Kobo.
+- `UI-12` **MUST** Use Kobo's wrappers instead of raw SwiftUI where Kobo provides one: `KoboTextField` /
+  `KoboTextArea` / `NumberEntry` over `TextField`, `.koboSearchable` over `.searchable`, `.koboSheet` /
+  `.koboActionSheet` / `.koboModalPage` over `.sheet` and `.confirmationDialog`, `.koboConfirm` for
+  confirmations, `Toast` via `ToastCenter` for transient messages. The wrappers carry the accessibility,
+  Dynamic Type, unsaved-changes and haptic behaviour that raw controls leave to each screen.
+
 ## 10. Platform features
 
 - `PLAT-1` **MUST** Live Activities and Dynamic Island live in the widget extension. Their `ActivityAttributes`

@@ -27,8 +27,9 @@ is_preview() { [[ "$1" == *Previews.swift || "$1" == *Fixtures.swift ]]; }
 is_design()  { [[ "$1" == */Design/* || "$1" == */KoboTokens/* ]]; }  # token layers own raw colours
 is_root()    { [[ "$1" == */App/* ]]; }          # composition root may touch live clocks / Date
 is_settings(){ [[ "$1" == *Settings*.swift ]]; }
+is_kobo()    { [[ "$1" == */Kobo/* || "$1" == Kobo/* ]]; }   # the component library may wrap raw SwiftUI
 
-# rule~regex~message~scope   (scope: all, notest, notestpreview, notdesign, notroot, notsettings)
+# rule~regex~message~scope   (scope: all, notest, notestpreview, notdesign, notroot, notsettings, notkobo)
 RULES=(
   'CONC-6~Task\.detached~Use structured concurrency (.task, async let, TaskGroup).~all'
   'CONC-6~DispatchQueue~Use actors or async/await, not GCD.~all'
@@ -56,6 +57,10 @@ RULES=(
   'UI-1~#colorLiteral~Use a Design token.~notdesign'
   'UI-1~Color\(hex:~Use a Design token.~notdesign'
   'PERF-5~\.id\(UUID\(\)\)~Never give a view a new identity on every body run.~all'
+  'UI-12~(^|[^A-Za-z.])(TextField|SecureField|TextEditor)\(~Use KoboTextField, KoboSecureField or KoboTextArea.~notkobo'
+  'UI-12~\.searchable\(~Use .koboSearchable so search behaves the same everywhere.~notkobo'
+  'UI-12~\.(sheet|fullScreenCover)\(~Use .koboSheet, .koboActionSheet or .koboModalPage.~notkobo'
+  'UI-12~\.confirmationDialog\(~Use .koboConfirm or .koboActionSheet.~notkobo'
 )
 
 for f in "${FILES[@]}"; do
@@ -69,6 +74,7 @@ for f in "${FILES[@]}"; do
       notdesign)     is_design "$f" && continue ;;
       notroot)       (is_root "$f" || is_test "$f") && continue ;;
       notsettings)   is_settings "$f" && continue ;;
+      notkobo)       is_kobo "$f" && continue ;;
     esac
     while IFS=: read -r line _; do
       [ -n "$line" ] && report "$f" "$line" "$rule" "$msg"
