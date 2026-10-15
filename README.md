@@ -20,6 +20,35 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Lift sync and dashboard
+
+The Lift iPhone app (`lift/`) syncs through two routes that follow `lift/SYNC.md`:
+
+- `POST /api/lift/sync/push` and `GET /api/lift/sync/pull`. They're public to Clerk and check their own
+  bearer token instead.
+- The read-only dashboard is at `/lift`, behind the normal Clerk sign-in.
+
+The code: `src/lib/lift-sync/` holds validation, last-writer-wins, cursors, push/pull orchestration, the
+in-memory repository and the Drizzle repository. `src/lib/lift-dashboard/` holds the dashboard queries
+and summaries. The tables are defined in `src/db/lift-schema.ts` and created by
+`drizzle/0009_lift_sync.sql`. The tests are in `scripts/lift-sync.test.mjs` (`npm test`).
+
+Environment variables (set them in Vercel and in `.env.local`, and never commit real values):
+
+| Variable | Purpose |
+| --- | --- |
+| `DATABASE_URL` | Neon Postgres connection string (already used by the rest of the app) |
+| `LIFT_SYNC_TOKEN` | Long random secret the iPhone sends as `Authorization: Bearer <token>`. If it's unset, every sync request gets `401`. Generate one with `openssl rand -base64 48` |
+
+Create the tables once by applying the migration to Neon:
+
+```bash
+psql "$DATABASE_URL" -f drizzle/0009_lift_sync.sql
+```
+
+`npm run db:migrate` also works if this database's migrations have been tracked by drizzle-kit from the
+start.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

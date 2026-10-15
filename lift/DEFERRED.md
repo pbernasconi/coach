@@ -12,6 +12,12 @@ already done around it. The build keeps going around these; nothing here blocks 
 - **Real-device check.** Haptics (an earlier app found `.sensoryFeedback` silent on an iOS 26 device), Liquid
   Glass rendering, and the rest-timer Live Activity can only be confirmed on your iPhone.
 
+- **Turn on sync (server).** The sync API and dashboard are built and tested, but not deployed against Neon.
+  1. Generate a token (`openssl rand -base64 48`) and set `LIFT_SYNC_TOKEN` in Vercel (Production).
+  2. Create the tables once: `psql "$DATABASE_URL" -f drizzle/0009_lift_sync.sql`.
+  3. Redeploy; `GET /api/lift/sync/pull` with the token should return `{"changes":[],"cursor":"0","hasMore":false}`.
+  4. Enter the same token in the app's Settings (Sync) once that screen ships.
+
 ## Decisions made with a default (change any of them)
 
 - **Tabs:** Week, History, Exercises, Settings.

@@ -14,8 +14,10 @@ import Testing
         let vm = WorkoutViewModel(
             sessionID: IDSequence.id(1, prefix: 0xA0),
             sessions: repository,
-            sets: RecordingSetRepository(result: SessionBuilder.session(id: 1, on: Fixtures.monday, done: 0, planned: 1)
-                .items[0].sets[0]),
+            sets: RecordingSetRepository(
+                result: SessionBuilder.session(id: 1, on: Fixtures.monday, done: 0, planned: 1)
+                    .items[0].sets[0]
+            ),
             clock: ImmediateClock(),
             calendar: SessionBuilder.calendar
         )

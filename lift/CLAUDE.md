@@ -13,9 +13,9 @@ lift/
 │   ├── scripts/generate.sh runs xcodegen
 │   ├── Lift/               app target
 │   │   ├── App/            @main, CompositionRoot (the only Date()/UUID()/database opening), AppDependencies,
-│   │   │                   LaunchOptions (-demo, -tab, -appearance), RootView (Kobo TabShell)
+│   │   │                   LaunchOptions (-demo, -tab, -appearance, -open), RootView (Kobo TabShell)
 │   │   ├── Design/         LiftTheme: Theme.lift / Palette.lift (amber); the only place with hex colours
-│   │   ├── Features/<Feature>/<Screen>/   the eight-file screen set: Week, History, Exercises, Settings
+│   │   ├── Features/<Feature>/<Screen>/   the eight-file screen set: Week, History, Exercises, Settings, Workout
 │   │   ├── Features/Sessions/             SessionSummary, DayCalendar, SessionText (shared by Week and History)
 │   │   └── Resources/      Localizable.xcstrings
 │   ├── LiftTests/          Swift Testing ViewModel tests, hand-written fakes in Fakes/
@@ -43,7 +43,8 @@ xcodebuild test -project ios/Lift.xcodeproj -scheme Lift \
 
 Launch arguments (scheme or `simctl launch`): `-demo` opens an in-memory database seeded by `DemoSeeder`
 (fabricated data, nothing saved); `-tab week|history|exercises|settings` picks the first tab; `-appearance
-dark|light` forces an appearance. Without `-demo` the app uses `Application Support/lift.sqlite`.
+dark|light` forces an appearance; with `-demo`, `-open workout` pushes today's or the next planned session onto
+the Week tab (for screenshots). Without `-demo` the app uses `Application Support/lift.sqlite`.
 
 Note: the app target defaults to MainActor isolation, so screen value types (`State`, `Action`, row items)
 are declared `nonisolated`; otherwise their `Equatable` conformance is main-actor-isolated and cannot be

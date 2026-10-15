@@ -15,13 +15,17 @@ import Testing
         harness.transport.queuePull(PullResponse(changes: try await remote.takeChanges(), cursor: "4", hasMore: false))
         let status = await harness.engine.syncNow()
         #expect(status.phase == .idle)
-        let reader = harness.store.database.writer
-        try await reader.read { db in
-            #expect(try ExerciseRow.fetchOne(db, key: written.exercise.id)?.exercise == written.exercise)
-            #expect(try SessionRecord.exists(db, key: written.slot.sessionID))
-            #expect(try SessionExerciseRecord.fetchOne(db, key: written.slot.id) == written.slot)
-            #expect(try SetRecord.fetchOne(db, key: written.set.id) == written.set)
+        let local = try await harness.store.database.writer.read { db in
+            (
+                try ExerciseRow.fetchOne(db, key: written.exercise.id)?.exercise,
+                try SessionRecord.exists(db, key: written.slot.sessionID),
+                try SessionExerciseRecord.fetchOne(db, key: written.slot.id)
+            )
         }
+        #expect(local.0 == written.exercise)
+        #expect(local.1)
+        #expect(local.2 == written.slot)
+        #expect(try await localSet(written.set.id, harness) == written.set)
         #expect(try await harness.pendingCount() == 0)
         #expect(try await harness.syncState.pullCursor() == "4")
     }

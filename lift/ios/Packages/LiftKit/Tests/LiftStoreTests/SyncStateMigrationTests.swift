@@ -19,11 +19,16 @@ import Testing
         }
         #expect(try queue.read { db in try db.tableExists("syncState") } == false)
         try LiftMigrations.migrator.migrate(queue, upTo: LiftMigrations.v2SyncState)
-        try queue.read { db in
-            #expect(try db.columns(in: "syncState").map(\.name) == ["key", "value"])
-            #expect(try db.primaryKey("syncState").columns == ["key"])
-            #expect(try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM session") == 1)
+        let (columns, primaryKey, sessions) = try queue.read { db in
+            (
+                try db.columns(in: "syncState").map(\.name),
+                try db.primaryKey("syncState").columns,
+                try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM session")
+            )
         }
+        #expect(columns == ["key", "value"])
+        #expect(primaryKey == ["key"])
+        #expect(sessions == 1)
     }
 
     @Test func syncStateKeysAreUnique() throws {
