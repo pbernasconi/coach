@@ -22,19 +22,7 @@ struct ExercisesContent: View {
                 case .failed:
                     ErrorState(title: "Exercises could not be loaded")
                 case .loaded:
-                    ListSection {
-                        ListRow(
-                            "All exercises",
-                            subtitle: "Browse the exercise catalog",
-                            action: {
-                                send(.allExercisesTapped)
-                            }
-                        ) {
-                            // The same tile size as the exercise thumbnails, so every row's text starts on one keyline.
-                            Thumbnail(systemName: "books.vertical", tone: .accent, side: ExerciseThumbnail.compactSide)
-                        }
-                    }
-                    .listRowDensity(.compact)
+                    LibraryLinks(send: send)
                     ExerciseList(
                         items: state.visible,
                         query: state.query,
@@ -58,6 +46,25 @@ struct ExercisesContent: View {
                 .padding(.bottom, Space.sm)
             }
         }
+    }
+}
+
+/// "All exercises" and "Templates" as tiled rows above the library.
+private struct LibraryLinks: View {
+    let send: (ExercisesAction) -> Void
+
+    var body: some View {
+        ListSection {
+            ListRow("All exercises", subtitle: "Browse the exercise catalog", action: { send(.allExercisesTapped) }) {
+                // The same tile size as the exercise thumbnails, so every row's text starts on one keyline.
+                Thumbnail(systemName: "books.vertical", tone: .accent, side: ExerciseThumbnail.compactSide)
+            }
+            ListRow("Templates", subtitle: "Workouts you repeat, to plan days from", action: { send(.templatesTapped) })
+            {
+                Thumbnail(systemName: "list.bullet.rectangle", tone: .accent, side: ExerciseThumbnail.compactSide)
+            }
+        }
+        .listRowDensity(.compact)
     }
 }
 
