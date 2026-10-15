@@ -1,3 +1,4 @@
+import KoboTokens
 import SwiftUI
 
 /// Draws `content` with the newest non-nil `value`, and keeps drawing the last one after `value` turns nil. For a sheet
@@ -26,3 +27,26 @@ public struct HoldsLastValue<Value: Equatable, Content: View>: View {
         }
     }
 }
+
+#if DEBUG
+    private struct HoldsLastValuePreview: View {
+        @Environment(\.koboTheme) private var theme
+        @State private var note: String? = "Draft the project brief"
+
+        var body: some View {
+            VStack(alignment: .leading, spacing: Space.md) {
+                HoldsLastValue(note) { shown in
+                    Text(verbatim: shown).font(theme.font(.headline))
+                }
+                Button("Toggle value") { note = note == nil ? "Draft the project brief" : nil }
+                    .buttonStyle(.kobo(.secondary))
+            }
+            .padding(Space.gutter)
+            .background(theme.palette.canvas)
+        }
+    }
+
+    #Preview("Holds last value") { HoldsLastValuePreview() }
+    #Preview("Holds last value · dark, Lift") { HoldsLastValuePreview().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Holds last value · AX3") { HoldsLastValuePreview().dynamicTypeSize(.accessibility3) }
+#endif

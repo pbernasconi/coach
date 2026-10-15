@@ -1,3 +1,4 @@
+import KoboTokens
 import SwiftUI
 
 /// Hands its content whether an accessibility text size (AX1 and up) is active, so a row can restack at the largest
@@ -19,3 +20,28 @@ public struct AccessibilitySizeReader<Content: View>: View {
         content(dynamicTypeSize.isAccessibilitySize)
     }
 }
+
+#if DEBUG
+    private struct AccessibilitySizeReaderPreview: View {
+        @Environment(\.koboTheme) private var theme
+
+        var body: some View {
+            AccessibilitySizeReader { isLarge in
+                let layout = isLarge ? AnyLayout(VStackLayout(alignment: .leading)) : AnyLayout(HStackLayout())
+                layout {
+                    Text("Due date").font(theme.font(.body))
+                    Spacer(minLength: Space.sm)
+                    Text(verbatim: isLarge ? "Stacked" : "Side by side").foregroundStyle(theme.palette.textSecondary)
+                }
+            }
+            .padding(Space.gutter)
+            .background(theme.palette.canvas)
+        }
+    }
+
+    #Preview("Accessibility size reader") { AccessibilitySizeReaderPreview() }
+    #Preview("Accessibility size reader · dark, Lift") {
+        AccessibilitySizeReaderPreview().koboTheme(.lift).preferredColorScheme(.dark)
+    }
+    #Preview("Accessibility size reader · AX3") { AccessibilitySizeReaderPreview().dynamicTypeSize(.accessibility3) }
+#endif
