@@ -182,9 +182,7 @@ jobs:
         run: lift/ios/scripts/ci-products.sh fetch lift-products build/products
       - name: Wait for the simulator
         if: ${{ !cancelled() }}
-        run: |
-          xcrun simctl bootstatus "$SIM_UDID" -b > /dev/null
-          cat "$RUNNER_TEMP/booted" || true
+        run: lift/ios/scripts/ci-simulator.sh ready
       - name: Unit test
         if: ${{ !cancelled() }}
         run: lift/ios/scripts/ci-xcodebuild.sh test lift-test.log build/products/*.xctestrun
@@ -233,9 +231,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: lift/ios/scripts/ci-products.sh fetch lift-app build/products
       - name: Wait for the simulator
-        run: |
-          xcrun simctl bootstatus "$SIM_UDID" -b > /dev/null
-          cat "$RUNNER_TEMP/booted" || true
+        run: lift/ios/scripts/ci-simulator.sh ready
       - name: Screenshots
         env:
           VARIANTS: ${{ matrix.variant }}

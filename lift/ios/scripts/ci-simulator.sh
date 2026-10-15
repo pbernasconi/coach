@@ -5,8 +5,9 @@
 #   scripts/ci-simulator.sh pick   picks the iPhone simulator (scripts/simulator.sh) and writes SIM_UDID and
 #                                  SIM_CACHE_KEY (image, runtime, device type) to GITHUB_ENV
 #   scripts/ci-simulator.sh boot   moves a restored snapshot (~/sim-data) in as the simulator's data if there is
-#                                  one, then boots it in the background; `bootstatus` later waits for it, and
-#                                  $RUNNER_TEMP/booted records how long it took
+#                                  one, then boots it and launches Settings once, in the background;
+#                                  $RUNNER_TEMP/booted appears when that is done (`ready` waits for it)
+#   scripts/ci-simulator.sh ready  waits for the background boot and prints how long it took
 #   scripts/ci-simulator.sh pack   shuts the simulator down and moves its data to ~/sim-data, for actions/cache
 set -euo pipefail
 SNAPSHOT="$HOME/sim-data"
@@ -37,8 +38,22 @@ for runtime, items in json.load(sys.stdin)["devices"].items():
     (
       start=$SECONDS
       xcrun simctl bootstatus "$SIM_UDID" -b >/dev/null 2>&1
-      echo "simulator booted after $((SECONDS - start)) s, at $(date -u +%T)" >"$RUNNER_TEMP/booted"
+      booted=$SECONDS
+      # One launch of a built-in app while the job waits for the build: the first app launch after a boot can
+      # take minutes, and the app under test should not be the one that pays for it.
+      xcrun simctl launch "$SIM_UDID" com.apple.Preferences >/dev/null 2>&1 || true
+      xcrun simctl terminate "$SIM_UDID" com.apple.Preferences >/dev/null 2>&1 || true
+      echo "simulator booted after $((booted - start)) s, warmed up after $((SECONDS - start)) s," \
+        "at $(date -u +%T)" >"$RUNNER_TEMP/booted.tmp"
+      mv "$RUNNER_TEMP/booted.tmp" "$RUNNER_TEMP/booted"
     ) >/dev/null 2>&1 &
+    ;;
+  ready)
+    for ((i = 0; i < 600; i++)); do
+      [ -f "$RUNNER_TEMP/booted" ] && break
+      sleep 1
+    done
+    cat "$RUNNER_TEMP/booted" 2>/dev/null || xcrun simctl bootstatus "$SIM_UDID" -b
     ;;
   pack)
     data="$HOME/Library/Developer/CoreSimulator/Devices/$SIM_UDID/data"
@@ -47,5 +62,5 @@ for runtime, items in json.load(sys.stdin)["devices"].items():
     du -sh "$data"
     mv "$data" "$SNAPSHOT"
     ;;
-  *) echo "usage: $0 pick|boot|pack" >&2 && exit 2 ;;
+  *) echo "usage: $0 pick|boot|ready|pack" >&2 && exit 2 ;;
 esac
