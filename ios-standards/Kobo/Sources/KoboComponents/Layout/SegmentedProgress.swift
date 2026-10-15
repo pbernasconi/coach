@@ -63,7 +63,7 @@ public struct SegmentedProgress: View {
                     Text(String(describing: segment))
                     SegmentedProgress(segments: [segment, segment, segment], accessibilityLabel: "Sample")
                 }
-                Text("2 done, 1 planned, required 3, goal 4")
+                Text("2 done, 1 planned, minimum 3, goal 4")
                 SegmentedProgress(done: 2, planned: 1, minimum: 3, goal: 4, accessibilityLabel: "Weekly goal")
                 Text("Goal passed")
                 SegmentedProgress(done: 5, goal: 3, accessibilityLabel: "Weekly goal")
