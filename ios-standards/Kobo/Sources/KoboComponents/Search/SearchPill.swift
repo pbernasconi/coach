@@ -10,7 +10,7 @@ struct SearchPill: ViewModifier {
     func body(content: Content) -> some View {
         content
             .padding(.horizontal, Space.lg)
-            .frame(maxWidth: .infinity, minHeight: Size.buttonHeight)
+            .frame(maxWidth: .infinity, minHeight: Size.searchHeight)
             .background(theme.palette.surface, in: Capsule())
             .overlay {
                 Capsule().strokeBorder(

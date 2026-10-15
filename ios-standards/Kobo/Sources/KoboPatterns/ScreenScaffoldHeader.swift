@@ -18,7 +18,6 @@ struct ScaffoldHeader<Toolbar: View>: View {
                     kicker
                         .font(theme.font(.footnote).weight(.semibold))
                         .foregroundStyle(theme.palette.accentText)
-                        .textCase(.uppercase)
                 }
                 if showsTitle {
                     title
