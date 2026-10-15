@@ -29,20 +29,27 @@ struct ExerciseDetailContent: View {
             }
         }
         .screenCanvas()
+        .navigationTitle(Text(verbatim: title))
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    /// The exercise's name as the inline title every pushed screen uses.
+    private var title: String {
+        guard case .loaded(let item) = state.exercise else { return "" }
+        return item.name
     }
 }
 
-/// The loaded exercise, top to bottom: name, the animation beside its muscles and equipment, recent history in compact
-/// rows, then how to do it (with the technique videos link in its header), which is the longest part.
+/// The loaded exercise, top to bottom: the animation beside its muscles and equipment, recent history in compact rows,
+/// then how to do it (with the technique videos link in its header), which is the longest part. The name is the bar
+/// title.
 private struct ExerciseDetailBody: View {
     let item: ExerciseDetailItem
     let state: ExerciseDetailState
     let send: (ExerciseDetailAction) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Space.lg) {
-            ExerciseTitle(name: item.name)
+        VStack(alignment: .leading, spacing: Space.section) {
             ExerciseMediaView(item: item, media: state.media, animation: state.animation)
             ExerciseHistorySection(history: state.history)
                 .listRowDensity(.compact)
@@ -66,7 +73,7 @@ private struct ExerciseDetailBody: View {
             }
         }
         .pageColumn()
-        .padding(.top, Space.xs)
+        .padding(.top, Space.sm)
         .padding(.bottom, Space.xxl)
     }
 }
@@ -83,6 +90,7 @@ private struct HowToSection<Content: View>: View {
         } accessory: {
             Button("Videos", systemImage: "play.rectangle.fill") { send(.videosTapped) }
                 .buttonStyle(.kobo(.plain, size: .compact, width: .inline))
+                .imageScale(.small)
                 .accessibilityLabel(Text("Watch technique videos"))
                 .accessibilityHint(Text("Opens a YouTube search."))
         }

@@ -26,9 +26,7 @@ struct ExerciseMediaView: View {
                 ExerciseFact("Secondary") { MuscleTags(muscles: item.secondary, style: .outline) }
             }
             if !item.equipment.isEmpty {
-                ExerciseFact("Equipment") {
-                    KoboTag(verbatim: item.equipment, tone: .neutral, systemImage: "dumbbell.fill")
-                }
+                ExerciseFact("Equipment") { AttributeTag(text: item.equipment) }
             }
         }
     }

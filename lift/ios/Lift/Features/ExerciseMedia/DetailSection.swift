@@ -2,11 +2,10 @@ import KoboComponents
 import KoboTokens
 import SwiftUI
 
-/// A titled part of an exercise detail page, flat on the canvas: its heading and its content start on the page
-/// keyline, with no card of its own. An optional accessory (a link) sits at the end of the heading line; at
+/// A titled part of an exercise detail page, flat on the canvas: its heading (the one section-title look, as on every
+/// list section) and its content start on the page keyline, with no card of its own. An optional accessory (a link) sits at the end of the heading line; at
 /// accessibility sizes it moves under the heading.
 struct DetailSection<Content: View, Accessory: View>: View {
-    @Environment(\.koboTheme) private var theme
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     private let title: LocalizedStringKey
     private let content: Content
@@ -41,10 +40,7 @@ struct DetailSection<Content: View, Accessory: View>: View {
     }
 
     private var heading: some View {
-        Text(title)
-            .font(theme.font(.headline))
-            .foregroundStyle(theme.palette.textPrimary)
-            .accessibilityAddTraits(.isHeader)
+        Text(title).sectionTitleStyle()
     }
 }
 
@@ -60,7 +56,6 @@ extension DetailSection where Accessory == EmptyView {
         var body: some View {
             ScrollView {
                 VStack(alignment: .leading, spacing: Space.xl) {
-                    ExerciseTitle(name: "Back squat")
                     DetailSection("Steps") {
                         CatalogSteps(steps: ["Stand tall under the bar.", "Sit down and back.", "Drive up."])
                     }
