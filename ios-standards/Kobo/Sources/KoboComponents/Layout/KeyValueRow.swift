@@ -8,6 +8,7 @@ import SwiftUI
 public struct KeyValueRow: View {
     @Environment(\.koboTheme) private var theme
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.listSectionStyle) private var style
     private let key: Text
     private let value: String
     private let valueTone: Tone?
@@ -39,11 +40,11 @@ public struct KeyValueRow: View {
                 .foregroundStyle(valueColor)
                 .multilineTextAlignment(dynamicTypeSize.isAccessibilitySize ? .leading : .trailing)
         }
-        .padding(.horizontal, Space.lg)
+        .padding(.horizontal, style.rowInset)
         .padding(.vertical, Space.rowVertical)
         .frame(maxWidth: .infinity, minHeight: Size.rowMinHeight, alignment: .leading)
         .accessibilityElement(children: .combine)
-        .listSectionSeparator(leadingInset: Space.lg)
+        .listSectionSeparator(leadingInset: style.separatorInset(leadingWidth: 0))
     }
 
     private var layout: AnyLayout {
@@ -67,7 +68,8 @@ public struct KeyValueRow: View {
                     KeyValueRow("Total distance", value: "1,240 km")
                     KeyValueRow("Change", value: "+5%", valueTone: .success)
                 }
-                .padding(Space.gutter)
+                .padding(.vertical, Space.gutter)
+                .pageGutter()
             }
             .background(Theme.system.palette.canvas)
         }

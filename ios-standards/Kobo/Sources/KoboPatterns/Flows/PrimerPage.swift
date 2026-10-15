@@ -46,7 +46,7 @@ public struct PrimerPage<Illustration: View, Extra: View>: View {
                 if !model.reasons.isEmpty { reasons }
                 extra
             }
-            .padding(.horizontal, Space.gutter)
+            .pageGutter()
             .padding(.bottom, Space.xxl)
             .frame(maxWidth: .infinity)
         }

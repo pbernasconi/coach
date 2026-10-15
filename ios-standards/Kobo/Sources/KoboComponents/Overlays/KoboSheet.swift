@@ -115,7 +115,9 @@ public struct KoboSheet<Content: View, Footer: View>: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: Space.lg) { content }
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, Space.gutter)
+                        .pageGutter()
+                        // A sheet holds forms and pickers: its sections are grouped cards on the keyline.
+                        .listSectionStyle(.grouped)
                         .padding(.top, Space.sm)
                         .padding(.bottom, Space.xxl)
                         .overlayReportsHeight { measurements.content = $0 }

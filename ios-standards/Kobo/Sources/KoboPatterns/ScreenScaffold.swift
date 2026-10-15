@@ -98,9 +98,10 @@ public struct ScreenScaffold<Content: View, Toolbar: View, Footer: View>: View {
                 }
                 content
             }
-            .padding(.horizontal, Space.gutter)
+            .pageGutter()
             .padding(.bottom, Space.xxl)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .readableWidth()
         }
         .scrollDismissesKeyboard(.interactively)
         .background(theme.palette.canvas)

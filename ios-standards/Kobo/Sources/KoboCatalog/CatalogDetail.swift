@@ -18,7 +18,8 @@ struct CatalogDetail: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .koboCard()
             }
-            .padding(Space.lg)
+            .padding(.vertical, Space.lg)
+            .pageColumn()
         }
         .background(theme.palette.canvas)
         .navigationTitle(component.title)

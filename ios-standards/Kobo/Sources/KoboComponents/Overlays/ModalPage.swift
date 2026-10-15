@@ -75,7 +75,7 @@ public struct ModalPage<Content: View>: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: Space.lg) { content }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, Space.gutter)
+                    .pageGutter()
                     .padding(.vertical, Space.lg)
             }
             .scrollDismissesKeyboard(.interactively)

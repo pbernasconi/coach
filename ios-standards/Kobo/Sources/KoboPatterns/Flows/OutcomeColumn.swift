@@ -44,7 +44,7 @@ struct OutcomeColumn<Extra: View>: View {
             }
             extra.entrance(isShown: showsContent, reduceMotion: reduceMotion)
         }
-        .padding(.horizontal, Space.gutter)
+        .pageGutter()
         .padding(.vertical, Space.xxl)
         .frame(maxWidth: .infinity)
     }

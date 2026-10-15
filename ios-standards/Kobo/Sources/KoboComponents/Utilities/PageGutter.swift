@@ -16,6 +16,14 @@ extension View {
         padding(.horizontal, inset).environment(\.insidePageGutter, true)
     }
 
+    /// The page column: the content padded by the page gutter (`pageGutter()`), laid out from the leading edge and
+    /// capped at the readable width on a wide window. Put it on the root stack of a scrolling page.
+    ///
+    ///     ScrollView { VStack(alignment: .leading) { … }.pageColumn() }
+    public func pageColumn(_ width: CGFloat = ReadableWidth.content) -> some View {
+        pageGutter().frame(maxWidth: .infinity, alignment: .leading).readableWidth(width)
+    }
+
     /// Marks the content as padded by the page gutter, for a page that pays the gutter itself.
     public func insidePageGutter(_ inside: Bool = true) -> some View {
         environment(\.insidePageGutter, inside)

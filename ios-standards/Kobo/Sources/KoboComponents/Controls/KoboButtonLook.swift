@@ -54,6 +54,9 @@ extension KoboButtonStyle {
     /// How wide a button is: its label's width, or the full width it is offered.
     public enum Width: Sendable, Equatable, CaseIterable {
         case hug, full
+        /// Hugs the label and lays out at the label's width, so a borderless (`.plain`) button's text sits on the
+        /// keyline with the text around it; the capsule (press veil and touch target) reaches past it into the margin.
+        case inline
     }
 }
 

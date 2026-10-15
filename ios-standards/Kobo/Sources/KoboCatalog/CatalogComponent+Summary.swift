@@ -75,7 +75,7 @@ extension CatalogComponent {
         case .thumbnail: "Rounded square image or symbol with an optional badge"
         case .card: "Surface container modifier and titled card section"
         case .listRow: "Title, subtitle, value, leading and trailing slots"
-        case .listSection: "Grouped rows with header and footer"
+        case .listSection: "Flat or grouped rows with header and footer"
         case .keyValueList: "Label and value pairs that stack at large text sizes"
         case .sectionHeader: "Section title with optional action"
         case .separator: "Hairline divider with insets"

@@ -3,9 +3,9 @@ import SwiftUI
 
 /// A list row: optional `leading` slot (icon, avatar), title, optional subtitle and value text, and a
 /// `trailing` slot. A row with an `action` is one `Button` with a press highlight and, when it has no
-/// trailing slot, a chevron. A row without an action reads as one VoiceOver element. The press highlight fills the
-/// whole row inside a `ListSection` (the card clips it) and is an inset rounded rectangle on the canvas or in a sheet,
-/// where a full-bleed fill would look like a selection; every tap shows it once, however quick (`ListRowButtonStyle`).
+/// trailing slot, a chevron. A row without an action reads as one VoiceOver element. The row pays its section's
+/// `rowInset` (the page gutter when flat), and the press highlight fills the whole row inside a `ListSection` (edge to
+/// edge when flat, clipped by the card when grouped); every tap shows it once, however quick (`ListRowButtonStyle`).
 ///
 ///     ListRow("Units", value: "km", action: openUnits) { Image(systemName: "ruler").accessibilityHidden(true) }
 ///
@@ -16,6 +16,7 @@ public struct ListRow<Leading: View, Trailing: View>: View {
     @Environment(\.koboTheme) private var theme
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.listRowDensity) private var density
+    @Environment(\.listSectionStyle) private var style
     @State private var leadingWidth: CGFloat = 0
     private let title: Text
     private let subtitle: Text?
@@ -92,7 +93,9 @@ public struct ListRow<Leading: View, Trailing: View>: View {
     private var hasLeading: Bool { Leading.self != EmptyView.self }
     private var showsChevron: Bool { action != nil && Trailing.self == EmptyView.self }
     private var stacksValue: Bool { dynamicTypeSize.isAccessibilitySize }
-    private var separatorInset: CGFloat { Space.lg + (hasLeading ? leadingWidth + Space.md : 0) }
+    private var separatorInset: CGFloat {
+        style.separatorInset(leadingWidth: hasLeading ? leadingWidth + Space.md : 0)
+    }
 
     private var row: some View {
         HStack(spacing: Space.md) {
@@ -115,7 +118,7 @@ public struct ListRow<Leading: View, Trailing: View>: View {
                     .accessibilityHidden(true)
             }
         }
-        .padding(.horizontal, Space.lg)
+        .padding(.horizontal, style.rowInset)
         .padding(.vertical, density.verticalPadding)
         .frame(maxWidth: .infinity, minHeight: density.minHeight, alignment: .leading)
         .contentShape(Rectangle())
@@ -233,7 +236,8 @@ extension ListRow where Leading == EmptyView, Trailing == EmptyView {
                         Toggle("Toggle trailing", isOn: $isOn).labelsHidden()
                     }
                 }
-                .padding(Space.gutter)
+                .padding(.vertical, Space.gutter)
+                .pageGutter()
             }
             .background(Theme.system.palette.canvas)
         }

@@ -55,7 +55,6 @@ public struct LoadableSection<Value: Equatable & Sendable, Content: View>: View 
                 content(value).transition(.opacity)
             case .empty:
                 SectionState(emptyTitle, message: emptyMessage)
-                    .padding(.horizontal, Space.lg)
                     .transition(.opacity)
             case .failed(let message, let retryLabel):
                 SectionState(
@@ -65,7 +64,6 @@ public struct LoadableSection<Value: Equatable & Sendable, Content: View>: View 
                     announces: true,
                     onRetry: onRetry
                 )
-                .padding(.horizontal, Space.lg)
                 .transition(.opacity)
             }
         }
