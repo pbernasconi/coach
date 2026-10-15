@@ -1,35 +1,40 @@
 import KoboComponents
 import KoboTokens
+import LiftCore
 import LiftStore
 import SwiftUI
 
-/// One set on the Workout screen: its name and target, the values saved or logged on it, and a large check that
-/// logs it in one tap (or un-logs it). Tapping the values opens the editor, which never logs. Skip and Remove sit in
-/// the context menu.
+/// The set grid's column widths at the default text size. The header and the rows scale them with Dynamic Type, so
+/// the columns stay lined up.
+nonisolated enum SetGridWidth {
+    static let badge = Size.iconLg + Space.xs
+    static let weight = Size.thumbnail + Space.lg
+    static let reps = Size.thumbnail
+}
+
+/// One set in the grid: its badge, the same set last time, weight and reps pills that open the editor (which never
+/// logs), and a check that logs it in one tap (or un-logs it). Skip and Remove sit in the context menu. At accessibility
+/// sizes the row stacks, so nothing is cut off.
 struct SetRow: View {
     @Environment(\.koboTheme) private var theme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @ScaledMetric(relativeTo: .body) private var badgeWidth = SetGridWidth.badge
+    @ScaledMetric(relativeTo: .body) private var weightWidth = SetGridWidth.weight
+    @ScaledMetric(relativeTo: .body) private var repsWidth = SetGridWidth.reps
     let item: WorkoutSetItem
+    let unit: WeightUnit
     let onLog: () -> Void
     let onEdit: () -> Void
     let onSkip: () -> Void
     let onRemove: () -> Void
 
     var body: some View {
-        HStack(spacing: Space.md) {
-            Button(action: onEdit) { values }
-                .buttonStyle(.plain)
-                .accessibilityHint(Text("Edit weight and reps"))
-            IconButton(
-                item.status == .skipped ? "forward.fill" : "checkmark",
-                verbatimAccessibilityLabel: logLabel,
-                style: item.status == .planned ? .tonal : .solid,
-                size: .large,
-                action: onLog
-            )
+        Group {
+            if dynamicTypeSize.isAccessibilitySize { stacked } else { grid }
         }
         .padding(.horizontal, Space.lg)
-        .padding(.vertical, Space.sm)
-        .frame(maxWidth: .infinity, minHeight: Size.rowMinHeight, alignment: .leading)
+        .padding(.vertical, Space.xxs)
+        .frame(maxWidth: .infinity, minHeight: Size.minTouch, alignment: .leading)
         .overlay(alignment: .top) { Separator(leadingInset: Space.lg) }
         .contextMenu {
             if item.status == .planned {
@@ -39,31 +44,119 @@ struct SetRow: View {
         }
     }
 
-    private var values: some View {
-        VStack(alignment: .leading, spacing: Space.xxs) {
-            Text(verbatim: item.title)
-                .font(theme.font(.footnote).weight(.semibold))
-                .foregroundStyle(theme.palette.textSecondary)
-            Text(verbatim: item.target)
-                .font(theme.font(.body).monospacedDigit())
-                .foregroundStyle(item.status == .skipped ? theme.palette.textTertiary : theme.palette.textPrimary)
-            if let detail {
-                Text(verbatim: detail)
+    private var grid: some View {
+        HStack(spacing: Space.sm) {
+            HStack(spacing: Space.sm) {
+                Text(verbatim: item.badge)
+                    .font(theme.font(.subheadline).weight(.semibold).monospacedDigit())
+                    .foregroundStyle(badgeColor)
+                    .frame(width: badgeWidth)
+                Text(verbatim: item.previous ?? "—")
                     .font(theme.font(.subheadline).monospacedDigit())
-                    .foregroundStyle(item.status == .done ? theme.palette.accentText : theme.palette.textSecondary)
+                    .foregroundStyle(theme.palette.textSecondary)
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(Text(verbatim: item.title))
+            .accessibilityValue(previousLabel)
+            pill(item.weight, label: weightLabel)
+                .frame(width: weightWidth)
+            pill(item.reps, label: repsLabel)
+                .frame(width: repsWidth)
+            check
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .contentShape(Rectangle())
     }
 
-    /// "Logged 5 @ 100 kg", "Saved 6 @ 100 kg" or "Skipped"; nil for a planned set with nothing saved.
-    private var detail: String? {
-        switch item.status {
-        case .done: item.actual.map { String(localized: "Logged \($0)") } ?? String(localized: "Logged")
-        case .skipped: String(localized: "Skipped")
-        case .planned: item.actual.map { String(localized: "Saved \($0)") }
+    private var stacked: some View {
+        VStack(alignment: .leading, spacing: Space.sm) {
+            HStack(spacing: Space.sm) {
+                VStack(alignment: .leading, spacing: Space.xxs) {
+                    Text(verbatim: item.title)
+                        .font(theme.font(.subheadline).weight(.semibold))
+                        .foregroundStyle(badgeColor)
+                    if let previous = item.previous {
+                        Text("Last time \(previous)")
+                            .font(theme.font(.footnote).monospacedDigit())
+                            .foregroundStyle(theme.palette.textSecondary)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                check
+            }
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: Space.sm) { stackedPills }
+                VStack(spacing: Space.sm) { stackedPills }
+            }
         }
+        .padding(.vertical, Space.sm)
+    }
+
+    @ViewBuilder private var stackedPills: some View {
+        pill("\(item.weight) \(unit.rawValue)", label: weightLabel)
+        pill(String(localized: "\(item.reps) reps"), label: repsLabel)
+    }
+
+    /// A tonal capsule showing a value; tapping it opens the editor.
+    private func pill(_ value: String, label: Text) -> some View {
+        Button(action: onEdit) {
+            Text(verbatim: value)
+                .font(theme.font(.body).weight(.semibold).monospacedDigit())
+                .foregroundStyle(pillInk)
+                .strikethrough(item.status == .skipped)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .padding(.horizontal, Space.sm)
+                .frame(maxWidth: .infinity, minHeight: Size.buttonHeightCompact)
+                .background(Capsule().fill(pillFill))
+        }
+        .buttonStyle(.pressFeedback(.highlight, in: Capsule()))
+        .accessibilityLabel(label)
+        .accessibilityHint(Text("Edit weight and reps"))
+    }
+
+    private var check: some View {
+        IconButton(
+            item.status == .skipped ? "forward.fill" : "checkmark",
+            verbatimAccessibilityLabel: logLabel,
+            style: item.status == .planned ? .tonal : .solid,
+            action: onLog
+        )
+    }
+
+    private var badgeColor: Color {
+        switch item.status {
+        case .done: theme.palette.accentText
+        case .skipped: theme.palette.textTertiary
+        case .planned: theme.palette.textSecondary
+        }
+    }
+
+    private var pillInk: Color {
+        switch item.status {
+        case .done: theme.palette.accentText
+        case .skipped: theme.palette.textTertiary
+        case .planned: theme.palette.textPrimary
+        }
+    }
+
+    private var pillFill: Color {
+        item.status == .done ? theme.palette.accentSoft : theme.palette.surfaceRaised
+    }
+
+    private var weightLabel: Text { Text("Weight \(item.weight) \(unit.rawValue)") }
+    private var repsLabel: Text { Text("Reps \(item.reps)") }
+
+    /// "Last time 5 × 85", "Skipped" or "Logged"; empty for a planned set never done before.
+    private var previousLabel: Text {
+        let last = item.previous.map { String(localized: "Last time \($0)") }
+        let status: String? =
+            switch item.status {
+            case .done: String(localized: "Logged")
+            case .skipped: String(localized: "Skipped")
+            case .planned: nil
+            }
+        return Text(verbatim: [status, last].compactMap(\.self).joined(separator: ", "))
     }
 
     private var logLabel: String {

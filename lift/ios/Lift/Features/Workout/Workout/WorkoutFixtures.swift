@@ -5,27 +5,50 @@
 
     /// Named states for previews and snapshots. Fake data only (TEST-8).
     extension WorkoutState {
+        /// A working set row: "Set 2", target "5 @ 87.5 kg", pills "87.5" and "5", and last time's values.
         private static func set(
-            _ number: UInt8,
-            _ title: String,
-            _ target: String,
-            actual: String? = nil,
+            _ id: UInt8,
+            _ number: Int,
+            reps: String,
+            kg weight: String,
+            previous: String? = nil,
             status: SetStatus = .planned
         ) -> WorkoutSetItem {
-            WorkoutSetItem(id: .fixture(number), title: title, target: target, actual: actual, status: status)
+            WorkoutSetItem(
+                id: .fixture(id),
+                title: "Set \(number)",
+                target: "\(reps) @ \(weight) kg",
+                actual: status == .done ? "\(reps) @ \(weight) kg" : nil,
+                status: status,
+                badge: "\(number)",
+                weight: weight,
+                reps: reps,
+                previous: previous
+            )
         }
 
         private static let squat = WorkoutExercise(
             id: .fixture(20),
             name: "Back squat",
-            target: "3 × 5 @ 100 kg",
-            warmUp: "Warm-up: 20×10 · 50×5 · 70×3 · 85×1 kg",
-            plates: "Per side: 25 + 15 · 20 kg bar",
+            target: "3 × 5 @ 87.5 kg",
+            warmUp: "Warm-up: 20×10 · 42.5×5 · 60×3 · 75×1 kg",
+            plates: "Per side: 25 + 5 + 2.5 + 1.25 · 20 kg bar",
             progression: nil,
             sets: [
-                set(21, "Set 1", "5 @ 100 kg", actual: "5 @ 100 kg", status: .done),
-                set(22, "Set 2", "5 @ 100 kg", actual: "6 @ 100 kg"),
-                set(23, "Set 3", "5 @ 100 kg"),
+                WorkoutSetItem(
+                    id: .fixture(24),
+                    title: "Warm-up 1",
+                    target: "5 @ 60 kg",
+                    actual: nil,
+                    status: .done,
+                    badge: "W",
+                    weight: "60",
+                    reps: "5",
+                    previous: "5 × 60"
+                ),
+                set(21, 1, reps: "5", kg: "87.5", previous: "5 × 85", status: .done),
+                set(22, 2, reps: "6", kg: "87.5", previous: "5 × 85"),
+                set(23, 3, reps: "5", kg: "87.5", previous: "4 × 85"),
             ],
             libraryID: ExerciseLibrary.seedID(1),
             catalogID: "0043"
@@ -34,14 +57,14 @@
         private static let romanian = WorkoutExercise(
             id: .fixture(30),
             name: "Romanian deadlift",
-            target: "3 × 8 @ 60 kg",
-            warmUp: "Warm-up: 20×10 · 30×5 · 42.5×3 · 50×1 kg",
-            plates: "Per side: 20 · 20 kg bar",
-            progression: "Next time: 8 @ 62.5 kg",
+            target: "3 × 8 @ 65 kg",
+            warmUp: "Warm-up: 20×10 · 32.5×5 · 45×3 · 55×1 kg",
+            plates: "Per side: 20 + 2.5 · 20 kg bar",
+            progression: "Next time: 8 @ 67.5 kg",
             sets: [
-                set(31, "Set 1", "8 @ 60 kg", actual: "8 @ 60 kg", status: .done),
-                set(32, "Set 2", "8 @ 60 kg", actual: "8 @ 60 kg", status: .done),
-                set(33, "Set 3", "8 @ 60 kg", status: .skipped),
+                set(31, 1, reps: "8", kg: "65", previous: "8 × 62.5", status: .done),
+                set(32, 2, reps: "8", kg: "65", previous: "8 × 62.5", status: .done),
+                set(33, 3, reps: "8", kg: "65", previous: "7 × 62.5", status: .skipped),
             ],
             libraryID: ExerciseLibrary.seedID(3)
         )
@@ -53,14 +76,14 @@
             warmUp: nil,
             plates: nil,
             progression: nil,
-            sets: [set(41, "Set 1", "10 @ 14 kg"), set(42, "Set 2", "10 @ 14 kg")]
+            sets: [set(41, 1, reps: "10", kg: "14"), set(42, 2, reps: "10", kg: "14")]
         )
 
         private static let overview = WorkoutOverview(
             title: "Lower A",
             dayTitle: "Thursday, 5 March",
-            loggedSets: 3,
-            totalSets: 8,
+            loggedSets: 4,
+            totalSets: 9,
             exercises: [squat, romanian, curl]
         )
 
@@ -79,10 +102,12 @@
                 title: "Set 2 · Back squat",
                 unit: .kg,
                 step: 2.5,
-                weight: 100,
+                weight: 90,
                 reps: 6,
-                savedWeight: 100,
-                savedReps: 5
+                savedWeight: 87.5,
+                savedReps: 6,
+                lastTime: "Last time 5 × 85 kg · Thu, Feb 26",
+                laterSets: 1
             )
         )
         static let fixtureLoading = WorkoutState(workout: .loading)
@@ -103,7 +128,10 @@
                             warmUp: nil,
                             plates: nil,
                             progression: "Next time: same weight, 11 reps",
-                            sets: [set(51, "Set 1", "10–12 @ 32.5 kg"), set(52, "Set 2", "10–12 @ 32.5 kg")]
+                            sets: [
+                                set(51, 1, reps: "10–12", kg: "32.5", previous: "12 × 30"),
+                                set(52, 2, reps: "10–12", kg: "32.5", previous: "11 × 30"),
+                            ]
                         )
                     ]
                 )
