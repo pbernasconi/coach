@@ -9,8 +9,8 @@ enum VolumeTrendMetrics {
     static let plotHeight: CGFloat = 132
 }
 
-/// "Last 8 weeks": every week's hard sets as a column, the week the bars above show in the accent. Touching a column
-/// shows that week above. VoiceOver reads the weeks as one summary; the arrows above step through them.
+/// "Hard sets per week": the last 8 weeks' hard sets as columns, the week the muscle bars below show in the accent.
+/// Touching a column shows that week below. VoiceOver reads the weeks as one summary; the arrows below step through them.
 struct VolumeTrendSection: View {
     @Environment(\.koboTheme) private var theme
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize

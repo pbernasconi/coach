@@ -3,6 +3,13 @@ import KoboTokens
 import LiftCore
 import SwiftUI
 
+/// Sizes of the History page.
+enum HistoryMetrics {
+    /// The largest text size of the Sessions | Progress picker: past it the two segments would stack and push the page
+    /// down; at this size they still read clearly side by side.
+    static let pickerTypeSize = DynamicTypeSize.xxxLarge
+}
+
 /// Dumb view: past sessions grouped by week, newest first, or (Progress) hard sets per muscle and per week (SCR-2).
 struct HistoryContent: View {
     let state: HistoryState
@@ -19,6 +26,7 @@ struct HistoryContent: View {
                         ChoiceOption(HistorySegment.progress, title: "Progress"),
                     ]
                 )
+                .dynamicTypeSize(...HistoryMetrics.pickerTypeSize)
                 switch state.segment {
                 case .sessions: HistorySessions(weeks: state.weeks, send: send)
                 case .progress: HistoryProgress(volume: state.volume, send: send)
@@ -74,7 +82,7 @@ private struct HistorySessions: View {
     }
 }
 
-/// Training volume: the chosen week's hard sets per muscle, then the 8-week trend.
+/// Training volume: the 8-week trend, which picks a week, then that week's hard sets per muscle.
 private struct HistoryProgress: View {
     let volume: Loadable<VolumeProgress>
     let send: (HistoryAction) -> Void
@@ -92,8 +100,8 @@ private struct HistoryProgress: View {
         case .failed:
             ErrorState(title: "Progress could not be loaded")
         case .loaded(let progress):
-            MuscleVolumeSection(progress: progress, send: send)
             VolumeTrendSection(progress: progress, send: send)
+            MuscleVolumeSection(progress: progress, send: send)
         }
     }
 }
