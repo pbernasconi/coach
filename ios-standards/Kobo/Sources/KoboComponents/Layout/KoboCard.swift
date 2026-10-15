@@ -20,8 +20,12 @@ private struct KoboCardModifier: ViewModifier {
         content
             .padding(padding)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(theme.palette.surface, in: RoundedRectangle(cornerRadius: Radius.lg, style: .continuous))
-            .shadow(color: shadowColor, radius: Space.sm, y: Space.xxs)
+            .background {
+                // The shadow belongs to the card's shape only, so text and images inside never cast one of their own.
+                RoundedRectangle(cornerRadius: Radius.lg, style: .continuous)
+                    .fill(theme.palette.surface)
+                    .shadow(color: shadowColor, radius: Space.sm, y: Space.xxs)
+            }
     }
 
     private var shadowColor: Color {
