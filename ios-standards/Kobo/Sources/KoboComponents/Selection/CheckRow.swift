@@ -96,13 +96,18 @@ public struct CheckRow<Leading: View>: View {
 
 extension CheckRow where Leading == EmptyView {
     /// A row with a localized title and subtitle.
-    public init(_ title: LocalizedStringKey, subtitle: LocalizedStringKey? = nil, isOn: Binding<Bool>) {
-        self.init(title, subtitle: subtitle, isOn: isOn) { EmptyView() }
+    public init(
+        _ title: LocalizedStringKey,
+        subtitle: LocalizedStringKey? = nil,
+        value: String? = nil,
+        isOn: Binding<Bool>
+    ) {
+        self.init(title, subtitle: subtitle, value: value, isOn: isOn) { EmptyView() }
     }
 
     /// A row whose title and subtitle are shown as is.
-    public init(verbatim title: String, subtitle: String? = nil, isOn: Binding<Bool>) {
-        self.init(verbatim: title, subtitle: subtitle, isOn: isOn) { EmptyView() }
+    public init(verbatim title: String, subtitle: String? = nil, value: String? = nil, isOn: Binding<Bool>) {
+        self.init(verbatim: title, subtitle: subtitle, value: value, isOn: isOn) { EmptyView() }
     }
 
     /// A three-state row with a localized title: a parent over other rows ("All amenities"). A tap on a mixed row
