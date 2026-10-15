@@ -28,9 +28,9 @@ public enum SyncPayload {
         return object
     }
 
-    /// An ISO 8601 date string ("2026-10-15T07:30:00.000Z").
+    /// An ISO 8601 date string ("2026-10-15T07:30:00.000Z"), rounded to the millisecond.
     public static func wireDate(_ date: Date) -> String {
-        date.formatted(isoWithMilliseconds)
+        StampText(date: date).wire
     }
 
     /// Parses a wire date, with or without milliseconds. The GRDB form is accepted too.
@@ -40,11 +40,20 @@ public enum SyncPayload {
         return Date.fromDatabaseValue(text.databaseValue)
     }
 
-    private static func wireDate(fromStored text: String) throws -> String {
+    /// The wire form of a stored stamp, converted as text so no millisecond is lost.
+    static func wireDate(fromStored text: String) throws -> String {
+        if let stamp = StampText(stored: text) ?? StampText(wire: text) { return stamp.wire }
         guard let date = Date.fromDatabaseValue(text.databaseValue) ?? self.date(fromWire: text) else {
             throw AppError(.decoding, detail: "date column")
         }
         return wireDate(date)
+    }
+
+    /// The stored (GRDB) form of a wire stamp, converted as text so no millisecond is lost. Offsets other
+    /// than `Z` go through `Date`, rounded to the millisecond.
+    static func storedDate(fromWire text: String) -> String? {
+        if let stamp = StampText(wire: text) ?? StampText(stored: text) { return stamp.stored }
+        return date(fromWire: text).map { StampText(date: $0).stored }
     }
 
     /// A database row for a pulled payload: the inverse of `wireObject`.
@@ -69,8 +78,8 @@ public enum SyncPayload {
                 return id.databaseValue
             }
             if dateColumns.contains(column) {
-                guard let date = date(fromWire: text) else { throw AppError(.decoding, detail: column) }
-                return date.databaseValue
+                guard let stored = storedDate(fromWire: text) else { throw AppError(.decoding, detail: column) }
+                return stored.databaseValue
             }
             return text.databaseValue
         }
