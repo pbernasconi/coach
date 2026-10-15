@@ -30,6 +30,7 @@ import Testing
             catalog: catalog,
             history: FakeExerciseHistoryRepository(emissions: [[]]),
             health: RecordingHealthRecorder(),
+            gym: InMemoryGymSettings(.standard),
             now: SessionBuilder.now,
             calendar: SessionBuilder.calendar
         )

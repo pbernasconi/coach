@@ -47,6 +47,7 @@ import Testing
             catalog: FakeExerciseCatalog(),
             history: FakeExerciseHistoryRepository(emissions: [[]]),
             health: health,
+            gym: InMemoryGymSettings(.standard),
             now: SessionBuilder.now,
             calendar: SessionBuilder.calendar
         )
@@ -212,10 +213,10 @@ import Testing
         var started = SessionBuilder.session(id: 3, on: Fixtures.monday, done: 1, planned: 1)
         started.items[0].sets[0].completedAt = ManualNow.start
         let days = DayCalendar(calendar: SessionBuilder.calendar)
-        let overview = WorkoutOverview(detail: started, days: days, previous: [:])
+        let overview = WorkoutOverview(detail: started, days: days, previous: [:], gym: .standard)
         #expect(overview.started == days.started(at: ManualNow.start))
         #expect(!overview.isFinished)
         started.session.finishedAt = ManualNow.start
-        #expect(WorkoutOverview(detail: started, days: days, previous: [:]).isFinished)
+        #expect(WorkoutOverview(detail: started, days: days, previous: [:], gym: .standard).isFinished)
     }
 }

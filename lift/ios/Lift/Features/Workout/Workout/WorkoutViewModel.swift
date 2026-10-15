@@ -18,6 +18,8 @@ final class WorkoutViewModel {
     private let catalog: any ExerciseCatalogProviding
     /// Each library exercise's sets last time, read once when the session first loads.
     private let previousSets: PreviousSetsLoader
+    /// The gym's bars and plates, for plates per side, warm-ups and the weight step; read each time the session shows.
+    private let gym: any GymPreference
     private let days: DayCalendar
     /// The latest session from the store; the source for the editor, Add set and rest times.
     @ObservationIgnored private(set) var detail: SessionDetail?
@@ -42,6 +44,7 @@ final class WorkoutViewModel {
         catalog: any ExerciseCatalogProviding,
         history: any ExerciseHistoryRepository,
         health: any WorkoutHealthRecording,
+        gym: any GymPreference,
         now: @escaping @Sendable () -> Date,
         calendar: Calendar
     ) {
@@ -60,6 +63,7 @@ final class WorkoutViewModel {
         self.restActivity = RestActivitySession(controller: restActivity, now: now)
         self.catalog = catalog
         self.previousSets = PreviousSetsLoader(history: history)
+        self.gym = gym
         self.days = DayCalendar(calendar: calendar)
     }
 
@@ -86,7 +90,7 @@ final class WorkoutViewModel {
     }
 
     private func show(_ detail: SessionDetail) {
-        state.workout = .loaded(WorkoutOverview(detail: detail, days: days, previous: state.previous))
+        state.workout = .loaded(WorkoutOverview(detail: detail, days: days, previous: state.previous, gym: gym.setup))
     }
 
     /// Counts the rest down once a second on the injected clock. The Screen restarts it for each new rest
@@ -184,7 +188,7 @@ final class WorkoutViewModel {
 
     private func openEditor(_ id: UUID) {
         guard case (let item, let set)? = detail?.find(setID: id) else { return }
-        state.editor = SetEditor(set: set, in: item, previous: state.previous, days: days)
+        state.editor = SetEditor(set: set, in: item, previous: state.previous, days: days, gym: gym.setup)
     }
 
     /// Done: saves values through `saveValues` only and never logs the set (product rule). "Apply to later sets" also
