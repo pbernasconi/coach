@@ -9,7 +9,7 @@ struct ExercisesContent: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: Space.xl) {
+            VStack(alignment: .leading, spacing: Space.section) {
                 switch state.exercises {
                 case .loading:
                     LoadingState()
@@ -30,9 +30,11 @@ struct ExercisesContent: View {
                                 send(.allExercisesTapped)
                             }
                         ) {
-                            Image(systemName: "books.vertical").accessibilityHidden(true)
+                            // The same tile size as the exercise thumbnails, so every row's text starts on one keyline.
+                            Thumbnail(systemName: "books.vertical", tone: .accent, side: ExerciseThumbnail.compactSide)
                         }
                     }
+                    .listRowDensity(.compact)
                     ExerciseList(
                         items: state.visible,
                         query: state.query,
@@ -74,7 +76,7 @@ private struct ExerciseList: View {
                 message: String(localized: "Try a different search.")
             )
         } else {
-            ListSection {
+            ListSection("Your exercises") {
                 LazyVStack(spacing: 0) {
                     ForEach(items) { item in
                         ExerciseRow(
@@ -84,10 +86,6 @@ private struct ExerciseList: View {
                         )
                     }
                 }
-            } header: {
-                EmptyView()
-            } footer: {
-                EmptyView()
             }
             .listRowDensity(.compact)
         }

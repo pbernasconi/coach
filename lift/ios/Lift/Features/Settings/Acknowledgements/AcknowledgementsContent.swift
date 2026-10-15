@@ -2,25 +2,25 @@ import KoboComponents
 import KoboTokens
 import SwiftUI
 
-/// Dumb view: one flat section per bundled third-party work, with its licence and source links (SCR-2).
+/// Dumb view: one flat section per bundled third-party work, with its licence and source links, under the inline title
+/// every pushed screen uses (SCR-2).
 struct AcknowledgementsContent: View {
     let state: AcknowledgementsState
     let send: (AcknowledgementsAction) -> Void
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                AppHeader("Acknowledgements")
-                VStack(alignment: .leading, spacing: Space.xxl) {
-                    ForEach(state.items) { item in
-                        AcknowledgementSection(item: item, send: send)
-                    }
+            VStack(alignment: .leading, spacing: Space.section) {
+                ForEach(state.items) { item in
+                    AcknowledgementSection(item: item, send: send)
                 }
-                .pageColumn()
-                .padding(.bottom, Space.xxl)
             }
+            .pageColumn()
+            .padding(.top, Space.sm)
+            .padding(.bottom, Space.xxl)
         }
         .screenCanvas()
+        .navigationTitle(Text("Acknowledgements"))
         .navigationBarTitleDisplayMode(.inline)
     }
 }
