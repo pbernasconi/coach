@@ -27,7 +27,7 @@ public struct FlowStep<Content: View>: View {
     /// - Parameters:
     ///   - flowTitle: the flow's name in the bar, the same on every step; `nil` leaves the bar as the app set it.
     ///   - secondary: a quieter action under the primary one ("Skip for now").
-    ///   - banner: a notice above the actions; a failed `submitState` shows its own.
+    ///   - banner: a notice above the actions; a failed `submitState` shows its reason instead while it lasts.
     ///   - submitState: the step's submit, which drives the spinner, the failure banner and its haptic.
     ///   - exit: the ✕ that leaves the flow; `nil` for no ✕.
     ///   - onBack: draws the step's own back chevron (steps inside one screen); `nil` keeps the system back.

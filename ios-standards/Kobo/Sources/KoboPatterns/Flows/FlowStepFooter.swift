@@ -16,7 +16,7 @@ struct FlowStepFooter: View {
     var body: some View {
         let primary = primary.loading(with: submitState)
         VStack(spacing: Space.sm) {
-            if let banner = banner ?? FlowStepBanner.failure(of: submitState) {
+            if let banner = FlowStepBanner.failure(of: submitState) ?? banner {
                 FlowFooterBanner(banner: banner, stepHeight: stepHeight)
             }
             if let hint = primary.disabledHint,

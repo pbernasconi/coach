@@ -41,3 +41,33 @@ extension FormReturnKey {
         }
     }
 }
+
+#if DEBUG
+    private struct FormFieldPreview: View {
+        enum Field: Hashable, Sendable { case name, email, note }
+
+        @FocusState private var focus: Field?
+        @State private var name = ""
+        @State private var email = ""
+        @State private var note = ""
+        @State private var submitted = 0
+
+        private var form: FormFocus<Field> {
+            FormFocus(FormFocusOrder([.name, .email, .note], last: .continue), focus: $focus) { submitted += 1 }
+        }
+
+        var body: some View {
+            Form {
+                TextField("Name", text: $name).formField(.name, in: form)
+                TextField("Email", text: $email).formField(.email, in: form)
+                TextField("Note", text: $note).formField(.note, in: form)
+                Text(verbatim: "Submitted \(submitted) times")
+            }
+            .onAppear { focus = form.order.initialFocus }
+        }
+    }
+
+    #Preview("Light") { FormFieldPreview() }
+    #Preview("Dark") { FormFieldPreview().preferredColorScheme(.dark) }
+    #Preview("AX3") { FormFieldPreview().dynamicTypeSize(.accessibility3) }
+#endif

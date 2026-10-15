@@ -58,10 +58,10 @@ public struct HeaderProfileButton: View {
     private struct HeaderProfileButtonPreview: View {
         var body: some View {
             VStack(alignment: .leading, spacing: Space.md) {
-                HeaderProfileButton(name: "Ada Lovelace") {}
+                HeaderProfileButton(name: "Mira Castellan") {}
                 HeaderProfileButton(name: "Alexandria Montgomery-Whitfield") {}
                 HeaderProfileButton(name: nil) {}
-                HeaderProfileButton(name: "Ada Lovelace", showsName: false) {}
+                HeaderProfileButton(name: "Mira Castellan", showsName: false) {}
             }
             .padding(Space.gutter)
             .frame(maxWidth: .infinity, alignment: .leading)
