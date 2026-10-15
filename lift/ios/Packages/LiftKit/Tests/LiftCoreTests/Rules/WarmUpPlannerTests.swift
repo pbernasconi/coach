@@ -14,8 +14,14 @@ import Testing
     }
 
     @Test func rampsAtTheThreshold() {
-        #expect(WarmUpPlanner.plan(working: .lb(135), equipment: .barbell) == Self.ramp([(10, 45), (5, 65), (3, 95), (1, 115)], .lb))
-        #expect(WarmUpPlanner.plan(working: .kg(60), equipment: .barbell) == Self.ramp([(10, 20), (5, 30), (3, 42.5), (1, 50)], .kg))
+        #expect(
+            WarmUpPlanner.plan(working: .lb(135), equipment: .barbell)
+                == Self.ramp([(10, 45), (5, 65), (3, 95), (1, 115)], .lb)
+        )
+        #expect(
+            WarmUpPlanner.plan(working: .kg(60), equipment: .barbell)
+                == Self.ramp([(10, 20), (5, 30), (3, 42.5), (1, 50)], .kg)
+        )
     }
 
     @Test(arguments: [
@@ -33,7 +39,13 @@ import Testing
 
     @Test func dropsDuplicatesAndAnythingAtTheWorkingWeight() {
         let onlyFortyFives = PlateSet(unit: .lb, bar: 45, plates: [45])
-        #expect(WarmUpPlanner.plan(working: .lb(150), equipment: .barbell, plates: onlyFortyFives) == Self.ramp([(10, 45), (3, 135)], .lb))
-        #expect(WarmUpPlanner.plan(working: .lb(135), equipment: .barbell, plates: onlyFortyFives) == Self.ramp([(10, 45)], .lb))
+        #expect(
+            WarmUpPlanner.plan(working: .lb(150), equipment: .barbell, plates: onlyFortyFives)
+                == Self.ramp([(10, 45), (3, 135)], .lb)
+        )
+        #expect(
+            WarmUpPlanner.plan(working: .lb(135), equipment: .barbell, plates: onlyFortyFives)
+                == Self.ramp([(10, 45)], .lb)
+        )
     }
 }

@@ -15,7 +15,9 @@ public enum ExerciseMatcher {
         }
         let words = key.split(separator: " ").sorted()
         let reordered = live.filter { exercise in
-            ([exercise.name] + exercise.aliases).contains { NameNormalizer.key($0).split(separator: " ").sorted() == words }
+            ([exercise.name] + exercise.aliases).contains {
+                NameNormalizer.key($0).split(separator: " ").sorted() == words
+            }
         }
         return unique(reordered).map { ExerciseMatch(exercise: $0, kind: .reorderedTokens) }
     }

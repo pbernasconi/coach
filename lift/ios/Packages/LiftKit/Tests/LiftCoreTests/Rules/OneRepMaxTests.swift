@@ -31,7 +31,9 @@ import Testing
         #expect(OneRepMax.estimate(set: plain, loadMode: .bodyweight(added: nil)) == nil)
         let belt = try #require(OneRepMax.estimate(set: plain, loadMode: .bodyweight(added: .lb(30))))
         #expect(abs(belt.value - 38) < 0.001)
-        let logged = try #require(OneRepMax.estimate(set: TestCalendar.done(5, .lb(30)), loadMode: .bodyweight(added: nil)))
+        let logged = try #require(
+            OneRepMax.estimate(set: TestCalendar.done(5, .lb(30)), loadMode: .bodyweight(added: nil))
+        )
         #expect(abs(logged.value - 35) < 0.001)
     }
 

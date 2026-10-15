@@ -52,7 +52,8 @@ enum ExerciseHeaderParser {
     }
 
     /// Consumes `225lb x`, `53*2lbs x` or `… x`. Reports whether a bare number (no unit) was read.
-    private static func readWeight(_ rest: inout String, into header: inout ExerciseHeader) -> (read: Bool, bare: Bool) {
+    private static func readWeight(_ rest: inout String, into header: inout ExerciseHeader) -> (read: Bool, bare: Bool)
+    {
         let pattern =
             /(?:(?<placeholder>…|\.{2,})|(?<value>\d+(?:\.\d+)?)\s*(?<times>\*\s*2)?\s*(?<unit>kgs?|lbs?)?)\s*[x×]\s*(?<rest>.+)/
         guard let match = rest.wholeMatch(of: pattern.ignoresCase()) else { return (false, false) }
@@ -85,6 +86,6 @@ enum ExerciseHeaderParser {
     }
 
     private static func hasName(_ text: String) -> Bool {
-        text.contains { $0.isLetter }
+        text.contains(where: \.isLetter)
     }
 }

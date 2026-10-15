@@ -74,7 +74,8 @@ struct SessionDraft: Equatable {
 
     /// Adds one set to each member, creating the members when the round starts a new superset.
     mutating func addRound(_ parsed: SupersetRound, done: Bool, line: Int, text: String) {
-        let block = round.flatMap { $0.keys == parsed.keys ? $0 : nil } ?? startRoundBlock(parsed, line: line, text: text)
+        let block =
+            round.flatMap { $0.keys == parsed.keys ? $0 : nil } ?? startRoundBlock(parsed, line: line, text: text)
         for (index, member) in zip(block.members, parsed.members) {
             var set = member.set
             if index == block.members.first, let note = parsed.note {

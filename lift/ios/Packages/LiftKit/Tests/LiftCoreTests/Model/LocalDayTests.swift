@@ -5,7 +5,10 @@ import Testing
 
 @Suite struct LocalDayTests {
     @Test func readsTheDayInTheCalendar() {
-        #expect(LocalDay(TestCalendar.date(2026, 9, 29), calendar: TestCalendar.gregorian) == LocalDay(year: 2026, month: 9, day: 29))
+        #expect(
+            LocalDay(TestCalendar.date(2026, 9, 29), calendar: TestCalendar.gregorian)
+                == LocalDay(year: 2026, month: 9, day: 29)
+        )
     }
 
     @Test(arguments: [
