@@ -14,7 +14,8 @@
             exerciseCount: 5,
             loggedSets: 15,
             totalSets: 15,
-            isDone: true
+            isDone: true,
+            note: "Short on time, skipped the lunges"
         )
 
         static let fixtureUpper = SessionSummary(

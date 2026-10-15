@@ -15,7 +15,9 @@ extension WorkoutOverview {
             exercises: detail.items.map { item in
                 let last = item.exercise.exerciseID.flatMap { previous[$0] }
                 return WorkoutExercise(item: item, unit: detail.session.unitsAtLog, previous: last)
-            }
+            },
+            note: detail.session.note,
+            warmUpNote: detail.session.warmUpNote
         )
     }
 }
@@ -46,7 +48,8 @@ extension WorkoutExercise {
             sets: Self.rows(item.sets, previous: previous),
             libraryID: exercise.exerciseID,
             catalogID: item.catalogID,
-            unit: item.sets.first?.unit ?? unit
+            unit: item.sets.first?.unit ?? unit,
+            note: WorkoutText.exerciseNote(exercise.note, hasHint: exercise.nextTimeHint != nil)
         )
     }
 
@@ -80,7 +83,8 @@ extension WorkoutExercise {
                 badge: WorkoutText.badge(number: number, kind: set.kind),
                 weight: WorkoutText.pill(set.actualWeight ?? set.target.weight, unit: set.unit),
                 reps: WorkoutText.pill(reps: set.actualReps, target: set.target),
-                previous: last.flatMap { WorkoutText.previous($0, unit: set.unit) }
+                previous: last.flatMap { WorkoutText.previous($0, unit: set.unit) },
+                note: set.note
             )
         }
     }

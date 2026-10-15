@@ -59,11 +59,12 @@ struct WorkoutExerciseSection: View {
                     howTo
                 }
             }
-            if exercise.warmUp != nil || exercise.plates != nil || exercise.progression != nil {
+            if exercise.warmUp != nil || exercise.plates != nil || exercise.progression != nil || exercise.note != nil {
                 VStack(alignment: .leading, spacing: Space.xxs) {
                     hint(exercise.warmUp, symbol: "flame", color: theme.palette.textSecondary)
                     hint(exercise.plates, symbol: "scalemass", color: theme.palette.textSecondary)
                     hint(exercise.progression, symbol: "arrow.up.right", color: theme.palette.accentText)
+                    hint(exercise.note, symbol: "quote.bubble", color: theme.palette.textSecondary, wraps: true)
                 }
             }
         }
@@ -120,10 +121,11 @@ struct WorkoutExerciseSection: View {
         }
     }
 
-    /// One plain hint line with a leading symbol; one line at default sizes, wrapping at accessibility sizes. Every
-    /// symbol takes the filled variant in one fixed-width frame, so the glyphs match in weight and the texts line up.
+    /// One plain hint line with a leading symbol; one line at default sizes (unless it `wraps`, as a written note does),
+    /// wrapping at accessibility sizes. Every symbol takes the filled variant in one fixed-width frame, so the glyphs
+    /// match in weight and the texts line up.
     @ViewBuilder
-    private func hint(_ text: String?, symbol: String, color: Color) -> some View {
+    private func hint(_ text: String?, symbol: String, color: Color, wraps: Bool = false) -> some View {
         if let text {
             HStack(alignment: .firstTextBaseline, spacing: Space.xs) {
                 Image(systemName: symbol)
@@ -132,7 +134,7 @@ struct WorkoutExerciseSection: View {
                     .frame(width: hintIconWidth)
                     .accessibilityHidden(true)
                 Text(verbatim: text)
-                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize || wraps ? nil : 1)
                     .minimumScaleFactor(0.85)
             }
             .font(theme.font(.footnote).monospacedDigit())

@@ -49,11 +49,17 @@ private struct HistoryWeekSection: View {
             ForEach(week.sessions) { session in
                 ListRow(
                     verbatim: session.summary.title,
-                    subtitle: "\(session.dayTitle) · \(SessionText.exercises(session.summary.exerciseCount))",
+                    subtitle: subtitle(session),
                     value: SessionText.sets(logged: session.summary.loggedSets, total: session.summary.totalSets),
                     action: { send(.sessionTapped(session.id)) }
                 )
             }
         }
+    }
+
+    /// "Tue, Oct 13 · 5 exercises", with the first line of the session's note under it when there is one.
+    private func subtitle(_ session: HistorySession) -> String {
+        let line = "\(session.dayTitle) · \(SessionText.exercises(session.summary.exerciseCount))"
+        return [line, session.summary.note].compactMap(\.self).joined(separator: "\n")
     }
 }

@@ -13,8 +13,19 @@ nonisolated struct SessionSummary: Equatable, Sendable, Identifiable {
     let totalSets: Int
     /// Finished, or every set is done or skipped.
     let isDone: Bool
+    /// The first line of the session's note ("Short on time, no lunges"), or nil.
+    let note: String?
 
-    init(id: UUID, day: LocalDay, title: String, exerciseCount: Int, loggedSets: Int, totalSets: Int, isDone: Bool) {
+    init(
+        id: UUID,
+        day: LocalDay,
+        title: String,
+        exerciseCount: Int,
+        loggedSets: Int,
+        totalSets: Int,
+        isDone: Bool,
+        note: String? = nil
+    ) {
         self.id = id
         self.day = day
         self.title = title
@@ -22,6 +33,7 @@ nonisolated struct SessionSummary: Equatable, Sendable, Identifiable {
         self.loggedSets = loggedSets
         self.totalSets = totalSets
         self.isDone = isDone
+        self.note = note
     }
 
     init(detail: SessionDetail) {
@@ -34,7 +46,8 @@ nonisolated struct SessionSummary: Equatable, Sendable, Identifiable {
             exerciseCount: detail.items.count,
             loggedSets: sets.count(where: { $0.status == .done }),
             totalSets: sets.count,
-            isDone: detail.session.finishedAt != nil || allHandled
+            isDone: detail.session.finishedAt != nil || allHandled,
+            note: SessionText.notePreview(detail.session.note)
         )
     }
 

@@ -76,6 +76,7 @@ private struct WorkoutBody: View {
                     }
                 }
                 SegmentedProgress(done: workout.loggedSets, goal: workout.totalSets, accessibilityLabel: "Sets logged")
+                WorkoutSessionNotes(note: workout.note, warmUpNote: workout.warmUpNote)
             }
             ForEach(workout.exercises) { exercise in
                 WorkoutExerciseSection(
