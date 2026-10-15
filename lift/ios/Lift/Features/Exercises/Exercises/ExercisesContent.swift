@@ -14,7 +14,11 @@ struct ExercisesContent: View {
                 case .loading:
                     LoadingState()
                 case .empty:
-                    EmptyState(symbol: "dumbbell", title: "No exercises", message: "The exercise library is empty.")
+                    EmptyState(
+                        symbol: "dumbbell",
+                        title: "No exercises",
+                        message: "The exercise library is empty."
+                    )
                 case .failed:
                     ErrorState(title: "Exercises could not be loaded")
                 case .loaded:
@@ -29,7 +33,12 @@ struct ExercisesContent: View {
                             Image(systemName: "books.vertical").accessibilityHidden(true)
                         }
                     }
-                    ExerciseList(items: state.visible, query: state.query, thumbnails: state.thumbnails, send: send)
+                    ExerciseList(
+                        items: state.visible,
+                        query: state.query,
+                        thumbnails: state.thumbnails,
+                        send: send
+                    )
                 }
             }
             .pageGutter()
@@ -39,9 +48,12 @@ struct ExercisesContent: View {
         .tabRootHeader {
             VStack(spacing: 0) {
                 AppHeader("Exercises")
-                SearchField(text: .action(state.query) { send(.queryChanged($0)) }, prompt: "Search exercises")
-                    .padding(.horizontal, Space.gutter)
-                    .padding(.bottom, Space.sm)
+                SearchField(
+                    text: .action(state.query) { send(.queryChanged($0)) },
+                    prompt: "Search exercises"
+                )
+                .padding(.horizontal, Space.gutter)
+                .padding(.bottom, Space.sm)
             }
         }
     }
@@ -77,11 +89,12 @@ private struct ExerciseList: View {
             } footer: {
                 EmptyView()
             }
+            .listRowDensity(.compact)
         }
     }
 }
 
-/// One library exercise: its catalog still (a figure symbol for one without), name and detail.
+/// One compact library row: its catalog still (a figure symbol for one without), name and detail.
 private struct ExerciseRow: View {
     let item: ExerciseItem
     let thumbnail: MediaImage?
@@ -89,7 +102,11 @@ private struct ExerciseRow: View {
 
     var body: some View {
         ListRow(verbatim: item.name, subtitle: item.detail, action: { send(.exerciseTapped(item.id)) }) {
-            ExerciseThumbnail(image: thumbnail ?? .failed, name: item.name)
+            ExerciseThumbnail(
+                image: thumbnail ?? .failed,
+                name: item.name,
+                side: ExerciseThumbnail.compactSide
+            )
         }
         .onAppear {
             if let catalogID = item.catalogID { send(.thumbnailNeeded(catalogID: catalogID)) }
