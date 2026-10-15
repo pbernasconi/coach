@@ -39,11 +39,9 @@ private struct WeekTemplatePickers: ViewModifier {
                         }
                     }
                     ActionSheetItem("Blank workout", systemImage: "plus") { send(.blankWorkoutPicked(day)) }
-                    if state.templates.isEmpty {
-                        ActionSheetItem("New template", systemImage: "list.bullet.rectangle") {
-                            send(.newTemplateTapped)
-                        }
-                    }
+                }
+                if state.templates.isEmpty {
+                    ActionSheetItem("New template", systemImage: "list.bullet.rectangle") { send(.newTemplateTapped) }
                 }
             }
             .koboActionSheet(

@@ -54,6 +54,17 @@ final class SettingsViewModel {
             router.open(.acknowledgements)
         case .syncNowTapped:
             return syncNow()
+        case .healthToggled(let isOn):
+            return setHealth(isOn)
+        default:
+            return sendToken(action)
+        }
+        return nil
+    }
+
+    /// The sync token row and its sheet.
+    private func sendToken(_ action: SettingsAction) -> Task<Void, Never>? {
+        switch action {
         case .tokenRowTapped:
             guard case .available(let summary) = state.sync else { return nil }
             state.tokenEditor = TokenEditor(draft: "", canRemove: summary.hasToken)
@@ -66,8 +77,8 @@ final class SettingsViewModel {
             return removeToken()
         case .tokenEditorDismissed:
             state.tokenEditor = nil
-        case .healthToggled(let isOn):
-            return setHealth(isOn)
+        default:
+            break
         }
         return nil
     }

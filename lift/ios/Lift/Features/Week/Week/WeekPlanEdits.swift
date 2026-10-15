@@ -74,6 +74,9 @@ struct WeekPlanEdits {
 
 /// A planning write and the `pending` key that stops a double tap from running it twice (nil: no single session).
 struct WeekPlanWrite {
+    /// The `pending` key of writes that change no single session.
+    static let planKey = UUID(uuid: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
+
     let key: UUID?
     let body: (WeekPlanEdits) async throws -> WeekNotice?
 }
