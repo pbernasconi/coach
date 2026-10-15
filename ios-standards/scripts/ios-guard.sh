@@ -24,7 +24,7 @@ report() { # file line rule message
 
 is_test()    { [[ "$1" == *Tests/* || "$1" == *Tests.swift || "$1" == */Testing/* ]]; }
 is_preview() { [[ "$1" == *Previews.swift || "$1" == *Fixtures.swift ]]; }
-is_design()  { [[ "$1" == */Design/* ]]; }
+is_design()  { [[ "$1" == */Design/* || "$1" == */CraftTokens/* ]]; }  # token layers own raw colours
 is_root()    { [[ "$1" == */App/* ]]; }          # composition root may touch live clocks / Date
 is_settings(){ [[ "$1" == *Settings*.swift ]]; }
 
@@ -55,6 +55,7 @@ RULES=(
   'UI-1~Color\(red:~Use a Design token.~notdesign'
   'UI-1~#colorLiteral~Use a Design token.~notdesign'
   'UI-1~Color\(hex:~Use a Design token.~notdesign'
+  'PERF-5~\.id\(UUID\(\)\)~Never give a view a new identity on every body run.~all'
 )
 
 for f in "${FILES[@]}"; do

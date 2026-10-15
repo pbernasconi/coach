@@ -29,7 +29,7 @@ without a network.
 ## 1. Stack
 
 | Concern | Choice | Not |
-|---|---|---|
+| --- | --- | --- |
 | UI | SwiftUI, `@Observable` | UIKit screens, Combine, TCA |
 | Language | Swift 6 language mode | Swift 5 mode |
 | Project | XcodeGen `project.yml` + one local SPM package | committed `.xcodeproj`, Tuist, CocoaPods |
@@ -50,7 +50,7 @@ without a network.
 
 ## 2. Project layout
 
-```
+```text
 <app>/
 ├── CLAUDE.md                      agent rules (short; points here)
 ├── ios/
@@ -89,7 +89,7 @@ without a network.
 Every screen is the same set of files in `Features/<Feature>/<Screen>/`:
 
 | File | Contains | Rules |
-|---|---|---|
+| --- | --- | --- |
 | `<Screen>State.swift` | `struct <Screen>State: Equatable, Sendable` | everything the screen renders; enums for exclusive states |
 | `<Screen>Action.swift` | `enum <Screen>Action: Equatable, Sendable` | every user intent, named for what happened (`saveTapped`) |
 | `<Screen>ViewModel.swift` | `@Observable final class` | `private(set) var state`, `run() async`, `send(_:)` |
@@ -140,7 +140,7 @@ Every screen is the same set of files in `Features/<Feature>/<Screen>/`:
 
 Build settings (in `project.yml` and the package manifest; see the templates):
 
-```
+```text
 SWIFT_VERSION: 6.0
 SWIFT_STRICT_CONCURRENCY: complete
 SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor        # app + Design
@@ -169,6 +169,11 @@ SWIFT_TREAT_WARNINGS_AS_ERRORS: YES
 - `CONC-8` **MUST** Repository streams use `AsyncStream.makeStream(bufferingPolicy: .bufferingNewest(1))`
   with one continuation per subscriber, removed in `onTermination`. Never share one stream between two
   consumers.
+- `CONC-9` **MUST** Pure types (maths, models, state machines, formatters) are declared `nonisolated` even in
+  MainActor-default targets, so they run and test anywhere, and keep them in files that import only
+  `Foundation`. Do not add `@MainActor` where default isolation already provides it; reach for
+  `@concurrent` only for measured CPU-heavy work (Swift 6.2 nonisolated async functions stay on the
+  caller's actor, SE-0461).
 
 ## 6. Local data and sync (offline-first)
 
@@ -246,9 +251,19 @@ and a second reader (web dashboard, coach scripts).
   over `\.self` on strings or indices, or `some View` helper functions that grow a body past the size limit
   (make a subview struct).
 - `UI-8` **MUST** Write user-facing strings in a String Catalog (`Localizable.xcstrings`), even with one
-  language, so copy is reviewable in one place.
+  language, so copy is reviewable in one place. Views that show copy take `LocalizedStringKey` (literals
+  localize) with a `verbatim:`/`StringProtocol` overload for user data, as SwiftUI's own initialisers do.
+  Strings inside a package resolve from the package's catalog (`Text("Close", bundle: .module)`,
+  `String(localized: "Close", bundle: .module)`), never the host app's main bundle.
 - `UI-9` **SHOULD** Use haptics through the injected `Haptics` protocol, for meaningful moments only (set
   logged, rest over, personal record).
+- `UI-10` **MUST** Liquid Glass belongs to the navigation and control layer (bars, toolbars, floating
+  buttons, the mini player, sheets), never to content (rows, cards, body text). Never stack glass on glass.
+  Group neighbouring glass views in one `GlassEffectContainer(spacing:)` (glass cannot sample glass) and
+  morph between them with `glassEffectID(_:in:)` inside an animation. Use `.interactive()` only on views
+  that respond to touch, and tint only the primary action, never as the only signal of state. Apply
+  `.glassEffect` after layout and appearance modifiers, and let the system adapt it for Reduce
+  Transparency and Increase Contrast; never override its opacity by hand.
 
 ## 10. Platform features
 
@@ -299,20 +314,44 @@ and a second reader (web dashboard, coach scripts).
 
 ## 13. Tooling and CI
 
-- `TOOL-1` **MUST** Pin the toolchain: `.xcode-version`, the `xcodegen` version in `scripts/`, and the
-  `swift-format` version.
+- `TOOL-1` **MUST** Pin the toolchain: `.xcode-version`, the `xcodegen` version in `scripts/`, and every lint
+  tool in `scripts/tools.lock`. `scripts/install-tools.sh` installs exactly those versions into `.tools/`
+  (git-ignored), so a laptop, CI and an agent sandbox run the same binaries.
 - `TOOL-2` **MUST** Run one command per check, the same locally and in CI:
   - `scripts/generate.sh`: XcodeGen.
-  - `scripts/lint.sh`: swift-format lint, SwiftLint `--strict` and `ios-guard.sh`.
+  - `scripts/lint.sh`: the quick Swift loop (swift-format, SwiftLint `--strict`, `ios-guard.sh`).
+  - `scripts/lint-all.sh`: the full static suite, runnable on Linux with no Xcode. It keeps going past
+    failures and exits 1 if any step failed. `--fix` auto-formats first; `--deep` adds the macOS-only build
+    with warnings as errors and Periphery dead-code scanning.
   - `scripts/test.sh`: package tests on macOS, then app tests on a simulator. Pick the simulator dynamically;
     never hard-code a device name.
   - `scripts/test.sh --ui`: the UI smoke test.
-- `TOOL-3` **MUST** CI runs `lint` and `test` on every PR that touches `ios/**`, on `macos-26`. Pin actions
-  by SHA and set `permissions: contents: read`.
+- `TOOL-3` **MUST** CI runs `lint-all.sh` on Linux and `lint-all.sh --deep` + `test.sh` on `macos-26` for
+  every PR that touches `ios/**`. Pin actions by full commit SHA with the tag in a comment, set
+  `permissions: contents: read`, `persist-credentials: false` on checkout, and a `timeout-minutes` per job.
+  zizmor must report no findings.
+- `TOOL-6` **MUST** Every check in the suite has one job and no overlap:
+
+  | Tool | Checks | Why it is here |
+  | --- | --- | --- |
+  | `ios-guard.sh` | Our bans, file sizes, names, ViewModel `init` | Encodes this document; no build needed |
+  | `swiftc -parse` | Every Swift file parses with the pinned toolchain | Catches syntax errors on Linux, where SwiftUI cannot compile |
+  | swift-format (`--strict`) | Formatting and a few lint rules | Apple's formatter, bundled with the toolchain |
+  | SwiftLint (`--strict`) | Size limits, correctness and opt-in rules | The widest Swift rule set; analyzer rules in `--deep` |
+  | Periphery | Unused code (`--deep`, macOS) | Dead code is the debt agents create fastest |
+  | shellcheck | `scripts/*.sh` | Scripts run in CI and hooks; quoting bugs are silent |
+  | actionlint + zizmor | Workflow correctness and security | Injection, unpinned actions, excessive permissions |
+  | yamllint | `project.yml`, configs, workflows | XcodeGen silently ignores mistyped keys |
+  | markdownlint | Docs, including this one | Agents read these files; keep them regular |
+  | typos | Spelling in code, comments and docs | Low noise; misspelt identifiers spread |
+  | detect-secrets | New secrets against `.secrets.baseline` | Signing keys and API tokens never enter git |
+
 - `TOOL-4` **MUST** Releases are tag-driven: `ios-v1.2.3` → TestFlight, with the build number taken from
   `git rev-list --count HEAD`. Signing secrets live in GitHub secrets, never in the repo.
 - `TOOL-5` **SHOULD** Run the guard script from a Claude Code `PostToolUse` hook on every edited `.swift` file,
   so agents see violations immediately (`templates/claude-settings.json`).
+- `TOOL-7` **SHOULD** Keep Dependabot (or Renovate) on for GitHub Actions and Swift packages, so SHA pins
+  and package versions move forward with reviewed PRs instead of rotting.
 
 ## 14. Performance budgets
 
@@ -323,6 +362,13 @@ and a second reader (web dashboard, coach scripts).
 - `PERF-3` **SHOULD** Formatters (`NumberFormatter`, `DateFormatter`, `Duration.UnitsFormatStyle`) are static
   or `FormatStyle` values, never created inside `body`.
 - `PERF-4` **SHOULD** Long lists use rows that take an `Equatable` value, so SwiftUI can skip unchanged rows.
+- `PERF-5` **MUST** View identity is stable: never create `UUID()` (or any new id) while building a body,
+  never `.id(UUID())`. Rows read only the state they show, so one change does not invalidate every row,
+  and long scrolling content uses `List` or lazy stacks.
+- `PERF-6` **SHOULD** Profile hitches in a Release build on a device with Instruments' SwiftUI template.
+  Fix *long* updates (expensive `body` or layout) by splitting views or caching derived values, and
+  *frequent* updates (broad observation) by narrowing what each view reads. Note the before and after in
+  the PR.
 
 ## 15. Definition of done (every PR)
 

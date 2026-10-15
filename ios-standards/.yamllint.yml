@@ -1,0 +1,10 @@
+extends: default
+rules:
+  line-length: { max: 140, level: error }
+  document-start: disable          # XcodeGen and GitHub don't use '---'
+  truthy: { check-keys: false }    # GitHub's `on:` key
+  comments: { min-spaces-from-content: 1 }
+  braces: { max-spaces-inside: 1 }
+ignore: |
+  .tools/
+  **/node_modules/

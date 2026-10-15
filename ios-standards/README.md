@@ -4,11 +4,14 @@ A drop-in standard for building native iOS apps with coding agents. It is based 
 (an earlier app for discipline, a small app for small size) and adds offline-first data rules that neither of them had.
 
 | File | What it is | Where it goes in an app repo |
-|---|---|---|
+| --- | --- | --- |
 | `IOS_GUIDELINES.md` | The full standard, with rule ids and reasons | `ios/IOS_GUIDELINES.md` |
 | `CLAUDE.md` | Short rules agents follow, pointing at the guidelines | repo root, or merged into the existing one |
 | `scripts/ios-guard.sh` | Grep-based enforcement of the bans; runs anywhere | `ios/scripts/` |
 | `scripts/lint.sh`, `test.sh`, `generate.sh` | One command per check, the same locally and in CI | `ios/scripts/` |
+| `scripts/lint-all.sh`, `install-tools.sh`, `tools.lock` | Full static suite with pinned tools; runs on Linux and in an agent session | `ios/scripts/` |
+| `.yamllint.yml`, `.markdownlint-cli2.yaml`, `_typos.toml` | Configs for the non-Swift linters | `ios/` |
+| `CraftUI/` | Reusable SwiftUI component library (tokens, components, patterns, catalog) | its own package or repo |
 | `templates/Screen/` | The eight-file screen set, with a full test file | copy and rename per screen |
 | `templates/Core/` | `Loadable`, `AppError`, `Log` | `Packages/<App>Kit/Sources/Core/` |
 | `templates/Store/` | Repository protocol + GRDB implementation with outbox writes | `Sources/Store/` |
@@ -28,6 +31,8 @@ Most rules are written so a machine can check them:
    ViewModel `init`, files over 250 lines and junk-drawer names. It needs no build, so it runs in the agent's
    sandbox, in a Claude Code hook after every edit, and in CI on Linux.
 3. **SwiftLint (`--strict`):** size limits and a few more bans. **swift-format** owns formatting.
+   `scripts/lint-all.sh` runs these plus shellcheck, actionlint, zizmor, yamllint, markdownlint, typos and
+   detect-secrets, all pinned in `scripts/tools.lock` (see `TOOL-6`).
 4. **Tests:** one per Action, table tests for Core rules, migration tests, and a demo-mode UI smoke test.
 5. **PR checklist:** covers what tools cannot check (light/dark/AX3 screenshots, VoiceOver, no real data).
 
