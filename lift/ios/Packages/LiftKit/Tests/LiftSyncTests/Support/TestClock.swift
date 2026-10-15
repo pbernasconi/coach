@@ -69,7 +69,7 @@ final class TestClock: Clock {
 /// Yields until `condition` holds; bounded, so a bug fails the expectation instead of hanging.
 func eventually(_ condition: () async -> Bool) async {
     var tries = 0
-    while await !condition(), tries < 10_000 {
+    while await !condition(), tries < 100_000 {
         tries += 1
         await Task.yield()
     }

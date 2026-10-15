@@ -20,7 +20,8 @@ public struct PushChange: Codable, Hashable, Sendable {
     public var op: OutboxOp
     public var payload: [String: JSONValue]
 
-    public init(idempotencyKey: String, entity: OutboxEntity, rowId: String, op: OutboxOp, payload: [String: JSONValue]) {
+    public init(idempotencyKey: String, entity: OutboxEntity, rowId: String, op: OutboxOp, payload: [String: JSONValue])
+    {
         self.idempotencyKey = idempotencyKey
         self.entity = entity
         self.rowId = rowId

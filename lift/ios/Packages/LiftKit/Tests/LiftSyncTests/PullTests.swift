@@ -96,8 +96,12 @@ import Testing
         let remote = try RemoteDevice()
         let set = try await remote.writeWorkout().set
         let changes = try await remote.takeChanges()
-        harness.transport.queuePull(PullResponse(changes: changes.filter { $0.entity == .set }, cursor: "1", hasMore: true))
-        harness.transport.queuePull(PullResponse(changes: changes.filter { $0.entity != .set }, cursor: "4", hasMore: false))
+        harness.transport.queuePull(
+            PullResponse(changes: changes.filter { $0.entity == .set }, cursor: "1", hasMore: true)
+        )
+        harness.transport.queuePull(
+            PullResponse(changes: changes.filter { $0.entity != .set }, cursor: "4", hasMore: false)
+        )
         await harness.engine.syncNow()
         #expect(try await localSet(set.id, harness) == set)
         #expect(harness.transport.pullCursors == [nil, "1"])

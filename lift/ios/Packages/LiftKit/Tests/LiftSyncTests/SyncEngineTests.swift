@@ -1,15 +1,14 @@
 import Foundation
 import LiftCore
 import LiftStore
-import LiftSync
 import LiftTesting
 import Testing
+
+@testable import LiftSync
 
 #if canImport(FoundationNetworking)
     import FoundationNetworking
 #endif
-
-@testable import LiftSync
 
 @Suite struct SyncEngineTests {
     @Test func cursorPersistsAcrossEngineInstances() async throws {
@@ -28,7 +27,7 @@ import Testing
         harness.transport.holdPushes()
         let engine = harness.engine
         let first = Task { await engine.syncNow() }
-        await eventually { harness.transport.heldCount == 1 }
+        await harness.transport.waitForHeldPush()
         let second = Task { await engine.syncNow() }
         await eventually { await engine.coalescedCount == 1 }
         harness.transport.release()
@@ -76,10 +75,16 @@ import Testing
 
     @Test func statusStreamReportsSyncingThenIdleWithLastSyncedAt() async throws {
         let harness = try SyncHarness()
+        _ = try await harness.store.writeLocalSet()
         var updates = harness.engine.statusUpdates().makeAsyncIterator()
         #expect(await updates.next() == .initial)
-        let finished = await harness.engine.syncNow()
-        #expect(await updates.next()?.phase == .syncing)
+        harness.transport.holdPushes()
+        let engine = harness.engine
+        let sync = Task { await engine.syncNow() }
+        await harness.transport.waitForHeldPush()
+        #expect(await updates.next() == SyncStatus(phase: .syncing, lastSyncedAt: nil))
+        harness.transport.release()
+        let finished = await sync.value
         #expect(await updates.next() == finished)
         #expect(finished.lastSyncedAt == ManualNow.start)
         #expect(try await harness.syncState.lastSyncedAt() == ManualNow.start)
@@ -102,8 +107,9 @@ import Testing
         await eventually { harness.clock.sleeperCount == 1 }
         harness.clock.advance(by: .seconds(2))
         #expect(harness.transport.calls.isEmpty)
+        let updates = harness.engine.statusUpdates()
         harness.clock.advance(by: .seconds(1))
-        await eventually { harness.engine.currentStatus.lastSyncedAt != nil }
+        for await status in updates where status.lastSyncedAt != nil { break }
         #expect(harness.transport.pullCursors == [nil])
     }
 

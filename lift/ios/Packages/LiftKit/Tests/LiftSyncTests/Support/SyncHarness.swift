@@ -93,7 +93,12 @@ struct RemoteDevice {
 extension TestStore {
     /// A kg session with one squat set: three outbox entries.
     func writeLocalSet() async throws -> SetRecord {
-        let session = try await sessions.createSession(on: Fixtures.monday, title: "Lower A", unit: .kg, templateID: nil)
+        let session = try await sessions.createSession(
+            on: Fixtures.monday,
+            title: "Lower A",
+            unit: .kg,
+            templateID: nil
+        )
         let slot = try await sessions.addExercise(ExerciseSlot(exercise: Fixtures.squat), to: session.id)
         return try await sets.addSet(to: slot.id, kind: .working, target: Fixtures.fiveAt100)
     }
