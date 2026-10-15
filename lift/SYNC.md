@@ -60,7 +60,18 @@ Server clarifications (added with the server implementation; the client contract
   than 500 changes, or if any change lacks a UUID `idempotencyKey`. Any other problem with a single change
   goes in `rejected` with a reason (`invalid entity`, `invalid op`, `invalid rowId`, `invalid payload`,
   `payload.id missing or invalid`, `payload.id does not match rowId`, `payload.updatedAt missing or
-  invalid`, `payload.deletedAt invalid`, `payload too large` (over 64 KB)).
+  invalid`, `payload.deletedAt invalid`, `payload too large` (over 64 KB), `payload has text Postgres cannot
+  store` (U+0000 or an unpaired surrogate in a key or string; Postgres `jsonb` refuses them, and a 500 would
+  keep the entry in the outbox for ever, blocking every change behind it)).
+
+Client clarifications (found by the end-to-end suite; the wire format is unchanged):
+
+- Stamps cross between the database and the wire as text (`2026-10-15 07:30:00.191` ⇄ `2026-10-15T07:30:00.191Z`),
+  never through `Date`, so every millisecond survives. Going through `Date` used to send about half of all stamps
+  one millisecond early, so no two devices held identical rows.
+- An edit's `updatedAt` is now, or one millisecond past the row's current `updatedAt` when this device's clock is
+  not ahead of it. An edit made after pulling a version therefore always beats that version, even when the other
+  device's clock runs ahead; before, the server dropped such an edit as older while the editing device kept it.
 
 Response `200`:
 
@@ -97,3 +108,26 @@ Response `200`:
 
 Push then pull: on launch, when the app returns to the foreground, after a local write (debounced by a few
 seconds), and on a manual "Sync now" in Settings. Logging never waits for the network.
+
+## End-to-end test (local)
+
+`lift/scripts/sync-e2e.sh` proves the contract with the real pieces and nothing deployed: it starts a throwaway
+Postgres, applies `drizzle/0009_lift_sync.sql`, runs this app's server against it (`next dev`, with
+`DATABASE_DRIVER=pg` so `src/db` uses node-postgres instead of Neon's HTTP driver, and a `LIFT_SYNC_TOKEN` generated
+for the run), runs the curl smoke test from `DEFERRED.md`, then the opt-in LiftKit suites, and tears everything down.
+
+```bash
+export PATH=<swift toolchain>/usr/bin:$PATH   # swift 6.2; Postgres 14+ server binaries, node, openssl, curl
+lift/scripts/sync-e2e.sh                       # --keep leaves Postgres and the server running
+```
+
+The suites live in `LiftKit/Tests/LiftSyncTests/EndToEnd`. Each phone is the real `LiftStore` on a temporary
+on-disk database with the real `SyncEngine` and `URLSessionSyncTransport` (FoundationNetworking on Linux). They are
+skipped unless `LIFT_SYNC_E2E_URL` is set (plus `LIFT_SYNC_E2E_TOKEN`), so a plain `swift test` and CI never need a
+server. `SyncEndToEndTests` covers: A pushes a workout with edits, a skip and a delete, and a fresh B pulls identical
+rows; last-writer-wins by `updatedAt` both ways, including a device whose clock is behind and concurrent edits;
+an idempotent re-push; 524 changes pushed as 500 + 24 and pulled in pages with `hasMore`, children arriving before
+their parent; a wrong token (401, outbox kept); tombstones; templates (edited, reordered, a slot removed, renamed)
+and a session planned from one; dates to the millisecond in ISO 8601 with `Z`.
+`SyncOutageEndToEndTests` runs with Postgres stopped (the server answers 500; the outbox is kept) and again after it
+is back (the same phone, reopened, drains its outbox and a fresh device pulls the rows).
