@@ -46,7 +46,9 @@ enum SchemaV1 {
         try db.create(table: "sessionExercise") { table in
             table.primaryKey("id", .blob)
             table.column("sessionID", .blob).notNull().references("session", deferred: true)
-            table.column("exerciseID", .blob).references("exercise", deferred: true)
+            // A soft link, no foreign key: the name and load mode are stamped on the row, and a library row
+            // may arrive later than the sessions that use it.
+            table.column("exerciseID", .blob)
             table.column("position", .integer).notNull()
             table.column("displayName", .text).notNull()
             loadModeColumns(table)
@@ -102,7 +104,11 @@ enum SchemaV1 {
             condition: Column("deletedAt") == nil
         )
         try db.create(index: "sessionExercise_on_session", on: "sessionExercise", columns: ["sessionID", "position"])
-        try db.create(index: "workoutSet_on_sessionExercise", on: "workoutSet", columns: ["sessionExerciseID", "position"])
+        try db.create(
+            index: "workoutSet_on_sessionExercise",
+            on: "workoutSet",
+            columns: ["sessionExerciseID", "position"]
+        )
     }
 
     /// `loadMode` is total | perHand | perSide | bodyweight; bodyweight may add `loadAddedValue` in `loadAddedUnit`.

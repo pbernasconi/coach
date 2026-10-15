@@ -71,9 +71,19 @@ extension PersistenceContainer {
     }
 
     mutating func setJSONArray(_ values: [some Encodable], forKey column: String) throws {
+        self[column] = try JSONText.encode(values)
+    }
+}
+
+/// Stable JSON text (sorted keys, unescaped slashes) for JSON columns and outbox payloads.
+enum JSONText {
+    static func encode(_ value: some Encodable) throws -> String {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
-        self[column] = String(decoding: try encoder.encode(values), as: UTF8.self)
+        guard let text = String(bytes: try encoder.encode(value), encoding: .utf8) else {
+            throw AppError(.invalidInput, detail: "JSON is not UTF-8")
+        }
+        return text
     }
 }
 

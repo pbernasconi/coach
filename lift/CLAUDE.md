@@ -9,7 +9,12 @@ every Swift file here. The full reasons are in `../ios-standards/IOS_GUIDELINES.
 ```text
 lift/
 ├── ios/
-│   ├── Packages/LiftKit/   LiftCore (pure domain: models, rules, Notes importer); later Store, Sync, Testing
+│   ├── Packages/LiftKit/   one package (LAY-2):
+│   │     LiftCore      pure domain: models, rules, Notes importer, LocalDay arithmetic
+│   │     LiftStore     GRDB schema + migrations, repository protocols and Live* implementations,
+│   │                   outbox writes, DemoSeeder (fabricated demo data)
+│   │     LiftTesting   IDSequence, ManualNow, TestStore (in-memory DB), fakes, fixtures
+│   │     (Sync arrives later)
 │   └── (app target, widget extension and project.yml arrive with the first screens)
 └── README.md               product notes and the Foundations decision log
 ```
