@@ -12,6 +12,8 @@ import SwiftUI
 public struct UpdateGateScreen: View {
     @Environment(\.koboTheme) private var theme
     @Environment(\.openURL) private var openURL
+    /// The visible height, so a short column centres and a tall one scrolls.
+    @State private var viewportHeight: CGFloat = 0
     private let title: Text
     private let message: Text
     private let symbol: String
@@ -79,10 +81,14 @@ public struct UpdateGateScreen: View {
             .multilineTextAlignment(.center)
             .padding(.horizontal, Space.xxxl)
             .padding(.vertical, Space.xxl)
-            .frame(maxWidth: .infinity)
-            .containerRelativeFrame(.vertical, alignment: .center) { length, _ in length }
+            .frame(maxWidth: .infinity, minHeight: viewportHeight)
         }
         .scrollBounceBehavior(.basedOnSize)
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.size.height
+        } action: { height in
+            viewportHeight = height
+        }
         .background(theme.palette.canvas)
         .interactiveDismissDisabled(true)
     }
