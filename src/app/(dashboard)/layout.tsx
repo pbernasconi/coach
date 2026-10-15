@@ -16,6 +16,7 @@ import { useState } from 'react';
 const navLinks = [
   { href: '/', label: 'Goals' },
   { href: '/workouts', label: 'Workouts' },
+  { href: '/lift', label: 'Lift' },
   { href: '/calendar', label: 'Calendar' },
   { href: '/plan', label: 'Plan' },
   { href: '/coach', label: 'AI Coach' },
