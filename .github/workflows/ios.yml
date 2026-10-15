@@ -51,13 +51,15 @@ jobs:
       - name: Lint
         run: ios-standards/scripts/lint-all.sh
 
-  kobo-macos:
-    # Compiles every Kobo view with the real SwiftUI SDK and runs all tests, including the SwiftUI ones.
+  macos:
+    # One macOS job (macOS minutes are billed at 10x and rounded up per job): Kobo's tests with the real SwiftUI
+    # SDK, LiftKit's tests, then the app: generate the Xcode project, build, run its unit tests on a simulator, and
+    # capture demo-mode screenshots (light, dark, AX3) as a downloadable artifact. The app build also compiles
+    # Kobo for iOS. Later steps run even when an earlier one fails, so one push reports every problem.
     runs-on: macos-26
-    timeout-minutes: 45
-    # Each job queues on its own, so a slow lint never holds back the compile report.
+    timeout-minutes: 75
     concurrency:
-      group: ios-kobo-${{ github.ref }}
+      group: ios-macos-${{ github.ref }}
       cancel-in-progress: true
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
@@ -67,66 +69,35 @@ jobs:
         run: |
           xcodebuild -version
           swift --version
-      - name: Build and test for macOS
+      - name: Kobo tests (macOS)
         working-directory: ios-standards/Kobo
         run: |
-          set -o pipefail
           status=0
           swift test > ../../kobo-macos.log 2>&1 || status=$?
-          tail -n 40 ../../kobo-macos.log
-          echo "::group::Unique errors (macOS)"
+          tail -n 20 ../../kobo-macos.log
+          echo "::group::Unique errors (Kobo)"
           grep -E "(error|warning):|✘|recorded an issue" ../../kobo-macos.log | grep -v "^ *|" | sort -u | head -n 150 || true
           echo "::endgroup::"
           exit "$status"
-      - name: Build for the iOS simulator (warnings are errors)
+      - name: LiftKit tests
         if: ${{ !cancelled() }}
-        working-directory: ios-standards/Kobo
+        working-directory: lift/ios/Packages/LiftKit
         run: |
-          # SwiftPM cross-builds for the simulator SDK. xcodebuild would also generate String Catalog symbols,
-          # which reject the format-only keys a component library needs.
           status=0
-          swift build \
-            --triple arm64-apple-ios26.0-simulator \
-            --sdk "$(xcrun --sdk iphonesimulator --show-sdk-path)" \
-            > ../../kobo-ios.log 2>&1 || status=$?
-          tail -n 15 ../../kobo-ios.log
-          echo "::group::Unique errors (iOS)"
-          grep -E "(error|warning):" ../../kobo-ios.log | grep -v "^ *|" | sort -u | head -n 150 || true
+          swift test > ../../../../liftkit.log 2>&1 || status=$?
+          tail -n 20 ../../../../liftkit.log
+          echo "::group::Unique errors (LiftKit)"
+          grep -E "(error|warning):|✘|recorded an issue" ../../../../liftkit.log | grep -v "^ *|" | sort -u | head -n 150 || true
           echo "::endgroup::"
           exit "$status"
-
-  liftkit-macos:
-    runs-on: macos-26
-    timeout-minutes: 30
-    concurrency:
-      group: ios-liftkit-${{ github.ref }}
-      cancel-in-progress: true
-    steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
-        with:
-          persist-credentials: false
-      - name: Test LiftKit
-        working-directory: lift/ios/Packages/LiftKit
-        run: swift test
-
-  lift-app:
-    # Generates the Xcode project, builds the app, runs its unit tests on a simulator, and captures demo-mode
-    # screenshots (light, dark, AX3) as a downloadable artifact for review.
-    runs-on: macos-26
-    timeout-minutes: 60
-    concurrency:
-      group: ios-liftapp-${{ github.ref }}
-      cancel-in-progress: true
-    steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
-        with:
-          persist-credentials: false
       - name: Generate the Xcode project
+        if: ${{ !cancelled() }}
         working-directory: lift/ios
         run: |
           command -v xcodegen >/dev/null || brew install xcodegen
           xcodegen generate
       - name: Build and unit test
+        if: ${{ !cancelled() }}
         working-directory: lift/ios
         run: |
           udid="$(scripts/simulator.sh)"
