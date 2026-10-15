@@ -154,9 +154,19 @@ public struct MenuSelectField<Value: Hashable & Sendable>: View {
         var body: some View {
             ScrollView {
                 FieldGroup {
-                    MenuSelectField("Grip", selection: $grip, options: grips, placeholder: "Choose a grip", error: grip == nil ? .message("Pick a grip") : .none)
+                    MenuSelectField(
+                        "Grip",
+                        selection: $grip,
+                        options: grips,
+                        placeholder: "Choose a grip",
+                        error: grip == nil ? .message("Pick a grip") : .none
+                    )
                     MenuSelectField("Side", selection: $side, options: sides, helper: "For single-arm work")
-                    MenuSelectField(verbatim: "Rest after this set", selection: $rest, options: SelectionSamples.restChoices)
+                    MenuSelectField(
+                        verbatim: "Rest after this set",
+                        selection: $rest,
+                        options: SelectionSamples.restChoices
+                    )
                     MenuSelectField("Locked", selection: $side, options: sides).disabled(true)
                 }
                 .padding(Space.gutter)

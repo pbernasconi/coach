@@ -100,3 +100,15 @@ enum SelectBinding {
         Binding(get: { [selection.wrappedValue] }, set: { if let first = $0.first { selection.wrappedValue = first } })
     }
 }
+
+extension Visibility {
+    /// The search preference of a select sheet: `.automatic` turns search on from `SelectSheet.searchThreshold`
+    /// options.
+    var preference: SelectSearch.Preference {
+        switch self {
+        case .visible: .shown
+        case .hidden: .hidden
+        default: .automatic
+        }
+    }
+}

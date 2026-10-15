@@ -184,17 +184,36 @@ extension ChoiceCard where Illustration == EmptyView {
         var body: some View {
             ScrollView {
                 VStack(spacing: Space.md) {
-                    ChoiceCard("Strength", description: "Heavy sets of 3 to 6 reps", systemImage: "scalemass", isSelected: goal == "strength") {
+                    ChoiceCard(
+                        "Strength",
+                        description: "Heavy sets of 3 to 6 reps",
+                        systemImage: "scalemass",
+                        isSelected: goal == "strength"
+                    ) {
                         goal = "strength"
                     }
-                    ChoiceCard("Muscle", description: "Moderate sets of 8 to 12 reps", systemImage: "figure.arms.open", isSelected: goal == "muscle") {
+                    ChoiceCard(
+                        "Muscle",
+                        description: "Moderate sets of 8 to 12 reps",
+                        systemImage: "figure.arms.open",
+                        isSelected: goal == "muscle"
+                    ) {
                         goal = "muscle"
                     }
-                    ChoiceCard("Add a cardio finisher", description: "Ten minutes after each session", isSelected: addCardio, mode: .multiple) {
+                    ChoiceCard(
+                        "Add a cardio finisher",
+                        description: "Ten minutes after each session",
+                        isSelected: addCardio,
+                        mode: .multiple
+                    ) {
                         addCardio.toggle()
                     }
-                    ChoiceCard(verbatim: "Powerlifting meet prep", description: "Ask your coach to unlock", isSelected: false) {}
-                        .disabled(true)
+                    ChoiceCard(
+                        verbatim: "Powerlifting meet prep",
+                        description: "Ask your coach to unlock",
+                        isSelected: false
+                    ) {}
+                    .disabled(true)
                 }
                 .padding(Space.gutter)
             }

@@ -15,7 +15,7 @@ public struct MultiSelectField<Value: Hashable & Sendable>: View {
     private let placeholder: Text?
     private let helper: Text?
     private let error: FieldError
-    private let searchable: Bool?
+    private let search: Visibility
 
     /// A field with localized copy.
     public init(
@@ -25,7 +25,7 @@ public struct MultiSelectField<Value: Hashable & Sendable>: View {
         placeholder: LocalizedStringKey? = nil,
         helper: LocalizedStringKey? = nil,
         error: FieldError = .none,
-        searchable: Bool? = nil
+        search: Visibility = .automatic
     ) {
         self.label = .localized(label, subtitle: nil)
         self.selection = selection
@@ -33,7 +33,7 @@ public struct MultiSelectField<Value: Hashable & Sendable>: View {
         self.placeholder = placeholder.map { Text($0) }
         self.helper = helper.map { Text($0) }
         self.error = error
-        self.searchable = searchable
+        self.search = search
     }
 
     /// A field whose copy is shown as is.
@@ -44,7 +44,7 @@ public struct MultiSelectField<Value: Hashable & Sendable>: View {
         placeholder: String? = nil,
         helper: String? = nil,
         error: FieldError = .none,
-        searchable: Bool? = nil
+        search: Visibility = .automatic
     ) {
         self.label = .verbatim(label, subtitle: nil)
         self.selection = selection
@@ -52,13 +52,21 @@ public struct MultiSelectField<Value: Hashable & Sendable>: View {
         self.placeholder = placeholder.map { Text(verbatim: $0) }
         self.helper = helper.map { Text(verbatim: $0) }
         self.error = error
-        self.searchable = searchable
+        self.search = search
     }
 
     public var body: some View {
         let summary = self.summary
-        SelectFieldBox(label: label.title, helper: helper, error: error, value: summary ?? placeholderText, isOpen: isOpen) {
-            Button { isOpen = true } label: {
+        SelectFieldBox(
+            label: label.title,
+            helper: helper,
+            error: error,
+            value: summary ?? placeholderText,
+            isOpen: isOpen
+        ) {
+            Button {
+                isOpen = true
+            } label: {
                 SelectValueLabel(value: summary, placeholder: placeholderText)
             }
             .buttonStyle(.plain)
@@ -66,13 +74,13 @@ public struct MultiSelectField<Value: Hashable & Sendable>: View {
         .sheet(isPresented: $isOpen) {
             KoboSheet(
                 title: label,
-                detents: SelectSearch.isEnabled(searchable, optionCount: options.count) ? [.large] : [.fitted],
+                detents: SelectSearch.isEnabled(search.preference, optionCount: options.count) ? [.large] : [.fitted],
                 grabber: .automatic,
                 background: .automatic,
                 hasChanges: false,
                 confirm: nil,
                 onClose: nil,
-                content: SelectSheet(options: options, selection: selection, searchable: searchable),
+                content: SelectSheet(options: options, selection: selection, search: search),
                 footer: EmptyView()
             )
         }
@@ -110,8 +118,17 @@ public struct MultiSelectField<Value: Hashable & Sendable>: View {
                         error: none.isEmpty ? .message("Pick at least one") : .none
                     )
                     MultiSelectField("Travel kit", selection: $one, options: SelectionSamples.equipment)
-                    MultiSelectField("Home gym", selection: $some, options: SelectionSamples.equipment, helper: "Shown on every plan")
-                    MultiSelectField(verbatim: "Plan days", selection: $templates, options: SelectionSamples.dayTemplates)
+                    MultiSelectField(
+                        "Home gym",
+                        selection: $some,
+                        options: SelectionSamples.equipment,
+                        helper: "Shown on every plan"
+                    )
+                    MultiSelectField(
+                        verbatim: "Plan days",
+                        selection: $templates,
+                        options: SelectionSamples.dayTemplates
+                    )
                 }
                 .padding(Space.gutter)
             }

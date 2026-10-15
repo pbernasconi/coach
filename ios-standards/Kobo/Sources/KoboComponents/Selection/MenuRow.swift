@@ -120,7 +120,11 @@ struct ChoiceMenuPicker<Value: Hashable & Sendable, Tag: Hashable>: View {
             ForEach(options) { option in
                 Group {
                     if let systemImage = option.systemImage {
-                        Label { option.title } icon: { Image(systemName: systemImage) }
+                        Label {
+                            option.title
+                        } icon: {
+                            Image(systemName: systemImage)
+                        }
                     } else {
                         option.title
                     }
@@ -150,12 +154,26 @@ extension ChoiceMenuPicker where Tag == Value {
         var body: some View {
             ScrollView {
                 ListSection("Workout", footer: "Changes apply to new sessions.") {
-                    MenuRow("Units", selection: $unit, options: [ChoiceOption("kg", title: "Kilograms"), ChoiceOption("lb", title: "Pounds")])
-                    MenuRow("Default rest", subtitle: "Between working sets", selection: $rest, options: SelectionSamples.restChoices) {
+                    MenuRow(
+                        "Units",
+                        selection: $unit,
+                        options: [ChoiceOption("kg", title: "Kilograms"), ChoiceOption("lb", title: "Pounds")]
+                    )
+                    MenuRow(
+                        "Default rest",
+                        subtitle: "Between working sets",
+                        selection: $rest,
+                        options: SelectionSamples.restChoices
+                    ) {
                         Image(systemName: "timer").accessibilityHidden(true)
                     }
-                    MenuRow(verbatim: "Week starts on", selection: $week, options: [ChoiceOption("monday", title: "Monday"), ChoiceOption("sunday", title: "Sunday")])
-                    MenuRow("Plate set", selection: .constant("std"), options: [ChoiceOption("std", title: "Standard")]).disabled(true)
+                    MenuRow(
+                        verbatim: "Week starts on",
+                        selection: $week,
+                        options: [ChoiceOption("monday", title: "Monday"), ChoiceOption("sunday", title: "Sunday")]
+                    )
+                    MenuRow("Plate set", selection: .constant("std"), options: [ChoiceOption("std", title: "Standard")])
+                        .disabled(true)
                 }
                 .padding(Space.gutter)
             }

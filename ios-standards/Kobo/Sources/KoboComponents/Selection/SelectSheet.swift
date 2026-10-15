@@ -2,7 +2,7 @@ import KoboTokens
 import SwiftUI
 
 /// The list of options a select opens, for the content of a `.koboSheet`: radio rows for one choice, check rows for
-/// several. With many options (from `SelectSheet.searchThreshold`, or when `searchable` is true) a search field
+/// several. With many options (from `SelectSheet.searchThreshold`, or with `search: .visible`) a search field
 /// filters them by title, subtitle and keywords, best match first, with the matched letters in bold; an empty result
 /// says so. A single pick lands at the tap and the sheet closes a moment later (`Motion.Duration.pickHold`), so the
 /// disc fills first; a multiple choice stays open until the person closes it. `SelectField` and `MultiSelectField` use
@@ -26,7 +26,7 @@ public struct SelectSheet<Value: Hashable & Sendable>: View {
     @State private var landed: Value?
     private let options: [SelectOption<Value>]
     private let mode: Mode
-    private let searchable: Bool?
+    private let search: Visibility
     private let searchPrompt: LocalizedStringKey?
     /// Times the pick hold; a ContinuousClock outside tests.
     private let clock: any Clock<Duration> = ContinuousClock()
@@ -38,12 +38,12 @@ public struct SelectSheet<Value: Hashable & Sendable>: View {
     public init(
         options: [SelectOption<Value>],
         selection: Binding<Value?>,
-        searchable: Bool? = nil,
+        search: Visibility = .automatic,
         searchPrompt: LocalizedStringKey? = nil
     ) {
         self.options = options
         mode = .single(selection)
-        self.searchable = searchable
+        self.search = search
         self.searchPrompt = searchPrompt
     }
 
@@ -51,30 +51,30 @@ public struct SelectSheet<Value: Hashable & Sendable>: View {
     public init(
         options: [SelectOption<Value>],
         selection: Binding<Value>,
-        searchable: Bool? = nil,
+        search: Visibility = .automatic,
         searchPrompt: LocalizedStringKey? = nil
     ) {
         let optional = SelectBinding.optional(selection)
-        self.init(options: options, selection: optional, searchable: searchable, searchPrompt: searchPrompt)
+        self.init(options: options, selection: optional, search: search, searchPrompt: searchPrompt)
     }
 
     /// Any number of choices. Each tap toggles one; the sheet stays open.
     public init(
         options: [SelectOption<Value>],
         selection: Binding<Set<Value>>,
-        searchable: Bool? = nil,
+        search: Visibility = .automatic,
         searchPrompt: LocalizedStringKey? = nil
     ) {
         self.options = options
         mode = .multiple(selection)
-        self.searchable = searchable
+        self.search = search
         self.searchPrompt = searchPrompt
     }
 
     public var body: some View {
         let results = SelectSearch.filter(options.map(\.candidate), query: query)
         VStack(alignment: .leading, spacing: Space.md) {
-            if SelectSearch.isEnabled(searchable, optionCount: options.count) {
+            if SelectSearch.isEnabled(search.preference, optionCount: options.count) {
                 SearchField(text: $query, prompt: searchPrompt)
             }
             if results.isEmpty, !SearchMatch.tokens(query).isEmpty {
@@ -99,13 +99,25 @@ public struct SelectSheet<Value: Hashable & Sendable>: View {
         let title = SelectHighlight.title(option, ranges: ranges)
         switch mode {
         case .single(let selection):
-            RadioRow(title, option.subtitle, option.systemImage, isChosen(option.value, selection), {
-                choose(option.value, selection)
-            }, EmptyView())
+            RadioRow(
+                title,
+                option.subtitle,
+                option.systemImage,
+                isChosen(option.value, selection),
+                {
+                    choose(option.value, selection)
+                },
+                EmptyView()
+            )
             .disabled(!option.isEnabled)
         case .multiple(let selection):
-            CheckRow(title: title, subtitle: option.subtitle, state: state(option.value, selection), leading: symbol(option))
-                .disabled(!option.isEnabled)
+            CheckRow(
+                title: title,
+                subtitle: option.subtitle,
+                state: state(option.value, selection),
+                leading: symbol(option)
+            )
+            .disabled(!option.isEnabled)
         }
     }
 
@@ -128,7 +140,9 @@ public struct SelectSheet<Value: Hashable & Sendable>: View {
     private func state(_ value: Value, _ selection: Binding<Set<Value>>) -> Binding<CheckboxState> {
         Binding(
             get: { CheckboxState(selection.wrappedValue.contains(value)) },
-            set: { _ in selection.wrappedValue = ChipSelection.toggled(value, in: selection.wrappedValue, mode: .multiple) }
+            set: { _ in
+                selection.wrappedValue = ChipSelection.toggled(value, in: selection.wrappedValue, mode: .multiple)
+            }
         )
     }
 
@@ -160,7 +174,11 @@ public struct SelectSheet<Value: Hashable & Sendable>: View {
                 SelectSheet(options: SelectionSamples.restPresets, selection: $rest)
             }
             .koboSheet(isPresented: $filtering, title: "Equipment", detents: [.large]) {
-                SelectSheet(options: SelectionSamples.equipment, selection: $equipment, searchPrompt: "Search equipment")
+                SelectSheet(
+                    options: SelectionSamples.equipment,
+                    selection: $equipment,
+                    searchPrompt: "Search equipment"
+                )
             }
         }
     }

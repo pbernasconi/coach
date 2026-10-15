@@ -25,7 +25,9 @@ nonisolated enum RangeSliderMath {
     }
 
     /// A caller's range, snapped and clamped into `bounds`, with the thumbs in order.
-    static func normalized(_ range: ClosedRange<Double>, bounds: ClosedRange<Double>, step: Double) -> ClosedRange<Double> {
+    static func normalized(_ range: ClosedRange<Double>, bounds: ClosedRange<Double>, step: Double) -> ClosedRange<
+        Double
+    > {
         let lower = snapped(range.lowerBound, step: step, in: bounds)
         let upper = snapped(range.upperBound, step: step, in: bounds)
         return min(lower, upper)...max(lower, upper)
