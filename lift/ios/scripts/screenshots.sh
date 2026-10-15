@@ -12,7 +12,7 @@ APP="$1"
 OUT="$2"
 SCREENS="${SCREENS:-week:-tab,week workout:-open,workout history:-tab,history import:-tab,history,-open,import exercises:-tab,exercises exercise:-tab,exercises,-open,exercise catalog:-tab,exercises,-open,catalog settings:-tab,settings}"
 SETTLE_FRAMES="${SETTLE_FRAMES:-2}"
-SETTLE_MAX="${SETTLE_MAX:-10}"
+SETTLE_MAX="${SETTLE_MAX:-6}"
 MIN_BYTES="${MIN_BYTES:-120000}"
 mkdir -p "$OUT"
 UDID="${SIM_UDID:-$("$(dirname "$0")/simulator.sh")}"
@@ -47,7 +47,7 @@ settle() {
     polls=$((polls + 1))
   done
   mv "$TMP/prev.png" "$1"
-  if ((same < SETTLE_FRAMES)); then echo "  still changing after $polls polls"; fi
+  echo "  $polls polls, $blank blank$( ((same >= SETTLE_FRAMES)) || echo ', still changing')"
 }
 
 # Warm-up launch: a fresh simulator shows first-boot notices (for example Apple Intelligence) for a few seconds.

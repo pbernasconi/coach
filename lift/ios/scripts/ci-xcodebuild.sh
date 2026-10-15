@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # CI's xcodebuild for the Lift scheme on a simulator. Both CI app jobs call it with the same settings, so they
 # share one compilation cache: Xcode's content-addressed cache (COMPILATION_CACHE_ENABLE_CACHING) lives in
-# build/cas and the SwiftPM checkouts in build/spm, both saved and restored with actions/cache.
+# build/cas, which CI saves and restores with actions/cache. Log lines get a UTC time stamp.
 #   scripts/ci-xcodebuild.sh <log file> <xcodebuild action…>   e.g. build-for-testing, test-without-building
 # Needs SIM_UDID (scripts/simulator.sh). Prints the log's tail and its unique errors; exits with xcodebuild's
 # status.
@@ -26,9 +26,9 @@ xcodebuild "$@" \
   ONLY_ACTIVE_ARCH=YES \
   COMPILATION_CACHE_ENABLE_CACHING=YES \
   COMPILATION_CACHE_CAS_PATH="$ROOT/build/cas" \
-  >"$LOG" 2>&1 || status=$?
+  2>&1 | perl -MPOSIX -ne 'print strftime("%H:%M:%S ", gmtime), $_' >"$LOG" || status=$?
 tail -n 60 "$LOG"
 echo "::group::Unique errors ($*)"
-grep -E "(error|warning):|✘|recorded an issue|\*\* (BUILD|TEST)[A-Z ]* " "$LOG" | grep -v "^ *|" | sort -u | head -n 150 || true
+grep -E "(error|warning):|✘|recorded an issue|\*\* (BUILD|TEST)[A-Z ]* " "$LOG" | grep -v "^[0-9:]* *|" | sort -u | head -n 150 || true
 echo "::endgroup::"
 exit "$status"

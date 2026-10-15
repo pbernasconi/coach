@@ -108,8 +108,9 @@ jobs:
 
   app:
     # The app: generate the Xcode project, build for testing, run the unit tests on a simulator. It also compiles
-    # Kobo for iOS. The simulator boots while the build runs; the compilation cache and SwiftPM checkouts are
-    # restored from the last run and saved after the build (even when tests fail).
+    # Kobo for iOS. The simulator boots while the build runs; the compilation cache is
+    # restored from the last run and saved after the build (even when tests fail). SwiftPM checkouts are not
+    # cached: restoring their 260 MB archive took longer than xcodebuild's own clone.
     runs-on: macos-26
     timeout-minutes: 60
     concurrency:
@@ -135,13 +136,10 @@ jobs:
           udid="$(lift/ios/scripts/simulator.sh)"
           echo "SIM_UDID=$udid" >> "$GITHUB_ENV"
           xcrun simctl boot "$udid" > /dev/null 2>&1 &
+          # Notes how long the boot took, for the timing printed before the simulator is used.
+          (start=$SECONDS; xcrun simctl bootstatus "$udid" -b > /dev/null 2>&1
+            echo "simulator booted after $((SECONDS - start)) s, at $(date -u +%T)" > "$RUNNER_TEMP/booted") &
           echo "xcode=$(basename "$(dirname "$(dirname "$(xcode-select -p)")")" .app)" >> "$GITHUB_OUTPUT"
-      - name: Restore SwiftPM checkouts
-        id: spm
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
-        with:
-          path: build/spm
-          key: lift-spm-${{ steps.sim.outputs.xcode }}-${{ hashFiles('lift/ios/Packages/LiftKit/Package.resolved') }}
       - name: Restore the compilation cache
         id: cas
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
@@ -151,12 +149,6 @@ jobs:
           restore-keys: lift-cas-${{ steps.sim.outputs.xcode }}-
       - name: Build for testing
         run: lift/ios/scripts/ci-xcodebuild.sh lift-build.log build-for-testing
-      - name: Save SwiftPM checkouts
-        if: ${{ !cancelled() && steps.spm.outputs.cache-hit != 'true' }}
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
-        with:
-          path: build/spm
-          key: lift-spm-${{ steps.sim.outputs.xcode }}-${{ hashFiles('lift/ios/Packages/LiftKit/Package.resolved') }}
       - name: Save the compilation cache
         if: ${{ !cancelled() && steps.cas.outputs.cache-hit != 'true' }}
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
@@ -166,7 +158,9 @@ jobs:
       - name: Unit test
         run: |
           xcrun simctl bootstatus "$SIM_UDID" -b > /dev/null
-          lift/ios/scripts/ci-xcodebuild.sh lift-test.log test-without-building -disableAutomaticPackageResolution
+          cat "$RUNNER_TEMP/booted" || true
+          lift/ios/scripts/ci-xcodebuild.sh lift-test.log test-without-building -disableAutomaticPackageResolution \
+            -parallel-testing-enabled NO
 
   screenshots:
     # Demo screenshots, one job per variant (light, dark, AX3), in parallel with the app job. Each builds the same
@@ -200,13 +194,10 @@ jobs:
           udid="$(lift/ios/scripts/simulator.sh)"
           echo "SIM_UDID=$udid" >> "$GITHUB_ENV"
           xcrun simctl boot "$udid" > /dev/null 2>&1 &
+          # Notes how long the boot took, for the timing printed before the simulator is used.
+          (start=$SECONDS; xcrun simctl bootstatus "$udid" -b > /dev/null 2>&1
+            echo "simulator booted after $((SECONDS - start)) s, at $(date -u +%T)" > "$RUNNER_TEMP/booted") &
           echo "xcode=$(basename "$(dirname "$(dirname "$(xcode-select -p)")")" .app)" >> "$GITHUB_OUTPUT"
-      - name: Restore SwiftPM checkouts
-        id: spm
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
-        with:
-          path: build/spm
-          key: lift-spm-${{ steps.sim.outputs.xcode }}-${{ hashFiles('lift/ios/Packages/LiftKit/Package.resolved') }}
       - name: Restore the compilation cache
         id: cas
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
@@ -220,6 +211,8 @@ jobs:
         env:
           VARIANTS: ${{ matrix.variant }}
         run: |
+          xcrun simctl bootstatus "$SIM_UDID" -b > /dev/null
+          cat "$RUNNER_TEMP/booted" || true
           lift/ios/scripts/screenshots.sh build/lift/Build/Products/Debug-iphonesimulator/Lift.app screenshots
       - name: Upload screenshots
         if: ${{ !cancelled() }}
