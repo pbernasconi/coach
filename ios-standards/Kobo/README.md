@@ -35,14 +35,15 @@ into a debug menu or a separate catalog target.
 WindowGroup { RootView().koboTheme(.lift) }
 
 // A screen
-ScreenScaffold("Week", kicker: "Oct 12 – 18") {
+ScreenScaffold("Week") {
     DayStrip(items: days, today: today, week: $week, onSelect: select)
-    SegmentedProgress(done: 1, planned: 1, goal: 3, accessibilityLabel: "Sessions this week")
+    SegmentedProgress(done: 1, planned: 1, minimum: 2, goal: 3, accessibilityLabel: "Sessions this week")
     ListSection("Today") {
-        ListRow("Back squat", subtitle: "3 × 8", value: "135 lb", action: open)
+        ListRow(verbatim: exercise.name, subtitle: "3 × 8", value: "135 lb", action: open)
     }
+} footer: {
+    Button("Start workout", action: start).buttonStyle(.glassProminent)
 }
-.pinnedFooter { Button("Start workout", action: start).buttonStyle(.glassProminent) }
 .toastHost(toasts)
 ```
 
