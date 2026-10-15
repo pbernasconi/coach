@@ -14,6 +14,8 @@ nonisolated struct WorkoutState: Equatable, Sendable {
     var toast: WorkoutToast?
     /// Exercise stills by catalog id, loaded as their sections appear.
     var thumbnails: [String: MediaImage] = [:]
+    /// The latest earlier session of each library exercise, by library exercise id, read once when the session loads.
+    var previous: [UUID: PreviousSets] = [:]
 }
 
 /// The session header and its exercises in order.
@@ -43,6 +45,8 @@ nonisolated struct WorkoutExercise: Equatable, Sendable, Identifiable {
     var libraryID: UUID?
     /// The catalog entry behind the library exercise, for the thumbnail; nil when there is none.
     var catalogID: String?
+    /// The unit of the weight column ("KG" or "LB" in the column header).
+    var unit: WeightUnit = .kg
 }
 
 /// One set row.
@@ -55,6 +59,14 @@ nonisolated struct WorkoutSetItem: Equatable, Sendable, Identifiable {
     /// The values saved or logged on the set ("6 @ 62.5 kg"); nil while there are none.
     var actual: String?
     var status: SetStatus
+    /// The set badge: "1" for working sets, "W", "D" or "F" for warm-up, drop and failure sets.
+    var badge: String = ""
+    /// The weight pill: the saved or logged weight, otherwise the target ("87.5"), or "—".
+    var weight: String = "—"
+    /// The reps pill: the saved or logged reps, otherwise the target ("5", "8–10"), or "—".
+    var reps: String = "—"
+    /// The same set last time ("5 × 85"); nil when there is none.
+    var previous: String?
 }
 
 /// The weight and reps editor for one set. Done saves the values only; it never logs the set.
@@ -71,6 +83,12 @@ nonisolated struct SetEditor: Equatable, Sendable, Identifiable {
     /// The values when the editor opened, to tell whether anything changed.
     var savedWeight: Double
     var savedReps: Int
+    /// "Last time 5 × 85 kg · Fri, Oct 9"; nil when there is no earlier session of the exercise.
+    var lastTime: String?
+    /// How many planned sets of the same kind follow this one; the "Apply to later sets" row shows when there are any.
+    var laterSets: Int = 0
+    /// Done also saves the weight onto the later planned sets of the same kind, each keeping its own reps.
+    var appliesToLater = true
 
     var hasChanges: Bool { weight != savedWeight || reps != savedReps }
 }

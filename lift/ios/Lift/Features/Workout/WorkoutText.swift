@@ -94,4 +94,42 @@ nonisolated enum WorkoutText {
         case .failure: String(localized: "Set \(number) to failure")
         }
     }
+
+    /// The set badge: "2" for a working set, "W", "D" or "F" for warm-up, drop and failure sets.
+    static func badge(number: Int, kind: SetKind) -> String {
+        switch kind {
+        case .working: "\(number)"
+        case .warmUp: String(localized: "W", comment: "Badge of a warm-up set")
+        case .drop: String(localized: "D", comment: "Badge of a drop set")
+        case .failure: String(localized: "F", comment: "Badge of a set to failure")
+        }
+    }
+
+    /// A weight pill in the set's unit without the unit ("87.5"), or "—" when there is none.
+    static func pill(_ weight: Weight?, unit: WeightUnit) -> String {
+        weight.map { number($0.converted(to: unit).value) } ?? "—"
+    }
+
+    /// A reps pill: the saved reps, otherwise the target ("5", "8–10"), or "—".
+    static func pill(reps: Int?, target: SetTarget) -> String {
+        reps.map { "\($0)" } ?? self.reps(target) ?? "—"
+    }
+
+    /// The same set last time, in the set's unit: "5 × 85", "5", "85", or nil when nothing was logged.
+    static func previous(_ set: PreviousSet, unit: WeightUnit) -> String? {
+        let weight = set.weight.map { number($0.converted(to: unit).value) }
+        switch (set.reps, weight) {
+        case (let reps?, let weight?): return "\(reps) × \(weight)"
+        case (let reps?, nil): return "\(reps)"
+        case (nil, let weight?): return weight
+        case (nil, nil): return nil
+        }
+    }
+
+    /// "Last time 5 × 85 kg · Fri, Oct 9" for the editor, or nil when nothing was logged.
+    static func lastTime(_ set: PreviousSet, unit: WeightUnit, day: String) -> String? {
+        guard let values = previous(set, unit: unit) else { return nil }
+        let text = set.weight == nil ? values : "\(values) \(unit.rawValue)"
+        return String(localized: "Last time \(text) · \(day)")
+    }
 }

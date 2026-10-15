@@ -22,6 +22,7 @@ import Testing
             clock: ImmediateClock(),
             restActivity: RecordingRestActivityController(),
             catalog: FakeExerciseCatalog(),
+            history: FakeExerciseHistoryRepository(emissions: [[]]),
             now: SessionBuilder.now,
             calendar: SessionBuilder.calendar
         )
