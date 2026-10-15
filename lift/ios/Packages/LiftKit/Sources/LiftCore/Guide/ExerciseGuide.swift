@@ -1,8 +1,8 @@
 import Foundation
 
-/// How to do one seed exercise: setup, numbered steps, form cues, common mistakes and breathing, plus the names of
-/// its illustrations and a video search. Plain text written for Lift; facts checked against common coaching
-/// practice. The illustrations are Everkinetic drawings (CC BY-SA 4.0) imported by `scripts/import-exercise-art.py`.
+/// How to do one seed exercise: setup, numbered steps, form cues, common mistakes and breathing, plus a video search.
+/// Plain text written for Lift; facts checked against common coaching practice. Media (animations, thumbnails) are
+/// not part of the guide: see `ExerciseMedia`.
 public struct ExerciseGuide: Hashable, Sendable, Identifiable {
     /// The seed exercise this guide is for (`ExerciseLibrary.seedID`).
     public let id: UUID
@@ -15,8 +15,6 @@ public struct ExerciseGuide: Hashable, Sendable, Identifiable {
     /// What usually goes wrong (2–4).
     public let mistakes: [String]
     public let breathing: String?
-    /// The asset catalog prefix of the start and end drawings (`<slug>-start`, `<slug>-end`); nil when there are none.
-    public let artSlug: String?
     /// What the video button searches for ("romanian deadlift technique").
     public let videoQuery: String
     /// A YouTube video id pinned for this exercise; nil until one is chosen.
@@ -29,7 +27,6 @@ public struct ExerciseGuide: Hashable, Sendable, Identifiable {
         cues: [String],
         mistakes: [String],
         breathing: String?,
-        artSlug: String?,
         videoQuery: String,
         curatedVideoID: String? = nil
     ) {
@@ -39,7 +36,6 @@ public struct ExerciseGuide: Hashable, Sendable, Identifiable {
         self.cues = cues
         self.mistakes = mistakes
         self.breathing = breathing
-        self.artSlug = artSlug
         self.videoQuery = videoQuery
         self.curatedVideoID = curatedVideoID
     }
@@ -53,12 +49,6 @@ public struct ExerciseGuide: Hashable, Sendable, Identifiable {
     public static func `for`(id: UUID) -> ExerciseGuide? {
         byID[id]
     }
-
-    /// The asset name of the start drawing.
-    public var startArtName: String? { artSlug.map { "\($0)-start" } }
-
-    /// The asset name of the end drawing.
-    public var endArtName: String? { artSlug.map { "\($0)-end" } }
 
     /// The pinned video when there is one, otherwise a YouTube search for `videoQuery`.
     public var videoURL: URL? {

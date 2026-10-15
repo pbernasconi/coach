@@ -19,4 +19,6 @@ nonisolated enum WorkoutAction: Equatable, Sendable {
     case editorDismissed
     case restExtendTapped
     case restSkipTapped
+    /// "How to" beside an exercise name: opens the library exercise's detail.
+    case howToTapped(exerciseID: UUID)
 }

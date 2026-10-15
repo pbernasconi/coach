@@ -20,7 +20,6 @@ extension ExerciseGuide {
                 "Reaching the chin up instead of pulling the body up.",
             ],
             breathing: "Breathe out as you pull up. Breathe in as you lower.",
-            artSlug: "pull-up",
             videoQuery: "pull up technique"
         ),
         ExerciseGuide(
@@ -42,7 +41,6 @@ extension ExerciseGuide {
                 "Craning the neck to get the chin over the bar.",
             ],
             breathing: "Breathe out as you pull up. Breathe in as you lower.",
-            artSlug: "chin-up",
             videoQuery: "chin up technique"
         ),
         ExerciseGuide(
@@ -64,7 +62,6 @@ extension ExerciseGuide {
                 "Letting the weight yank the arms up.",
             ],
             breathing: "Breathe out as you pull down. Breathe in as the bar rises.",
-            artSlug: "lat-pulldown",
             videoQuery: "lat pulldown technique"
         ),
         ExerciseGuide(
@@ -87,7 +84,6 @@ extension ExerciseGuide {
                 "Shrugging the shoulders up.",
             ],
             breathing: "Breathe out as you pull. Breathe in as you return.",
-            artSlug: nil,
             videoQuery: "cable face pull technique"
         ),
     ]

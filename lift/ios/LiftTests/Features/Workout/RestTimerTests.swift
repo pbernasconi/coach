@@ -32,6 +32,15 @@ import Testing
         #expect(timer?.run == 2)
     }
 
+    @Test func cappingKeepsTheSmallerTimeLeftAndEndsAtZero() {
+        let timer = RestTimer(run: 3, seconds: 90)
+        #expect(timer.capped(at: 30)?.remaining == 30)
+        #expect(timer.capped(at: 30)?.total == 90)
+        #expect(timer.capped(at: 120) == timer)
+        #expect(timer.capped(at: 0) == nil)
+        #expect(timer.capped(at: -4) == nil)
+    }
+
     @Test func negativeValuesAreClamped() {
         let timer = RestTimer(run: 1, seconds: -5).extended(by: -10)
         #expect(timer.remaining == 0)

@@ -22,7 +22,6 @@ extension ExerciseGuide {
                 "Leaning back at the top.",
             ],
             breathing: "Breathe in and brace at the top. Breathe out once you are standing again.",
-            artSlug: "romanian-deadlift",
             videoQuery: "romanian deadlift technique"
         ),
         ExerciseGuide(
@@ -48,7 +47,6 @@ extension ExerciseGuide {
                 "Bar swinging out in front of the legs.",
             ],
             breathing: "Breathe in and brace before each rep, hold it through the pull, and breathe again at the top or with the bar on the floor.",
-            artSlug: nil,
             videoQuery: "conventional deadlift technique"
         ),
         ExerciseGuide(
@@ -71,7 +69,6 @@ extension ExerciseGuide {
                 "Pushing through the toes so the heels lift.",
             ],
             breathing: "Breathe in at the bottom. Breathe out as you lift.",
-            artSlug: nil,
             videoQuery: "barbell hip thrust technique"
         ),
         ExerciseGuide(
@@ -95,7 +92,6 @@ extension ExerciseGuide {
                 "Rounding the back as the bell swings between the legs.",
             ],
             breathing: "Breathe out sharply as the hips snap forward. Breathe in as the bell drops back.",
-            artSlug: nil,
             videoQuery: "kettlebell swing technique"
         ),
         ExerciseGuide(
@@ -118,7 +114,6 @@ extension ExerciseGuide {
                 "Bending the standing knee into a squat.",
             ],
             breathing: "Breathe in on the way down. Breathe out as you stand.",
-            artSlug: nil,
             videoQuery: "single leg romanian deadlift technique"
         ),
     ]

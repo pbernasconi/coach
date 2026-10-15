@@ -18,7 +18,7 @@ struct ExercisesContent: View {
                 case .failed:
                     ErrorState(title: "Exercises could not be loaded")
                 case .loaded:
-                    ExerciseList(items: state.visible, query: state.query)
+                    ExerciseList(items: state.visible, query: state.query, send: send)
                 }
             }
             .pageGutter()
@@ -40,6 +40,7 @@ struct ExercisesContent: View {
 private struct ExerciseList: View {
     let items: [ExerciseItem]
     let query: String
+    let send: (ExercisesAction) -> Void
 
     var body: some View {
         if items.isEmpty {
@@ -52,7 +53,7 @@ private struct ExerciseList: View {
             ListSection {
                 LazyVStack(spacing: 0) {
                     ForEach(items) { item in
-                        ListRow(verbatim: item.name, subtitle: item.detail)
+                        ListRow(verbatim: item.name, subtitle: item.detail, action: { send(.exerciseTapped(item.id)) })
                     }
                 }
             }

@@ -24,7 +24,6 @@ extension ExerciseGuide {
                 "Losing the brace and rounding the lower back at the bottom.",
             ],
             breathing: "Take a big breath and brace before each descent. Hold it through the bottom and breathe out near the top.",
-            artSlug: "back-squat",
             videoQuery: "back squat technique"
         ),
         ExerciseGuide(
@@ -49,7 +48,6 @@ extension ExerciseGuide {
                 "Holding the bar up with the hands instead of resting it on the shoulders.",
             ],
             breathing: "Breathe in and brace at the top. Breathe out as you finish standing.",
-            artSlug: "front-squat",
             videoQuery: "front squat technique"
         ),
         ExerciseGuide(
@@ -72,7 +70,6 @@ extension ExerciseGuide {
                 "Rising onto the toes.",
             ],
             breathing: "Breathe in at the top, hold it on the way down, and breathe out as you stand.",
-            artSlug: nil,
             videoQuery: "goblet squat technique"
         ),
         ExerciseGuide(
@@ -98,7 +95,6 @@ extension ExerciseGuide {
                 "Bouncing out of the bottom.",
             ],
             breathing: "Breathe in as the platform comes down. Breathe out as you press.",
-            artSlug: "leg-press",
             videoQuery: "leg press technique"
         ),
     ]

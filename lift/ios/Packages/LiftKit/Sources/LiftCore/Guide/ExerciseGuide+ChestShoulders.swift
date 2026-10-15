@@ -25,7 +25,6 @@ extension ExerciseGuide {
                 "Letting the wrists bend back under the bar.",
             ],
             breathing: "Breathe in and hold it as the bar comes down. Breathe out once the bar is past the hardest part of the press.",
-            artSlug: "bench-press",
             videoQuery: "barbell bench press technique"
         ),
         ExerciseGuide(
@@ -49,7 +48,6 @@ extension ExerciseGuide {
                 "Dumbbells drifting toward the face.",
             ],
             breathing: "Breathe in as you lower. Breathe out as you press.",
-            artSlug: "dumbbell-bench-press",
             videoQuery: "dumbbell bench press technique"
         ),
         ExerciseGuide(
@@ -72,7 +70,6 @@ extension ExerciseGuide {
                 "Stopping short at the bottom.",
             ],
             breathing: "Breathe in as you lower. Breathe out as you press.",
-            artSlug: "incline-dumbbell-press",
             videoQuery: "incline dumbbell press technique"
         ),
         ExerciseGuide(
@@ -96,7 +93,6 @@ extension ExerciseGuide {
                 "Bending the knees to drive the bar up.",
             ],
             breathing: "Breathe in and brace with the bar on your shoulders. Breathe out at the top.",
-            artSlug: "overhead-press",
             videoQuery: "barbell overhead press technique"
         ),
         ExerciseGuide(
@@ -118,7 +114,6 @@ extension ExerciseGuide {
                 "Elbows drifting far behind the body.",
             ],
             breathing: "Breathe out as you press. Breathe in as you lower.",
-            artSlug: "dumbbell-shoulder-press",
             videoQuery: "dumbbell shoulder press technique"
         ),
         ExerciseGuide(
@@ -140,7 +135,6 @@ extension ExerciseGuide {
                 "Raising the hands well above shoulder height.",
             ],
             breathing: "Breathe out as you raise. Breathe in as you lower.",
-            artSlug: "lateral-raise",
             videoQuery: "dumbbell lateral raise technique"
         ),
     ]

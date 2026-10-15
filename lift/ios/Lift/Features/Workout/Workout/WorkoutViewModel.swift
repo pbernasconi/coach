@@ -10,7 +10,10 @@ final class WorkoutViewModel {
     private let sessionID: UUID
     private let sessions: any SessionRepository
     private let sets: any SetRepository
+    private let router: any Navigating
     private let clock: any Clock<Duration>
+    /// The rest's wall-clock end and its Live Activity.
+    private let restActivity: RestActivitySession
     private let days: DayCalendar
     /// The latest session from the store; the source for the editor, Add set and rest times.
     @ObservationIgnored private var detail: SessionDetail?
@@ -23,13 +26,18 @@ final class WorkoutViewModel {
         sessionID: UUID,
         sessions: any SessionRepository,
         sets: any SetRepository,
+        router: any Navigating,
         clock: any Clock<Duration>,
+        restActivity: any RestActivityController,
+        now: @escaping @Sendable () -> Date,
         calendar: Calendar
     ) {
         self.sessionID = sessionID
         self.sessions = sessions
         self.sets = sets
+        self.router = router
         self.clock = clock
+        self.restActivity = RestActivitySession(controller: restActivity, now: now)
         self.days = DayCalendar(calendar: calendar)
     }
 
@@ -47,7 +55,8 @@ final class WorkoutViewModel {
     }
 
     /// Counts the rest down once a second on the injected clock. The Screen restarts it for each new rest
-    /// (`.task(id: state.rest?.run)`), and cancelling it stops the countdown.
+    /// (`.task(id: state.rest?.run)`), and cancelling it stops the countdown. Each tick also catches up with the wall
+    /// clock, so the bar matches the Live Activity after the app was in the background. Reaching zero ends the rest.
     func runRestTimer() async {
         while let rest = state.rest {
             do {
@@ -56,7 +65,8 @@ final class WorkoutViewModel {
                 return
             }
             guard let current = state.rest, current.run == rest.run else { return }
-            state.rest = current.ticked()
+            state.rest = current.ticked()?.capped(at: restActivity.secondsLeft)
+            if state.rest == nil { endRest() }
         }
     }
 
@@ -73,15 +83,16 @@ final class WorkoutViewModel {
         }
     }
 
-    /// The actions that only change what is on screen: the editor and the rest timer.
+    /// The actions that only change what is on screen or where it goes: the editor, the rest timer, "How to".
     private func sendLocal(_ action: WorkoutAction) -> Task<Void, Never>? {
         switch action {
         case .editorWeightChanged(let weight): state.editor?.weight = max(0, weight)
         case .editorRepsChanged(let reps): state.editor?.reps = max(0, reps)
         case .editorDoneTapped: return saveEditor()
         case .editorDismissed: state.editor = nil
-        case .restExtendTapped: state.rest = state.rest?.extended(by: RestTimer.extensionSeconds)
-        case .restSkipTapped: state.rest = nil
+        case .restExtendTapped: extendRest()
+        case .restSkipTapped: endRest()
+        case .howToTapped(let exerciseID): router.open(.exercise(exerciseID))
         default: break
         }
         return nil
@@ -95,12 +106,13 @@ final class WorkoutViewModel {
         inFlight.insert(id)
         let isPlanned = set.status == .planned
         let restSeconds = item.exercise.restSeconds ?? RestTimer.defaultSeconds
+        let activity = isPlanned ? state.restActivity(afterLogging: id) : nil
         return Task {
             defer { inFlight.remove(id) }
             do {
                 if isPlanned {
                     _ = try await sets.log(setID: id)
-                    startRest(seconds: restSeconds)
+                    startRest(seconds: restSeconds, activity: activity)
                 } else {
                     _ = try await sets.unlog(setID: id)
                 }
@@ -164,9 +176,26 @@ final class WorkoutViewModel {
 
     // MARK: Rest
 
-    private func startRest(seconds: Int) {
-        let run = (state.rest?.run ?? 0) + 1
-        state.rest = seconds > 0 ? RestTimer(run: run, seconds: seconds) : nil
+    /// Starts the countdown in the app and on the Lock Screen and Dynamic Island; leaving the workout ends both.
+    private func startRest(seconds: Int, activity: RestActivityStart?) {
+        guard seconds > 0 else {
+            endRest()
+            return
+        }
+        state.rest = RestTimer(run: (state.rest?.run ?? 0) + 1, seconds: seconds)
+        restActivity.start(seconds: seconds, activity: activity)
+    }
+
+    private func extendRest() {
+        guard let rest = state.rest?.extended(by: RestTimer.extensionSeconds) else { return }
+        state.rest = rest
+        restActivity.extend(by: RestTimer.extensionSeconds, totalSeconds: rest.total)
+    }
+
+    /// Skip or zero: the countdown goes away in the app and on the Live Activity.
+    private func endRest() {
+        state.rest = nil
+        restActivity.end()
     }
 
     // MARK: Support

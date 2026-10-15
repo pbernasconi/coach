@@ -12,13 +12,17 @@ import Testing
     let planned = SessionBuilder.session(id: 1, on: Fixtures.monday, done: 0, planned: 3)
     let started = SessionBuilder.session(id: 2, on: Fixtures.monday, done: 1, planned: 2)
     let clock = ImmediateClock()
+    let router = RecordingNavigator()
 
     func makeViewModel(_ detail: SessionDetail, sets: RecordingSetRepository) -> WorkoutViewModel {
         WorkoutViewModel(
             sessionID: detail.id,
             sessions: FakeSessionDetailRepository(emissions: [detail]),
             sets: sets,
+            router: router,
             clock: clock,
+            restActivity: RecordingRestActivityController(),
+            now: SessionBuilder.now,
             calendar: SessionBuilder.calendar
         )
     }
@@ -197,6 +201,16 @@ import Testing
         vm.send(.restSkipTapped)
 
         #expect(vm.state.rest == nil)
+    }
+
+    @Test func howToTappedOpensTheExerciseDetail() async {
+        let vm = makeViewModel(planned, sets: recorder(planned))
+        await vm.run()
+
+        let task = vm.send(.howToTapped(exerciseID: Fixtures.squat.id))
+
+        #expect(task == nil)
+        #expect(router.opened == [.exercise(Fixtures.squat.id)])
     }
 
     @Test func runRestTimerCountsDownOnTheInjectedClock() async {

@@ -22,7 +22,6 @@ extension ExerciseGuide {
                 "Rounding the back.",
             ],
             breathing: "Breathe out as you pull. Breathe in as you lower.",
-            artSlug: nil,
             videoQuery: "barbell bent over row technique"
         ),
         ExerciseGuide(
@@ -46,7 +45,6 @@ extension ExerciseGuide {
                 "Shrugging instead of rowing.",
             ],
             breathing: "Breathe out as you pull. Breathe in as you lower.",
-            artSlug: "single-arm-dumbbell-row",
             videoQuery: "single arm dumbbell row technique"
         ),
         ExerciseGuide(
@@ -69,7 +67,6 @@ extension ExerciseGuide {
                 "Cutting the stretch short at the bottom.",
             ],
             breathing: "Breathe out as you pull. Breathe in as you lower.",
-            artSlug: nil,
             videoQuery: "chest supported dumbbell row technique"
         ),
         ExerciseGuide(
@@ -92,7 +89,6 @@ extension ExerciseGuide {
                 "Shrugging the shoulders.",
             ],
             breathing: "Breathe out as you pull. Breathe in as the handle returns.",
-            artSlug: "seated-cable-row",
             videoQuery: "seated cable row technique"
         ),
     ]
