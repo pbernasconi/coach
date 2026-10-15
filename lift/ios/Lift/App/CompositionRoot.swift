@@ -40,7 +40,7 @@ enum CompositionRoot {
         let now: @Sendable () -> Date = { Date() }
         let makeID: @Sendable () -> UUID = { UUID() }
         let sessions = LiveSessionRepository(database: database, now: now, makeID: makeID)
-        let mediaLoader = mediaLoader()
+        let mediaLoader = makeMediaLoader()
         return AppDependencies(
             sessions: sessions,
             exercises: LiveExerciseRepository(database: database, now: now, makeID: makeID),
@@ -58,7 +58,7 @@ enum CompositionRoot {
     }
 
     /// The catalog media loader: its own URLSession (never `.shared`) and the on-disk cache in Caches/ExerciseMedia.
-    private static func mediaLoader() -> any ExerciseMediaLoader {
+    private static func makeMediaLoader() -> any ExerciseMediaLoader {
         let configuration = URLSessionConfiguration.default
         configuration.urlCache = nil  // the loader keeps its own cache on disk
         configuration.timeoutIntervalForRequest = 20

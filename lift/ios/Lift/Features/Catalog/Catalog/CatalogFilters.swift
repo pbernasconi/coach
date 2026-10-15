@@ -9,7 +9,10 @@ struct CatalogFilters: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Space.md) {
-            SearchField(text: .action(state.query) { send(.queryChanged($0)) }, prompt: "Search by name, muscle or equipment")
+            SearchField(
+                text: .action(state.query) { send(.queryChanged($0)) },
+                prompt: "Search by name, muscle or equipment"
+            )
             ScrollView(.horizontal) {
                 HStack(spacing: Space.sm) {
                     ForEach(bodyParts) { choice in
@@ -26,7 +29,7 @@ struct CatalogFilters: View {
             .accessibilityLabel(Text("Body part"))
             MenuSelectField(
                 "Equipment",
-                selection: .action(state.equipment) { send(.equipmentChanged($0)) },
+                selection: Binding<CatalogChoice>.action(state.equipment) { send(.equipmentChanged($0)) },
                 options: equipment
             )
         }
@@ -44,8 +47,4 @@ struct CatalogFilters: View {
     private func title(_ choice: CatalogChoice) -> String {
         choice.value.map(CatalogText.label) ?? String(localized: "All")
     }
-}
-
-extension CatalogChoice: Identifiable {
-    nonisolated var id: Self { self }
 }

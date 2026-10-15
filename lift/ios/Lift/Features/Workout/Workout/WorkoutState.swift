@@ -42,7 +42,7 @@ nonisolated struct WorkoutExercise: Equatable, Sendable, Identifiable {
     /// The library exercise behind this slot, for "How to"; nil for a free-text exercise.
     var libraryID: UUID?
     /// The catalog entry behind the library exercise, for the thumbnail; nil when there is none.
-    var catalogID: String? = nil
+    var catalogID: String?
 }
 
 /// One set row.

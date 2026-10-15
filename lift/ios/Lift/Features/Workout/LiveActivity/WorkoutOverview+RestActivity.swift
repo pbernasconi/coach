@@ -1,4 +1,5 @@
 import Foundation
+import LiftStore
 
 /// What the rest Live Activity shows once a set is logged.
 nonisolated struct RestActivityStart: Equatable, Sendable {

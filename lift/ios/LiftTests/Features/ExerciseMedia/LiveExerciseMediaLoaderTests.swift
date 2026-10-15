@@ -10,7 +10,9 @@ import Testing
 
     func makeCache() -> MediaDiskCache {
         MediaDiskCache(
-            directory: FileManager.default.temporaryDirectory.appending(path: "media-tests-\(UInt64.random(in: 0...UInt64.max))")
+            directory: FileManager.default.temporaryDirectory.appending(
+                path: "media-tests-\(UInt64.random(in: 0...UInt64.max))"
+            )
         )
     }
 
@@ -43,7 +45,10 @@ import Testing
     @Test(arguments: [(Data([1]), 404, ExerciseMediaError.status(404)), (Data(), 200, ExerciseMediaError.empty)])
     func refusesBadResponses(data: Data, status: Int, expected: ExerciseMediaError) async throws {
         let url = try #require(url)
-        let loader = LiveExerciseMediaLoader(transport: FakeMediaTransport(responses: [(data, status)]), cache: makeCache())
+        let loader = LiveExerciseMediaLoader(
+            transport: FakeMediaTransport(responses: [(data, status)]),
+            cache: makeCache()
+        )
         await #expect(throws: expected) { try await loader.data(for: url) }
     }
 

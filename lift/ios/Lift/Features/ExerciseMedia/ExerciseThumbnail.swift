@@ -29,6 +29,8 @@ struct ExerciseThumbnail: View {
             Thumbnail(systemName: "figure.strengthtraining.traditional", side: side)
         case .loaded(let data):
             if let decoded, decoded.data == data, let still = decoded.image {
+                // Thumbnail labels the tile itself with the exercise name.
+                // swiftlint:disable:next accessibility_label_for_image
                 Thumbnail(image: Image(uiImage: still), side: side, accessibilityLabel: "\(name)")
             } else if decoded?.data == data {
                 Thumbnail(systemName: "figure.strengthtraining.traditional", side: side)

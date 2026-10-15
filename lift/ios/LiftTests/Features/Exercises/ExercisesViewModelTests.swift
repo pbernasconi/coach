@@ -82,7 +82,11 @@ import Testing
 
     @Test func exerciseTappedOpensTheDetail() {
         let router = RecordingNavigator()
-        let vm = ExercisesViewModel(exercises: FakeExerciseRepository(emissions: []), catalog: FakeExerciseCatalog(), router: router)
+        let vm = ExercisesViewModel(
+            exercises: FakeExerciseRepository(emissions: []),
+            catalog: FakeExerciseCatalog(),
+            router: router
+        )
 
         let task = vm.send(.exerciseTapped(rdl.id))
 
@@ -92,8 +96,15 @@ import Testing
 
     @Test func thumbnailNeededLoadsTheStillOnce() async {
         let still = MediaImage.loaded(FakeExerciseCatalog.imageData)
-        let catalog = FakeExerciseCatalog(entries: [FakeExerciseCatalog.entry("0043", "Squat")], images: ["0043": still])
-        let vm = ExercisesViewModel(exercises: FakeExerciseRepository(emissions: []), catalog: catalog, router: RecordingNavigator())
+        let catalog = FakeExerciseCatalog(
+            entries: [FakeExerciseCatalog.entry("0043", "Squat")],
+            images: ["0043": still]
+        )
+        let vm = ExercisesViewModel(
+            exercises: FakeExerciseRepository(emissions: []),
+            catalog: catalog,
+            router: RecordingNavigator()
+        )
 
         let task = vm.send(.thumbnailNeeded(catalogID: "0043"))
         #expect(vm.state.thumbnails["0043"] == .loading)
@@ -108,7 +119,11 @@ import Testing
 
     @Test func allExercisesTappedOpensTheCatalog() {
         let router = RecordingNavigator()
-        let vm = ExercisesViewModel(exercises: FakeExerciseRepository(emissions: []), catalog: FakeExerciseCatalog(), router: router)
+        let vm = ExercisesViewModel(
+            exercises: FakeExerciseRepository(emissions: []),
+            catalog: FakeExerciseCatalog(),
+            router: router
+        )
 
         #expect(vm.send(.allExercisesTapped) == nil)
         #expect(router.opened == [.catalog])

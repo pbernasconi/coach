@@ -64,7 +64,10 @@
             exercises: [squat, romanian, curl]
         )
 
-        static let fixtureDefault = WorkoutState(workout: .loaded(overview), thumbnails: ["0043": MediaPreviewData.still])
+        static let fixtureDefault = WorkoutState(
+            workout: .loaded(overview),
+            thumbnails: ["0043": MediaPreviewData.still]
+        )
         static let fixtureResting = WorkoutState(
             workout: .loaded(overview),
             rest: RestTimer(run: 1, seconds: 90).ticked()

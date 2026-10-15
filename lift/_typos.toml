@@ -4,4 +4,8 @@ nd = "nd"            # ordinal suffix: "2nd"
 dumbell = "dumbell"  # common misspelling mapped to "dumbbell"
 
 [files]
-extend-exclude = [".build/"]
+extend-exclude = [
+  ".build/",
+  # Generated from the exercises dataset; names keep the dataset's own spelling ("Revers Wrist Curl").
+  "exercise-catalog.json",
+]

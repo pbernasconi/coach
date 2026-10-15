@@ -1,7 +1,8 @@
 # Exercise catalog: attribution
 
 Lift's exercise catalog (`Packages/LiftKit/Sources/LiftCore/Resources/exercise-catalog.json`) is built by
-`scripts/import-exercise-dataset.py` from the exercises dataset at https://github.com/hasaneyldrm/exercises-dataset, commit `7455efae41b330c265e7cd4b78dfa848e7ce5ebd`.
+`scripts/import-exercise-dataset.py` from the exercises dataset at
+<https://github.com/hasaneyldrm/exercises-dataset>, commit `7455efae41b330c265e7cd4b78dfa848e7ce5ebd`.
 
 ## Dataset text: MIT
 
@@ -33,8 +34,13 @@ SOFTWARE.
 
 ## Media: © Gym visual, not included
 
-The thumbnails and animations are **© Gym visual — https://gymvisual.com/**. They are not covered by the MIT licence and are **not
-copied into this repository or the app bundle**. The app loads them at runtime, at their published 180×180 size,
-from `https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/7455efae41b330c265e7cd4b78dfa848e7ce5ebd/<path>`, and shows the credit
-"© Gym visual" (linking to https://gymvisual.com/) on every screen that displays them. Their use is governed by
-Gym visual's terms: https://gymvisual.com/content/3-terms-and-conditions-of-use
+The thumbnails and animations are **© Gym visual — <https://gymvisual.com/>**. They are not covered by the MIT
+licence and are **not copied into this repository or the app bundle**. The app loads them at runtime, at their
+published 180×180 size, from
+
+```text
+https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/7455efae41b330c265e7cd4b78dfa848e7ce5ebd/<path>
+```
+
+and shows the credit "© Gym visual" (linking to <https://gymvisual.com/>) on every screen that displays them.
+Their use is governed by Gym visual's terms: <https://gymvisual.com/content/3-terms-and-conditions-of-use>

@@ -151,7 +151,8 @@ def attribution_text(clone, commit):
     return f"""# Exercise catalog: attribution
 
 Lift's exercise catalog (`Packages/LiftKit/Sources/LiftCore/Resources/exercise-catalog.json`) is built by
-`scripts/import-exercise-dataset.py` from the exercises dataset at {SOURCE}, commit `{commit}`.
+`scripts/import-exercise-dataset.py` from the exercises dataset at
+<{SOURCE}>, commit `{commit}`.
 
 ## Dataset text: MIT
 
@@ -161,13 +162,18 @@ The names, categories, body parts, equipment, muscles and English instruction st
 {mit}
 ```
 
-## Media: © Gym visual, not included
+## Media: \u00a9 Gym visual, not included
 
-The thumbnails and animations are **{MEDIA_CREDIT}**. They are not covered by the MIT licence and are **not
-copied into this repository or the app bundle**. The app loads them at runtime, at their published 180×180 size,
-from `https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/{commit}/<path>`, and shows the credit
-"© Gym visual" (linking to https://gymvisual.com/) on every screen that displays them. Their use is governed by
-Gym visual's terms: https://gymvisual.com/content/3-terms-and-conditions-of-use
+The thumbnails and animations are **\u00a9 Gym visual \u2014 <https://gymvisual.com/>**. They are not covered by the MIT
+licence and are **not copied into this repository or the app bundle**. The app loads them at runtime, at their
+published 180\u00d7180 size, from
+
+```text
+https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/{commit}/<path>
+```
+
+and shows the credit "\u00a9 Gym visual" (linking to <https://gymvisual.com/>) on every screen that displays them.
+Their use is governed by Gym visual's terms: <https://gymvisual.com/content/3-terms-and-conditions-of-use>
 """
 
 

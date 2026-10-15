@@ -155,7 +155,10 @@ import Testing
 
     @Test func runShowsCatalogMediaAndLoadAnimationLoadsIt() async {
         let gif = MediaImage.loaded(FakeExerciseCatalog.imageData)
-        let catalog = FakeExerciseCatalog(entries: [FakeExerciseCatalog.entry("0043", "Barbell Full Squat")], images: ["0043": gif])
+        let catalog = FakeExerciseCatalog(
+            entries: [FakeExerciseCatalog.entry("0043", "Barbell Full Squat")],
+            images: ["0043": gif]
+        )
         let vm = makeViewModel(squatID, catalog: catalog)
 
         await vm.run()
