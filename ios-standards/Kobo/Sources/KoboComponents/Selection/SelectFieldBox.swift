@@ -42,7 +42,7 @@ struct SelectFieldBox<Control: View>: View {
     /// "Wi-Fi", or "Wi-Fi, Pick at least one" with an error.
     private var spokenValue: Text {
         guard let message = error.message else { return value }
-        return Text("\(value), \(message)", bundle: .module)
+        return Text("\(value), \(message)")
     }
 }
 

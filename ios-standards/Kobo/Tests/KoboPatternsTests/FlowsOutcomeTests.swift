@@ -84,7 +84,11 @@ import Testing
 
     @Test func aPrimerShowsAtMostThreeReasons() {
         let reasons = (1...5).map { PrimerPageModel.Reason(symbol: "star", verbatim: "Reason \($0)") }
-        let model = PrimerPageModel(verbatim: "Turn on alerts", message: "So a timer never runs over.", reasons: reasons)
+        let model = PrimerPageModel(
+            verbatim: "Turn on alerts",
+            message: "So a timer never runs over.",
+            reasons: reasons
+        )
         #expect(model.reasons.count == PrimerPageModel.maxReasons)
         #expect(model.reasons.map(\.text) == ["Reason 1", "Reason 2", "Reason 3"])
         #expect(model.symbol == nil)

@@ -65,7 +65,7 @@ extension View {
             titleVisibility: .visible
         ) {
             Button(role: .destructive, action: onDiscard) {
-                Text("Discard changes", bundle: .module)
+                Text("Discard", bundle: .module)
             }
             Button(role: .cancel) {
             } label: {

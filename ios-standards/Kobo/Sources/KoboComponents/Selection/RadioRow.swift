@@ -127,7 +127,12 @@ extension RadioRow where Trailing == EmptyView {
             ScrollView {
                 ListSection("Today's plan") {
                     RadioRow("Focus", subtitle: "Deep work, no meetings", isSelected: day == "focus") { day = "focus" }
-                    RadioRow("Meetings", subtitle: "Calls and reviews", isSelected: day == "meetings", action: { day = "meetings" }) {
+                    RadioRow(
+                        "Meetings",
+                        subtitle: "Calls and reviews",
+                        isSelected: day == "meetings",
+                        action: { day = "meetings" }
+                    ) {
                         KoboTag("New", tone: .info)
                     }
                     RadioRow(verbatim: "Errands", systemImage: "cart", isSelected: day == "errands") { day = "errands" }

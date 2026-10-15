@@ -83,7 +83,10 @@ public struct KoboCheckbox: View {
                     KoboCheckbox(verbatim: "Chapter \(chapter.number)", isOn: $chapter.isOn)
                         .padding(.leading, Space.xxxl)
                 }
-                KoboCheckbox("Download chapters for offline reading, so every one opens without a connection", isOn: .constant(true))
+                KoboCheckbox(
+                    "Download chapters for offline reading, so every one opens without a connection",
+                    isOn: .constant(true)
+                )
                 KoboCheckbox("Locked by the author", isOn: .constant(false)).disabled(true)
                 KoboCheckbox(isOn: $selected, accessibilityLabel: "Select row 2")
             }

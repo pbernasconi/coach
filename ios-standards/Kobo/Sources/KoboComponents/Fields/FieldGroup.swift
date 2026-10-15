@@ -91,7 +91,9 @@ public struct FieldGroup<Content: View>: View {
                         SegmentedPicker(
                             "Plan",
                             selection: $plan,
-                            options: [ChoiceOption("monthly", title: "Monthly"), ChoiceOption("yearly", title: "Yearly")]
+                            options: [
+                                ChoiceOption("monthly", title: "Monthly"), ChoiceOption("yearly", title: "Yearly"),
+                            ]
                         )
                     }
                 }

@@ -1,18 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "%@ %@" : {
-      "comment" : "StepperField spoken value: the formatted number, then the unit (\"12.5 km\").",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ %@"
-          }
-        }
-      }
-    },
     "%@ available" : {
       "comment" : "Toast announcement suffix naming its action (\"Undo available\").",
       "extractionState" : "manual",
@@ -45,30 +33,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ new"
-          }
-        }
-      }
-    },
-    "%@ – %@" : {
-      "comment" : "RangeSlider shown range: the lower value, then the upper value (\"40 km – 120 km\").",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ – %@"
-          }
-        }
-      }
-    },
-    "%@, %@" : {
-      "comment" : "Field spoken value: the value, then its error message (\"12 km, Too far\").",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@, %@"
           }
         }
       }
@@ -141,18 +105,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld selected"
-          }
-        }
-      }
-    },
-    "%lld/%lld" : {
-      "comment" : "Character counter under a text area: characters typed of the limit (\"12/40\").",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld/%lld"
           }
         }
       }
@@ -445,7 +397,7 @@
         }
       }
     },
-    "Discard changes" : {
+    "Discard" : {
       "comment" : "Destructive button of the confirmation shown when closing a sheet or page with unsaved edits.",
       "extractionState" : "manual",
       "localizations" : {

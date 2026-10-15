@@ -45,7 +45,11 @@
             ReviewScaffold(
                 "Check the import",
                 flowTitle: "Import notes",
-                summary: ReviewSummary(verbatim: "3 tasks", caption: "Ready to import", note: "1 list, about 2 h 35 min"),
+                summary: ReviewSummary(
+                    verbatim: "3 tasks",
+                    caption: "Ready to import",
+                    note: "1 list, about 2 h 35 min"
+                ),
                 submit: ReviewSubmit("Import tasks", state: importState) {
                     importState.send(.submit)
                     importState.send(.succeed)

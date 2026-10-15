@@ -31,7 +31,12 @@ import SwiftUI
         ]
 
         static let dayPlans: [SelectOption<String>] = [
-            SelectOption("focus", title: "Focus", subtitle: "Deep work, no meetings", systemImage: "brain.head.profile"),
+            SelectOption(
+                "focus",
+                title: "Focus",
+                subtitle: "Deep work, no meetings",
+                systemImage: "brain.head.profile"
+            ),
             SelectOption("meetings", title: "Meetings", subtitle: "Calls and reviews", systemImage: "person.2"),
             SelectOption("errands", title: "Errands", subtitle: "Shopping, post and bank", systemImage: "cart"),
             SelectOption("off", title: "Day off", subtitle: "Not in a holiday week", isEnabled: false),
