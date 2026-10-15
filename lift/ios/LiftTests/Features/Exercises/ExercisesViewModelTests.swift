@@ -129,6 +129,18 @@ import Testing
         #expect(router.opened == [.catalog])
     }
 
+    @Test func templatesTappedOpensTheTemplates() {
+        let router = RecordingNavigator()
+        let vm = ExercisesViewModel(
+            exercises: FakeExerciseRepository(emissions: []),
+            catalog: FakeExerciseCatalog(),
+            router: router
+        )
+
+        #expect(vm.send(.templatesTapped) == nil)
+        #expect(router.opened == [.templates])
+    }
+
     @Test func rowsCarryTheirCatalogID() {
         #expect(ExerciseItem(exercise: ExerciseLibrary.seed[0]).catalogID == "0043")
         #expect(ExerciseItem(exercise: crunch).catalogID == nil)
