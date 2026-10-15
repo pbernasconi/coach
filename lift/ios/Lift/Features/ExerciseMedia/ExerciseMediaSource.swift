@@ -45,7 +45,9 @@ nonisolated struct ExerciseMediaSource: Equatable, Sendable {
         let parts = path.split(separator: "/", omittingEmptySubsequences: false)
         guard parts.count == 2, parts[0] == "images" || parts[0] == "videos" else { return false }
         let name = parts[1]
-        let allowed = name.allSatisfy { $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "-" || $0 == "_" || $0 == ".") }
+        let allowed = name.allSatisfy {
+            $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "-" || $0 == "_" || $0 == ".")
+        }
         return allowed && !name.hasPrefix(".") && (name.hasSuffix(".jpg") || name.hasSuffix(".gif"))
     }
 }

@@ -16,13 +16,17 @@ lift/
 │   │   │                   LaunchOptions (-demo, -tab, -appearance, -open), RootView (Kobo TabShell)
 │   │   ├── Design/         LiftTheme: Theme.lift / Palette.lift (amber); the only place with hex colours
 │   │   ├── Features/<Feature>/<Screen>/   the eight-file screen set: Week, History, Exercises, Settings, Workout
+│   │   │                                  and Catalog (browse the bundled exercise catalog, catalog detail)
+│   │   ├── Features/ExerciseMedia/        catalog media: URLs at the pinned dataset commit, the cached loader,
+│   │   │                                  GIF and thumbnail views, the "© Gym visual" credit
 │   │   ├── Features/Sessions/             SessionSummary, DayCalendar, SessionText (shared by Week and History)
 │   │   └── Resources/      Localizable.xcstrings
 │   ├── LiftWidgets/        widget extension: the rest Live Activity (Lock Screen, Dynamic Island); it also
 │   │                       compiles Lift/Features/Workout/LiveActivity/RestActivityAttributes.swift
 │   ├── LiftTests/          Swift Testing ViewModel tests, hand-written fakes in Fakes/
 │   └── Packages/LiftKit/   one package (LAY-2):
-│         LiftCore      pure domain: models, rules, Notes importer, LocalDay arithmetic
+│         LiftCore      pure domain: models, rules, Notes importer, LocalDay arithmetic, the bundled exercise
+│                       catalog (Resources/exercise-catalog.json, built by scripts/import-exercise-dataset.py)
 │         LiftStore     GRDB schema + migrations, repository protocols and Live* implementations,
 │                       outbox writes, DemoSeeder (fabricated demo data)
 │         LiftTesting   IDSequence, ManualNow, TestStore (in-memory DB), fakes, fixtures
@@ -63,3 +67,6 @@ used inside `Loadable`.
 - **Rescheduling** uses the lift sheet: move to another day, push to next week, change the workout, or
   remove it. Each action offers Undo instead of a confirmation dialog.
 - **Real data stays out of the repo.** Fixtures and tests use made-up sessions, never imported notes.
+- **Catalog media is never bundled.** The dataset's text is MIT; its images and GIFs are © Gym visual. They load at
+  runtime from the pinned commit, and every view that shows them carries `MediaAttribution` ("© Gym visual"). See
+  `ios/ExerciseMedia/ATTRIBUTION.md`.

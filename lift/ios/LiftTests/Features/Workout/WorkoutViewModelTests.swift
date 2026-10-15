@@ -227,7 +227,10 @@ import Testing
 
     @Test func thumbnailNeededLoadsTheStillOnce() async {
         let still = MediaImage.loaded(FakeExerciseCatalog.imageData)
-        let catalog = FakeExerciseCatalog(entries: [FakeExerciseCatalog.entry("0043", "Squat")], images: ["0043": still])
+        let catalog = FakeExerciseCatalog(
+            entries: [FakeExerciseCatalog.entry("0043", "Squat")],
+            images: ["0043": still]
+        )
         let vm = WorkoutViewModel(
             sessionID: planned.id,
             sessions: FakeSessionDetailRepository(emissions: [planned]),

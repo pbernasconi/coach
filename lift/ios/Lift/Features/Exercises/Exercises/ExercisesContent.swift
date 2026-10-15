@@ -19,9 +19,13 @@ struct ExercisesContent: View {
                     ErrorState(title: "Exercises could not be loaded")
                 case .loaded:
                     ListSection {
-                        ListRow("All exercises", subtitle: "Browse the exercise catalog", action: {
-                            send(.allExercisesTapped)
-                        }) {
+                        ListRow(
+                            "All exercises",
+                            subtitle: "Browse the exercise catalog",
+                            action: {
+                                send(.allExercisesTapped)
+                            }
+                        ) {
                             Image(systemName: "books.vertical").accessibilityHidden(true)
                         }
                     }
@@ -61,7 +65,11 @@ private struct ExerciseList: View {
             ListSection {
                 LazyVStack(spacing: 0) {
                     ForEach(items) { item in
-                        ExerciseRow(item: item, thumbnail: item.catalogID.map { thumbnails[$0] ?? .loading }, send: send)
+                        ExerciseRow(
+                            item: item,
+                            thumbnail: item.catalogID.map { thumbnails[$0] ?? .loading },
+                            send: send
+                        )
                     }
                 }
             } header: {

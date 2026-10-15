@@ -49,7 +49,10 @@ import Testing
     }
 
     @Test func nonSeedIDsHaveNoLink() {
-        #expect(CatalogSeedLinks.catalogID(forSeedExerciseID: UUID(uuid: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1))) == nil)
+        #expect(
+            CatalogSeedLinks.catalogID(forSeedExerciseID: UUID(uuid: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1)))
+                == nil
+        )
         #expect(CatalogSeedLinks.seedLink(seedNumber: 99) == nil)
     }
 
@@ -80,8 +83,14 @@ import Testing
             "Lunge",  // name prefix, shortest
             "Lunge With Twist",  // name prefix
         ])
-        #expect(catalog.search("lunge").map(\.name) == ["Lunge", "Lunge With Twist", "Barbell Lunge", "Reverse Lunge Twist"])
-        #expect(catalog.search("unge").map(\.name) == ["Lunge", "Barbell Lunge", "Lunge With Twist", "Reverse Lunge Twist"])
+        #expect(
+            catalog.search("lunge").map(\.name) == [
+                "Lunge", "Lunge With Twist", "Barbell Lunge", "Reverse Lunge Twist",
+            ]
+        )
+        #expect(
+            catalog.search("unge").map(\.name) == ["Lunge", "Barbell Lunge", "Lunge With Twist", "Reverse Lunge Twist"]
+        )
     }
 
     @Test func searchMatchesTargetAndEquipmentTokensAndIgnoresCase() throws {
@@ -98,7 +107,8 @@ import Testing
         let results = catalog.search("", filter: filter)
         #expect(!results.isEmpty)
         #expect(results.allSatisfy { $0.bodyPart == "upper legs" && $0.equipment == "barbell" })
-        #expect((results.first?.name.count ?? 0) <= (results.last?.name.count ?? 0))
+        let folded = results.map { $0.name.lowercased() }
+        #expect(folded.first ?? "" <= folded.last ?? "")
         #expect(catalog.search("").count == 1324)
         #expect(catalog.bodyParts.contains("chest"))
         #expect(catalog.equipment.contains("body weight"))

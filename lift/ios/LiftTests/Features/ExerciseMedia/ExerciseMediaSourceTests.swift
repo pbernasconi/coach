@@ -16,7 +16,9 @@ import Testing
         )
     }
 
-    @Test(arguments: ["../secret.gif", "videos/../x.gif", "other/0043.gif", "videos/0043.png", "videos/.gif", "videos/a b.gif", ""])
+    @Test(arguments: [
+        "../secret.gif", "videos/../x.gif", "other/0043.gif", "videos/0043.png", "videos/.gif", "videos/a b.gif", "",
+    ])
     func refusesPathsOutsideTheMediaFolders(path: String) {
         #expect(source.url(path: path) == nil)
     }

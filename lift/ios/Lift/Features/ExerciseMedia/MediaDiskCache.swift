@@ -15,7 +15,8 @@ nonisolated struct MediaDiskCache: Sendable {
     /// the pinned commit, so a new commit never reads an old file.
     static func key(for url: URL) -> String {
         let mapped = url.path().map { character -> Character in
-            character.isASCII && (character.isLetter || character.isNumber || "._-".contains(character)) ? character : "_"
+            character.isASCII && (character.isLetter || character.isNumber || "._-".contains(character))
+                ? character : "_"
         }
         return String(mapped)
     }

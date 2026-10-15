@@ -8,7 +8,13 @@ import Testing
 @MainActor
 @Suite struct CatalogViewModelTests {
     let squat = FakeExerciseCatalog.entry("9001", "Barbell Squat")
-    let curl = FakeExerciseCatalog.entry("9002", "Dumbbell Curl", bodyPart: "upper arms", equipment: "dumbbell", target: "biceps")
+    let curl = FakeExerciseCatalog.entry(
+        "9002",
+        "Dumbbell Curl",
+        bodyPart: "upper arms",
+        equipment: "dumbbell",
+        target: "biceps"
+    )
     let lunge = FakeExerciseCatalog.entry("9003", "Squat Lunge", equipment: "body weight", target: "quads")
     let router = RecordingNavigator()
 
@@ -26,7 +32,9 @@ import Testing
     @Test func runLoadsEveryEntryByNameWithFacets() async {
         let (vm, _) = await loaded()
         #expect(vm.state.total == 3)
-        #expect(vm.state.rows == .loaded([CatalogRow(entry: squat), CatalogRow(entry: curl), CatalogRow(entry: lunge)]))
+        #expect(
+            vm.state.rows == .loaded([CatalogRow(entry: squat), CatalogRow(entry: curl), CatalogRow(entry: lunge)])
+        )
         #expect(vm.state.bodyParts == ["upper arms", "upper legs"])
         #expect(vm.state.equipmentKinds == ["barbell", "body weight", "dumbbell"])
         #expect(CatalogRow(entry: curl).detail == "Biceps · Dumbbell")
@@ -37,7 +45,7 @@ import Testing
         let empty = makeViewModel(FakeExerciseCatalog(entries: []))
         await empty.run()
         #expect(empty.state.rows == .empty)
-        let failing = makeViewModel(FakeExerciseCatalog(entries: nil))
+        let failing = makeViewModel(FakeExerciseCatalog(fails: true))
         await failing.run()
         #expect(failing.state.rows == .failed(.decoding))
     }
@@ -56,7 +64,9 @@ import Testing
         vm.send(.bodyPartChanged(.only("upper arms")))
         #expect(vm.state.rows == .loaded([CatalogRow(entry: curl)]))
         vm.send(.bodyPartChanged(.any))
-        #expect(vm.state.rows == .loaded([CatalogRow(entry: squat), CatalogRow(entry: curl), CatalogRow(entry: lunge)]))
+        #expect(
+            vm.state.rows == .loaded([CatalogRow(entry: squat), CatalogRow(entry: curl), CatalogRow(entry: lunge)])
+        )
     }
 
     @Test func equipmentChangedFiltersWithTheQuery() async {
@@ -77,7 +87,9 @@ import Testing
         #expect(vm.state.thumbnails["9001"] == still)
         await vm.send(.rowAppeared("9002"))?.value
         #expect(vm.state.thumbnails["9002"] == .failed)
-        #expect(catalog.imageRequests == [.init(kind: .still, catalogID: "9001"), .init(kind: .still, catalogID: "9002")])
+        #expect(
+            catalog.imageRequests == [.init(kind: .still, catalogID: "9001"), .init(kind: .still, catalogID: "9002")]
+        )
         #expect(vm.send(.rowAppeared("0000")) == nil)
     }
 
@@ -88,7 +100,7 @@ import Testing
     }
 
     @Test func retryTappedLoadsAgain() async {
-        let vm = makeViewModel(FakeExerciseCatalog(entries: nil))
+        let vm = makeViewModel(FakeExerciseCatalog(fails: true))
         await vm.run()
         let task = vm.send(.retryTapped)
         #expect(vm.state.rows == .loading)

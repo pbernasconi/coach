@@ -33,7 +33,8 @@ extension ExerciseCatalog {
             if lhs.rank != rhs.rank { return lhs.rank < rhs.rank }
             let left = searchKeys[lhs.index].name
             let right = searchKeys[rhs.index].name
-            return left.count != right.count ? left.count < right.count : left < right
+            let byName = lhs.rank == CatalogSearchKey.Rank.blank.rawValue || left.count == right.count
+            return byName ? left < right : left.count < right.count
         }
         return ranked.map { entries[$0.index] }
     }

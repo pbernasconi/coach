@@ -26,7 +26,9 @@ import Testing
         let rows = try queue.read { db in
             try Row.fetchAll(db, sql: "SELECT id, catalogID, updatedAt FROM exercise")
         }
-        let byID = Dictionary(uniqueKeysWithValues: rows.map { row -> (UUID, String?) in (row["id"], row["catalogID"]) })
+        let byID = Dictionary(
+            uniqueKeysWithValues: rows.map { row -> (UUID, String?) in (row["id"], row["catalogID"]) }
+        )
         #expect(byID[ExerciseLibrary.seedID(1)] == "0043")
         #expect(byID[ExerciseLibrary.seedID(29)] == "2135")
         #expect(byID[custom] == .some(nil))

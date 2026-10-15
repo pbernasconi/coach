@@ -16,9 +16,11 @@ nonisolated enum CatalogText {
 }
 
 /// A filter choice: everything, or one value.
-nonisolated enum CatalogChoice: Hashable, Sendable {
+nonisolated enum CatalogChoice: Hashable, Sendable, Identifiable {
     case any
     case only(String)
+
+    var id: Self { self }
 
     /// The value to filter by; nil for `.any`.
     var value: String? {

@@ -20,17 +20,18 @@ nonisolated final class FakeExerciseCatalog: ExerciseCatalogProviding {
         var catalogID: String
     }
 
-    /// `entries` nil makes `catalog()` throw `AppError(.decoding)`.
-    init(entries: [CatalogExercise]? = [], images: [String: MediaImage] = [:]) {
-        loaded = entries.map { entries in
-            ExerciseCatalog(
+    /// With `fails`, `catalog()` throws `AppError(.decoding)`.
+    init(entries: [CatalogExercise] = [], images: [String: MediaImage] = [:], fails: Bool = false) {
+        loaded =
+            fails
+            ? nil
+            : ExerciseCatalog(
                 commit: Self.commit,
                 source: "https://example.com/dataset",
                 license: "MIT (data)",
                 attribution: "Made-up credit",
                 entries: entries
             )
-        }
         self.images = images
     }
 
