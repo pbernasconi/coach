@@ -5,15 +5,15 @@
     /// Named states for previews and snapshots. Made-up rows; no media is fetched (TEST-8).
     extension CatalogState {
         private static let rows = [
-            CatalogRow(id: "9001", name: "Made-Up Barbell Squat", detail: "Glutes · Barbell"),
-            CatalogRow(id: "9002", name: "Made-Up Dumbbell Curl", detail: "Biceps · Dumbbell"),
-            CatalogRow(id: "9003", name: "Made-Up Cable Row", detail: "Upper back · Cable"),
-            CatalogRow(id: "9004", name: "Made-Up Plank", detail: "Abs · Body weight"),
-            CatalogRow(id: "9006", name: "Made-Up Bench Press", detail: "Pectorals · Barbell"),
-            CatalogRow(id: "9007", name: "Made-Up Lateral Raise", detail: "Delts · Dumbbell"),
-            CatalogRow(id: "9008", name: "Made-Up Push-Up", detail: "Pectorals · Body weight"),
-            CatalogRow(id: "9009", name: "Made-Up Calf Raise", detail: "Calves · Leverage machine"),
-            CatalogRow(id: "9010", name: "Made-Up Face Pull", detail: "Delts · Cable"),
+            CatalogRow(id: "9001", name: "Made-up barbell squat", detail: "Glutes · Barbell"),
+            CatalogRow(id: "9002", name: "Made-up dumbbell curl", detail: "Biceps · Dumbbell"),
+            CatalogRow(id: "9003", name: "Made-up cable row", detail: "Upper back · Cable"),
+            CatalogRow(id: "9004", name: "Made-up plank", detail: "Abs · Bodyweight"),
+            CatalogRow(id: "9006", name: "Made-up bench press", detail: "Pectorals · Barbell"),
+            CatalogRow(id: "9007", name: "Made-up lateral raise", detail: "Delts · Dumbbell"),
+            CatalogRow(id: "9008", name: "Made-up push-up", detail: "Pectorals · Bodyweight"),
+            CatalogRow(id: "9009", name: "Made-up calf raise", detail: "Calves · Leverage machine"),
+            CatalogRow(id: "9010", name: "Made-up face pull", detail: "Delts · Cable"),
         ]
         private static let options: [CatalogFacet: [String]] = [
             .bodyPart: ["back", "chest", "lower legs", "shoulders", "upper arms", "upper legs", "waist"],
@@ -74,7 +74,7 @@
             state.rows = .loaded([
                 CatalogRow(
                     id: "9005",
-                    name: "Made-Up Cable One Arm Straight Back High Row (Kneeling, With Rope Attachment)",
+                    name: "Made-up cable one arm straight back high row (kneeling, with rope attachment)",
                     detail: "Upper back · Cable"
                 )
             ])

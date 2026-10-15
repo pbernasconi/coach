@@ -85,6 +85,6 @@ nonisolated struct CatalogRow: Equatable, Sendable, Identifiable {
     }
 
     init(entry: CatalogExercise) {
-        self.init(id: entry.id, name: entry.name, detail: CatalogText.detail(entry))
+        self.init(id: entry.id, name: CatalogText.name(entry.name), detail: CatalogText.detail(entry))
     }
 }

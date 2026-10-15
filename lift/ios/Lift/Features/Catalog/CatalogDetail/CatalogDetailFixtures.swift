@@ -6,7 +6,7 @@
     extension CatalogDetailState {
         private static let item = CatalogDetailItem(
             id: "9001",
-            name: "Made-Up Barbell Squat",
+            name: "Made-up barbell squat",
             bodyPart: "Upper legs",
             target: "Glutes",
             secondary: ["Quadriceps", "Hamstrings", "Core"],
@@ -36,7 +36,7 @@
             entry: .loaded(
                 CatalogDetailItem(
                     id: "9002",
-                    name: "Made-Up Cable One Arm Straight Back High Row (Kneeling, With Rope Attachment)",
+                    name: "Made-up cable one arm straight back high row (kneeling, with rope attachment)",
                     bodyPart: "Back",
                     target: "Upper back",
                     secondary: ["Biceps", "Rear deltoids", "Rhomboids", "Trapezius", "Forearms"],

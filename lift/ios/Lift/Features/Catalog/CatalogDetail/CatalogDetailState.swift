@@ -49,7 +49,7 @@ nonisolated struct CatalogDetailItem: Equatable, Sendable {
     init(entry: CatalogExercise) {
         self.init(
             id: entry.id,
-            name: entry.name,
+            name: CatalogText.name(entry.name),
             bodyPart: CatalogText.label(entry.bodyPart),
             target: CatalogText.label(entry.target),
             secondary: entry.secondary.map(CatalogText.label),
