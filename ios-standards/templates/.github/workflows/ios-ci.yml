@@ -1,0 +1,22 @@
+name: iOS CI
+on:
+  pull_request:
+    paths: ["ios/**", ".github/workflows/ios-ci.yml"]
+permissions: { contents: read }
+concurrency: { group: ios-${{ github.ref }}, cancel-in-progress: true }
+jobs:
+  core-linux:          # fast signal: guard + pure Core tests, no Xcode needed
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4   # pin by SHA in the real repo (TOOL-3)
+      - run: ios/scripts/ios-guard.sh
+      - uses: swift-actions/setup-swift@v2
+        with: { swift-version: "6.2" }
+      - run: cd ios/Packages/AppKit && swift test --filter CoreTests
+  app-macos:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install xcodegen swiftlint swift-format
+      - run: ios/scripts/lint.sh
+      - run: ios/scripts/test.sh
