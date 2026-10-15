@@ -29,9 +29,18 @@ import Testing
     @Test func historyListsLoggedSessionsNewestFirstWithOnlyLoggedSets() async throws {
         let store = try TestStore.make()
         let (older, olderSets) = try await session(store, on: Fixtures.monday, statuses: [.done, .skipped])
-        let (newer, newerSets) = try await session(store, on: Fixtures.monday.adding(days: 3), statuses: [.done, .done])
+        let (newer, newerSets) = try await session(
+            store,
+            on: Fixtures.monday.adding(days: 3),
+            statuses: [.done, .done]
+        )
         _ = try await session(store, on: Fixtures.monday.adding(days: 5), statuses: [.planned, .skipped])
-        _ = try await session(store, on: Fixtures.monday.adding(days: 6), exercise: Fixtures.dumbbellBench, statuses: [.done])
+        _ = try await session(
+            store,
+            on: Fixtures.monday.adding(days: 6),
+            exercise: Fixtures.dumbbellBench,
+            statuses: [.done]
+        )
 
         var stream = store.sessions.observeHistory(exerciseID: Fixtures.squat.id, limit: 5).makeAsyncIterator()
         let entries = try #require(await stream.next())

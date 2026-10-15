@@ -18,7 +18,9 @@ extension ExerciseHistoryRow {
             dayTitle: days.longTitle(of: entry.session.day),
             best: best.map { Self.setText($0.set) } ?? String(localized: "Logged"),
             sets: String(localized: "\(entry.sets.count) sets"),
-            estimate: best?.estimate.map { String(localized: "Est. 1RM \(WorkoutText.weight($0.rounded(toStep: 0.5)))") }
+            estimate: best?.estimate.map {
+                String(localized: "Est. 1RM \(WorkoutText.weight($0.rounded(toStep: 0.5)))")
+            }
         )
     }
 

@@ -46,7 +46,8 @@ extension ExerciseGuide {
                 "Rounding the lower back.",
                 "Bar swinging out in front of the legs.",
             ],
-            breathing: "Breathe in and brace before each rep, hold it through the pull, and breathe again at the top or with the bar on the floor.",
+            breathing:
+                "Breathe in and brace before each rep, hold it through the pull, and breathe again at the top or with the bar on the floor.",
             videoQuery: "conventional deadlift technique"
         ),
         ExerciseGuide(
