@@ -1,0 +1,64 @@
+# XcodeGen spec for Lift: the committed source of truth (LAY-1).
+# `scripts/generate.sh` writes Lift.xcodeproj, which is gitignored. Never edit the project by hand.
+name: Lift
+options:
+  bundleIdPrefix: com.example
+  deploymentTarget: { iOS: "26.0" }
+  createIntermediateGroups: true
+packages:
+  LiftKit: { path: Packages/LiftKit }
+  Kobo: { path: ../../ios-standards/Kobo }
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+    SWIFT_APPROACHABLE_CONCURRENCY: "YES"
+    SWIFT_TREAT_WARNINGS_AS_ERRORS: "YES"
+    GCC_TREAT_WARNINGS_AS_ERRORS: "YES"
+    ENABLE_USER_SCRIPT_SANDBOXING: "YES"
+    TARGETED_DEVICE_FAMILY: "1"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    VERSIONING_SYSTEM: apple-generic
+    DEVELOPMENT_TEAM: ""   # set locally or via CI secret
+targets:
+  Lift:
+    type: application
+    platform: iOS
+    sources: [Lift]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.lift   # placeholder until the App Store record exists
+        SWIFT_EMIT_LOC_STRINGS: "YES"                 # fills Resources/Localizable.xcstrings on build (UI-8)
+        LOCALIZATION_PREFERS_STRING_CATALOGS: "YES"
+    dependencies:
+      - package: LiftKit
+        products: [LiftCore, LiftStore]
+      - package: Kobo
+        products: [KoboTokens, KoboComponents, KoboPatterns]
+    info:
+      path: Lift/Info.plist
+      properties:
+        CFBundleDisplayName: Lift
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        ITSAppUsesNonExemptEncryption: false
+  LiftTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [LiftTests]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.lift.tests
+        GENERATE_INFOPLIST_FILE: "YES"
+    dependencies:
+      - target: Lift
+      - package: LiftKit
+        products: [LiftTesting]
+schemes:
+  Lift:
+    build: { targets: { Lift: all } }
+    run: { config: Debug }
+    test: { config: Debug, gatherCoverageData: true, targets: [LiftTests] }
+    archive: { config: Release }
