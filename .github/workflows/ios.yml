@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     concurrency:
-      group: ios-lint-${{ github.ref }}
+      group: ios-lint-${{ github.ref }}-${{ github.event_name == 'workflow_dispatch' && github.run_id || 'auto' }}
       cancel-in-progress: true
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
@@ -82,7 +82,7 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 30
     concurrency:
-      group: ios-packages-${{ github.ref }}
+      group: ios-packages-${{ github.ref }}-${{ github.event_name == 'workflow_dispatch' && github.run_id || 'auto' }}
       cancel-in-progress: true
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
@@ -113,12 +113,22 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 60
     concurrency:
-      group: ios-app-${{ github.ref }}
+      group: ios-app-${{ github.ref }}-${{ github.event_name == 'workflow_dispatch' && github.run_id || 'auto' }}
       cancel-in-progress: true
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
         with:
           persist-credentials: false
+      - name: Generate the Xcode project
+        # XcodeGen's release binary, checked by hash: faster than brew, which crawls once the simulator boots.
+        env:
+          XCODEGEN_URL: https://github.com/yonaskolb/XcodeGen/releases/download/2.46.0/xcodegen.zip
+          XCODEGEN_SHA256: 4d9e34b62172d645eed6457cac13fc222569974098ef4ee9c3368bedf0196806
+        run: |
+          curl -fsSLo "$RUNNER_TEMP/xcodegen.zip" "$XCODEGEN_URL"
+          echo "$XCODEGEN_SHA256  $RUNNER_TEMP/xcodegen.zip" | shasum -a 256 -c -
+          unzip -q "$RUNNER_TEMP/xcodegen.zip" -d "$RUNNER_TEMP"
+          (cd lift/ios && "$RUNNER_TEMP/xcodegen/bin/xcodegen" generate)
       - name: Boot a simulator in the background
         id: sim
         run: |
@@ -127,6 +137,7 @@ jobs:
           xcrun simctl boot "$udid" > /dev/null 2>&1 &
           echo "xcode=$(basename "$(dirname "$(dirname "$(xcode-select -p)")")" .app)" >> "$GITHUB_OUTPUT"
       - name: Restore SwiftPM checkouts
+        id: spm
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: build/spm
@@ -138,18 +149,10 @@ jobs:
           path: build/cas
           key: lift-cas-${{ steps.sim.outputs.xcode }}-${{ github.sha }}
           restore-keys: lift-cas-${{ steps.sim.outputs.xcode }}-
-      - name: Generate the Xcode project
-        working-directory: lift/ios
-        env:
-          HOMEBREW_NO_AUTO_UPDATE: "1"
-          HOMEBREW_NO_INSTALL_CLEANUP: "1"
-        run: |
-          command -v xcodegen >/dev/null || brew install xcodegen
-          xcodegen generate
       - name: Build for testing
         run: lift/ios/scripts/ci-xcodebuild.sh lift-build.log build-for-testing
       - name: Save SwiftPM checkouts
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.spm.outputs.cache-hit != 'true' }}
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: build/spm
@@ -175,12 +178,22 @@ jobs:
       matrix:
         variant: [light, dark, ax3]
     concurrency:
-      group: ios-screenshots-${{ matrix.variant }}-${{ github.ref }}
+      group: ios-shots-${{ matrix.variant }}-${{ github.ref }}-${{ github.event_name == 'workflow_dispatch' && github.run_id || 'auto' }}
       cancel-in-progress: true
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
         with:
           persist-credentials: false
+      - name: Generate the Xcode project
+        # XcodeGen's release binary, checked by hash: faster than brew, which crawls once the simulator boots.
+        env:
+          XCODEGEN_URL: https://github.com/yonaskolb/XcodeGen/releases/download/2.46.0/xcodegen.zip
+          XCODEGEN_SHA256: 4d9e34b62172d645eed6457cac13fc222569974098ef4ee9c3368bedf0196806
+        run: |
+          curl -fsSLo "$RUNNER_TEMP/xcodegen.zip" "$XCODEGEN_URL"
+          echo "$XCODEGEN_SHA256  $RUNNER_TEMP/xcodegen.zip" | shasum -a 256 -c -
+          unzip -q "$RUNNER_TEMP/xcodegen.zip" -d "$RUNNER_TEMP"
+          (cd lift/ios && "$RUNNER_TEMP/xcodegen/bin/xcodegen" generate)
       - name: Boot a simulator in the background
         id: sim
         run: |
@@ -189,6 +202,7 @@ jobs:
           xcrun simctl boot "$udid" > /dev/null 2>&1 &
           echo "xcode=$(basename "$(dirname "$(dirname "$(xcode-select -p)")")" .app)" >> "$GITHUB_OUTPUT"
       - name: Restore SwiftPM checkouts
+        id: spm
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: build/spm
@@ -200,14 +214,6 @@ jobs:
           path: build/cas
           key: lift-cas-${{ steps.sim.outputs.xcode }}-${{ github.sha }}
           restore-keys: lift-cas-${{ steps.sim.outputs.xcode }}-
-      - name: Generate the Xcode project
-        working-directory: lift/ios
-        env:
-          HOMEBREW_NO_AUTO_UPDATE: "1"
-          HOMEBREW_NO_INSTALL_CLEANUP: "1"
-        run: |
-          command -v xcodegen >/dev/null || brew install xcodegen
-          xcodegen generate
       - name: Build
         run: lift/ios/scripts/ci-xcodebuild.sh lift-build.log build-for-testing
       - name: Screenshots
