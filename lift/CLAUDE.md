@@ -14,8 +14,8 @@ lift/
 └── README.md               product notes and the Foundations decision log
 ```
 
-UI comes from `../ios-standards/CraftUI`, themed with `.craftTheme(.lift)`. Lift-specific composites (set
-rows, the workout screen) live in the app, never in CraftUI.
+UI comes from `../ios-standards/Kobo`, themed with `.koboTheme(.lift)`. Lift-specific composites (set
+rows, the workout screen) live in the app, never in Kobo.
 
 ## Commands
 

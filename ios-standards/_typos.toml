@@ -3,4 +3,4 @@ extend-exclude = [".tools/", "*.xcstrings", ".secrets.baseline"]
 
 [default.extend-words]
 # domain words typos would otherwise "fix"
-craftui = "craftui"
+kobo = "kobo"
