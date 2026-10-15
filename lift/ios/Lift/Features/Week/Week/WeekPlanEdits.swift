@@ -48,10 +48,11 @@ struct WeekPlanEdits {
             return WeekNotice(String(localized: "Next week already has those days"))
         }
         let count = plan.sessionIDs.count
-        return WeekNotice(
-            String(localized: "Planned ^[\(count) workout](inflect: true) for next week"),
-            undo: .plan(plan)
-        )
+        let message =
+            count == 1
+            ? String(localized: "Planned 1 workout for next week")
+            : String(localized: "Planned \(count) workouts for next week")
+        return WeekNotice(message, undo: .plan(plan))
     }
 
     /// Puts a change back; nothing to show after it.

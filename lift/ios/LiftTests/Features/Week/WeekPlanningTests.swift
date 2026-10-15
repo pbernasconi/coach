@@ -141,7 +141,7 @@ import Testing
         await vm.send(.planNextWeekTapped)?.value
 
         #expect(plans.calls == [.planNextWeek(monday)])
-        #expect(vm.state.toast?.message == String(localized: "Planned ^[\(2) workout](inflect: true) for next week"))
+        #expect(vm.state.toast?.message == String(localized: "Planned \(2) workouts for next week"))
         guard case .plan(let plan)? = vm.state.toast?.undo else {
             Issue.record("expected an undo")
             return

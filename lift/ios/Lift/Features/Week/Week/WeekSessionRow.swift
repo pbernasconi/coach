@@ -84,7 +84,7 @@ struct WeekRowMark: View {
                 Image(systemName: "plus.circle")
                     .foregroundStyle(theme.palette.accentText)
             case .plan:
-                Image(systemName: "calendar.badge.plus")
+                Image(systemName: "arrow.forward.circle")
                     .foregroundStyle(theme.palette.accentText)
             }
         }
