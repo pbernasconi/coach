@@ -40,7 +40,8 @@ extension WorkoutExercise {
             },
             progression: Self.progression(item: item, working: working),
             sets: Self.rows(item.sets),
-            libraryID: exercise.exerciseID
+            libraryID: exercise.exerciseID,
+            catalogID: item.catalogID
         )
     }
 

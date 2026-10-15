@@ -24,6 +24,7 @@ import Testing
             router: RecordingNavigator(),
             clock: clock,
             restActivity: activity,
+            catalog: FakeExerciseCatalog(),
             now: { [now] in now() },
             calendar: SessionBuilder.calendar
         )

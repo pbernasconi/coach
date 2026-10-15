@@ -15,8 +15,16 @@ final class AppDependencies {
     let clock: any Clock<Duration>
     /// The rest countdown on the Lock Screen and in the Dynamic Island.
     let restActivity: any RestActivityController
+    /// Downloads and caches the catalog's media (© Gym visual) from the pinned dataset commit.
+    let mediaLoader: any ExerciseMediaLoader
+    /// The bundled exercise catalog and its media.
+    let catalog: any ExerciseCatalogProviding
     let calendar: Calendar
     let info: AppInfo
+    /// The clipboard, for the import flow's Paste button.
+    let pasteboard: any TextPasteboard
+    /// Opens and closes Import from Notes, which the shell shows as a modal page above the tabs.
+    let importFlow = ImportFlowPresenter()
     private var isPrepared = false
 
     init(
@@ -27,8 +35,11 @@ final class AppDependencies {
         now: @escaping @Sendable () -> Date,
         clock: any Clock<Duration>,
         restActivity: any RestActivityController,
+        mediaLoader: any ExerciseMediaLoader,
+        catalog: any ExerciseCatalogProviding,
         calendar: Calendar,
-        info: AppInfo
+        info: AppInfo,
+        pasteboard: any TextPasteboard
     ) {
         self.sessions = sessions
         self.exercises = exercises
@@ -37,8 +48,11 @@ final class AppDependencies {
         self.now = now
         self.clock = clock
         self.restActivity = restActivity
+        self.mediaLoader = mediaLoader
+        self.catalog = catalog
         self.calendar = calendar
         self.info = info
+        self.pasteboard = pasteboard
     }
 
     /// Work that finishes before the tabs show: the seed exercise library on this iPhone, or the fabricated demo

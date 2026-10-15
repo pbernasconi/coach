@@ -18,7 +18,14 @@ struct ExercisesContent: View {
                 case .failed:
                     ErrorState(title: "Exercises could not be loaded")
                 case .loaded:
-                    ExerciseList(items: state.visible, query: state.query, send: send)
+                    ListSection {
+                        ListRow("All exercises", subtitle: "Browse the exercise catalog", action: {
+                            send(.allExercisesTapped)
+                        }) {
+                            Image(systemName: "books.vertical").accessibilityHidden(true)
+                        }
+                    }
+                    ExerciseList(items: state.visible, query: state.query, thumbnails: state.thumbnails, send: send)
                 }
             }
             .pageGutter()
@@ -40,6 +47,7 @@ struct ExercisesContent: View {
 private struct ExerciseList: View {
     let items: [ExerciseItem]
     let query: String
+    let thumbnails: [String: MediaImage]
     let send: (ExercisesAction) -> Void
 
     var body: some View {
@@ -53,10 +61,32 @@ private struct ExerciseList: View {
             ListSection {
                 LazyVStack(spacing: 0) {
                     ForEach(items) { item in
-                        ListRow(verbatim: item.name, subtitle: item.detail, action: { send(.exerciseTapped(item.id)) })
+                        ExerciseRow(item: item, thumbnail: item.catalogID.map { thumbnails[$0] ?? .loading }, send: send)
                     }
                 }
+            } header: {
+                EmptyView()
+            } footer: {
+                if items.contains(where: { $0.catalogID != nil }) {
+                    MediaAttribution()  // the credit for the thumbnails
+                }
             }
+        }
+    }
+}
+
+/// One library exercise: its catalog still (a figure symbol for one without), name and detail.
+private struct ExerciseRow: View {
+    let item: ExerciseItem
+    let thumbnail: MediaImage?
+    let send: (ExercisesAction) -> Void
+
+    var body: some View {
+        ListRow(verbatim: item.name, subtitle: item.detail, action: { send(.exerciseTapped(item.id)) }) {
+            ExerciseThumbnail(image: thumbnail ?? .failed, name: item.name)
+        }
+        .onAppear {
+            if let catalogID = item.catalogID { send(.thumbnailNeeded(catalogID: catalogID)) }
         }
     }
 }

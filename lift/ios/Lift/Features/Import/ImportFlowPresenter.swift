@@ -10,7 +10,7 @@ protocol ImportFlowPresenting: AnyObject {
 }
 
 /// One opening of the import flow: the text it starts with, and whether it reads that text straight away.
-nonisolated struct ImportRequest: Identifiable, Equatable, Sendable {
+nonisolated struct ImportRequest: Identifiable, Hashable, Sendable {
     /// Counts openings, so a new opening is a new page.
     let id: Int
     let text: String

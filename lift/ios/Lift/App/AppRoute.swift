@@ -6,6 +6,10 @@ nonisolated enum AppRoute: Hashable, Sendable {
     case workout(UUID)
     /// How to do a library exercise, and its recent history.
     case exercise(UUID)
+    /// Every exercise in the bundled catalog, to browse and add from.
+    case catalog
+    /// One catalog exercise, by dataset id.
+    case catalogExercise(String)
     /// Third-party work bundled with the app and its licences.
     case acknowledgements
 }

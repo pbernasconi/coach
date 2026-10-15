@@ -3,31 +3,19 @@ import KoboTokens
 import LiftCore
 import SwiftUI
 
-/// The top of the exercise detail screen: the exercise's media with its credit line, or a placeholder when there is
-/// none. For now it shows the still thumbnail; playing `media.gifURL` (and holding the thumbnail under Reduce Motion)
-/// is left to the media integration.
+/// The top of the exercise detail screen: the exercise's animation (its first frame, still, under Reduce Motion) with
+/// the "© Gym visual" credit, or a placeholder when the exercise has no catalog media.
 struct ExerciseMediaView: View {
     @Environment(\.koboTheme) private var theme
-    @ScaledMetric(relativeTo: .body) private var height: CGFloat = 240
     let name: String
     let media: ExerciseMedia?
+    /// The loaded animation behind `media`.
+    let animation: MediaImage
 
     var body: some View {
         Group {
-            if let media {
-                VStack(alignment: .leading, spacing: Space.sm) {
-                    AsyncImage(url: media.thumbnailURL) { image in
-                        image.resizable().scaledToFit()
-                    } placeholder: {
-                        placeholder
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: height)
-                    .accessibilityLabel(Text(verbatim: String(localized: "\(name), demonstration")))
-                    Text(verbatim: media.attribution)
-                        .font(theme.font(.footnote))
-                        .foregroundStyle(theme.palette.textSecondary)
-                }
+            if media != nil {
+                ExerciseMediaHero(animation: animation, name: name)
             } else {
                 placeholder
                     .padding(.vertical, Space.xxl)

@@ -22,6 +22,7 @@ import Testing
             router: router,
             clock: clock,
             restActivity: RecordingRestActivityController(),
+            catalog: FakeExerciseCatalog(),
             now: SessionBuilder.now,
             calendar: SessionBuilder.calendar
         )
@@ -222,5 +223,29 @@ import Testing
 
         #expect(vm.state.rest == nil)
         #expect(clock.sleepCount == RestTimer.defaultSeconds)
+    }
+
+    @Test func thumbnailNeededLoadsTheStillOnce() async {
+        let still = MediaImage.loaded(FakeExerciseCatalog.imageData)
+        let catalog = FakeExerciseCatalog(entries: [FakeExerciseCatalog.entry("0043", "Squat")], images: ["0043": still])
+        let vm = WorkoutViewModel(
+            sessionID: planned.id,
+            sessions: FakeSessionDetailRepository(emissions: [planned]),
+            sets: recorder(planned),
+            router: router,
+            clock: clock,
+            restActivity: RecordingRestActivityController(),
+            catalog: catalog,
+            now: SessionBuilder.now,
+            calendar: SessionBuilder.calendar
+        )
+
+        let task = vm.send(.thumbnailNeeded(catalogID: "0043"))
+        #expect(vm.state.thumbnails["0043"] == .loading)
+        #expect(vm.send(.thumbnailNeeded(catalogID: "0043")) == nil)
+        await task?.value
+
+        #expect(vm.state.thumbnails["0043"] == still)
+        #expect(catalog.imageRequests.count == 1)
     }
 }

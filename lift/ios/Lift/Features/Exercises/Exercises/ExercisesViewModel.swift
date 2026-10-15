@@ -8,11 +8,13 @@ final class ExercisesViewModel {
     private(set) var state = ExercisesState()
 
     private let exercises: any ExerciseRepository
+    private let catalog: any ExerciseCatalogProviding
     private let router: any Navigating
 
     /// Protocols only, no defaults, no work (SCR-3).
-    init(exercises: any ExerciseRepository, router: any Navigating) {
+    init(exercises: any ExerciseRepository, catalog: any ExerciseCatalogProviding, router: any Navigating) {
         self.exercises = exercises
+        self.catalog = catalog
         self.router = router
     }
 
@@ -31,7 +33,18 @@ final class ExercisesViewModel {
             state.query = query
         case .exerciseTapped(let id):
             router.open(.exercise(id))
+        case .thumbnailNeeded(let catalogID):
+            return loadThumbnail(catalogID)
+        case .allExercisesTapped:
+            router.open(.catalog)
         }
         return nil
+    }
+
+    private func loadThumbnail(_ catalogID: String) -> Task<Void, Never>? {
+        guard state.thumbnails[catalogID] == nil else { return nil }
+        state.thumbnails[catalogID] = .loading
+        let catalog = catalog
+        return Task { state.thumbnails[catalogID] = await catalog.image(.still, catalogID: catalogID) }
     }
 }

@@ -92,4 +92,20 @@ import Testing
         let saved = try await store.exercises.update(exercise)
         #expect(saved.catalogID == "9001")
     }
+
+    @Test func sessionItemsCarryTheLibraryExerciseCatalogID() async throws {
+        let store = try TestStore.make()
+        _ = try await store.exercises.installLibrary()
+        let (session, _) = try await store.sessionWithSquat()
+        let custom = try await store.exercises.create(
+            name: "Sled push",
+            equipment: .other,
+            loadMode: .total,
+            primary: [.quads],
+            secondary: []
+        )
+        _ = try await store.sessions.addExercise(ExerciseSlot(exercise: custom), to: session.id)
+        let detail = await store.sessions.observeSession(id: session.id).first { _ in true } ?? nil
+        #expect(detail?.items.map(\.catalogID) == ["0043", nil])
+    }
 }

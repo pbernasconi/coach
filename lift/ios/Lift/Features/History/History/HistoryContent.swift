@@ -31,7 +31,11 @@ struct HistoryContent: View {
             .padding(.bottom, Space.xxl)
         }
         .screenCanvas()
-        .tabRootHeader { AppHeader("History") }
+        .tabRootHeader {
+            AppHeader("History") {
+                Button("Import from Notes", systemImage: "square.and.arrow.down") { send(.importTapped) }
+            }
+        }
     }
 }
 

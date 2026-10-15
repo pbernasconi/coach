@@ -40,6 +40,7 @@ enum CompositionRoot {
         let now: @Sendable () -> Date = { Date() }
         let makeID: @Sendable () -> UUID = { UUID() }
         let sessions = LiveSessionRepository(database: database, now: now, makeID: makeID)
+        let mediaLoader = mediaLoader()
         return AppDependencies(
             sessions: sessions,
             exercises: LiveExerciseRepository(database: database, now: now, makeID: makeID),
@@ -48,8 +49,26 @@ enum CompositionRoot {
             now: now,
             clock: ContinuousClock(),
             restActivity: restActivity(),
+            mediaLoader: mediaLoader,
+            catalog: LiveExerciseCatalog(loader: mediaLoader),
             calendar: .autoupdatingCurrent,
-            info: info(isDemo: isDemo)
+            info: info(isDemo: isDemo),
+            pasteboard: SystemPasteboard()
+        )
+    }
+
+    /// The catalog media loader: its own URLSession (never `.shared`) and the on-disk cache in Caches/ExerciseMedia.
+    private static func mediaLoader() -> any ExerciseMediaLoader {
+        let configuration = URLSessionConfiguration.default
+        configuration.urlCache = nil  // the loader keeps its own cache on disk
+        configuration.timeoutIntervalForRequest = 20
+        configuration.waitsForConnectivity = false
+        let cache =
+            (try? MediaDiskCache.inCaches(fileManager: .default))
+            ?? MediaDiskCache(directory: FileManager.default.temporaryDirectory.appending(path: "ExerciseMedia"))
+        return LiveExerciseMediaLoader(
+            transport: URLSessionMediaTransport(session: URLSession(configuration: configuration)),
+            cache: cache
         )
     }
 

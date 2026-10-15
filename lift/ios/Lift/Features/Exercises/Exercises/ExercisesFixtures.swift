@@ -6,7 +6,10 @@
     extension ExercisesState {
         private static let library = ExerciseLibrary.seed.map { ExerciseItem(exercise: $0) }
 
-        static let fixtureDefault = ExercisesState(exercises: .loaded(library))
+        static let fixtureDefault = ExercisesState(
+            exercises: .loaded(library),
+            thumbnails: ["0043": MediaPreviewData.still, "0042": MediaPreviewData.still, "0085": .failed]
+        )
         static let fixtureLoading = ExercisesState(exercises: .loading)
         static let fixtureEmpty = ExercisesState(exercises: .empty)
         static let fixtureFailed = ExercisesState(exercises: .failed(.unknown))

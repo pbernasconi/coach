@@ -39,10 +39,12 @@ private struct ExerciseDetailBody: View {
         VStack(alignment: .leading, spacing: 0) {
             AppHeader(verbatim: item.name, kicker: item.equipment)
             VStack(alignment: .leading, spacing: Space.xxl) {
-                ExerciseMediaView(name: item.name, media: state.media)
+                ExerciseMediaView(name: item.name, media: state.media, animation: state.animation)
                 ExerciseFactsSections(item: item)
                 if let guide = item.guide {
                     ExerciseGuideSections(guide: guide)
+                } else if !state.librarySteps.isEmpty {
+                    LibraryStepsSection(state: state, send: send)
                 } else {
                     CardSection("How to") {
                         BodyText(String(localized: "There are no instructions for this exercise yet."))
@@ -69,6 +71,23 @@ private struct VideoSection: View {
             Text("Opens a YouTube search.")
                 .font(theme.font(.footnote))
                 .foregroundStyle(theme.palette.textSecondary)
+        }
+    }
+}
+
+/// The catalog's steps for an exercise without an authored guide, behind "From the exercise library".
+private struct LibraryStepsSection: View {
+    let state: ExerciseDetailState
+    let send: (ExerciseDetailAction) -> Void
+
+    var body: some View {
+        CardSection("How to") {
+            Collapsible(
+                "From the exercise library",
+                isExpanded: .action(state.isLibraryStepsExpanded) { send(.libraryStepsExpandedChanged($0)) }
+            ) {
+                CatalogSteps(steps: state.librarySteps)
+            }
         }
     }
 }

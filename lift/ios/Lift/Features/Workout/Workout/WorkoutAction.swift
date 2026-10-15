@@ -21,4 +21,6 @@ nonisolated enum WorkoutAction: Equatable, Sendable {
     case restSkipTapped
     /// "How to" beside an exercise name: opens the library exercise's detail.
     case howToTapped(exerciseID: UUID)
+    /// An exercise section with a catalog entry appeared: load its still once.
+    case thumbnailNeeded(catalogID: String)
 }

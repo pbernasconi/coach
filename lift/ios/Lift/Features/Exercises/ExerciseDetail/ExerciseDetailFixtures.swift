@@ -42,7 +42,24 @@
                 URL(string: "https://example.com/squat.png").map { thumbnail in
                     ExerciseMedia(gifURL: gif, thumbnailURL: thumbnail, attribution: "Made-up credit line")
                 }
-            }
+            },
+            animation: MediaPreviewData.still
+        )
+        static let fixtureCatalogAdded = ExerciseDetailState(
+            exercise: .loaded(
+                ExerciseDetailItem(
+                    name: "Made-Up Cable Row",
+                    equipment: "Cable",
+                    primary: ["Back"],
+                    secondary: ["Biceps"],
+                    guide: nil,
+                    videoURL: ExerciseGuide.videoSearchURL(for: "Made-up cable row technique")
+                )
+            ),
+            history: .empty,
+            animation: .failed,
+            librarySteps: ["Sit tall and grab the handle.", "Pull it to your waist.", "Let it back out slowly."],
+            isLibraryStepsExpanded: true
         )
         static let fixtureNoHistory = ExerciseDetailState(exercise: .loaded(item(seed: 4)), history: .empty)
         static let fixtureCustom = ExerciseDetailState(

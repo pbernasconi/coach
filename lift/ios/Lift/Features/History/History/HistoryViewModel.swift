@@ -9,6 +9,7 @@ final class HistoryViewModel {
 
     private let sessions: any SessionRepository
     private let router: any Navigating
+    private let importFlow: any ImportFlowPresenting
     private let now: @Sendable () -> Date
     private let days: DayCalendar
 
@@ -16,11 +17,13 @@ final class HistoryViewModel {
     init(
         sessions: any SessionRepository,
         router: any Navigating,
+        importFlow: any ImportFlowPresenting,
         now: @escaping @Sendable () -> Date,
         calendar: Calendar
     ) {
         self.sessions = sessions
         self.router = router
+        self.importFlow = importFlow
         self.now = now
         self.days = DayCalendar(calendar: calendar)
     }
@@ -43,6 +46,8 @@ final class HistoryViewModel {
         switch action {
         case .sessionTapped(let id):
             router.open(.workout(id))
+        case .importTapped:
+            importFlow.presentImport()
         }
         return nil
     }
