@@ -20,6 +20,7 @@ xcodebuild "$@" \
   -skipMacroValidation \
   -skipPackagePluginValidation \
   -showBuildTimingSummary \
+  -enableCodeCoverage NO \
   CODE_SIGNING_ALLOWED=NO \
   COMPILER_INDEX_STORE_ENABLE=NO \
   ONLY_ACTIVE_ARCH=YES \
