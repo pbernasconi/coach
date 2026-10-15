@@ -109,3 +109,54 @@ jobs:
       - name: Test LiftKit
         working-directory: lift/ios/Packages/LiftKit
         run: swift test
+
+  lift-app:
+    # Generates the Xcode project, builds the app, runs its unit tests on a simulator, and captures demo-mode
+    # screenshots (light, dark, AX3) as a downloadable artifact for review.
+    runs-on: macos-26
+    timeout-minutes: 60
+    concurrency:
+      group: ios-liftapp-${{ github.ref }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+        with:
+          persist-credentials: false
+      - name: Generate the Xcode project
+        working-directory: lift/ios
+        run: |
+          command -v xcodegen >/dev/null || brew install xcodegen
+          xcodegen generate
+      - name: Build and unit test
+        working-directory: lift/ios
+        run: |
+          udid="$(scripts/simulator.sh)"
+          echo "SIM_UDID=$udid" >> "$GITHUB_ENV"
+          status=0
+          xcodebuild test \
+            -project Lift.xcodeproj \
+            -scheme Lift \
+            -destination "id=$udid" \
+            -derivedDataPath ../../build/lift \
+            CODE_SIGNING_ALLOWED=NO \
+            > ../../lift-app.log 2>&1 || status=$?
+          tail -n 25 ../../lift-app.log
+          echo "::group::Unique errors (Lift app)"
+          grep -E "(error|warning):|✘|recorded an issue|\*\* (BUILD|TEST) " ../../lift-app.log \
+            | grep -v "^ *|" | sort -u | head -n 150 || true
+          echo "::endgroup::"
+          exit "$status"
+      - name: Screenshots
+        if: ${{ !cancelled() }}
+        run: |
+          app="$(find build/lift/Build/Products -maxdepth 2 -path '*iphonesimulator/Lift.app' | head -n 1)"
+          if [ -z "$app" ]; then echo "no app build to screenshot"; exit 0; fi
+          lift/ios/scripts/screenshots.sh "$app" screenshots
+      - name: Upload screenshots
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: lift-screenshots
+          path: screenshots
+          if-no-files-found: ignore
+          retention-days: 14
