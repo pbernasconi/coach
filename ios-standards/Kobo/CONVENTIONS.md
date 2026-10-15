@@ -66,6 +66,18 @@ Every component in Kobo follows these rules. They are what make the library reus
     library's own strings ("Close", "Try again") come from its String Catalog with `bundle: .module`,
     never the host app's bundle.
 
+## Page layout
+
+18. **One page margin.** `Space.gutter` (16 pt) is the page's only keyline: titles, section headers, row content,
+    footers, buttons and card edges all start on it. A scrolling page puts `.pageColumn()` (the gutter plus the
+    readable width) on its root stack, and nothing inside adds its own horizontal padding: a second inset makes a
+    second keyline, and the page looks misaligned. A card's content sits one `Space.cardInset` in from the card's edge.
+19. **Flat rows for top-level lists.** A page's lists are flat `ListSection`s (the default `ListSectionStyle`):
+    full-width rows on the canvas that pay the gutter themselves, so the press fill runs edge to edge and separators
+    start at the row text. `.grouped` cards are for forms, sheets (`.koboSheet` sets it) and grouped fields.
+    Horizontally scrolling rows (chips, carousels) bleed to the screen edges with `.bleedsPageGutter()` and start
+    their first item on the keyline.
+
 ## Enforcement
 
 `scripts/conformance.sh` (run by `lint-all.sh` and CI) checks every component against the rules a machine can
