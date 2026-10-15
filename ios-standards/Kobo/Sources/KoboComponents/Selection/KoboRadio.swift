@@ -81,7 +81,10 @@ public struct KoboRadio: View {
                 }
                 VStack(alignment: .leading, spacing: 0) {
                     KoboRadio("Print both sides", isSelected: side == "both") { side = "both" }
-                    KoboRadio("Print the fronts first, then the backs once you flip the stack", isSelected: side == "left") {
+                    KoboRadio(
+                        "Print the fronts first, then the backs once you flip the stack",
+                        isSelected: side == "left"
+                    ) {
                         side = "left"
                     }
                     KoboRadio("Print one side only", isSelected: false) {}.disabled(true)

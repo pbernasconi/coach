@@ -20,8 +20,12 @@ struct DisplayDemo: View {
             }
         case .countdownRing:
             VStack(spacing: Space.md) {
-                CountdownRing(start: timerStart, end: timerStart.addingTimeInterval(90), accessibilityLabel: "Tea timer")
-                    .frame(width: Size.minTouch * 3, height: Size.minTouch * 3)
+                CountdownRing(
+                    start: timerStart,
+                    end: timerStart.addingTimeInterval(90),
+                    accessibilityLabel: "Tea timer"
+                )
+                .frame(width: Size.minTouch * 3, height: Size.minTouch * 3)
                 Button("Restart") { timerStart = .now }  // ios-guard: allow catalog demo
                     .buttonStyle(.kobo(.secondary))
             }

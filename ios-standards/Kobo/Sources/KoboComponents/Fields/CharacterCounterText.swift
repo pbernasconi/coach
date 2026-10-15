@@ -28,7 +28,7 @@ struct CharacterCounterText: View {
 
     private func text(_ caption: CharacterCounter.Caption) -> Text {
         switch caption {
-        case .fraction(let count, let limit): Text("\(count)/\(limit)", bundle: .module)
+        case .fraction(let count, let limit): Text(verbatim: "\(count)/\(limit)")
         case .remaining(let left): Text("\(left) characters left", bundle: .module)
         }
     }

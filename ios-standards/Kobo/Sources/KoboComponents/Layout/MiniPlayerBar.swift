@@ -153,8 +153,12 @@ extension MiniPlayerBar where Trailing == EmptyView {
         let chrome: MiniPlayerChrome
 
         var body: some View {
-            MiniPlayerBar(verbatim: "Focus timer", subtitle: "12:40 · Write the report, block 3 of 5", chrome: chrome, action: {})
-            {
+            MiniPlayerBar(
+                verbatim: "Focus timer",
+                subtitle: "12:40 · Write the report, block 3 of 5",
+                chrome: chrome,
+                action: {}
+            ) {
                 Image(systemName: "timer").accessibilityHidden(true)
             } trailing: {
                 Button("Open") {}

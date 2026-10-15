@@ -64,7 +64,8 @@ struct LayoutDemo: View {
         case .segmentedProgress:
             SegmentedProgress(done: 1, planned: 1, minimum: 2, goal: 3, accessibilityLabel: "Tasks this week")
         case .miniPlayerBar:
-            MiniPlayerBar(verbatim: "Focus timer", subtitle: "Write the report · 18:24", chrome: .floating, action: {}) {
+            MiniPlayerBar(verbatim: "Focus timer", subtitle: "Write the report · 18:24", chrome: .floating, action: {})
+            {
                 Image(systemName: "timer").accessibilityHidden(true)
             }
         default: EmptyView()

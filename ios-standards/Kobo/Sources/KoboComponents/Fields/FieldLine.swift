@@ -48,8 +48,8 @@ extension View {
 /// The spoken value of a field: "12 km, Too far".
 enum FieldSpeech {
     static func value(_ value: String, unit: Text?, error: FieldError) -> Text {
-        let base = unit.map { Text("\(value) \($0)", bundle: .module) } ?? Text(verbatim: value)
+        let base = unit.map { Text("\(value) \($0)") } ?? Text(verbatim: value)
         guard let message = error.message else { return base }
-        return Text("\(base), \(message)", bundle: .module)
+        return Text("\(base), \(message)")
     }
 }

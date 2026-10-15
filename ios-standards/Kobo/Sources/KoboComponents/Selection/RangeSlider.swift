@@ -73,7 +73,7 @@ public struct RangeSlider: View {
                     .font(theme.font(.subheadline).weight(.semibold))
                     .foregroundStyle(theme.palette.textPrimary)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                Text("\(format(current.lowerBound)) – \(format(current.upperBound))", bundle: .module)
+                Text(verbatim: "\(format(current.lowerBound)) – \(format(current.upperBound))")
                     .font(theme.font(.numeric))
                     .foregroundStyle(theme.palette.textSecondary)
             }
@@ -207,7 +207,9 @@ private struct RangeSliderKnob: View {
 
         var body: some View {
             VStack(spacing: Space.xxl) {
-                RangeSlider("Distance", range: $distance, in: 0...200, step: 2.5) { "\(RangeSlider.defaultFormat($0)) km" }
+                RangeSlider("Distance", range: $distance, in: 0...200, step: 2.5) {
+                    "\(RangeSlider.defaultFormat($0)) km"
+                }
                 RangeSlider(verbatim: "Nights", range: $nights, in: 1...30)
                 RangeSlider("Both at the top", range: $stacked, in: 0...200, step: 10)
                 RangeSlider("Locked", range: .constant(20...60), in: 0...100).disabled(true)

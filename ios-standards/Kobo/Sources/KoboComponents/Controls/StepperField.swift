@@ -159,7 +159,7 @@ public struct StepperField: View {
 
     private func spokenValue(_ current: Double) -> Text {
         guard let unit else { return Text(verbatim: format(current)) }
-        return Text("\(format(current)) \(unit)", bundle: .module)
+        return Text("\(format(current)) \(unit)")
     }
 }
 

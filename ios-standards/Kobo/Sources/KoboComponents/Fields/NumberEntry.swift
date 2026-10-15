@@ -177,7 +177,7 @@ extension NumberEntry {
     private var spokenValue: Text {
         let shown = current.text.isEmpty ? "0" : current.text
         guard let unit else { return Text(verbatim: shown) }
-        return Text("\(shown) \(unit)", bundle: .module)
+        return Text("\(shown) \(unit)")
     }
 
     /// Runs one edit on the field state, then reports the new number and shakes when the edit was cut or refused.
