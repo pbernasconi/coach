@@ -17,6 +17,7 @@ struct RouteScreen: View {
                     router: router,
                     clock: dependencies.clock,
                     restActivity: dependencies.restActivity,
+                    catalog: dependencies.catalog,
                     now: dependencies.now,
                     calendar: dependencies.calendar
                 )
@@ -28,7 +29,20 @@ struct RouteScreen: View {
                     exerciseID: exerciseID,
                     exercises: dependencies.exercises,
                     history: dependencies.history,
+                    catalog: dependencies.catalog,
                     calendar: dependencies.calendar
+                )
+            )
+            .id(route)
+        case .catalog:
+            CatalogScreen(viewModel: CatalogViewModel(catalog: dependencies.catalog, router: router))
+        case .catalogExercise(let catalogID):
+            CatalogDetailScreen(
+                viewModel: CatalogDetailViewModel(
+                    catalogID: catalogID,
+                    catalog: dependencies.catalog,
+                    exercises: dependencies.exercises,
+                    router: router
                 )
             )
             .id(route)

@@ -12,6 +12,7 @@ struct ExerciseDetailScreen: View {
     var body: some View {
         ExerciseDetailContent(state: viewModel.state, send: { viewModel.send($0) })
             .task { await viewModel.run() }
+            .task(id: viewModel.state.media) { await viewModel.loadAnimation() }
             .onChange(of: viewModel.state.link) { _, link in
                 if let link { openURL(link.url) }
             }

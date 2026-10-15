@@ -27,7 +27,8 @@
                 set(22, "Set 2", "5 @ 100 kg", actual: "6 @ 100 kg"),
                 set(23, "Set 3", "5 @ 100 kg"),
             ],
-            libraryID: ExerciseLibrary.seedID(1)
+            libraryID: ExerciseLibrary.seedID(1),
+            catalogID: "0043"
         )
 
         private static let romanian = WorkoutExercise(
@@ -63,7 +64,7 @@
             exercises: [squat, romanian, curl]
         )
 
-        static let fixtureDefault = WorkoutState(workout: .loaded(overview))
+        static let fixtureDefault = WorkoutState(workout: .loaded(overview), thumbnails: ["0043": MediaPreviewData.still])
         static let fixtureResting = WorkoutState(
             workout: .loaded(overview),
             rest: RestTimer(run: 1, seconds: 90).ticked()

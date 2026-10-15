@@ -17,14 +17,15 @@ nonisolated struct ImportReview: Equatable, Sendable {
     var includedSetCount: Int { included.reduce(0) { $0 + $1.setCount } }
 
     /// Names in the included workouts that match no library exercise, once each (by normalized name), in
-    /// reading order. Each becomes a new library exercise.
-    var newExerciseNames: [String] {
+    /// reading order. Importing creates each as a library exercise.
+    var newExercises: [ImportNewExercise] {
         var seen: Set<String> = []
-        var names: [String] = []
-        for name in included.flatMap(\.newExerciseNames) where seen.insert(ExerciseMatcher.normalizedName(name)).inserted {
-            names.append(name)
+        var found: [ImportNewExercise] = []
+        for name in included.flatMap(\.newExerciseNames) {
+            let key = ExerciseMatcher.normalizedName(name)
+            if seen.insert(key).inserted { found.append(ImportNewExercise(id: key, name: name)) }
         }
-        return names
+        return found
     }
 
     /// Includes or excludes one workout.
@@ -35,6 +36,14 @@ nonisolated struct ImportReview: Equatable, Sendable {
             }
         }
     }
+}
+
+/// A written name that matches no library exercise.
+nonisolated struct ImportNewExercise: Equatable, Sendable, Identifiable {
+    /// The normalized name, which is how names are told apart.
+    var id: String
+    /// The name as first written.
+    var name: String
 }
 
 /// The workouts parsed for one day.

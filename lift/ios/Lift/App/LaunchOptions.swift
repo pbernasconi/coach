@@ -8,6 +8,9 @@ import LiftCore
 ///     -appearance dark|light                  forces an appearance (CI usually sets it with simctl)
 ///     -open workout                           with -demo: pushes today's or the next planned session on Week
 ///     -open exercise                          with -demo: pushes the Back squat detail on Exercises
+///     -open catalog                           with -demo: pushes the exercise catalog browse on Exercises
+///     -open import                            with -demo: opens Import from Notes over History with a made-up
+///                                             note already read, on the review step
 nonisolated struct LaunchOptions: Equatable, Sendable {
     enum Appearance: String, Equatable, Sendable {
         case dark
@@ -18,12 +21,16 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
     enum Opening: String, Equatable, Sendable {
         case workout
         case exercise
+        case catalog
+        /// Import from Notes: a modal page over History rather than a pushed route.
+        case importNotes = "import"
 
         /// The tab whose stack the screen is pushed on.
         var tab: AppTab {
             switch self {
             case .workout: .week
-            case .exercise: .exercises
+            case .exercise, .catalog: .exercises
+            case .importNotes: .history
             }
         }
     }
@@ -52,14 +59,20 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
     }
 
     /// The route `opening.tab` starts on in demo mode: the given session for `-open workout`, the Back squat detail
-    /// for `-open exercise`. Nil without demo data, so a real launch never opens a screen by itself.
+    /// for `-open exercise`, the catalog browse for `-open catalog`. Nil without demo data, so a real launch never
+    /// opens a screen by itself.
     func initialRoute(upcomingSessionID: UUID?) -> AppRoute? {
         guard isDemo, let opening else { return nil }
         switch opening {
         case .workout: return upcomingSessionID.map(AppRoute.workout)
         case .exercise: return .exercise(ExerciseLibrary.seedID(1))
+        case .catalog: return .catalog
+        case .importNotes: return nil  // a modal page, opened through `opensImportSample`
         }
     }
+
+    /// `-open import` in demo mode: the shell opens the import flow with the made-up sample note already read.
+    var opensImportSample: Bool { isDemo && opening == .importNotes }
 
     private static func value(after flag: String, in arguments: [String]) -> String? {
         guard let index = arguments.firstIndex(of: flag), arguments.indices.contains(index + 1) else { return nil }

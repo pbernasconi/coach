@@ -12,11 +12,13 @@ import Testing
     let monday = Fixtures.monday
     let days = DayCalendar(calendar: SessionBuilder.calendar)
     let router = RecordingNavigator()
+    let importFlow = RecordingImportFlow()
 
     func makeViewModel(_ repository: FakeSessionRepository) -> HistoryViewModel {
         HistoryViewModel(
             sessions: repository,
             router: router,
+            importFlow: importFlow,
             now: SessionBuilder.now,
             calendar: SessionBuilder.calendar
         )
@@ -66,5 +68,17 @@ import Testing
         #expect(task == nil)
         #expect(vm.state == before)
         #expect(router.opened == [.workout(friday.id)])
+    }
+
+    @Test func importTappedOpensTheImportFlow() {
+        let vm = makeViewModel(FakeSessionRepository(emissions: []))
+        let before = vm.state
+
+        let task = vm.send(.importTapped)
+
+        #expect(task == nil)
+        #expect(vm.state == before)
+        #expect(importFlow.presented == 1)
+        #expect(router.opened.isEmpty)
     }
 }

@@ -41,6 +41,9 @@ private struct AppShell: View {
                 TabShell(tabs: tabs, selection: $tab) { tab in
                     TabStack(tab: tab, dependencies: dependencies, initialPath: initialPath(for: tab))
                 }
+                .koboModalPage(item: importRequest, style: .sheet) { request in
+                    ImportFlowPage(request: request, dependencies: dependencies)
+                }
             } else {
                 LoadingState()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -54,8 +57,17 @@ private struct AppShell: View {
                 let sessionID = opening == .workout ? await dependencies.upcomingSessionID() : nil
                 openedRoute = options.initialRoute(upcomingSessionID: sessionID)
             }
+            if options.opensImportSample {
+                dependencies.importFlow.present(text: ImportSample.note, readsOnOpen: true)
+            }
             isReady = true
         }
+    }
+
+    /// Import from Notes, shown over the tabs while the presenter holds a request.
+    private var importRequest: Binding<ImportRequest?> {
+        let flow = dependencies.importFlow
+        return .action(flow.request) { if $0 == nil { flow.dismissImport() } }
     }
 
     private func initialPath(for tab: AppTab) -> [AppRoute] {
@@ -117,12 +129,19 @@ private struct TabRootScreen: View {
                 viewModel: HistoryViewModel(
                     sessions: dependencies.sessions,
                     router: router,
+                    importFlow: dependencies.importFlow,
                     now: dependencies.now,
                     calendar: dependencies.calendar
                 )
             )
         case .exercises:
-            ExercisesScreen(viewModel: ExercisesViewModel(exercises: dependencies.exercises, router: router))
+            ExercisesScreen(
+                viewModel: ExercisesViewModel(
+                    exercises: dependencies.exercises,
+                    catalog: dependencies.catalog,
+                    router: router
+                )
+            )
         case .settings:
             SettingsScreen(viewModel: SettingsViewModel(info: dependencies.info, router: router))
         }

@@ -6,6 +6,8 @@ nonisolated struct ExercisesState: Equatable, Sendable {
     var query = ""
     /// The whole library (archived exercises left out), sorted by name.
     var exercises: Loadable<[ExerciseItem]> = .loading
+    /// Exercise stills by catalog id, loaded as rows appear.
+    var thumbnails: [String: MediaImage] = [:]
 
     /// The exercises that match `query`; all of them when it is blank.
     var visible: [ExerciseItem] {
@@ -23,12 +25,15 @@ nonisolated struct ExerciseItem: Equatable, Sendable, Identifiable {
     var aliases: [String]
     /// "Barbell · Quads, Glutes".
     var detail: String
+    /// The catalog entry, for the thumbnail; nil for an exercise the person made up.
+    var catalogID: String?
 
-    init(id: UUID, name: String, aliases: [String], detail: String) {
+    init(id: UUID, name: String, aliases: [String], detail: String, catalogID: String? = nil) {
         self.id = id
         self.name = name
         self.aliases = aliases
         self.detail = detail
+        self.catalogID = catalogID
     }
 
     init(exercise: Exercise) {
@@ -36,7 +41,8 @@ nonisolated struct ExerciseItem: Equatable, Sendable, Identifiable {
             id: exercise.id,
             name: exercise.name,
             aliases: exercise.aliases,
-            detail: ExerciseText.detail(equipment: exercise.equipment, primary: exercise.primary)
+            detail: ExerciseText.detail(equipment: exercise.equipment, primary: exercise.primary),
+            catalogID: exercise.catalogID
         )
     }
 

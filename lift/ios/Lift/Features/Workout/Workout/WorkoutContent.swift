@@ -24,7 +24,7 @@ struct WorkoutContent: View {
                 ErrorState(title: "Workout could not be loaded")
                     .pageGutter()
             case .loaded(let workout):
-                WorkoutBody(workout: workout, send: send)
+                WorkoutBody(workout: workout, thumbnails: state.thumbnails, send: send)
             }
         }
         .screenCanvas()
@@ -51,6 +51,7 @@ struct WorkoutContent: View {
 private struct WorkoutBody: View {
     @Environment(\.koboTheme) private var theme
     let workout: WorkoutOverview
+    let thumbnails: [String: MediaImage]
     let send: (WorkoutAction) -> Void
 
     var body: some View {
@@ -69,7 +70,14 @@ private struct WorkoutBody: View {
                         .fixedSize()
                 }
                 ForEach(workout.exercises) { exercise in
-                    WorkoutExerciseSection(exercise: exercise, send: send)
+                    WorkoutExerciseSection(
+                        exercise: exercise,
+                        thumbnail: exercise.catalogID.map { thumbnails[$0] ?? .loading },
+                        send: send
+                    )
+                }
+                if workout.exercises.contains(where: { $0.catalogID != nil }) {
+                    MediaAttribution()  // the credit for the exercise thumbnails
                 }
             }
             .pageGutter()

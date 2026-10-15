@@ -17,6 +17,7 @@
     #Preview("Dark") { ExerciseDetailPreview(state: .fixtureDefault).preferredColorScheme(.dark) }
     #Preview("With media") { ExerciseDetailPreview(state: .fixtureWithMedia) }
     #Preview("No history") { ExerciseDetailPreview(state: .fixtureNoHistory) }
+    #Preview("Added from the catalog") { ExerciseDetailPreview(state: .fixtureCatalogAdded) }
     #Preview("Custom exercise") { ExerciseDetailPreview(state: .fixtureCustom) }
     #Preview("Loading") { ExerciseDetailPreview(state: .fixtureLoading) }
     #Preview("Empty") { ExerciseDetailPreview(state: .fixtureEmpty) }

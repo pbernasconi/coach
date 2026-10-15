@@ -9,6 +9,12 @@ nonisolated struct ExerciseDetailState: Equatable, Sendable {
     var history: Loadable<[ExerciseHistoryRow]> = .loading
     /// The animation shown at the top; nil until media is known for this exercise.
     var media: ExerciseMedia?
+    /// The loaded animation behind `media`.
+    var animation: MediaImage = .loading
+    /// The catalog's steps, for an exercise with no authored guide (one added from the catalog); empty otherwise.
+    var librarySteps: [String] = []
+    /// Whether "From the exercise library" is open.
+    var isLibraryStepsExpanded = false
     /// The latest page to open (technique videos).
     var link: LinkRequest?
 }

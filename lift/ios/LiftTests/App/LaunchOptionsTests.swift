@@ -21,6 +21,10 @@ import Testing
         (["Lift", "-open", "nope"], LaunchOptions()),
         (["Lift", "-open"], LaunchOptions()),
         (
+            ["Lift", "-demo", "-tab", "history", "-open", "import"],
+            LaunchOptions(isDemo: true, initialTab: .history, opening: .importNotes)
+        ),
+        (
             ["Lift", "-demo", "-tab", "exercises", "-open", "exercise"],
             LaunchOptions(isDemo: true, initialTab: .exercises, opening: .exercise)
         ),
@@ -46,6 +50,23 @@ import Testing
     @Test func eachOpeningPushesOnItsTab() {
         #expect(LaunchOptions.Opening.workout.tab == .week)
         #expect(LaunchOptions.Opening.exercise.tab == .exercises)
+        #expect(LaunchOptions.Opening.importNotes.tab == .history)
+        #expect(LaunchOptions.Opening.catalog.tab == .exercises)
+    }
+
+    @Test func openCatalogInDemoModePushesTheBrowseOnExercises() {
+        let options = LaunchOptions(arguments: ["Lift", "-demo", "-tab", "exercises", "-open", "catalog"])
+        #expect(options.opening == .catalog)
+        #expect(options.initialRoute(upcomingSessionID: nil) == .catalog)
+        #expect(LaunchOptions(opening: .catalog).initialRoute(upcomingSessionID: nil) == nil)
+    }
+
+    @Test func openImportInDemoModeOpensTheSampleNotARoute() {
+        let options = LaunchOptions(arguments: ["Lift", "-demo", "-tab", "history", "-open", "import"])
+        #expect(options.opensImportSample)
+        #expect(options.initialRoute(upcomingSessionID: nil) == nil)
+        #expect(!LaunchOptions(opening: .importNotes).opensImportSample)
+        #expect(!LaunchOptions(isDemo: true, opening: .workout).opensImportSample)
     }
 
     @Test func openWorkoutNeedsDemoMode() {

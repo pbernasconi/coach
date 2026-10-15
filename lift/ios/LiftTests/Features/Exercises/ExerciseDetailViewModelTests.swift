@@ -14,12 +14,14 @@ import Testing
     func makeViewModel(
         _ exerciseID: UUID,
         library: [Exercise] = ExerciseLibrary.seed,
-        history: FakeExerciseHistoryRepository = FakeExerciseHistoryRepository(emissions: [[]])
+        history: FakeExerciseHistoryRepository = FakeExerciseHistoryRepository(emissions: [[]]),
+        catalog: FakeExerciseCatalog = FakeExerciseCatalog()
     ) -> ExerciseDetailViewModel {
         ExerciseDetailViewModel(
             exerciseID: exerciseID,
             exercises: FakeExerciseRepository(emissions: [library]),
             history: history,
+            catalog: catalog,
             calendar: SessionBuilder.calendar
         )
     }
@@ -149,5 +151,58 @@ import Testing
         vm.send(.videosTapped)
 
         #expect(vm.state.link == nil)
+    }
+
+    @Test func runShowsCatalogMediaAndLoadAnimationLoadsIt() async {
+        let gif = MediaImage.loaded(FakeExerciseCatalog.imageData)
+        let catalog = FakeExerciseCatalog(entries: [FakeExerciseCatalog.entry("0043", "Barbell Full Squat")], images: ["0043": gif])
+        let vm = makeViewModel(squatID, catalog: catalog)
+
+        await vm.run()
+        #expect(vm.state.media?.gifURL.lastPathComponent == "0043-abc.gif")
+        #expect(vm.state.media?.attribution == "Made-up credit")
+        #expect(vm.state.librarySteps.isEmpty)  // the squat has an authored guide
+        #expect(vm.state.animation == .loading)
+
+        await vm.loadAnimation()
+        #expect(vm.state.animation == gif)
+        #expect(catalog.imageRequests == [.init(kind: .animation, catalogID: "0043")])
+    }
+
+    @Test func runShowsLibraryStepsForACatalogExerciseWithoutAGuide() async {
+        let added = Exercise(
+            id: IDSequence.id(8),
+            name: "Made-Up Row",
+            equipment: .cable,
+            loadMode: .total,
+            primary: [.back],
+            catalogID: "9002",
+            createdAt: ManualNow.start,
+            updatedAt: ManualNow.start
+        )
+        let catalog = FakeExerciseCatalog(entries: [FakeExerciseCatalog.entry("9002", "Made-Up Row")])
+        let vm = makeViewModel(added.id, library: [added], catalog: catalog)
+
+        await vm.run()
+
+        #expect(vm.state.librarySteps == ["Step one.", "Step two."])
+        #expect(vm.state.media != nil)
+    }
+
+    @Test func loadAnimationDoesNothingWithoutMedia() async {
+        let vm = makeViewModel(squatID)
+        await vm.run()
+        await vm.loadAnimation()
+        #expect(vm.state.animation == .loading)
+        #expect(vm.state.media == nil)
+    }
+
+    @Test func libraryStepsExpandedChangedOpensAndCloses() {
+        let vm = makeViewModel(squatID)
+
+        #expect(vm.send(.libraryStepsExpandedChanged(true)) == nil)
+        #expect(vm.state.isLibraryStepsExpanded)
+        vm.send(.libraryStepsExpandedChanged(false))
+        #expect(!vm.state.isLibraryStepsExpanded)
     }
 }

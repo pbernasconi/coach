@@ -36,6 +36,7 @@ import Testing
         archived.isArchived = true
         let vm = ExercisesViewModel(
             exercises: FakeExerciseRepository(emissions: [[], [squat, archived, rdl]]),
+            catalog: FakeExerciseCatalog(),
             router: RecordingNavigator()
         )
 
@@ -46,7 +47,11 @@ import Testing
     }
 
     @Test func runShowsEmptyForAnEmptyLibrary() async {
-        let vm = ExercisesViewModel(exercises: FakeExerciseRepository(emissions: [[]]), router: RecordingNavigator())
+        let vm = ExercisesViewModel(
+            exercises: FakeExerciseRepository(emissions: [[]]),
+            catalog: FakeExerciseCatalog(),
+            router: RecordingNavigator()
+        )
 
         await vm.run()
 
@@ -63,6 +68,7 @@ import Testing
     func queryChangedFiltersByNameAndAlias(query: String, expected: [String]) async {
         let vm = ExercisesViewModel(
             exercises: FakeExerciseRepository(emissions: [[squat, rdl, crunch]]),
+            catalog: FakeExerciseCatalog(),
             router: RecordingNavigator()
         )
         await vm.run()
@@ -76,11 +82,40 @@ import Testing
 
     @Test func exerciseTappedOpensTheDetail() {
         let router = RecordingNavigator()
-        let vm = ExercisesViewModel(exercises: FakeExerciseRepository(emissions: []), router: router)
+        let vm = ExercisesViewModel(exercises: FakeExerciseRepository(emissions: []), catalog: FakeExerciseCatalog(), router: router)
 
         let task = vm.send(.exerciseTapped(rdl.id))
 
         #expect(task == nil)
         #expect(router.opened == [.exercise(rdl.id)])
+    }
+
+    @Test func thumbnailNeededLoadsTheStillOnce() async {
+        let still = MediaImage.loaded(FakeExerciseCatalog.imageData)
+        let catalog = FakeExerciseCatalog(entries: [FakeExerciseCatalog.entry("0043", "Squat")], images: ["0043": still])
+        let vm = ExercisesViewModel(exercises: FakeExerciseRepository(emissions: []), catalog: catalog, router: RecordingNavigator())
+
+        let task = vm.send(.thumbnailNeeded(catalogID: "0043"))
+        #expect(vm.state.thumbnails["0043"] == .loading)
+        #expect(vm.send(.thumbnailNeeded(catalogID: "0043")) == nil)
+        await task?.value
+
+        #expect(vm.state.thumbnails["0043"] == still)
+        #expect(catalog.imageRequests == [.init(kind: .still, catalogID: "0043")])
+        await vm.send(.thumbnailNeeded(catalogID: "9999"))?.value
+        #expect(vm.state.thumbnails["9999"] == .failed)
+    }
+
+    @Test func allExercisesTappedOpensTheCatalog() {
+        let router = RecordingNavigator()
+        let vm = ExercisesViewModel(exercises: FakeExerciseRepository(emissions: []), catalog: FakeExerciseCatalog(), router: router)
+
+        #expect(vm.send(.allExercisesTapped) == nil)
+        #expect(router.opened == [.catalog])
+    }
+
+    @Test func rowsCarryTheirCatalogID() {
+        #expect(ExerciseItem(exercise: ExerciseLibrary.seed[0]).catalogID == "0043")
+        #expect(ExerciseItem(exercise: crunch).catalogID == nil)
     }
 }

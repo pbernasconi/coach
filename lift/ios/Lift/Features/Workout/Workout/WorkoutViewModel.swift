@@ -14,6 +14,8 @@ final class WorkoutViewModel {
     private let clock: any Clock<Duration>
     /// The rest's wall-clock end and its Live Activity.
     private let restActivity: RestActivitySession
+    /// The catalog, for exercise thumbnails.
+    private let catalog: any ExerciseCatalogProviding
     private let days: DayCalendar
     /// The latest session from the store; the source for the editor, Add set and rest times.
     @ObservationIgnored private var detail: SessionDetail?
@@ -29,6 +31,7 @@ final class WorkoutViewModel {
         router: any Navigating,
         clock: any Clock<Duration>,
         restActivity: any RestActivityController,
+        catalog: any ExerciseCatalogProviding,
         now: @escaping @Sendable () -> Date,
         calendar: Calendar
     ) {
@@ -38,6 +41,7 @@ final class WorkoutViewModel {
         self.router = router
         self.clock = clock
         self.restActivity = RestActivitySession(controller: restActivity, now: now)
+        self.catalog = catalog
         self.days = DayCalendar(calendar: calendar)
     }
 
@@ -93,6 +97,7 @@ final class WorkoutViewModel {
         case .restExtendTapped: extendRest()
         case .restSkipTapped: endRest()
         case .howToTapped(let exerciseID): router.open(.exercise(exerciseID))
+        case .thumbnailNeeded(let catalogID): return loadThumbnail(catalogID)
         default: break
         }
         return nil
@@ -199,6 +204,13 @@ final class WorkoutViewModel {
     }
 
     // MARK: Support
+
+    private func loadThumbnail(_ catalogID: String) -> Task<Void, Never>? {
+        guard state.thumbnails[catalogID] == nil else { return nil }
+        state.thumbnails[catalogID] = .loading
+        let catalog = catalog
+        return Task { state.thumbnails[catalogID] = await catalog.image(.still, catalogID: catalogID) }
+    }
 
     private func find(_ setID: UUID) -> (SessionDetail.Item, SetRecord)? {
         for item in detail?.items ?? [] {

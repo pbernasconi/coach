@@ -12,6 +12,8 @@ nonisolated struct WorkoutState: Equatable, Sendable {
     var rest: RestTimer?
     /// The latest message for the toast slot.
     var toast: WorkoutToast?
+    /// Exercise stills by catalog id, loaded as their sections appear.
+    var thumbnails: [String: MediaImage] = [:]
 }
 
 /// The session header and its exercises in order.
@@ -39,6 +41,8 @@ nonisolated struct WorkoutExercise: Equatable, Sendable, Identifiable {
     var sets: [WorkoutSetItem]
     /// The library exercise behind this slot, for "How to"; nil for a free-text exercise.
     var libraryID: UUID?
+    /// The catalog entry behind the library exercise, for the thumbnail; nil when there is none.
+    var catalogID: String? = nil
 }
 
 /// One set row.
