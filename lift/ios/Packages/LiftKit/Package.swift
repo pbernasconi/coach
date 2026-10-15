@@ -20,6 +20,7 @@ let package = Package(
         .library(name: "LiftCore", targets: ["LiftCore"]),
         .library(name: "LiftStore", targets: ["LiftStore"]),
         .library(name: "LiftTesting", targets: ["LiftTesting"]),
+        .library(name: "LiftSync", targets: ["LiftSync"]),
     ],
     dependencies: [
         // Pinned exactly (STACK-1). Bump on purpose, never with a range.
@@ -29,10 +30,16 @@ let package = Package(
         .target(name: "LiftCore", swiftSettings: logic),
         .target(name: "LiftStore", dependencies: ["LiftCore", grdb], swiftSettings: logic),
         .target(name: "LiftTesting", dependencies: ["LiftCore", "LiftStore"], swiftSettings: logic),
+        .target(name: "LiftSync", dependencies: ["LiftCore", "LiftStore"], swiftSettings: logic),
         .testTarget(name: "LiftCoreTests", dependencies: ["LiftCore"], swiftSettings: logic),
         .testTarget(
             name: "LiftStoreTests",
             dependencies: ["LiftCore", "LiftStore", "LiftTesting", grdb],
+            swiftSettings: logic
+        ),
+        .testTarget(
+            name: "LiftSyncTests",
+            dependencies: ["LiftCore", "LiftStore", "LiftSync", "LiftTesting", grdb],
             swiftSettings: logic
         ),
     ]

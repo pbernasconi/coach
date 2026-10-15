@@ -11,9 +11,15 @@ import Testing
 @Suite struct HistoryViewModelTests {
     let monday = Fixtures.monday
     let days = DayCalendar(calendar: SessionBuilder.calendar)
+    let router = RecordingNavigator()
 
     func makeViewModel(_ repository: FakeSessionRepository) -> HistoryViewModel {
-        HistoryViewModel(sessions: repository, now: SessionBuilder.now, calendar: SessionBuilder.calendar)
+        HistoryViewModel(
+            sessions: repository,
+            router: router,
+            now: SessionBuilder.now,
+            calendar: SessionBuilder.calendar
+        )
     }
 
     @Test func runGroupsPastSessionsByWeekNewestFirst() async {
@@ -49,7 +55,7 @@ import Testing
         #expect(vm.state.weeks == .empty)
     }
 
-    @Test func sessionTappedLeavesTheStateAlone() async {
+    @Test func sessionTappedOpensTheWorkout() async {
         let friday = SessionBuilder.session(id: 1, on: monday.adding(days: -3), done: 3, planned: 0)
         let vm = makeViewModel(FakeSessionRepository(emissions: [[friday]]))
         await vm.run()
@@ -59,5 +65,6 @@ import Testing
 
         #expect(task == nil)
         #expect(vm.state == before)
+        #expect(router.opened == [.workout(friday.id)])
     }
 }

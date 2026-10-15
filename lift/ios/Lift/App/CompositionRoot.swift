@@ -43,6 +43,7 @@ enum CompositionRoot {
             exercises: LiveExerciseRepository(database: database, now: now, makeID: makeID),
             sets: LiveSetRepository(database: database, now: now, makeID: makeID),
             now: now,
+            clock: ContinuousClock(),
             calendar: .autoupdatingCurrent,
             info: info(isDemo: isDemo)
         )

@@ -17,3 +17,11 @@ already done around it. The build keeps going around these; nothing here blocks 
 - **Tabs:** Week, History, Exercises, Settings.
 - **Units:** kg by default; lb available in Settings.
 - **Plates and bar:** made-up defaults until you list your gym's plates and bars.
+
+## Product decisions to make
+
+- **"Change workout" in the lift sheet.** Left out for now: swapping only the title would leave the old
+  exercises in place. A real swap needs workout templates (which exercises a plan day holds) so the session's
+  exercises can be replaced and undone. Tell me how you plan workouts (fixed A/B days? a program?) and I'll
+  build templates.
+- **"Add workout" on a day.** Waits on the same templates.

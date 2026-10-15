@@ -8,12 +8,19 @@ final class HistoryViewModel {
     private(set) var state = HistoryState()
 
     private let sessions: any SessionRepository
+    private let router: any Navigating
     private let now: @Sendable () -> Date
     private let days: DayCalendar
 
     /// Protocols only, no defaults, no work (SCR-3).
-    init(sessions: any SessionRepository, now: @escaping @Sendable () -> Date, calendar: Calendar) {
+    init(
+        sessions: any SessionRepository,
+        router: any Navigating,
+        now: @escaping @Sendable () -> Date,
+        calendar: Calendar
+    ) {
         self.sessions = sessions
+        self.router = router
         self.now = now
         self.days = DayCalendar(calendar: calendar)
     }
@@ -34,8 +41,8 @@ final class HistoryViewModel {
     @discardableResult
     func send(_ action: HistoryAction) -> Task<Void, Never>? {
         switch action {
-        case .sessionTapped:
-            break  // Opens the session once the workout screen exists.
+        case .sessionTapped(let id):
+            router.open(.workout(id))
         }
         return nil
     }

@@ -1,4 +1,3 @@
-import KoboComponents
 import SwiftUI
 
 /// Builds the screen for a pushed route and hands it the dependencies it needs (DI-1).
@@ -9,8 +8,17 @@ struct RouteScreen: View {
 
     var body: some View {
         switch route {
-        case .workout:
-            EmptyState(symbol: "figure.strengthtraining.traditional", title: "Workout", message: "Coming soon.")
+        case .workout(let sessionID):
+            WorkoutScreen(
+                viewModel: WorkoutViewModel(
+                    sessionID: sessionID,
+                    sessions: dependencies.sessions,
+                    sets: dependencies.sets,
+                    clock: dependencies.clock,
+                    calendar: dependencies.calendar
+                )
+            )
+            .id(route)
         }
     }
 }

@@ -14,7 +14,7 @@ struct LiftApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView(launch: launch, initialTab: options.initialTab)
+            RootView(launch: launch, options: options)
                 .koboTheme(.lift)
                 .preferredColorScheme(colorScheme)
         }

@@ -1,8 +1,11 @@
+import KoboComponents
 import SwiftUI
 
-/// Owns the ViewModel; renders Content; starts reads (SCR-2, SCR-4).
+/// Owns the ViewModel; renders Content; starts reads (SCR-2, SCR-4). Shows the ViewModel's toasts through Kobo's
+/// `ToastCenter`, whose Undo action goes back through `send`.
 struct WeekScreen: View {
     @State private var viewModel: WeekViewModel
+    @State private var toasts = ToastCenter()
 
     init(viewModel: @autoclosure @escaping () -> WeekViewModel) {
         _viewModel = State(wrappedValue: viewModel())
@@ -11,5 +14,16 @@ struct WeekScreen: View {
     var body: some View {
         WeekContent(state: viewModel.state, send: { viewModel.send($0) })
             .task { await viewModel.run() }
+            .onChange(of: viewModel.state.toast) { _, toast in show(toast) }
+            .toastHost(toasts)
+    }
+
+    private func show(_ toast: WeekToast?) {
+        guard let toast else { return }
+        let viewModel = viewModel
+        let undo = toast.undo.map { change in
+            Toast.Action("Undo") { viewModel.send(.undoTapped(change)) }
+        }
+        toasts.show(Toast(verbatim: toast.message, action: undo))
     }
 }
