@@ -103,6 +103,15 @@ import Testing
         #expect(units.unit == .lb)  // saved, so new sessions and templates use it
     }
 
+    @Test func platesTappedOpensPlatesAndBars() {
+        let vm = makeViewModel()
+
+        let task = vm.send(.platesTapped)
+
+        #expect(task == nil)
+        #expect(router.opened == [.plates])
+    }
+
     @Test func acknowledgementsTappedOpensTheList() {
         let vm = makeViewModel()
 

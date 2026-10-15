@@ -26,6 +26,9 @@ struct SettingsContent: View {
                     .padding(.vertical, Space.sm)
                     .pageGutter()
                 }
+                ListSection("Barbell", footer: "Plates per side and warm-ups on the Workout screen use these.") {
+                    ListRow("Plates and bars", action: { send(.platesTapped) })
+                }
                 dataSection
                 SettingsHealthSection(status: state.health, send: send)
                 SettingsSyncSection(section: state.sync, send: send)

@@ -68,6 +68,11 @@ struct RouteScreen: View {
             .id(route)
         case .acknowledgements:
             AcknowledgementsScreen(viewModel: AcknowledgementsViewModel(items: Acknowledgement.bundled))
+        case .plates:
+            PlatesScreen(
+                viewModel: PlatesViewModel(gym: dependencies.gym, unit: dependencies.info.unit),
+                toasts: toasts
+            )
         case .templates, .template, .exercisePicker, .workoutSummary:
             PlanRouteScreen(route: route, dependencies: dependencies, router: router)
         }

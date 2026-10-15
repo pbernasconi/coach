@@ -55,6 +55,8 @@ final class SettingsViewModel {
         case .unitSelected(let unit):
             units.unit = unit  // saved; new sessions and templates, and screens opened from now, use it
             state.unit = unit
+        case .platesTapped:
+            router.open(.plates)
         case .acknowledgementsTapped:
             router.open(.acknowledgements)
         case .syncNowTapped:
