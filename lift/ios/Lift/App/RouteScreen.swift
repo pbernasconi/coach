@@ -24,6 +24,7 @@ struct RouteScreen: View {
                     catalog: dependencies.catalog,
                     history: dependencies.history,
                     health: dependencies.health,
+                    gym: dependencies.gym,
                     now: dependencies.now,
                     calendar: dependencies.calendar
                 ),

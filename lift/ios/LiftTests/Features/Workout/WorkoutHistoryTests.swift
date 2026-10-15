@@ -29,6 +29,7 @@ import Testing
             catalog: FakeExerciseCatalog(),
             history: history,
             health: RecordingHealthRecorder(),
+            gym: InMemoryGymSettings(.standard),
             now: SessionBuilder.now,
             calendar: SessionBuilder.calendar
         )

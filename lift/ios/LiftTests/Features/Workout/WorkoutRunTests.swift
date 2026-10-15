@@ -9,7 +9,9 @@ import Testing
 /// `WorkoutViewModel.run()` and the hint lines it builds from the LiftCore rules. Made-up sessions only (TEST-8).
 @MainActor
 @Suite struct WorkoutRunTests {
-    func run(_ emissions: [SessionDetail?]) async -> (WorkoutViewModel, FakeSessionDetailRepository) {
+    func run(_ emissions: [SessionDetail?], gym: GymSetup = .standard) async
+        -> (WorkoutViewModel, FakeSessionDetailRepository)
+    {
         let repository = FakeSessionDetailRepository(emissions: emissions)
         let vm = WorkoutViewModel(
             sessionID: IDSequence.id(1, prefix: 0xA0),
@@ -25,6 +27,7 @@ import Testing
             catalog: FakeExerciseCatalog(),
             history: FakeExerciseHistoryRepository(emissions: [[]]),
             health: RecordingHealthRecorder(),
+            gym: InMemoryGymSettings(gym),
             now: SessionBuilder.now,
             calendar: SessionBuilder.calendar
         )

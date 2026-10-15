@@ -56,14 +56,16 @@ nonisolated enum WorkoutText {
         return String(localized: "Warm-up: \(ramp) \(unit.rawValue)")
     }
 
-    /// "Per side: 25 + 15 · 20 kg bar", "Empty 20 kg bar", with "= 97.5 kg" when the target cannot be made exactly.
-    static func plates(_ load: PlateLoad, bar: Double) -> String {
-        let unit = load.total.unit
-        let barText = "\(number(bar)) \(unit.rawValue)"
+    /// "Per side: 25 + 15 · 20 kg bar", "Empty 20 kg bar", "… · 20 kg bar + collars", with "= 97.5 kg" when the target
+    /// cannot be made exactly with the gym's plates.
+    static func plates(_ load: PlateLoad, kit: BarbellSetup) -> String {
+        let barText = "\(number(kit.bar)) \(kit.unit.rawValue)"
+        let bar =
+            kit.collar > 0 ? String(localized: "\(barText) bar + collars") : String(localized: "\(barText) bar")
         var text =
             load.perSide.isEmpty
-            ? String(localized: "Empty \(barText) bar")
-            : String(localized: "Per side: \(load.perSide.map(number).joined(separator: " + ")) · \(barText) bar")
+            ? String(localized: "Empty \(bar)")
+            : String(localized: "Per side: \(load.perSide.map(number).joined(separator: " + ")) · \(bar)")
         if !load.isExact {
             text += " = \(weight(load.total))"
         }
