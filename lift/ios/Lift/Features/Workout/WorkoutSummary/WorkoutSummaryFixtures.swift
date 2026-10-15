@@ -13,16 +13,16 @@
             unit: "kg",
             bests: [
                 WorkoutBestItem(
-                    id: "squat-e1rm",
+                    id: "squat",
                     exercise: "Back squat",
-                    detail: "Estimated 1RM · was 98 kg",
-                    value: "102.1 kg"
+                    detail: "87.5 kg × 5 · est. 1RM 102 kg (was 98)",
+                    value: "87.5 kg"
                 ),
                 WorkoutBestItem(
-                    id: "squat-weight",
-                    exercise: "Back squat",
-                    detail: "Heaviest set · was 85 kg",
-                    value: "87.5 kg"
+                    id: "rdl",
+                    exercise: "Romanian deadlift",
+                    detail: "65 kg × 10 · est. 1RM 86.5 kg (was 84)",
+                    value: "86.5 kg"
                 ),
             ]
         )
