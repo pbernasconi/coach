@@ -1,0 +1,42 @@
+# SwiftLint is used for size limits and bans only; formatting belongs to swift-format (STACK, TOOL-2).
+included: [App, AppWidgets, Packages]
+excluded: [Packages/AppKit/.build, "**/Generated"]
+disabled_rules: [trailing_comma, opening_brace, line_length, identifier_name]   # swift-format owns style
+opt_in_rules:
+  - force_unwrapping
+  - discouraged_optional_boolean
+  - empty_count
+  - first_where
+  - contains_over_filter_count
+  - sorted_first_last
+  - fatal_error_message
+  - unowned_variable_capture
+  - private_swiftui_state
+file_length: { warning: 250, error: 250, ignore_comment_only_lines: true }            # LAY-5
+function_body_length: { warning: 40, error: 40 }
+type_body_length: { warning: 200, error: 250 }
+cyclomatic_complexity: { warning: 10, error: 12 }
+nesting: { type_level: 2 }
+force_unwrapping: { severity: error }
+custom_rules:
+  view_body_length:            # LAY-5: SwiftUI body ≤ 80 lines (approximation: flags very long bodies)
+    regex: 'var body: some View \{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\}){4000,}\}'
+    message: "SwiftUI body too long. Extract subviews (LAY-5)."
+    severity: error
+  no_print:
+    regex: '(^|[^A-Za-z.])print\('
+    excluded: ".*Tests.*"
+    message: "Use Log.<category> (ERR-3)."
+    severity: error
+  no_any_view:
+    regex: '\bAnyView\b'
+    message: "No AnyView (UI-7)."
+    severity: error
+  no_gcd:
+    regex: 'DispatchQueue|DispatchSemaphore|Task\.detached'
+    message: "Use structured concurrency (CONC-6)."
+    severity: error
+  no_shared_session:
+    regex: 'URLSession\.shared'
+    message: "Inject a URLSession (DI-3)."
+    severity: error
