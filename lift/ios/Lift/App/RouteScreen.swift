@@ -18,6 +18,7 @@ struct RouteScreen: View {
                     clock: dependencies.clock,
                     restActivity: dependencies.restActivity,
                     catalog: dependencies.catalog,
+                    history: dependencies.history,
                     now: dependencies.now,
                     calendar: dependencies.calendar
                 )

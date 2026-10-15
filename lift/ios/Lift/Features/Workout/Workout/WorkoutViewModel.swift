@@ -16,6 +16,8 @@ final class WorkoutViewModel {
     private let restActivity: RestActivitySession
     /// The catalog, for exercise thumbnails.
     private let catalog: any ExerciseCatalogProviding
+    /// Each library exercise's sets last time, read once when the session first loads.
+    private let previousSets: PreviousSetsLoader
     private let days: DayCalendar
     /// The latest session from the store; the source for the editor, Add set and rest times.
     @ObservationIgnored private var detail: SessionDetail?
@@ -32,6 +34,7 @@ final class WorkoutViewModel {
         clock: any Clock<Duration>,
         restActivity: any RestActivityController,
         catalog: any ExerciseCatalogProviding,
+        history: any ExerciseHistoryRepository,
         now: @escaping @Sendable () -> Date,
         calendar: Calendar
     ) {
@@ -42,20 +45,32 @@ final class WorkoutViewModel {
         self.clock = clock
         self.restActivity = RestActivitySession(controller: restActivity, now: now)
         self.catalog = catalog
+        self.previousSets = PreviousSetsLoader(history: history)
         self.days = DayCalendar(calendar: calendar)
     }
 
-    /// Observes the session; started by the Screen's `.task` (SCR-4).
+    /// Observes the session; started by the Screen's `.task` (SCR-4). The first time the session loads, it also reads
+    /// each exercise's sets last time, once.
     func run() async {
+        var hasReadPrevious = false
         for await detail in sessions.observeSession(id: sessionID) {
             self.detail = detail
-            if let detail {
-                state.workout = .loaded(WorkoutOverview(detail: detail, days: days))
-            } else {
+            guard let detail else {
                 state.workout = .empty
                 state.editor = nil
+                continue
+            }
+            show(detail)
+            if !hasReadPrevious {
+                hasReadPrevious = true
+                state.previous = await previousSets.load(for: detail)
+                show(detail)
             }
         }
+    }
+
+    private func show(_ detail: SessionDetail) {
+        state.workout = .loaded(WorkoutOverview(detail: detail, days: days, previous: state.previous))
     }
 
     /// Counts the rest down once a second on the injected clock. The Screen restarts it for each new rest
@@ -78,7 +93,6 @@ final class WorkoutViewModel {
     func send(_ action: WorkoutAction) -> Task<Void, Never>? {
         switch action {
         case .setLogTapped(let id): toggleLog(id)
-        case .setValuesTapped(let id): openEditor(id)
         case .setSkipTapped(let id): skip(id)
         case .setRemoveTapped(let id): remove(id)
         case .removeUndoTapped(let id): write { try await $0.restore(setID: id) }
@@ -90,10 +104,10 @@ final class WorkoutViewModel {
     /// The actions that only change what is on screen or where it goes: the editor, the rest timer, "How to".
     private func sendLocal(_ action: WorkoutAction) -> Task<Void, Never>? {
         switch action {
-        case .editorWeightChanged(let weight): state.editor?.weight = max(0, weight)
-        case .editorRepsChanged(let reps): state.editor?.reps = max(0, reps)
+        case .setValuesTapped(let id): openEditor(id)
+        case .editorWeightChanged, .editorRepsChanged, .editorApplyToLaterChanged, .editorDismissed:
+            state.editor = state.editor?.applying(action)
         case .editorDoneTapped: return saveEditor()
-        case .editorDismissed: state.editor = nil
         case .restExtendTapped: extendRest()
         case .restSkipTapped: endRest()
         case .howToTapped(let exerciseID): router.open(.exercise(exerciseID))
@@ -107,7 +121,7 @@ final class WorkoutViewModel {
 
     /// One tap logs a planned set; a logged or skipped set goes back to planned.
     private func toggleLog(_ id: UUID) -> Task<Void, Never>? {
-        guard case (let item, let set)? = find(id), !inFlight.contains(id) else { return nil }
+        guard case (let item, let set)? = detail?.find(setID: id), !inFlight.contains(id) else { return nil }
         inFlight.insert(id)
         let isPlanned = set.status == .planned
         let restSeconds = item.exercise.restSeconds ?? RestTimer.defaultSeconds
@@ -128,7 +142,7 @@ final class WorkoutViewModel {
     }
 
     private func skip(_ id: UUID) -> Task<Void, Never>? {
-        guard find(id) != nil, !inFlight.contains(id) else { return nil }
+        guard detail?.find(setID: id) != nil, !inFlight.contains(id) else { return nil }
         inFlight.insert(id)
         return Task {
             defer { inFlight.remove(id) }
@@ -141,7 +155,7 @@ final class WorkoutViewModel {
     }
 
     private func remove(_ id: UUID) -> Task<Void, Never>? {
-        guard find(id) != nil else { return nil }
+        guard detail?.find(setID: id) != nil else { return nil }
         if state.editor?.id == id { state.editor = nil }
         return Task {
             do {
@@ -162,21 +176,25 @@ final class WorkoutViewModel {
 
     // MARK: Editor
 
-    private func openEditor(_ id: UUID) -> Task<Void, Never>? {
-        guard case (let item, let set)? = find(id) else { return nil }
-        let row = WorkoutExercise(item: item, unit: set.unit).sets.first { $0.id == id }
-        let title = [row?.title, item.exercise.displayName].compactMap(\.self).joined(separator: " · ")
-        state.editor = SetEditor(set: set, title: title)
-        return nil
+    private func openEditor(_ id: UUID) {
+        guard case (let item, let set)? = detail?.find(setID: id) else { return }
+        state.editor = SetEditor(set: set, in: item, previous: state.previous, days: days)
     }
 
-    /// Done: saves weight and reps through `saveValues` only. It never logs the set (product rule).
+    /// Done: saves values through `saveValues` only and never logs the set (product rule). "Apply to later sets" also
+    /// saves a new weight onto the later planned sets of the same kind, each keeping its own reps.
     private func saveEditor() -> Task<Void, Never>? {
         guard let editor = state.editor else { return nil }
         state.editor = nil
         let weight = editor.weight > 0 ? Weight(editor.weight, editor.unit) : nil
         let reps = editor.reps > 0 ? editor.reps : nil
-        return write { _ = try await $0.saveValues(setID: editor.id, reps: reps, weight: weight) }
+        let updates = detail?.find(setID: editor.id).map { editor.laterSets(in: $0.0, weight: weight) } ?? []
+        return write { sets in
+            _ = try await sets.saveValues(setID: editor.id, reps: reps, weight: weight)
+            for set in updates {
+                _ = try await sets.saveValues(setID: set.id, reps: set.actualReps, weight: weight)
+            }
+        }
     }
 
     // MARK: Rest
@@ -203,20 +221,11 @@ final class WorkoutViewModel {
         restActivity.end()
     }
 
-    // MARK: Support
-
     private func loadThumbnail(_ catalogID: String) -> Task<Void, Never>? {
         guard state.thumbnails[catalogID] == nil else { return nil }
         state.thumbnails[catalogID] = .loading
         let catalog = catalog
         return Task { state.thumbnails[catalogID] = await catalog.image(.still, catalogID: catalogID) }
-    }
-
-    private func find(_ setID: UUID) -> (SessionDetail.Item, SetRecord)? {
-        for item in detail?.items ?? [] {
-            if let set = item.sets.first(where: { $0.id == setID }) { return (item, set) }
-        }
-        return nil
     }
 
     /// Runs one write; a failure shows the "could not save" toast.

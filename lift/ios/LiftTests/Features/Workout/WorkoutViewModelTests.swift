@@ -23,6 +23,7 @@ import Testing
             clock: clock,
             restActivity: RecordingRestActivityController(),
             catalog: FakeExerciseCatalog(),
+            history: FakeExerciseHistoryRepository(emissions: [[]]),
             now: SessionBuilder.now,
             calendar: SessionBuilder.calendar
         )
@@ -84,7 +85,9 @@ import Testing
             weight: 100,
             reps: 5,
             savedWeight: 100,
-            savedReps: 5
+            savedReps: 5,
+            lastTime: nil,
+            laterSets: 2
         )
         #expect(vm.state.editor == expected)
         #expect(vm.state.editor?.hasChanges == false)
@@ -117,6 +120,7 @@ import Testing
         let vm = makeViewModel(planned, sets: sets)
         await vm.run()
         vm.send(.setValuesTapped(firstSetID(planned)))
+        vm.send(.editorApplyToLaterChanged(false))
         vm.send(.editorWeightChanged(102.5))
         vm.send(.editorRepsChanged(6))
 
@@ -125,6 +129,19 @@ import Testing
         #expect(sets.calls == [.saveValues(setID: firstSetID(planned), reps: 6, weight: .kg(102.5))])
         #expect(vm.state.editor == nil)
         #expect(vm.state.rest == nil)
+    }
+
+    @Test func editorApplyToLaterChangedUpdatesTheDraft() async {
+        let vm = makeViewModel(planned, sets: recorder(planned))
+        await vm.run()
+        vm.send(.setValuesTapped(firstSetID(planned)))
+        #expect(vm.state.editor?.appliesToLater == true)
+
+        let task = vm.send(.editorApplyToLaterChanged(false))
+
+        #expect(task == nil)
+        #expect(vm.state.editor?.appliesToLater == false)
+        #expect(vm.state.editor?.hasChanges == false)
     }
 
     @Test func editorDismissedClosesWithoutSaving() async {
@@ -239,6 +256,7 @@ import Testing
             clock: clock,
             restActivity: RecordingRestActivityController(),
             catalog: catalog,
+            history: FakeExerciseHistoryRepository(emissions: [[]]),
             now: SessionBuilder.now,
             calendar: SessionBuilder.calendar
         )

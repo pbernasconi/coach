@@ -25,6 +25,7 @@ import Testing
             clock: clock,
             restActivity: activity,
             catalog: FakeExerciseCatalog(),
+            history: FakeExerciseHistoryRepository(emissions: [[]]),
             now: { [now] in now() },
             calendar: SessionBuilder.calendar
         )
