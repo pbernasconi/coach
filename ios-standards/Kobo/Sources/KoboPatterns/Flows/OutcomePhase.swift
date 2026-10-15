@@ -11,10 +11,12 @@ nonisolated public enum OutcomePhase: Hashable, Sendable, CaseIterable {
     case failure
     case unknown
 
-    /// The phase for a flow's state: a result wins; with none, `unknown` only once the flow gave up waiting, and
-    /// `pending` once the work was accepted.
-    public static func of(result: Bool?, isAccepted: Bool, gaveUp: Bool) -> OutcomePhase {
-        if let result { return result ? .success : .failure }
+    /// The phase while there is no result yet: `pending` once the work was accepted, `unknown` once the flow gave up
+    /// waiting, else `loading`. A result maps straight to `.success` or `.failure`.
+    ///
+    ///     let phase = draft.result.map { $0.ok ? .success : .failure }
+    ///         ?? .waiting(isAccepted: draft.isAccepted, gaveUp: draft.timedOut)
+    public static func waiting(isAccepted: Bool, gaveUp: Bool) -> OutcomePhase {
         if gaveUp { return .unknown }
         return isAccepted ? .pending : .loading
     }

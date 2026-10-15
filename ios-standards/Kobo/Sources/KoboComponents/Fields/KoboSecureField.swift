@@ -166,8 +166,8 @@ extension View {
 #if DEBUG
     private struct KoboSecureFieldGallery: View {
         @Environment(\.koboTheme) private var theme
-        @State private var password = "correct horse"
-        @State private var newPassword = "Correct7"
+        @State private var password = "correct horse"  // pragma: allowlist secret
+        @State private var newPassword = "Correct7"  // pragma: allowlist secret
 
         var body: some View {
             ScrollView {

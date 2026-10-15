@@ -32,7 +32,11 @@ public struct ReviewSection<Content: View>: View {
     public var body: some View {
         VStack(alignment: .leading, spacing: Space.xs) {
             header
-            ListSection { content } header: { EmptyView() }
+            ListSection {
+                content
+            } header: {
+                EmptyView()
+            }
         }
     }
 

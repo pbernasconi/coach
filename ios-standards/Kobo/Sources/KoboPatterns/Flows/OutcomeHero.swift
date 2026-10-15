@@ -59,6 +59,7 @@ struct OutcomeHero: View {
         } else {
             Image(systemName: symbol ?? phase.symbol)
                 .font(.system(size: OutcomeHeroMetrics.glyph(halo: halo), weight: .bold))
+                .accessibilityHidden(true)
         }
     }
 

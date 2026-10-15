@@ -48,6 +48,21 @@ public struct UpdateGateScreen: View {
         self.onUpdate = onUpdate
     }
 
+    /// The caller's own copy, shown as is (server copy already reviewed).
+    public init(
+        verbatim title: String,
+        message: String,
+        symbol: String = "arrow.down.app",
+        storeURL: URL? = nil,
+        onUpdate: (() -> Void)? = nil
+    ) {
+        self.title = Text(verbatim: title)
+        self.message = Text(verbatim: message)
+        self.symbol = symbol
+        self.storeURL = storeURL
+        self.onUpdate = onUpdate
+    }
+
     public var body: some View {
         ScrollView {
             VStack(spacing: Space.lg) {

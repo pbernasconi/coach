@@ -13,7 +13,7 @@ import SwiftUI
 ///                primary: PrimerPageAction("Allow notifications", action: ask),
 ///                secondary: .notNow(action: skip))
 ///
-/// The default illustration is the model's symbol on a large accent disc (`PrimerIllustration`); pass `illustration:`
+/// The default illustration is the model's symbol on a large accent disc (`EmptyStateArt`); pass `illustration:`
 /// for the app's own art (mark it decorative: the title carries the meaning). With both an illustration and `extra:`
 /// content, use the full initialiser.
 public struct PrimerPage<Illustration: View, Extra: View>: View {
@@ -104,14 +104,14 @@ public struct PrimerPage<Illustration: View, Extra: View>: View {
     }
 }
 
-extension PrimerPage where Illustration == PrimerIllustration, Extra == EmptyView {
+extension PrimerPage where Illustration == EmptyStateArt?, Extra == EmptyView {
     /// A primer with the default illustration and no extra content.
     public init(model: PrimerPageModel, primary: PrimerPageAction, secondary: PrimerPageAction? = nil) {
         self.init(
             model: model,
             primary: primary,
             secondary: secondary,
-            illustration: { PrimerIllustration(symbol: model.symbol) },
+            illustration: { model.symbol.map { EmptyStateArt(systemImage: $0, tone: .accent, scale: .large) } },
             extra: { EmptyView() }
         )
     }
@@ -125,23 +125,13 @@ extension PrimerPage where Extra == EmptyView {
         secondary: PrimerPageAction? = nil,
         @ViewBuilder illustration: () -> Illustration
     ) {
-        self.init(model: model, primary: primary, secondary: secondary, illustration: illustration, extra: { EmptyView() })
-    }
-}
-
-/// The default primer illustration: the model's SF Symbol on a large accent disc, or nothing without a symbol.
-public struct PrimerIllustration: View {
-    let symbol: String?
-
-    /// A disc with `symbol`; `nil` draws nothing.
-    public init(symbol: String?) {
-        self.symbol = symbol
-    }
-
-    public var body: some View {
-        if let symbol {
-            EmptyStateArt(systemImage: symbol, tone: .accent, scale: .large)
-        }
+        self.init(
+            model: model,
+            primary: primary,
+            secondary: secondary,
+            illustration: illustration,
+            extra: { EmptyView() }
+        )
     }
 }
 

@@ -1,6 +1,30 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%@ · %@" : {
+      "comment" : "StepIndicator caption: the step count, then the step's name (\"Step 2 of 4 · Review\").",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · %@"
+          }
+        }
+      }
+    },
+    "A new version of %@ is required" : {
+      "comment" : "UpdateGateScreen title naming the app.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A new version of %@ is required"
+          }
+        }
+      }
+    },
     "Cancel" : {
       "comment" : "koboConfirm cancel button title when the caller gives none.",
       "extractionState" : "manual",
@@ -9,6 +33,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cancel"
+          }
+        }
+      }
+    },
+    "Continue" : {
+      "comment" : "PrimerPageAction.continue: the primary action of an onboarding primer.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue"
           }
         }
       }
@@ -37,6 +73,66 @@
         }
       }
     },
+    "Edit" : {
+      "comment" : "ReviewRow accessibility hint for an editable row; ReviewSection and ReviewSummary edit link.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit"
+          }
+        }
+      }
+    },
+    "Edit %@" : {
+      "comment" : "ReviewSection accessibility label of the Edit button, naming the section.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit %@"
+          }
+        }
+      }
+    },
+    "Keep going" : {
+      "comment" : "FlowExitAction confirmation: the cancel button that stays in the flow.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep going"
+          }
+        }
+      }
+    },
+    "Leave" : {
+      "comment" : "FlowExitAction confirmation: the destructive button that leaves the flow.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leave"
+          }
+        }
+      }
+    },
+    "Leave without finishing?" : {
+      "comment" : "FlowExitAction confirmation title when the flow has unsaved progress.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leave without finishing?"
+          }
+        }
+      }
+    },
     "Load more" : {
       "comment" : "LoadMoreFooter button that loads the next page.",
       "extractionState" : "manual",
@@ -57,6 +153,42 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Loading"
+          }
+        }
+      }
+    },
+    "Loading result" : {
+      "comment" : "OutcomeScaffold accessibility label while the result loads.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading result"
+          }
+        }
+      }
+    },
+    "Not now" : {
+      "comment" : "PrimerPageAction.notNow: the secondary action that skips a primer.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not now"
+          }
+        }
+      }
+    },
+    "Share" : {
+      "comment" : "OutcomeScaffold accessibility label of the share button.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share"
           }
         }
       }
@@ -85,6 +217,42 @@
         }
       }
     },
+    "Step %lld" : {
+      "comment" : "StepIndicator count while the flow's length is not known yet.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Step %lld"
+          }
+        }
+      }
+    },
+    "Step %lld of %lld" : {
+      "comment" : "StepIndicator count (\"Step 2 of 4\"), also read by VoiceOver.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Step %lld of %lld"
+          }
+        }
+      }
+    },
+    "This version is no longer supported. Update the app to keep using it." : {
+      "comment" : "UpdateGateScreen message.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This version is no longer supported. Update the app to keep using it."
+          }
+        }
+      }
+    },
     "Try again" : {
       "comment" : "LoadableView retry button title when the state gives none.",
       "extractionState" : "manual",
@@ -93,6 +261,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Try again"
+          }
+        }
+      }
+    },
+    "Update from the App Store." : {
+      "comment" : "UpdateGateScreen hint when no update action is available.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update from the App Store."
+          }
+        }
+      }
+    },
+    "Update now" : {
+      "comment" : "UpdateGateScreen button that opens the App Store listing.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update now"
+          }
+        }
+      }
+    },
+    "Update required" : {
+      "comment" : "UpdateGateScreen title when no app name is given.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update required"
+          }
+        }
+      }
+    },
+    "What you've entered so far won't be kept." : {
+      "comment" : "FlowExitAction confirmation message.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What you've entered so far won't be kept."
           }
         }
       }

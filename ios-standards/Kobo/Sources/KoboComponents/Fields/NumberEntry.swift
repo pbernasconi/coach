@@ -22,7 +22,8 @@ public struct NumberEntry: View {
     @FocusState private var isFocused: Bool
     @State private var field: NumberEntryText?
     @State private var shakes = 0
-    private let label: Text
+    /// Internal so the `verbatim:` initialisers in NumberEntryVerbatim.swift can set it.
+    var label: Text
     private let value: Binding<Double?>
     private let rules: NumberEntryRules
     private let step: Double?

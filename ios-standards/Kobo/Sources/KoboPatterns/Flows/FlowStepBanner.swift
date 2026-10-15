@@ -30,8 +30,12 @@ public struct FlowStepBanner {
     }
 
     /// A banner whose copy is shown as is (reviewed server copy).
-    public init(tone: Tone = .danger, verbatim title: String, message: String? = nil, action: NoticeBanner.Action? = nil)
-    {
+    public init(
+        tone: Tone = .danger,
+        verbatim title: String,
+        message: String? = nil,
+        action: NoticeBanner.Action? = nil
+    ) {
         self.tone = tone
         self.copy = .verbatim(title, message: message)
         self.action = action
