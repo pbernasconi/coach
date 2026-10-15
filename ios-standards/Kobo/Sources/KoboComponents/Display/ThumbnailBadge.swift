@@ -35,18 +35,20 @@ private struct BadgeSurface: ViewModifier {
     }
 }
 
-#Preview("Thumbnail badge") {
-    HStack(spacing: Space.md) {
-        ThumbnailBadge()
-        ThumbnailBadge(systemName: "checkmark")
+#if DEBUG
+    #Preview("Thumbnail badge") {
+        HStack(spacing: Space.md) {
+            ThumbnailBadge()
+            ThumbnailBadge(systemName: "checkmark")
+        }
+        .padding()
     }
-    .padding()
-}
 
-#Preview("Thumbnail badge, dark, solid") {
-    ThumbnailBadge().padding().koboTheme(Theme(palette: .lift, surfaceStyle: .solid)).preferredColorScheme(.dark)
-}
+    #Preview("Thumbnail badge, dark, solid") {
+        ThumbnailBadge().padding().koboTheme(Theme(palette: .lift, surfaceStyle: .solid)).preferredColorScheme(.dark)
+    }
 
-#Preview("Thumbnail badge, AX3") {
-    ThumbnailBadge().padding().dynamicTypeSize(.accessibility3)
-}
+    #Preview("Thumbnail badge, AX3") {
+        ThumbnailBadge().padding().dynamicTypeSize(.accessibility3)
+    }
+#endif

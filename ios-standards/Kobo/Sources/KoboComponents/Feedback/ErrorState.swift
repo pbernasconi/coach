@@ -127,31 +127,33 @@ public struct ErrorState: View {
     }
 }
 
-#Preview("Error") {
-    ErrorState(title: "Couldn't load history", message: "Check your connection and try again.") {}
-}
+#if DEBUG
+    #Preview("Error") {
+        ErrorState(title: "Couldn't load history", message: "Check your connection and try again.") {}
+    }
 
-#Preview("Error, retrying, dark") {
-    ErrorState(
-        title: "Couldn't load history",
-        message: "Check your connection and try again.",
-        isRetrying: true,
-        secondaryAction: .init("Contact support") {}
-    ) {}
-    .preferredColorScheme(.dark)
-}
+    #Preview("Error, retrying, dark") {
+        ErrorState(
+            title: "Couldn't load history",
+            message: "Check your connection and try again.",
+            isRetrying: true,
+            secondaryAction: .init("Contact support") {}
+        ) {}
+        .preferredColorScheme(.dark)
+    }
 
-#Preview("Restricted, solid") {
-    ErrorState(
-        title: "No access",
-        message: "Ask the owner to share this plan.",
-        kind: .restricted,
-        retryLabel: "Go back"
-    ) {}
-    .koboTheme(Theme(palette: .lift, surfaceStyle: .solid))
-}
+    #Preview("Restricted, solid") {
+        ErrorState(
+            title: "No access",
+            message: "Ask the owner to share this plan.",
+            kind: .restricted,
+            retryLabel: "Go back"
+        ) {}
+        .koboTheme(Theme(palette: .lift, surfaceStyle: .solid))
+    }
 
-#Preview("Error, AX3") {
-    ErrorState(verbatim: "Couldn't load “Push day”", message: "Check your connection and try again.") {}
-        .dynamicTypeSize(.accessibility3)
-}
+    #Preview("Error, AX3") {
+        ErrorState(verbatim: "Couldn't load “Push day”", message: "Check your connection and try again.") {}
+            .dynamicTypeSize(.accessibility3)
+    }
+#endif

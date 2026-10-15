@@ -151,6 +151,8 @@ private struct NoticeBannerPreviews: View {
     }
 }
 
-#Preview("Notice banner") { NoticeBannerPreviews() }
-#Preview("Notice banner, dark") { NoticeBannerPreviews().preferredColorScheme(.dark) }
-#Preview("Notice banner, AX3") { NoticeBannerPreviews().dynamicTypeSize(.accessibility3) }
+#if DEBUG
+    #Preview("Notice banner") { NoticeBannerPreviews() }
+    #Preview("Notice banner, dark") { NoticeBannerPreviews().preferredColorScheme(.dark) }
+    #Preview("Notice banner, AX3") { NoticeBannerPreviews().dynamicTypeSize(.accessibility3) }
+#endif

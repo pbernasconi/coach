@@ -104,33 +104,35 @@ extension EmptyState where Actions == EmptyView {
     }
 }
 
-#Preview("Empty") {
-    EmptyState(symbol: "dumbbell", title: "No workouts yet", message: "Start one and it shows up here.") {
-        Button("Start a workout") {}
-            .buttonStyle(.kobo(.primary))
+#if DEBUG
+    #Preview("Empty") {
+        EmptyState(symbol: "dumbbell", title: "No workouts yet", message: "Start one and it shows up here.") {
+            Button("Start a workout") {}
+                .buttonStyle(.kobo(.primary))
+        }
     }
-}
 
-#Preview("Empty, first run, dark") {
-    EmptyState(title: "Plan your first week", message: "Pick the days you train and we'll fill them in.") {
-        EmptyStateArt(systemImage: "calendar.badge.plus", tone: .accent, scale: .large)
-    } actions: {
-        Button("Plan a week") {}
-            .buttonStyle(.kobo(.primary))
-    }
-    .koboTheme(.lift)
-    .preferredColorScheme(.dark)
-}
-
-#Preview("Empty, search, dark") {
-    EmptyState(symbol: "magnifyingglass", verbatim: "No matches for “bnch”", message: "Try a different search.")
+    #Preview("Empty, first run, dark") {
+        EmptyState(title: "Plan your first week", message: "Pick the days you train and we'll fill them in.") {
+            EmptyStateArt(systemImage: "calendar.badge.plus", tone: .accent, scale: .large)
+        } actions: {
+            Button("Plan a week") {}
+                .buttonStyle(.kobo(.primary))
+        }
+        .koboTheme(.lift)
         .preferredColorScheme(.dark)
-}
-
-#Preview("Empty, AX3") {
-    EmptyState(symbol: "dumbbell", title: "No workouts yet", message: "Start one and it shows up here.") {
-        Button("Start a workout") {}
-            .buttonStyle(.kobo(.primary))
     }
-    .dynamicTypeSize(.accessibility3)
-}
+
+    #Preview("Empty, search, dark") {
+        EmptyState(symbol: "magnifyingglass", verbatim: "No matches for “bnch”", message: "Try a different search.")
+            .preferredColorScheme(.dark)
+    }
+
+    #Preview("Empty, AX3") {
+        EmptyState(symbol: "dumbbell", title: "No workouts yet", message: "Start one and it shows up here.") {
+            Button("Start a workout") {}
+                .buttonStyle(.kobo(.primary))
+        }
+        .dynamicTypeSize(.accessibility3)
+    }
+#endif

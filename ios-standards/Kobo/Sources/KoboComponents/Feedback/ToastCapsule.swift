@@ -88,32 +88,34 @@ private struct ToastSurface<S: Shape>: ViewModifier {
     }
 }
 
-#Preview("Capsules") {
-    VStack(spacing: Space.md) {
-        ToastCapsule(toast: Toast("Workout saved", tone: .success), onDismiss: {}, onAction: {})
-        ToastCapsule(toast: Toast("Set deleted", action: .init("Undo") {}), onDismiss: {}, onAction: {})
-        ToastCapsule(
-            toast: Toast(verbatim: "Lower A moved to Thursday, and its rest timer settings came with it"),
-            onDismiss: {},
-            onAction: {}
-        )
+#if DEBUG
+    #Preview("Capsules") {
+        VStack(spacing: Space.md) {
+            ToastCapsule(toast: Toast("Workout saved", tone: .success), onDismiss: {}, onAction: {})
+            ToastCapsule(toast: Toast("Set deleted", action: .init("Undo") {}), onDismiss: {}, onAction: {})
+            ToastCapsule(
+                toast: Toast(verbatim: "Lower A moved to Thursday, and its rest timer settings came with it"),
+                onDismiss: {},
+                onAction: {}
+            )
+        }
+        .padding(.horizontal, Space.gutter)
     }
-    .padding(.horizontal, Space.gutter)
-}
 
-#Preview("Capsules, dark, solid") {
-    VStack(spacing: Space.md) {
-        ToastCapsule(toast: Toast("Couldn't sync. We'll retry.", tone: .danger), onDismiss: {}, onAction: {})
-        ToastCapsule(toast: Toast("Set deleted", action: .init("Undo") {}), onDismiss: {}, onAction: {})
-    }
-    .padding()
-    .koboTheme(Theme(palette: .lift, surfaceStyle: .solid))
-    .preferredColorScheme(.dark)
-}
-
-#Preview("Capsule, AX3") {
-    let toast = Toast(verbatim: "Set deleted from Bench Press", action: .init("Undo") {})
-    ToastCapsule(toast: toast, onDismiss: {}, onAction: {})
+    #Preview("Capsules, dark, solid") {
+        VStack(spacing: Space.md) {
+            ToastCapsule(toast: Toast("Couldn't sync. We'll retry.", tone: .danger), onDismiss: {}, onAction: {})
+            ToastCapsule(toast: Toast("Set deleted", action: .init("Undo") {}), onDismiss: {}, onAction: {})
+        }
         .padding()
-        .dynamicTypeSize(.accessibility3)
-}
+        .koboTheme(Theme(palette: .lift, surfaceStyle: .solid))
+        .preferredColorScheme(.dark)
+    }
+
+    #Preview("Capsule, AX3") {
+        let toast = Toast(verbatim: "Set deleted from Bench Press", action: .init("Undo") {})
+        ToastCapsule(toast: toast, onDismiss: {}, onAction: {})
+            .padding()
+            .dynamicTypeSize(.accessibility3)
+    }
+#endif

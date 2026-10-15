@@ -64,3 +64,16 @@ Every component in Kobo follows these rules. They are what make the library reus
     runtime values (names, numbers, user data) use a `verbatim:` (or `StringProtocol`) overload. The
     library's own strings ("Close", "Try again") come from its String Catalog with `bundle: .module`,
     never the host app's bundle.
+
+## Enforcement
+
+`scripts/conformance.sh` (run by `lint-all.sh` and CI) checks every component against the rules a machine can
+verify: R2 system colours, R7 raw animation curves, R9 fixed font sizes, R11 UIKit haptics, R13 `///`
+summaries on public API, R14 previews (inside `#if DEBUG`, with dark and AX3 variants), R15 `nonisolated`
+pure-logic types, R16 glass without a `surfaceStyle` check, R17 `verbatim:` forms and `bundle: .module`
+strings, DOC a reference page per public view, and DATA no real people's names. `ios-guard.sh` covers the
+bans (rule 12), `catalog-coverage.sh` the catalogue (rule 14) and `linux-logic-tests.sh` the logic (rule 15).
+
+A justified exception carries its reason on the same line: `// kobo: allow R9 fixed-size disc`. Rules a
+script cannot judge (touch targets, VoiceOver wording, AX3 layout quality) are checked in review against the
+component's reference page.

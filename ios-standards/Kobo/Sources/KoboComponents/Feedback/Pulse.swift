@@ -71,6 +71,8 @@ private struct PulsePreview: View {
     }
 }
 
-#Preview("Pulse") { PulsePreview().koboTheme(.lift) }
-#Preview("Pulse, dark") { PulsePreview().koboTheme(.lift).preferredColorScheme(.dark) }
-#Preview("Pulse, AX3") { PulsePreview().dynamicTypeSize(.accessibility3) }
+#if DEBUG
+    #Preview("Pulse") { PulsePreview().koboTheme(.lift) }
+    #Preview("Pulse, dark") { PulsePreview().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Pulse, AX3") { PulsePreview().dynamicTypeSize(.accessibility3) }
+#endif

@@ -56,7 +56,7 @@ public struct Thumbnail<Content: View, Badge: View>: View {
             } else {
                 content
                     // Maths inside the tile (rule 9 exception, see above): the glyph keeps its proportion.
-                    .font(.system(size: side * 0.42, weight: .semibold))
+                    .font(.system(size: side * 0.42, weight: .semibold))  // kobo: allow R9
                     .foregroundStyle(colors.ink)
             }
         }
@@ -169,6 +169,8 @@ private struct ThumbnailPreviews: View {
     }
 }
 
-#Preview("Thumbnail") { ThumbnailPreviews().koboTheme(.lift) }
-#Preview("Thumbnail, dark") { ThumbnailPreviews().koboTheme(.lift).preferredColorScheme(.dark) }
-#Preview("Thumbnail, AX3") { ThumbnailPreviews().dynamicTypeSize(.accessibility3) }
+#if DEBUG
+    #Preview("Thumbnail") { ThumbnailPreviews().koboTheme(.lift) }
+    #Preview("Thumbnail, dark") { ThumbnailPreviews().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Thumbnail, AX3") { ThumbnailPreviews().dynamicTypeSize(.accessibility3) }
+#endif

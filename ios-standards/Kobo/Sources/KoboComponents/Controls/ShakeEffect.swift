@@ -38,7 +38,7 @@ private struct ShakeModifier<Trigger: Equatable>: ViewModifier {
             .onChange(of: trigger) {
                 guard !reduceMotion else { return }
                 // A linear sweep of `travel`: the eased legs in `ShakeMath` shape the swings, timed by `Motion.Shake`.
-                withAnimation(.linear(duration: ShakeMath.duration)) { shakes += 1 }
+                withAnimation(.linear(duration: ShakeMath.duration)) { shakes += 1 }  // kobo: allow R7
             }
     }
 }

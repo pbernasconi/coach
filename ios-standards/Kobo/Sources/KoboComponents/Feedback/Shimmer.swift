@@ -45,21 +45,23 @@ private struct ShimmerModifier: ViewModifier {
     }
 }
 
-#Preview("Shimmer") {
-    VStack(alignment: .leading, spacing: Space.sm) {
-        Skeleton(.line).frame(width: Size.thumbnail * 3)
-        Skeleton(.block).frame(height: Size.thumbnail)
-        Text("Placeholder headline").font(.headline).redacted(reason: .placeholder)
+#if DEBUG
+    #Preview("Shimmer") {
+        VStack(alignment: .leading, spacing: Space.sm) {
+            Skeleton(.line).frame(width: Size.thumbnail * 3)
+            Skeleton(.block).frame(height: Size.thumbnail)
+            Text("Placeholder headline").font(.headline).redacted(reason: .placeholder)
+        }
+        .shimmering()
+        .padding()
     }
-    .shimmering()
-    .padding()
-}
 
-#Preview("Shimmer, dark") {
-    Skeleton(.block).frame(height: Size.thumbnail).shimmering().padding().preferredColorScheme(.dark)
-}
+    #Preview("Shimmer, dark") {
+        Skeleton(.block).frame(height: Size.thumbnail).shimmering().padding().preferredColorScheme(.dark)
+    }
 
-#Preview("Shimmer, AX3") {
-    Text("Placeholder body copy").redacted(reason: .placeholder).shimmering().padding()
-        .dynamicTypeSize(.accessibility3)
-}
+    #Preview("Shimmer, AX3") {
+        Text("Placeholder body copy").redacted(reason: .placeholder).shimmering().padding()
+            .dynamicTypeSize(.accessibility3)
+    }
+#endif

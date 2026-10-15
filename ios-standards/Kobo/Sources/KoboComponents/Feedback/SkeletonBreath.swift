@@ -23,19 +23,21 @@ private struct SkeletonBreathModifier: ViewModifier {
     }
 }
 
-#Preview("Breath") {
-    VStack(alignment: .leading, spacing: Space.sm) {
-        Skeleton(.line).frame(width: Size.thumbnail * 3)
-        Skeleton(.block).frame(height: Size.thumbnail)
+#if DEBUG
+    #Preview("Breath") {
+        VStack(alignment: .leading, spacing: Space.sm) {
+            Skeleton(.line).frame(width: Size.thumbnail * 3)
+            Skeleton(.block).frame(height: Size.thumbnail)
+        }
+        .skeletonBreath()
+        .padding()
     }
-    .skeletonBreath()
-    .padding()
-}
 
-#Preview("Breath, dark") {
-    Skeleton(.block).frame(height: Size.thumbnail).skeletonBreath().padding().preferredColorScheme(.dark)
-}
+    #Preview("Breath, dark") {
+        Skeleton(.block).frame(height: Size.thumbnail).skeletonBreath().padding().preferredColorScheme(.dark)
+    }
 
-#Preview("Breath, AX3") {
-    Skeleton(.line).skeletonBreath().padding().dynamicTypeSize(.accessibility3)
-}
+    #Preview("Breath, AX3") {
+        Skeleton(.line).skeletonBreath().padding().dynamicTypeSize(.accessibility3)
+    }
+#endif
