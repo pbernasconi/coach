@@ -16,6 +16,8 @@ nonisolated struct WorkoutState: Equatable, Sendable {
     var thumbnails: [String: MediaImage] = [:]
     /// The latest earlier session of each library exercise, by library exercise id, read once when the session loads.
     var previous: [UUID: PreviousSets] = [:]
+    /// The open options sheet: the workout's, or one exercise's.
+    var options: WorkoutOptions?
 }
 
 /// The session header and its exercises in order.
@@ -30,6 +32,9 @@ nonisolated struct WorkoutOverview: Equatable, Sendable {
     var note: String?
     /// What was written about the session's warm-up ("5 min rower"); nil when nothing was.
     var warmUpNote: String?
+    /// "Started 9:05": the start, or the first logged set's time; nil before anything was logged.
+    var started: String?
+    var isFinished = false
 }
 
 /// One exercise section: name, plain hint lines and its sets.
@@ -106,6 +111,12 @@ nonisolated struct WorkoutToast: Equatable, Sendable {
     enum Kind: Equatable, Sendable {
         /// A set was removed; the toast offers Undo.
         case removed(setID: UUID)
+        /// An exercise was removed; the toast offers Undo.
+        case exerciseRemoved(UUID)
+        /// The session was discarded; the toast offers Undo.
+        case discarded(RescheduleUndo)
+        /// A template was made from the session.
+        case savedAsTemplate(name: String)
         /// A write failed.
         case failed
     }

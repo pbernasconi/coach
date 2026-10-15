@@ -1,17 +1,35 @@
 import Foundation
 import LiftCore
 import LiftStore
+import LiftTesting
 import Synchronization
 
 /// A `SessionRepository` whose `observeSession` yields the given values, then finishes, so `await vm.run()`
-/// returns. Records each requested id. Day ranges yield nothing; writes are not used by the Workout screen and throw.
+/// returns. Records each requested id. Day ranges yield nothing. The Workout screen's writes (remove, restore and
+/// reorder exercises, finish, discard and its undo) are recorded, then throw `writeError` when one is given; the
+/// others are not used by the Workout screen and throw.
 nonisolated final class FakeSessionDetailRepository: SessionRepository {
-    private let emissions: [SessionDetail?]
-    private let requests = Mutex<[UUID]>([])
-
-    init(emissions: [SessionDetail?]) {
-        self.emissions = emissions
+    enum Call: Equatable, Sendable {
+        case removeExercise(UUID)
+        case restoreExercise(UUID)
+        case reorder(UUID, [UUID])
+        case finish(UUID)
+        case reschedule(UUID, RescheduleAction)
+        case undo(RescheduleUndo)
     }
+
+    private let emissions: [SessionDetail?]
+    private let writeError: AppError?
+    private let requests = Mutex<[UUID]>([])
+    private let recorded = Mutex<[Call]>([])
+
+    init(emissions: [SessionDetail?], writeError: AppError? = nil) {
+        self.emissions = emissions
+        self.writeError = writeError
+    }
+
+    /// The Workout screen's writes, in order, including ones that threw.
+    var calls: [Call] { recorded.withLock { $0 } }
 
     /// Every id passed to `observeSession`, in order.
     var requestedIDs: [UUID] { requests.withLock { $0 } }
@@ -41,28 +59,29 @@ nonisolated final class FakeSessionDetailRepository: SessionRepository {
         throw AppError(.unknown, detail: "not used")
     }
 
-    func removeExercise(id _: UUID) async throws {
-        throw AppError(.unknown, detail: "not used")
+    func removeExercise(id: UUID) async throws { try record(.removeExercise(id)) }
+    func restoreExercise(id: UUID) async throws { try record(.restoreExercise(id)) }
+    func reorderExercises(in sessionID: UUID, ids: [UUID]) async throws { try record(.reorder(sessionID, ids)) }
+
+    func finish(sessionID: UUID) async throws -> SessionRecord {
+        try record(.finish(sessionID))
+        guard var session = emissions.compactMap(\.self).last(where: { $0.id == sessionID })?.session else {
+            throw AppError(.notFound)
+        }
+        session.finishedAt = ManualNow.start
+        return session
     }
 
-    func restoreExercise(id _: UUID) async throws {
-        throw AppError(.unknown, detail: "not used")
+    func reschedule(_ sessionID: UUID, _ action: RescheduleAction) async throws -> RescheduleUndo {
+        try record(.reschedule(sessionID, action))
+        return RescheduleUndo(sessionID: sessionID, previousDay: Fixtures.monday)
     }
 
-    func reorderExercises(in _: UUID, ids _: [UUID]) async throws {
-        throw AppError(.unknown, detail: "not used")
-    }
+    func undo(_ change: RescheduleUndo) async throws { try record(.undo(change)) }
 
-    func finish(sessionID _: UUID) async throws -> SessionRecord {
-        throw AppError(.unknown, detail: "not used")
-    }
-
-    func reschedule(_: UUID, _: RescheduleAction) async throws -> RescheduleUndo {
-        throw AppError(.unknown, detail: "not used")
-    }
-
-    func undo(_: RescheduleUndo) async throws {
-        throw AppError(.unknown, detail: "not used")
+    private func record(_ call: Call) throws {
+        recorded.withLock { $0.append(call) }
+        if let writeError { throw writeError }
     }
 
     func createImportedSession(_: Session) async throws -> SessionRecord {

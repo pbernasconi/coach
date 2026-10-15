@@ -20,7 +20,10 @@ final class WorkoutViewModel {
     private let previousSets: PreviousSetsLoader
     private let days: DayCalendar
     /// The latest session from the store; the source for the editor, Add set and rest times.
-    @ObservationIgnored private var detail: SessionDetail?
+    @ObservationIgnored private(set) var detail: SessionDetail?
+    /// Add, move and remove exercises, finish, discard and Save as template (`WorkoutViewModel+Session`).
+    let edits: WorkoutSessionEdits
+    @ObservationIgnored var isEditingSession = false
     /// Sets with a log, unlog or skip on the way, so a double tap writes once.
     @ObservationIgnored private var inFlight: Set<UUID> = []
     @ObservationIgnored private var serial = 0
@@ -30,6 +33,7 @@ final class WorkoutViewModel {
         sessionID: UUID,
         sessions: any SessionRepository,
         sets: any SetRepository,
+        templates: any TemplateRepository,
         router: any Navigating,
         clock: any Clock<Duration>,
         restActivity: any RestActivityController,
@@ -42,6 +46,7 @@ final class WorkoutViewModel {
         self.sessions = sessions
         self.sets = sets
         self.router = router
+        self.edits = WorkoutSessionEdits(sessionID: sessionID, sessions: sessions, templates: templates, router: router)
         self.clock = clock
         self.restActivity = RestActivitySession(controller: restActivity, now: now)
         self.catalog = catalog
@@ -101,7 +106,7 @@ final class WorkoutViewModel {
         }
     }
 
-    /// The actions that only change what is on screen or where it goes: the editor, the rest timer, "How to".
+    /// The editor, the rest timer, "How to" and the options sheets; session writes go to `sendSession`.
     private func sendLocal(_ action: WorkoutAction) -> Task<Void, Never>? {
         switch action {
         case .setValuesTapped(let id): openEditor(id)
@@ -112,12 +117,11 @@ final class WorkoutViewModel {
         case .restSkipTapped: endRest()
         case .howToTapped(let exerciseID): router.open(.exercise(exerciseID))
         case .thumbnailNeeded(let catalogID): return loadThumbnail(catalogID)
-        default: break
+        case .workoutOptionsTapped, .exerciseOptionsTapped, .optionsDismissed: state.options = options(for: action)
+        default: return sendSession(action)
         }
         return nil
     }
-
-    // MARK: Logging
 
     /// One tap logs a planned set; a logged or skipped set goes back to planned.
     private func toggleLog(_ id: UUID) -> Task<Void, Never>? {
@@ -174,8 +178,6 @@ final class WorkoutViewModel {
         return write { _ = try await $0.addSet(to: exerciseID, kind: .working, target: target) }
     }
 
-    // MARK: Editor
-
     private func openEditor(_ id: UUID) {
         guard case (let item, let set)? = detail?.find(setID: id) else { return }
         state.editor = SetEditor(set: set, in: item, previous: state.previous, days: days)
@@ -196,8 +198,6 @@ final class WorkoutViewModel {
             }
         }
     }
-
-    // MARK: Rest
 
     /// Starts the countdown in the app and on the Lock Screen and Dynamic Island; leaving the workout ends both.
     private func startRest(seconds: Int, activity: RestActivityStart?) {
@@ -240,7 +240,7 @@ final class WorkoutViewModel {
         }
     }
 
-    private func showToast(_ kind: WorkoutToast.Kind) {
+    func showToast(_ kind: WorkoutToast.Kind) {
         serial += 1
         state.toast = WorkoutToast(serial: serial, kind: kind)
     }

@@ -1,0 +1,86 @@
+import Foundation
+import LiftCore
+import LiftStore
+import LiftTesting
+import Testing
+
+@testable import Lift
+
+/// One test per Action case, plus `run()` (TEST-2). No sleeps, no real time (TEST-3).
+@MainActor
+@Suite struct WorkoutSummaryViewModelTests {
+    let router = RecordingNavigator()
+
+    /// Monday: three squat sets logged, the first at 09:00 and the last at 09:30, then finished.
+    var detail: SessionDetail {
+        var detail = SessionBuilder.session(id: 1, on: Fixtures.monday, done: 3, planned: 0)
+        for index in detail.items[0].sets.indices {
+            detail.items[0].sets[index].actualReps = 5
+            detail.items[0].sets[index].actualWeight = .kg(105)
+            detail.items[0].sets[index].completedAt = ManualNow.start.addingTimeInterval(Double(index) * 900)
+        }
+        detail.session.finishedAt = ManualNow.start.addingTimeInterval(1_800)
+        return detail
+    }
+
+    /// A squat session a week earlier at 100 kg.
+    var earlier: ExerciseHistoryEntry {
+        var session = SessionBuilder.session(id: 2, on: Fixtures.monday.adding(days: -7), done: 3, planned: 0)
+        for index in session.items[0].sets.indices {
+            session.items[0].sets[index].actualReps = 5
+            session.items[0].sets[index].actualWeight = .kg(100)
+        }
+        return ExerciseHistoryEntry(session: session.session, loadMode: .total, sets: session.items[0].sets)
+    }
+
+    @Test func runShowsTheNumbersAndTheBests() async {
+        let history = FakeExerciseHistoryRepository(emissions: [[earlier]])
+        let vm = WorkoutSummaryViewModel(
+            sessionID: detail.id,
+            sessions: FakeSessionDetailRepository(emissions: [detail]),
+            history: history,
+            router: router,
+            calendar: SessionBuilder.calendar
+        )
+
+        await vm.run()
+
+        guard case .loaded(let summary) = vm.state.summary else {
+            Issue.record("expected a summary")
+            return
+        }
+        #expect(summary.title == "Lower A")
+        #expect(summary.duration == WorkoutSummaryText.duration(1_800))
+        #expect(summary.sets == "3")
+        #expect(summary.volume == WorkoutSummaryText.volume(.kg(1_575)))
+        #expect(summary.bests.map(\.value) == ["122.5 kg", "105 kg"])
+        #expect(history.requested.map(\.exerciseID) == [Fixtures.squat.id])
+    }
+
+    @Test func runWithoutTheSessionIsEmpty() async {
+        let vm = WorkoutSummaryViewModel(
+            sessionID: detail.id,
+            sessions: FakeSessionDetailRepository(emissions: [nil]),
+            history: FakeExerciseHistoryRepository(emissions: [[]]),
+            router: router,
+            calendar: SessionBuilder.calendar
+        )
+
+        await vm.run()
+
+        #expect(vm.state.summary == .empty)
+    }
+
+    @Test func doneTappedGoesBack() {
+        let vm = WorkoutSummaryViewModel(
+            sessionID: detail.id,
+            sessions: FakeSessionDetailRepository(emissions: []),
+            history: FakeExerciseHistoryRepository(emissions: []),
+            router: router,
+            calendar: SessionBuilder.calendar
+        )
+
+        #expect(vm.send(.doneTapped) == nil)
+        #expect(router.backCount == 1)
+    }
+}

@@ -21,6 +21,7 @@ import Testing
             sessionID: detail.id,
             sessions: FakeSessionDetailRepository(emissions: [detail]),
             sets: RecordingSetRepository(result: detail.items[0].sets[0]),
+            templates: FakeTemplateRepository(),
             router: RecordingNavigator(),
             clock: clock,
             restActivity: activity,

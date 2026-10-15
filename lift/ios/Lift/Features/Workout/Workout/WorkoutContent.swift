@@ -30,6 +30,7 @@ struct WorkoutContent: View {
         .screenCanvas()
         .navigationTitle(Text(verbatim: title))
         .navigationBarTitleDisplayMode(.inline)
+        .workoutOptions(state: state, send: send)
         .pinnedFooter(isPresented: state.rest != nil) {
             if let rest = state.rest {
                 RestBar(rest: rest, onExtend: { send(.restExtendTapped) }, onSkip: { send(.restSkipTapped) })
@@ -85,6 +86,7 @@ private struct WorkoutBody: View {
                     send: send
                 )
             }
+            WorkoutFooterActions(workout: workout, send: send)
         }
         .pageColumn()
         .padding(.top, Space.sm)
@@ -92,7 +94,7 @@ private struct WorkoutBody: View {
     }
 
     private var dayText: some View {
-        Text(verbatim: workout.dayTitle)
+        Text(verbatim: workout.dayLine)
             .font(theme.font(.subheadline).weight(.semibold))
             .foregroundStyle(theme.palette.accentText)
     }

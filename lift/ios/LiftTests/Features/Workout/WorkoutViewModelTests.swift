@@ -14,15 +14,20 @@ import Testing
     let clock = ImmediateClock()
     let router = RecordingNavigator()
 
-    func makeViewModel(_ detail: SessionDetail, sets: RecordingSetRepository) -> WorkoutViewModel {
+    func makeViewModel(
+        _ detail: SessionDetail,
+        sets: RecordingSetRepository,
+        catalog: FakeExerciseCatalog = FakeExerciseCatalog()
+    ) -> WorkoutViewModel {
         WorkoutViewModel(
             sessionID: detail.id,
             sessions: FakeSessionDetailRepository(emissions: [detail]),
             sets: sets,
+            templates: FakeTemplateRepository(),
             router: router,
             clock: clock,
             restActivity: RecordingRestActivityController(),
-            catalog: FakeExerciseCatalog(),
+            catalog: catalog,
             history: FakeExerciseHistoryRepository(emissions: [[]]),
             now: SessionBuilder.now,
             calendar: SessionBuilder.calendar
@@ -248,18 +253,7 @@ import Testing
             entries: [FakeExerciseCatalog.entry("0043", "Squat")],
             images: ["0043": still]
         )
-        let vm = WorkoutViewModel(
-            sessionID: planned.id,
-            sessions: FakeSessionDetailRepository(emissions: [planned]),
-            sets: recorder(planned),
-            router: router,
-            clock: clock,
-            restActivity: RecordingRestActivityController(),
-            catalog: catalog,
-            history: FakeExerciseHistoryRepository(emissions: [[]]),
-            now: SessionBuilder.now,
-            calendar: SessionBuilder.calendar
-        )
+        let vm = makeViewModel(planned, sets: recorder(planned), catalog: catalog)
 
         let task = vm.send(.thumbnailNeeded(catalogID: "0043"))
         #expect(vm.state.thumbnails["0043"] == .loading)
