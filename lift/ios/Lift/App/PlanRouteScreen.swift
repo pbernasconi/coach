@@ -45,7 +45,7 @@ struct PlanRouteScreen: View {
                 )
             )
             .id(route)
-        case .workout, .exercise, .catalog, .catalogExercise, .acknowledgements:
+        case .workout, .exercise, .catalog, .catalogExercise, .acknowledgements, .plates:
             EmptyView()  // built by RouteScreen
         }
     }
