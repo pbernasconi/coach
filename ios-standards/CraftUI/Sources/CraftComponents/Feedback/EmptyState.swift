@@ -8,20 +8,40 @@ import SwiftUI
 ///     }
 public struct EmptyState<Actions: View>: View {
     private let symbol: String
-    private let title: String
-    private let message: String?
+    private let title: Text
+    private let message: Text?
     private let actions: Actions
 
+    /// An empty state with localized copy.
     public init(
         symbol: String,
-        title: String,
+        title: LocalizedStringKey,
+        message: LocalizedStringKey? = nil,
+        @ViewBuilder actions: () -> Actions
+    ) {
+        self.init(symbol: symbol, title: Text(title), message: message.map { Text($0) }, actions: actions())
+    }
+
+    /// An empty state whose copy is shown as is (user data, search terms).
+    public init(
+        symbol: String,
+        verbatim title: String,
         message: String? = nil,
         @ViewBuilder actions: () -> Actions
     ) {
+        self.init(
+            symbol: symbol,
+            title: Text(verbatim: title),
+            message: message.map { Text(verbatim: $0) },
+            actions: actions()
+        )
+    }
+
+    private init(symbol: String, title: Text, message: Text?, actions: Actions) {
         self.symbol = symbol
         self.title = title
         self.message = message
-        self.actions = actions()
+        self.actions = actions
     }
 
     public var body: some View {
@@ -31,9 +51,14 @@ public struct EmptyState<Actions: View>: View {
 }
 
 extension EmptyState where Actions == EmptyView {
-    /// An empty state with no actions.
-    public init(symbol: String, title: String, message: String? = nil) {
+    /// An empty state with localized copy and no actions.
+    public init(symbol: String, title: LocalizedStringKey, message: LocalizedStringKey? = nil) {
         self.init(symbol: symbol, title: title, message: message) { EmptyView() }
+    }
+
+    /// An empty state whose copy is shown as is, with no actions.
+    public init(symbol: String, verbatim title: String, message: String? = nil) {
+        self.init(symbol: symbol, verbatim: title, message: message) { EmptyView() }
     }
 }
 
@@ -45,7 +70,7 @@ extension EmptyState where Actions == EmptyView {
 }
 
 #Preview("Empty, dark") {
-    EmptyState(symbol: "magnifyingglass", title: "No matches", message: "Try a different search.")
+    EmptyState(symbol: "magnifyingglass", verbatim: "No matches for “bnch”", message: "Try a different search.")
         .preferredColorScheme(.dark)
 }
 

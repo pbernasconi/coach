@@ -47,7 +47,7 @@ public struct IconButton: View {
     @ScaledMetric private var diameter: CGFloat
     @ScaledMetric private var iconSize: CGFloat
     private let systemImage: String
-    private let accessibilityLabel: LocalizedStringKey
+    private let label: Text
     private let style: Style
     private let action: () -> Void
 
@@ -58,8 +58,13 @@ public struct IconButton: View {
         size: Size = .regular,
         action: @escaping () -> Void
     ) {
+        self.init(systemImage, label: Text(accessibilityLabel), style: style, size: size, action: action)
+    }
+
+    /// An icon button labelled with a ready-made `Text`, for the library's own labels ("Close", "Increase").
+    init(_ systemImage: String, label: Text, style: Style, size: Size, action: @escaping () -> Void) {
         self.systemImage = systemImage
-        self.accessibilityLabel = accessibilityLabel
+        self.label = label
         self.style = style
         self.action = action
         _diameter = ScaledMetric(wrappedValue: size.diameter, relativeTo: .body)
@@ -73,7 +78,7 @@ public struct IconButton: View {
                 .frame(width: diameter, height: diameter)
         }
         .buttonStyle(IconButtonStyle(style: style))
-        .accessibilityLabel(Text(accessibilityLabel))
+        .accessibilityLabel(label)
     }
 }
 

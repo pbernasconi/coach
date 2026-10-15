@@ -10,18 +10,32 @@ public struct Collapsible<Content: View>: View {
     @Environment(\.craftTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Binding private var isExpanded: Bool
-    private let title: String
-    private let subtitle: String?
+    private let title: Text
+    private let subtitle: Text?
     private let content: Content
 
+    /// A collapsible section with a localized title.
     public init(
-        _ title: String,
+        _ title: LocalizedStringKey,
+        subtitle: LocalizedStringKey? = nil,
+        isExpanded: Binding<Bool>,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.title = Text(title)
+        self.subtitle = subtitle.map { Text($0) }
+        self._isExpanded = isExpanded
+        self.content = content()
+    }
+
+    /// A collapsible section whose title is shown as is (user data).
+    public init(
+        verbatim title: String,
         subtitle: String? = nil,
         isExpanded: Binding<Bool>,
         @ViewBuilder content: () -> Content
     ) {
-        self.title = title
-        self.subtitle = subtitle
+        self.title = Text(verbatim: title)
+        self.subtitle = subtitle.map { Text(verbatim: $0) }
         self._isExpanded = isExpanded
         self.content = content()
     }
@@ -30,8 +44,10 @@ public struct Collapsible<Content: View>: View {
         VStack(alignment: .leading, spacing: 0) {
             Button(action: toggle) { header }
                 .buttonStyle(.plain)
-                .accessibilityValue(isExpanded ? Text("Expanded") : Text("Collapsed"))
-                .accessibilityHint(isExpanded ? Text("Hides the content") : Text("Shows the content"))
+                .accessibilityValue(isExpanded ? Text("Expanded", bundle: .module) : Text("Collapsed", bundle: .module))
+                .accessibilityHint(
+                    isExpanded ? Text("Hides the content", bundle: .module) : Text("Shows the content", bundle: .module)
+                )
             if isExpanded {
                 VStack(alignment: .leading, spacing: Space.sm) { content }
                     .padding(.top, Space.sm)
@@ -45,11 +61,11 @@ public struct Collapsible<Content: View>: View {
     private var header: some View {
         HStack(spacing: Space.sm) {
             VStack(alignment: .leading, spacing: Space.xxs) {
-                Text(title)
+                title
                     .font(theme.font(.headline))
                     .foregroundStyle(theme.palette.textPrimary)
                 if let subtitle {
-                    Text(subtitle)
+                    subtitle
                         .font(theme.font(.subheadline))
                         .foregroundStyle(theme.palette.textSecondary)
                 }

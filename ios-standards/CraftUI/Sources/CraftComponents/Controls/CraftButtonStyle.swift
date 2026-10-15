@@ -54,7 +54,7 @@ public struct CraftButtonStyle: ButtonStyle {
             .padding(.vertical, size.targetInset)
             .contentShape(Rectangle())
             .allowsHitTesting(!isLoading)
-            .accessibilityValue(isLoading ? Text("In progress") : Text(verbatim: ""))
+            .accessibilityValue(isLoading ? Text("In progress", bundle: .module) : Text(verbatim: ""))
     }
 }
 

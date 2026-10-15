@@ -4,13 +4,22 @@ import SwiftUI
 
 /// A change shown under a stat ("+5 lb"), toned and always with a glyph, so it never reads by colour alone.
 public struct StatDelta {
-    public let text: String
+    public let text: Text
     public let tone: Tone
     public let symbol: String
 
+    /// A delta with localized text ("on track", "+\(change)%").
+    ///
     /// - Parameter symbol: an SF Symbol ("arrow.up.right"); the tone's glyph when `nil`.
-    public init(_ text: String, tone: Tone, symbol: String? = nil) {
-        self.text = text
+    public init(_ text: LocalizedStringKey, tone: Tone, symbol: String? = nil) {
+        self.text = Text(text)
+        self.tone = tone
+        self.symbol = symbol ?? tone.feedbackSymbol
+    }
+
+    /// A delta whose text is shown as is (a formatted number).
+    public init(verbatim text: String, tone: Tone, symbol: String? = nil) {
+        self.text = Text(verbatim: text)
         self.tone = tone
         self.symbol = symbol ?? tone.feedbackSymbol
     }
@@ -18,16 +27,16 @@ public struct StatDelta {
 
 /// A compact card with a caption, a big value, an optional unit and an optional delta. Reads as one VoiceOver element.
 ///
-///     StatTile(label: "Volume", value: "12.4k", unit: "lb", delta: StatDelta("+8%", tone: .success, symbol: "arrow.up"))
+///     StatTile(label: "Volume", value: "12.4k", unit: "lb", delta: StatDelta(verbatim: "+8%", tone: .success))
 ///     StatTile(label: "Sets", value: Double(done), unit: "/18")
 public struct StatTile<Value: View>: View {
-    private let label: String
+    private let label: Text
     private let value: Value
-    private let unit: String?
+    private let unit: Text?
     private let delta: StatDelta?
     @Environment(\.craftTheme) private var theme
 
-    private init(label: String, content: Value, unit: String?, delta: StatDelta?) {
+    private init(label: Text, content: Value, unit: Text?, delta: StatDelta?) {
         self.label = label
         self.value = content
         self.unit = unit
@@ -36,7 +45,7 @@ public struct StatTile<Value: View>: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: Space.xs) {
-            Text(label)
+            label
                 .font(theme.font(.caption).weight(.semibold))
                 .textCase(.uppercase)
                 .foregroundStyle(theme.palette.textSecondary)
@@ -46,14 +55,14 @@ public struct StatTile<Value: View>: View {
                     .monospacedDigit()
                     .foregroundStyle(theme.palette.textPrimary)
                 if let unit {
-                    Text(unit)
+                    unit
                         .font(theme.font(.subheadline).weight(.semibold))
                         .foregroundStyle(theme.palette.textSecondary)
                 }
             }
             if let delta {
                 Label {
-                    Text(delta.text)
+                    delta.text
                 } icon: {
                     Image(systemName: delta.symbol).accessibilityHidden(true)
                 }
@@ -71,29 +80,36 @@ public struct StatTile<Value: View>: View {
 }
 
 extension StatTile where Value == Text {
-    /// A tile showing a ready-made value string.
-    public init(label: String, value: String, unit: String? = nil, delta: StatDelta? = nil) {
-        self.init(label: label, content: Text(value), unit: unit, delta: delta)
+    /// A tile showing a ready-made value string (shown as is) under a localized label.
+    public init(label: LocalizedStringKey, value: String, unit: LocalizedStringKey? = nil, delta: StatDelta? = nil) {
+        self.init(label: Text(label), content: Text(verbatim: value), unit: unit.map { Text($0) }, delta: delta)
+    }
+
+    /// A tile whose label, value and unit are all shown as is (user-defined metrics).
+    public init(verbatim label: String, value: String, unit: String? = nil, delta: StatDelta? = nil) {
+        let unit = unit.map { Text(verbatim: $0) }
+        self.init(label: Text(verbatim: label), content: Text(verbatim: value), unit: unit, delta: delta)
     }
 }
 
 extension StatTile {
     /// A tile whose number rolls to each new value (`AnimatedNumber`).
     public init<Format: FormatStyle>(
-        label: String,
+        label: LocalizedStringKey,
         value: Double,
         format: Format,
-        unit: String? = nil,
+        unit: LocalizedStringKey? = nil,
         delta: StatDelta? = nil
     ) where Value == AnimatedNumber<Format>, Format.FormatInput == Double, Format.FormatOutput == String {
-        self.init(label: label, content: AnimatedNumber(value, format: format), unit: unit, delta: delta)
+        let number = AnimatedNumber(value, format: format)
+        self.init(label: Text(label), content: number, unit: unit.map { Text($0) }, delta: delta)
     }
 }
 
 extension StatTile where Value == AnimatedNumber<FloatingPointFormatStyle<Double>> {
     /// A tile whose number rolls to each new value, in the locale's default number format.
-    public init(label: String, value: Double, unit: String? = nil, delta: StatDelta? = nil) {
-        self.init(label: label, content: AnimatedNumber(value), unit: unit, delta: delta)
+    public init(label: LocalizedStringKey, value: Double, unit: LocalizedStringKey? = nil, delta: StatDelta? = nil) {
+        self.init(label: Text(label), content: AnimatedNumber(value), unit: unit.map { Text($0) }, delta: delta)
     }
 }
 
@@ -111,7 +127,7 @@ private struct StatTilePreviews: View {
                 label: "Est. 1RM",
                 value: "245",
                 unit: "lb",
-                delta: StatDelta("+5 lb", tone: .success, symbol: "arrow.up")
+                delta: StatDelta(verbatim: "+5 lb", tone: .success, symbol: "arrow.up")
             )
         }
         .padding()

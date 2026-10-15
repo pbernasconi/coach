@@ -15,7 +15,7 @@ public struct CountdownRing: View {
     private let showsTotal: Bool
     private let lineWidth: CGFloat
     private let tint: RingTint
-    private let label: String?
+    private let label: Text?
     @Environment(\.craftTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -28,14 +28,14 @@ public struct CountdownRing: View {
         showsTotal: Bool = true,
         lineWidth: CGFloat = Space.sm,
         tone: Tone = .accent,
-        accessibilityLabel: String? = nil
+        accessibilityLabel: LocalizedStringKey? = nil
     ) {
         self.start = start
         self.end = end
         self.showsTotal = showsTotal
         self.lineWidth = lineWidth
         self.tint = .tone(tone)
-        self.label = accessibilityLabel
+        self.label = accessibilityLabel.map { Text($0) }
     }
 
     public var body: some View {
@@ -48,7 +48,7 @@ public struct CountdownRing: View {
             )
             .overlay { centre }
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel(label.map { Text($0) } ?? Text("Timer"))
+            .accessibilityLabel(label ?? Text("Timer", bundle: .module))
             .accessibilityValue(CountdownMath.spokenRemaining(now: context.date, end: end))
             .accessibilityAddTraits(.updatesFrequently)
         }
@@ -63,7 +63,7 @@ public struct CountdownRing: View {
                 .foregroundStyle(theme.palette.textPrimary)
                 .multilineTextAlignment(.center)
             if showsTotal {
-                Text("of \(CountdownMath.clockText(seconds: CountdownMath.totalSeconds(start: start, end: end)))")
+                Text("of \(totalText)", bundle: .module)
                     .font(theme.font(.caption).weight(.semibold))
                     .monospacedDigit()
                     .foregroundStyle(theme.palette.textSecondary)
@@ -74,6 +74,10 @@ public struct CountdownRing: View {
         .padding(lineWidth + Space.xs)
     }
 
+    /// The whole countdown as a clock ("3:00"), for the "of 3:00" line.
+    private var totalText: String {
+        CountdownMath.clockText(seconds: CountdownMath.totalSeconds(start: start, end: end))
+    }
 }
 
 #Preview("Countdown ring") {

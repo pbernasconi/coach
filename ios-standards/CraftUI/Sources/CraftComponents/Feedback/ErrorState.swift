@@ -1,30 +1,51 @@
 import CraftTokens
+import Foundation
 import SwiftUI
 
 /// Content that failed to load: a title, reviewed copy (never a raw error) and an optional retry.
 /// VoiceOver announces the title and message when it appears.
 ///
 ///     ErrorState(title: "Couldn't load history", message: "Check your connection.", retry: reload)
+///
+/// The localized initialiser takes `LocalizedStringResource` rather than `LocalizedStringKey` because the copy is
+/// also spoken as an announcement, which needs a resolved string. Literals localize from the app's bundle either way.
 public struct ErrorState: View {
-    private let title: String
-    private let message: String?
-    private let retryLabel: String?
+    private let title: Text
+    private let message: Text?
+    private let retryLabel: Text?
     private let retry: (() -> Void)?
+    /// The title and the message, as one sentence pair.
+    let announcement: String
     @Environment(\.craftTheme) private var theme
 
     /// - Parameters:
     ///   - retryLabel: the button title; "Try again" when `nil`.
     ///   - retry: what the button does; no button when `nil` (for example, a permission denial).
     public init(
-        title: String,
-        message: String? = nil,
-        retryLabel: String? = nil,
+        title: LocalizedStringResource,
+        message: LocalizedStringResource? = nil,
+        retryLabel: LocalizedStringKey? = nil,
         retry: (() -> Void)? = nil
     ) {
-        self.title = title
-        self.message = message
-        self.retryLabel = retryLabel
+        self.title = Text(title)
+        self.message = message.map { Text($0) }
+        self.retryLabel = retryLabel.map { Text($0) }
         self.retry = retry
+        self.announcement = Self.sentences(String(localized: title), message.map { String(localized: $0) })
+    }
+
+    /// An error whose title and message are shown as is (already-resolved copy).
+    public init(
+        verbatim title: String,
+        message: String? = nil,
+        retryLabel: LocalizedStringKey? = nil,
+        retry: (() -> Void)? = nil
+    ) {
+        self.title = Text(verbatim: title)
+        self.message = message.map { Text(verbatim: $0) }
+        self.retryLabel = retryLabel.map { Text($0) }
+        self.retry = retry
+        self.announcement = Self.sentences(title, message)
     }
 
     public var body: some View {
@@ -36,7 +57,7 @@ public struct ErrorState: View {
         ) {
             if let retry {
                 Button(action: retry) {
-                    buttonTitle
+                    (retryLabel ?? Text("Try again", bundle: .module))
                         .font(theme.font(.headline))
                         .frame(minHeight: Size.minTouch)
                         .padding(.horizontal, Space.lg)
@@ -49,12 +70,7 @@ public struct ErrorState: View {
         .onAppear { AccessibilityNotification.Announcement(announcement).post() }
     }
 
-    private var buttonTitle: Text {
-        if let retryLabel { Text(retryLabel) } else { Text("Try again") }
-    }
-
-    /// The title and the message, as one sentence pair.
-    var announcement: String {
+    private static func sentences(_ title: String, _ message: String?) -> String {
         [title, message].compactMap(\.self).joined(separator: ". ")
     }
 }
@@ -69,6 +85,6 @@ public struct ErrorState: View {
 }
 
 #Preview("Error, AX3") {
-    ErrorState(title: "Couldn't load history", message: "Check your connection and try again.") {}
+    ErrorState(verbatim: "Couldn't load “Push day”", message: "Check your connection and try again.") {}
         .dynamicTypeSize(.accessibility3)
 }

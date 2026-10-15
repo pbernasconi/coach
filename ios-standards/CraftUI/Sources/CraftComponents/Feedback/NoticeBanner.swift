@@ -8,19 +8,26 @@ import SwiftUI
 public struct NoticeBanner: View {
     /// The one text action under the message ("Open Settings").
     public struct Action {
-        public let label: String
+        public let label: Text
         public let perform: () -> Void
 
-        public init(_ label: String, perform: @escaping () -> Void) {
-            self.label = label
+        /// An action with a localized label.
+        public init(_ label: LocalizedStringKey, perform: @escaping () -> Void) {
+            self.label = Text(label)
+            self.perform = perform
+        }
+
+        /// An action whose label is shown as is.
+        public init(verbatim label: String, perform: @escaping () -> Void) {
+            self.label = Text(verbatim: label)
             self.perform = perform
         }
     }
 
     private let tone: Tone
     private let symbol: String?
-    private let title: String
-    private let message: String?
+    private let title: Text
+    private let message: Text?
     private let action: Action?
     private let onDismiss: (() -> Void)?
     @Environment(\.craftTheme) private var theme
@@ -31,11 +38,30 @@ public struct NoticeBanner: View {
     public init(
         tone: Tone,
         symbol: String? = nil,
-        title: String,
+        title: LocalizedStringKey,
+        message: LocalizedStringKey? = nil,
+        action: Action? = nil,
+        onDismiss: (() -> Void)? = nil
+    ) {
+        let message = message.map { Text($0) }
+        self.init(tone: tone, symbol: symbol, title: Text(title), message: message, action: action, onDismiss: onDismiss)
+    }
+
+    /// A banner whose title and message are shown as is (user data, server copy already reviewed).
+    public init(
+        tone: Tone,
+        symbol: String? = nil,
+        verbatim title: String,
         message: String? = nil,
         action: Action? = nil,
         onDismiss: (() -> Void)? = nil
     ) {
+        let title = Text(verbatim: title)
+        let message = message.map { Text(verbatim: $0) }
+        self.init(tone: tone, symbol: symbol, title: title, message: message, action: action, onDismiss: onDismiss)
+    }
+
+    private init(tone: Tone, symbol: String?, title: Text, message: Text?, action: Action?, onDismiss: (() -> Void)?) {
         self.tone = tone
         self.symbol = symbol
         self.title = title
@@ -54,7 +80,7 @@ public struct NoticeBanner: View {
                 copy
                 if let action {
                     Button(action: action.perform) {
-                        Text(action.label)
+                        action.label
                             .font(theme.font(.subheadline).weight(.semibold))
                             .underline()
                             .foregroundStyle(colors.ink)
@@ -74,7 +100,7 @@ public struct NoticeBanner: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(Text("Dismiss"))
+                .accessibilityLabel(Text("Dismiss", bundle: .module))
             }
         }
         .padding(.leading, Space.md)
@@ -86,11 +112,11 @@ public struct NoticeBanner: View {
 
     private var copy: some View {
         VStack(alignment: .leading, spacing: Space.xxs) {
-            Text(title)
+            title
                 .font(theme.font(.subheadline).weight(.semibold))
                 .foregroundStyle(theme.palette.textPrimary)
             if let message {
-                Text(message)
+                message
                     .font(theme.font(.subheadline))
                     .foregroundStyle(theme.palette.textSecondary)
             }
@@ -111,7 +137,7 @@ private struct NoticeBannerPreviews: View {
                 action: .init("Open Settings") {},
                 onDismiss: {}
             )
-            NoticeBanner(tone: .danger, title: "Couldn't sync", onDismiss: {})
+            NoticeBanner(tone: .danger, verbatim: "Couldn't sync “Push day”", onDismiss: {})
             NoticeBanner(tone: .success, symbol: "trophy.fill", title: "New personal record")
         }
         .padding()

@@ -16,7 +16,7 @@ public struct CloseButton: View {
     }
 
     public var body: some View {
-        IconButton("xmark", accessibilityLabel: "Close", style: style, size: size, action: action)
+        IconButton("xmark", label: Text("Close", bundle: .module), style: style, size: size, action: action)
     }
 }
 

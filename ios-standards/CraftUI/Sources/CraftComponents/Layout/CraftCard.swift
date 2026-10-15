@@ -67,9 +67,14 @@ public struct CardSection<Header: View, Content: View>: View {
 }
 
 extension CardSection where Header == Text? {
-    /// A card with an optional plain title.
-    public init(_ title: String? = nil, padding: CGFloat = Space.lg, @ViewBuilder content: () -> Content) {
+    /// A card with an optional localized title.
+    public init(_ title: LocalizedStringKey? = nil, padding: CGFloat = Space.lg, @ViewBuilder content: () -> Content) {
         self.init(padding: padding, content: content) { title.map { Text($0) } }
+    }
+
+    /// A card whose title is shown as is (user data).
+    public init(verbatim title: String, padding: CGFloat = Space.lg, @ViewBuilder content: () -> Content) {
+        self.init(padding: padding, content: content) { Text(verbatim: title) }
     }
 }
 
