@@ -69,7 +69,7 @@ private struct WeekDaySectionView: View {
     }
 
     private var header: some View {
-        HStack(spacing: Space.xs) {
+        HStack(alignment: .firstTextBaseline, spacing: Space.xs) {
             if section.isSelected {
                 // A fill, so the bright accent, like the strip's day dots; the title beside it is text (accentText).
                 Image(systemName: "circle.fill")
