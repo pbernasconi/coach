@@ -3,15 +3,15 @@ import KoboTokens
 import LiftCore
 import SwiftUI
 
-/// Setup, numbered steps, form cues, common mistakes and breathing from the exercise's guide, as parts of one
-/// "How to" card.
+/// Setup, numbered steps, form cues, common mistakes and breathing from the exercise's guide, as parts of the flat
+/// "How to" section.
 struct ExerciseGuideSections: View {
     let guide: ExerciseGuide
 
     var body: some View {
         VStack(alignment: .leading, spacing: Space.lg) {
             GuidePart("Setup") {
-                GuideList(lines: guide.setup, marker: .symbol("circle.fill", .neutral))
+                GuideList(lines: guide.setup, marker: .bullet)
             }
             GuidePart("Steps") {
                 GuideList(lines: guide.steps, marker: .number)
@@ -31,9 +31,8 @@ struct ExerciseGuideSections: View {
     }
 }
 
-/// One titled part of the "How to" card.
+/// One titled part of "How to", under a sub-section title (sentence case, a step below the section title).
 private struct GuidePart<Content: View>: View {
-    @Environment(\.koboTheme) private var theme
     private let title: LocalizedStringKey
     private let content: Content
 
@@ -45,19 +44,18 @@ private struct GuidePart<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Space.sm) {
             Text(title)
-                .font(theme.font(.footnote).weight(.semibold))
-                .foregroundStyle(theme.palette.textSecondary)
-                .textCase(.uppercase)
-                .accessibilityAddTraits(.isHeader)
+                .sectionTitleStyle(.subsection)
             content
         }
     }
 }
 
-/// A list of guide lines, each behind a number or a symbol.
+/// A list of guide lines, each behind a number, a text bullet or a status symbol. Bullets and symbols take the line's
+/// own text size, so they never outweigh the words beside them.
 private struct GuideList: View {
     enum Marker {
         case number
+        case bullet
         case symbol(String, Tone)
     }
 
@@ -88,9 +86,15 @@ private struct GuideList: View {
                 .frame(minWidth: badge, minHeight: badge)
                 .background(theme.palette.accent, in: Circle())
                 .accessibilityLabel(Text("Step \(number)"))
+        case .bullet:
+            Text(verbatim: "•")
+                .font(theme.font(.subheadline))
+                .foregroundStyle(theme.palette.textSecondary)
+                .frame(minWidth: badge)
+                .accessibilityHidden(true)
         case .symbol(let name, let tone):
             Image(systemName: name)
-                .font(theme.font(.caption))
+                .font(theme.font(.subheadline))
                 .imageScale(.small)
                 .foregroundStyle(theme.palette.status(tone).ink)
                 .frame(minWidth: badge)

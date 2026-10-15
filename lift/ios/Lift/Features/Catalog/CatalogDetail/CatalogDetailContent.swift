@@ -28,20 +28,26 @@ struct CatalogDetailContent: View {
             }
         }
         .screenCanvas()
+        .navigationTitle(Text(verbatim: title))
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    /// The entry's name as the inline title every pushed screen uses.
+    private var title: String {
+        guard case .loaded(let item) = state.entry else { return "" }
+        return item.name
     }
 }
 
-/// The loaded entry, top to bottom: name, the animation beside its muscles and equipment, the library action, then
-/// the dataset's steps.
+/// The loaded entry, top to bottom: the animation beside its body part, muscles and equipment, the library action, then
+/// the dataset's steps. The name is the bar title.
 private struct CatalogDetailBody: View {
     let item: CatalogDetailItem
     let state: CatalogDetailState
     let send: (CatalogDetailAction) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Space.lg) {
-            ExerciseTitle(name: item.name, kicker: item.bodyPart)
+        VStack(alignment: .leading, spacing: Space.section) {
             ExerciseOverview {
                 ExerciseMediaHero(animation: state.animation, name: item.name)
             } facts: {
@@ -53,7 +59,7 @@ private struct CatalogDetailBody: View {
             }
         }
         .pageColumn()
-        .padding(.top, Space.xs)
+        .padding(.top, Space.sm)
         .padding(.bottom, Space.xxl)
     }
 }
@@ -80,7 +86,7 @@ private struct LibraryAction: View {
     }
 }
 
-/// Target and secondary muscles as tags, and the equipment, beside the animation.
+/// Target and secondary muscles, the equipment and the body part as tags, beside the animation.
 private struct CatalogFacts: View {
     let item: CatalogDetailItem
 
@@ -89,8 +95,7 @@ private struct CatalogFacts: View {
         if !item.secondary.isEmpty {
             ExerciseFact("Secondary") { MuscleTags(muscles: item.secondary, style: .outline) }
         }
-        ExerciseFact("Equipment") {
-            KoboTag(verbatim: item.equipment, tone: .neutral, systemImage: "dumbbell.fill")
-        }
+        ExerciseFact("Equipment") { AttributeTag(text: item.equipment) }
+        ExerciseFact("Body part") { AttributeTag(text: item.bodyPart) }
     }
 }

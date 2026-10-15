@@ -57,9 +57,9 @@ struct ExerciseOverview<Media: View, Facts: View>: View {
     }
 }
 
-/// A small label over its value in the overview: "Primary" over muscle tags, "Equipment" over a tag.
+/// A small label over its value in the overview: "Primary" over muscle tags, "Equipment" over a tag. The label is a
+/// sentence-case sub-section title, like the parts of How to.
 struct ExerciseFact<Value: View>: View {
-    @Environment(\.koboTheme) private var theme
     private let title: LocalizedStringKey
     private let value: Value
 
@@ -71,9 +71,7 @@ struct ExerciseFact<Value: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Space.xs) {
             Text(title)
-                .font(theme.font(.caption).weight(.semibold))
-                .foregroundStyle(theme.palette.textSecondary)
-                .textCase(.uppercase)
+                .sectionTitleStyle(.subsection)
             value
         }
         .accessibilityElement(children: .combine)
@@ -95,27 +93,12 @@ struct MuscleTags: View {
     }
 }
 
-/// The exercise's name at the top of a detail screen, with an optional small kicker above it. Compact on purpose:
-/// the screen's content starts right under it.
-struct ExerciseTitle: View {
-    @Environment(\.koboTheme) private var theme
-    let name: String
-    var kicker: String?
+/// An attribute of the exercise (its equipment, its body part) as an outlined tag: the same tag set as the muscles,
+/// whose primary ones are tonal and the rest outlined, so the card has two tag looks, not three.
+struct AttributeTag: View {
+    let text: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Space.xxs) {
-            if let kicker {
-                Text(verbatim: kicker)
-                    .font(theme.font(.footnote).weight(.semibold))
-                    .foregroundStyle(theme.palette.accentText)
-                    .textCase(.uppercase)
-            }
-            Text(verbatim: name)
-                .font(theme.font(.title2).weight(.bold))
-                .foregroundStyle(theme.palette.textPrimary)
-                .fixedSize(horizontal: false, vertical: true)
-                .accessibilityAddTraits(.isHeader)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        KoboTag(verbatim: text, tone: .neutral, style: .outline)
     }
 }
