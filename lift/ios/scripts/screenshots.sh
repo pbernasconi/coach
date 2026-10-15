@@ -51,11 +51,13 @@ settle() {
 }
 
 # Warm-up launch: a fresh simulator shows first-boot notices (for example Apple Intelligence) for a few seconds.
-# CI boots the simulator while it builds, so by now they are usually gone; WARMUP adds a minimum wait.
-xcrun simctl launch "$UDID" "$BUNDLE" -demo >/dev/null
-sleep "${WARMUP:-0}"
-settle "$TMP/warmup.png"
-xcrun simctl terminate "$UDID" "$BUNDLE" 2>/dev/null || true
+# CI usually boots a simulator that has booted before (WARMUP_LAUNCH=0 skips this then); WARMUP adds a wait.
+if [ "${WARMUP_LAUNCH:-1}" = 1 ]; then
+  xcrun simctl launch "$UDID" "$BUNDLE" -demo >/dev/null
+  sleep "${WARMUP:-0}"
+  settle "$TMP/warmup.png"
+  xcrun simctl terminate "$UDID" "$BUNDLE" 2>/dev/null || true
+fi
 
 shoot() { # variant appearance content-size
   xcrun simctl ui "$UDID" appearance "$2"
