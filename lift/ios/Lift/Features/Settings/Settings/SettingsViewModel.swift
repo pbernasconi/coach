@@ -9,22 +9,33 @@ final class SettingsViewModel {
     private let router: any Navigating
     private let sync: any Syncing
     private let now: @Sendable () -> Date
+    /// Saving finished workouts to Apple Health.
+    private let health: any WorkoutHealthRecording
     /// The latest sync status, kept to redraw the status row when the token changes.
     @ObservationIgnored private var latest = SyncStatus.initial
 
     /// Values and protocols only, no defaults, no work (SCR-3).
-    init(info: AppInfo, sync: any Syncing, now: @escaping @Sendable () -> Date, router: any Navigating) {
+    init(
+        info: AppInfo,
+        sync: any Syncing,
+        health: any WorkoutHealthRecording,
+        now: @escaping @Sendable () -> Date,
+        router: any Navigating
+    ) {
         state = SettingsState(
             info: info,
             sync: Self.section(dataSource: info.dataSource, isConfigured: sync.isConfigured)
         )
         self.router = router
         self.sync = sync
+        self.health = health
         self.now = now
     }
 
-    /// Follows the sync status while the screen is shown (SCR-4). Demo data and builds without a server skip it.
+    /// Reads the Apple Health status (it may have changed in the Health settings), then follows the sync status while
+    /// the screen is shown (SCR-4). Demo data and builds without a server skip the sync part.
     func run() async {
+        state.health = health.status()
         guard case .available = state.sync else { return }
         let hasToken = await sync.hasToken()
         refresh(hasToken: hasToken)
@@ -55,8 +66,17 @@ final class SettingsViewModel {
             return removeToken()
         case .tokenEditorDismissed:
             state.tokenEditor = nil
+        case .healthToggled(let isOn):
+            return setHealth(isOn)
         }
         return nil
+    }
+
+    /// The Apple Health switch. Turning it on asks Health the first time; the row then shows what Health said.
+    private func setHealth(_ isOn: Bool) -> Task<Void, Never>? {
+        guard state.health.canToggle, state.health.isOn != isOn else { return nil }
+        state.health = isOn ? .notAsked : .off  // the switch moves at once; the answer follows
+        return Task { state.health = await health.setEnabled(isOn) }
     }
 
     private func syncNow() -> Task<Void, Never>? {
@@ -119,7 +139,7 @@ final class SettingsViewModel {
 
     private static func section(dataSource: AppInfo.DataSource, isConfigured: Bool) -> SyncSection {
         switch dataSource {
-        case .demo:
+        case .demo, .fresh:
             return .demo
         case .device:
             guard isConfigured else { return .unavailable }

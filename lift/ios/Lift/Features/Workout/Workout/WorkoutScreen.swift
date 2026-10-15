@@ -2,13 +2,15 @@ import KoboComponents
 import SwiftUI
 
 /// Owns the ViewModel; renders Content; starts reads (SCR-2, SCR-4). Runs the rest countdown for each new rest and
-/// shows the ViewModel's toasts through Kobo's `ToastCenter`, whose Undo action goes back through `send`.
+/// shows the ViewModel's toasts through the tab's Kobo `ToastCenter`, whose Undo action goes back through `send`. The
+/// tab owns the center, so "Workout discarded" and its Undo stay up after the page closes.
 struct WorkoutScreen: View {
     @State private var viewModel: WorkoutViewModel
-    @State private var toasts = ToastCenter()
+    private let toasts: ToastCenter
 
-    init(viewModel: @autoclosure @escaping () -> WorkoutViewModel) {
+    init(viewModel: @autoclosure @escaping () -> WorkoutViewModel, toasts: ToastCenter) {
         _viewModel = State(wrappedValue: viewModel())
+        self.toasts = toasts
     }
 
     var body: some View {
@@ -16,7 +18,6 @@ struct WorkoutScreen: View {
             .task { await viewModel.run() }
             .task(id: viewModel.state.rest?.run) { await viewModel.runRestTimer() }
             .onChange(of: viewModel.state.toast) { _, toast in show(toast) }
-            .toastHost(toasts)
     }
 
     private func show(_ toast: WorkoutToast?) {
@@ -34,6 +35,7 @@ struct WorkoutScreen: View {
             let viewModel = viewModel
             let undo = Toast.Action("Undo") { viewModel.send(.discardUndoTapped(change)) }
             toasts.show(Toast("Workout discarded", action: undo))
+            viewModel.send(.discardedToastShown)
         case .savedAsTemplate(let name):
             toasts.show(Toast(verbatim: String(localized: "Saved as template \(name)")))
         case .failed:

@@ -23,6 +23,7 @@ struct WorkoutSummaryContent: View {
                     ErrorState(title: "The summary could not be loaded")
                 case .loaded(let summary):
                     SummaryNumbers(summary: summary)
+                    SummaryHealthRow(health: state.health, send: send)
                     SummaryBests(bests: summary.bests)
                 }
             }
@@ -89,5 +90,34 @@ private struct SummaryBests: View {
             }
         }
         .listRowDensity(.compact)
+    }
+}
+
+/// The first finish asks before the system sheet does (PLAT-5); afterwards a saved workout says so.
+private struct SummaryHealthRow: View {
+    let health: SummaryHealth?
+    let send: (WorkoutSummaryAction) -> Void
+
+    var body: some View {
+        switch health {
+        case .ask:
+            NoticeBanner(
+                tone: .accent,
+                symbol: "heart",
+                title: "Save workouts to Apple Health?",
+                message: "Each finished workout is saved as strength training, with its start, end and title.",
+                action: .init("Save to Apple Health") { send(.healthAllowTapped) },
+                onDismiss: { send(.healthNotNowTapped) }
+            )
+        case .saved:
+            ListSection {
+                ListRow("Apple Health", value: String(localized: "Saved")) {
+                    Thumbnail(systemName: "heart", tone: .accent, side: ExerciseThumbnail.compactSide)
+                }
+            }
+            .listRowDensity(.compact)
+        case nil:
+            EmptyView()
+        }
     }
 }

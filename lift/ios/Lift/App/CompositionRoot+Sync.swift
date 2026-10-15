@@ -3,16 +3,16 @@ import LiftStore
 import LiftSync
 
 extension CompositionRoot {
-    /// Live sync over the device database when this build names a server, else `DisabledSync`. Demo data never
-    /// syncs, whatever the build says.
+    /// Live sync over the device database when this build names a server, else `DisabledSync`. Demo and `-fresh` data
+    /// (`isSaved` false) never sync, whatever the build says.
     static func makeSync(
         database: LiftDatabase,
-        isDemo: Bool,
+        isSaved: Bool,
         now: @escaping @Sendable () -> Date,
         makeID: @escaping @Sendable () -> UUID
     ) -> any Syncing {
         let baseURL = SyncServer.baseURL(from: Bundle.main.object(forInfoDictionaryKey: SyncServer.infoKey))
-        guard !isDemo, let baseURL else { return DisabledSync() }
+        guard isSaved, let baseURL else { return DisabledSync() }
         let tokens = KeychainTokenStore(service: "app.lift.sync", account: "token")
         let transport = URLSessionSyncTransport(session: syncSession(), baseURL: baseURL, tokens: tokens)
         let engine = SyncEngine(

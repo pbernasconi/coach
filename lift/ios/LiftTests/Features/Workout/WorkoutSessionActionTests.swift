@@ -11,6 +11,7 @@ import Testing
 @MainActor
 @Suite struct WorkoutSessionActionTests {
     let router = RecordingNavigator()
+    let health = RecordingHealthRecorder()
 
     /// A planned session with two exercises: the builder's squat, then a bench press.
     var detail: SessionDetail {
@@ -45,6 +46,7 @@ import Testing
             restActivity: RecordingRestActivityController(),
             catalog: FakeExerciseCatalog(),
             history: FakeExerciseHistoryRepository(emissions: [[]]),
+            health: health,
             now: SessionBuilder.now,
             calendar: SessionBuilder.calendar
         )
@@ -135,6 +137,7 @@ import Testing
         #expect(second == nil)
         #expect(sessions.calls == [.finish(detail.id)])
         #expect(router.opened == [.workoutSummary(detail.id)])
+        #expect(health.calls == [.finished(detail.id)])
     }
 
     @Test func aFailedFinishSaysSo() async {
@@ -146,6 +149,7 @@ import Testing
 
         #expect(router.opened.isEmpty)
         #expect(vm.state.toast?.kind == .failed)
+        #expect(health.calls.isEmpty)
     }
 
     @Test func summaryTappedOpensTheSummary() async {
@@ -163,10 +167,30 @@ import Testing
         #expect(sessions.calls == [.reschedule(detail.id, .remove)])
         let undo = RescheduleUndo(sessionID: detail.id, previousDay: Fixtures.monday)
         #expect(vm.state.toast?.kind == .discarded(undo))
+        #expect(health.calls == [.removed(detail.id)])
+        #expect(router.backCount == 0)  // the page closes once the toast is up
+    }
+
+    @Test func discardedToastShownGoesBackToWhereTheWorkoutWasOpened() async {
+        let (vm, _) = await loaded()
+
+        #expect(vm.send(.discardedToastShown) == nil)
+
+        #expect(router.backCount == 1)
     }
 
     @Test func discardUndoTappedPutsTheSessionBack() async {
         let (vm, sessions) = await loaded()
+        let undo = RescheduleUndo(sessionID: detail.id, previousDay: Fixtures.monday)
+
+        await vm.send(.discardUndoTapped(undo))?.value
+
+        #expect(sessions.calls == [.undo(undo)])
+        #expect(health.calls == [.restored(detail.id)])
+    }
+
+    @Test func undoWorksAfterTheSessionLeftTheStore() async {
+        let (vm, sessions) = await loaded(sessions: FakeSessionDetailRepository(emissions: [nil]))
         let undo = RescheduleUndo(sessionID: detail.id, previousDay: Fixtures.monday)
 
         await vm.send(.discardUndoTapped(undo))?.value

@@ -39,6 +39,7 @@ struct PlanRouteScreen: View {
                     sessionID: sessionID,
                     sessions: dependencies.sessions,
                     history: dependencies.history,
+                    health: dependencies.health,
                     router: router,
                     calendar: dependencies.calendar
                 )

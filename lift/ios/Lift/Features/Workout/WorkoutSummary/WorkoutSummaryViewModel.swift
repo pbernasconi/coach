@@ -11,7 +11,11 @@ final class WorkoutSummaryViewModel {
     private let sessions: any SessionRepository
     private let history: any ExerciseHistoryRepository
     private let router: any Navigating
+    /// Saving finished workouts to Apple Health; the first summary asks.
+    private let health: any WorkoutHealthRecording
     private let days: DayCalendar
+    /// Where Apple Health stood when the summary opened, updated by the prompt's answers.
+    @ObservationIgnored private var healthStatus = HealthStatus.notSaved
     /// Each library exercise's sets logged before this workout, read once.
     @ObservationIgnored private var earlier: [UUID: [LoggedSet]] = [:]
     @ObservationIgnored private var hasReadEarlier = false
@@ -21,12 +25,14 @@ final class WorkoutSummaryViewModel {
         sessionID: UUID,
         sessions: any SessionRepository,
         history: any ExerciseHistoryRepository,
+        health: any WorkoutHealthRecording,
         router: any Navigating,
         calendar: Calendar
     ) {
         self.sessionID = sessionID
         self.sessions = sessions
         self.history = history
+        self.health = health
         self.router = router
         self.days = DayCalendar(calendar: calendar)
     }
@@ -34,11 +40,14 @@ final class WorkoutSummaryViewModel {
     /// Observes the session; started by the Screen's `.task` (SCR-4). The earlier history is read once, the first time
     /// the session loads.
     func run() async {
+        healthStatus = health.status()
         for await detail in sessions.observeSession(id: sessionID) {
             guard let detail else {
                 state.summary = .empty
+                state.health = nil
                 continue
             }
+            state.health = healthRow(detail.session)
             let earlier = await earlierSets(before: detail)
             let unit = detail.session.unitsAtLog
             let summary = WorkoutSummarizer.summarize(detail.domain, earlier: earlier, unit: unit)
@@ -61,8 +70,25 @@ final class WorkoutSummaryViewModel {
         switch action {
         case .doneTapped:
             router.back()
+        case .healthAllowTapped:
+            guard state.health == .ask else { return nil }
+            state.health = nil  // "Saved to Apple Health" shows once the workout is saved
+            let id = sessionID
+            return Task { healthStatus = await health.allow(savingSession: id) }
+        case .healthNotNowTapped:
+            guard state.health == .ask else { return nil }
+            state.health = nil
+            healthStatus = .off
+            return Task { _ = await health.setEnabled(false) }
         }
         return nil
+    }
+
+    /// "Saved to Apple Health" once the workout is there; the prompt on a finished workout while Health was never
+    /// asked (the first finish); nothing otherwise.
+    private func healthRow(_ session: SessionRecord) -> SummaryHealth? {
+        if session.healthWorkoutID != nil { return .saved }
+        return session.finishedAt != nil && healthStatus == .notAsked ? .ask : nil
     }
 
     /// The sets of each library exercise in `detail` logged in sessions before it (an earlier day, or earlier the same

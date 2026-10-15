@@ -16,4 +16,6 @@ nonisolated enum SettingsAction: Equatable, Sendable {
     case tokenRemoveTapped
     /// The token sheet was closed without saving.
     case tokenEditorDismissed
+    /// The Apple Health switch: save finished workouts to Health, or stop.
+    case healthToggled(Bool)
 }

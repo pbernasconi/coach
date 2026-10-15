@@ -45,8 +45,10 @@ nonisolated enum WorkoutAction: Equatable, Sendable {
     case summaryTapped
     /// Removes the session at once; the toast offers Undo. The only destructive path on this screen.
     case discardTapped
-    /// Undo on the "Workout discarded" toast.
+    /// Undo on the "Workout discarded" toast, which stays up after the page closes.
     case discardUndoTapped(RescheduleUndo)
+    /// The "Workout discarded" toast is up: the page closes, back to where it was opened from.
+    case discardedToastShown
     /// A new template from this session's exercises, named like it.
     case saveAsTemplateTapped
 }

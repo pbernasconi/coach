@@ -3,7 +3,7 @@ import KoboTokens
 import LiftCore
 import SwiftUI
 
-/// Dumb view: units, where the data lives, sync, and the app version (SCR-2).
+/// Dumb view: units, where the data lives, Apple Health, sync, and the app version (SCR-2).
 struct SettingsContent: View {
     let state: SettingsState
     let send: (SettingsAction) -> Void
@@ -24,6 +24,7 @@ struct SettingsContent: View {
                     .pageGutter()
                 }
                 dataSection
+                SettingsHealthSection(status: state.health, send: send)
                 SettingsSyncSection(section: state.sync, send: send)
                 ListSection("About") {
                     ListRow("Version", value: state.version)
@@ -56,6 +57,10 @@ struct SettingsContent: View {
         case .demo:
             ListSection("Data", footer: "Demo data is made up and is not saved.") {
                 ListRow("Stored", value: String(localized: "Demo data"))
+            }
+        case .fresh:
+            ListSection("Data", footer: "This launch starts empty and is not saved.") {
+                ListRow("Stored", value: String(localized: "Not saved"))
             }
         }
     }

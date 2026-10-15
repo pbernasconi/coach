@@ -27,7 +27,9 @@
             ]
         )
 
-        static let fixtureDefault = WorkoutSummaryState(summary: .loaded(fixtureOverview))
+        static let fixtureDefault = WorkoutSummaryState(summary: .loaded(fixtureOverview), health: .saved)
+        /// The first finish: the Apple Health prompt above the bests.
+        static let fixtureHealthPrompt = WorkoutSummaryState(summary: .loaded(fixtureOverview), health: .ask)
         static let fixtureLoading = WorkoutSummaryState(summary: .loading)
         static let fixtureEmpty = WorkoutSummaryState(summary: .empty)
         static let fixtureFailed = WorkoutSummaryState(summary: .failed(.unknown))

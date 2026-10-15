@@ -28,6 +28,7 @@ import Testing
             restActivity: RecordingRestActivityController(),
             catalog: FakeExerciseCatalog(),
             history: history,
+            health: RecordingHealthRecorder(),
             now: SessionBuilder.now,
             calendar: SessionBuilder.calendar
         )

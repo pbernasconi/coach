@@ -10,19 +10,23 @@ nonisolated struct SettingsState: Equatable, Sendable {
     var sync: SyncSection
     /// The sync token sheet, while it is open.
     var tokenEditor: TokenEditor?
+    /// Saving finished workouts to Apple Health.
+    var health: HealthStatus
 
     init(
         unit: WeightUnit,
         version: String,
         dataSource: AppInfo.DataSource,
         sync: SyncSection,
-        tokenEditor: TokenEditor? = nil
+        tokenEditor: TokenEditor? = nil,
+        health: HealthStatus = .notSaved
     ) {
         self.unit = unit
         self.version = version
         self.dataSource = dataSource
         self.sync = sync
         self.tokenEditor = tokenEditor
+        self.health = health
     }
 
     init(info: AppInfo, sync: SyncSection) {
