@@ -15,7 +15,9 @@ public struct Collapsible<Content: View>: View {
     private let content: Content
 
     public init(
-        _ title: String, subtitle: String? = nil, isExpanded: Binding<Bool>,
+        _ title: String,
+        subtitle: String? = nil,
+        isExpanded: Binding<Bool>,
         @ViewBuilder content: () -> Content
     ) {
         self.title = title
@@ -72,29 +74,29 @@ public struct Collapsible<Content: View>: View {
 }
 
 #if DEBUG
-private struct CollapsiblePreview: View {
-    @State private var first = false
-    @State private var second = true
+    private struct CollapsiblePreview: View {
+        @State private var first = false
+        @State private var second = true
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: Space.lg) {
-            Collapsible("Hidden exercises (2)", isExpanded: $first) {
-                Text("Face pull")
-                Text("Calf raise")
+        var body: some View {
+            VStack(alignment: .leading, spacing: Space.lg) {
+                Collapsible("Hidden exercises (2)", isExpanded: $first) {
+                    Text("Face pull")
+                    Text("Calf raise")
+                }
+                Collapsible("Notes", subtitle: "Pinned to this workout", isExpanded: $second) {
+                    Text("Keep the rest short on the last two sets.")
+                }
             }
-            Collapsible("Notes", subtitle: "Pinned to this workout", isExpanded: $second) {
-                Text("Keep the rest short on the last two sets.")
-            }
+            .padding(Space.gutter)
+            .craftCard()
+            .padding(Space.gutter)
+            .frame(maxHeight: .infinity, alignment: .top)
+            .background(Theme.system.palette.canvas)
         }
-        .padding(Space.gutter)
-        .craftCard()
-        .padding(Space.gutter)
-        .frame(maxHeight: .infinity, alignment: .top)
-        .background(Theme.system.palette.canvas)
     }
-}
 
-#Preview("Light") { CollapsiblePreview() }
-#Preview("Dark") { CollapsiblePreview().preferredColorScheme(.dark) }
-#Preview("AX3") { CollapsiblePreview().dynamicTypeSize(.accessibility3) }
+    #Preview("Light") { CollapsiblePreview() }
+    #Preview("Dark") { CollapsiblePreview().preferredColorScheme(.dark) }
+    #Preview("AX3") { CollapsiblePreview().dynamicTypeSize(.accessibility3) }
 #endif

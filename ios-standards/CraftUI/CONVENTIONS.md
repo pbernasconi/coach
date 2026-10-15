@@ -46,4 +46,20 @@ Every component in CraftUI follows these rules. They are what make the library r
 14. **Every component ships previews**: a `#Preview` covering its variants, light and dark, plus one at
     `.accessibility3`. The catalog (`CraftCatalog`) lists every component.
 15. **Pure logic is separated and testable.** Formatting, clamping, layout maths and state machines live
-    in small internal functions or types that tests can call without rendering.
+    in small `nonisolated` types, in files that import only `Foundation` (and `CraftTokens`), next to the
+    view that uses them (`StepperMath`, `FlowLines`, `CountdownMath`). `scripts/linux-logic-tests.sh`
+    builds every SwiftUI-free file and its tests on Linux, so logic is compiled and tested in CI and in agent
+    sandboxes without Xcode. A test that needs a SwiftUI type goes inside `#if canImport(SwiftUI)`.
+
+## Platform
+
+16. **Liquid Glass on controls, never content** (IOS_GUIDELINES `UI-10`). Glass goes on buttons, bars,
+    floating controls and transient overlays, and always yields to `theme.surfaceStyle == .solid`. A
+    component that draws glass never puts glass inside it (no `.glass` button inside a glass bar); a
+    component that holds several glass controls wraps them in one `GlassEffectContainer`. `.interactive()`
+    only on views that respond to touch. Never hand-tune glass opacity; the system adapts it for Reduce
+    Transparency and Increase Contrast.
+17. **Text parameters mirror SwiftUI.** Copy the caller writes as a literal is a `LocalizedStringKey`;
+    runtime values (names, numbers, user data) use a `verbatim:` (or `StringProtocol`) overload. The
+    library's own strings ("Close", "Try again") come from its String Catalog with `bundle: .module`,
+    never the host app's bundle.

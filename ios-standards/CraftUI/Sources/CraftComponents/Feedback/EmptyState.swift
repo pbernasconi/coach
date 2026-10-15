@@ -30,9 +30,9 @@ public struct EmptyState<Actions: View>: View {
     }
 }
 
-public extension EmptyState where Actions == EmptyView {
+extension EmptyState where Actions == EmptyView {
     /// An empty state with no actions.
-    init(symbol: String, title: String, message: String? = nil) {
+    public init(symbol: String, title: String, message: String? = nil) {
         self.init(symbol: symbol, title: title, message: message) { EmptyView() }
     }
 }

@@ -1,10 +1,10 @@
 import CraftTokens
 import SwiftUI
 
-public extension View {
+extension View {
     /// Renders `center`'s current toast at the top of this view as a glass capsule that drops in, swipes away and is
     /// announced to VoiceOver. Attach it once, near the root of a window.
-    func toastHost(_ center: ToastCenter) -> some View {
+    public func toastHost(_ center: ToastCenter) -> some View {
         modifier(ToastHostModifier(center: center))
     }
 }

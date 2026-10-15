@@ -105,9 +105,11 @@ private struct NoticeBannerPreviews: View {
         VStack(spacing: Space.md) {
             NoticeBanner(tone: .info, title: "New plan ready", message: "Week 3 starts Monday.")
             NoticeBanner(
-                tone: .warning, title: "Notifications are off",
+                tone: .warning,
+                title: "Notifications are off",
                 message: "Turn them on to hear when rest is over.",
-                action: .init("Open Settings") {}, onDismiss: {}
+                action: .init("Open Settings") {},
+                onDismiss: {}
             )
             NoticeBanner(tone: .danger, title: "Couldn't sync", onDismiss: {})
             NoticeBanner(tone: .success, symbol: "trophy.fill", title: "New personal record")

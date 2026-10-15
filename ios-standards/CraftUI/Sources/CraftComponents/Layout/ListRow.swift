@@ -5,7 +5,7 @@ import SwiftUI
 /// `trailing` slot. A row with an `action` is one `Button` with a press highlight and, when it has no
 /// trailing slot, a chevron. A row without an action reads as one VoiceOver element.
 ///
-///     ListRow("Units", value: "kg", action: openUnits) { Image(systemName: "scalemass") }
+///     ListRow("Units", value: "kg", action: openUnits) { Image(systemName: "scalemass").accessibilityHidden(true) }
 ///
 /// For a trailing slot with no leading one, pass `leading: { EmptyView() }`. Interactive trailing
 /// controls (a `Toggle`) belong in rows without an action, so buttons never nest.
@@ -22,8 +22,11 @@ public struct ListRow<Leading: View, Trailing: View>: View {
 
     /// A static row with leading and trailing slots.
     public init(
-        _ title: String, subtitle: String? = nil, value: String? = nil,
-        @ViewBuilder leading: () -> Leading, @ViewBuilder trailing: () -> Trailing
+        _ title: String,
+        subtitle: String? = nil,
+        value: String? = nil,
+        @ViewBuilder leading: () -> Leading,
+        @ViewBuilder trailing: () -> Trailing
     ) {
         self.title = title
         self.subtitle = subtitle
@@ -35,8 +38,12 @@ public struct ListRow<Leading: View, Trailing: View>: View {
 
     /// A tappable row with leading and trailing slots.
     public init(
-        _ title: String, subtitle: String? = nil, value: String? = nil, action: @escaping () -> Void,
-        @ViewBuilder leading: () -> Leading, @ViewBuilder trailing: () -> Trailing
+        _ title: String,
+        subtitle: String? = nil,
+        value: String? = nil,
+        action: @escaping () -> Void,
+        @ViewBuilder leading: () -> Leading,
+        @ViewBuilder trailing: () -> Trailing
     ) {
         self.title = title
         self.subtitle = subtitle
@@ -71,18 +78,7 @@ public struct ListRow<Leading: View, Trailing: View>: View {
                         leadingWidth = width
                     }
             }
-            VStack(alignment: .leading, spacing: Space.xxs) {
-                Text(title)
-                    .font(theme.font(.body))
-                    .foregroundStyle(theme.palette.textPrimary)
-                if let subtitle {
-                    Text(subtitle)
-                        .font(theme.font(.subheadline))
-                        .foregroundStyle(theme.palette.textSecondary)
-                }
-                if stacksValue, let value { valueText(value) }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            texts
             if !stacksValue, let value { valueText(value) }
             trailing
             if showsChevron {
@@ -99,6 +95,21 @@ public struct ListRow<Leading: View, Trailing: View>: View {
         .listSectionSeparator(leadingInset: separatorInset)
     }
 
+    private var texts: some View {
+        VStack(alignment: .leading, spacing: Space.xxs) {
+            Text(title)
+                .font(theme.font(.body))
+                .foregroundStyle(theme.palette.textPrimary)
+            if let subtitle {
+                Text(subtitle)
+                    .font(theme.font(.subheadline))
+                    .foregroundStyle(theme.palette.textSecondary)
+            }
+            if stacksValue, let value { valueText(value) }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
     private func valueText(_ value: String) -> some View {
         Text(value)
             .font(theme.font(.body))
@@ -107,32 +118,39 @@ public struct ListRow<Leading: View, Trailing: View>: View {
     }
 }
 
-public extension ListRow where Trailing == EmptyView {
+extension ListRow where Trailing == EmptyView {
     /// A static row with a leading slot.
-    init(_ title: String, subtitle: String? = nil, value: String? = nil, @ViewBuilder leading: () -> Leading) {
+    public init(_ title: String, subtitle: String? = nil, value: String? = nil, @ViewBuilder leading: () -> Leading) {
         self.init(title, subtitle: subtitle, value: value, leading: leading, trailing: { EmptyView() })
     }
 
     /// A tappable row with a leading slot and a chevron.
-    init(
-        _ title: String, subtitle: String? = nil, value: String? = nil, action: @escaping () -> Void,
+    public init(
+        _ title: String,
+        subtitle: String? = nil,
+        value: String? = nil,
+        action: @escaping () -> Void,
         @ViewBuilder leading: () -> Leading
     ) {
         self.init(title, subtitle: subtitle, value: value, action: action, leading: leading, trailing: { EmptyView() })
     }
 }
 
-public extension ListRow where Leading == EmptyView, Trailing == EmptyView {
+extension ListRow where Leading == EmptyView, Trailing == EmptyView {
     /// A static text row.
-    init(_ title: String, subtitle: String? = nil, value: String? = nil) {
+    public init(_ title: String, subtitle: String? = nil, value: String? = nil) {
         self.init(title, subtitle: subtitle, value: value, leading: { EmptyView() }, trailing: { EmptyView() })
     }
 
     /// A tappable text row with a chevron.
-    init(_ title: String, subtitle: String? = nil, value: String? = nil, action: @escaping () -> Void) {
+    public init(_ title: String, subtitle: String? = nil, value: String? = nil, action: @escaping () -> Void) {
         self.init(
-            title, subtitle: subtitle, value: value, action: action,
-            leading: { EmptyView() }, trailing: { EmptyView() }
+            title,
+            subtitle: subtitle,
+            value: value,
+            action: action,
+            leading: { EmptyView() },
+            trailing: { EmptyView() }
         )
     }
 }
@@ -154,34 +172,39 @@ private struct ListRowPressLook<Label: View>: View {
         label
             .foregroundStyle(theme.palette.textPrimary)
             .background(isPressed ? theme.palette.surfaceRaised : Color.clear)
-            .animation((isPressed ? Motion.instant : Motion.exit).animation(reduceMotion: reduceMotion), value: isPressed)
+            .animation(
+                (isPressed ? Motion.instant : Motion.exit).animation(reduceMotion: reduceMotion),
+                value: isPressed
+            )
     }
 }
 
 #if DEBUG
-private struct ListRowPreview: View {
-    @State private var isOn = true
+    private struct ListRowPreview: View {
+        @State private var isOn = true
 
-    var body: some View {
-        ScrollView {
-            ListSection("Rows") {
-                ListRow("Static title")
-                ListRow("With subtitle", subtitle: "A longer secondary line that wraps", value: "Value")
-                ListRow("Tappable", action: {})
-                ListRow("Leading icon", value: "kg", action: {}) { Image(systemName: "scalemass") }
-                ListRow("Toggle trailing") {
-                    EmptyView()
-                } trailing: {
-                    Toggle("Toggle trailing", isOn: $isOn).labelsHidden()
+        var body: some View {
+            ScrollView {
+                ListSection("Rows") {
+                    ListRow("Static title")
+                    ListRow("With subtitle", subtitle: "A longer secondary line that wraps", value: "Value")
+                    ListRow("Tappable", action: {})
+                    ListRow("Leading icon", value: "kg", action: {}) {
+                        Image(systemName: "scalemass").accessibilityHidden(true)
+                    }
+                    ListRow("Toggle trailing") {
+                        EmptyView()
+                    } trailing: {
+                        Toggle("Toggle trailing", isOn: $isOn).labelsHidden()
+                    }
                 }
+                .padding(Space.gutter)
             }
-            .padding(Space.gutter)
+            .background(Theme.system.palette.canvas)
         }
-        .background(Theme.system.palette.canvas)
     }
-}
 
-#Preview("Light") { ListRowPreview() }
-#Preview("Dark") { ListRowPreview().preferredColorScheme(.dark) }
-#Preview("AX3") { ListRowPreview().dynamicTypeSize(.accessibility3) }
+    #Preview("Light") { ListRowPreview() }
+    #Preview("Dark") { ListRowPreview().preferredColorScheme(.dark) }
+    #Preview("AX3") { ListRowPreview().dynamicTypeSize(.accessibility3) }
 #endif

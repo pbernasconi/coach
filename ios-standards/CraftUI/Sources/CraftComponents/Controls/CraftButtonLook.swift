@@ -1,9 +1,9 @@
 import CraftTokens
 import SwiftUI
 
-public extension CraftButtonStyle {
+extension CraftButtonStyle {
     /// The visual weight of a button. Pick one prominent action per screen.
-    enum Variant: Sendable, Equatable, CaseIterable {
+    public enum Variant: Sendable, Equatable, CaseIterable {
         /// The accent fill: the one main action.
         case primary
         /// A neutral raised fill: a secondary action next to a primary.
@@ -19,7 +19,7 @@ public extension CraftButtonStyle {
     }
 
     /// The height class of a button.
-    enum Size: Sendable, Equatable, CaseIterable {
+    public enum Size: Sendable, Equatable, CaseIterable {
         /// `Size.buttonHeight` (50pt): the default for screen actions.
         case regular
         /// `Size.buttonHeightCompact` (36pt), padded to a 44pt target: inline and toolbar actions.
@@ -52,7 +52,7 @@ public extension CraftButtonStyle {
     }
 
     /// How wide a button is: its label's width, or the full width it is offered.
-    enum Width: Sendable, Equatable, CaseIterable {
+    public enum Width: Sendable, Equatable, CaseIterable {
         case hug, full
     }
 }

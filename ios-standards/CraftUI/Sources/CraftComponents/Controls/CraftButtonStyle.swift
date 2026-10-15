@@ -58,9 +58,9 @@ public struct CraftButtonStyle: ButtonStyle {
     }
 }
 
-public extension ButtonStyle where Self == CraftButtonStyle {
+extension ButtonStyle where Self == CraftButtonStyle {
     /// The CraftUI button look. See `CraftButtonStyle`.
-    static func craft(
+    public static func craft(
         _ variant: CraftButtonStyle.Variant = .primary,
         size: CraftButtonStyle.Size = .regular,
         width: CraftButtonStyle.Width = .hug,
@@ -94,35 +94,38 @@ private struct ButtonSurface: ViewModifier {
 }
 
 #if DEBUG
-private struct CraftButtonGallery: View {
-    @Environment(\.craftTheme) private var theme
+    private struct CraftButtonGallery: View {
+        @Environment(\.craftTheme) private var theme
 
-    var body: some View {
-        ScrollView {
-            VStack(spacing: Space.md) {
-                Button("Primary") {}.buttonStyle(.craft(.primary, width: .full))
-                Button("Secondary") {}.buttonStyle(.craft(.secondary, width: .full))
-                Button("Tonal") {}.buttonStyle(.craft(.tonal, width: .full))
-                Button("Glass") {}.buttonStyle(.craft(.glass, width: .full))
-                Button("Delete set") {}.buttonStyle(.craft(.destructive, width: .full))
-                Button("Plain") {}.buttonStyle(.craft(.plain))
-                Button("Saving") {}.buttonStyle(.craft(.primary, width: .full, isLoading: true))
-                Button("Disabled") {}.buttonStyle(.craft(.primary, width: .full)).disabled(true)
-                HStack(spacing: Space.sm) {
-                    Button("Compact") {}.buttonStyle(.craft(.secondary, size: .compact))
-                    Button("Glass") {}.buttonStyle(.craft(.glass, size: .compact))
-                    Button {} label: { Image(systemName: "plus") }
+        var body: some View {
+            ScrollView {
+                VStack(spacing: Space.md) {
+                    Button("Primary") {}.buttonStyle(.craft(.primary, width: .full))
+                    Button("Secondary") {}.buttonStyle(.craft(.secondary, width: .full))
+                    Button("Tonal") {}.buttonStyle(.craft(.tonal, width: .full))
+                    Button("Glass") {}.buttonStyle(.craft(.glass, width: .full))
+                    Button("Delete set") {}.buttonStyle(.craft(.destructive, width: .full))
+                    Button("Plain") {}.buttonStyle(.craft(.plain))
+                    Button("Saving") {}.buttonStyle(.craft(.primary, width: .full, isLoading: true))
+                    Button("Disabled") {}.buttonStyle(.craft(.primary, width: .full)).disabled(true)
+                    HStack(spacing: Space.sm) {
+                        Button("Compact") {}.buttonStyle(.craft(.secondary, size: .compact))
+                        Button("Glass") {}.buttonStyle(.craft(.glass, size: .compact))
+                        Button {
+                        } label: {
+                            Image(systemName: "plus")
+                        }
                         .buttonStyle(.craft(.primary, size: .icon))
                         .accessibilityLabel("Add")
+                    }
                 }
+                .padding(Space.gutter)
             }
-            .padding(Space.gutter)
+            .background(theme.palette.canvas)
         }
-        .background(theme.palette.canvas)
     }
-}
 
-#Preview("Button") { CraftButtonGallery() }
-#Preview("Button · dark, Lift") { CraftButtonGallery().craftTheme(.lift).preferredColorScheme(.dark) }
-#Preview("Button · AX3") { CraftButtonGallery().dynamicTypeSize(.accessibility3) }
+    #Preview("Button") { CraftButtonGallery() }
+    #Preview("Button · dark, Lift") { CraftButtonGallery().craftTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Button · AX3") { CraftButtonGallery().dynamicTypeSize(.accessibility3) }
 #endif

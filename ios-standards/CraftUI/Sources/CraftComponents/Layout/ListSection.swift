@@ -48,16 +48,16 @@ public struct ListSection<Header: View, Content: View, Footer: View>: View {
     }
 }
 
-public extension ListSection where Header == Text?, Footer == Text? {
+extension ListSection where Header == Text?, Footer == Text? {
     /// A section with an optional plain title and footer note.
-    init(_ title: String? = nil, footer: String? = nil, @ViewBuilder content: () -> Content) {
+    public init(_ title: String? = nil, footer: String? = nil, @ViewBuilder content: () -> Content) {
         self.init(content: content, header: { title.map { Text($0) } }, footer: { footer.map { Text($0) } })
     }
 }
 
-public extension ListSection where Footer == EmptyView {
+extension ListSection where Footer == EmptyView {
     /// A section with a custom header slot and no footer.
-    init(@ViewBuilder content: () -> Content, @ViewBuilder header: () -> Header) {
+    public init(@ViewBuilder content: () -> Content, @ViewBuilder header: () -> Header) {
         self.init(content: content, header: header, footer: { EmptyView() })
     }
 }
@@ -88,33 +88,33 @@ private struct ListSectionSeparator: ViewModifier {
 }
 
 #if DEBUG
-private struct ListSectionPreview: View {
-    var body: some View {
-        ScrollView {
-            VStack(spacing: Space.xxl) {
-                ListSection("Account", footer: "Changes sync to all your devices.") {
-                    ListRow("Profile", subtitle: "Name, photo", action: {}) {
-                        Image(systemName: "person.crop.circle")
+    private struct ListSectionPreview: View {
+        var body: some View {
+            ScrollView {
+                VStack(spacing: Space.xxl) {
+                    ListSection("Account", footer: "Changes sync to all your devices.") {
+                        ListRow("Profile", subtitle: "Name, photo", action: {}) {
+                            Image(systemName: "person.crop.circle").accessibilityHidden(true)
+                        }
+                        ListRow("Units", value: "kg", action: {}) {
+                            Image(systemName: "scalemass").accessibilityHidden(true)
+                        }
+                        ListRow("Version", value: "1.0")
                     }
-                    ListRow("Units", value: "kg", action: {}) {
-                        Image(systemName: "scalemass")
+                    ListSection {
+                        ListRow("No header", action: {})
+                        ListRow("Second row", action: {})
+                    } header: {
+                        Label("Custom header", systemImage: "gear")
                     }
-                    ListRow("Version", value: "1.0")
                 }
-                ListSection {
-                    ListRow("No header", action: {})
-                    ListRow("Second row", action: {})
-                } header: {
-                    Label("Custom header", systemImage: "gear")
-                }
+                .padding(Space.gutter)
             }
-            .padding(Space.gutter)
+            .background(Theme.system.palette.canvas)
         }
-        .background(Theme.system.palette.canvas)
     }
-}
 
-#Preview("Light") { ListSectionPreview() }
-#Preview("Dark") { ListSectionPreview().preferredColorScheme(.dark) }
-#Preview("AX3") { ListSectionPreview().dynamicTypeSize(.accessibility3) }
+    #Preview("Light") { ListSectionPreview() }
+    #Preview("Dark") { ListSectionPreview().preferredColorScheme(.dark) }
+    #Preview("AX3") { ListSectionPreview().dynamicTypeSize(.accessibility3) }
 #endif

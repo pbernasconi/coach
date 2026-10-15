@@ -41,24 +41,24 @@ public struct KeyValueList: View {
 }
 
 #if DEBUG
-private struct KeyValueListPreview: View {
-    private let items = [
-        KeyValueItem("Duration", value: "1 h 12 min"),
-        KeyValueItem("Sets", value: "18"),
-        KeyValueItem("Volume", value: "4,200 kg"),
-        KeyValueItem("Personal records", value: "2", valueTone: .success),
-    ]
+    private struct KeyValueListPreview: View {
+        private let items = [
+            KeyValueItem("Duration", value: "1 h 12 min"),
+            KeyValueItem("Sets", value: "18"),
+            KeyValueItem("Volume", value: "4,200 kg"),
+            KeyValueItem("Personal records", value: "2", valueTone: .success),
+        ]
 
-    var body: some View {
-        ScrollView {
-            KeyValueList("Summary", items: items, footer: "Volume counts working sets only.")
-                .padding(Space.gutter)
+        var body: some View {
+            ScrollView {
+                KeyValueList("Summary", items: items, footer: "Volume counts working sets only.")
+                    .padding(Space.gutter)
+            }
+            .background(Theme.system.palette.canvas)
         }
-        .background(Theme.system.palette.canvas)
     }
-}
 
-#Preview("Light") { KeyValueListPreview() }
-#Preview("Dark") { KeyValueListPreview().preferredColorScheme(.dark) }
-#Preview("AX3") { KeyValueListPreview().dynamicTypeSize(.accessibility3) }
+    #Preview("Light") { KeyValueListPreview() }
+    #Preview("Dark") { KeyValueListPreview().preferredColorScheme(.dark) }
+    #Preview("AX3") { KeyValueListPreview().dynamicTypeSize(.accessibility3) }
 #endif

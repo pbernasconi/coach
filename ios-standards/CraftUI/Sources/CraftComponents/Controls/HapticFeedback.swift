@@ -44,17 +44,18 @@ public enum HapticFeedback: Sendable, Equatable, CaseIterable {
     public static func toggle(_ isOn: Bool) -> HapticFeedback { isOn ? .toggleOn : .toggleOff }
 }
 
-public extension View {
+extension View {
     /// Plays `feedback` each time `trigger` changes. Pass `nil` to stay silent (a caller turned haptics off).
-    func craftFeedback<Trigger: Equatable>(_ feedback: HapticFeedback?, trigger: Trigger) -> some View {
+    public func craftFeedback<Trigger: Equatable>(_ feedback: HapticFeedback?, trigger: Trigger) -> some View {
         sensoryFeedback(trigger: trigger) { _, _ in feedback?.sensoryFeedback }
     }
 
     /// Plays the feedback `feedback` returns for a change of `trigger` from old to new, or nothing for `nil`.
     ///
     ///     .craftFeedback(trigger: value) { old, new in new > old ? .increase : .decrease }
-    func craftFeedback<Trigger: Equatable>(
-        trigger: Trigger, _ feedback: @escaping (Trigger, Trigger) -> HapticFeedback?
+    public func craftFeedback<Trigger: Equatable>(
+        trigger: Trigger,
+        _ feedback: @escaping (Trigger, Trigger) -> HapticFeedback?
     ) -> some View {
         sensoryFeedback(trigger: trigger) { old, new in feedback(old, new)?.sensoryFeedback }
     }
