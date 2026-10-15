@@ -1,0 +1,90 @@
+---
+name: iOS
+
+"on":
+  push:
+    branches: [main, ios-standards]
+    paths:
+      - "ios-standards/**"
+      - "lift/**"
+      - ".github/workflows/ios.yml"
+  pull_request:
+    paths:
+      - "ios-standards/**"
+      - "lift/**"
+      - ".github/workflows/ios.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+# Actions are pinned by commit SHA (TOOL-3).
+jobs:
+  lint:
+    # The full static suite on Linux: guard, conformance, swift-format, SwiftLint, Linux logic tests and the
+    # non-Swift linters. Fast signal before the macOS build.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+        with:
+          persist-credentials: false
+      - uses: swift-actions/setup-swift@7ca6abe6b3b0e8b5421b88be48feee39cbf52c6a  # v2.4.0
+        with:
+          swift-version: "6.2"
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
+        with:
+          node-version: "22"
+      - name: Cache pinned lint tools
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: ios-standards/.tools
+          key: lint-tools-${{ runner.os }}-${{ hashFiles('ios-standards/scripts/tools.lock') }}
+      - name: Install pinned lint tools
+        run: ios-standards/scripts/install-tools.sh --swiftlint
+      - name: Lint
+        run: ios-standards/scripts/lint-all.sh
+
+  kobo-macos:
+    # Compiles every Kobo view with the real SwiftUI SDK and runs all tests, including the SwiftUI ones.
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+        with:
+          persist-credentials: false
+      - name: Toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+      - name: Build and test for macOS
+        working-directory: ios-standards/Kobo
+        run: swift test 2>&1 | tee ../../kobo-macos.log
+      - name: Build for the iOS simulator (warnings are errors)
+        working-directory: ios-standards/Kobo
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -scheme Kobo-Package \
+            -destination "generic/platform=iOS Simulator" \
+            -skipPackagePluginValidation \
+            2>&1 | tee ../../kobo-ios.log | grep -E "error:|warning:|BUILD (SUCCEEDED|FAILED)" || true
+          grep -q "BUILD SUCCEEDED" ../../kobo-ios.log
+
+  liftkit-macos:
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+        with:
+          persist-credentials: false
+      - name: Test LiftKit
+        working-directory: lift/ios/Packages/LiftKit
+        run: swift test
