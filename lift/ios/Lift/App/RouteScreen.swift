@@ -32,7 +32,9 @@ struct RouteScreen: View {
                     exercises: dependencies.exercises,
                     history: dependencies.history,
                     catalog: dependencies.catalog,
-                    calendar: dependencies.calendar
+                    now: dependencies.now,
+                    calendar: dependencies.calendar,
+                    unit: dependencies.info.unit
                 )
             )
             .id(route)
@@ -50,7 +52,11 @@ struct RouteScreen: View {
                     catalogID: catalogID,
                     catalog: dependencies.catalog,
                     exercises: dependencies.exercises,
-                    router: router
+                    router: router,
+                    history: dependencies.history,
+                    now: dependencies.now,
+                    calendar: dependencies.calendar,
+                    unit: dependencies.info.unit
                 )
             )
             .id(route)

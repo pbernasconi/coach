@@ -28,6 +28,12 @@
             animation: MediaPreviewData.still,
             library: .present(.fixture(1))
         )
+        static let fixtureInLibraryWithProgress = CatalogDetailState(
+            entry: .loaded(item),
+            animation: MediaPreviewData.still,
+            library: .present(.fixture(1)),
+            progress: .fixtureWeekly
+        )
         static let fixtureAdding = CatalogDetailState(entry: .loaded(item), animation: .loading, library: .adding)
         static let fixtureMediaFailed = CatalogDetailState(entry: .loaded(item), animation: .failed, library: .absent)
         static let fixtureLoading = CatalogDetailState(entry: .loading)

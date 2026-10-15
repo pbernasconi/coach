@@ -14,6 +14,7 @@ struct CatalogDetailScreen: View {
     var body: some View {
         CatalogDetailContent(state: viewModel.state, send: { viewModel.send($0) })
             .task { await viewModel.run() }
+            .task(id: viewModel.libraryExerciseID) { await viewModel.observeProgress() }
             .onChange(of: viewModel.state.toast) { _, toast in show(toast) }
             .toastHost(toasts)
     }

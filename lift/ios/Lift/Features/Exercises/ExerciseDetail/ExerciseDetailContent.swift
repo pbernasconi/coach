@@ -40,8 +40,8 @@ struct ExerciseDetailContent: View {
     }
 }
 
-/// The loaded exercise, top to bottom: the animation beside its muscles and equipment, recent history in compact rows,
-/// then how to do it (with the technique videos link in its header), which is the longest part. The name is the bar
+/// The loaded exercise, top to bottom: the animation beside its muscles and equipment, the progress chart (once there
+/// is a session to chart), recent history in compact rows, then how to do it (with the technique videos link in its header), which is the longest part. The name is the bar
 /// title.
 private struct ExerciseDetailBody: View {
     let item: ExerciseDetailItem
@@ -51,6 +51,11 @@ private struct ExerciseDetailBody: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Space.section) {
             ExerciseMediaView(item: item, media: state.media, animation: state.animation)
+            ExerciseProgressSection(
+                progress: state.progress,
+                rangeChanged: { send(.progressRangeChanged($0)) },
+                selectionChanged: { send(.progressSelectionChanged($0)) }
+            )
             ExerciseHistorySection(history: state.history)
                 .listRowDensity(.compact)
             if let guide = item.guide {
