@@ -37,7 +37,7 @@ struct StoreWriter: Sendable {
             let stamp = now()
             var after = before
             try apply(&after, stamp)
-            after.updatedAt = stamp
+            after.updatedAt = Self.stamp(after: before.updatedAt, now: stamp)
             try after.update(db)
             try appendOutbox(after, op: op, at: stamp, db)
             return (before, after)
@@ -52,6 +52,19 @@ struct StoreWriter: Sendable {
     /// Clears the tombstone on a soft-deleted row (the Undo of a remove).
     func restore<Record: SyncedRecord>(_ type: Record.Type, id: UUID) async throws {
         _ = try await change(type, id: id, includeDeleted: true) { row, _ in row.deletedAt = nil }
+    }
+
+    /// The `updatedAt` for an edit of a row last stamped `previous`: now, or one millisecond past `previous` when
+    /// this device's clock is not ahead of it (a version pulled from a device whose clock runs ahead, or two edits
+    /// in one millisecond). An edit made after seeing a version then always wins over it under last-writer-wins
+    /// (SYNC.md); without this the server kept the older-looking edit out and the devices disagreed for good.
+    static func stamp(after previous: Date, now: Date) -> Date {
+        // Stored stamps are whole milliseconds; `now` is finer, and storing it rounds or truncates (by platform).
+        let last = Int64((previous.timeIntervalSince1970 * 1000).rounded())
+        let current = Int64((now.timeIntervalSince1970 * 1000 + 1e-6).rounded(.down))
+        if current > last { return now }
+        // A quarter past `last + 1`, so storing it gives exactly `last + 1` whether the formatter rounds or truncates.
+        return Date(timeIntervalSince1970: (Double(last + 1) + 0.25) / 1000)
     }
 
     /// Appends the outbox entry for `record` inside the caller's transaction.

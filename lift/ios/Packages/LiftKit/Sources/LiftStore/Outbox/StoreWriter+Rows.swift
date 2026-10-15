@@ -17,7 +17,8 @@ extension StoreWriter {
         try appendOutbox(record, op: .insert, at: stamp, db)
     }
 
-    /// Stamps `updatedAt`, saves `record` and appends its entry. Returns the saved row.
+    /// Stamps `updatedAt` (past the row's current stamp, see `stamp(after:now:)`), saves `record` and appends its
+    /// entry. `record` carries the row's current `updatedAt`. Returns the saved row.
     @discardableResult
     func updateRow<Record: SyncedRecord>(
         _ record: Record,
@@ -26,7 +27,7 @@ extension StoreWriter {
         _ db: Database
     ) throws -> Record {
         var saved = record
-        saved.updatedAt = stamp
+        saved.updatedAt = Self.stamp(after: record.updatedAt, now: stamp)
         try saved.update(db)
         try appendOutbox(saved, op: op, at: stamp, db)
         return saved
