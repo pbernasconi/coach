@@ -48,7 +48,13 @@ public struct KoboTextArea: View {
         self.init(copy: copy, text: text, error: error, lines: lines, characterLimit: characterLimit)
     }
 
-    private init(copy: FieldCopy, text: Binding<String>, error: FieldError, lines: ClosedRange<Int>, characterLimit: Int?) {
+    private init(
+        copy: FieldCopy,
+        text: Binding<String>,
+        error: FieldError,
+        lines: ClosedRange<Int>,
+        characterLimit: Int?
+    ) {
         label = copy.label
         prompt = copy.prompt
         helper = copy.helper

@@ -12,7 +12,8 @@ extension View {
     /// - Parameters:
     ///   - what: names the value ("routing number") for the confirmation and the VoiceOver action.
     ///   - showsGlyph: puts a small copy glyph after the value, so a bare value shows that it copies.
-    public func tapToCopy(_ value: String?, what: LocalizedStringResource? = nil, showsGlyph: Bool = false) -> some View {
+    public func tapToCopy(_ value: String?, what: LocalizedStringResource? = nil, showsGlyph: Bool = false) -> some View
+    {
         modifier(TapToCopyModifier(value: value, what: what.map { String(localized: $0) }, showsGlyph: showsGlyph))
     }
 }
@@ -130,6 +131,7 @@ private struct TapToCopyLabel<Value: View>: View {
         Image(systemName: "checkmark.circle.fill")
             .font(.system(size: glyphSize))
             .foregroundStyle(theme.palette.success.ink)
+            .accessibilityHidden(true)
             .transition(Motion.pop(reduceMotion: reduceMotion))
     }
 }
@@ -137,7 +139,11 @@ private struct TapToCopyLabel<Value: View>: View {
 #if DEBUG
     #Preview("Tap to copy") {
         VStack(alignment: .leading, spacing: Space.lg) {
-            Text(verbatim: "JBSWY3DPEHPK3PXP").font(.body.monospaced()).tapToCopy("JBSWY3DPEHPK3PXP", what: "setup key", showsGlyph: true)
+            Text(verbatim: "JBSWY3DPEHPK3PXP").font(.body.monospaced()).tapToCopy(
+                "JBSWY3DPEHPK3PXP",
+                what: "setup key",
+                showsGlyph: true
+            )
             Text(verbatim: "121144269").tapToCopy("121144269", what: "member number")
         }
         .padding(Space.gutter)

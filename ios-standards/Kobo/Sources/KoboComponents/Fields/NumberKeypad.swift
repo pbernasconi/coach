@@ -42,7 +42,7 @@ struct NumberKeypad: View {
         switch key {
         case .digit(let digit): Text(verbatim: String(digit)).monospacedDigit()
         case .decimal: Text(verbatim: String(decimalSeparator))
-        case .delete: Image(systemName: "delete.left")
+        case .delete: Image(systemName: "delete.left").accessibilityHidden(true)
         }
     }
 

@@ -14,6 +14,24 @@ struct NumberEntryHero<Field: View>: View {
     let field: Field
 
     var body: some View {
+        VStack(spacing: 0) {
+            // A zero-height row that takes the column width: the digits never change it, so a number that overflows
+            // still reads the column, and the scale settles in one pass.
+            Color.clear
+                .frame(maxWidth: .infinity)
+                .frame(height: 0)
+                .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { availableWidth = $0 }
+                .accessibilityHidden(true)
+            line
+                .fixedSize()
+                .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { contentWidth = $0 }
+                .scaleEffect(scale)
+                .frame(width: contentWidth > 0 ? contentWidth * scale : nil)
+                .koboAnimation(.present, value: scale)
+        }
+    }
+
+    private var line: some View {
         HStack(alignment: .firstTextBaseline, spacing: Space.xs) {
             Text(verbatim: text.isEmpty ? "0" : text)
                 .font(theme.font(.display))
@@ -29,13 +47,7 @@ struct NumberEntryHero<Field: View>: View {
                     .accessibilityHidden(true)
             }
         }
-        .fixedSize()
         .koboAnimation(.defaultEffects, value: text)
-        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { contentWidth = $0 }
-        .scaleEffect(scale)
-        .koboAnimation(.present, value: scale)
-        .frame(maxWidth: .infinity)
-        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { availableWidth = $0 }
     }
 
     private var scale: CGFloat {

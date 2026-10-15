@@ -114,7 +114,12 @@ public struct DateField: View {
 
     /// The state: the edited one, or a fresh one over the caller's date before the first render settles.
     private var current: DateFieldText {
-        field ?? DateFieldText(value: selection.wrappedValue, pattern: DateFieldPattern(locale: locale), calendar: calendar)
+        field
+            ?? DateFieldText(
+                value: selection.wrappedValue,
+                pattern: DateFieldPattern(locale: locale),
+                calendar: calendar
+            )
     }
 
     private var textBinding: Binding<String> {
@@ -188,7 +193,13 @@ extension DateField {
         var body: some View {
             ScrollView {
                 VStack(spacing: Space.lg) {
-                    DateField("Start date", selection: $start, today: today, bounds: DateBounds(minDate: today), quickPicks: true)
+                    DateField(
+                        "Start date",
+                        selection: $start,
+                        today: today,
+                        bounds: DateBounds(minDate: today),
+                        quickPicks: true
+                    )
                     DateField("Birthday", selection: $birthday, today: today, bounds: DateBounds(maxDate: today))
                     DateField("In a sheet", selection: $start, today: today, showsCalendar: false)
                 }

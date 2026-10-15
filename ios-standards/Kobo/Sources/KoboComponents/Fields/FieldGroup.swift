@@ -36,7 +36,12 @@ public struct FieldGroup<Content: View>: View {
         error: FieldError = .none,
         @ViewBuilder content: () -> Content
     ) {
-        self.init(title: Text(verbatim: title), helper: helper.map { Text(verbatim: $0) }, error: error, content: content())
+        self.init(
+            title: Text(verbatim: title),
+            helper: helper.map { Text(verbatim: $0) },
+            error: error,
+            content: content()
+        )
     }
 
     /// An untitled stack of fields with the shared spacing.

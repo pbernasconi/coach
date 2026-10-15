@@ -53,8 +53,10 @@ nonisolated public struct CopyConfirmation: Sendable {
 extension EnvironmentValues {
     /// Where `tapToCopy`, `CopyButton` and `CopyableValue` write.
     @Entry public var pasteboardWriter: PasteboardWriter = .system()
-    /// How copies below confirm; `nil` announces the confirmation to VoiceOver instead.
-    @Entry public var copyConfirmation: CopyConfirmation?
+    // swiftlint:disable implicit_optional_initialization
+    /// How copies below confirm; `nil` announces the confirmation to VoiceOver instead. (`@Entry` needs the `= nil`.)
+    @Entry public var copyConfirmation: CopyConfirmation? = nil
+    // swiftlint:enable implicit_optional_initialization
 }
 
 extension View {

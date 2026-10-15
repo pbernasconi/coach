@@ -62,11 +62,25 @@ public struct SheetHeader: View {
         self.init(title: Text(verbatim: title), subtitle: subtitle, close: close, confirm: confirm)
     }
 
-    private init(title: Text, subtitle: Text?, close: SheetHeaderAction, confirm: SheetHeaderAction?) {
+    /// The one place every initialiser lands: ready-made texts. Internal so other families (Overlays) can reuse the
+    /// header with library-owned labels.
+    init(title: Text, subtitle: Text?, close: SheetHeaderAction, confirm: SheetHeaderAction?) {
         self.title = title
         self.subtitle = subtitle
         self.close = close
         self.confirm = confirm
+    }
+
+    /// A header from ready-made texts, with an optional library-owned close label ("Cancel"); "Close" when `nil`.
+    init(
+        title: Text,
+        subtitle: Text? = nil,
+        closeLabel: Text?,
+        onClose: @escaping () -> Void,
+        confirm: SheetHeaderAction? = nil
+    ) {
+        let close = SheetHeaderAction(label: closeLabel ?? Text("Close", bundle: .module), action: onClose)
+        self.init(title: title, subtitle: subtitle, close: close, confirm: confirm)
     }
 
     private static func closeAction(_ label: LocalizedStringKey?, onClose: @escaping () -> Void) -> SheetHeaderAction {
