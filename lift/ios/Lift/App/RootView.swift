@@ -34,9 +34,7 @@ private struct AppShell: View {
         Group {
             if isReady {
                 TabShell(tabs: tabs, selection: $tab) { tab in
-                    NavigationStack {
-                        TabRootScreen(tab: tab, dependencies: dependencies)
-                    }
+                    TabStack(tab: tab, dependencies: dependencies)
                 }
             } else {
                 LoadingState()
@@ -61,10 +59,27 @@ private struct AppShell: View {
     }
 }
 
+/// One tab's navigation stack: its root screen plus any pushed routes.
+private struct TabStack: View {
+    let tab: AppTab
+    let dependencies: AppDependencies
+    @State private var router = TabRouter()
+
+    var body: some View {
+        NavigationStack(path: $router.path) {
+            TabRootScreen(tab: tab, dependencies: dependencies, router: router)
+                .navigationDestination(for: AppRoute.self) { route in
+                    RouteScreen(route: route, dependencies: dependencies, router: router)
+                }
+        }
+    }
+}
+
 /// Builds the root screen of a tab and hands it the dependencies it needs (DI-1).
 private struct TabRootScreen: View {
     let tab: AppTab
     let dependencies: AppDependencies
+    let router: any Navigating
 
     var body: some View {
         switch tab {
