@@ -16,7 +16,9 @@ struct SessionDraft: Equatable {
     let isPast: Bool
     var exercises: [ExerciseDraft] = []
     var warmUpLines: [String] = []
-    var notes: [String] = []
+    /// Session-level notes with their line numbers, so free-text lines read later (`SessionNoteHeuristic`) slot in
+    /// where they were written.
+    var notes: [DraftNote] = []
     var current: Int?
     var round: RoundBlock?
     var supersetMode: Int?
@@ -64,11 +66,11 @@ struct SessionDraft: Equatable {
     }
 
     /// Adds a note to the current exercise, or to the session when there is none.
-    mutating func addNote(_ note: String) {
+    mutating func addNote(_ note: String, line: Int) {
         if let current {
             exercises[current].addNote(note)
         } else {
-            notes.append(note)
+            notes.append(DraftNote(line: line, text: note))
         }
     }
 
@@ -104,4 +106,10 @@ struct SessionDraft: Equatable {
         }
         return RoundBlock(group: group, members: Array(first..<exercises.count), keys: parsed.keys)
     }
+}
+
+/// A session note as read, with its line number.
+struct DraftNote: Equatable {
+    let line: Int
+    let text: String
 }

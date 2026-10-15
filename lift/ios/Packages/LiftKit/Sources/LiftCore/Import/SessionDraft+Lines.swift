@@ -16,7 +16,7 @@ extension SessionDraft {
             return addSet(set, done: done, line: line) ? nil : .setWithoutExercise
         }
         if NoteHintParser.mentionsNextTime(content) || current != nil {
-            addNote(content)
+            addNote(content, line: line)
             return nil
         }
         return .setWithoutExercise
@@ -35,7 +35,7 @@ extension SessionDraft {
             return nil
         }
         if NoteHintParser.mentionsNextTime(content) {
-            addNote(content)
+            addNote(content, line: line)
             return nil
         }
         if let current, exercises[current].sets.isEmpty, let equipment = EquipmentWord.equipment(for: content) {

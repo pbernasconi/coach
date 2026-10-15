@@ -87,6 +87,3 @@ already done around it. The build keeps going around these; nothing here blocks 
 - The Share extension cannot open Lift by itself: iOS refuses `NSExtensionContext.open` from share extensions, and
   Lift does not use the private workarounds. After Send it says "Open Lift"; Lift then opens the note in Import
   (it checks the shared inbox whenever it comes to the front). If a later iOS allows the open, it happens at once.
-- Importer: a free-text line under a workout title that is not followed by sets (for example "Felt strong") is
-  still read as an exercise header without sets and listed as an issue on the review step, not kept as the
-  session's note. Notes the importer does read (warm-up, next-time lines, set notes) are all kept now.
