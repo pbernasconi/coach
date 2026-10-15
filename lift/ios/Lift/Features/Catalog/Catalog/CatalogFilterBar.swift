@@ -12,7 +12,7 @@ struct CatalogFilterBar: View {
         VStack(alignment: .leading, spacing: Space.xs) {
             SearchField(
                 text: .action(state.query) { send(.queryChanged($0)) },
-                prompt: "Search by name, muscle or equipment"
+                prompt: "Search exercises"
             )
             FilterBar(activeCount: state.filter.activeCount, onFilters: { send(.filtersTapped) }) {
                 ForEach(CatalogFacet.allCases) { facet in
