@@ -6,8 +6,14 @@ nonisolated struct HistoryState: Equatable, Sendable {
     /// How many weeks back the history goes, this week included.
     static let weekCount = 8
 
+    /// Sessions or Progress.
+    var segment: HistorySegment = .sessions
     /// Past weeks with sessions, newest first.
     var weeks: Loadable<[HistoryWeek]> = .loading
+    /// Hard sets per muscle and the 8-week trend; `.empty` when no hard set was logged in those weeks.
+    var volume: Loadable<VolumeProgress> = .loading
+    /// The exercises behind a tapped muscle, shown in a sheet.
+    var muscleDetail: MuscleDetail?
 }
 
 /// One week of past sessions.

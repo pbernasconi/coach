@@ -8,37 +8,46 @@ final class HistoryViewModel {
     private(set) var state = HistoryState()
 
     private let sessions: any SessionRepository
+    private let exercises: any ExerciseRepository
     private let router: any Navigating
     private let importFlow: any ImportFlowPresenting
     private let now: @Sendable () -> Date
     private let days: DayCalendar
+    private let volume: HistoryVolumeBuilder
+    /// The latest sessions and library, which the Progress view is built from; `.loading` until the library is read.
+    @ObservationIgnored private var details: [Session] = []
+    @ObservationIgnored private var library: Loadable<[Exercise]> = .loading
+    /// The week the muscle bars show; nil for this week.
+    @ObservationIgnored private var selectedWeek: LocalDay?
 
-    /// Protocols only, no defaults, no work (SCR-3).
+    /// Protocols only, no defaults, no work (SCR-3). `segment` is the view to open on (`-open progress`).
     init(
         sessions: any SessionRepository,
+        exercises: any ExerciseRepository,
         router: any Navigating,
         importFlow: any ImportFlowPresenting,
         now: @escaping @Sendable () -> Date,
-        calendar: Calendar
+        calendar: Calendar,
+        segment: HistorySegment
     ) {
         self.sessions = sessions
+        self.exercises = exercises
         self.router = router
         self.importFlow = importFlow
         self.now = now
-        self.days = DayCalendar(calendar: calendar)
+        let days = DayCalendar(calendar: calendar)
+        self.days = days
+        self.volume = HistoryVolumeBuilder(days: days)
+        state.segment = segment
     }
 
-    /// Observes the last `HistoryState.weekCount` weeks through today; started by the Screen's `.task` (SCR-4).
-    /// A session counts as past once its day has gone by, or as soon as a set in it is logged.
+    /// Observes the last `HistoryState.weekCount` weeks through today and the exercise library; started by the
+    /// Screen's `.task` (SCR-4). A session counts as past once its day has gone by, or as soon as a set in it is
+    /// logged. The library tells which muscles each exercise works, for the Progress view.
     func run() async {
-        let today = days.day(of: now())
-        let first = days.weekStart(of: today).adding(days: -7 * (HistoryState.weekCount - 1))
-        for await details in sessions.observeSessions(from: first, through: today) {
-            let past = details.map { SessionSummary(detail: $0) }
-                .filter { $0.day < today || $0.hasLoggedSets }
-            let weeks = group(past)
-            state.weeks = weeks.isEmpty ? .empty : .loaded(weeks)
-        }
+        async let past: Void = observeSessions()
+        async let muscles: Void = observeLibrary()
+        _ = await (past, muscles)
     }
 
     @discardableResult
@@ -48,9 +57,56 @@ final class HistoryViewModel {
             router.open(.workout(id))
         case .importTapped:
             importFlow.presentImport()
+        case .segmentChanged(let segment):
+            state.segment = segment
+        case .volumeWeekSelected(let week):
+            selectedWeek = week
+            rebuildVolume()
+        case .volumeTrendSelectionChanged(let date):
+            guard let date, let week = volume.week(containing: date, today: today) else { return nil }
+            selectedWeek = week
+            rebuildVolume()
+        case .muscleTapped(let muscle):
+            state.muscleDetail = muscleDetail(muscle)
+        case .muscleDetailDismissed:
+            state.muscleDetail = nil
         }
         return nil
     }
+
+    private func observeSessions() async {
+        let today = today
+        let first = days.weekStart(of: today).adding(days: -7 * (HistoryState.weekCount - 1))
+        for await details in sessions.observeSessions(from: first, through: today) {
+            let past = details.map { SessionSummary(detail: $0) }
+                .filter { $0.day < today || $0.hasLoggedSets }
+            let weeks = group(past)
+            state.weeks = weeks.isEmpty ? .empty : .loaded(weeks)
+            self.details = details.map(\.domain)
+            rebuildVolume()
+        }
+    }
+
+    private func observeLibrary() async {
+        for await library in exercises.observeExercises() {
+            self.library = .loaded(library)
+            rebuildVolume()
+        }
+    }
+
+    /// The Progress view and any open muscle sheet, from the latest sessions and library.
+    private func rebuildVolume() {
+        guard case .loaded(let library) = library else { return }
+        state.volume = volume.progress(sessions: details, library: library, selected: selectedWeek, today: today)
+        if let open = state.muscleDetail { state.muscleDetail = muscleDetail(open.id) }
+    }
+
+    private func muscleDetail(_ muscle: Muscle) -> MuscleDetail? {
+        guard case .loaded(let progress) = state.volume, case .loaded(let library) = library else { return nil }
+        return volume.detail(for: muscle, week: progress.week.id, sessions: details, library: library, today: today)
+    }
+
+    private var today: LocalDay { days.day(of: now()) }
 
     /// Groups sessions (oldest first, as the repository returns them) into weeks, newest week and session first.
     private func group(_ past: [SessionSummary]) -> [HistoryWeek] {
