@@ -10,7 +10,7 @@
 set -euo pipefail
 APP="$1"
 OUT="$2"
-SCREENS="${SCREENS:-week:-tab,week workout:-open,workout history:-tab,history import:-tab,history,-open,import exercises:-tab,exercises exercise:-tab,exercises,-open,exercise catalog:-tab,exercises,-open,catalog settings:-tab,settings}"
+SCREENS="${SCREENS:-week:-tab,week workout:-open,workout history:-tab,history import:-tab,history,-open,import exercises:-tab,exercises exercise:-tab,exercises,-open,exercise catalog:-tab,exercises,-open,catalog templates:-tab,exercises,-open,templates template:-tab,exercises,-open,template summary:-tab,week,-open,summary settings:-tab,settings}"
 SETTLE_FRAMES="${SETTLE_FRAMES:-2}"
 SETTLE_MAX="${SETTLE_MAX:-6}"
 MIN_BYTES="${MIN_BYTES:-120000}"

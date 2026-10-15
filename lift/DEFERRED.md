@@ -53,6 +53,11 @@ already done around it. The build keeps going around these; nothing here blocks 
 - **Tabs:** Week, History, Exercises, Settings.
 - **Units:** kg by default; lb available in Settings.
 - **Plates and bar:** made-up defaults until you list your gym's plates and bars.
+- **Planning:** fixed day templates (such as Upper A and Lower A), each an ordered list of exercises with sets, a
+  rep target or range, an optional load and rest. Templates live on the Exercises tab (next to All exercises); Week
+  plans a day from one, changes a planned day to another, or copies this week's template days to next week. A
+  session planned from a template starts at the last session's load, plus one increment once every set hit the
+  top of the range. No multi-week program (periodisation) yet.
 
 ## Smaller gaps (no input needed; noted so nothing is lost)
 
@@ -62,11 +67,3 @@ already done around it. The build keeps going around these; nothing here blocks 
 - Importer: a free-text line under a workout title that is not followed by sets (for example "Felt strong") is
   still read as an exercise header without sets and listed as an issue on the review step, not kept as the
   session's note. Notes the importer does read (warm-up, next-time lines, set notes) are all kept now.
-
-## Product decisions to make
-
-- **"Change workout" in the lift sheet.** Left out for now: swapping only the title would leave the old
-  exercises in place. A real swap needs workout templates (which exercises a plan day holds) so the session's
-  exercises can be replaced and undone. Tell me how you plan workouts (fixed A/B days? a program?) and I'll
-  build templates.
-- **"Add workout" on a day.** Waits on the same templates.

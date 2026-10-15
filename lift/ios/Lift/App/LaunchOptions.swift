@@ -11,6 +11,9 @@ import LiftCore
 ///     -open catalog                           with -demo: pushes the exercise catalog browse on Exercises
 ///     -open import                            with -demo: opens Import from Notes over History with a made-up
 ///                                             note already read, on the review step
+///     -open templates                         with -demo: pushes the templates list on Exercises
+///     -open template                          with -demo: pushes the first template's editor on Exercises
+///     -open summary                           with -demo: pushes the latest logged session's summary on Week
 nonisolated struct LaunchOptions: Equatable, Sendable {
     enum Appearance: String, Equatable, Sendable {
         case dark
@@ -24,12 +27,15 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
         case catalog
         /// Import from Notes: a modal page over History rather than a pushed route.
         case importNotes = "import"
+        case templates
+        case template
+        case summary
 
         /// The tab whose stack the screen is pushed on.
         var tab: AppTab {
             switch self {
-            case .workout: .week
-            case .exercise, .catalog: .exercises
+            case .workout, .summary: .week
+            case .exercise, .catalog, .templates, .template: .exercises
             case .importNotes: .history
             }
         }
@@ -59,12 +65,15 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
     }
 
     /// The route `opening.tab` starts on in demo mode: the given session for `-open workout`, the Back squat detail
-    /// for `-open exercise`, the catalog browse for `-open catalog`. Nil without demo data, so a real launch never
-    /// opens a screen by itself.
-    func initialRoute(upcomingSessionID: UUID?) -> AppRoute? {
+    /// for `-open exercise`, the catalog browse for `-open catalog`, the templates, the given template's editor, or the
+    /// given logged session's summary. Nil without demo data, so a real launch never opens a screen by itself.
+    func initialRoute(upcomingSessionID: UUID?, templateID: UUID? = nil, loggedSessionID: UUID? = nil) -> AppRoute? {
         guard isDemo, let opening else { return nil }
         switch opening {
         case .workout: return upcomingSessionID.map(AppRoute.workout)
+        case .templates: return .templates
+        case .template: return templateID.map(AppRoute.template)
+        case .summary: return loggedSessionID.map(AppRoute.workoutSummary)
         case .exercise: return .exercise(ExerciseLibrary.seedID(1))
         case .catalog: return .catalog
         case .importNotes: return nil  // a modal page, opened through `opensImportSample`

@@ -1,5 +1,6 @@
 import Foundation
 import LiftCore
+import LiftTesting
 import Testing
 
 @testable import Lift
@@ -73,5 +74,21 @@ import Testing
         let id = UUID(uuid: (0, 0, 0, 0, 0, 0, 0x40, 0, 0x80, 0, 0, 0, 0, 0, 0, 7))
         #expect(LaunchOptions(opening: .workout).initialRoute(upcomingSessionID: id) == nil)
         #expect(LaunchOptions(isDemo: true).initialRoute(upcomingSessionID: id) == nil)
+    }
+
+    @Test func planningOpeningsPushTheirScreens() {
+        let templateID = IDSequence.id(1, prefix: 0xD1)
+        let sessionID = IDSequence.id(1, prefix: 0xA0)
+        #expect(
+            LaunchOptions(arguments: ["-demo", "-open", "templates"]).initialRoute(upcomingSessionID: nil) == .templates
+        )
+        let template = LaunchOptions(arguments: ["-demo", "-open", "template"])
+        #expect(template.initialRoute(upcomingSessionID: nil, templateID: templateID) == .template(templateID))
+        let summary = LaunchOptions(arguments: ["-demo", "-open", "summary"])
+        #expect(summary.initialRoute(upcomingSessionID: nil, loggedSessionID: sessionID) == .workoutSummary(sessionID))
+        #expect(LaunchOptions(opening: .templates).initialRoute(upcomingSessionID: nil) == nil)
+        #expect(LaunchOptions.Opening.templates.tab == .exercises)
+        #expect(LaunchOptions.Opening.template.tab == .exercises)
+        #expect(LaunchOptions.Opening.summary.tab == .week)
     }
 }
