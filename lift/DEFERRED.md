@@ -77,8 +77,7 @@ already done around it. The build keeps going around these; nothing here blocks 
 ## Decisions made with a default (change any of them)
 
 - **Tabs:** Week, History, Exercises, Settings.
-- **Units:** kg by default; lb available in Settings.
-- **Plates and bar:** made-up defaults until you list your gym's plates and bars.
+- **Units:** the locale's unit (lb in the US, kg elsewhere) until you pick one in Settings; the choice is saved.
 - **Planning:** fixed day templates (such as Upper A and Lower A), each an ordered list of exercises with sets, a
   rep target or range, an optional load and rest. Templates live on the Exercises tab (next to All exercises); Week
   plans a day from one, changes a planned day to another, or copies this week's template days to next week. A
