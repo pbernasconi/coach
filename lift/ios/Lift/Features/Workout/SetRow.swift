@@ -99,7 +99,8 @@ struct SetRow: View {
         pill(String(localized: "\(item.reps) reps"), label: repsLabel)
     }
 
-    /// A tonal capsule showing a value; tapping it opens the editor.
+    /// A tonal capsule showing a value; tapping it opens the editor. It is as tall as the log check beside it (one
+    /// touch target), so every control in the row shares one height and, being a capsule, the check's round ends.
     private func pill(_ value: String, label: Text) -> some View {
         Button(action: onEdit) {
             Text(verbatim: value)
@@ -109,7 +110,7 @@ struct SetRow: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
                 .padding(.horizontal, Space.sm)
-                .frame(maxWidth: .infinity, minHeight: Size.buttonHeightCompact)
+                .frame(maxWidth: .infinity, minHeight: Size.minTouch)
                 .background(Capsule().fill(pillFill))
         }
         .buttonStyle(.pressFeedback(.highlight, in: Capsule()))
