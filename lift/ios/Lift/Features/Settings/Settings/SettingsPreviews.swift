@@ -16,6 +16,11 @@
     #Preview("Default") { SettingsPreview(state: .fixtureDefault) }
     #Preview("Dark") { SettingsPreview(state: .fixtureDefault).preferredColorScheme(.dark) }
     #Preview("Pounds") { SettingsPreview(state: .fixturePounds) }
+    #Preview("Health not allowed") { SettingsPreview(state: .fixtureHealthDenied) }
+    #Preview("Health not allowed, AX3") {
+        SettingsPreview(state: .fixtureHealthDenied)
+            .dynamicTypeSize(.accessibility3)
+    }
     #Preview("Demo, AX3") {
         SettingsPreview(state: .fixtureDemo)
             .dynamicTypeSize(.accessibility3)

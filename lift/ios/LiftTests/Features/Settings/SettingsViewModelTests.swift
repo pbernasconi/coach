@@ -13,12 +13,14 @@ import Testing
     let sync = FakeSyncing()
     let router = RecordingNavigator()
     let now = ManualNow()
+    let health = RecordingHealthRecorder(status: .notSaved)
 
     func makeViewModel(_ dataSource: AppInfo.DataSource = .device, unit: WeightUnit = .kg) -> SettingsViewModel {
         let now = now
         return SettingsViewModel(
             info: AppInfo(version: "0.1.0", build: "7", unit: unit, dataSource: dataSource),
             sync: sync,
+            health: health,
             now: { now() },
             router: router
         )
@@ -150,5 +152,37 @@ import Testing
 
         #expect(task == nil)
         #expect(sync.syncNowCount == 0)
+    }
+
+    @Test func runShowsWhereAppleHealthStands() async {
+        health.statusAnswer = .notAsked
+        let vm = makeViewModel()
+
+        await vm.run()
+
+        #expect(vm.state.health == .notAsked)
+    }
+
+    @Test func healthToggledTurnsSavingOnAndShowsWhatHealthSaid() async {
+        health.statusAnswer = .off
+        health.answerAfterAsking = .on
+        let vm = makeViewModel()
+        await vm.run()
+
+        let task = vm.send(.healthToggled(true))
+        #expect(vm.state.health == .notAsked)  // the switch moves at once
+        await task?.value
+
+        #expect(health.calls == [.setEnabled(true)])
+        #expect(vm.state.health == .on)
+    }
+
+    @Test func healthToggledDoesNothingForDemoData() async {
+        let vm = makeViewModel(.demo)
+        await vm.run()
+
+        #expect(vm.send(.healthToggled(true)) == nil)
+        #expect(health.calls.isEmpty)
+        #expect(vm.state.health == .notSaved)
     }
 }

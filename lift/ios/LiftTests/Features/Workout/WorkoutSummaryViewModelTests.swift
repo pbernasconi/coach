@@ -10,6 +10,7 @@ import Testing
 @MainActor
 @Suite struct WorkoutSummaryViewModelTests {
     let router = RecordingNavigator()
+    let health = RecordingHealthRecorder()
 
     /// Monday: three squat sets logged, the first at 09:00 and the last at 09:30, then finished.
     var detail: SessionDetail {
@@ -39,6 +40,7 @@ import Testing
             sessionID: detail.id,
             sessions: FakeSessionDetailRepository(emissions: [detail]),
             history: history,
+            health: health,
             router: router,
             calendar: SessionBuilder.calendar
         )
@@ -64,6 +66,7 @@ import Testing
             sessionID: detail.id,
             sessions: FakeSessionDetailRepository(emissions: [nil]),
             history: FakeExerciseHistoryRepository(emissions: [[]]),
+            health: health,
             router: router,
             calendar: SessionBuilder.calendar
         )
@@ -78,11 +81,57 @@ import Testing
             sessionID: detail.id,
             sessions: FakeSessionDetailRepository(emissions: []),
             history: FakeExerciseHistoryRepository(emissions: []),
+            health: health,
             router: router,
             calendar: SessionBuilder.calendar
         )
 
         #expect(vm.send(.doneTapped) == nil)
         #expect(router.backCount == 1)
+    }
+
+    func summary(health status: HealthStatus, saved: Bool = false) async -> WorkoutSummaryViewModel {
+        health.statusAnswer = status
+        var detail = detail
+        if saved { detail.session.healthWorkoutID = IDSequence.id(9, prefix: 0xEE) }
+        let vm = WorkoutSummaryViewModel(
+            sessionID: detail.id,
+            sessions: FakeSessionDetailRepository(emissions: [detail]),
+            history: FakeExerciseHistoryRepository(emissions: [[]]),
+            health: health,
+            router: router,
+            calendar: SessionBuilder.calendar
+        )
+        await vm.run()
+        return vm
+    }
+
+    @Test func theFirstFinishAsksAboutAppleHealth() async {
+        #expect(await summary(health: .notAsked).state.health == .ask)
+        #expect(await summary(health: .on).state.health == nil)
+        #expect(await summary(health: .off).state.health == nil)
+        #expect(await summary(health: .notSaved).state.health == nil)
+        #expect(await summary(health: .on, saved: true).state.health == .saved)
+        #expect(health.calls.isEmpty)
+    }
+
+    @Test func healthAllowTappedAsksHealthAndSavesThisWorkout() async {
+        let vm = await summary(health: .notAsked)
+
+        let task = vm.send(.healthAllowTapped)
+        #expect(vm.send(.healthAllowTapped) == nil)  // a double tap asks once
+        await task?.value
+
+        #expect(health.calls == [.allow(detail.id)])
+        #expect(vm.state.health == nil)
+    }
+
+    @Test func healthNotNowTappedTurnsSavingOff() async {
+        let vm = await summary(health: .notAsked)
+
+        await vm.send(.healthNotNowTapped)?.value
+
+        #expect(health.calls == [.setEnabled(false)])
+        #expect(vm.state.health == nil)
     }
 }

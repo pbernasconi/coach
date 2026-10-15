@@ -14,6 +14,9 @@ already done around it. The build keeps going around these; nothing here blocks 
     2. Identifiers → App IDs → register three explicit App IDs: `<id>` (the app), `<id>.widgets` (the rest Live
        Activity) and `<id>.share` (the Share extension). On each, turn on **App Groups** and assign `group.<id>`.
        Live Activities need no capability of their own.
+    3. On the app's App ID (`<id>` only, not the extensions), also turn on **HealthKit** (no clinical records, no
+       background delivery): Lift saves each finished workout to Apple Health. The entitlement is in `ios/project.yml`;
+       without the capability the archive fails to sign. CI's simulator builds are unsigned and do not need it.
     Automatic signing (`CODE_SIGN_STYLE=Automatic` with the API key) then makes the three profiles. It can usually
     register missing App IDs itself, but registering the App Group and assigning it by hand avoids a failed first
     archive. Without the group, the Lock Screen +30s and Skip still work but the Share extension cannot hand notes

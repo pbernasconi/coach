@@ -9,6 +9,11 @@ nonisolated struct AppInfo: Equatable, Sendable {
         case device
         /// Fabricated demo data in memory; nothing is saved.
         case demo
+        /// An empty database in memory, as a first launch leaves it (`-fresh`); nothing is saved.
+        case fresh
+
+        /// Whether the data is kept on this iPhone. Data that is not is never synced or saved to Apple Health.
+        var isSaved: Bool { self == .device }
     }
 
     var version: String

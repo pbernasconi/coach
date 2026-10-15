@@ -24,6 +24,7 @@ import Testing
             restActivity: RecordingRestActivityController(),
             catalog: FakeExerciseCatalog(),
             history: FakeExerciseHistoryRepository(emissions: [[]]),
+            health: RecordingHealthRecorder(),
             now: SessionBuilder.now,
             calendar: SessionBuilder.calendar
         )

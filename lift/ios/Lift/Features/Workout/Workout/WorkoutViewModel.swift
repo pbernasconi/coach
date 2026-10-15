@@ -9,7 +9,7 @@ final class WorkoutViewModel {
 
     private let sessionID: UUID
     private let sessions: any SessionRepository
-    private let sets: any SetRepository
+    let sets: any SetRepository
     private let router: any Navigating
     private let clock: any Clock<Duration>
     /// The rest's wall-clock end and its Live Activity.
@@ -24,6 +24,8 @@ final class WorkoutViewModel {
     /// Add, move and remove exercises, finish, discard and Save as template (`WorkoutViewModel+Session`).
     let edits: WorkoutSessionEdits
     @ObservationIgnored var isEditingSession = false
+    /// Set by Discard: the page keeps showing the session while it closes, instead of "Workout not found".
+    @ObservationIgnored var hasDiscarded = false
     /// Sets with a log, unlog or skip on the way, so a double tap writes once.
     @ObservationIgnored private var inFlight: Set<UUID> = []
     @ObservationIgnored private var serial = 0
@@ -39,6 +41,7 @@ final class WorkoutViewModel {
         restActivity: any RestActivityController,
         catalog: any ExerciseCatalogProviding,
         history: any ExerciseHistoryRepository,
+        health: any WorkoutHealthRecording,
         now: @escaping @Sendable () -> Date,
         calendar: Calendar
     ) {
@@ -46,7 +49,13 @@ final class WorkoutViewModel {
         self.sessions = sessions
         self.sets = sets
         self.router = router
-        self.edits = WorkoutSessionEdits(sessionID: sessionID, sessions: sessions, templates: templates, router: router)
+        self.edits = WorkoutSessionEdits(
+            sessionID: sessionID,
+            sessions: sessions,
+            templates: templates,
+            router: router,
+            health: health
+        )
         self.clock = clock
         self.restActivity = RestActivitySession(controller: restActivity, now: now)
         self.catalog = catalog
@@ -61,8 +70,10 @@ final class WorkoutViewModel {
         for await detail in sessions.observeSession(id: sessionID) {
             self.detail = detail
             guard let detail else {
-                state.workout = .empty
-                state.editor = nil
+                if !hasDiscarded {
+                    state.workout = .empty
+                    state.editor = nil
+                }
                 continue
             }
             show(detail)
@@ -171,13 +182,6 @@ final class WorkoutViewModel {
         }
     }
 
-    private func addSet(to exerciseID: UUID) -> Task<Void, Never>? {
-        guard let item = detail?.items.first(where: { $0.id == exerciseID }) else { return nil }
-        let last = item.sets.last { $0.kind == .working } ?? item.sets.last
-        let target = last?.target ?? .none
-        return write { _ = try await $0.addSet(to: exerciseID, kind: .working, target: target) }
-    }
-
     private func openEditor(_ id: UUID) {
         guard case (let item, let set)? = detail?.find(setID: id) else { return }
         state.editor = SetEditor(set: set, in: item, previous: state.previous, days: days)
@@ -226,18 +230,6 @@ final class WorkoutViewModel {
         state.thumbnails[catalogID] = .loading
         let catalog = catalog
         return Task { state.thumbnails[catalogID] = await catalog.image(.still, catalogID: catalogID) }
-    }
-
-    /// Runs one write; a failure shows the "could not save" toast.
-    private func write(_ body: @escaping (any SetRepository) async throws -> Void) -> Task<Void, Never> {
-        let sets = sets
-        return Task {
-            do {
-                try await body(sets)
-            } catch {
-                showToast(.failed)
-            }
-        }
     }
 
     func showToast(_ kind: WorkoutToast.Kind) {

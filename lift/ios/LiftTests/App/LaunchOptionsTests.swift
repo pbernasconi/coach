@@ -11,6 +11,8 @@ import Testing
         ([], LaunchOptions()),
         (["Lift", "-demo"], LaunchOptions(isDemo: true)),
         (["Lift", "--demo"], LaunchOptions(isDemo: true)),
+        (["Lift", "-fresh"], LaunchOptions(isFresh: true)),
+        (["Lift", "-demo", "-fresh", "-tab", "history"], LaunchOptions(initialTab: .history, isFresh: true)),
         (["Lift", "-tab", "history"], LaunchOptions(initialTab: .history)),
         (["Lift", "-demo", "-tab", "Exercises"], LaunchOptions(isDemo: true, initialTab: .exercises)),
         (["Lift", "-tab", "settings", "-appearance", "dark"], LaunchOptions(initialTab: .settings, appearance: .dark)),
@@ -32,6 +34,18 @@ import Testing
     ])
     func parsesArguments(arguments: [String], expected: LaunchOptions) {
         #expect(LaunchOptions(arguments: arguments) == expected)
+    }
+
+    @Test func eachLaunchNamesWhereItsDataLives() {
+        #expect(LaunchOptions().dataSource == .device)
+        #expect(LaunchOptions(isDemo: true).dataSource == .demo)
+        #expect(LaunchOptions(arguments: ["Lift", "-demo", "-fresh"]).dataSource == .fresh)
+        #expect(
+            !AppInfo.DataSource.fresh.isSaved && !AppInfo.DataSource.demo.isSaved && AppInfo.DataSource.device.isSaved
+        )
+        #expect(
+            LaunchOptions(arguments: ["Lift", "-fresh", "-open", "workout"]).initialRoute(upcomingSessionID: nil) == nil
+        )
     }
 
     @Test func openWorkoutInDemoModePushesTheUpcomingSession() {

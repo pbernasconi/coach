@@ -13,9 +13,11 @@ lift/
 │   ├── scripts/generate.sh runs xcodegen
 │   ├── Lift/               app target
 │   │   ├── App/            @main, CompositionRoot (the only Date()/UUID()/database opening), AppDependencies,
-│   │   │                   LaunchOptions (-demo, -tab, -appearance, -open), RootView (Kobo TabShell)
+│   │   │                   LaunchOptions (-demo, -fresh, -tab, -appearance, -open), RootView (Kobo TabShell)
 │   │   │                   Sync/: Syncing (LiveSync over SyncEngine + Keychain, DisabledSync for demo or no
 │   │   │                   server), SyncCoordinator (launch, foreground, outbox growth), SyncServer (LiftSyncBaseURL)
+│   │   │                   Health/: Apple Health (HealthRecorder over HealthWorkoutStore; LiveHealthWorkoutStore
+│   │   │                   saves with HKWorkoutBuilder; DisabledHealthRecorder for demo and -fresh), HealthSettings
 │   │   ├── Design/         LiftTheme: Theme.lift / Palette.lift (amber); the only place with hex colours
 │   │   ├── Features/<Feature>/<Screen>/   the eight-file screen set: Week, History, Exercises, Settings, Workout
 │   │   │                                  (with its finish summary), Catalog (browse the bundled exercise
@@ -40,7 +42,6 @@ lift/
 │         LiftTesting   IDSequence, ManualNow, TestStore (in-memory DB), fakes, fixtures
 │         LiftSync      SyncEngine (push outbox, pull with LWW), URLSessionSyncTransport, wire types
 │                       (SYNC.md), KeychainTokenStore; the pull applier and syncState live in LiftStore/Sync
-│         (HealthKit arrives later)
 └── README.md               product notes and the Foundations decision log
 ```
 
@@ -58,9 +59,10 @@ xcodebuild test -project ios/Lift.xcodeproj -scheme Lift \
 ```
 
 Launch arguments (scheme or `simctl launch`): `-demo` opens an in-memory database seeded by `DemoSeeder`
-(fabricated data, nothing saved); `-tab week|history|exercises|settings` picks the first tab; `-appearance
-dark|light` forces an appearance; with `-demo`, `-open workout` pushes today's or the next planned session onto
-the Week tab, `-open exercise` pushes the Back squat detail onto the Exercises tab, `-open templates` and
+(fabricated data, nothing saved); `-fresh` opens an empty in-memory database as a first launch leaves it (the exercise
+library only; it wins over `-demo`, never syncs and never touches Apple Health), for the empty states;
+`-tab week|history|exercises|settings` picks the first tab; `-appearance dark|light` forces an appearance; with
+`-demo`, `-open workout` pushes today's or the next planned session onto the Week tab, `-open exercise` pushes the Back squat detail onto the Exercises tab, `-open templates` and
 `-open template` push the templates list and the first template's editor onto the Exercises tab, `-open summary`
 pushes the latest logged session's summary onto the Week tab, and `-open import` opens Import from Notes over
 History with a made-up note already read to the review step (for screenshots). Without `-demo` the app uses `Application Support/lift.sqlite`.
@@ -73,6 +75,10 @@ used inside `Loadable`.
 
 - **Logging comes first.** Logging a set takes one tap. Editing weight or reps and tapping Done saves the
   values only; it never marks the set as logged.
+- **Apple Health.** A finished workout is saved to Health as traditional strength training from its start to its
+  finish, with its title; no energy (Lift cannot estimate it honestly). The first summary asks before the system sheet
+  does, never at launch; Settings has the switch. `session.healthWorkoutID` (schema v5) keeps it saved once, and a
+  discard deletes the workout Lift saved. Demo and `-fresh` data never touch Health.
 - **No generated commentary.** No AI summaries or "insights" text. Show numbers and plain labels.
 - **Rescheduling** uses the lift sheet: move to another day, push to next week, change the workout, or
   remove it. Each action offers Undo instead of a confirmation dialog.

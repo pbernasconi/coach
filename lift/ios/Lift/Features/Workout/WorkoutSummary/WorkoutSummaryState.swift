@@ -5,6 +5,16 @@ import LiftCore
 nonisolated struct WorkoutSummaryState: Equatable, Sendable {
     /// The session's numbers; `.empty` once it was removed or if it never existed.
     var summary: Loadable<WorkoutSummaryOverview> = .loading
+    /// The Apple Health row: the first-finish prompt, or "Saved"; nil shows nothing.
+    var health: SummaryHealth?
+}
+
+/// The summary's Apple Health row.
+nonisolated enum SummaryHealth: Equatable, Sendable {
+    /// Health was never asked: offer to save this workout and later ones (the pre-prompt before the system sheet).
+    case ask
+    /// The workout is in Apple Health.
+    case saved
 }
 
 /// A finished workout in numbers.

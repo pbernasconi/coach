@@ -7,7 +7,16 @@
             unit: .kg,
             version: "0.1.0 (1)",
             dataSource: .device,
-            sync: .available(SyncSummary(status: "Synced 2 min ago", isSyncing: false, hasToken: true))
+            sync: .available(SyncSummary(status: "Synced 2 min ago", isSyncing: false, hasToken: true)),
+            health: .on
+        )
+        /// Apple Health on in Lift but not allowed in Health.
+        static let fixtureHealthDenied = SettingsState(
+            unit: .kg,
+            version: "0.1.0 (1)",
+            dataSource: .device,
+            sync: .available(SyncSummary(status: "Synced 2 min ago", isSyncing: false, hasToken: true)),
+            health: .denied
         )
         static let fixturePounds = SettingsState(
             unit: .lb,

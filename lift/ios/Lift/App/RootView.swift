@@ -98,11 +98,13 @@ private struct AppShell: View {
     }
 }
 
-/// One tab's navigation stack: its root screen plus any pushed routes.
+/// One tab's navigation stack: its root screen plus any pushed routes, and the tab's toast slot, which outlives the
+/// pages pushed on it.
 private struct TabStack: View {
     let tab: AppTab
     let dependencies: AppDependencies
     @State private var router: TabRouter
+    @State private var toasts = ToastCenter()
 
     init(tab: AppTab, dependencies: AppDependencies, initialPath: [AppRoute]) {
         self.tab = tab
@@ -114,9 +116,10 @@ private struct TabStack: View {
         NavigationStack(path: $router.path) {
             TabRootScreen(tab: tab, dependencies: dependencies, router: router)
                 .navigationDestination(for: AppRoute.self) { route in
-                    RouteScreen(route: route, dependencies: dependencies, router: router)
+                    RouteScreen(route: route, dependencies: dependencies, router: router, toasts: toasts)
                 }
         }
+        .toastHost(toasts)
     }
 }
 
@@ -163,6 +166,7 @@ private struct TabRootScreen: View {
                 viewModel: SettingsViewModel(
                     info: dependencies.info,
                     sync: dependencies.sync,
+                    health: dependencies.health,
                     now: dependencies.now,
                     router: router
                 )

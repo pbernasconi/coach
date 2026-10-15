@@ -15,6 +15,11 @@
 
     #Preview("Default") { WorkoutSummaryPreview(state: .fixtureDefault) }
     #Preview("Dark") { WorkoutSummaryPreview(state: .fixtureDefault).preferredColorScheme(.dark) }
+    #Preview("Health prompt") { WorkoutSummaryPreview(state: .fixtureHealthPrompt) }
+    #Preview("Health prompt, AX3") {
+        WorkoutSummaryPreview(state: .fixtureHealthPrompt)
+            .dynamicTypeSize(.accessibility3)
+    }
     #Preview("Loading") { WorkoutSummaryPreview(state: .fixtureLoading) }
     #Preview("Empty") { WorkoutSummaryPreview(state: .fixtureEmpty) }
     #Preview("Failed") { WorkoutSummaryPreview(state: .fixtureFailed) }

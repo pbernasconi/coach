@@ -4,4 +4,5 @@ import os
 nonisolated enum AppLog {
     static let launch = Logger(subsystem: "com.example.lift", category: "launch")
     static let rest = Logger(subsystem: "com.example.lift", category: "rest")
+    static let health = Logger(subsystem: "com.example.lift", category: "health")
 }

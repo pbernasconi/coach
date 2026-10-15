@@ -17,6 +17,7 @@ import Testing
         let vm = SettingsViewModel(
             info: AppInfo(version: "0.1.0", build: "1", unit: .kg, dataSource: .device),
             sync: sync,
+            health: RecordingHealthRecorder(status: .notSaved),
             now: { now() },
             router: RecordingNavigator()
         )
@@ -46,6 +47,7 @@ import Testing
         let vm = SettingsViewModel(
             info: AppInfo(version: "0.1.0", build: "1", unit: .kg, dataSource: .demo),
             sync: sync,
+            health: RecordingHealthRecorder(status: .notSaved),
             now: { ManualNow.start },
             router: RecordingNavigator()
         )

@@ -12,19 +12,21 @@ enum CompositionRoot {
         case failed
     }
 
-    /// Opens `Application Support/lift.sqlite`, or an in-memory database for `-demo`, and wires the live repositories.
+    /// Opens `Application Support/lift.sqlite`, or an in-memory database for `-demo` and `-fresh`, and wires the live
+    /// repositories.
     static func launch(options: LaunchOptions) -> Launch {
         do {
-            let database = try openDatabase(isDemo: options.isDemo)
-            return .ready(dependencies(database: database, isDemo: options.isDemo))
+            let source = options.dataSource
+            let database = try openDatabase(isSaved: source.isSaved)
+            return .ready(dependencies(database: database, source: source))
         } catch {
             AppLog.launch.fault("Opening the database failed: \(String(describing: error), privacy: .private)")
             return .failed
         }
     }
 
-    private static func openDatabase(isDemo: Bool) throws -> LiftDatabase {
-        if isDemo {
+    private static func openDatabase(isSaved: Bool) throws -> LiftDatabase {
+        if !isSaved {
             return try LiftDatabase.inMemory()
         }
         let folder = try FileManager.default.url(
@@ -36,7 +38,7 @@ enum CompositionRoot {
         return try LiftDatabase.onDisk(at: folder.appending(path: "lift.sqlite"))
     }
 
-    private static func dependencies(database: LiftDatabase, isDemo: Bool) -> AppDependencies {
+    private static func dependencies(database: LiftDatabase, source: AppInfo.DataSource) -> AppDependencies {
         let now: @Sendable () -> Date = { Date() }
         let makeID: @Sendable () -> UUID = { UUID() }
         let sessions = LiveSessionRepository(database: database, now: now, makeID: makeID)
@@ -54,10 +56,11 @@ enum CompositionRoot {
             mediaLoader: mediaLoader,
             catalog: LiveExerciseCatalog(loader: mediaLoader),
             calendar: .autoupdatingCurrent,
-            info: info(isDemo: isDemo),
+            info: info(source: source),
             pasteboard: SystemPasteboard(),
             outbox: LiveOutboxRepository(database: database),
-            sync: makeSync(database: database, isDemo: isDemo, now: now, makeID: makeID)
+            sync: makeSync(database: database, isSaved: source.isSaved, now: now, makeID: makeID),
+            health: makeHealth(sessions: sessions, isSaved: source.isSaved)
         )
     }
 
@@ -83,7 +86,17 @@ enum CompositionRoot {
             : DisabledRestActivityController()
     }
 
-    private static func info(isDemo: Bool) -> AppInfo {
+    /// Apple Health for data kept on this iPhone; demo and `-fresh` data never touch it.
+    private static func makeHealth(sessions: LiveSessionRepository, isSaved: Bool) -> any WorkoutHealthRecording {
+        guard isSaved else { return DisabledHealthRecorder() }
+        return HealthRecorder(
+            store: LiveHealthWorkoutStore(),
+            sessions: sessions,
+            settings: UserDefaultsHealthSettings.standard()
+        )
+    }
+
+    private static func info(source: AppInfo.DataSource) -> AppInfo {
         let bundle = Bundle.main
         let version = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
         let build = bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String
@@ -91,8 +104,8 @@ enum CompositionRoot {
         return AppInfo(
             version: version ?? "0",
             build: build ?? "0",
-            unit: isDemo ? .kg : localUnit,  // the demo data is logged in kg
-            dataSource: isDemo ? .demo : .device
+            unit: source.isSaved ? localUnit : .kg,  // the demo data is logged in kg
+            dataSource: source
         )
     }
 }

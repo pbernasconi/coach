@@ -31,6 +31,8 @@ final class AppDependencies {
     let outbox: any OutboxRepository
     /// Push and pull with the coach web app, or a stand-in that never syncs (demo data, or no server in this build).
     let sync: any Syncing
+    /// Saves finished workouts to Apple Health, or a stand-in that never touches Health (demo and `-fresh` data).
+    let health: any WorkoutHealthRecording
     /// Opens and closes Import from Notes, which the shell shows as a modal page above the tabs.
     let importFlow: ImportFlowPresenter
     /// Opens Import from Notes for `lift://import` links and for notes shared through the Share extension.
@@ -53,7 +55,8 @@ final class AppDependencies {
         info: AppInfo,
         pasteboard: any TextPasteboard,
         outbox: any OutboxRepository,
-        sync: any Syncing
+        sync: any Syncing,
+        health: any WorkoutHealthRecording
     ) {
         self.sessions = sessions
         self.exercises = exercises
@@ -71,21 +74,22 @@ final class AppDependencies {
         self.pasteboard = pasteboard
         self.outbox = outbox
         self.sync = sync
+        self.health = health
         let importFlow = ImportFlowPresenter()
         self.importFlow = importFlow
         incomingNotes = IncomingNoteRouter(inbox: AppGroupNoteInbox(bundle: .main), importFlow: importFlow)
     }
 
-    /// Work that finishes before the tabs show: the seed exercise library on this iPhone, or the fabricated demo
-    /// sessions in demo mode. Runs once; a failure is logged and the app opens with what the database holds. A rest
-    /// Live Activity left over from a previous launch is ended first.
+    /// Work that finishes before the tabs show: the seed exercise library on this iPhone (and in `-fresh`), or the
+    /// fabricated demo sessions in demo mode. Runs once; a failure is logged and the app opens with what the database
+    /// holds. A rest Live Activity left over from a previous launch is ended first.
     func prepare() async {
         guard !isPrepared else { return }
         isPrepared = true
         restActivity.end()
         do {
             switch info.dataSource {
-            case .device:
+            case .device, .fresh:
                 _ = try await exercises.installLibrary()
             case .demo:
                 let seeder = DemoSeeder(

@@ -3,12 +3,14 @@ import LiftCore
 import LiftStore
 
 /// The Workout screen's session-level writes: exercises added, moved and removed, finish, discard and Save as
-/// template. Each returns the toast to show, if any; the ViewModel shows a failure.
+/// template. Each returns the toast to show, if any; the ViewModel shows a failure. Finish, discard and its Undo also
+/// keep Apple Health in step.
 struct WorkoutSessionEdits {
     let sessionID: UUID
     let sessions: any SessionRepository
     let templates: any TemplateRepository
     let router: any Navigating
+    let health: any WorkoutHealthRecording
 
     /// Moves the exercise `id` one place up (`offset` -1) or down (+1).
     func move(_ id: UUID, by offset: Int, in detail: SessionDetail) async throws -> WorkoutToast.Kind? {
@@ -29,19 +31,26 @@ struct WorkoutSessionEdits {
         return nil
     }
 
-    /// Finishes the session, then opens its summary.
+    /// Finishes the session, opens its summary, then saves it to Apple Health when that is on (the summary asks the
+    /// first time).
     func finish() async throws -> WorkoutToast.Kind? {
         _ = try await sessions.finish(sessionID: sessionID)
         router.open(.workoutSummary(sessionID))
+        await health.sessionFinished(sessionID)
         return nil
     }
 
+    /// Removes the session and the workout Lift saved for it in Apple Health, if any.
     func discard() async throws -> WorkoutToast.Kind? {
-        .discarded(try await sessions.reschedule(sessionID, .remove))
+        let undo = try await sessions.reschedule(sessionID, .remove)
+        await health.sessionRemoved(sessionID)
+        return .discarded(undo)
     }
 
+    /// Puts the session back, and a finished one back in Apple Health.
     func undoDiscard(_ undo: RescheduleUndo) async throws -> WorkoutToast.Kind? {
         try await sessions.undo(undo)
+        await health.sessionRestored(sessionID)
         return nil
     }
 

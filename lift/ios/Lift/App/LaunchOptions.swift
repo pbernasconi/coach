@@ -4,6 +4,9 @@ import LiftCore
 /// What the launch arguments ask for. CI and the UI smoke test use them; a normal launch passes none.
 ///
 ///     -demo                                   in-memory database filled with fabricated sessions
+///     -fresh                                  in-memory database as a first launch leaves it: the exercise library
+///                                             and nothing else (no sessions, no templates); wins over -demo, so
+///                                             the screenshot script's empty states (`-demo -fresh`) work
 ///     -tab week|history|exercises|settings    the tab to open first
 ///     -appearance dark|light                  forces an appearance (CI usually sets it with simctl)
 ///     -open workout                           with -demo: pushes today's or the next planned session on Week
@@ -45,18 +48,34 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
     var initialTab = AppTab.week
     var appearance: Appearance?
     var opening: Opening?
+    /// `-fresh`: an empty in-memory database that never syncs or touches Apple Health, for the empty states.
+    var isFresh = false
 
-    init(isDemo: Bool = false, initialTab: AppTab = .week, appearance: Appearance? = nil, opening: Opening? = nil) {
+    init(
+        isDemo: Bool = false,
+        initialTab: AppTab = .week,
+        appearance: Appearance? = nil,
+        opening: Opening? = nil,
+        isFresh: Bool = false
+    ) {
         self.isDemo = isDemo
         self.initialTab = initialTab
         self.appearance = appearance
         self.opening = opening
+        self.isFresh = isFresh
+    }
+
+    /// Where the data lives for this launch.
+    var dataSource: AppInfo.DataSource {
+        if isFresh { return .fresh }
+        return isDemo ? .demo : .device
     }
 
     /// Parses `ProcessInfo.processInfo.arguments`. Unknown arguments and bad values are ignored.
     init(arguments: [String]) {
         self.init()
-        isDemo = arguments.contains("-demo") || arguments.contains("--demo")
+        isFresh = arguments.contains("-fresh")
+        isDemo = !isFresh && (arguments.contains("-demo") || arguments.contains("--demo"))
         if let tab = Self.value(after: "-tab", in: arguments).flatMap(AppTab.init(rawValue:)) {
             initialTab = tab
         }

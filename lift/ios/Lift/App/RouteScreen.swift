@@ -1,3 +1,4 @@
+import KoboComponents
 import SwiftUI
 
 /// Builds the screen for a pushed route and hands it the dependencies it needs (DI-1).
@@ -5,6 +6,8 @@ struct RouteScreen: View {
     let route: AppRoute
     let dependencies: AppDependencies
     let router: any Navigating
+    /// The tab's toast slot, which outlives a pushed page (the workout's "Workout discarded" with Undo).
+    let toasts: ToastCenter
 
     var body: some View {
         switch route {
@@ -20,9 +23,11 @@ struct RouteScreen: View {
                     restActivity: dependencies.restActivity,
                     catalog: dependencies.catalog,
                     history: dependencies.history,
+                    health: dependencies.health,
                     now: dependencies.now,
                     calendar: dependencies.calendar
-                )
+                ),
+                toasts: toasts
             )
             .id(route)
         case .exercise(let exerciseID):
