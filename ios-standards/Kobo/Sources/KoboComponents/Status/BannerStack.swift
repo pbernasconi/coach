@@ -100,7 +100,7 @@ nonisolated public enum NoBanner: StackableBanner {
 extension BannerStack where Item == NoBanner, Banner == EmptyView {
     /// A stack that shows only the offline banner.
     public init(isOffline: Bool, clock: any Clock<Duration> = ContinuousClock()) {
-        self.init([], isOffline: isOffline, clock: clock) { _ in EmptyView() }
+        self.init([], isOffline: isOffline, clock: clock) { (item: NoBanner) -> EmptyView in switch item {} }
     }
 }
 
