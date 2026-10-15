@@ -9,10 +9,31 @@
             CatalogRow(id: "9002", name: "Made-Up Dumbbell Curl", detail: "Biceps · Dumbbell"),
             CatalogRow(id: "9003", name: "Made-Up Cable Row", detail: "Upper back · Cable"),
             CatalogRow(id: "9004", name: "Made-Up Plank", detail: "Abs · Body weight"),
+            CatalogRow(id: "9006", name: "Made-Up Bench Press", detail: "Pectorals · Barbell"),
+            CatalogRow(id: "9007", name: "Made-Up Lateral Raise", detail: "Delts · Dumbbell"),
+            CatalogRow(id: "9008", name: "Made-Up Push-Up", detail: "Pectorals · Body weight"),
+            CatalogRow(id: "9009", name: "Made-Up Calf Raise", detail: "Calves · Leverage machine"),
+            CatalogRow(id: "9010", name: "Made-Up Face Pull", detail: "Delts · Cable"),
         ]
+        private static let options: [CatalogFacet: [String]] = [
+            .bodyPart: ["back", "chest", "lower legs", "shoulders", "upper arms", "upper legs", "waist"],
+            .target: ["abs", "biceps", "calves", "delts", "glutes", "pectorals", "upper back"],
+            .equipment: ["barbell", "body weight", "cable", "dumbbell", "leverage machine"],
+        ]
+        private static let counts = CatalogFacetCounts(
+            values: [
+                .bodyPart: [
+                    "back": 203, "chest": 163, "lower legs": 59, "shoulders": 143, "upper arms": 292,
+                ],
+                .target: ["abs": 169, "biceps": 151, "calves": 59, "delts": 143, "pectorals": 158],
+                .equipment: ["barbell": 154, "body weight": 325, "cable": 157, "dumbbell": 294],
+            ],
+            inLibrary: 30
+        )
         private static let base = CatalogState(
-            bodyParts: ["back", "chest", "upper arms", "upper legs", "waist"],
-            equipmentKinds: ["barbell", "body weight", "cable", "dumbbell"],
+            options: options,
+            counts: counts,
+            library: ["9001", "9006"],
             rows: .loaded(rows),
             total: 1324,
             thumbnails: ["9001": MediaPreviewData.still, "9002": MediaPreviewData.still, "9003": .failed]
@@ -24,10 +45,21 @@
         static let fixtureFailed = CatalogState(rows: .failed(.decoding))
         static let fixtureFiltered: CatalogState = {
             var state = base
-            state.query = "squat"
-            state.bodyPart = .only("upper legs")
-            state.equipment = .only("barbell")
-            state.rows = .loaded([rows[0]])
+            state.query = "press"
+            state.filter = CatalogFilter(selections: [
+                .bodyPart: ["chest", "shoulders"], .equipment: ["barbell"],
+            ])
+            state.rows = .loaded([rows[4]])
+            return state
+        }()
+        static let fixtureFiltersSheet: CatalogState = {
+            var state = fixtureFiltered
+            state.sheet = .all
+            return state
+        }()
+        static let fixtureFacetSheet: CatalogState = {
+            var state = fixtureFiltered
+            state.sheet = .facet(.bodyPart)
             return state
         }()
         static let fixtureNoMatches: CatalogState = {
@@ -38,6 +70,7 @@
         }()
         static let fixtureLongText: CatalogState = {
             var state = base
+            state.filter = CatalogFilter(selections: [.equipment: ["cable"]], inLibrary: true)
             state.rows = .loaded([
                 CatalogRow(
                     id: "9005",

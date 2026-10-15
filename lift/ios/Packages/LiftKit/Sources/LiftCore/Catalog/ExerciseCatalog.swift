@@ -19,6 +19,8 @@ public struct ExerciseCatalog: Sendable {
     public let bodyParts: [String]
     /// Distinct equipment, sorted.
     public let equipment: [String]
+    /// Distinct target muscles, sorted.
+    public let targets: [String]
     private let indexByID: [String: Int]
     let searchKeys: [CatalogSearchKey]
 
@@ -38,6 +40,7 @@ public struct ExerciseCatalog: Sendable {
         self.seeds = seeds
         bodyParts = Set(entries.map(\.bodyPart)).sorted()
         equipment = Set(entries.map(\.equipment)).sorted()
+        targets = Set(entries.map(\.target)).sorted()
         indexByID = Dictionary(entries.enumerated().map { ($1.id, $0) }) { first, _ in first }
         searchKeys = entries.map(CatalogSearchKey.init)
     }
@@ -66,6 +69,15 @@ public struct ExerciseCatalog: Sendable {
             throw AppError(.notFound, detail: "exercise-catalog.json")
         }
         return try ExerciseCatalog(json: Data(contentsOf: url))
+    }
+
+    /// Every distinct value of one facet, sorted.
+    public func options(_ facet: CatalogFacet) -> [String] {
+        switch facet {
+        case .bodyPart: bodyParts
+        case .target: targets
+        case .equipment: equipment
+        }
     }
 
     /// The exercise with dataset id `id`, if the catalog has it.

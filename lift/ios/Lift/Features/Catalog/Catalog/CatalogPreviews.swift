@@ -19,6 +19,8 @@
     #Preview("Empty") { CatalogPreview(state: .fixtureEmpty) }
     #Preview("Failed") { CatalogPreview(state: .fixtureFailed) }
     #Preview("Filtered") { CatalogPreview(state: .fixtureFiltered) }
+    #Preview("Filters sheet") { CatalogPreview(state: .fixtureFiltersSheet) }
+    #Preview("Facet sheet") { CatalogPreview(state: .fixtureFacetSheet) }
     #Preview("No matches") { CatalogPreview(state: .fixtureNoMatches) }
     #Preview("Long text, AX3") {
         CatalogPreview(state: .fixtureLongText)

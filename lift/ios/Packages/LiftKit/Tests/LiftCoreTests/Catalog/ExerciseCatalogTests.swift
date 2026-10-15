@@ -44,13 +44,17 @@ import Testing
 
     @Test func swiftSeedTableMatchesTheImportedSeedMap() throws {
         let imported = try bundled().seeds
-        let table = Dictionary(uniqueKeysWithValues: CatalogSeedLinks.all.map { (String($0.seed), $0.catalogID) })
+        let table = Dictionary(
+            uniqueKeysWithValues: CatalogSeedLinks.all.map { (String($0.seed), $0.catalogID) }
+        )
         #expect(imported == table)
     }
 
     @Test func nonSeedIDsHaveNoLink() {
         #expect(
-            CatalogSeedLinks.catalogID(forSeedExerciseID: UUID(uuid: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1)))
+            CatalogSeedLinks.catalogID(
+                forSeedExerciseID: UUID(uuid: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1))
+            )
                 == nil
         )
         #expect(CatalogSeedLinks.seedLink(seedNumber: 99) == nil)
@@ -89,7 +93,9 @@ import Testing
             ]
         )
         #expect(
-            catalog.search("unge").map(\.name) == ["Lunge", "Barbell Lunge", "Lunge With Twist", "Reverse Lunge Twist"]
+            catalog.search("unge").map(\.name) == [
+                "Lunge", "Barbell Lunge", "Lunge With Twist", "Reverse Lunge Twist",
+            ]
         )
     }
 
@@ -97,13 +103,15 @@ import Testing
         let catalog = try bundled()
         let results = catalog.search("LATS cable")
         #expect(!results.isEmpty)
-        #expect(results.allSatisfy { $0.equipment == "cable" || $0.name.lowercased().contains("cable") })
+        #expect(
+            results.allSatisfy { $0.equipment == "cable" || $0.name.lowercased().contains("cable") }
+        )
         #expect(catalog.search("zzzz-no-such").isEmpty)
     }
 
     @Test func filtersByBodyPartAndEquipment() throws {
         let catalog = try bundled()
-        let filter = CatalogFilter(bodyPart: "upper legs", equipment: "barbell")
+        let filter = CatalogFilter(selections: [.bodyPart: ["upper legs"], .equipment: ["barbell"]])
         let results = catalog.search("", filter: filter)
         #expect(!results.isEmpty)
         #expect(results.allSatisfy { $0.bodyPart == "upper legs" && $0.equipment == "barbell" })
@@ -112,6 +120,7 @@ import Testing
         #expect(catalog.search("").count == 1324)
         #expect(catalog.bodyParts.contains("chest"))
         #expect(catalog.equipment.contains("body weight"))
+        #expect(catalog.options(.target).contains("pectorals"))
     }
 
     @Test func badJSONThrowsDecoding() {
@@ -156,6 +165,12 @@ extension ExerciseCatalog {
                 gifPath: "videos/x.gif"
             )
         }
-        return ExerciseCatalog(commit: "c", source: "s", license: "l", attribution: "a", entries: entries)
+        return ExerciseCatalog(
+            commit: "c",
+            source: "s",
+            license: "l",
+            attribution: "a",
+            entries: entries
+        )
     }
 }

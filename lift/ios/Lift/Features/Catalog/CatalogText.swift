@@ -13,18 +13,28 @@ nonisolated enum CatalogText {
     static func detail(_ entry: CatalogExercise) -> String {
         "\(label(entry.target)) · \(label(entry.equipment))"
     }
-}
 
-/// A filter choice: everything, or one value.
-nonisolated enum CatalogChoice: Hashable, Sendable, Identifiable {
-    case any
-    case only(String)
+    /// The name of a facet, on its chip and over its options.
+    static func title(_ facet: CatalogFacet) -> String {
+        switch facet {
+        case .bodyPart: String(localized: "Body part")
+        case .target: String(localized: "Muscle")
+        case .equipment: String(localized: "Equipment")
+        }
+    }
 
-    var id: Self { self }
+    /// A filter sheet's title: "Filters", or the facet's name.
+    static func title(sheet: CatalogSheet) -> String {
+        switch sheet {
+        case .all: String(localized: "Filters")
+        case .facet(let facet): title(facet)
+        }
+    }
 
-    /// The value to filter by; nil for `.any`.
-    var value: String? {
-        if case .only(let value) = self { return value }
-        return nil
+    /// "1,324 exercises", or "12 of 1,324 exercises" while the search or a filter narrows the list.
+    static func count(shown: Int, total: Int, isFiltered: Bool) -> String {
+        isFiltered
+            ? String(localized: "\(shown) of \(total) exercises")
+            : String(localized: "\(total) exercises")
     }
 }
