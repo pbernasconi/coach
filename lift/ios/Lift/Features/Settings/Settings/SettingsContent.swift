@@ -10,7 +10,7 @@ struct SettingsContent: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: Space.xxl) {
+            VStack(alignment: .leading, spacing: Space.section) {
                 ListSection("Units") {
                     SegmentedPicker(
                         "Weight unit",

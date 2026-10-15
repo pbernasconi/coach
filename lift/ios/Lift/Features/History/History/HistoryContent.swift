@@ -9,7 +9,7 @@ struct HistoryContent: View {
 
     var body: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: Space.xxl) {
+            LazyVStack(alignment: .leading, spacing: Space.section) {
                 switch state.weeks {
                 case .loading:
                     LoadingState()
