@@ -1,4 +1,5 @@
 import Foundation
+import LiftCore
 
 /// What the launch arguments ask for. CI and the UI smoke test use them; a normal launch passes none.
 ///
@@ -6,6 +7,7 @@ import Foundation
 ///     -tab week|history|exercises|settings    the tab to open first
 ///     -appearance dark|light                  forces an appearance (CI usually sets it with simctl)
 ///     -open workout                           with -demo: pushes today's or the next planned session on Week
+///     -open exercise                          with -demo: pushes the Back squat detail on Exercises
 nonisolated struct LaunchOptions: Equatable, Sendable {
     enum Appearance: String, Equatable, Sendable {
         case dark
@@ -15,6 +17,15 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
     /// A screen to push once the data is ready, for screenshots.
     enum Opening: String, Equatable, Sendable {
         case workout
+        case exercise
+
+        /// The tab whose stack the screen is pushed on.
+        var tab: AppTab {
+            switch self {
+            case .workout: .week
+            case .exercise: .exercises
+            }
+        }
     }
 
     var isDemo = false
@@ -40,11 +51,14 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
         opening = Self.value(after: "-open", in: arguments).flatMap(Opening.init(rawValue:))
     }
 
-    /// The route the Week tab starts on: the workout for `-open workout` in demo mode, given the session to open.
-    /// Nil without demo data, so a real launch never opens a screen by itself.
+    /// The route `opening.tab` starts on in demo mode: the given session for `-open workout`, the Back squat detail
+    /// for `-open exercise`. Nil without demo data, so a real launch never opens a screen by itself.
     func initialRoute(upcomingSessionID: UUID?) -> AppRoute? {
-        guard isDemo, opening == .workout, let upcomingSessionID else { return nil }
-        return .workout(upcomingSessionID)
+        guard isDemo, let opening else { return nil }
+        switch opening {
+        case .workout: return upcomingSessionID.map(AppRoute.workout)
+        case .exercise: return .exercise(ExerciseLibrary.seedID(1))
+        }
     }
 
     private static func value(after flag: String, in arguments: [String]) -> String? {

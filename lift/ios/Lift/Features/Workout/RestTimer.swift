@@ -37,6 +37,15 @@ nonisolated struct RestTimer: Equatable, Sendable {
         return next
     }
 
+    /// The same rest with at most `seconds` left, or nil when none are. Keeps the countdown in step with the wall
+    /// clock after the app was in the background, where the ticks stop.
+    func capped(at seconds: Int) -> RestTimer? {
+        guard seconds > 0 else { return nil }
+        var next = self
+        next.remaining = min(remaining, seconds)
+        return next
+    }
+
     /// The time left as "1:30" or "0:05".
     var clockText: String {
         let seconds = remaining % 60

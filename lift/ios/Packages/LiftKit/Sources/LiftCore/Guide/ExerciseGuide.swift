@@ -45,7 +45,7 @@ public struct ExerciseGuide: Hashable, Sendable, Identifiable {
     }
 
     /// Every guide, one per seed exercise.
-    public static let all: [ExerciseGuide] = legs + hips + chestAndShoulders + back + armsAndCore
+    public static let all: [ExerciseGuide] = squats + singleLeg + hips + chestAndShoulders + rows + pulls + armsAndCore
 
     private static let byID: [UUID: ExerciseGuide] = Dictionary(all.map { ($0.id, $0) }) { first, _ in first }
 
