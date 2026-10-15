@@ -34,12 +34,15 @@ final class LiveRestActivityController: RestActivityController {
         show(state, on: activityID)
     }
 
-    /// Ends this rest and any left over from an earlier launch.
+    /// Ends this rest and any left over from an earlier launch. The ids are read now, so a rest started right after
+    /// this call is not ended by it.
     func end() {
         activityID = nil
         attributes = nil
         state = nil
-        Task { await Self.endAll() }
+        let running = Activity<RestActivityAttributes>.activities.map(\.id)
+        guard !running.isEmpty else { return }
+        Task { await Self.end(ids: running) }
     }
 
     private func show(_ state: RestActivityAttributes.ContentState, on id: String) {
@@ -55,8 +58,8 @@ final class LiveRestActivityController: RestActivityController {
     }
 
     @concurrent
-    private static func endAll() async {
-        for activity in Activity<RestActivityAttributes>.activities {
+    private static func end(ids: [String]) async {
+        for activity in Activity<RestActivityAttributes>.activities where ids.contains(activity.id) {
             await activity.end(nil, dismissalPolicy: .immediate)
         }
     }
