@@ -18,6 +18,7 @@ nonisolated struct WeekNotice: Equatable, Sendable {
 struct WeekPlanEdits {
     let sessions: any SessionRepository
     let plans: any WorkoutPlanRepository
+    let templates: any TemplateRepository
     /// The unit new sessions are logged in.
     let unit: WeightUnit
     let days: DayCalendar
@@ -40,6 +41,11 @@ struct WeekPlanEdits {
         } catch  where AppError.kind(of: error) == .conflict {
             return WeekNotice(String(localized: "A started workout keeps its exercises"))
         }
+    }
+
+    /// A new empty template with a free name; returns its id.
+    func newTemplate(taken: [String]) async throws -> UUID {
+        try await templates.createTemplate(name: TemplateText.newName(taken: taken)).id
     }
 
     func planNextWeek(from weekStart: LocalDay) async throws -> WeekNotice {
@@ -92,6 +98,12 @@ extension WeekPlanEdits {
         case .changeTemplatePicked(let sessionID, let id):
             return template(id).map { choice in
                 WeekPlanWrite(key: sessionID) { try await $0.change(sessionID, to: choice) }
+            }
+        case .newTemplateTapped:
+            let taken = templates.map(\.name)
+            return WeekPlanWrite(key: nil) { edits in
+                router.open(.template(try await edits.newTemplate(taken: taken)))
+                return nil
             }
         case .planNextWeekTapped:
             return weekStart.map { start in WeekPlanWrite(key: nil) { try await $0.planNextWeek(from: start) } }

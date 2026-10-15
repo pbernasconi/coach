@@ -49,7 +49,18 @@
 
         static let fixtureDefault = WeekState(strip: strip, sessions: .loaded(sections))
         static let fixtureLoading = WeekState(strip: strip, sessions: .loading)
-        static let fixtureEmpty = WeekState(strip: strip, sessions: .empty)
+        static let fixtureEmpty = WeekState(
+            strip: strip,
+            sessions: .empty,
+            templates: [
+                WeekTemplateChoice(
+                    id: UUID(uuid: (0xD1, 0, 0, 0, 0, 0, 0x40, 0, 0x80, 0, 0, 0, 0, 0, 0, 1)),
+                    name: "Upper A"
+                )
+            ]
+        )
+        /// A first launch: no sessions and no templates, so the page points to New template.
+        static let fixtureFirstRun = WeekState(strip: strip, sessions: .empty)
         static let fixtureFailed = WeekState(strip: strip, sessions: .failed(.unknown))
         static let fixtureLongText = WeekState(
             strip: strip,

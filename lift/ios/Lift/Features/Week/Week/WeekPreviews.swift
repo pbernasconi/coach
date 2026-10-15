@@ -21,6 +21,11 @@
     }
     #Preview("Loading") { WeekPreview(state: .fixtureLoading) }
     #Preview("Empty") { WeekPreview(state: .fixtureEmpty) }
+    #Preview("First run") { WeekPreview(state: .fixtureFirstRun) }
+    #Preview("First run, AX3") {
+        WeekPreview(state: .fixtureFirstRun)
+            .dynamicTypeSize(.accessibility3)
+    }
     #Preview("Failed") { WeekPreview(state: .fixtureFailed) }
     #Preview("Long text, AX3") {
         WeekPreview(state: .fixtureLongText)

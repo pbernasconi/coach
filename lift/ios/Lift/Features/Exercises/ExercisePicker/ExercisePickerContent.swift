@@ -53,7 +53,10 @@ private struct PickerLibraryList: View {
         case .loading:
             LoadingState()
         case .empty:
-            EmptyState(symbol: "dumbbell", title: "No exercises", message: "Pick one from All exercises.")
+            EmptyState(symbol: "dumbbell", title: "No exercises yet", message: "Pick one from All exercises.") {
+                Button("Show all exercises") { send(.sourceChanged(.catalog)) }
+                    .buttonStyle(.kobo(.primary))
+            }
         case .failed:
             ErrorState(title: "Exercises could not be loaded")
         case .loaded:

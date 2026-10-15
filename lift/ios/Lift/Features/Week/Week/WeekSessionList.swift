@@ -30,10 +30,7 @@ struct WeekSessionList: View {
         case .loading:
             LoadingState()
         case .empty:
-            EmptyState(symbol: "calendar", title: "No workouts", message: "Nothing is planned for this week.") {
-                Button("Add workout", systemImage: "plus") { send(.addWorkoutTapped(nil)) }
-                    .buttonStyle(.kobo(.primary))
-            }
+            WeekEmptyState(hasTemplates: !state.templates.isEmpty, send: send)
         case .failed:
             ErrorState(title: "Workouts could not be loaded")
         case .loaded(let sections):
@@ -106,6 +103,33 @@ private struct WeekPlanNextRow: View {
                 action: { send(.planNextWeekTapped) }
             ) {
                 WeekRowMark(kind: .plan)
+            }
+        }
+    }
+}
+
+/// A week with nothing planned. Without templates yet (a first launch), it points to making one, which is how days get
+/// planned; a blank workout is the other way in.
+private struct WeekEmptyState: View {
+    let hasTemplates: Bool
+    let send: (WeekAction) -> Void
+
+    var body: some View {
+        if hasTemplates {
+            EmptyState(symbol: "calendar", title: "No workouts", message: "Nothing is planned for this week.") {
+                Button("Add workout", systemImage: "plus") { send(.addWorkoutTapped(nil)) }
+                    .buttonStyle(.kobo(.primary))
+            }
+        } else {
+            EmptyState(
+                symbol: "calendar",
+                title: "No workouts yet",
+                message: "Make a template, such as Upper A, then plan days from it here."
+            ) {
+                Button("New template", systemImage: "list.bullet.rectangle") { send(.newTemplateTapped) }
+                    .buttonStyle(.kobo(.primary))
+                Button("Blank workout", systemImage: "plus") { send(.addWorkoutTapped(nil)) }
+                    .buttonStyle(.kobo(.secondary))
             }
         }
     }
