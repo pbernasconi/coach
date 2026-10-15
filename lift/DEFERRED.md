@@ -18,6 +18,16 @@ already done around it. The build keeps going around these; nothing here blocks 
   3. Redeploy; `GET /api/lift/sync/pull` with the token should return `{"changes":[],"cursor":"0","hasMore":false}`.
   4. Enter the same token in the app's Settings (Sync) once that screen ships.
 
+- **Gym visual licence for exercise animations.** The exercise GIFs and thumbnails come from
+  [hasaneyldrm/exercises-dataset](https://github.com/hasaneyldrm/exercises-dataset), whose media is
+  © Gym visual (https://gymvisual.com/). The dataset's text is MIT, but its license says cloning it grants no
+  rights to the media. The app loads the GIFs at runtime from that repository (pinned commit) with the required
+  attribution and does not bundle them. That is your call for personal TestFlight use; before any public App Store
+  release, get a licence from Gym visual (their terms page blocked automated reading, so I could not check the
+  tiers), or switch to the Everkinetic line art (CC BY-SA 4.0) that is already mapped in `lift/ios/ExerciseArt/`.
+- **Two approximate animations.** Hip thrust shows a floor glute bridge and Plank shows a weighted front plank;
+  the dataset has no exact match.
+
 ## Decisions made with a default (change any of them)
 
 - **Tabs:** Week, History, Exercises, Settings.
