@@ -31,6 +31,10 @@ public protocol SessionRepository: Sendable {
     func createSession(on day: LocalDay, title: String, unit: WeightUnit, templateID: UUID?) async throws
         -> SessionRecord
 
+    /// Creates a session as an import read it, in one write: its day, title, unit, note and warm-up note (its
+    /// exercises are added after). One insert, so the notes can never lose a last-writer-wins tie to the bare row.
+    func createImportedSession(_ session: Session) async throws -> SessionRecord
+
     /// Appends an exercise to a live session, stamping its load mode and equipment (DATA-6).
     func addExercise(_ slot: ExerciseSlot, to sessionID: UUID) async throws -> SessionExerciseRecord
 

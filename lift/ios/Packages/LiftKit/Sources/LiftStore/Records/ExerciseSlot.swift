@@ -10,6 +10,8 @@ public struct ExerciseSlot: Hashable, Sendable {
     public var restSeconds: Int?
     public var note: String?
     public var supersetGroup: Int?
+    /// A weight written down for next time ("next time 22kg"), as an import reads it.
+    public var nextTimeHint: Weight?
 
     public init(
         exerciseID: UUID?,
@@ -18,7 +20,8 @@ public struct ExerciseSlot: Hashable, Sendable {
         equipment: Equipment?,
         restSeconds: Int? = nil,
         note: String? = nil,
-        supersetGroup: Int? = nil
+        supersetGroup: Int? = nil,
+        nextTimeHint: Weight? = nil
     ) {
         self.exerciseID = exerciseID
         self.displayName = displayName
@@ -27,6 +30,7 @@ public struct ExerciseSlot: Hashable, Sendable {
         self.restSeconds = restSeconds
         self.note = note
         self.supersetGroup = supersetGroup
+        self.nextTimeHint = nextTimeHint
     }
 
     /// A slot for a library exercise, copying its name, load mode and equipment.

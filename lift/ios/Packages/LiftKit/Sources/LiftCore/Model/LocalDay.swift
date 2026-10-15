@@ -26,6 +26,15 @@ public struct LocalDay: Codable, Hashable, Comparable, Sendable {
         return calendar.date(from: parts)
     }
 
+    /// Noon on this day in `calendar`, or nil if the day does not exist. Notes give a day but no time, so sets logged
+    /// from an import are stamped at noon local: it keeps them on the right day in nearby time zones and away from
+    /// daylight-saving gaps, which fall at night.
+    public func noon(in calendar: Calendar) -> Date? {
+        let parts = DateComponents(year: year, month: month, day: day, hour: 12)
+        guard DateComponents(year: year, month: month, day: day).isValidDate(in: calendar) else { return nil }
+        return calendar.date(from: parts)
+    }
+
     public static func < (lhs: LocalDay, rhs: LocalDay) -> Bool {
         (lhs.year, lhs.month, lhs.day) < (rhs.year, rhs.month, rhs.day)
     }

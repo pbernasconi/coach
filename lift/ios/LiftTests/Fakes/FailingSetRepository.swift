@@ -3,8 +3,8 @@ import LiftCore
 import LiftStore
 import Synchronization
 
-/// Passes every call to `base`, except that the `failingAddSet`-th `addSet` (1-based) throws `error`, so a test can
-/// stop an import part-way through a workout.
+/// Passes every call to `base`, except that the `failingAddSet`-th `addSet` or `addImported` (1-based, counted
+/// together) throws `error`, so a test can stop an import part-way through a workout.
 nonisolated final class FailingSetRepository: SetRepository {
     private let base: any SetRepository
     private let failingAddSet: Int
@@ -18,12 +18,21 @@ nonisolated final class FailingSetRepository: SetRepository {
     }
 
     func addSet(to sessionExerciseID: UUID, kind: SetKind, target: SetTarget) async throws -> SetRecord {
+        try countAddSet()
+        return try await base.addSet(to: sessionExerciseID, kind: kind, target: target)
+    }
+
+    func addImported(_ set: LoggedSet, to sessionExerciseID: UUID, completedAt: Date?) async throws -> SetRecord {
+        try countAddSet()
+        return try await base.addImported(set, to: sessionExerciseID, completedAt: completedAt)
+    }
+
+    private func countAddSet() throws {
         let call = addSetCalls.withLock { count in
             count += 1
             return count
         }
         if call == failingAddSet { throw error }
-        return try await base.addSet(to: sessionExerciseID, kind: kind, target: target)
     }
 
     func saveValues(setID: UUID, reps: Int?, weight: Weight?) async throws -> SetRecord {

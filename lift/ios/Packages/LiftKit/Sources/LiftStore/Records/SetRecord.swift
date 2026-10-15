@@ -54,6 +54,22 @@ public struct SetRecord: Hashable, Sendable, Identifiable {
         self.deletedAt = nil
     }
 
+    /// Takes an imported set's note, values and status. A done set without values gets its target's, as `log` does;
+    /// a skipped set keeps any values it has.
+    mutating func apply(imported set: LoggedSet, completedAt: Date?) {
+        note = set.note
+        actualReps = set.actual?.reps
+        actualWeight = set.actual?.weight?.converted(to: unit)
+        if set.isSkipped {
+            status = .skipped
+        } else if set.actual != nil {
+            status = .done
+            actualReps = actualReps ?? target.reps ?? target.repRange?.lowerBound
+            actualWeight = actualWeight ?? target.weight
+        }
+        self.completedAt = status == .planned ? nil : completedAt
+    }
+
     /// The domain view. A planned set has no actual, even when values were saved on it.
     public var loggedSet: LoggedSet {
         LoggedSet(
