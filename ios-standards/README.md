@@ -11,7 +11,7 @@ A drop-in standard for building native iOS apps with coding agents. It is based 
 | `scripts/lint.sh`, `test.sh`, `generate.sh` | One command per check, the same locally and in CI | `ios/scripts/` |
 | `scripts/lint-all.sh`, `install-tools.sh`, `tools.lock` | Full static suite with pinned tools; runs on Linux and in an agent session | `ios/scripts/` |
 | `.yamllint.yml`, `.markdownlint-cli2.yaml`, `_typos.toml` | Configs for the non-Swift linters | `ios/` |
-| `CraftUI/` | Reusable SwiftUI component library (tokens, components, patterns, catalog) | its own package or repo |
+| `Kobo/` | Reusable SwiftUI component library (tokens, components, patterns, catalog) | its own package or repo |
 | `templates/Screen/` | The eight-file screen set, with a full test file | copy and rename per screen |
 | `templates/Core/` | `Loadable`, `AppError`, `Log` | `Packages/<App>Kit/Sources/Core/` |
 | `templates/Store/` | Repository protocol + GRDB implementation with outbox writes | `Sources/Store/` |

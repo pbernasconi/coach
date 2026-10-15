@@ -15,7 +15,7 @@ Each decision and why it was made. Change a decision here before changing the co
 | Local data | GRDB on SQLite, observed as `AsyncStream` | Offline-first, explicit migrations, testable on Linux |
 | Sync | Outbox table, idempotent push, cursor pull, last writer wins | Logging never waits for the network |
 | IDs | Client-made UUIDs, with `createdAt` / `updatedAt` / `deletedAt` | Rows can be created offline and merged later |
-| UI kit | `ios-standards/CraftUI` with the `.lift` theme | Shared, accessible, motion-aware components |
+| UI kit | `ios-standards/Kobo` with the `.lift` theme | Shared, accessible, motion-aware components |
 | Location | `coach/lift/` for now | Can be split into its own repo later with `git subtree split` |
 
 ## Build order
