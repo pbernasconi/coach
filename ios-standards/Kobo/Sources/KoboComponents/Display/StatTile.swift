@@ -47,7 +47,6 @@ public struct StatTile<Value: View>: View {
         VStack(alignment: .leading, spacing: Space.xs) {
             label
                 .font(theme.font(.caption).weight(.semibold))
-                .textCase(.uppercase)
                 .foregroundStyle(theme.palette.textSecondary)
             HStack(alignment: .firstTextBaseline, spacing: Space.xxs) {
                 value

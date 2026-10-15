@@ -34,4 +34,10 @@ import Testing
             #expect(style.separatorInset(leadingWidth: 36) == style.rowInset + 36)
         }
     }
+
+    @Test func aFlatCaptionLeansOnTheRowPaddingAndAGroupedOneKeepsAGap() {
+        #expect(ListSectionStyle.flat.captionGap + Space.rowVertical <= Space.lg + Space.xxs)
+        #expect(ListSectionStyle.grouped.captionGap == Space.sm)
+        #expect(ListSectionStyle.flat.captionGap < ListSectionStyle.grouped.captionGap)
+    }
 }

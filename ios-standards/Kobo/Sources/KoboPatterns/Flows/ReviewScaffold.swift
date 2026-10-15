@@ -26,7 +26,7 @@ public struct ReviewScaffold<Sections: View>: View {
 
     /// - Parameters:
     ///   - title: the step heading ("Check the import").
-    ///   - flowTitle: the flow's quiet name in the bar.
+    ///   - flowTitle: the flow's name, the inline bar title.
     ///   - Other parameters as `FlowStep`.
     public init(
         _ title: LocalizedStringKey,
@@ -88,7 +88,7 @@ public struct ReviewScaffold<Sections: View>: View {
                 if let summary {
                     ReviewSummaryCard(summary: summary)
                 }
-                VStack(alignment: .leading, spacing: Space.xl) { sections }
+                VStack(alignment: .leading, spacing: Space.section) { sections }
             }
             .pageGutter()
             .padding(.top, Space.lg)

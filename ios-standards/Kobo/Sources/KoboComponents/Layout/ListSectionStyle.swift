@@ -21,6 +21,16 @@ nonisolated public enum ListSectionStyle: Sendable, Equatable, CaseIterable {
         }
     }
 
+    /// The gap between the header, the rows and the footer. A flat row already pays `Space.rowVertical` above and
+    /// below its text, so a flat section adds only a hairline of space and the caption sits as close to the row text
+    /// as the rows sit to each other; a grouped card has no such padding outside its edge, so it keeps a small gap.
+    public var captionGap: CGFloat {
+        switch self {
+        case .flat: Space.xxs
+        case .grouped: Space.sm
+        }
+    }
+
     /// How far the header and footer sit in from the section's edge. A flat section inside a page gutter is already
     /// on the keyline; one outside a gutter (a full-width container) pays the gutter itself, as its rows do.
     public func captionInset(insidePageGutter: Bool) -> CGFloat {

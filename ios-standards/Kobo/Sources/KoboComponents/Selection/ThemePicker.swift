@@ -63,10 +63,7 @@ public struct ThemePicker<ID: Hashable & Sendable>: View {
     ) -> some View {
         VStack(alignment: .leading, spacing: Space.sm) {
             title
-                .font(theme.font(.footnote).weight(.semibold))
-                .foregroundStyle(theme.palette.textSecondary)
-                .textCase(.uppercase)
-                .accessibilityAddTraits(.isHeader)
+                .sectionTitleStyle()
             if dynamicTypeSize.isAccessibilitySize {
                 VStack(alignment: .leading, spacing: Space.sm) { ForEach(items) { content($0) } }
             } else {

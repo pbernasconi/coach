@@ -2,9 +2,9 @@ import KoboComponents
 import KoboTokens
 import SwiftUI
 
-/// A titled group of review rows: a heading with an optional "Edit" button that jumps back to the step that set these
-/// values, then the rows in a `ListSection` (flat on a page). The heading sits on the page keyline. Key a `ForEach` of
-/// rows on a stable id, never on the label.
+/// A titled group of review rows: a quiet section title (the same look as a `ListSection` header) with an optional
+/// "Edit" button that jumps back to the step that set these values, then the rows in a `ListSection` (flat on a page).
+/// The heading sits on the page keyline. Key a `ForEach` of rows on a stable id, never on the label.
 ///
 ///     ReviewSection("Tasks", onEdit: { step = .paste }) {
 ///         ReviewRow("Found", value: "12 tasks")
@@ -12,6 +12,7 @@ import SwiftUI
 ///     }
 public struct ReviewSection<Content: View>: View {
     @Environment(\.koboTheme) private var theme
+    @Environment(\.listSectionStyle) private var style
     private let title: Text
     private let onEdit: (() -> Void)?
     private let content: Content
@@ -31,7 +32,7 @@ public struct ReviewSection<Content: View>: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: Space.xs) {
+        VStack(alignment: .leading, spacing: style.captionGap) {
             header
             ListSection {
                 content
@@ -41,12 +42,12 @@ public struct ReviewSection<Content: View>: View {
         }
     }
 
+    /// The title in the one section-title look (`sectionTitleStyle()`), like every list section's header; with an
+    /// Edit link the line grows to the link's 44pt target.
     private var header: some View {
         HStack(alignment: .firstTextBaseline, spacing: Space.md) {
             title
-                .font(theme.font(.headline))
-                .foregroundStyle(theme.palette.textPrimary)
-                .accessibilityAddTraits(.isHeader)
+                .sectionTitleStyle()
                 .frame(maxWidth: .infinity, alignment: .leading)
             if let onEdit {
                 Button(action: onEdit) {
@@ -60,7 +61,6 @@ public struct ReviewSection<Content: View>: View {
                 .accessibilityLabel(Text("Edit \(title)", bundle: .module))
             }
         }
-        .frame(minHeight: Size.minTouch)
     }
 }
 

@@ -1,7 +1,8 @@
 import KoboTokens
 import SwiftUI
 
-/// A group of rows with optional header and footer slots, in one of two styles (`ListSectionStyle`):
+/// A group of rows with optional header and footer slots, in one of two styles (`ListSectionStyle`). The header is a
+/// quiet sentence-case title (`sectionTitleStyle()`), never upper-cased (DL-H3):
 /// `.flat` (the default, for a page's top-level lists) runs full-width rows on the canvas, each paying the page gutter,
 /// so the row content, the header and the footer share the page's one keyline; `.grouped` (forms and sheets) puts the
 /// rows in a rounded card whose edge sits on that keyline. Rows (`ListRow`, `KeyValueRow`) draw a hairline above
@@ -34,13 +35,10 @@ public struct ListSection<Header: View, Content: View, Footer: View>: View {
 
     public var body: some View {
         let captionInset = style.captionInset(insidePageGutter: insidePageGutter)
-        VStack(alignment: .leading, spacing: Space.sm) {
+        VStack(alignment: .leading, spacing: style.captionGap) {
             header
-                .font(theme.font(.footnote).weight(.semibold))
-                .foregroundStyle(theme.palette.textSecondary)
-                .textCase(.uppercase)
+                .sectionTitleStyle()
                 .padding(.horizontal, captionInset)
-                .accessibilityAddTraits(.isHeader)
             rows
             footer
                 .font(theme.font(.footnote))

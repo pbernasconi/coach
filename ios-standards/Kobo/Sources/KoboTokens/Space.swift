@@ -18,6 +18,9 @@ public enum Space {
     public static let cardInset: CGFloat = 16
     /// Vertical padding of a list row; with `Size.rowMinHeight` it gives a 52pt row.
     public static let rowVertical: CGFloat = 14
+    /// The gap between two sections of a page (one `ListSection`, `DetailSection` or card to the next). Every page
+    /// uses it, so sections sit the same distance apart on every screen.
+    public static let section: CGFloat = 24
 }
 
 /// Corner radii. Nested shapes use `Radius.concentric(outer:inset:)` so inner corners stay
@@ -42,6 +45,9 @@ public enum Size {
     public static let rowMinHeight: CGFloat = 52
     public static let buttonHeight: CGFloat = 50
     public static let buttonHeightCompact: CGFloat = 36
+    /// The height of the search pill: one touch target. The filter chips under it (`buttonHeightCompact`) are one step
+    /// smaller on the same surface, so a search field and its filter row read as one family.
+    public static let searchHeight: CGFloat = 44
     public static let iconSm: CGFloat = 16
     public static let iconMd: CGFloat = 20
     public static let iconLg: CGFloat = 24

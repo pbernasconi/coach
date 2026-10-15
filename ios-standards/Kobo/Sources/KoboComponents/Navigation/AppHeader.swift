@@ -55,7 +55,6 @@ public struct AppHeader<Trailing: View>: View {
                     kicker
                         .font(theme.font(.footnote).weight(.semibold))
                         .foregroundStyle(theme.palette.accentText)
-                        .textCase(.uppercase)
                 }
                 title
                     .font(theme.font(.largeTitle))
@@ -108,8 +107,10 @@ private struct HeaderControlStyle: ViewModifier {
 
     func body(content: Content) -> some View {
         if theme.surfaceStyle == .glass {
+            // Header glyphs use the primary ink, like the system back button beside them (DL-H4: quiet controls).
             content
                 .buttonStyle(.glass)
+                .tint(theme.palette.textPrimary)
                 .buttonBorderShape(.circle)
                 .labelStyle(.iconOnly)
                 .controlSize(.large)
