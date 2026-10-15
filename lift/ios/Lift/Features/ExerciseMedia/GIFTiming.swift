@@ -13,6 +13,17 @@ nonisolated enum GIFTiming {
     /// A cap on repeated frames, so a broken file cannot use unbounded memory.
     static let maxFrames = 600
 
+    /// A delay at or above this holds a pose.
+    static let holdDelay = 0.5
+
+    /// The frames worth showing. When a GIF holds two or more poses (frames shown for `holdDelay` or longer), only the
+    /// held poses play: the dataset's short frames between them are cross-fades of the two poses, which read as a
+    /// ghosted double figure, not as motion. A GIF of real motion (no holds) plays every frame.
+    static func keyFrames(delays: [Double]) -> [Int] {
+        let holds = delays.indices.filter { delays[$0] >= holdDelay }
+        return holds.count >= 2 ? holds : Array(delays.indices)
+    }
+
     /// The frame order (indices into the GIF, some repeated) and the total duration for `delays`.
     static func sequence(delays: [Double]) -> (frames: [Int], duration: Double) {
         let honoured = delays.map { $0 < minimumDelay ? defaultDelay : $0 }

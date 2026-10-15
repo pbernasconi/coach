@@ -7,9 +7,8 @@ import SwiftUI
 /// tile: the same rounded tile and the same dimming as every exercise thumbnail (`ExerciseMediaStyle`), so no screen
 /// shows a glaring white square. The caller sizes it; it keeps a square.
 ///
-/// The animation is drawn frame by frame as the dataset made it. Its frames are opaque and fully composited, and nothing
-/// in the app blends or cross-fades between them; the soft double figure between the two poses is the dataset's own
-/// in-between frames (the GIF cross-fades from standing to squatting), not a decoding fault.
+/// The dataset's GIFs hold two poses and cross-fade between them in short in-between frames, which show a ghosted
+/// double figure; the decoder plays only the held poses (`GIFTiming.keyFrames`), so every frame shows one clean figure.
 struct ExerciseMediaHero: View {
     @Environment(\.colorScheme) private var colorScheme
     let animation: MediaImage

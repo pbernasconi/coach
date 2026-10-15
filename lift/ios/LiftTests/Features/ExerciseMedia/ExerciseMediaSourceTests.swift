@@ -40,4 +40,13 @@ import Testing
         #expect(abs(timing.duration - 0.16) < 0.000_1)
         #expect(GIFTiming.sequence(delays: Array(repeating: 10, count: 10)).frames.count == GIFTiming.maxFrames)
     }
+
+    @Test func gifKeyFramesKeepOnlyHeldPosesWhenTheGIFHoldsThem() {
+        // The dataset's shape: two held poses with short cross-fades between them.
+        let crossFaded = [1.0, 0.1, 0.1, 0.1, 1.0, 0.1, 0.1]
+        #expect(GIFTiming.keyFrames(delays: crossFaded) == [0, 4])
+        // Real motion (no holds) and a single hold keep every frame.
+        #expect(GIFTiming.keyFrames(delays: [0.1, 0.1, 0.1]) == [0, 1, 2])
+        #expect(GIFTiming.keyFrames(delays: [1.0, 0.1, 0.1]) == [0, 1, 2])
+    }
 }
