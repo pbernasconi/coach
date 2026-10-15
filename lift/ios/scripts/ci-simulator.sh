@@ -11,6 +11,30 @@
 #   scripts/ci-simulator.sh pack   shuts the simulator down and moves its data to ~/sim-data, for actions/cache
 set -euo pipefail
 SNAPSHOT="$HOME/sim-data"
+
+# with_timeout <seconds> <command…>: runs the command, killing it after <seconds>.
+with_timeout() {
+  local seconds="$1"
+  shift
+  "$@" &
+  local pid=$!
+  (sleep "$seconds" && kill "$pid") 2>/dev/null &
+  local timer=$!
+  local status=0
+  wait "$pid" || status=$?
+  kill "$timer" 2>/dev/null || true
+  return "$status"
+}
+
+# wait_booted: waits until the simulator has finished booting. A single `simctl bootstatus` sometimes never
+# returns although the simulator booted (a later call answers at once), so each try gets 60 s.
+wait_booted() {
+  local try
+  for ((try = 0; try < 10; try++)); do
+    with_timeout 60 xcrun simctl bootstatus "$SIM_UDID" >/dev/null 2>&1 && return 0
+  done
+  return 1
+}
 case "$1" in
   pick)
     udid="$("$(dirname "$0")/simulator.sh")"
@@ -37,14 +61,11 @@ for runtime, items in json.load(sys.stdin)["devices"].items():
     xcrun simctl boot "$SIM_UDID" >/dev/null 2>&1 &
     (
       start=$SECONDS
-      xcrun simctl bootstatus "$SIM_UDID" -b >/dev/null 2>&1
+      wait_booted
       echo "simulator booted after $((SECONDS - start)) s, at $(date -u +%T)" >"$RUNNER_TEMP/booted"
       # One launch of a built-in app while the job waits for the build: the first app launch after a boot can
-      # take a minute or more, and the app under test should not be the one that pays for it. Capped at 90 s.
-      xcrun simctl launch "$SIM_UDID" com.apple.Preferences >/dev/null 2>&1 &
-      launch=$!
-      (sleep 90 && kill "$launch") 2>/dev/null &
-      wait "$launch" || true
+      # take a minute or more, and the app under test should not be the one that pays for it.
+      with_timeout 90 xcrun simctl launch "$SIM_UDID" com.apple.Preferences >/dev/null 2>&1 || true
       xcrun simctl terminate "$SIM_UDID" com.apple.Preferences >/dev/null 2>&1 || true
       echo "warm-up launch done after $((SECONDS - start)) s, at $(date -u +%T)" >"$RUNNER_TEMP/warmed"
     ) >/dev/null 2>&1 &
@@ -55,7 +76,7 @@ for runtime, items in json.load(sys.stdin)["devices"].items():
       [ -f "$RUNNER_TEMP/booted" ] && break
       sleep 1
     done
-    cat "$RUNNER_TEMP/booted" 2>/dev/null || xcrun simctl bootstatus "$SIM_UDID" -b
+    cat "$RUNNER_TEMP/booted" 2>/dev/null || wait_booted
     for ((i = 0; i < 60; i++)); do
       [ -f "$RUNNER_TEMP/warmed" ] && break
       sleep 1
