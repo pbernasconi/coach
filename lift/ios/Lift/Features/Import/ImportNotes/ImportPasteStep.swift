@@ -48,7 +48,11 @@ private struct ImportFormatPrimer: View {
     @Environment(\.koboTheme) private var theme
 
     var body: some View {
-        KoboCard("What notes look like") {
+        VStack(alignment: .leading, spacing: Space.md) {
+            Text("What notes look like")
+                .font(theme.font(.headline))
+                .foregroundStyle(theme.palette.textPrimary)
+                .accessibilityAddTraits(.isHeader)
             VStack(alignment: .leading, spacing: Space.md) {
                 Text(
                     "Start each workout with a title line that has a date. Put each exercise on its own line, then one line per set: reps, then the weight. Ticked sets are imported as logged."
@@ -63,5 +67,7 @@ private struct ImportFormatPrimer: View {
                     .accessibilityValue(Text(verbatim: ImportSample.format))
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .koboCard()
     }
 }
