@@ -105,7 +105,7 @@ struct CheckboxControl<Label: View>: View {
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
-        .modifier(OptionalAccessibilityLabel(label: accessibilityLabel))
+        .modifier(CheckboxAccessibilityLabel(label: accessibilityLabel))
         .accessibilityValue(CheckboxSpeech.value(state))
         .accessibilityAddTraits(CheckboxSpeech.traits(state))
         .koboFeedback(trigger: taps) { [tappedOn] _, _ in HapticFeedback.toggle(tappedOn) }
@@ -120,7 +120,7 @@ struct CheckboxControl<Label: View>: View {
 }
 
 /// Replaces the combined label only when the caller named the control (a bare box).
-private struct OptionalAccessibilityLabel: ViewModifier {
+private struct CheckboxAccessibilityLabel: ViewModifier {
     let label: Text?
 
     func body(content: Content) -> some View {

@@ -11,7 +11,7 @@ public struct KoboCheckboxStyle: ToggleStyle {
 
     public func makeBody(configuration: Configuration) -> some View {
         let state: CheckboxState = configuration.isMixed ? .mixed : CheckboxState(configuration.isOn)
-        CheckboxControl(state: state, accessibilityLabel: nil) {
+        return CheckboxControl(state: state, accessibilityLabel: nil) {
             configuration.isOn = state.toggled.isOn
         } label: {
             configuration.label

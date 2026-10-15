@@ -59,7 +59,7 @@ public struct ThemePicker<ID: Hashable & Sendable>: View {
     private func options<Item: Identifiable, Tile: View>(
         _ title: Text,
         _ items: [Item],
-        @ViewBuilder tile: @escaping (Item) -> Tile
+        @ViewBuilder content: @escaping (Item) -> Tile
     ) -> some View {
         VStack(alignment: .leading, spacing: Space.sm) {
             title
@@ -68,10 +68,10 @@ public struct ThemePicker<ID: Hashable & Sendable>: View {
                 .textCase(.uppercase)
                 .accessibilityAddTraits(.isHeader)
             if dynamicTypeSize.isAccessibilitySize {
-                VStack(alignment: .leading, spacing: Space.sm) { ForEach(items) { tile($0) } }
+                VStack(alignment: .leading, spacing: Space.sm) { ForEach(items) { content($0) } }
             } else {
                 ScrollView(.horizontal) {
-                    HStack(alignment: .top, spacing: Space.md) { ForEach(items) { tile($0) } }
+                    HStack(alignment: .top, spacing: Space.md) { ForEach(items) { content($0) } }
                 }
                 .scrollIndicators(.hidden)
                 .scrollBounceBehavior(.basedOnSize, axes: .horizontal)

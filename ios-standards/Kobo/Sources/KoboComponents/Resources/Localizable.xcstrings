@@ -49,6 +49,18 @@
         }
       }
     },
+    "%@ – %@" : {
+      "comment" : "RangeSlider shown range: the lower value, then the upper value (\"40 kg – 120 kg\").",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ – %@"
+          }
+        }
+      }
+    },
     "%@, %@" : {
       "comment" : "Field spoken value: the value, then its error message (\"135 lb, Too heavy\").",
       "extractionState" : "manual",
@@ -121,6 +133,18 @@
         }
       }
     },
+    "%lld selected" : {
+      "comment" : "MultiSelectField summary for several chosen options (\"3 selected\").",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld selected"
+          }
+        }
+      }
+    },
     "%lld/%lld" : {
       "comment" : "Character counter under a text area: characters typed of the limit (\"12/40\").",
       "extractionState" : "manual",
@@ -141,6 +165,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "About %@"
+          }
+        }
+      }
+    },
+    "All" : {
+      "comment" : "MultiSelectField summary when every option is chosen.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All"
+          }
+        }
+      }
+    },
+    "Appearance" : {
+      "comment" : "ThemePicker heading over the light, dark and system choices.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appearance"
           }
         }
       }
@@ -241,6 +289,18 @@
         }
       }
     },
+    "Checked" : {
+      "comment" : "Checkbox spoken value when on (KoboCheckbox, CheckRow).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Checked"
+          }
+        }
+      }
+    },
     "Clear %@" : {
       "comment" : "Chip VoiceOver action that clears an active filter chip (\"Clear Barbell\").",
       "extractionState" : "manual",
@@ -333,6 +393,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Copy %@"
+          }
+        }
+      }
+    },
+    "Dark" : {
+      "comment" : "ThemePicker dark appearance.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dark"
           }
         }
       }
@@ -601,6 +673,18 @@
         }
       }
     },
+    "Light" : {
+      "comment" : "ThemePicker light appearance.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Light"
+          }
+        }
+      }
+    },
     "Loading" : {
       "comment" : "LoadingState accessibility label when it has no caption.",
       "extractionState" : "manual",
@@ -613,6 +697,18 @@
         }
       }
     },
+    "Maximum %@" : {
+      "comment" : "RangeSlider upper thumb spoken label, with the slider title (\"Maximum Weight\").",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maximum %@"
+          }
+        }
+      }
+    },
     "Met" : {
       "comment" : "Accessibility value of a password rule the password meets.",
       "extractionState" : "manual",
@@ -621,6 +717,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Met"
+          }
+        }
+      }
+    },
+    "Minimum %@" : {
+      "comment" : "RangeSlider lower thumb spoken label, with the slider title (\"Minimum Weight\").",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Minimum %@"
+          }
+        }
+      }
+    },
+    "Mixed" : {
+      "comment" : "Checkbox spoken value when only some of the items it stands for are on.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mixed"
           }
         }
       }
@@ -681,6 +801,42 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No internet connection"
+          }
+        }
+      }
+    },
+    "No matches for “%@”" : {
+      "comment" : "SelectSheet search with no results, quoting the query.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No matches for “%@”"
+          }
+        }
+      }
+    },
+    "None" : {
+      "comment" : "Placeholder of a multi-select field with nothing chosen.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "None"
+          }
+        }
+      }
+    },
+    "Not checked" : {
+      "comment" : "Checkbox spoken value when off (KoboCheckbox, CheckRow).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not checked"
           }
         }
       }
@@ -841,6 +997,18 @@
         }
       }
     },
+    "Select" : {
+      "comment" : "Placeholder of a select field with nothing chosen (SelectField, MenuSelectField).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select"
+          }
+        }
+      }
+    },
     "Show" : {
       "comment" : "RevealableValue button label that reveals the value.",
       "extractionState" : "manual",
@@ -901,6 +1069,18 @@
         }
       }
     },
+    "System" : {
+      "comment" : "ThemePicker appearance that follows the device setting.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System"
+          }
+        }
+      }
+    },
     "That date is too early" : {
       "comment" : "DateField error for a typed date before the first allowed day.",
       "extractionState" : "manual",
@@ -933,6 +1113,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "That date isn't available"
+          }
+        }
+      }
+    },
+    "Theme" : {
+      "comment" : "ThemePicker heading over the app's themes.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Theme"
           }
         }
       }
