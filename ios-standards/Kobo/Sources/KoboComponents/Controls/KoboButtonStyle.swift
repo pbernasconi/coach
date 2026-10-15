@@ -56,6 +56,8 @@ public struct KoboButtonStyle: ButtonStyle {
             .koboAnimation(.instant, value: isEnabled)
             .padding(.vertical, size.targetInset)
             .contentShape(Rectangle())
+            // An inline button keeps its capsule but lays out at its label's width, on the keyline.
+            .padding(.horizontal, width == .inline ? -size.horizontalPadding : 0)
             .allowsHitTesting(!isLoading)
             .accessibilityValue(isLoading ? Text("In progress", bundle: .module) : Text(verbatim: ""))
     }
@@ -109,6 +111,9 @@ private struct ButtonSurface: ViewModifier {
                     Button("Glass") {}.buttonStyle(.kobo(.glass, width: .full))
                     Button("Delete set") {}.buttonStyle(.kobo(.destructive, width: .full))
                     Button("Plain") {}.buttonStyle(.kobo(.plain))
+                    Button("Inline, on the keyline") {}
+                        .buttonStyle(.kobo(.plain, size: .compact, width: .inline))
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     Button("Saving") {}.buttonStyle(.kobo(.primary, width: .full, isLoading: true))
                     Button("Disabled") {}.buttonStyle(.kobo(.primary, width: .full)).disabled(true)
                     HStack(spacing: Space.sm) {

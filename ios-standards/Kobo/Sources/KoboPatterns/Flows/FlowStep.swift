@@ -90,7 +90,7 @@ public struct FlowStep<Content: View>: View {
                 FlowStepHeading(title: title, subtitle: subtitle)
                 content
             }
-            .padding(.horizontal, Space.gutter)
+            .pageGutter()
             .padding(.top, Space.lg)
             .padding(.bottom, Space.xxl)
             .frame(maxWidth: .infinity, alignment: .leading)

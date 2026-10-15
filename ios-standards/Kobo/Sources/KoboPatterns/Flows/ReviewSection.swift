@@ -3,7 +3,8 @@ import KoboTokens
 import SwiftUI
 
 /// A titled group of review rows: a heading with an optional "Edit" button that jumps back to the step that set these
-/// values, then the rows in a rounded `ListSection` card. Key a `ForEach` of rows on a stable id, never on the label.
+/// values, then the rows in a `ListSection` (flat on a page). The heading sits on the page keyline. Key a `ForEach` of
+/// rows on a stable id, never on the label.
 ///
 ///     ReviewSection("Tasks", onEdit: { step = .paste }) {
 ///         ReviewRow("Found", value: "12 tasks")
@@ -59,7 +60,6 @@ public struct ReviewSection<Content: View>: View {
                 .accessibilityLabel(Text("Edit \(title)", bundle: .module))
             }
         }
-        .padding(.horizontal, Space.lg)
         .frame(minHeight: Size.minTouch)
     }
 }
@@ -83,7 +83,8 @@ public struct ReviewSection<Content: View>: View {
                         Text(verbatim: "Mon 14 Oct\nWrite the report 2h")
                     }
                 }
-                .padding(Space.gutter)
+                .padding(.vertical, Space.gutter)
+                .pageGutter()
             }
             .background(theme.palette.canvas)
         }

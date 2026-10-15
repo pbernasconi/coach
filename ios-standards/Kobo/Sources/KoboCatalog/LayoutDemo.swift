@@ -23,9 +23,16 @@ struct LayoutDemo: View {
                 }
             }
         case .listSection:
-            ListSection("Settings", footer: "Applies to new tasks.") {
-                ListRow("Units", value: "km", action: {})
-                ListRow("Default timer", value: "25:00", action: {})
+            VStack(alignment: .leading, spacing: Space.xl) {
+                ListSection("Flat", footer: "A page's top-level list: full-width rows on the keyline.") {
+                    ListRow("Units", value: "km", action: {})
+                    ListRow("Default timer", value: "25:00", action: {})
+                }
+                ListSection("Grouped", footer: "Forms and sheets: the card's edge on the keyline.") {
+                    ListRow("Units", value: "km", action: {})
+                    ListRow("Default timer", value: "25:00", action: {})
+                }
+                .listSectionStyle(.grouped)
             }
         case .keyValueList:
             KeyValueRow("Units", value: "km")

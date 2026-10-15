@@ -1,9 +1,12 @@
 import KoboTokens
 import SwiftUI
 
-/// A rounded group of rows with optional header and footer slots. Rows (`ListRow`, `KeyValueRow`) draw a
-/// hairline above themselves, inset to their text; the section clips the first one away, so `ForEach` and
-/// conditional rows get correct separators with no view erasure.
+/// A group of rows with optional header and footer slots, in one of two styles (`ListSectionStyle`):
+/// `.flat` (the default, for a page's top-level lists) runs full-width rows on the canvas, each paying the page gutter,
+/// so the row content, the header and the footer share the page's one keyline; `.grouped` (forms and sheets) puts the
+/// rows in a rounded card whose edge sits on that keyline. Rows (`ListRow`, `KeyValueRow`) draw a hairline above
+/// themselves, inset to their text; the section clips the first one away, so `ForEach` and conditional rows get
+/// correct separators with no view erasure. Content that is not a row pays the gutter with `.pageGutter()`.
 ///
 ///     ListSection("Account") {
 ///         ListRow("Profile", action: openProfile)
@@ -12,6 +15,8 @@ import SwiftUI
 public struct ListSection<Header: View, Content: View, Footer: View>: View {
     @Environment(\.koboTheme) private var theme
     @Environment(\.displayScale) private var displayScale
+    @Environment(\.listSectionStyle) private var style
+    @Environment(\.insidePageGutter) private var insidePageGutter
     private let header: Header
     private let content: Content
     private let footer: Footer
@@ -28,22 +33,38 @@ public struct ListSection<Header: View, Content: View, Footer: View>: View {
     }
 
     public var body: some View {
+        let captionInset = style.captionInset(insidePageGutter: insidePageGutter)
         VStack(alignment: .leading, spacing: Space.sm) {
             header
                 .font(theme.font(.footnote).weight(.semibold))
                 .foregroundStyle(theme.palette.textSecondary)
                 .textCase(.uppercase)
-                .padding(.horizontal, Space.lg)
+                .padding(.horizontal, captionInset)
                 .accessibilityAddTraits(.isHeader)
-            VStack(spacing: 0) { content }
-                .padding(.top, -1 / displayScale)
-                .environment(\.koboInListSection, true)
-                .background(theme.palette.surface)
-                .clipShape(RoundedRectangle(cornerRadius: Radius.lg, style: .continuous))
+            rows
             footer
                 .font(theme.font(.footnote))
                 .foregroundStyle(theme.palette.textSecondary)
-                .padding(.horizontal, Space.lg)
+                .padding(.horizontal, captionInset)
+        }
+    }
+
+    /// The rows, their first hairline clipped away: bled to the screen edges when flat, on a card when grouped.
+    @ViewBuilder private var rows: some View {
+        let stack = VStack(spacing: 0) { content }
+            .padding(.top, -1 / displayScale)
+            .environment(\.koboInListSection, true)
+            // The rows pay their own inset, so content inside them is no longer inside the page gutter.
+            .insidePageGutter(false)
+        switch style {
+        case .flat:
+            stack
+                .clipShape(Rectangle())
+                .padding(.horizontal, -style.rowBleed(insidePageGutter: insidePageGutter))
+        case .grouped:
+            stack
+                .background(theme.palette.surface)
+                .clipShape(RoundedRectangle(cornerRadius: Radius.lg, style: .continuous))
         }
     }
 }
@@ -105,26 +126,35 @@ private struct ListSectionSeparator: ViewModifier {
     private struct ListSectionPreview: View {
         var body: some View {
             ScrollView {
-                VStack(spacing: Space.xxl) {
-                    ListSection("Account", footer: "Changes sync to all your devices.") {
-                        ListRow("Profile", subtitle: "Name, photo", action: {}) {
-                            Image(systemName: "person.crop.circle").accessibilityHidden(true)
-                        }
-                        ListRow("Units", value: "km", action: {}) {
-                            Image(systemName: "ruler").accessibilityHidden(true)
-                        }
-                        ListRow("Version", value: "1.0")
-                    }
-                    ListSection {
-                        ListRow("No header", action: {})
-                        ListRow("Second row", action: {})
-                    } header: {
-                        Label("Custom header", systemImage: "gear")
-                    }
+                VStack(alignment: .leading, spacing: Space.xxl) {
+                    SectionHeader("Flat (top-level lists)")
+                    sections
+                    SectionHeader("Grouped (forms and sheets)")
+                    sections.listSectionStyle(.grouped)
                 }
-                .padding(Space.gutter)
+                .pageGutter()
             }
             .background(Theme.system.palette.canvas)
+        }
+
+        private var sections: some View {
+            VStack(spacing: Space.xxl) {
+                ListSection("Account", footer: "Changes sync to all your devices.") {
+                    ListRow("Profile", subtitle: "Name, photo", action: {}) {
+                        Image(systemName: "person.crop.circle").accessibilityHidden(true)
+                    }
+                    ListRow("Units", value: "km", action: {}) {
+                        Image(systemName: "ruler").accessibilityHidden(true)
+                    }
+                    ListRow("Version", value: "1.0")
+                }
+                ListSection {
+                    ListRow("No header", action: {})
+                    ListRow("Second row", action: {})
+                } header: {
+                    Label("Custom header", systemImage: "gear")
+                }
+            }
         }
     }
 

@@ -11,8 +11,11 @@ public enum Space {
     public static let xl: CGFloat = 20
     public static let xxl: CGFloat = 24
     public static let xxxl: CGFloat = 32
-    /// Horizontal screen gutter.
+    /// The one page margin (the keyline): titles, section headers, row content, footers, buttons and card edges all
+    /// start here. Flat rows pay it themselves; everything else sits inside `.pageGutter()`.
     public static let gutter: CGFloat = 16
+    /// The inner padding of a card (`.koboCard()`, a grouped `ListSection`): one inset for every card's content.
+    public static let cardInset: CGFloat = 16
     /// Vertical padding of a list row; with `Size.rowMinHeight` it gives a 52pt row.
     public static let rowVertical: CGFloat = 14
 }

@@ -64,7 +64,8 @@ public struct RadioGroup<Value: Hashable & Sendable>: View {
                         RadioGroup(verbatim: "Weekday plan", options: SelectionSamples.dayPlans, selection: $day)
                     }
                 }
-                .padding(Space.gutter)
+                .padding(.vertical, Space.gutter)
+                .pageGutter()
             }
             .background(theme.palette.canvas)
         }

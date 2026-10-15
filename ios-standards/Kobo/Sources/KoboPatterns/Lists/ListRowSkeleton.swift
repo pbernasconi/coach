@@ -10,6 +10,7 @@ import SwiftUI
 ///         .accessibilityElement(children: .ignore)
 ///         .accessibilityLabel("Loading")
 public struct ListRowSkeleton: View {
+    @Environment(\.listSectionStyle) private var style
     @ScaledMetric(relativeTo: .body) private var leadingSide = Size.iconLg
     private let rows: Int
     private let showsLeading: Bool
@@ -35,7 +36,9 @@ public struct ListRowSkeleton: View {
         .accessibilityHidden(true)
     }
 
-    private var separatorInset: CGFloat { Space.lg + (showsLeading ? leadingSide + Space.md : 0) }
+    private var separatorInset: CGFloat {
+        style.separatorInset(leadingWidth: showsLeading ? leadingSide + Space.md : 0)
+    }
 
     private func row(_ index: Int) -> some View {
         HStack(spacing: Space.md) {
@@ -48,7 +51,7 @@ public struct ListRowSkeleton: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.horizontal, Space.lg)
+        .padding(.horizontal, style.rowInset)
         .padding(.vertical, Space.rowVertical)
         .frame(minHeight: Size.rowMinHeight)
     }
@@ -76,7 +79,8 @@ struct SkeletonSlot: Identifiable {
                 ListSection("Loading") { ListRowSkeleton(rows: 3) }
                 ListSection { ListRowSkeleton(rows: 2, showsLeading: false) }
             }
-            .padding(Space.gutter)
+            .padding(.vertical, Space.gutter)
+            .pageGutter()
             .screenCanvas()
         }
     }

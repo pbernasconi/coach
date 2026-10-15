@@ -69,7 +69,8 @@ public struct KeyValueList: View {
         var body: some View {
             ScrollView {
                 KeyValueList("Summary", items: items, footer: "Distance counts travel days only.")
-                    .padding(Space.gutter)
+                    .padding(.vertical, Space.gutter)
+                    .pageGutter()
             }
             .background(Theme.system.palette.canvas)
         }

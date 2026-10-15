@@ -3,10 +3,13 @@ import SwiftUI
 
 extension View {
     /// Places the view on a rounded surface card: surface fill, continuous corners and a subtle shadow
-    /// in light mode only (dark mode separates by tone).
+    /// in light mode only (dark mode separates by tone). The card's edge goes on the page keyline (inside
+    /// `.pageGutter()`), and its content sits one `Space.cardInset` in; keep that default unless the content fills the
+    /// card edge to edge (pass `0`). Cards are for forms and grouped fields; a page's top-level list is a flat
+    /// `ListSection`.
     ///
     ///     VStack { … }.koboCard()
-    public func koboCard(padding: CGFloat = Space.lg) -> some View {
+    public func koboCard(padding: CGFloat = Space.cardInset) -> some View {
         modifier(KoboCardModifier(padding: padding))
     }
 }
@@ -49,7 +52,7 @@ public struct CardSection<Header: View, Content: View>: View {
 
     /// A card with a custom header slot.
     public init(
-        padding: CGFloat = Space.lg,
+        padding: CGFloat = Space.cardInset,
         @ViewBuilder content: () -> Content,
         @ViewBuilder header: () -> Header
     ) {
@@ -72,12 +75,16 @@ public struct CardSection<Header: View, Content: View>: View {
 
 extension CardSection where Header == Text? {
     /// A card with an optional localized title.
-    public init(_ title: LocalizedStringKey? = nil, padding: CGFloat = Space.lg, @ViewBuilder content: () -> Content) {
+    public init(
+        _ title: LocalizedStringKey? = nil,
+        padding: CGFloat = Space.cardInset,
+        @ViewBuilder content: () -> Content
+    ) {
         self.init(padding: padding, content: content) { title.map { Text($0) } }
     }
 
     /// A card whose title is shown as is (user data).
-    public init(verbatim title: String, padding: CGFloat = Space.lg, @ViewBuilder content: () -> Content) {
+    public init(verbatim title: String, padding: CGFloat = Space.cardInset, @ViewBuilder content: () -> Content) {
         self.init(padding: padding, content: content) { Optional(Text(verbatim: title)) }
     }
 }

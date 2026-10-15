@@ -139,7 +139,8 @@ extension RadioRow where Trailing == EmptyView {
                     RadioRow("Day off", subtitle: "Not available in a holiday week", isSelected: false) {}
                         .disabled(true)
                 }
-                .padding(Space.gutter)
+                .padding(.vertical, Space.gutter)
+                .pageGutter()
             }
             .background(theme.palette.canvas)
         }

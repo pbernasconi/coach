@@ -1,10 +1,11 @@
 import KoboTokens
 import SwiftUI
 
-/// The pressed look of a tappable `ListRow`. Inside a `ListSection` the whole row fills with `surfaceRaised`, clipped
-/// by the card's corners. Outside one (rows straight on the canvas, or in a sheet), the fill is a rounded rectangle
-/// inset `Space.xs`, in `surfaceSunken`, which reads on the canvas where the raised tone almost vanishes. The fill comes in on
-/// `Motion.instant` and goes out on `Motion.exit`, and a quick tap shows the whole fill once (`PressFillSchedule`).
+/// The pressed look of a tappable `ListRow`. Inside a `ListSection` the whole row fills: edge to edge in
+/// `surfaceSunken` in a flat section (the row runs to the screen edges and reads on the canvas), with `surfaceRaised`
+/// clipped by the card's corners in a grouped one. Outside a section (a lone row in a sheet), the fill is a rounded
+/// rectangle inset `Space.xs`, in `surfaceSunken`. The fill comes in on `Motion.instant` and goes out on
+/// `Motion.exit`, and a quick tap shows the whole fill once (`PressFillSchedule`).
 /// Ported from Trellis's `ListRowPressLook` and `PressFillSchedule`.
 struct ListRowButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
@@ -15,6 +16,7 @@ struct ListRowButtonStyle: ButtonStyle {
 private struct ListRowPressBody<Label: View>: View {
     @Environment(\.koboTheme) private var theme
     @Environment(\.koboInListSection) private var inSection
+    @Environment(\.listSectionStyle) private var style
     let label: Label
     let isPressed: Bool
 
@@ -30,6 +32,6 @@ private struct ListRowPressBody<Label: View>: View {
     }
 
     private var fill: Color {
-        inSection ? theme.palette.surfaceRaised : theme.palette.surfaceSunken
+        inSection && style == .grouped ? theme.palette.surfaceRaised : theme.palette.surfaceSunken
     }
 }

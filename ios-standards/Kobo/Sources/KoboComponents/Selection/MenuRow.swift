@@ -175,7 +175,8 @@ extension ChoiceMenuPicker where Tag == Value {
                     MenuRow("Calendar", selection: .constant("std"), options: [ChoiceOption("std", title: "Gregorian")])
                         .disabled(true)
                 }
-                .padding(Space.gutter)
+                .padding(.vertical, Space.gutter)
+                .pageGutter()
             }
             .background(theme.palette.canvas)
         }

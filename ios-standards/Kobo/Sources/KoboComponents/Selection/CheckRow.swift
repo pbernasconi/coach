@@ -152,7 +152,8 @@ extension CheckRow where Leading == EmptyView {
                     CheckRow("Sauna", subtitle: "Ask your host", isOn: .constant(false)).disabled(true)
                     CheckRow(verbatim: "Balcony", value: "12", isOn: .constant(true))
                 }
-                .padding(Space.gutter)
+                .padding(.vertical, Space.gutter)
+                .pageGutter()
             }
             .background(theme.palette.canvas)
         }

@@ -2,7 +2,7 @@ import KoboComponents
 import KoboTokens
 import SwiftUI
 
-/// The facts of an outcome in a rounded `ListSection`, one `KeyValueRow` each, read as "label, value".
+/// The facts of an outcome in a grouped `ListSection` card, one `KeyValueRow` each, read as "label, value".
 struct OutcomeFactsCard: View {
     let facts: [OutcomeFact]
 
@@ -14,5 +14,6 @@ struct OutcomeFactsCard: View {
         } header: {
             EmptyView()
         }
+        .listSectionStyle(.grouped)
     }
 }

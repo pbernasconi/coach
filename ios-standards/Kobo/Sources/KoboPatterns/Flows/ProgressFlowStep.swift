@@ -88,13 +88,13 @@ public struct ProgressFlowStep<Content: View>: View {
     public var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Space.lg) { content }
-                .padding(.horizontal, Space.gutter)
+                .pageGutter()
                 .padding(.vertical, Space.lg)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .safeAreaInset(edge: .top, spacing: 0) {
             indicator
-                .padding(.horizontal, Space.gutter)
+                .pageGutter()
                 .padding(.vertical, Space.sm)
                 .background(theme.palette.canvas)
         }

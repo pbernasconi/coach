@@ -16,6 +16,7 @@ public struct ToggleRow: View {
     @Environment(\.koboTheme) private var theme
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.listSectionStyle) private var style
     @ScaledMetric(relativeTo: .body) private var iconWidth = Size.iconLg
     @State private var pendingTap = ToggleRowPendingTap()
     @State private var slowSave = false
@@ -85,7 +86,9 @@ public struct ToggleRow: View {
     }
 
     private var displayed: Bool { pendingTap.displayed(isOn: isOn.wrappedValue, interaction: interaction) }
-    private var separatorInset: CGFloat { Space.lg + (systemImage == nil ? 0 : iconWidth + Space.md) }
+    private var separatorInset: CGFloat {
+        style.separatorInset(leadingWidth: systemImage == nil ? 0 : iconWidth + Space.md)
+    }
 
     @ViewBuilder private var row: some View {
         Group {
@@ -111,7 +114,7 @@ public struct ToggleRow: View {
             }
         }
         .padding(.vertical, Space.md)
-        .padding(.horizontal, Space.lg)
+        .padding(.horizontal, style.rowInset)
         .frame(maxWidth: .infinity, minHeight: Size.rowMinHeight, alignment: .leading)
         .contentShape(Rectangle())
     }
@@ -188,7 +191,8 @@ public struct ToggleRow: View {
                 ToggleRow(verbatim: "Kitchen speaker", subtitle: "Saving…", isOn: $paired, interaction: .saving)
                 ToggleRow("Smart suggestions", isOn: .constant(true)).disabled(true)
             }
-            .padding(Space.gutter)
+            .padding(.vertical, Space.gutter)
+            .pageGutter()
             .frame(maxHeight: .infinity, alignment: .top)
             .background(theme.palette.canvas)
         }

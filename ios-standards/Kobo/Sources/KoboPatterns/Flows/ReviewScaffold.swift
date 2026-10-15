@@ -90,7 +90,7 @@ public struct ReviewScaffold<Sections: View>: View {
                 }
                 VStack(alignment: .leading, spacing: Space.xl) { sections }
             }
-            .padding(.horizontal, Space.gutter)
+            .pageGutter()
             .padding(.top, Space.lg)
             .padding(.bottom, Space.xxl)
             .frame(maxWidth: .infinity, alignment: .leading)
