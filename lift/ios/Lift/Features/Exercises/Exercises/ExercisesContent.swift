@@ -41,7 +41,7 @@ struct ExercisesContent: View {
                     )
                 }
             }
-            .pageGutter()
+            .pageColumn()
             .padding(.bottom, Space.xxl)
         }
         .screenCanvas()
@@ -52,7 +52,7 @@ struct ExercisesContent: View {
                     text: .action(state.query) { send(.queryChanged($0)) },
                     prompt: "Search exercises"
                 )
-                .padding(.horizontal, Space.gutter)
+                .pageGutter()
                 .padding(.bottom, Space.sm)
             }
         }

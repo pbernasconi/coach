@@ -10,6 +10,8 @@ nonisolated enum SetGridWidth {
     static let badge = Size.iconLg + Space.xs
     static let weight = Size.thumbnail + Space.lg
     static let reps = Size.thumbnail
+    /// The grid's inset inside its card: the card inset every card's content uses.
+    static let inset = Space.cardInset
 }
 
 /// One set in the grid: its badge, the same set last time, weight and reps pills that open the editor (which never
@@ -32,10 +34,10 @@ struct SetRow: View {
         Group {
             if dynamicTypeSize.isAccessibilitySize { stacked } else { grid }
         }
-        .padding(.horizontal, Space.lg)
+        .padding(.horizontal, SetGridWidth.inset)
         .padding(.vertical, Space.xxs)
         .frame(maxWidth: .infinity, minHeight: Size.minTouch, alignment: .leading)
-        .overlay(alignment: .top) { Separator(leadingInset: Space.lg) }
+        .overlay(alignment: .top) { Separator(leadingInset: SetGridWidth.inset) }
         .contextMenu {
             if item.status == .planned {
                 Button("Skip set", systemImage: "forward", action: onSkip)

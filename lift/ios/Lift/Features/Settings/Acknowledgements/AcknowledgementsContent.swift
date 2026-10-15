@@ -2,7 +2,7 @@ import KoboComponents
 import KoboTokens
 import SwiftUI
 
-/// Dumb view: one card per bundled third-party work, with its licence and source links (SCR-2).
+/// Dumb view: one flat section per bundled third-party work, with its licence and source links (SCR-2).
 struct AcknowledgementsContent: View {
     let state: AcknowledgementsState
     let send: (AcknowledgementsAction) -> Void
@@ -13,10 +13,10 @@ struct AcknowledgementsContent: View {
                 AppHeader("Acknowledgements")
                 VStack(alignment: .leading, spacing: Space.xxl) {
                     ForEach(state.items) { item in
-                        AcknowledgementCard(item: item, send: send)
+                        AcknowledgementSection(item: item, send: send)
                     }
                 }
-                .pageGutter()
+                .pageColumn()
                 .padding(.bottom, Space.xxl)
             }
         }
@@ -25,14 +25,18 @@ struct AcknowledgementsContent: View {
     }
 }
 
-/// One acknowledgement: name, licence tag, what it is, and its links.
-private struct AcknowledgementCard: View {
+/// One acknowledgement, flat on the page keyline: name, licence tag, what it is, and its links.
+private struct AcknowledgementSection: View {
     @Environment(\.koboTheme) private var theme
     let item: Acknowledgement
     let send: (AcknowledgementsAction) -> Void
 
     var body: some View {
-        CardSection(verbatim: item.title) {
+        VStack(alignment: .leading, spacing: Space.md) {
+            Text(verbatim: item.title)
+                .font(theme.font(.headline))
+                .foregroundStyle(theme.palette.textPrimary)
+                .accessibilityAddTraits(.isHeader)
             KoboTag(verbatim: item.license, tone: .neutral, style: .outline)
             Text(verbatim: item.detail)
                 .font(theme.font(.body))

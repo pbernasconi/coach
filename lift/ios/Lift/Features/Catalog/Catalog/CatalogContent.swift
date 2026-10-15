@@ -25,7 +25,7 @@ struct CatalogContent: View {
                     CatalogList(rows: rows, state: state, send: send)
                 }
             }
-            .pageGutter()
+            .pageColumn()
             .padding(.top, Space.sm)
             .padding(.bottom, Space.xxl)
         }

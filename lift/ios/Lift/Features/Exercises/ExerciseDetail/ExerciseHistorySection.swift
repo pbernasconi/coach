@@ -12,7 +12,8 @@ struct ExerciseHistorySection: View {
         case .loading:
             ListSection("Your history") {
                 LoadingState()
-                    .padding(Space.md)
+                    .padding(.vertical, Space.md)
+                    .pageGutter()
             }
         case .empty:
             ListSection("Your history") {

@@ -85,7 +85,7 @@ private struct WorkoutBody: View {
                 )
             }
         }
-        .pageGutter()
+        .pageColumn()
         .padding(.top, Space.sm)
         .padding(.bottom, Space.xxl)
     }

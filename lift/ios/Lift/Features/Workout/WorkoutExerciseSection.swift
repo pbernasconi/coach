@@ -4,7 +4,9 @@ import LiftCore
 import SwiftUI
 
 /// One exercise on the Workout screen: a compact header (thumbnail, name, working target, How to), one-line warm-up,
-/// plates and progression hints, then the set grid with last time's sets, and Add set.
+/// plates and progression hints, then the set grid with last time's sets, and Add set. The header, the grid's card edge
+/// and Add set sit on the page keyline; the grid is a grouped card (a set of editable fields) with its column header
+/// inside it, so the column titles share the rows' inset.
 struct WorkoutExerciseSection: View {
     @Environment(\.koboTheme) private var theme
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -18,6 +20,9 @@ struct WorkoutExerciseSection: View {
         VStack(alignment: .leading, spacing: Space.sm) {
             header
             ListSection {
+                if !dynamicTypeSize.isAccessibilitySize {
+                    SetGridHeader(unit: exercise.unit)
+                }
                 ForEach(exercise.sets) { item in
                     SetRow(
                         item: item,
@@ -29,13 +34,12 @@ struct WorkoutExerciseSection: View {
                     )
                 }
             } header: {
-                if !dynamicTypeSize.isAccessibilitySize {
-                    SetGridHeader(unit: exercise.unit)
-                }
+                EmptyView()
             } footer: {
                 Button("Add set", systemImage: "plus") { send(.addSetTapped(exerciseID: exercise.id)) }
-                    .buttonStyle(.kobo(.plain, size: .compact))
+                    .buttonStyle(.kobo(.plain, size: .compact, width: .inline))
             }
+            .listSectionStyle(.grouped)
         }
     }
 
@@ -65,7 +69,6 @@ struct WorkoutExerciseSection: View {
                 }
             }
         }
-        .padding(.horizontal, Space.lg)
     }
 
     private var title: some View {
@@ -129,7 +132,8 @@ struct WorkoutExerciseSection: View {
     }
 }
 
-/// The set grid's column header: SET · PREVIOUS · KG (or LB) · REPS, lined up with `SetRow`.
+/// The set grid's column header: SET · PREVIOUS · KG (or LB) · REPS, the first line of the grid's card, lined up with
+/// `SetRow` on the card's inset.
 private struct SetGridHeader: View {
     @Environment(\.koboTheme) private var theme
     @ScaledMetric(relativeTo: .body) private var badgeWidth = SetGridWidth.badge
@@ -146,7 +150,12 @@ private struct SetGridHeader: View {
             Color.clear.frame(width: Size.minTouch, height: 0)
         }
         .font(theme.font(.caption).weight(.semibold))
+        .foregroundStyle(theme.palette.textSecondary)
+        .textCase(.uppercase)
         .lineLimit(1)
+        .padding(.horizontal, SetGridWidth.inset)
+        .padding(.top, Space.sm)
+        .padding(.bottom, Space.xs)
         .accessibilityHidden(true)
     }
 }

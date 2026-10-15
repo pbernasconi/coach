@@ -48,11 +48,11 @@ private struct CatalogDetailBody: View {
                 CatalogFacts(item: item)
             }
             LibraryAction(status: state.library, send: send)
-            CardSection("Steps", padding: Space.md) {
+            DetailSection("Steps") {
                 CatalogSteps(steps: item.steps)
             }
         }
-        .pageGutter()
+        .pageColumn()
         .padding(.top, Space.xs)
         .padding(.bottom, Space.xxl)
     }

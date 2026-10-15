@@ -14,7 +14,7 @@ struct WeekSessionList: View {
                 VStack(alignment: .leading, spacing: Space.xl) {
                     content
                 }
-                .pageGutter()
+                .pageColumn()
                 .padding(.top, Space.sm)
                 .padding(.bottom, Space.xxl)
             }
