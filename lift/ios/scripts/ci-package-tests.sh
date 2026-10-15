@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Runs a Swift package's tests in the background of a CI job and reports them later, so they use time the job
-# spends waiting anyway (the screenshot jobs wait for the build job's app).
+# Runs a Swift package's tests in the background of a CI job and reports them later, so several packages can
+# test side by side.
 #   scripts/ci-package-tests.sh start <package dir>   starts `swift test` there
 #   scripts/ci-package-tests.sh wait <package dir>    waits for it, prints the log's tail and unique errors, and
 #                                                     exits with its status
