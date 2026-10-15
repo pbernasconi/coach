@@ -92,7 +92,7 @@ enum BannerSlot<ID: Hashable>: Hashable, Identifiable {
 }
 
 /// The banner type of a stack that shows only the offline banner.
-public enum NoBanner: StackableBanner {
+nonisolated public enum NoBanner: StackableBanner {
     public var id: Never { switch self {} }
     public var priority: BannerPriority { switch self {} }
 }

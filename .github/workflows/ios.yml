@@ -71,7 +71,13 @@ jobs:
         working-directory: ios-standards/Kobo
         run: |
           set -o pipefail
-          swift test 2>&1 | tee ../../kobo-macos.log
+          status=0
+          swift test > ../../kobo-macos.log 2>&1 || status=$?
+          tail -n 40 ../../kobo-macos.log
+          echo "::group::Unique errors (macOS)"
+          grep -E "(error|warning):" ../../kobo-macos.log | grep -v "^ *|" | sort -u | head -n 150 || true
+          echo "::endgroup::"
+          exit "$status"
       - name: Build for the iOS simulator (warnings are errors)
         if: ${{ !cancelled() }}
         working-directory: ios-standards/Kobo
@@ -82,7 +88,9 @@ jobs:
             -destination "generic/platform=iOS Simulator" \
             -skipPackagePluginValidation \
             -IDEBuildingContinueBuildingAfterErrors=YES \
-            2>&1 | tee ../../kobo-ios.log | grep -E "error:|warning:|BUILD (SUCCEEDED|FAILED)" || true
+            STRING_CATALOG_GENERATE_SYMBOLS=NO \
+            > ../../kobo-ios.log 2>&1 || true
+          grep -E "(error|warning):" ../../kobo-ios.log | grep -v "^ *|" | sort -u | head -n 150 || true
           grep -q "BUILD SUCCEEDED" ../../kobo-ios.log
 
   liftkit-macos:

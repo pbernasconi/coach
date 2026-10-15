@@ -2,7 +2,7 @@ import KoboTokens
 import SwiftUI
 
 #if DEBUG
-    private enum PreviewBanner: String, StackableBanner, CaseIterable {
+    nonisolated private enum PreviewBanner: String, StackableBanner, CaseIterable {
         case update, maintenance, tip
 
         var id: String { rawValue }
