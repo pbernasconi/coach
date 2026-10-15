@@ -40,6 +40,10 @@ server as `LIFT_SYNC_TOKEN` and stored on the iPhone in the Keychain. Wrong or m
   count, `repMin`/`repMax`, optional `weightValue`/`weightUnit`, `restSeconds` and `kind`). A
   `templateExercise` belongs to a `template` through `templateID`; a `session` names the template it was planned
   from in `templateID`.
+- `session.healthWorkoutID` (schema v5): the UUID of the Apple Health workout Lift saved when the session was
+  finished, or `null`. It syncs so a second device sees the workout is already in Health and never saves it again;
+  it is cleared when Lift deletes that workout (the session was discarded). Payloads from builds before v5 omit the
+  key, which reads as `null`. The server stores it like any other column and validates nothing about it.
 - At most 500 changes per request.
 - `payload` is the outbox entry's JSON object as written by LiftStore (column names as keys, UUIDs as
   strings, dates as ISO 8601 with milliseconds and `Z`).
