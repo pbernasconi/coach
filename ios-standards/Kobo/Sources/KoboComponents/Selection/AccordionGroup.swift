@@ -10,7 +10,7 @@ import SwiftUI
 ///         ForEach(day.exercises) { Text(verbatim: $0.name) }
 ///     }
 public struct AccordionGroup<Data: RandomAccessCollection, Content: View>: View
-where Data.Element: Identifiable {
+where Data.Element: Identifiable, Data.Element.ID: Sendable {
     private let data: Data
     private let expanded: Binding<Data.Element.ID?>
     private let mode: AccordionMode

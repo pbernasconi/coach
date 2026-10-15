@@ -61,7 +61,7 @@ public struct RangeSlider: View {
     }
 
     /// Up to one decimal, in the user's locale.
-    public static func defaultFormat(_ value: Double) -> String {
+    nonisolated public static func defaultFormat(_ value: Double) -> String {
         value.formatted(.number.precision(.fractionLength(0...1)))
     }
 
