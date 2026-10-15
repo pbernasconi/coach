@@ -81,3 +81,11 @@ public struct LiveSessionRepository: SessionRepository {
         }
     }
 }
+
+extension LiveSessionRepository: ExerciseHistoryRepository {
+    public func observeHistory(exerciseID: UUID, limit: Int) -> AsyncStream<[ExerciseHistoryEntry]> {
+        ObservedStream.make(in: store.writer) { db in
+            try ExerciseHistoryQuery.entries(db, exerciseID: exerciseID, limit: limit)
+        }
+    }
+}

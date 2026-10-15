@@ -8,6 +8,8 @@ final class AppDependencies {
     let sessions: any SessionRepository
     let exercises: any ExerciseRepository
     let sets: any SetRepository
+    /// The logged history of one exercise, for the exercise detail screen.
+    let history: any ExerciseHistoryRepository
     let now: @Sendable () -> Date
     /// Drives countdowns such as the rest timer; tests and previews pass their own.
     let clock: any Clock<Duration>
@@ -19,6 +21,7 @@ final class AppDependencies {
         sessions: any SessionRepository,
         exercises: any ExerciseRepository,
         sets: any SetRepository,
+        history: any ExerciseHistoryRepository,
         now: @escaping @Sendable () -> Date,
         clock: any Clock<Duration>,
         calendar: Calendar,
@@ -27,6 +30,7 @@ final class AppDependencies {
         self.sessions = sessions
         self.exercises = exercises
         self.sets = sets
+        self.history = history
         self.now = now
         self.clock = clock
         self.calendar = calendar

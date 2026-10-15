@@ -25,8 +25,9 @@ private struct AppShell: View {
     private let options: LaunchOptions
     @State private var tab: AppTab
     @State private var isReady = false
-    /// The route the Week tab starts on (`-open workout`), worked out after `prepare()`.
-    @State private var weekRoute: AppRoute?
+    /// The route `options.opening` pushes on its tab (`-open workout`, `-open exercise`), worked out after
+    /// `prepare()`.
+    @State private var openedRoute: AppRoute?
 
     init(dependencies: AppDependencies, options: LaunchOptions) {
         self.dependencies = dependencies
@@ -49,16 +50,17 @@ private struct AppShell: View {
         .environment(\.calendar, dependencies.calendar)
         .task {
             await dependencies.prepare()
-            if options.opening != nil {
-                weekRoute = options.initialRoute(upcomingSessionID: await dependencies.upcomingSessionID())
+            if let opening = options.opening {
+                let sessionID = opening == .workout ? await dependencies.upcomingSessionID() : nil
+                openedRoute = options.initialRoute(upcomingSessionID: sessionID)
             }
             isReady = true
         }
     }
 
     private func initialPath(for tab: AppTab) -> [AppRoute] {
-        guard tab == .week, let weekRoute else { return [] }
-        return [weekRoute]
+        guard tab == options.opening?.tab, let openedRoute else { return [] }
+        return [openedRoute]
     }
 
     private var tabs: [KoboTab<AppTab>] {
@@ -120,9 +122,9 @@ private struct TabRootScreen: View {
                 )
             )
         case .exercises:
-            ExercisesScreen(viewModel: ExercisesViewModel(exercises: dependencies.exercises))
+            ExercisesScreen(viewModel: ExercisesViewModel(exercises: dependencies.exercises, router: router))
         case .settings:
-            SettingsScreen(viewModel: SettingsViewModel(info: dependencies.info))
+            SettingsScreen(viewModel: SettingsViewModel(info: dependencies.info, router: router))
         }
     }
 }

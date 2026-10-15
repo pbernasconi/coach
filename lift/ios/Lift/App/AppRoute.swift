@@ -4,6 +4,10 @@ import Observation
 /// A screen pushed onto a tab's navigation stack.
 nonisolated enum AppRoute: Hashable, Sendable {
     case workout(UUID)
+    /// How to do a library exercise, and its recent history.
+    case exercise(UUID)
+    /// Third-party work bundled with the app and its licences.
+    case acknowledgements
 }
 
 /// Opens routes. ViewModels take this protocol, so tests can record what they opened (SCR-3).

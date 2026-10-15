@@ -38,10 +38,12 @@ enum CompositionRoot {
     private static func dependencies(database: LiftDatabase, isDemo: Bool) -> AppDependencies {
         let now: @Sendable () -> Date = { Date() }
         let makeID: @Sendable () -> UUID = { UUID() }
+        let sessions = LiveSessionRepository(database: database, now: now, makeID: makeID)
         return AppDependencies(
-            sessions: LiveSessionRepository(database: database, now: now, makeID: makeID),
+            sessions: sessions,
             exercises: LiveExerciseRepository(database: database, now: now, makeID: makeID),
             sets: LiveSetRepository(database: database, now: now, makeID: makeID),
+            history: sessions,
             now: now,
             clock: ContinuousClock(),
             calendar: .autoupdatingCurrent,
