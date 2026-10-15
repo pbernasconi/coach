@@ -15,6 +15,7 @@ import SwiftUI
 public struct ListRow<Leading: View, Trailing: View>: View {
     @Environment(\.koboTheme) private var theme
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.listRowDensity) private var density
     @State private var leadingWidth: CGFloat = 0
     private let title: Text
     private let subtitle: Text?
@@ -63,7 +64,14 @@ public struct ListRow<Leading: View, Trailing: View>: View {
     }
 
     /// The one place every initialiser lands: ready-made texts and built slots.
-    init(title: Text, subtitle: Text?, value: String?, action: (() -> Void)?, leading: Leading, trailing: Trailing) {
+    init(
+        title: Text,
+        subtitle: Text?,
+        value: String?,
+        action: (() -> Void)?,
+        leading: Leading,
+        trailing: Trailing
+    ) {
         self.title = title
         self.subtitle = subtitle
         self.value = value
@@ -108,8 +116,8 @@ public struct ListRow<Leading: View, Trailing: View>: View {
             }
         }
         .padding(.horizontal, Space.lg)
-        .padding(.vertical, Space.rowVertical)
-        .frame(maxWidth: .infinity, minHeight: Size.rowMinHeight, alignment: .leading)
+        .padding(.vertical, density.verticalPadding)
+        .frame(maxWidth: .infinity, minHeight: density.minHeight, alignment: .leading)
         .contentShape(Rectangle())
         .listSectionSeparator(leadingInset: separatorInset)
     }
@@ -121,7 +129,7 @@ public struct ListRow<Leading: View, Trailing: View>: View {
                 .foregroundStyle(theme.palette.textPrimary)
             if let subtitle {
                 subtitle
-                    .font(theme.font(.subheadline))
+                    .font(theme.font(density == .compact ? .footnote : .subheadline))
                     .foregroundStyle(theme.palette.textSecondary)
             }
             if stacksValue, let value { valueText(value) }
@@ -156,14 +164,31 @@ extension ListRow where Trailing == EmptyView {
         action: @escaping () -> Void,
         @ViewBuilder leading: () -> Leading
     ) {
-        self.init(title, subtitle: subtitle, value: value, action: action, leading: leading, trailing: { EmptyView() })
+        self.init(
+            title,
+            subtitle: subtitle,
+            value: value,
+            action: action,
+            leading: leading,
+            trailing: { EmptyView() }
+        )
     }
 }
 
 extension ListRow where Leading == EmptyView, Trailing == EmptyView {
     /// A static text row.
-    public init(_ title: LocalizedStringKey, subtitle: LocalizedStringKey? = nil, value: String? = nil) {
-        self.init(title, subtitle: subtitle, value: value, leading: { EmptyView() }, trailing: { EmptyView() })
+    public init(
+        _ title: LocalizedStringKey,
+        subtitle: LocalizedStringKey? = nil,
+        value: String? = nil
+    ) {
+        self.init(
+            title,
+            subtitle: subtitle,
+            value: value,
+            leading: { EmptyView() },
+            trailing: { EmptyView() }
+        )
     }
 
     /// A tappable text row with a chevron.
@@ -198,6 +223,10 @@ extension ListRow where Leading == EmptyView, Trailing == EmptyView {
                     ListRow("Leading icon", value: "km", action: {}) {
                         Image(systemName: "ruler").accessibilityHidden(true)
                     }
+                    ListRow(verbatim: "Compact row", subtitle: "Footnote subtitle, less padding", action: {}) {
+                        Thumbnail(systemName: "leaf", tone: .success, side: Size.iconLg + Space.lg)
+                    }
+                    .listRowDensity(.compact)
                     ListRow("Toggle trailing") {
                         EmptyView()
                     } trailing: {

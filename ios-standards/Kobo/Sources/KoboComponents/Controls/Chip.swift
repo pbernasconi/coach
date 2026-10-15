@@ -12,6 +12,7 @@ import SwiftUI
 public struct Chip: View {
     private let title: Text
     private let systemImage: String?
+    private let trailingSystemImage: String?
     private let tone: Tone
     private let isSelected: Bool
     private let onClear: (() -> Void)?
@@ -55,9 +56,11 @@ public struct Chip: View {
         )
     }
 
+    /// `trailingSystemImage` (a disclosure chevron for `FilterChip`) shows while the clear ✕ does not.
     init(
         title: Text,
         systemImage: String?,
+        trailingSystemImage: String? = nil,
         tone: Tone,
         isSelected: Bool,
         onClear: (() -> Void)? = nil,
@@ -65,6 +68,7 @@ public struct Chip: View {
     ) {
         self.title = title
         self.systemImage = systemImage
+        self.trailingSystemImage = trailingSystemImage
         self.tone = tone
         self.isSelected = isSelected
         self.onClear = onClear
@@ -80,6 +84,8 @@ public struct Chip: View {
                 title.lineLimit(1)
                 if showsClear {
                     Image(systemName: "xmark").imageScale(.small).fontWeight(.bold).accessibilityHidden(true)
+                } else if let trailingSystemImage {
+                    Image(systemName: trailingSystemImage).imageScale(.small).accessibilityHidden(true)
                 }
             }
         }
@@ -125,7 +131,12 @@ struct ChipStyle: ButtonStyle {
     }
 
     func makeBody(configuration: Configuration) -> some View {
-        let colors = Self.colors(tone: tone, isSelected: isSelected, isEnabled: isEnabled, palette: theme.palette)
+        let colors = Self.colors(
+            tone: tone,
+            isSelected: isSelected,
+            isEnabled: isEnabled,
+            palette: theme.palette
+        )
         configuration.label
             .font(theme.font(.subheadline).weight(.semibold))
             .foregroundStyle(colors.ink)
@@ -147,9 +158,15 @@ struct ChipStyle: ButtonStyle {
     }
 
     /// The fill (`soft`) and the label ink (`ink`) of one chip state.
-    static func colors(tone: Tone, isSelected: Bool, isEnabled: Bool, palette: Palette) -> StatusColors {
-        guard isEnabled else { return StatusColors(ink: palette.textTertiary, soft: palette.surfaceRaised) }
-        guard isSelected else { return StatusColors(ink: palette.textPrimary, soft: palette.surfaceRaised) }
+    static func colors(tone: Tone, isSelected: Bool, isEnabled: Bool, palette: Palette)
+        -> StatusColors
+    {
+        guard isEnabled else {
+            return StatusColors(ink: palette.textTertiary, soft: palette.surfaceRaised)
+        }
+        guard isSelected else {
+            return StatusColors(ink: palette.textPrimary, soft: palette.surfaceRaised)
+        }
         if tone == .accent { return StatusColors(ink: palette.onAccent, soft: palette.accent) }
         return StatusColors(ink: palette.surface, soft: palette.status(tone).ink)
     }
