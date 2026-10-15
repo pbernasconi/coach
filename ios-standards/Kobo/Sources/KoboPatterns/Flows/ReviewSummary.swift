@@ -2,7 +2,7 @@ import KoboComponents
 import KoboTokens
 import SwiftUI
 
-/// The hero at the top of a review: the one figure the person is about to confirm ("12 tasks"), a caption over it
+/// The hero at the top of a review: the one figure the person is about to confirm ("12 tasks"), a caption under it
 /// ("Ready to import"), an optional note under a hairline ("From Mon 7 Oct to Mon 14 Oct"), an optional symbol, and
 /// an optional edit link back to the step that set it. Pass `onEdit: nil` while a submit runs, so nothing changes
 /// under it.

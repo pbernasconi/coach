@@ -2,8 +2,8 @@ import KoboComponents
 import KoboTokens
 import SwiftUI
 
-/// A `ReviewSummary` on a card: the symbol disc, the caption and the figure (one VoiceOver element), a hairline and
-/// the note, then the edit link.
+/// A `ReviewSummary` on a card: the symbol disc, the figure and the caption under it (one VoiceOver element, read in
+/// that order), a hairline and the note, then the edit link.
 struct ReviewSummaryCard: View {
     @Environment(\.koboTheme) private var theme
     let summary: ReviewSummary
@@ -14,15 +14,15 @@ struct ReviewSummaryCard: View {
                 if let symbol = summary.symbol {
                     EmptyStateArt(systemImage: symbol, tone: .accent)
                 }
+                summary.value
+                    .font(theme.font(.display))
+                    .foregroundStyle(theme.palette.textPrimary)
+                    .minimumScaleFactor(Self.minimumScale)
                 if let caption = summary.caption {
                     caption
                         .font(theme.font(.subheadline))
                         .foregroundStyle(theme.palette.textSecondary)
                 }
-                summary.value
-                    .font(theme.font(.display))
-                    .foregroundStyle(theme.palette.textPrimary)
-                    .minimumScaleFactor(Self.minimumScale)
             }
             .accessibilityElement(children: .combine)
             if let note = summary.note {
