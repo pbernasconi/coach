@@ -39,8 +39,8 @@ struct CatalogDetailContent: View {
     }
 }
 
-/// The loaded entry, top to bottom: the animation beside its body part, muscles and equipment, the library action, then
-/// the dataset's steps. The name is the bar title.
+/// The loaded entry, top to bottom: the animation beside its body part, muscles and equipment, the library action, the
+/// library exercise's progress chart when it has logged sessions, then the dataset's steps. The name is the bar title.
 private struct CatalogDetailBody: View {
     let item: CatalogDetailItem
     let state: CatalogDetailState
@@ -54,6 +54,11 @@ private struct CatalogDetailBody: View {
                 CatalogFacts(item: item)
             }
             LibraryAction(status: state.library, send: send)
+            ExerciseProgressSection(
+                progress: state.progress,
+                rangeChanged: { send(.progressRangeChanged($0)) },
+                selectionChanged: { send(.progressSelectionChanged($0)) }
+            )
             DetailSection("Steps") {
                 CatalogSteps(steps: item.steps)
             }

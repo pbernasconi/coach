@@ -9,6 +9,8 @@ nonisolated struct CatalogDetailState: Equatable, Sendable {
     var animation: MediaImage = .loading
     /// Whether the entry is in the person's exercise library.
     var library: CatalogLibraryStatus = .checking
+    /// The library exercise's progress chart; `.empty` (hidden) until the entry is in the library with history.
+    var progress = ExerciseProgressState()
     /// The latest message for the toast slot.
     var toast: CatalogToast?
 }

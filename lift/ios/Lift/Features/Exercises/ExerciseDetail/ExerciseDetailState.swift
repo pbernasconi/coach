@@ -7,6 +7,8 @@ nonisolated struct ExerciseDetailState: Equatable, Sendable {
     var exercise: Loadable<ExerciseDetailItem> = .loading
     /// The last logged sessions of this exercise, newest first.
     var history: Loadable<[ExerciseHistoryRow]> = .loading
+    /// Estimated one-rep max and heaviest set per session, over the chosen range.
+    var progress = ExerciseProgressState()
     /// The animation shown at the top; nil until media is known for this exercise.
     var media: ExerciseMedia?
     /// The loaded animation behind `media`.

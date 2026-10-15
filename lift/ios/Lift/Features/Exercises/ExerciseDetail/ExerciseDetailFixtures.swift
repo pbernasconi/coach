@@ -34,10 +34,30 @@
             ),
         ]
 
-        static let fixtureDefault = ExerciseDetailState(exercise: .loaded(item(seed: 1)), history: .loaded(history))
+        static let fixtureDefault = ExerciseDetailState(
+            exercise: .loaded(item(seed: 1)),
+            history: .loaded(history),
+            progress: .fixtureWeekly
+        )
+        static let fixtureProgressSelected = ExerciseDetailState(
+            exercise: .loaded(item(seed: 1)),
+            history: .loaded(history),
+            progress: .fixtureSelected
+        )
+        static let fixtureProgressSingle = ExerciseDetailState(
+            exercise: .loaded(item(seed: 1)),
+            history: .loaded(Array(history.prefix(1))),
+            progress: .fixtureSingle
+        )
+        static let fixtureProgressEmptyRange = ExerciseDetailState(
+            exercise: .loaded(item(seed: 1)),
+            history: .loaded(Array(history.suffix(1))),
+            progress: .fixtureEmptyRange
+        )
         static let fixtureWithMedia = ExerciseDetailState(
             exercise: .loaded(item(seed: 1)),
             history: .loaded(history),
+            progress: .fixtureWeekly,
             media: URL(string: "https://example.com/squat.gif").flatMap { gif in
                 URL(string: "https://example.com/squat.png").map { thumbnail in
                     ExerciseMedia(gifURL: gif, thumbnailURL: thumbnail, attribution: "Made-up credit line")

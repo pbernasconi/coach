@@ -17,6 +17,11 @@
     #Preview("Dark") { ExerciseDetailPreview(state: .fixtureDefault).preferredColorScheme(.dark) }
     #Preview("With media") { ExerciseDetailPreview(state: .fixtureWithMedia) }
     #Preview("With media, dark") { ExerciseDetailPreview(state: .fixtureWithMedia).preferredColorScheme(.dark) }
+    #Preview("Progress, touched") { ExerciseDetailPreview(state: .fixtureProgressSelected) }
+    #Preview("Progress, one session") { ExerciseDetailPreview(state: .fixtureProgressSingle) }
+    #Preview("Progress, empty range, dark") {
+        ExerciseDetailPreview(state: .fixtureProgressEmptyRange).preferredColorScheme(.dark)
+    }
     #Preview("No history") { ExerciseDetailPreview(state: .fixtureNoHistory) }
     #Preview("Added from the catalog") { ExerciseDetailPreview(state: .fixtureCatalogAdded) }
     #Preview("Custom exercise") { ExerciseDetailPreview(state: .fixtureCustom) }

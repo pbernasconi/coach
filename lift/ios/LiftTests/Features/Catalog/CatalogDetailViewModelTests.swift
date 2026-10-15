@@ -15,11 +15,21 @@ import Testing
     func makeViewModel(
         _ id: String = "9001",
         library: [[Exercise]] = [[]],
-        error: AppError? = nil
+        error: AppError? = nil,
+        history: FakeExerciseHistoryRepository = FakeExerciseHistoryRepository(emissions: [[]])
     ) -> (CatalogDetailViewModel, RecordingCatalogExerciseRepository, FakeExerciseCatalog) {
         let catalog = FakeExerciseCatalog(entries: [entry], images: ["9001": gif])
         let exercises = RecordingCatalogExerciseRepository(emissions: library, error: error)
-        let vm = CatalogDetailViewModel(catalogID: id, catalog: catalog, exercises: exercises, router: router)
+        let vm = CatalogDetailViewModel(
+            catalogID: id,
+            catalog: catalog,
+            exercises: exercises,
+            router: router,
+            history: history,
+            now: SessionBuilder.now,
+            calendar: SessionBuilder.calendar,
+            unit: .kg
+        )
         return (vm, exercises, catalog)
     }
 

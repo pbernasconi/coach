@@ -22,7 +22,9 @@ import Testing
             exercises: FakeExerciseRepository(emissions: [library]),
             history: history,
             catalog: catalog,
-            calendar: SessionBuilder.calendar
+            now: SessionBuilder.now,
+            calendar: SessionBuilder.calendar,
+            unit: .kg
         )
     }
 
@@ -56,7 +58,7 @@ import Testing
         return ExerciseHistoryEntry(session: session, loadMode: loadMode, sets: sets)
     }
 
-    @Test func runLoadsTheExerciseWithItsGuideAndAsksForFiveSessions() async throws {
+    @Test func runLoadsTheExerciseWithItsGuideAndReadsItsWholeHistory() async throws {
         let history = FakeExerciseHistoryRepository(emissions: [[]])
         let vm = makeViewModel(squatID, history: history)
 
@@ -72,7 +74,8 @@ import Testing
         #expect(item.guide == ExerciseGuide.for(id: squatID))
         #expect(vm.state.media == nil)
         #expect(vm.state.history == .empty)
-        #expect(history.requested == [.init(exerciseID: squatID, limit: 5)])
+        #expect(history.requested == [.init(exerciseID: squatID, limit: ExerciseProgressTracker.sessionLimit)])
+        #expect(vm.state.progress.chart == .empty)
     }
 
     @Test func runShowsEmptyWhenTheExerciseIsGone() async {

@@ -16,6 +16,11 @@
     #Preview("Default") { CatalogDetailPreview(state: .fixtureDefault) }
     #Preview("Dark") { CatalogDetailPreview(state: .fixtureDefault).preferredColorScheme(.dark) }
     #Preview("In library") { CatalogDetailPreview(state: .fixtureInLibrary) }
+    #Preview("In library, progress") { CatalogDetailPreview(state: .fixtureInLibraryWithProgress) }
+    #Preview("In library, progress, AX3") {
+        CatalogDetailPreview(state: .fixtureInLibraryWithProgress)
+            .dynamicTypeSize(.accessibility3)
+    }
     #Preview("Adding") { CatalogDetailPreview(state: .fixtureAdding) }
     #Preview("Media failed, dark") { CatalogDetailPreview(state: .fixtureMediaFailed).preferredColorScheme(.dark) }
     #Preview("Loading") { CatalogDetailPreview(state: .fixtureLoading) }

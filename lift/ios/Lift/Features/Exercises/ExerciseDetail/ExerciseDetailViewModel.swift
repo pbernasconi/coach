@@ -15,7 +15,10 @@ final class ExerciseDetailViewModel {
     private let history: any ExerciseHistoryRepository
     private let catalog: any ExerciseCatalogProviding
     private let days: DayCalendar
+    private let now: @Sendable () -> Date
     @ObservationIgnored private var serial = 0
+    /// Every charted session, the range and the touched session behind `state.progress`.
+    @ObservationIgnored private var progress: ExerciseProgressTracker
     /// The catalog entry the media and library steps come from.
     @ObservationIgnored private var entry: CatalogExercise?
 
@@ -25,13 +28,18 @@ final class ExerciseDetailViewModel {
         exercises: any ExerciseRepository,
         history: any ExerciseHistoryRepository,
         catalog: any ExerciseCatalogProviding,
-        calendar: Calendar
+        now: @escaping @Sendable () -> Date,
+        calendar: Calendar,
+        unit: WeightUnit
     ) {
         self.exerciseID = exerciseID
         self.exercises = exercises
         self.history = history
         self.catalog = catalog
-        self.days = DayCalendar(calendar: calendar)
+        self.now = now
+        let days = DayCalendar(calendar: calendar)
+        self.days = days
+        self.progress = ExerciseProgressTracker(days: days, unit: unit)
     }
 
     /// Observes the exercise and its history; started by the Screen's `.task` (SCR-4).
@@ -50,6 +58,12 @@ final class ExerciseDetailViewModel {
             state.link = LinkRequest(serial: serial, url: url)
         case .libraryStepsExpandedChanged(let isExpanded):
             state.isLibraryStepsExpanded = isExpanded
+        case .progressRangeChanged(let range):
+            progress.select(range: range, today: today)
+            state.progress = progress.state
+        case .progressSelectionChanged(let date):
+            progress.select(date: date, today: today)
+            state.progress = progress.state
         }
         return nil
     }
@@ -84,10 +98,16 @@ final class ExerciseDetailViewModel {
         state.librarySteps = hasGuide ? [] : entry?.steps ?? []
     }
 
+    /// One read for both the chart (every session) and "Your history" (the latest `historyLimit`).
     private func observeHistory() async {
-        for await entries in history.observeHistory(exerciseID: exerciseID, limit: Self.historyLimit) {
-            let rows = entries.map { ExerciseHistoryRow(entry: $0, days: days) }
+        let stream = history.observeHistory(exerciseID: exerciseID, limit: ExerciseProgressTracker.sessionLimit)
+        for await entries in stream {
+            let rows = entries.prefix(Self.historyLimit).map { ExerciseHistoryRow(entry: $0, days: days) }
             state.history = rows.isEmpty ? .empty : .loaded(rows)
+            progress.show(entries, today: today)
+            state.progress = progress.state
         }
     }
+
+    private var today: LocalDay { days.day(of: now()) }
 }

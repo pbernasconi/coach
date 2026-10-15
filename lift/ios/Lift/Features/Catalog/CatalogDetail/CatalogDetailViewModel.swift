@@ -11,20 +11,34 @@ final class CatalogDetailViewModel {
     private let catalog: any ExerciseCatalogProviding
     private let exercises: any ExerciseRepository
     private let router: any Navigating
+    private let history: any ExerciseHistoryRepository
+    private let now: @Sendable () -> Date
+    private let days: DayCalendar
     @ObservationIgnored private var entry: CatalogExercise?
     @ObservationIgnored private var serial = 0
+    /// The library exercise's charted sessions, range and touched session behind `state.progress`.
+    @ObservationIgnored private var progress: ExerciseProgressTracker
 
     /// Protocols only, no defaults, no work (SCR-3).
     init(
         catalogID: String,
         catalog: any ExerciseCatalogProviding,
         exercises: any ExerciseRepository,
-        router: any Navigating
+        router: any Navigating,
+        history: any ExerciseHistoryRepository,
+        now: @escaping @Sendable () -> Date,
+        calendar: Calendar,
+        unit: WeightUnit
     ) {
         self.catalogID = catalogID
         self.catalog = catalog
         self.exercises = exercises
         self.router = router
+        self.history = history
+        self.now = now
+        let days = DayCalendar(calendar: calendar)
+        self.days = days
+        self.progress = ExerciseProgressTracker(days: days, unit: unit)
     }
 
     /// Loads the entry and its animation, and watches the library; started by the Screen's `.task` (SCR-4).
@@ -42,8 +56,38 @@ final class CatalogDetailViewModel {
         case .libraryExerciseTapped:
             if case .present(let id) = state.library { router.open(.exercise(id)) }
             return nil
+        case .progressRangeChanged(let range):
+            progress.select(range: range, today: today)
+            state.progress = progress.state
+            return nil
+        case .progressSelectionChanged(let date):
+            progress.select(date: date, today: today)
+            state.progress = progress.state
+            return nil
         }
     }
+
+    /// The library exercise behind this entry, while there is one: the Screen restarts `observeProgress()` when it
+    /// changes (`.task(id:)`).
+    var libraryExerciseID: UUID? {
+        if case .present(let id) = state.library { id } else { nil }
+    }
+
+    /// Charts the library exercise's history; restarted by the Screen whenever `libraryExerciseID` changes, and
+    /// cancelled with it. Without a library exercise there is nothing to chart.
+    func observeProgress() async {
+        guard let exerciseID = libraryExerciseID else {
+            state.progress.chart = .empty
+            return
+        }
+        for await entries in history.observeHistory(exerciseID: exerciseID, limit: ExerciseProgressTracker.sessionLimit)
+        {
+            progress.show(entries, today: today)
+            state.progress = progress.state
+        }
+    }
+
+    private var today: LocalDay { days.day(of: now()) }
 
     private func loadEntry() async {
         guard let entry = await catalog.entry(id: catalogID) else {
