@@ -35,14 +35,9 @@ final class WeekViewModel {
         self.templates = templates
         self.router = router
         self.now = now
-        self.days = DayCalendar(calendar: calendar)
-        self.edits = WeekPlanEdits(
-            sessions: sessions,
-            plans: plans,
-            templates: templates,
-            unit: unit,
-            days: DayCalendar(calendar: calendar)
-        )
+        let days = DayCalendar(calendar: calendar)
+        self.days = days
+        self.edits = WeekPlanEdits(sessions: sessions, plans: plans, templates: templates, unit: unit, days: days)
     }
 
     /// Observes every session in the strip's range and the templates; started by the Screen's `.task` (SCR-4).
@@ -219,7 +214,7 @@ final class WeekViewModel {
     private func perform(_ key: UUID?, _ body: @escaping (WeekPlanEdits) async throws -> WeekNotice?)
         -> Task<Void, Never>?
     {
-        let key = key ?? Self.planKey
+        let key = key ?? WeekPlanWrite.planKey
         guard !pending.contains(key) else { return nil }
         pending.insert(key)
         let edits = edits
@@ -232,9 +227,6 @@ final class WeekViewModel {
             }
         }
     }
-
-    /// The `pending` key of writes that change no single session.
-    private static let planKey = UUID(uuid: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
 
     private func showToast(_ message: String, undo: WeekUndo?) {
         toastCount += 1

@@ -16,6 +16,7 @@ Each decision and why it was made. Change a decision here before changing the co
 | Sync | Outbox table, idempotent push, cursor pull, last writer wins | Logging never waits for the network |
 | IDs | Client-made UUIDs, with `createdAt` / `updatedAt` / `deletedAt` | Rows can be created offline and merged later |
 | UI kit | `ios-standards/Kobo` with the `.lift` theme | Shared, accessible, motion-aware components |
+| Apple Health | Write-only: each finished workout as strength training via `HKWorkoutBuilder`, its id on the session | Health shows the training next to everything else; no energy, because Lift cannot estimate it honestly |
 | Location | `coach/lift/` for now | Can be split into its own repo later with `git subtree split` |
 
 ## Build order
