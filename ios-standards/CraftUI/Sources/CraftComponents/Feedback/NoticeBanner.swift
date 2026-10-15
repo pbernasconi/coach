@@ -44,7 +44,14 @@ public struct NoticeBanner: View {
         onDismiss: (() -> Void)? = nil
     ) {
         let message = message.map { Text($0) }
-        self.init(tone: tone, symbol: symbol, title: Text(title), message: message, action: action, onDismiss: onDismiss)
+        self.init(
+            tone: tone,
+            symbol: symbol,
+            title: Text(title),
+            message: message,
+            action: action,
+            onDismiss: onDismiss
+        )
     }
 
     /// A banner whose title and message are shown as is (user data, server copy already reviewed).

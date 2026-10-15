@@ -8,13 +8,14 @@ import SwiftUI
 ///     ListRow("Units", value: "kg", action: openUnits) { Image(systemName: "scalemass").accessibilityHidden(true) }
 ///
 /// For a trailing slot with no leading one, pass `leading: { EmptyView() }`. Interactive trailing
-/// controls (a `Toggle`) belong in rows without an action, so buttons never nest.
+/// controls (a `Toggle`) belong in rows without an action, so buttons never nest. Titles from user data use the
+/// `verbatim:` initialisers; `value` is always shown as is.
 public struct ListRow<Leading: View, Trailing: View>: View {
     @Environment(\.craftTheme) private var theme
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var leadingWidth: CGFloat = 0
-    private let title: String
-    private let subtitle: String?
+    private let title: Text
+    private let subtitle: Text?
     private let value: String?
     private let action: (() -> Void)?
     private let leading: Leading
@@ -22,35 +23,51 @@ public struct ListRow<Leading: View, Trailing: View>: View {
 
     /// A static row with leading and trailing slots.
     public init(
-        _ title: String,
-        subtitle: String? = nil,
+        _ title: LocalizedStringKey,
+        subtitle: LocalizedStringKey? = nil,
         value: String? = nil,
         @ViewBuilder leading: () -> Leading,
         @ViewBuilder trailing: () -> Trailing
     ) {
-        self.title = title
-        self.subtitle = subtitle
-        self.value = value
-        self.action = nil
-        self.leading = leading()
-        self.trailing = trailing()
+        let subtitle = subtitle.map { Text($0) }
+        self.init(
+            title: Text(title),
+            subtitle: subtitle,
+            value: value,
+            action: nil,
+            leading: leading(),
+            trailing: trailing()
+        )
     }
 
     /// A tappable row with leading and trailing slots.
     public init(
-        _ title: String,
-        subtitle: String? = nil,
+        _ title: LocalizedStringKey,
+        subtitle: LocalizedStringKey? = nil,
         value: String? = nil,
         action: @escaping () -> Void,
         @ViewBuilder leading: () -> Leading,
         @ViewBuilder trailing: () -> Trailing
     ) {
+        let subtitle = subtitle.map { Text($0) }
+        self.init(
+            title: Text(title),
+            subtitle: subtitle,
+            value: value,
+            action: action,
+            leading: leading(),
+            trailing: trailing()
+        )
+    }
+
+    /// The one place every initialiser lands: ready-made texts and built slots.
+    init(title: Text, subtitle: Text?, value: String?, action: (() -> Void)?, leading: Leading, trailing: Trailing) {
         self.title = title
         self.subtitle = subtitle
         self.value = value
         self.action = action
-        self.leading = leading()
-        self.trailing = trailing()
+        self.leading = leading
+        self.trailing = trailing
     }
 
     public var body: some View {
@@ -97,11 +114,11 @@ public struct ListRow<Leading: View, Trailing: View>: View {
 
     private var texts: some View {
         VStack(alignment: .leading, spacing: Space.xxs) {
-            Text(title)
+            title
                 .font(theme.font(.body))
                 .foregroundStyle(theme.palette.textPrimary)
             if let subtitle {
-                Text(subtitle)
+                subtitle
                     .font(theme.font(.subheadline))
                     .foregroundStyle(theme.palette.textSecondary)
             }
@@ -111,7 +128,7 @@ public struct ListRow<Leading: View, Trailing: View>: View {
     }
 
     private func valueText(_ value: String) -> some View {
-        Text(value)
+        Text(verbatim: value)
             .font(theme.font(.body))
             .foregroundStyle(theme.palette.textSecondary)
             .multilineTextAlignment(stacksValue ? .leading : .trailing)
@@ -120,14 +137,19 @@ public struct ListRow<Leading: View, Trailing: View>: View {
 
 extension ListRow where Trailing == EmptyView {
     /// A static row with a leading slot.
-    public init(_ title: String, subtitle: String? = nil, value: String? = nil, @ViewBuilder leading: () -> Leading) {
+    public init(
+        _ title: LocalizedStringKey,
+        subtitle: LocalizedStringKey? = nil,
+        value: String? = nil,
+        @ViewBuilder leading: () -> Leading
+    ) {
         self.init(title, subtitle: subtitle, value: value, leading: leading, trailing: { EmptyView() })
     }
 
     /// A tappable row with a leading slot and a chevron.
     public init(
-        _ title: String,
-        subtitle: String? = nil,
+        _ title: LocalizedStringKey,
+        subtitle: LocalizedStringKey? = nil,
         value: String? = nil,
         action: @escaping () -> Void,
         @ViewBuilder leading: () -> Leading
@@ -138,12 +160,17 @@ extension ListRow where Trailing == EmptyView {
 
 extension ListRow where Leading == EmptyView, Trailing == EmptyView {
     /// A static text row.
-    public init(_ title: String, subtitle: String? = nil, value: String? = nil) {
+    public init(_ title: LocalizedStringKey, subtitle: LocalizedStringKey? = nil, value: String? = nil) {
         self.init(title, subtitle: subtitle, value: value, leading: { EmptyView() }, trailing: { EmptyView() })
     }
 
     /// A tappable text row with a chevron.
-    public init(_ title: String, subtitle: String? = nil, value: String? = nil, action: @escaping () -> Void) {
+    public init(
+        _ title: LocalizedStringKey,
+        subtitle: LocalizedStringKey? = nil,
+        value: String? = nil,
+        action: @escaping () -> Void
+    ) {
         self.init(
             title,
             subtitle: subtitle,
@@ -189,6 +216,7 @@ private struct ListRowPressLook<Label: View>: View {
                     ListRow("Static title")
                     ListRow("With subtitle", subtitle: "A longer secondary line that wraps", value: "Value")
                     ListRow("Tappable", action: {})
+                    ListRow(verbatim: "Bench press", subtitle: "3 × 8", value: "80 kg", action: {})
                     ListRow("Leading icon", value: "kg", action: {}) {
                         Image(systemName: "scalemass").accessibilityHidden(true)
                     }

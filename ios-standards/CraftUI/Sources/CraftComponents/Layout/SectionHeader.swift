@@ -7,21 +7,44 @@ import SwiftUI
 ///     SectionHeader("Recent", subtitle: "Last 7 days", actionTitle: "See all") { showAll() }
 public struct SectionHeader: View {
     @Environment(\.craftTheme) private var theme
-    private let title: String
-    private let subtitle: String?
-    private let actionTitle: String?
+    private let title: Text
+    private let subtitle: Text?
+    private let actionTitle: LocalizedStringKey?
     private let action: (() -> Void)?
 
-    /// A title with an optional subtitle.
-    public init(_ title: String, subtitle: String? = nil) {
-        self.title = title
-        self.subtitle = subtitle
-        self.actionTitle = nil
-        self.action = nil
+    /// A localized title with an optional subtitle.
+    public init(_ title: LocalizedStringKey, subtitle: LocalizedStringKey? = nil) {
+        self.init(title: Text(title), subtitle: subtitle.map { Text($0) }, actionTitle: nil, action: nil)
     }
 
-    /// A title with a trailing action button.
-    public init(_ title: String, subtitle: String? = nil, actionTitle: String, action: @escaping () -> Void) {
+    /// A localized title with a trailing action button.
+    public init(
+        _ title: LocalizedStringKey,
+        subtitle: LocalizedStringKey? = nil,
+        actionTitle: LocalizedStringKey,
+        action: @escaping () -> Void
+    ) {
+        self.init(title: Text(title), subtitle: subtitle.map { Text($0) }, actionTitle: actionTitle, action: action)
+    }
+
+    /// A title and subtitle shown as is (user data).
+    public init(verbatim title: String, subtitle: String? = nil) {
+        let subtitle = subtitle.map { Text(verbatim: $0) }
+        self.init(title: Text(verbatim: title), subtitle: subtitle, actionTitle: nil, action: nil)
+    }
+
+    /// A title and subtitle shown as is, with a trailing action button whose title stays localized.
+    public init(
+        verbatim title: String,
+        subtitle: String? = nil,
+        actionTitle: LocalizedStringKey,
+        action: @escaping () -> Void
+    ) {
+        let subtitle = subtitle.map { Text(verbatim: $0) }
+        self.init(title: Text(verbatim: title), subtitle: subtitle, actionTitle: actionTitle, action: action)
+    }
+
+    private init(title: Text, subtitle: Text?, actionTitle: LocalizedStringKey?, action: (() -> Void)?) {
         self.title = title
         self.subtitle = subtitle
         self.actionTitle = actionTitle
@@ -31,12 +54,12 @@ public struct SectionHeader: View {
     public var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: Space.md) {
             VStack(alignment: .leading, spacing: Space.xxs) {
-                Text(title)
+                title
                     .font(theme.font(.title2))
                     .foregroundStyle(theme.palette.textPrimary)
                     .accessibilityAddTraits(.isHeader)
                 if let subtitle {
-                    Text(subtitle)
+                    subtitle
                         .font(theme.font(.subheadline))
                         .foregroundStyle(theme.palette.textSecondary)
                 }

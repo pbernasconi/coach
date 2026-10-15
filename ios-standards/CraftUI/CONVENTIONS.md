@@ -4,8 +4,9 @@ Every component in CraftUI follows these rules. They are what make the library r
 
 ## API shape
 
-1. **Data in, intents out.** A component takes plain values and closures (`title: String`,
-   `action: () -> Void`, `value: Binding<Int>`). It never takes an app model, a ViewModel or a repository.
+1. **Data in, intents out.** A component takes plain values and closures (`title: LocalizedStringKey`,
+   `action: () -> Void`, `value: Binding<Int>`; see rule 17 for text). It never takes an
+   app model, a ViewModel or a repository.
 2. **Theme from the environment.** Read `@Environment(\.craftTheme) private var theme` and use
    `theme.palette.<role>`, `theme.font(.<role>)`, `Space`, `Radius`, `Size`, `Motion`. **No literal colours,
    font sizes or magic numbers.** The only exceptions are hairlines and maths inside a shape.

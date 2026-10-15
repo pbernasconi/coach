@@ -57,7 +57,7 @@ enum DemoPhase: String, CaseIterable, Identifiable {
         case .loading: .loading
         case .empty: .empty
         case .loaded: .loaded(["Back squat", "Bench press", "Barbell row"].map(DemoItem.init))
-        case .failed: .failed(message: "Couldn't load exercises.", retryLabel: "Try again")
+        case .failed: .failed("Couldn't load exercises.", retryLabel: "Try again")
         }
     }
 }

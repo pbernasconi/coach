@@ -74,7 +74,7 @@ extension CardSection where Header == Text? {
 
     /// A card whose title is shown as is (user data).
     public init(verbatim title: String, padding: CGFloat = Space.lg, @ViewBuilder content: () -> Content) {
-        self.init(padding: padding, content: content) { Text(verbatim: title) }
+        self.init(padding: padding, content: content) { Optional(Text(verbatim: title)) }
     }
 }
 
