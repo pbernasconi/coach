@@ -37,13 +37,30 @@ targets:
         products: [LiftCore, LiftStore]
       - package: Kobo
         products: [KoboTokens, KoboComponents, KoboPatterns]
+      - target: LiftWidgets                           # embedded in PlugIns/; draws the rest Live Activity
     info:
       path: Lift/Info.plist
       properties:
         CFBundleDisplayName: Lift
         UILaunchScreen: {}
+        NSSupportsLiveActivities: true
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         ITSAppUsesNonExemptEncryption: false
+  LiftWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - LiftWidgets
+      # The Live Activity's attributes, compiled by both the app and the extension.
+      - Lift/Features/Workout/LiveActivity/RestActivityAttributes.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.lift.widgets   # must start with the app's bundle id
+    info:
+      path: LiftWidgets/Info.plist
+      properties:
+        CFBundleDisplayName: Lift
+        NSExtension: { NSExtensionPointIdentifier: com.apple.widgetkit-extension }
   LiftTests:
     type: bundle.unit-test
     platform: iOS

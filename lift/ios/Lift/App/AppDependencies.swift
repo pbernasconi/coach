@@ -13,6 +13,8 @@ final class AppDependencies {
     let now: @Sendable () -> Date
     /// Drives countdowns such as the rest timer; tests and previews pass their own.
     let clock: any Clock<Duration>
+    /// The rest countdown on the Lock Screen and in the Dynamic Island.
+    let restActivity: any RestActivityController
     let calendar: Calendar
     let info: AppInfo
     private var isPrepared = false
@@ -24,6 +26,7 @@ final class AppDependencies {
         history: any ExerciseHistoryRepository,
         now: @escaping @Sendable () -> Date,
         clock: any Clock<Duration>,
+        restActivity: any RestActivityController,
         calendar: Calendar,
         info: AppInfo
     ) {
@@ -33,15 +36,18 @@ final class AppDependencies {
         self.history = history
         self.now = now
         self.clock = clock
+        self.restActivity = restActivity
         self.calendar = calendar
         self.info = info
     }
 
     /// Work that finishes before the tabs show: the seed exercise library on this iPhone, or the fabricated demo
-    /// sessions in demo mode. Runs once; a failure is logged and the app opens with what the database holds.
+    /// sessions in demo mode. Runs once; a failure is logged and the app opens with what the database holds. A rest
+    /// Live Activity left over from a previous launch is ended first.
     func prepare() async {
         guard !isPrepared else { return }
         isPrepared = true
+        restActivity.end()
         do {
             switch info.dataSource {
             case .device:

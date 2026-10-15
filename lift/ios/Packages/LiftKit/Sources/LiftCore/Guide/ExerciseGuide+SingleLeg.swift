@@ -22,7 +22,6 @@ extension ExerciseGuide {
                 "Front knee collapsing inward.",
             ],
             breathing: "Breathe in on the way down. Breathe out as you stand.",
-            artSlug: "bulgarian-split-squat",
             videoQuery: "bulgarian split squat technique"
         ),
         ExerciseGuide(
@@ -45,7 +44,6 @@ extension ExerciseGuide {
                 "Dropping the back knee onto the floor.",
             ],
             breathing: "Breathe in as you step back and lower. Breathe out as you drive up.",
-            artSlug: "reverse-lunge",
             videoQuery: "dumbbell reverse lunge technique"
         ),
         ExerciseGuide(
@@ -68,7 +66,6 @@ extension ExerciseGuide {
                 "Dropping down instead of lowering.",
             ],
             breathing: "Breathe out as you step up. Breathe in as you step down.",
-            artSlug: "step-up",
             videoQuery: "dumbbell step up technique"
         ),
         ExerciseGuide(
@@ -90,7 +87,6 @@ extension ExerciseGuide {
                 "Rolling onto the outside edges of the feet.",
             ],
             breathing: "Breathe out on the way up. Breathe in on the way down.",
-            artSlug: "calf-raise",
             videoQuery: "standing calf raise machine technique"
         ),
     ]

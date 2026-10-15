@@ -1,3 +1,4 @@
+import Foundation
 import LiftCore
 import LiftStore
 import Observation
@@ -7,10 +8,12 @@ final class ExercisesViewModel {
     private(set) var state = ExercisesState()
 
     private let exercises: any ExerciseRepository
+    private let router: any Navigating
 
     /// Protocols only, no defaults, no work (SCR-3).
-    init(exercises: any ExerciseRepository) {
+    init(exercises: any ExerciseRepository, router: any Navigating) {
         self.exercises = exercises
+        self.router = router
     }
 
     /// Observes the library; started by the Screen's `.task` (SCR-4).
@@ -26,6 +29,8 @@ final class ExercisesViewModel {
         switch action {
         case .queryChanged(let query):
             state.query = query
+        case .exerciseTapped(let id):
+            router.open(.exercise(id))
         }
         return nil
     }

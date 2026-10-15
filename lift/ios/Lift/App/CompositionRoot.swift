@@ -1,3 +1,4 @@
+import ActivityKit
 import Foundation
 import LiftCore
 import LiftStore
@@ -46,9 +47,16 @@ enum CompositionRoot {
             history: sessions,
             now: now,
             clock: ContinuousClock(),
+            restActivity: restActivity(),
             calendar: .autoupdatingCurrent,
             info: info(isDemo: isDemo)
         )
+    }
+
+    /// The live ActivityKit rest countdown, or one that does nothing when Live Activities are off for Lift.
+    private static func restActivity() -> any RestActivityController {
+        ActivityAuthorizationInfo().areActivitiesEnabled
+            ? LiveRestActivityController() : DisabledRestActivityController()
     }
 
     private static func info(isDemo: Bool) -> AppInfo {

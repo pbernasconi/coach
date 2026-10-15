@@ -25,6 +25,7 @@ struct SettingsContent: View {
                 dataSection
                 ListSection("About") {
                     ListRow("Version", value: state.version)
+                    ListRow("Acknowledgements", action: { send(.acknowledgementsTapped) })
                 }
             }
             .pageGutter()

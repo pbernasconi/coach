@@ -39,7 +39,8 @@ extension WorkoutExercise {
                 WorkoutText.plates(PlateMath.load(for: weight, using: plateSet), bar: plateSet.bar)
             },
             progression: Self.progression(item: item, working: working),
-            sets: Self.rows(item.sets)
+            sets: Self.rows(item.sets),
+            libraryID: exercise.exerciseID
         )
     }
 

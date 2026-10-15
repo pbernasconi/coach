@@ -26,7 +26,8 @@
                 set(21, "Set 1", "5 @ 100 kg", actual: "5 @ 100 kg", status: .done),
                 set(22, "Set 2", "5 @ 100 kg", actual: "6 @ 100 kg"),
                 set(23, "Set 3", "5 @ 100 kg"),
-            ]
+            ],
+            libraryID: ExerciseLibrary.seedID(1)
         )
 
         private static let romanian = WorkoutExercise(
@@ -40,7 +41,8 @@
                 set(31, "Set 1", "8 @ 60 kg", actual: "8 @ 60 kg", status: .done),
                 set(32, "Set 2", "8 @ 60 kg", actual: "8 @ 60 kg", status: .done),
                 set(33, "Set 3", "8 @ 60 kg", status: .skipped),
-            ]
+            ],
+            libraryID: ExerciseLibrary.seedID(3)
         )
 
         private static let curl = WorkoutExercise(

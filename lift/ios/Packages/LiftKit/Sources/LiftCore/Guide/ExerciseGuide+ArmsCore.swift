@@ -20,7 +20,6 @@ extension ExerciseGuide {
                 "Dropping the weight on the way down.",
             ],
             breathing: "Breathe out as you curl. Breathe in as you lower.",
-            artSlug: "dumbbell-curl",
             videoQuery: "dumbbell biceps curl technique"
         ),
         ExerciseGuide(
@@ -42,7 +41,6 @@ extension ExerciseGuide {
                 "Moving the upper arms so the shoulders take over.",
             ],
             breathing: "Breathe in as you lower. Breathe out as you straighten your arms.",
-            artSlug: "overhead-triceps-extension",
             videoQuery: "overhead dumbbell triceps extension technique"
         ),
         ExerciseGuide(
@@ -64,7 +62,6 @@ extension ExerciseGuide {
                 "Holding the breath.",
             ],
             breathing: "Breathe slowly and steadily through the whole hold.",
-            artSlug: nil,
             videoQuery: "plank technique"
         ),
     ]

@@ -18,7 +18,10 @@ import Testing
                 result: SessionBuilder.session(id: 1, on: Fixtures.monday, done: 0, planned: 1)
                     .items[0].sets[0]
             ),
+            router: RecordingNavigator(),
             clock: ImmediateClock(),
+            restActivity: RecordingRestActivityController(),
+            now: SessionBuilder.now,
             calendar: SessionBuilder.calendar
         )
         await vm.run()

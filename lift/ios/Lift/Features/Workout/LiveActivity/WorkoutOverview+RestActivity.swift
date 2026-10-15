@@ -1,9 +1,23 @@
 import Foundation
 
+/// What the rest Live Activity shows once a set is logged.
+nonisolated struct RestActivityStart: Equatable, Sendable {
+    var attributes: RestActivityAttributes
+    /// "Set 3 · 5 @ 100 kg", with the exercise name first when it is another exercise; nil when none is planned.
+    var nextSetLabel: String?
+}
+
+extension WorkoutState {
+    /// The Live Activity for logging `setID`, or nil while the session is not loaded or the set is unknown.
+    func restActivity(afterLogging setID: UUID) -> RestActivityStart? {
+        guard case .loaded(let overview) = workout else { return nil }
+        return overview.restActivity(afterLogging: setID)
+    }
+}
+
 extension WorkoutOverview {
-    /// What the rest Live Activity shows once `setID` is logged: its exercise and set title, and the next planned
-    /// set ("Set 3 · 5 @ 100 kg", with the exercise name first when it is another exercise). Nil for an unknown set.
-    func restActivity(afterLogging setID: UUID) -> (attributes: RestActivityAttributes, nextSetLabel: String?)? {
+    /// The logged set's exercise and title, and the next planned set after it (wrapping to earlier ones).
+    func restActivity(afterLogging setID: UUID) -> RestActivityStart? {
         let rows = exercises.flatMap { exercise in exercise.sets.map { (exercise: exercise, set: $0) } }
         guard let index = rows.firstIndex(where: { $0.set.id == setID }) else { return nil }
         let logged = rows[index]
@@ -13,6 +27,9 @@ extension WorkoutOverview {
             let parts = row.exercise.id == logged.exercise.id ? [] : [row.exercise.name]
             return (parts + [row.set.title, row.set.target]).joined(separator: " · ")
         }
-        return (RestActivityAttributes(exerciseName: logged.exercise.name, setLabel: logged.set.title), nextLabel)
+        return RestActivityStart(
+            attributes: RestActivityAttributes(exerciseName: logged.exercise.name, setLabel: logged.set.title),
+            nextSetLabel: nextLabel
+        )
     }
 }

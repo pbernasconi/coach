@@ -37,6 +37,8 @@ nonisolated struct WorkoutExercise: Equatable, Sendable, Identifiable {
     /// "Next time: 5 @ 102.5 kg".
     var progression: String?
     var sets: [WorkoutSetItem]
+    /// The library exercise behind this slot, for "How to"; nil for a free-text exercise.
+    var libraryID: UUID?
 }
 
 /// One set row.
