@@ -4,7 +4,7 @@ import SwiftUI
 /// Build it in a computed property and pass it to each field's `.formField(_:in:)`; the return key then says "Next"
 /// and moves on, and the last field shows the order's last key.
 ///
-///     enum Field: Hashable { case name, email }
+///     nonisolated enum Field: Hashable, Sendable { case name, email }   // nonisolated in a MainActor target
 ///     @FocusState private var focus: Field?
 ///     private var form: FormFocus<Field> {
 ///         FormFocus(FormFocusOrder([.name, .email], last: .continue), focus: $focus, onSubmit: next)

@@ -20,11 +20,19 @@ struct NumberEntryHero<Field: View>: View {
             Color.clear
                 .frame(maxWidth: .infinity)
                 .frame(height: 0)
-                .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { availableWidth = $0 }
+                .onGeometryChange(for: CGFloat.self) {
+                    $0.size.width
+                } action: {
+                    availableWidth = $0
+                }
                 .accessibilityHidden(true)
             line
                 .fixedSize()
-                .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { contentWidth = $0 }
+                .onGeometryChange(for: CGFloat.self) {
+                    $0.size.width
+                } action: {
+                    contentWidth = $0
+                }
                 .scaleEffect(scale)
                 .frame(width: contentWidth > 0 ? contentWidth * scale : nil)
                 .koboAnimation(.present, value: scale)

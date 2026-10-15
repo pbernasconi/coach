@@ -5,7 +5,7 @@ import Testing
 
 /// The keyboard order of a form: Next through the fields, then the form's last key.
 @Suite struct FlowsFormFocusOrderTests {
-    enum Field: Hashable, Sendable {
+    nonisolated enum Field: Hashable, Sendable {
         case name, note, line1, line2, city, zip, other
     }
 

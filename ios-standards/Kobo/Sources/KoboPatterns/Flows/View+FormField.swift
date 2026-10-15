@@ -44,7 +44,7 @@ extension FormReturnKey {
 
 #if DEBUG
     private struct FormFieldPreview: View {
-        enum Field: Hashable, Sendable { case name, email, note }
+        nonisolated enum Field: Hashable, Sendable { case name, email, note }
 
         @FocusState private var focus: Field?
         @State private var name = ""

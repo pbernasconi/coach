@@ -51,7 +51,12 @@ extension PrimerPageModel {
         symbol: String? = nil,
         reasons: [Reason] = []
     ) {
-        self.init(verbatim: String(localized: title), message: String(localized: message), symbol: symbol, reasons: reasons)
+        self.init(
+            verbatim: String(localized: title),
+            message: String(localized: message),
+            symbol: symbol,
+            reasons: reasons
+        )
     }
 }
 

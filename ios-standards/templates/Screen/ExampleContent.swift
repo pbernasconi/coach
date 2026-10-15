@@ -1,4 +1,5 @@
 import Design
+import KoboComponents
 import SwiftUI
 
 /// Dumb view: draws `state`, reports intents through `send`. Nothing else (SCR-2).
@@ -25,7 +26,7 @@ struct ExampleContent: View {
                 }
             }
             Section {
-                TextField("Name", text: binding(state.draftName) { send(.nameChanged($0)) })  // ios-guard: allow UI-12
+                KoboTextField("Name", text: binding(state.draftName) { send(.nameChanged($0)) })
                 Button("Save") { send(.saveTapped) }
                     .buttonStyle(.glassProminent)
                     .disabled(state.save == .saving)
