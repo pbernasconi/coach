@@ -76,7 +76,7 @@ jobs:
           swift test > ../../kobo-macos.log 2>&1 || status=$?
           tail -n 40 ../../kobo-macos.log
           echo "::group::Unique errors (macOS)"
-          grep -E "(error|warning):" ../../kobo-macos.log | grep -v "^ *|" | sort -u | head -n 150 || true
+          grep -E "(error|warning):|✘|recorded an issue" ../../kobo-macos.log | grep -v "^ *|" | sort -u | head -n 150 || true
           echo "::endgroup::"
           exit "$status"
       - name: Build for the iOS simulator (warnings are errors)
