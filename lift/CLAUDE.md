@@ -24,7 +24,9 @@ lift/
 │         LiftStore     GRDB schema + migrations, repository protocols and Live* implementations,
 │                       outbox writes, DemoSeeder (fabricated demo data)
 │         LiftTesting   IDSequence, ManualNow, TestStore (in-memory DB), fakes, fixtures
-│         (Sync, the widget extension and HealthKit arrive later)
+│         LiftSync      SyncEngine (push outbox, pull with LWW), URLSessionSyncTransport, wire types
+│                       (SYNC.md), KeychainTokenStore; the pull applier and syncState live in LiftStore/Sync
+│         (the widget extension and HealthKit arrive later)
 └── README.md               product notes and the Foundations decision log
 ```
 

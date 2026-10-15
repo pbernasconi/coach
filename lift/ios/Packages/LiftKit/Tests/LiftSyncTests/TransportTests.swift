@@ -2,11 +2,11 @@ import Foundation
 import LiftStore
 import Testing
 
+@testable import LiftSync
+
 #if canImport(FoundationNetworking)
     import FoundationNetworking
 #endif
-
-@testable import LiftSync
 
 @Suite struct TransportTests {
     private let builder = SyncRequestBuilder(baseURL: URL(string: "https://coach.test")!)
@@ -24,14 +24,16 @@ import Testing
         #expect(request.httpMethod == "POST")
         #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer secret")
         #expect(request.value(forHTTPHeaderField: "Content-Type") == "application/json")
-        let body = String(decoding: try #require(request.httpBody), as: UTF8.self)
+        let body = String(bytes: try #require(request.httpBody), encoding: .utf8)
         let expected =
             #"{"changes":[{"entity":"sessionExercise","idempotencyKey":"0A8B","op":"delete","#
             + #""payload":{"deletedAt":"2026-10-15T07:30:00.000Z","position":2},"rowId":"R1"}],"deviceId":"D1"}"#
         #expect(body == expected)
     }
 
-    @Test(arguments: [(String?.some("12 87"), 50, "cursor=12%2087&limit=50"), (nil, 9_000, "limit=500"), (nil, 0, "limit=1")])
+    @Test(arguments: [
+        (String?.some("12 87"), 50, "cursor=12%2087&limit=50"), (nil, 9_000, "limit=500"), (nil, 0, "limit=1"),
+    ])
     func pullRequestCarriesCursorAndClampedLimit(cursor: String?, limit: Int, query: String) {
         let request = builder.pull(cursor: cursor, limit: limit, token: "secret")
         #expect(request.url?.absoluteString == "https://coach.test/api/lift/sync/pull?\(query)")
@@ -50,20 +52,28 @@ import Testing
 
     @Test func mapperThrowsForErrorStatusesAndBadBodies() throws {
         let unauthorized = try response(401, "{}")
-        #expect(throws: SyncTransportError.unauthorized) { try SyncResponseMapper.decode(PushResponse.self, from: unauthorized) }
+        #expect(throws: SyncTransportError.unauthorized) {
+            try SyncResponseMapper.decode(PushResponse.self, from: unauthorized)
+        }
         let garbage = try response(200, "<html>")
-        #expect(throws: SyncTransportError.invalidResponse) { try SyncResponseMapper.decode(PushResponse.self, from: garbage) }
+        #expect(throws: SyncTransportError.invalidResponse) {
+            try SyncResponseMapper.decode(PushResponse.self, from: garbage)
+        }
     }
 
     @Test func networkErrorsAreRetryableAndCancellationStaysCancellation() {
-        #expect(SyncResponseMapper.transportError(URLError(.notConnectedToInternet)) as? SyncTransportError == .retryable(status: nil))
+        #expect(
+            SyncResponseMapper.transportError(URLError(.notConnectedToInternet)) as? SyncTransportError
+                == .retryable(status: nil)
+        )
         #expect(SyncResponseMapper.transportError(URLError(.cancelled)) is CancellationError)
         #expect(SyncResponseMapper.transportError(CancellationError()) is CancellationError)
     }
 
     @Test func pushResponseMatchesKeysInAnyCase() throws {
         let key = UUID(uuid: (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16))
-        let json = #"{"accepted":["\#(key.uuidString.lowercased())"],"rejected":[{"idempotencyKey":"bad","reason":"x"}]}"#
+        let json =
+            #"{"accepted":["\#(key.uuidString.lowercased())"],"rejected":[{"idempotencyKey":"bad","reason":"x"}]}"#
         let decoded = try SyncResponseMapper.decode(PushResponse.self, from: try response(200, json))
         #expect(decoded.acknowledgedKeys == [key])
         #expect(decoded.rejected == [.init(idempotencyKey: "bad", reason: "x")])

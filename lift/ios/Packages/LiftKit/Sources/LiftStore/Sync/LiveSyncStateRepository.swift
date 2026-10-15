@@ -65,7 +65,8 @@ public struct LiveSyncStateRepository: SyncStateRepository {
 
     private static func setValue(_ value: String, for key: String, _ db: Database) throws {
         try db.execute(
-            sql: "INSERT INTO syncState (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+            sql:
+                "INSERT INTO syncState (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
             arguments: [key, value]
         )
     }

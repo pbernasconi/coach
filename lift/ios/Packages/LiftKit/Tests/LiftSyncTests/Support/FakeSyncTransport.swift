@@ -25,6 +25,7 @@ final class FakeSyncTransport: SyncTransport {
         var pullResults: [Result<PullResponse, SyncTransportError>] = []
         var holdPushes = false
         var held: [CheckedContinuation<Void, Never>] = []
+        var heldWaiters: [CheckedContinuation<Void, Never>] = []
     }
 
     private let state = Mutex(State())
@@ -42,11 +43,21 @@ final class FakeSyncTransport: SyncTransport {
             return nil
         }
     }
-    var heldCount: Int { state.withLock { $0.held.count } }
 
     func queuePush(_ outcomes: PushOutcome...) { state.withLock { $0.pushOutcomes += outcomes } }
     func queuePull(_ response: PullResponse) { state.withLock { $0.pullResults.append(.success(response)) } }
     func queuePullFailure(_ error: SyncTransportError) { state.withLock { $0.pullResults.append(.failure(error)) } }
+
+    /// Returns once a push is waiting for `release()`.
+    func waitForHeldPush() async {
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            let ready = state.withLock { state in
+                if state.held.isEmpty { state.heldWaiters.append(continuation) }
+                return !state.held.isEmpty
+            }
+            if ready { continuation.resume() }
+        }
+    }
 
     /// Makes every push wait until `release()`.
     func holdPushes() { state.withLock { $0.holdPushes = true } }
@@ -62,14 +73,19 @@ final class FakeSyncTransport: SyncTransport {
 
     func push(_ body: PushRequest) async throws -> PushResponse {
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-            let wait = state.withLock { state in
+            let (wait, waiters) = state.withLock { state -> (Bool, [CheckedContinuation<Void, Never>]) in
                 state.calls.append(.push(body))
-                if state.holdPushes { state.held.append(continuation) }
-                return state.holdPushes
+                guard state.holdPushes else { return (false, []) }
+                state.held.append(continuation)
+                defer { state.heldWaiters = [] }
+                return (true, state.heldWaiters)
             }
+            for waiter in waiters { waiter.resume() }
             if !wait { continuation.resume() }
         }
-        let outcome = state.withLock { state in state.pushOutcomes.isEmpty ? .acceptAll : state.pushOutcomes.removeFirst() }
+        let outcome = state.withLock { state in
+            state.pushOutcomes.isEmpty ? .acceptAll : state.pushOutcomes.removeFirst()
+        }
         let keys = body.changes.map(\.idempotencyKey)
         switch outcome {
         case .acceptAll: return PushResponse(accepted: keys)

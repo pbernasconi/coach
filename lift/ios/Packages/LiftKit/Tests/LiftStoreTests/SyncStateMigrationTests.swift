@@ -36,7 +36,8 @@ import Testing
         try LiftMigrations.migrator.migrate(queue)
         try queue.write { db in try db.execute(sql: "INSERT INTO syncState (key, value) VALUES ('pullCursor', '1')") }
         #expect(throws: DatabaseError.self) {
-            try queue.write { db in try db.execute(sql: "INSERT INTO syncState (key, value) VALUES ('pullCursor', '2')") }
+            try queue.write { db in try db.execute(sql: "INSERT INTO syncState (key, value) VALUES ('pullCursor', '2')")
+            }
         }
     }
 }
