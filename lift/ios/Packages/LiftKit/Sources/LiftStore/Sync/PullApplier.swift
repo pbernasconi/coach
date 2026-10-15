@@ -28,8 +28,8 @@ enum PullApplier {
 
     private static func rank(_ entity: OutboxEntity) -> Int {
         switch entity {
-        case .exercise: 0
-        case .session: 1
+        case .exercise, .template: 0
+        case .session, .templateExercise: 1
         case .sessionExercise: 2
         case .set: 3
         }
@@ -48,6 +48,12 @@ enum PullApplier {
         case .set:
             return try upsert(SetRecord.self, change, db) { row in
                 try SessionExerciseRecord.exists(db, key: row.sessionExerciseID)
+            }
+        case .template:
+            return try upsert(TemplateRecord.self, change, db) { _ in true }
+        case .templateExercise:
+            return try upsert(TemplateExerciseRecord.self, change, db) { row in
+                try TemplateRecord.exists(db, key: row.templateID)
             }
         }
     }

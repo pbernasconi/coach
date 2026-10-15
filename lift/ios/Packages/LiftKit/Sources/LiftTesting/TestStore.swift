@@ -10,6 +10,8 @@ public struct TestStore: Sendable {
     public let sessions: LiveSessionRepository
     public let sets: LiveSetRepository
     public let outbox: LiveOutboxRepository
+    public let templates: LiveTemplateRepository
+    public let plans: LiveWorkoutPlanRepository
 
     public static func make() throws -> TestStore {
         try TestStore(database: .inMemory(), ids: IDSequence(), now: ManualNow())
@@ -25,5 +27,7 @@ public struct TestStore: Sendable {
         sessions = LiveSessionRepository(database: database, now: clock, makeID: makeID)
         sets = LiveSetRepository(database: database, now: clock, makeID: makeID)
         outbox = LiveOutboxRepository(database: database)
+        templates = LiveTemplateRepository(database: database, now: clock, makeID: makeID)
+        plans = LiveWorkoutPlanRepository(database: database, now: clock, makeID: makeID)
     }
 }

@@ -11,7 +11,8 @@ public struct LiveOutboxRepository: OutboxRepository {
 
     public func pending(limit: Int) async throws -> [OutboxEntry] {
         try await writer.read { db in
-            try OutboxEntry.order(Column.rowID).limit(limit).fetchAll(db)
+            // Write order. `_rowid_`, not `rowid`: the table's own `rowID` column (the changed row's id) shadows `rowid`.
+            try OutboxEntry.order(Column("_rowid_")).limit(limit).fetchAll(db)
         }
     }
 

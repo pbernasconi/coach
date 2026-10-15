@@ -33,4 +33,19 @@ extension TestStore {
         try await drainOutbox()
         return set
     }
+
+    /// A kg squat session on `Fixtures.monday` (rest 120 s) whose sets were all logged at `weight`, outbox drained.
+    func loggedSquats(reps: [Int], weight: Weight, on day: LocalDay = Fixtures.monday) async throws -> SessionRecord {
+        let session = try await sessions.createSession(on: day, title: "Lower A", unit: .kg, templateID: nil)
+        let slot = try await sessions.addExercise(
+            ExerciseSlot(exercise: Fixtures.squat, restSeconds: 120),
+            to: session.id
+        )
+        for count in reps {
+            let set = try await sets.addSet(to: slot.id, kind: .working, target: SetTarget(reps: count, weight: weight))
+            _ = try await sets.log(setID: set.id)
+        }
+        try await drainOutbox()
+        return session
+    }
 }
