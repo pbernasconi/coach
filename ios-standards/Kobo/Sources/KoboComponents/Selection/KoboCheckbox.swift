@@ -109,6 +109,6 @@ public struct KoboCheckbox: View {
     }
 
     #Preview("Checkbox") { KoboCheckboxGallery() }
-    #Preview("Checkbox · dark, Lift") { KoboCheckboxGallery().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Checkbox · dark, Amber") { KoboCheckboxGallery().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Checkbox · AX3") { KoboCheckboxGallery().dynamicTypeSize(.accessibility3) }
 #endif

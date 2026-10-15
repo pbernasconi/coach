@@ -162,6 +162,6 @@ public struct KoboCalendar: View {
     }
 
     #Preview("Calendar") { KoboCalendarGallery() }
-    #Preview("Calendar · dark, Lift") { KoboCalendarGallery().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Calendar · dark, Amber") { KoboCalendarGallery().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Calendar · AX3") { KoboCalendarGallery().dynamicTypeSize(.accessibility3) }
 #endif

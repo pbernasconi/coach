@@ -139,6 +139,6 @@ private struct QuickPickItem<Value: Hashable & Sendable>: Identifiable {
     }
 
     #Preview("Quick pick row") { QuickPickGallery() }
-    #Preview("Quick pick row · dark, Lift") { QuickPickGallery().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Quick pick row · dark, Amber") { QuickPickGallery().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Quick pick row · AX3") { QuickPickGallery().dynamicTypeSize(.accessibility3) }
 #endif

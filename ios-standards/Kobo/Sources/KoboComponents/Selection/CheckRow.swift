@@ -136,6 +136,6 @@ extension CheckRow where Leading == EmptyView {
     }
 
     #Preview("Check row") { CheckRowGallery() }
-    #Preview("Check row · dark, Lift") { CheckRowGallery().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Check row · dark, Amber") { CheckRowGallery().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Check row · AX3") { CheckRowGallery().dynamicTypeSize(.accessibility3) }
 #endif

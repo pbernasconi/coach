@@ -71,6 +71,6 @@ public struct RadioGroup<Value: Hashable & Sendable>: View {
     }
 
     #Preview("Radio group") { RadioGroupGallery() }
-    #Preview("Radio group · dark, Lift") { RadioGroupGallery().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Radio group · dark, Amber") { RadioGroupGallery().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Radio group · AX3") { RadioGroupGallery().dynamicTypeSize(.accessibility3) }
 #endif

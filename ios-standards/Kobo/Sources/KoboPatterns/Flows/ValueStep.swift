@@ -135,6 +135,6 @@ struct ValueStepBody<Entry: View, Below: View>: View {
     }
 
     #Preview("Light") { ValueStepPreview() }
-    #Preview("Dark, Lift") { ValueStepPreview().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Dark, Amber") { ValueStepPreview().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("AX3") { ValueStepPreview().dynamicTypeSize(.accessibility3) }
 #endif

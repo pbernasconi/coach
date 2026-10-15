@@ -8,7 +8,7 @@
     /// increased contrast. Call it once at launch, after picking the theme; `koboRefreshable` plays the pull haptic,
     /// because a tinted control plays none of its own.
     ///
-    ///     RefreshControlTint.apply(.lift)
+    ///     RefreshControlTint.apply(.amber)
     public enum RefreshControlTint {
         public static func apply(_ theme: Theme) {
             UIRefreshControl.appearance().tintColor = UIColor(theme.palette.accentText)

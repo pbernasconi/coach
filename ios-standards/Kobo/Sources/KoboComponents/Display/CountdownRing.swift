@@ -120,7 +120,7 @@ public struct CountdownRing: View {
         let now = Date.now
         CountdownRing(start: now, end: now.addingTimeInterval(90))
             .frame(width: Size.thumbnail * 2, height: Size.thumbnail * 2)
-            .koboTheme(.lift)
+            .koboTheme(.amber)
             .preferredColorScheme(.dark)
     }
 

@@ -108,7 +108,7 @@ private struct ToastSurface<S: Shape>: ViewModifier {
             ToastCapsule(toast: Toast("Set deleted", action: .init("Undo") {}), onDismiss: {}, onAction: {})
         }
         .padding()
-        .koboTheme(Theme(palette: .lift, surfaceStyle: .solid))
+        .koboTheme(Theme(palette: .amber, surfaceStyle: .solid))
         .preferredColorScheme(.dark)
     }
 

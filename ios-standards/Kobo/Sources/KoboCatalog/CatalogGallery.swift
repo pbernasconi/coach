@@ -6,7 +6,7 @@ import SwiftUI
 /// A browsable gallery of every Kobo component, for a debug menu or a catalog app target.
 ///
 ///     #if DEBUG
-///     CatalogGallery(themes: [("Lift", .lift), ("System", .system)])
+///     CatalogGallery(themes: [("Lift", .amber), ("System", .system)])
 ///     #endif
 ///
 /// The toolbar switches theme, colour scheme and text size, so each component can be checked in light,
@@ -18,7 +18,7 @@ public struct CatalogGallery: View {
     @State private var appearance = CatalogAppearance.system
     @State private var largeText = false
 
-    public init(themes: [(name: String, theme: Theme)] = [("System", .system), ("Lift", .lift)]) {
+    public init(themes: [(name: String, theme: Theme)] = [("System", .system), ("Lift", .amber)]) {
         self.themes = themes.enumerated().map {
             CatalogTheme(id: $0.offset, name: $0.element.name, theme: $0.element.theme)
         }

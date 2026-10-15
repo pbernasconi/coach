@@ -56,6 +56,8 @@ public struct AdaptiveColumns<Primary: View, Secondary: View>: View {
     }
 
     #Preview("Adaptive columns") { AdaptiveColumnsPreview() }
-    #Preview("Adaptive columns · dark, Lift") { AdaptiveColumnsPreview().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Adaptive columns · dark, Amber") {
+        AdaptiveColumnsPreview().koboTheme(.amber).preferredColorScheme(.dark)
+    }
     #Preview("Adaptive columns · AX3") { AdaptiveColumnsPreview().dynamicTypeSize(.accessibility3) }
 #endif

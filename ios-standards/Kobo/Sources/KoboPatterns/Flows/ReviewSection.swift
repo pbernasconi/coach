@@ -91,5 +91,5 @@ public struct ReviewSection<Content: View>: View {
 
     #Preview("Light") { ReviewSectionPreview() }
     #Preview("Dark") { ReviewSectionPreview().preferredColorScheme(.dark) }
-    #Preview("AX3, Lift") { ReviewSectionPreview().koboTheme(.lift).dynamicTypeSize(.accessibility3) }
+    #Preview("AX3, Amber") { ReviewSectionPreview().koboTheme(.amber).dynamicTypeSize(.accessibility3) }
 #endif

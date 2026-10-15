@@ -105,6 +105,6 @@ public struct HeaderButton: View {
     }
 
     #Preview("Header button") { HeaderButtonPreview() }
-    #Preview("Header button · dark, Lift") { HeaderButtonPreview().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Header button · dark, Amber") { HeaderButtonPreview().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Header button · AX3") { HeaderButtonPreview().dynamicTypeSize(.accessibility3) }
 #endif

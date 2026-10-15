@@ -132,5 +132,5 @@ public struct ProgressFlowStep<Content: View>: View {
 
     #Preview("Light") { ProgressFlowStepPreview() }
     #Preview("Dark") { ProgressFlowStepPreview().preferredColorScheme(.dark) }
-    #Preview("AX3, Lift") { ProgressFlowStepPreview().koboTheme(.lift).dynamicTypeSize(.accessibility3) }
+    #Preview("AX3, Amber") { ProgressFlowStepPreview().koboTheme(.amber).dynamicTypeSize(.accessibility3) }
 #endif

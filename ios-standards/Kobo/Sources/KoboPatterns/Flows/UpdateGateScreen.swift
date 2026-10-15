@@ -116,9 +116,9 @@ public struct UpdateGateScreen: View {
 #if DEBUG
     #Preview("Store link") { UpdateGateScreen(appName: "Lift", storeURL: URL(string: "https://apps.apple.com")) }
     #Preview("No store link, dark") { UpdateGateScreen().preferredColorScheme(.dark) }
-    #Preview("Custom copy, Lift") {
+    #Preview("Custom copy, Amber") {
         UpdateGateScreen("Time to update", message: "This version can't sync your workouts any more.") {}
-            .koboTheme(.lift)
+            .koboTheme(.amber)
     }
     #Preview("AX3") { UpdateGateScreen(appName: "Lift") {}.dynamicTypeSize(.accessibility3) }
 #endif

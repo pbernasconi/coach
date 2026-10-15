@@ -119,7 +119,7 @@ extension EmptyState where Actions == EmptyView {
             Button("Plan a week") {}
                 .buttonStyle(.kobo(.primary))
         }
-        .koboTheme(.lift)
+        .koboTheme(.amber)
         .preferredColorScheme(.dark)
     }
 

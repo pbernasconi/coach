@@ -98,6 +98,6 @@ public struct InlineNotice: View {
     }
 
     #Preview("Inline notice") { InlineNoticePreview() }
-    #Preview("Inline notice · dark, Lift") { InlineNoticePreview().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Inline notice · dark, Amber") { InlineNoticePreview().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Inline notice · AX3") { InlineNoticePreview().dynamicTypeSize(.accessibility3) }
 #endif

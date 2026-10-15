@@ -182,6 +182,6 @@ extension ChoiceMenuPicker where Tag == Value {
     }
 
     #Preview("Menu row") { MenuRowGallery() }
-    #Preview("Menu row · dark, Lift") { MenuRowGallery().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Menu row · dark, Amber") { MenuRowGallery().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Menu row · AX3") { MenuRowGallery().dynamicTypeSize(.accessibility3) }
 #endif

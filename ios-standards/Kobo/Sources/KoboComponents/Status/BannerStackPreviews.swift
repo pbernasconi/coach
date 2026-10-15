@@ -52,6 +52,6 @@ import SwiftUI
     }
 
     #Preview("Banner stack") { BannerStackPreview() }
-    #Preview("Banner stack · dark, Lift") { BannerStackPreview().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Banner stack · dark, Amber") { BannerStackPreview().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Banner stack · AX3") { BannerStackPreview().dynamicTypeSize(.accessibility3) }
 #endif

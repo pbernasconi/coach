@@ -163,7 +163,7 @@ private struct SheetHeaderButtonLook: ViewModifier {
                     confirm: SheetHeaderAction(verbatimAccessibilityLabel: "Save Pinned note", isEnabled: false) {}
                 )
                 SheetHeader("Solid theme", onClose: {}, confirm: SheetHeaderAction(accessibilityLabel: "Save") {})
-                    .koboTheme(Theme(palette: .lift, surfaceStyle: .solid))
+                    .koboTheme(Theme(palette: .amber, surfaceStyle: .solid))
             }
             .frame(maxHeight: .infinity, alignment: .top)
             .background(Theme.system.palette.surface)

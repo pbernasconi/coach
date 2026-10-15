@@ -72,7 +72,7 @@ private struct PulsePreview: View {
 }
 
 #if DEBUG
-    #Preview("Pulse") { PulsePreview().koboTheme(.lift) }
-    #Preview("Pulse, dark") { PulsePreview().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Pulse") { PulsePreview().koboTheme(.amber) }
+    #Preview("Pulse, dark") { PulsePreview().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Pulse, AX3") { PulsePreview().dynamicTypeSize(.accessibility3) }
 #endif

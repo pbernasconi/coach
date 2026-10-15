@@ -202,6 +202,6 @@ extension KoboSearchPlacement {
     }
 
     #Preview("Searchable") { KoboSearchableGallery() }
-    #Preview("Searchable · dark, Lift") { KoboSearchableGallery().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Searchable · dark, Amber") { KoboSearchableGallery().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Searchable · AX3") { KoboSearchableGallery().dynamicTypeSize(.accessibility3) }
 #endif

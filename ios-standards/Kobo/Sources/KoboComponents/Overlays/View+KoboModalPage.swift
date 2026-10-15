@@ -113,6 +113,6 @@ private struct ModalPageSheetSizing: ViewModifier {
 
     #Preview("Light") { ModalPagePreview() }
     #Preview("Dark") { ModalPagePreview().preferredColorScheme(.dark) }
-    #Preview("Lift") { ModalPagePreview().koboTheme(.lift) }
+    #Preview("Amber") { ModalPagePreview().koboTheme(.amber) }
     #Preview("AX3") { ModalPagePreview().dynamicTypeSize(.accessibility3) }
 #endif

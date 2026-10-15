@@ -210,7 +210,7 @@ extension DateField {
     }
 
     #Preview("Date field") { DateFieldGallery() }
-    #Preview("Date field · dark, Lift") { DateFieldGallery().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Date field · dark, Amber") { DateFieldGallery().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Date field · AX3") { DateFieldGallery().dynamicTypeSize(.accessibility3) }
     #Preview("Date field · German") { DateFieldGallery().environment(\.locale, Locale(identifier: "de_DE")) }
 #endif

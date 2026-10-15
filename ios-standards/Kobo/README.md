@@ -33,7 +33,7 @@ into a debug menu or a separate catalog target.
 .product(name: "KoboComponents", package: "Kobo")
 
 // App root
-WindowGroup { RootView().koboTheme(.lift) }
+WindowGroup { RootView().koboTheme(.amber) }
 
 // A screen
 ScreenScaffold("Week") {

@@ -7,7 +7,7 @@ import SwiftUI
 /// accessibility sizes the previews stack as rows. The themes are the caller's: pass any list of named `Theme`s.
 ///
 ///     ThemePicker(appearance: $appearance)
-///     ThemePicker(appearance: $appearance, themes: [ThemeChoice("lift", title: "Lift", theme: .lift),
+///     ThemePicker(appearance: $appearance, themes: [ThemeChoice("lift", title: "Lift", theme: .amber),
 ///                                                  ThemeChoice("system", title: "Classic", theme: .system)],
 ///                 selection: $themeID)
 public struct ThemePicker<ID: Hashable & Sendable>: View {
@@ -147,9 +147,9 @@ private struct ThemePickerTile: View {
         @State private var appearance = AppearanceMode.system
         @State private var brand = "lift"
         private let themes = [
-            ThemeChoice("lift", title: "Lift", theme: .lift),
+            ThemeChoice("lift", title: "Lift", theme: .amber),
             ThemeChoice("classic", title: "Classic", theme: .system),
-            ThemeChoice("flat", title: "Flat", theme: Theme(palette: .lift, surfaceStyle: .solid)),
+            ThemeChoice("flat", title: "Flat", theme: Theme(palette: .amber, surfaceStyle: .solid)),
         ]
 
         var body: some View {
@@ -165,6 +165,6 @@ private struct ThemePickerTile: View {
     }
 
     #Preview("Theme picker") { ThemePickerGallery() }
-    #Preview("Theme picker · dark, Lift") { ThemePickerGallery().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Theme picker · dark, Amber") { ThemePickerGallery().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Theme picker · AX3") { ThemePickerGallery().dynamicTypeSize(.accessibility3) }
 #endif

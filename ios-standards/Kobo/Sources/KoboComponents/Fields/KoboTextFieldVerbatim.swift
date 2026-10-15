@@ -103,6 +103,6 @@ extension KoboTextField where Leading == EmptyView, Trailing == EmptyView {
     }
 
     #Preview("Text field") { KoboTextFieldGallery() }
-    #Preview("Text field · dark, Lift") { KoboTextFieldGallery().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Text field · dark, Amber") { KoboTextFieldGallery().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Text field · AX3") { KoboTextFieldGallery().dynamicTypeSize(.accessibility3) }
 #endif

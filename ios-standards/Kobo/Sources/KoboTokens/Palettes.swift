@@ -9,8 +9,8 @@ extension Palette {
         accentText: Color(light: Color(hex: 0x0058D0), dark: Color(hex: 0x6CB4FF))
     )
 
-    /// Lift: warm amber accent with dark ink on top (the prototype's look).
-    public static let lift = Palette.make(
+    /// Amber: a warm amber accent with dark ink on top.
+    public static let amber = Palette.make(
         accent: Color(hex: 0xFFC21A),
         onAccent: Color(hex: 0x1A1300),
         accentText: Color(light: Color(hex: 0x8F5F00), dark: Color(hex: 0xFFC21A))

@@ -127,6 +127,6 @@ where Data.Element: Identifiable, Data.Element.ID: Sendable {
     }
 
     #Preview("Accordion group") { AccordionGroupGallery() }
-    #Preview("Accordion group · dark, Lift") { AccordionGroupGallery().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Accordion group · dark, Amber") { AccordionGroupGallery().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Accordion group · AX3") { AccordionGroupGallery().dynamicTypeSize(.accessibility3) }
 #endif

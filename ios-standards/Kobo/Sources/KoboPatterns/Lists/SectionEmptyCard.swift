@@ -65,8 +65,8 @@ public struct SectionEmptyCard: View {
     }
 
     #Preview("Section empty card") { SectionEmptyCardPreview() }
-    #Preview("Section empty card · dark, Lift") {
-        SectionEmptyCardPreview().koboTheme(.lift).preferredColorScheme(.dark)
+    #Preview("Section empty card · dark, Amber") {
+        SectionEmptyCardPreview().koboTheme(.amber).preferredColorScheme(.dark)
     }
     #Preview("Section empty card · AX3") { SectionEmptyCardPreview().dynamicTypeSize(.accessibility3) }
 #endif

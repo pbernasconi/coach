@@ -92,6 +92,6 @@ extension TonalCardRow where Trailing == EmptyView {
     }
 
     #Preview("Tonal card row") { TonalCardRowPreview() }
-    #Preview("Tonal card row · dark, Lift") { TonalCardRowPreview().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Tonal card row · dark, Amber") { TonalCardRowPreview().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Tonal card row · AX3") { TonalCardRowPreview().dynamicTypeSize(.accessibility3) }
 #endif

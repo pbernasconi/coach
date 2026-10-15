@@ -34,7 +34,7 @@ public enum AppearanceMode: String, Sendable, Hashable, CaseIterable, Identifiab
 
 /// One theme a `ThemePicker` offers: an id the caller stores, a name, and the `Theme` its preview draws.
 ///
-///     ThemeChoice("lift", title: "Lift", theme: .lift)
+///     ThemeChoice("lift", title: "Lift", theme: .amber)
 ///     ThemeChoice(brand.id, verbatim: brand.name, theme: brand.theme)
 public struct ThemeChoice<ID: Hashable & Sendable>: Identifiable {
     public let id: ID

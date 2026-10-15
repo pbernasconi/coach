@@ -195,6 +195,6 @@ public struct ToggleRow: View {
     }
 
     #Preview("Toggle row") { ToggleRowGallery() }
-    #Preview("Toggle row · dark, Lift") { ToggleRowGallery().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Toggle row · dark, Amber") { ToggleRowGallery().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Toggle row · AX3") { ToggleRowGallery().dynamicTypeSize(.accessibility3) }
 #endif

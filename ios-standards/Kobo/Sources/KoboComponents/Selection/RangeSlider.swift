@@ -219,6 +219,6 @@ private struct RangeSliderKnob: View {
     }
 
     #Preview("Range slider") { RangeSliderGallery() }
-    #Preview("Range slider · dark, Lift") { RangeSliderGallery().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Range slider · dark, Amber") { RangeSliderGallery().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Range slider · AX3") { RangeSliderGallery().dynamicTypeSize(.accessibility3) }
 #endif

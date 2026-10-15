@@ -193,6 +193,6 @@ private struct ProgressRingPreview: View {
 
 #if DEBUG
     #Preview("Progress ring") { ProgressRingPreview() }
-    #Preview("Progress ring, dark") { ProgressRingPreview().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Progress ring, dark") { ProgressRingPreview().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Progress ring, AX3") { ProgressRingPreview().dynamicTypeSize(.accessibility3) }
 #endif

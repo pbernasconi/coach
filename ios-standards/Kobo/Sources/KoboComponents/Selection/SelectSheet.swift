@@ -184,6 +184,6 @@ public struct SelectSheet<Value: Hashable & Sendable>: View {
     }
 
     #Preview("Select sheet") { SelectSheetGallery() }
-    #Preview("Select sheet · dark, Lift") { SelectSheetGallery().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Select sheet · dark, Amber") { SelectSheetGallery().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Select sheet · AX3") { SelectSheetGallery().dynamicTypeSize(.accessibility3) }
 #endif

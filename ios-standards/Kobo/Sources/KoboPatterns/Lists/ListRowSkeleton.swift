@@ -82,8 +82,8 @@ struct SkeletonSlot: Identifiable {
     }
 
     #Preview("List row skeleton") { ListRowSkeletonPreview() }
-    #Preview("List row skeleton · dark, Lift") {
-        ListRowSkeletonPreview().koboTheme(.lift).preferredColorScheme(.dark)
+    #Preview("List row skeleton · dark, Amber") {
+        ListRowSkeletonPreview().koboTheme(.amber).preferredColorScheme(.dark)
     }
     #Preview("List row skeleton · AX3") { ListRowSkeletonPreview().dynamicTypeSize(.accessibility3) }
 #endif

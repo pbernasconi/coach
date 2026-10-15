@@ -85,6 +85,6 @@ public struct NudgeBanner: View {
     }
 
     #Preview("Nudge banner") { NudgeBannerPreview() }
-    #Preview("Nudge banner · dark, Lift") { NudgeBannerPreview().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Nudge banner · dark, Amber") { NudgeBannerPreview().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Nudge banner · AX3") { NudgeBannerPreview().dynamicTypeSize(.accessibility3) }
 #endif

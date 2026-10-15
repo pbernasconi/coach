@@ -127,6 +127,6 @@ public struct ReviewScaffold<Sections: View>: View {
     }
 
     #Preview("Light") { ReviewScaffoldPreview() }
-    #Preview("Dark, Lift") { ReviewScaffoldPreview().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Dark, Amber") { ReviewScaffoldPreview().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("AX3") { ReviewScaffoldPreview().dynamicTypeSize(.accessibility3) }
 #endif

@@ -222,6 +222,6 @@ extension ChoiceCard where Illustration == EmptyView {
     }
 
     #Preview("Choice card") { ChoiceCardGallery() }
-    #Preview("Choice card · dark, Lift") { ChoiceCardGallery().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Choice card · dark, Amber") { ChoiceCardGallery().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Choice card · AX3") { ChoiceCardGallery().dynamicTypeSize(.accessibility3) }
 #endif

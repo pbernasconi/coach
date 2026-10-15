@@ -113,6 +113,6 @@ public struct ActionCircle: View {
     }
 
     #Preview("Action circle") { ActionCirclePreview() }
-    #Preview("Action circle · dark, Lift") { ActionCirclePreview().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Action circle · dark, Amber") { ActionCirclePreview().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Action circle · AX3") { ActionCirclePreview().dynamicTypeSize(.accessibility3) }
 #endif

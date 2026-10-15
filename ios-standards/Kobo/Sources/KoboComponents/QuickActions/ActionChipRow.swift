@@ -110,6 +110,6 @@ private struct ActionChipButton: View {
     }
 
     #Preview("Action chip row") { ActionChipRowPreview() }
-    #Preview("Action chip row · dark, Lift") { ActionChipRowPreview().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Action chip row · dark, Amber") { ActionChipRowPreview().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Action chip row · AX3") { ActionChipRowPreview().dynamicTypeSize(.accessibility3) }
 #endif

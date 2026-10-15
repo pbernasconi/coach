@@ -99,6 +99,6 @@ public struct SystemNotice: View {
     }
 
     #Preview("System notice") { SystemNoticePreview() }
-    #Preview("System notice · dark, Lift") { SystemNoticePreview().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("System notice · dark, Amber") { SystemNoticePreview().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("System notice · AX3") { SystemNoticePreview().dynamicTypeSize(.accessibility3) }
 #endif

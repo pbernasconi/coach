@@ -47,7 +47,7 @@ struct CatalogDetail: View {
 
 #if DEBUG
     #Preview("Detail") {
-        NavigationStack { CatalogDetail(component: .stepperField) }.koboTheme(.lift)
+        NavigationStack { CatalogDetail(component: .stepperField) }.koboTheme(.amber)
     }
     #Preview("Detail · dark") {
         NavigationStack { CatalogDetail(component: .countdownRing) }.preferredColorScheme(.dark)

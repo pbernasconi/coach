@@ -129,6 +129,6 @@ public struct FlowStep<Content: View>: View {
     }
 
     #Preview("Light") { FlowStepPreview() }
-    #Preview("Dark, Lift") { FlowStepPreview().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Dark, Amber") { FlowStepPreview().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("AX3") { FlowStepPreview().dynamicTypeSize(.accessibility3) }
 #endif

@@ -70,6 +70,6 @@ public struct SlowWaitNote: View {
     }
 
     #Preview("Slow wait note") { SlowWaitNotePreview() }
-    #Preview("Slow wait note · dark, Lift") { SlowWaitNotePreview().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Slow wait note · dark, Amber") { SlowWaitNotePreview().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Slow wait note · AX3") { SlowWaitNotePreview().dynamicTypeSize(.accessibility3) }
 #endif

@@ -181,6 +181,6 @@ struct ChipStyle: ButtonStyle {
     }
 
     #Preview("Chip") { ChipGallery() }
-    #Preview("Chip · dark, Lift") { ChipGallery().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Chip · dark, Amber") { ChipGallery().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Chip · AX3") { ChipGallery().dynamicTypeSize(.accessibility3) }
 #endif

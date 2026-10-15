@@ -161,8 +161,8 @@ extension View {
 
     #Preview("Light") { KoboSheetPreview() }
     #Preview("Dark") { KoboSheetPreview().preferredColorScheme(.dark) }
-    #Preview("Lift, solid") {
-        KoboSheetPreview().koboTheme(Theme(palette: .lift, surfaceStyle: .solid))
+    #Preview("Amber, solid") {
+        KoboSheetPreview().koboTheme(Theme(palette: .amber, surfaceStyle: .solid))
     }
     #Preview("AX3") { KoboSheetPreview().dynamicTypeSize(.accessibility3) }
 #endif

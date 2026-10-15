@@ -177,6 +177,8 @@ extension ChoiceCardGroup where Illustration == EmptyView {
     }
 
     #Preview("Choice card group") { ChoiceCardGroupGallery() }
-    #Preview("Choice card group · dark, Lift") { ChoiceCardGroupGallery().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Choice card group · dark, Amber") {
+        ChoiceCardGroupGallery().koboTheme(.amber).preferredColorScheme(.dark)
+    }
     #Preview("Choice card group · AX3") { ChoiceCardGroupGallery().dynamicTypeSize(.accessibility3) }
 #endif

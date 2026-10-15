@@ -144,6 +144,6 @@ public struct StepIndicator: View {
     }
 
     #Preview("Light") { StepIndicatorPreview() }
-    #Preview("Dark, Lift") { StepIndicatorPreview().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Dark, Amber") { StepIndicatorPreview().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("AX3") { StepIndicatorPreview().dynamicTypeSize(.accessibility3) }
 #endif

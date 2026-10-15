@@ -81,6 +81,6 @@ extension View {
     }
 
     #Preview("Count badge") { CountBadgePreview() }
-    #Preview("Count badge · dark, Lift") { CountBadgePreview().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Count badge · dark, Amber") { CountBadgePreview().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Count badge · AX3") { CountBadgePreview().dynamicTypeSize(.accessibility3) }
 #endif
