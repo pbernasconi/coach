@@ -79,7 +79,7 @@ final class HistoryViewModel {
         let first = days.weekStart(of: today).adding(days: -7 * (HistoryState.weekCount - 1))
         for await details in sessions.observeSessions(from: first, through: today) {
             let past = details.map { SessionSummary(detail: $0) }
-                .filter { $0.day < today || $0.hasLoggedSets }
+                .filter { $0.day < today || $0.hasLoggedSets || $0.isDone }
             let weeks = group(past)
             state.weeks = weeks.isEmpty ? .empty : .loaded(weeks)
             self.details = details.map(\.domain)

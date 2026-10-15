@@ -63,6 +63,20 @@ import Testing
         #expect(vm.state.weeks == .empty)
     }
 
+    @Test func aWorkoutFinishedTodayWithNothingLoggedIsHistory() async {
+        var finished = SessionBuilder.session(id: 1, on: monday, done: 0, planned: 3)
+        finished.session.finishedAt = ManualNow.start
+        let vm = makeViewModel(FakeSessionRepository(emissions: [[finished]]))
+
+        await vm.run()
+
+        guard case .loaded(let weeks) = vm.state.weeks else {
+            Issue.record("Expected the finished workout, got \(vm.state.weeks)")
+            return
+        }
+        #expect(weeks.flatMap(\.sessions).map(\.id) == [finished.id])
+    }
+
     @Test func sessionTappedOpensTheWorkout() async {
         let friday = SessionBuilder.session(id: 1, on: monday.adding(days: -3), done: 3, planned: 0)
         let vm = makeViewModel(FakeSessionRepository(emissions: [[friday]]))

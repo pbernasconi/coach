@@ -58,8 +58,12 @@ private struct HistorySessions: View {
             EmptyState(
                 symbol: "clock.arrow.circlepath",
                 title: "No past workouts",
-                message: "Workouts from the last 8 weeks show here once they are logged."
-            )
+                message:
+                    "A workout shows here once a set is logged or it is finished. Logged in Apple Notes? Import it."
+            ) {
+                Button("Import from Notes", systemImage: "square.and.arrow.down") { send(.importTapped) }
+                    .buttonStyle(.kobo(.secondary))
+            }
         case .failed:
             ErrorState(title: "History could not be loaded")
         case .loaded(let weeks):
