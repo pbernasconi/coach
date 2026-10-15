@@ -14,8 +14,12 @@ struct CatalogDetailContent: View {
                 LoadingState()
                     .pageGutter()
             case .empty:
-                EmptyState(symbol: "dumbbell", title: "Exercise not found", message: "It is not in the catalog.")
-                    .pageGutter()
+                EmptyState(
+                    symbol: "dumbbell",
+                    title: "Exercise not found",
+                    message: "It is not in the catalog."
+                )
+                .pageGutter()
             case .failed:
                 ErrorState(title: "The exercise catalog could not be loaded")
                     .pageGutter()
@@ -28,27 +32,29 @@ struct CatalogDetailContent: View {
     }
 }
 
-/// The loaded entry, top to bottom.
+/// The loaded entry, top to bottom: name, the animation beside its muscles and equipment, the library action, then
+/// the dataset's steps.
 private struct CatalogDetailBody: View {
     let item: CatalogDetailItem
     let state: CatalogDetailState
     let send: (CatalogDetailAction) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            AppHeader(verbatim: item.name, kicker: item.bodyPart)
-            VStack(alignment: .leading, spacing: Space.xxl) {
+        VStack(alignment: .leading, spacing: Space.lg) {
+            ExerciseTitle(name: item.name, kicker: item.bodyPart)
+            ExerciseOverview {
                 ExerciseMediaHero(animation: state.animation, name: item.name)
-                    .koboCard()
-                LibraryAction(status: state.library, send: send)
+            } facts: {
                 CatalogFacts(item: item)
-                CardSection("Steps") {
-                    CatalogSteps(steps: item.steps)
-                }
             }
-            .pageGutter()
-            .padding(.bottom, Space.xxl)
+            LibraryAction(status: state.library, send: send)
+            CardSection("Steps", padding: Space.md) {
+                CatalogSteps(steps: item.steps)
+            }
         }
+        .pageGutter()
+        .padding(.top, Space.xs)
+        .padding(.bottom, Space.xxl)
     }
 }
 
@@ -74,36 +80,17 @@ private struct LibraryAction: View {
     }
 }
 
-/// Target and secondary muscles as tags, and the equipment.
+/// Target and secondary muscles as tags, and the equipment, beside the animation.
 private struct CatalogFacts: View {
-    @Environment(\.koboTheme) private var theme
     let item: CatalogDetailItem
 
     var body: some View {
-        CardSection("Muscles") {
-            tags("Target", [item.target], style: .tonal)
-            if !item.secondary.isEmpty {
-                tags("Secondary", item.secondary, style: .outline)
-            }
+        ExerciseFact("Target") { MuscleTags(muscles: [item.target], style: .tonal) }
+        if !item.secondary.isEmpty {
+            ExerciseFact("Secondary") { MuscleTags(muscles: item.secondary, style: .outline) }
         }
-        CardSection("Equipment") {
-            Text(verbatim: item.equipment)
-                .font(theme.font(.body))
-                .foregroundStyle(theme.palette.textPrimary)
-        }
-    }
-
-    private func tags(_ title: LocalizedStringKey, _ muscles: [String], style: KoboTag.Style) -> some View {
-        VStack(alignment: .leading, spacing: Space.xs) {
-            Text(title)
-                .font(theme.font(.footnote).weight(.semibold))
-                .foregroundStyle(theme.palette.textSecondary)
-            FlowLayout {
-                // Fixed labels from the catalog; the offset is a stable identity for them.
-                ForEach(Array(muscles.enumerated()), id: \.offset) { _, muscle in
-                    KoboTag(verbatim: muscle, tone: .accent, style: style)
-                }
-            }
+        ExerciseFact("Equipment") {
+            KoboTag(verbatim: item.equipment, tone: .neutral, systemImage: "dumbbell.fill")
         }
     }
 }
