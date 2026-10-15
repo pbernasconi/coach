@@ -20,7 +20,8 @@ permissions:
 
 concurrency:
   group: ios-${{ github.ref }}
-  cancel-in-progress: true
+  # Let a started run finish so every push gets a complete compile report; newer pushes wait in the queue.
+  cancel-in-progress: false
 
 # Actions are pinned by commit SHA (TOOL-3).
 jobs:
@@ -66,8 +67,11 @@ jobs:
           swift --version
       - name: Build and test for macOS
         working-directory: ios-standards/Kobo
-        run: swift test 2>&1 | tee ../../kobo-macos.log
+        run: |
+          set -o pipefail
+          swift test 2>&1 | tee ../../kobo-macos.log
       - name: Build for the iOS simulator (warnings are errors)
+        if: ${{ !cancelled() }}
         working-directory: ios-standards/Kobo
         run: |
           set -o pipefail
@@ -75,6 +79,7 @@ jobs:
             -scheme Kobo-Package \
             -destination "generic/platform=iOS Simulator" \
             -skipPackagePluginValidation \
+            -IDEBuildingContinueBuildingAfterErrors=YES \
             2>&1 | tee ../../kobo-ios.log | grep -E "error:|warning:|BUILD (SUCCEEDED|FAILED)" || true
           grep -q "BUILD SUCCEEDED" ../../kobo-ios.log
 

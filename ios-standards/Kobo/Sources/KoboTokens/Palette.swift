@@ -90,9 +90,9 @@ extension Color {
         #if canImport(UIKit)
             self.init(
                 uiColor: UIColor { traits in
-                    let dark = traits.userInterfaceStyle == .dark
-                    let high = traits.accessibilityContrast == .high
-                    switch (dark, high) {
+                    let isDark = traits.userInterfaceStyle == .dark
+                    let isHigh = traits.accessibilityContrast == .high
+                    switch (isDark, isHigh) {
                     case (false, false): return UIColor(light)
                     case (true, false): return UIColor(dark)
                     case (false, true): return UIColor(highContrastLight ?? light)
