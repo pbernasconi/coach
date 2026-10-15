@@ -1,4 +1,5 @@
 import KoboComponents
+import KoboPatterns
 import KoboTokens
 import SwiftUI
 

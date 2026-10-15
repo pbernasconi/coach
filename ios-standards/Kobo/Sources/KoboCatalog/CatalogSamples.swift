@@ -1,4 +1,6 @@
 import KoboComponents
+import KoboPatterns
+import KoboTokens
 import SwiftUI
 
 /// Made-up sample content shared by the catalog demos: task priorities, projects, reminders and views. Nothing here
