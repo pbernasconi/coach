@@ -62,6 +62,8 @@ public struct DayStrip: View {
             .scrollTargetBehavior(.paging)
             .scrollIndicators(.hidden)
             .scrollPosition(id: Binding<Int?>($week))
+            // A horizontal scroll view takes every point of height it is offered; the strip is one row tall.
+            .fixedSize(horizontal: false, vertical: true)
         }
         .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
     }
