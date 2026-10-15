@@ -21,11 +21,12 @@ case "$1" in
     api="repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
     for ((i = 0; i < 240; i++)); do
       if [ -n "$(gh api "$api/artifacts?name=$name" --jq '.artifacts[0].id // empty')" ]; then
+        echo "$(date -u +%T) $name is listed, downloading"
         mkdir -p "$dir"
         gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "$name" --dir "$dir.download"
         zstd -q -d -c "$dir.download"/*.tar.zst | tar -xf - -C "$dir"
         rm -rf "$dir.download"
-        echo "products ready after $((SECONDS / 60))m$((SECONDS % 60))s"
+        echo "$(date -u +%T) products ready after $((SECONDS / 60))m$((SECONDS % 60))s"
         exit 0
       fi
       if [ "$(gh api "$api/jobs" --jq '[.jobs[] | select(.name == "build" and .conclusion == "failure")] | length')" != 0 ]; then

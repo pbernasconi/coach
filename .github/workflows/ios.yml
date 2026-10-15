@@ -56,7 +56,7 @@ jobs:
     # No simulator boots here, so the cache restore and the build get the whole machine. Xcode's compilation
     # cache (build/cas) comes from the last run and is saved after the upload, even when a later job fails.
     # SwiftPM checkouts are not cached: restoring their 260 MB archive took longer than xcodebuild's own clone.
-    # It also compiles Kobo for iOS.
+    # It also compiles Kobo for iOS, and runs the Kobo and LiftKit tests (macOS, the real SwiftUI SDK) last.
     runs-on: macos-26
     timeout-minutes: 45
     concurrency:
@@ -101,11 +101,29 @@ jobs:
         with:
           path: build/cas
           key: lift-cas-${{ env.XCODE }}-${{ github.sha }}
+      - name: Kobo and LiftKit tests
+        # After the products are out: the simulator jobs need them first. Both packages side by side.
+        if: ${{ !cancelled() }}
+        run: |
+          (cd ios-standards/Kobo && swift test > "$RUNNER_TEMP/kobo.log" 2>&1) & kobo=$!
+          (cd lift/ios/Packages/LiftKit && swift test > "$RUNNER_TEMP/liftkit.log" 2>&1) & liftkit=$!
+          status=0
+          wait "$kobo" || status=1
+          wait "$liftkit" || status=1
+          for name in kobo liftkit; do
+            log="$RUNNER_TEMP/$name.log"
+            echo "::group::$name (tail)"
+            tail -n 20 "$log"
+            echo "::endgroup::"
+            echo "::group::Unique errors ($name)"
+            grep -E "(error|warning):|✘|recorded an issue" "$log" | grep -v "^ *|" | sort -u | head -n 150 || true
+            echo "::endgroup::"
+          done
+          exit "$status"
 
   test:
-    # Kobo and LiftKit tests (macOS, the real SwiftUI SDK) while the simulator boots and the build job builds,
-    # then the app's unit tests on the simulator from the build job's products. It starts with the build job
-    # rather than after it, so the simulator is ready when the products arrive.
+    # The app's unit tests on a simulator, from the build job's products. It starts with the build job rather
+    # than after it, so the simulator has booted when the products arrive.
     runs-on: macos-26
     timeout-minutes: 45
     permissions:
@@ -126,23 +144,6 @@ jobs:
           # Notes how long the boot took, for the timing printed before the simulator is used.
           (start=$SECONDS; xcrun simctl bootstatus "$udid" -b > /dev/null 2>&1
             echo "simulator booted after $((SECONDS - start)) s, at $(date -u +%T)" > "$RUNNER_TEMP/booted") &
-      - name: Kobo and LiftKit tests
-        run: |
-          (cd ios-standards/Kobo && swift test > "$RUNNER_TEMP/kobo.log" 2>&1) & kobo=$!
-          (cd lift/ios/Packages/LiftKit && swift test > "$RUNNER_TEMP/liftkit.log" 2>&1) & liftkit=$!
-          status=0
-          wait "$kobo" || status=1
-          wait "$liftkit" || status=1
-          for name in kobo liftkit; do
-            log="$RUNNER_TEMP/$name.log"
-            echo "::group::$name (tail)"
-            tail -n 20 "$log"
-            echo "::endgroup::"
-            echo "::group::Unique errors ($name)"
-            grep -E "(error|warning):|✘|recorded an issue" "$log" | grep -v "^ *|" | sort -u | head -n 150 || true
-            echo "::endgroup::"
-          done
-          exit "$status"
       - name: Wait for the build job's products
         if: ${{ !cancelled() }}
         env:
@@ -195,7 +196,16 @@ jobs:
       - name: Screenshots
         env:
           VARIANTS: ${{ matrix.variant }}
-        run: lift/ios/scripts/screenshots.sh build/products/Debug-iphonesimulator/Lift.app screenshots
+        run: |
+          top -l 1 -o cpu -n 12 -stats pid,command,cpu,mem | tail -n 13
+          lift/ios/scripts/screenshots.sh build/products/Debug-iphonesimulator/Lift.app screenshots
+          top -l 1 -o cpu -n 12 -stats pid,command,cpu,mem | tail -n 13
+      - name: Simulator disk use
+        if: ${{ !cancelled() }}
+        run: |
+          du -sh ~/Library/Developer/CoreSimulator/Devices/"$SIM_UDID" ~/Library/Developer/CoreSimulator/Caches \
+            /Library/Developer/CoreSimulator/Caches 2>/dev/null || true
+          ls -la ~/Library/Developer/CoreSimulator/Caches/dyld /Library/Developer/CoreSimulator/Caches/dyld 2>/dev/null || true
       - name: Upload screenshots
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
