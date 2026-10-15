@@ -34,4 +34,6 @@ nonisolated enum WeekAction: Equatable, Sendable {
     case templateUndoTapped(TemplateChangeUndo)
     /// "Undo" on the toast after Plan next week.
     case planUndoTapped(WeekPlanUndo)
+    /// "New template" (no templates yet): makes one and opens its editor.
+    case newTemplateTapped
 }

@@ -181,4 +181,25 @@ import Testing
         #expect(plans.calls == [.undoPlan(undo)])
         #expect(vm.state.toast == nil)
     }
+
+    @Test func newTemplateTappedMakesOneAndOpensItsEditor() async {
+        let templates = FakeTemplateRepository(emissions: [[]])
+        let vm = WeekViewModel(
+            sessions: FakeSessionRepository(emissions: [[]]),
+            templates: templates,
+            plans: FakeWorkoutPlanRepository(),
+            router: router,
+            now: SessionBuilder.now,
+            calendar: calendar,
+            unit: .kg
+        )
+        await vm.run()
+        #expect(vm.state.sessions == .empty)
+        #expect(vm.state.templates.isEmpty)  // the first-run empty state points to New template
+
+        await vm.send(.newTemplateTapped)?.value
+
+        #expect(templates.calls == [.create("New template")])
+        #expect(router.opened == [.template(FakeTemplateRepository.newID)])
+    }
 }

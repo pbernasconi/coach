@@ -36,7 +36,13 @@ final class WeekViewModel {
         self.router = router
         self.now = now
         self.days = DayCalendar(calendar: calendar)
-        self.edits = WeekPlanEdits(sessions: sessions, plans: plans, unit: unit, days: DayCalendar(calendar: calendar))
+        self.edits = WeekPlanEdits(
+            sessions: sessions,
+            plans: plans,
+            templates: templates,
+            unit: unit,
+            days: DayCalendar(calendar: calendar)
+        )
     }
 
     /// Observes every session in the strip's range and the templates; started by the Screen's `.task` (SCR-4).

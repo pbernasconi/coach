@@ -14,10 +14,11 @@ struct ExercisesContent: View {
                 case .loading:
                     LoadingState()
                 case .empty:
+                    LibraryLinks(send: send)
                     EmptyState(
                         symbol: "dumbbell",
-                        title: "No exercises",
-                        message: "The exercise library is empty."
+                        title: "No exercises yet",
+                        message: "Add exercises from All exercises; templates and workouts use them."
                     )
                 case .failed:
                     ErrorState(title: "Exercises could not be loaded")
