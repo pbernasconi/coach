@@ -320,6 +320,20 @@ test('pull: changes carry entity, rowId and the payload as pushed', async () => 
   assert.deepEqual(body.changes, [{ entity: 'sessionExercise', rowId: c.rowId.toLowerCase(), payload: c.payload }]);
 });
 
+test('push and pull: templates and their slots are entities like any other', async () => {
+  const repo = createMemoryRepository();
+  const template = change({ entity: 'template', payload: { name: 'Upper A', position: 0 } });
+  const slot = change({
+    entity: 'templateExercise',
+    payload: { templateID: template.rowId, setCount: 3, repMin: 8, repMax: 12, kind: 'working' },
+  });
+  const { body: pushed } = await handlePush(pushReq([template, slot]), repo);
+  assert.deepEqual(pushed.accepted, [template.idempotencyKey, slot.idempotencyKey]);
+  assert.deepEqual(pushed.rejected, []);
+  const { body } = await handlePull(pullReq(), repo);
+  assert.deepEqual(body.changes.map((c) => c.entity), ['template', 'templateExercise']);
+});
+
 // --- Dashboard summaries ---
 
 test('dashboard: Epley, week starts, and session/weekly/exercise summaries', () => {

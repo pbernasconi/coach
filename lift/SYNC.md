@@ -26,7 +26,7 @@ server as `LIFT_SYNC_TOKEN` and stored on the iPhone in the Keychain. Wrong or m
   "changes": [
     {
       "idempotencyKey": "0A8B…",
-      "entity": "exercise | session | sessionExercise | set",
+      "entity": "exercise | session | sessionExercise | set | template | templateExercise",
       "rowId": "UUID",
       "op": "insert | update | delete",
       "payload": { "id": "UUID", "updatedAt": "2026-10-15T07:30:00.000Z", "deletedAt": null, "…": "…" }
@@ -35,6 +35,11 @@ server as `LIFT_SYNC_TOKEN` and stored on the iPhone in the Keychain. Wrong or m
 }
 ```
 
+- Entities: `exercise`, `session`, `sessionExercise` and `set` (the logged work), and `template` and
+  `templateExercise` (day templates such as "Upper A" and their ordered exercise slots: library exercise id, set
+  count, `repMin`/`repMax`, optional `weightValue`/`weightUnit`, `restSeconds` and `kind`). A
+  `templateExercise` belongs to a `template` through `templateID`; a `session` names the template it was planned
+  from in `templateID`.
 - At most 500 changes per request.
 - `payload` is the outbox entry's JSON object as written by LiftStore (column names as keys, UUIDs as
   strings, dates as ISO 8601 with milliseconds and `Z`).

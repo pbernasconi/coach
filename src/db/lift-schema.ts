@@ -13,7 +13,7 @@ export const liftRowsSeq = pgSequence('lift_rows_seq');
 export const liftRows = pgTable(
   'lift_rows',
   {
-    entity: text('entity').notNull(), // exercise | session | sessionExercise | set
+    entity: text('entity').notNull(), // exercise | session | sessionExercise | set | template | templateExercise
     id: uuid('id').notNull(),
     payload: jsonb('payload').$type<Record<string, unknown>>().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).notNull(),

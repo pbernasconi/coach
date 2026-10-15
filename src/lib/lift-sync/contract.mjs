@@ -3,11 +3,11 @@
 
 import { z } from 'zod';
 
-/** @typedef {'exercise' | 'session' | 'sessionExercise' | 'set'} LiftEntity */
+/** @typedef {'exercise' | 'session' | 'sessionExercise' | 'set' | 'template' | 'templateExercise'} LiftEntity */
 /** @typedef {'insert' | 'update' | 'delete'} LiftOp */
 
 /** @type {readonly LiftEntity[]} */
-export const ENTITIES = Object.freeze(['exercise', 'session', 'sessionExercise', 'set']);
+export const ENTITIES = Object.freeze(['exercise', 'session', 'sessionExercise', 'set', 'template', 'templateExercise']);
 /** @type {readonly LiftOp[]} */
 export const OPS = Object.freeze(['insert', 'update', 'delete']);
 
