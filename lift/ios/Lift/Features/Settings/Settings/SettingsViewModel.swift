@@ -11,6 +11,8 @@ final class SettingsViewModel {
     private let now: @Sendable () -> Date
     /// Saving finished workouts to Apple Health.
     private let health: any WorkoutHealthRecording
+    /// The preferred weight unit, kept on this iPhone.
+    private let units: any UnitPreference
     /// The latest sync status, kept to redraw the status row when the token changes.
     @ObservationIgnored private var latest = SyncStatus.initial
 
@@ -19,6 +21,7 @@ final class SettingsViewModel {
         info: AppInfo,
         sync: any Syncing,
         health: any WorkoutHealthRecording,
+        units: any UnitPreference,
         now: @escaping @Sendable () -> Date,
         router: any Navigating
     ) {
@@ -29,6 +32,7 @@ final class SettingsViewModel {
         self.router = router
         self.sync = sync
         self.health = health
+        self.units = units
         self.now = now
     }
 
@@ -49,7 +53,8 @@ final class SettingsViewModel {
     func send(_ action: SettingsAction) -> Task<Void, Never>? {
         switch action {
         case .unitSelected(let unit):
-            state.unit = unit  // Held for this launch; saving settings comes later.
+            units.unit = unit  // saved; new sessions and templates, and screens opened from now, use it
+            state.unit = unit
         case .acknowledgementsTapped:
             router.open(.acknowledgements)
         case .syncNowTapped:

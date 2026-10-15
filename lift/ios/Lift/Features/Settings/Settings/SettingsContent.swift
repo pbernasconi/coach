@@ -11,7 +11,10 @@ struct SettingsContent: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Space.section) {
-                ListSection("Units") {
+                ListSection(
+                    "Units",
+                    footer: "New workouts and templates use it. Past workouts keep the unit they were logged in."
+                ) {
                     SegmentedPicker(
                         "Weight unit",
                         selection: .action(state.unit) { send(.unitSelected($0)) },
