@@ -56,7 +56,7 @@ jobs:
     # No simulator boots here, so the cache restore and the build get the whole machine. Xcode's compilation
     # cache (build/cas) comes from the last run and is saved after the upload, even when a later job fails.
     # SwiftPM checkouts are not cached: restoring their 260 MB archive took longer than xcodebuild's own clone.
-    # It also compiles Kobo for iOS, and runs the Kobo and LiftKit tests (macOS, the real SwiftUI SDK) last.
+    # It also compiles Kobo for iOS.
     runs-on: macos-26
     timeout-minutes: 45
     concurrency:
@@ -113,26 +113,6 @@ jobs:
         with:
           path: build/cas
           key: lift-cas-${{ env.XCODE }}-${{ github.sha }}
-      - name: Kobo and LiftKit tests
-        # After the products are out: the simulator jobs need them first. Both packages side by side.
-        if: ${{ !cancelled() }}
-        run: |
-          (cd ios-standards/Kobo && swift test > "$RUNNER_TEMP/kobo.log" 2>&1) & kobo=$!
-          (cd lift/ios/Packages/LiftKit && swift test > "$RUNNER_TEMP/liftkit.log" 2>&1) & liftkit=$!
-          status=0
-          wait "$kobo" || status=1
-          wait "$liftkit" || status=1
-          for name in kobo liftkit; do
-            log="$RUNNER_TEMP/$name.log"
-            echo "::group::$name (tail)"
-            tail -n 20 "$log"
-            echo "::endgroup::"
-            echo "::group::Unique errors ($name)"
-            grep -E "(error|warning):|✘|recorded an issue" "$log" | grep -v "^ *|" | sort -u | head -n 150 || true
-            echo "::endgroup::"
-          done
-          exit "$status"
-
   test:
     # The app's unit tests on a simulator, from the build job's products. It starts with the build job rather
     # than after it, so the simulator has booted when the products arrive. The simulator boots from a cached
@@ -184,8 +164,9 @@ jobs:
           key: ${{ env.SIM_CACHE_KEY }}
 
   screenshots:
-    # Demo screenshots, one job per variant (light, dark, AX3), from the build job's products. Like the test job
-    # it starts with the build job and boots its simulator while it waits.
+    # Demo screenshots, one job per variant (light, dark, AX3), from the build job's app. Like the test job it
+    # starts with the build job and boots its simulator while it waits; two of them also run the Kobo and
+    # LiftKit tests in that time.
     runs-on: macos-26
     timeout-minutes: 45
     permissions:
@@ -195,6 +176,12 @@ jobs:
       fail-fast: false
       matrix:
         variant: [light, dark, ax3]
+        include:
+          # Package tests (macOS, the real SwiftUI SDK) run in the background while a job waits for the app.
+          - variant: light
+            package: ios-standards/Kobo
+          - variant: dark
+            package: lift/ios/Packages/LiftKit
     concurrency:
       group: ios-shots-${{ matrix.variant }}-${{ github.ref }}-${{ github.event_name == 'workflow_dispatch' && github.run_id || 'auto' }}
       cancel-in-progress: true
@@ -202,6 +189,11 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
         with:
           persist-credentials: false
+      - name: Start the package tests
+        if: ${{ matrix.package }}
+        env:
+          PACKAGE: ${{ matrix.package }}
+        run: lift/ios/scripts/ci-package-tests.sh start "$PACKAGE"
       - name: Pick a simulator
         run: lift/ios/scripts/ci-simulator.sh pick
       - name: Restore the simulator snapshot
@@ -234,3 +226,8 @@ jobs:
           path: screenshots
           if-no-files-found: ignore
           retention-days: 14
+      - name: Package tests
+        if: ${{ !cancelled() && matrix.package }}
+        env:
+          PACKAGE: ${{ matrix.package }}
+        run: lift/ios/scripts/ci-package-tests.sh wait "$PACKAGE"

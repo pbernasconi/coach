@@ -44,7 +44,11 @@ case "$MODE" in
 esac
 status=0
 xcodebuild "${args[@]}" 2>&1 | perl -MPOSIX -ne 'print strftime("%H:%M:%S ", gmtime), $_' >"$LOG" || status=$?
-tail -n 40 "$LOG"
+echo "::group::Milestones ($MODE)"
+grep -vE "^[0-9:]+ +(✔|◇|[A-Za-z]+ \(.*tasks?\) \|)" "$LOG" | grep -vE "^[0-9:]+ *$" | head -n 80 || true
+echo "::endgroup::"
+grep -E "hits /|SwiftCompile \(|SwiftDriver \(|SwiftEmitModule \(|Ld \(" "$LOG" || true
+tail -n 25 "$LOG"
 echo "::group::Unique errors ($MODE)"
 grep -E "(error|warning):|✘|recorded an issue|\*\* (BUILD|TEST)[A-Z ]* " "$LOG" | grep -v "^[0-9:]* *|" | sort -u | head -n 150 || true
 echo "::endgroup::"
