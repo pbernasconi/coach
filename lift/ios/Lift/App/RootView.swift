@@ -23,8 +23,11 @@ struct RootView: View {
 private struct AppShell: View {
     private let dependencies: AppDependencies
     private let options: LaunchOptions
+    @Environment(\.scenePhase) private var scenePhase
     @State private var tab: AppTab
     @State private var isReady = false
+    /// Syncs after launch, on returning to the foreground and after local writes.
+    @State private var syncCoordinator: SyncCoordinator
     /// The route `options.opening` pushes on its tab (`-open workout`, `-open exercise`), worked out after
     /// `prepare()`.
     @State private var openedRoute: AppRoute?
@@ -33,6 +36,9 @@ private struct AppShell: View {
         self.dependencies = dependencies
         self.options = options
         _tab = State(initialValue: options.initialTab)
+        _syncCoordinator = State(
+            initialValue: SyncCoordinator(sync: dependencies.sync, outbox: dependencies.outbox)
+        )
     }
 
     var body: some View {
@@ -44,6 +50,7 @@ private struct AppShell: View {
                 .koboModalPage(item: importRequest, style: .sheet) { request in
                     ImportFlowPage(request: request, dependencies: dependencies)
                 }
+                .task { await syncCoordinator.watchOutbox() }
             } else {
                 LoadingState()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -61,6 +68,11 @@ private struct AppShell: View {
                 dependencies.importFlow.present(text: ImportSample.note, readsOnOpen: true)
             }
             isReady = true
+            await syncCoordinator.launched()  // after the tabs show: logging never waits for the network
+        }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            Task { await syncCoordinator.sceneBecameActive() }
         }
     }
 
@@ -143,7 +155,14 @@ private struct TabRootScreen: View {
                 )
             )
         case .settings:
-            SettingsScreen(viewModel: SettingsViewModel(info: dependencies.info, router: router))
+            SettingsScreen(
+                viewModel: SettingsViewModel(
+                    info: dependencies.info,
+                    sync: dependencies.sync,
+                    now: dependencies.now,
+                    router: router
+                )
+            )
         }
     }
 }

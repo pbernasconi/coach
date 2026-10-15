@@ -23,6 +23,10 @@ final class AppDependencies {
     let info: AppInfo
     /// The clipboard, for the import flow's Paste button.
     let pasteboard: any TextPasteboard
+    /// The local changes waiting to be pushed; the sync coordinator watches its count.
+    let outbox: any OutboxRepository
+    /// Push and pull with the coach web app, or a stand-in that never syncs (demo data, or no server in this build).
+    let sync: any Syncing
     /// Opens and closes Import from Notes, which the shell shows as a modal page above the tabs.
     let importFlow = ImportFlowPresenter()
     private var isPrepared = false
@@ -39,7 +43,9 @@ final class AppDependencies {
         catalog: any ExerciseCatalogProviding,
         calendar: Calendar,
         info: AppInfo,
-        pasteboard: any TextPasteboard
+        pasteboard: any TextPasteboard,
+        outbox: any OutboxRepository,
+        sync: any Syncing
     ) {
         self.sessions = sessions
         self.exercises = exercises
@@ -53,6 +59,8 @@ final class AppDependencies {
         self.calendar = calendar
         self.info = info
         self.pasteboard = pasteboard
+        self.outbox = outbox
+        self.sync = sync
     }
 
     /// Work that finishes before the tabs show: the seed exercise library on this iPhone, or the fabricated demo

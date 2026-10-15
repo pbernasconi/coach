@@ -20,4 +20,19 @@
         SettingsPreview(state: .fixtureDemo)
             .dynamicTypeSize(.accessibility3)
     }
+    #Preview("Syncing") { SettingsPreview(state: .fixtureSyncing) }
+    #Preview("Not set up") { SettingsPreview(state: .fixtureNotSetUp) }
+    #Preview("Token rejected, dark") {
+        SettingsPreview(state: .fixtureTokenRejected).preferredColorScheme(.dark)
+    }
+    #Preview("No server, AX3") {
+        SettingsPreview(state: .fixtureNoServer)
+            .dynamicTypeSize(.accessibility3)
+    }
+    #Preview("Token sheet") { SettingsPreview(state: .fixtureTokenEditor) }
+    #Preview("Token sheet, dark") { SettingsPreview(state: .fixtureTokenEditor).preferredColorScheme(.dark) }
+    #Preview("Token sheet, AX3") {
+        SettingsPreview(state: .fixtureTokenEditor)
+            .dynamicTypeSize(.accessibility3)
+    }
 #endif

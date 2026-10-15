@@ -3,7 +3,7 @@ import KoboTokens
 import LiftCore
 import SwiftUI
 
-/// Dumb view: units, where the data lives, and the app version (SCR-2).
+/// Dumb view: units, where the data lives, sync, and the app version (SCR-2).
 struct SettingsContent: View {
     let state: SettingsState
     let send: (SettingsAction) -> Void
@@ -23,6 +23,7 @@ struct SettingsContent: View {
                     .padding(Space.md)
                 }
                 dataSection
+                SettingsSyncSection(section: state.sync, send: send)
                 ListSection("About") {
                     ListRow("Version", value: state.version)
                     ListRow("Acknowledgements", action: { send(.acknowledgementsTapped) })
@@ -33,6 +34,15 @@ struct SettingsContent: View {
         }
         .screenCanvas()
         .tabRootHeader { AppHeader("Settings") }
+        .koboSheet(
+            item: Binding<TokenEditor?>.action(state.tokenEditor) { if $0 == nil { send(.tokenEditorDismissed) } },
+            title: { _ in String(localized: "Sync token") },
+            hasChanges: !(state.tokenEditor?.draft.isEmpty ?? true)
+        ) { editor in
+            TokenEditorField(editor: editor, send: send)
+        } footer: { editor in
+            TokenEditorButtons(editor: editor, send: send)
+        }
     }
 
     @ViewBuilder

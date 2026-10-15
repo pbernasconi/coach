@@ -53,7 +53,9 @@ enum CompositionRoot {
             catalog: LiveExerciseCatalog(loader: mediaLoader),
             calendar: .autoupdatingCurrent,
             info: info(isDemo: isDemo),
-            pasteboard: SystemPasteboard()
+            pasteboard: SystemPasteboard(),
+            outbox: LiveOutboxRepository(database: database),
+            sync: makeSync(database: database, isDemo: isDemo, now: now, makeID: makeID)
         )
     }
 
