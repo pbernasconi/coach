@@ -39,28 +39,22 @@ struct WorkoutExerciseSection: View {
         }
     }
 
+    /// Thumbnail, name and target, and How to in one row; at accessibility sizes the name and target get the full
+    /// width under the thumbnail and How to.
     private var header: some View {
         VStack(alignment: .leading, spacing: Space.sm) {
-            HStack(spacing: Space.md) {
-                thumbnailView
-                VStack(alignment: .leading, spacing: Space.xxs) {
-                    Text(verbatim: exercise.name)
-                        .font(theme.font(.headline))
-                        .foregroundStyle(theme.palette.textPrimary)
-                        .accessibilityAddTraits(.isHeader)
-                    if let target = exercise.target {
-                        Text(verbatim: target)
-                            .font(theme.font(.subheadline).monospacedDigit())
-                            .foregroundStyle(theme.palette.textSecondary)
-                    }
+            if dynamicTypeSize.isAccessibilitySize {
+                HStack(spacing: Space.md) {
+                    thumbnailView
+                    Spacer(minLength: 0)
+                    howTo
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                if let libraryID = exercise.libraryID {
-                    IconButton(
-                        "info.circle",
-                        verbatimAccessibilityLabel: String(localized: "How to \(exercise.name)"),
-                        style: .plain
-                    ) { send(.howToTapped(exerciseID: libraryID)) }
+                title
+            } else {
+                HStack(spacing: Space.md) {
+                    thumbnailView
+                    title.frame(maxWidth: .infinity, alignment: .leading)
+                    howTo
                 }
             }
             if exercise.warmUp != nil || exercise.plates != nil || exercise.progression != nil {
@@ -72,6 +66,30 @@ struct WorkoutExerciseSection: View {
             }
         }
         .padding(.horizontal, Space.lg)
+    }
+
+    private var title: some View {
+        VStack(alignment: .leading, spacing: Space.xxs) {
+            Text(verbatim: exercise.name)
+                .font(theme.font(.headline))
+                .foregroundStyle(theme.palette.textPrimary)
+                .accessibilityAddTraits(.isHeader)
+            if let target = exercise.target {
+                Text(verbatim: target)
+                    .font(theme.font(.subheadline).monospacedDigit())
+                    .foregroundStyle(theme.palette.textSecondary)
+            }
+        }
+    }
+
+    @ViewBuilder private var howTo: some View {
+        if let libraryID = exercise.libraryID {
+            IconButton(
+                "info.circle",
+                verbatimAccessibilityLabel: String(localized: "How to \(exercise.name)"),
+                style: .plain
+            ) { send(.howToTapped(exerciseID: libraryID)) }
+        }
     }
 
     /// The still; tapping it opens How to too. VoiceOver skips it, since the How to button does the same.

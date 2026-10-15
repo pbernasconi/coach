@@ -62,7 +62,7 @@ private struct WorkoutBody: View {
     let send: (WorkoutAction) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Space.xl) {
+        VStack(alignment: .leading, spacing: Space.lg) {
             VStack(alignment: .leading, spacing: Space.xs) {
                 ViewThatFits(in: .horizontal) {
                     HStack(alignment: .firstTextBaseline, spacing: Space.sm) {
