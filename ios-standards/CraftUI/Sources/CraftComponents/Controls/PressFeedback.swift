@@ -46,24 +46,24 @@ public struct PressFeedbackStyle: ButtonStyle {
     }
 }
 
-public extension ButtonStyle where Self == PressFeedbackStyle {
+extension ButtonStyle where Self == PressFeedbackStyle {
     /// Scale-on-press feedback.
-    static var pressFeedback: PressFeedbackStyle { PressFeedbackStyle() }
+    public static var pressFeedback: PressFeedbackStyle { PressFeedbackStyle() }
 
     /// Press feedback with a chosen effect.
-    static func pressFeedback(_ effect: PressEffect) -> PressFeedbackStyle { PressFeedbackStyle(effect) }
+    public static func pressFeedback(_ effect: PressEffect) -> PressFeedbackStyle { PressFeedbackStyle(effect) }
 }
 
-public extension View {
+extension View {
     /// Gives the buttons in this view press feedback (scale and/or highlight). Apply it to a `Button`.
-    func pressFeedback(_ effect: PressEffect = .scale) -> some View {
+    public func pressFeedback(_ effect: PressEffect = .scale) -> some View {
         buttonStyle(PressFeedbackStyle(effect))
     }
 
     /// Draws press feedback for `isPressed`. Use it inside your own `ButtonStyle`:
     ///
     ///     configuration.label.pressEffect(configuration.isPressed)
-    func pressEffect(_ isPressed: Bool, effect: PressEffect = .scale) -> some View {
+    public func pressEffect(_ isPressed: Bool, effect: PressEffect = .scale) -> some View {
         modifier(PressEffectModifier(isPressed: isPressed, effect: effect))
     }
 }
@@ -86,37 +86,38 @@ private struct PressEffectModifier: ViewModifier {
 }
 
 #if DEBUG
-private struct PressSample: View {
-    @Environment(\.craftTheme) private var theme
-    let effect: PressEffect
+    private struct PressSample: View {
+        @Environment(\.craftTheme) private var theme
+        let effect: PressEffect
 
-    var body: some View {
-        Button {} label: {
-            Text(String(describing: effect))
-                .font(theme.font(.body))
-                .foregroundStyle(theme.palette.textPrimary)
-                .frame(maxWidth: .infinity, minHeight: Size.rowMinHeight)
-                .background(theme.palette.surface, in: RoundedRectangle(cornerRadius: Radius.md))
+        var body: some View {
+            Button {
+            } label: {
+                Text(String(describing: effect))
+                    .font(theme.font(.body))
+                    .foregroundStyle(theme.palette.textPrimary)
+                    .frame(maxWidth: .infinity, minHeight: Size.rowMinHeight)
+                    .background(theme.palette.surface, in: RoundedRectangle(cornerRadius: Radius.md))
+            }
+            .pressFeedback(effect)
         }
-        .pressFeedback(effect)
     }
-}
 
-private struct PressFeedbackGallery: View {
-    @Environment(\.craftTheme) private var theme
+    private struct PressFeedbackGallery: View {
+        @Environment(\.craftTheme) private var theme
 
-    var body: some View {
-        VStack(spacing: Space.lg) {
-            PressSample(effect: .scale)
-            PressSample(effect: .highlight)
-            PressSample(effect: .scaleAndHighlight)
+        var body: some View {
+            VStack(spacing: Space.lg) {
+                PressSample(effect: .scale)
+                PressSample(effect: .highlight)
+                PressSample(effect: .scaleAndHighlight)
+            }
+            .padding(Space.gutter)
+            .background(theme.palette.canvas)
         }
-        .padding(Space.gutter)
-        .background(theme.palette.canvas)
     }
-}
 
-#Preview("Press feedback") { PressFeedbackGallery() }
-#Preview("Press feedback · dark") { PressFeedbackGallery().preferredColorScheme(.dark) }
-#Preview("Press feedback · AX3") { PressFeedbackGallery().dynamicTypeSize(.accessibility3) }
+    #Preview("Press feedback") { PressFeedbackGallery() }
+    #Preview("Press feedback · dark") { PressFeedbackGallery().preferredColorScheme(.dark) }
+    #Preview("Press feedback · AX3") { PressFeedbackGallery().dynamicTypeSize(.accessibility3) }
 #endif

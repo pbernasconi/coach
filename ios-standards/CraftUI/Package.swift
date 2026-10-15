@@ -24,11 +24,36 @@ let package = Package(
     ],
     targets: [
         .target(name: "CraftTokens", swiftSettings: strict + [.defaultIsolation(nil)]),
-        .target(name: "CraftComponents", dependencies: ["CraftTokens"], swiftSettings: strict + [.defaultIsolation(MainActor.self)]),
-        .target(name: "CraftPatterns", dependencies: ["CraftTokens", "CraftComponents"], swiftSettings: strict + [.defaultIsolation(MainActor.self)]),
-        .target(name: "CraftCatalog", dependencies: ["CraftTokens", "CraftComponents", "CraftPatterns"], swiftSettings: strict + [.defaultIsolation(MainActor.self)]),
+        .target(
+            name: "CraftComponents",
+            dependencies: ["CraftTokens"],
+            swiftSettings: strict + [.defaultIsolation(MainActor.self)]
+        ),
+        .target(
+            name: "CraftPatterns",
+            dependencies: ["CraftTokens", "CraftComponents"],
+            swiftSettings: strict + [.defaultIsolation(MainActor.self)]
+        ),
+        .target(
+            name: "CraftCatalog",
+            dependencies: ["CraftTokens", "CraftComponents", "CraftPatterns"],
+            swiftSettings: strict + [.defaultIsolation(MainActor.self)]
+        ),
         .testTarget(name: "CraftTokensTests", dependencies: ["CraftTokens"], swiftSettings: strict),
-        .testTarget(name: "CraftComponentsTests", dependencies: ["CraftTokens", "CraftComponents"], swiftSettings: strict + [.defaultIsolation(MainActor.self)]),
-        .testTarget(name: "CraftPatternsTests", dependencies: ["CraftTokens", "CraftComponents", "CraftPatterns"], swiftSettings: strict + [.defaultIsolation(MainActor.self)]),
+        .testTarget(
+            name: "CraftComponentsTests",
+            dependencies: ["CraftTokens", "CraftComponents"],
+            swiftSettings: strict + [.defaultIsolation(MainActor.self)]
+        ),
+        .testTarget(
+            name: "CraftPatternsTests",
+            dependencies: ["CraftTokens", "CraftComponents", "CraftPatterns"],
+            swiftSettings: strict + [.defaultIsolation(MainActor.self)]
+        ),
+        .testTarget(
+            name: "CraftCatalogTests",
+            dependencies: ["CraftCatalog"],
+            swiftSettings: strict + [.defaultIsolation(MainActor.self)]
+        ),
     ]
 )

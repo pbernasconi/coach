@@ -1,4 +1,4 @@
-import CoreGraphics
+import Foundation  // CGFloat; Foundation keeps the token maths testable on Linux
 
 /// The spacing scale. Every padding, gap and margin in CraftUI comes from here; feature code
 /// never uses a literal number for spacing. Values follow a 4pt grid.

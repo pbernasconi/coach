@@ -26,7 +26,10 @@ public struct DayStrip: View {
     ///   - week: the visible week offset.
     ///   - weeks: the pageable range of week offsets.
     public init(
-        items: [DayItem], today: Date, week: Binding<Int>, weeks: ClosedRange<Int> = -4...4,
+        items: [DayItem],
+        today: Date,
+        week: Binding<Int>,
+        weeks: ClosedRange<Int> = -4...4,
         onSelect: @escaping (Date) -> Void
     ) {
         self.items = items
@@ -103,45 +106,48 @@ public struct DayStrip: View {
 }
 
 #if DEBUG
-private struct DayStripPreview: View {
-    @State private var week = 0
-    @State private var selected: Date?
-    private let today = Date(timeIntervalSinceReferenceDate: 813_744_000) // a fixed Thursday
+    private struct DayStripPreview: View {
+        @State private var week = 0
+        @State private var selected: Date?
+        private let today = Date(timeIntervalSinceReferenceDate: 813_744_000)  // a fixed Thursday
 
-    private var items: [DayItem] {
-        let calendar = Calendar.current
-        func day(_ offset: Int) -> Date { calendar.date(byAdding: .day, value: offset, to: today) ?? today }
-        return [
-            DayItem(date: day(-3), marker: .done(.accent)),
-            DayItem(date: day(-1), marker: .done(.success)),
-            DayItem(date: day(0), marker: .planned(.accent)),
-            DayItem(date: day(2), marker: .planned(.info)),
-            DayItem(date: day(-8), marker: .done(.accent)),
-        ]
-    }
-
-    var body: some View {
-        VStack(spacing: Space.lg) {
-            DayStrip(items: items, today: today, week: $week) { selected = $0 }
-                .padding(.vertical, Space.md)
-                .craftCard(padding: 0)
-            Text("Week offset \(week)")
-            Text(selected.map { $0.formatted(date: .abbreviated, time: .omitted) } ?? "No day selected")
+        private var items: [DayItem] {
+            let calendar = Calendar.current
+            func day(_ offset: Int) -> Date { calendar.date(byAdding: .day, value: offset, to: today) ?? today }
+            return [
+                DayItem(date: day(-3), marker: .done(.accent)),
+                DayItem(date: day(-1), marker: .done(.success)),
+                DayItem(date: day(0), marker: .planned(.accent)),
+                DayItem(date: day(2), marker: .planned(.info)),
+                DayItem(date: day(-8), marker: .done(.accent)),
+            ]
         }
-        .padding(Space.gutter)
-        .frame(maxHeight: .infinity, alignment: .top)
-        .background(Theme.system.palette.canvas)
-    }
-}
 
-#Preview("Light") { DayStripPreview() }
-#Preview("Dark") { DayStripPreview().preferredColorScheme(.dark) }
-#Preview("AX3") { DayStripPreview().dynamicTypeSize(.accessibility3) }
-#Preview("Monday first") {
-    DayStripPreview().environment(\.calendar, {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.firstWeekday = 2
-        return calendar
-    }())
-}
+        var body: some View {
+            VStack(spacing: Space.lg) {
+                DayStrip(items: items, today: today, week: $week) { selected = $0 }
+                    .padding(.vertical, Space.md)
+                    .craftCard(padding: 0)
+                Text("Week offset \(week)")
+                Text(selected.map { $0.formatted(date: .abbreviated, time: .omitted) } ?? "No day selected")
+            }
+            .padding(Space.gutter)
+            .frame(maxHeight: .infinity, alignment: .top)
+            .background(Theme.system.palette.canvas)
+        }
+    }
+
+    #Preview("Light") { DayStripPreview() }
+    #Preview("Dark") { DayStripPreview().preferredColorScheme(.dark) }
+    #Preview("AX3") { DayStripPreview().dynamicTypeSize(.accessibility3) }
+    #Preview("Monday first") {
+        DayStripPreview().environment(
+            \.calendar,
+            {
+                var calendar = Calendar(identifier: .gregorian)
+                calendar.firstWeekday = 2
+                return calendar
+            }()
+        )
+    }
 #endif

@@ -21,21 +21,21 @@ public struct CloseButton: View {
 }
 
 #if DEBUG
-private struct CloseButtonGallery: View {
-    @Environment(\.craftTheme) private var theme
+    private struct CloseButtonGallery: View {
+        @Environment(\.craftTheme) private var theme
 
-    var body: some View {
-        HStack(spacing: Space.md) {
-            CloseButton {}
-            CloseButton(style: .tonal, size: .small) {}
-            CloseButton(style: .plain) {}
+        var body: some View {
+            HStack(spacing: Space.md) {
+                CloseButton {}
+                CloseButton(style: .tonal, size: .small) {}
+                CloseButton(style: .plain) {}
+            }
+            .padding(Space.gutter)
+            .background(theme.palette.canvas)
         }
-        .padding(Space.gutter)
-        .background(theme.palette.canvas)
     }
-}
 
-#Preview("Close button") { CloseButtonGallery() }
-#Preview("Close button · dark") { CloseButtonGallery().preferredColorScheme(.dark) }
-#Preview("Close button · AX3") { CloseButtonGallery().dynamicTypeSize(.accessibility3) }
+    #Preview("Close button") { CloseButtonGallery() }
+    #Preview("Close button · dark") { CloseButtonGallery().preferredColorScheme(.dark) }
+    #Preview("Close button · AX3") { CloseButtonGallery().dynamicTypeSize(.accessibility3) }
 #endif

@@ -38,7 +38,13 @@ public struct ProgressRing<Center: View>: View {
         trackColor: Color? = nil,
         @ViewBuilder center: () -> Center
     ) {
-        self.init(progress: progress, lineWidth: lineWidth, tint: .color(color), trackColor: trackColor, center: center())
+        self.init(
+            progress: progress,
+            lineWidth: lineWidth,
+            tint: .color(color),
+            trackColor: trackColor,
+            center: center()
+        )
     }
 
     private init(progress: Double, lineWidth: CGFloat, tint: RingTint, trackColor: Color?, center: Center) {
@@ -69,14 +75,14 @@ public struct ProgressRing<Center: View>: View {
     }
 }
 
-public extension ProgressRing where Center == EmptyView {
+extension ProgressRing where Center == EmptyView {
     /// A ring with nothing in the middle.
-    init(progress: Double, lineWidth: CGFloat = Space.sm, tone: Tone = .accent, trackColor: Color? = nil) {
+    public init(progress: Double, lineWidth: CGFloat = Space.sm, tone: Tone = .accent, trackColor: Color? = nil) {
         self.init(progress: progress, lineWidth: lineWidth, tone: tone, trackColor: trackColor) { EmptyView() }
     }
 
     /// A ring in an explicit colour with nothing in the middle.
-    init(progress: Double, lineWidth: CGFloat = Space.sm, color: Color, trackColor: Color? = nil) {
+    public init(progress: Double, lineWidth: CGFloat = Space.sm, color: Color, trackColor: Color? = nil) {
         self.init(progress: progress, lineWidth: lineWidth, color: color, trackColor: trackColor) { EmptyView() }
     }
 }

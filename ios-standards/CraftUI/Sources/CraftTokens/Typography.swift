@@ -25,11 +25,12 @@ public struct Typography: Sendable, Equatable {
 
     public func font(_ role: Role) -> Font {
         let style = role.textStyle
-        let base: Font = if let customFamily {
-            .custom(customFamily, size: role.pointSize, relativeTo: style)
-        } else {
-            .system(style, design: role == .display ? .rounded : design)
-        }
+        let base: Font =
+            if let customFamily {
+                .custom(customFamily, size: role.pointSize, relativeTo: style)
+            } else {
+                .system(style, design: role == .display ? .rounded : design)
+            }
         return base.weight(role.weight).monospacedDigitIf(role.isNumeric)
     }
 }

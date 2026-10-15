@@ -1,12 +1,12 @@
 import CraftTokens
 import SwiftUI
 
-public extension View {
+extension View {
     /// Places the view on a rounded surface card: surface fill, continuous corners and a subtle shadow
     /// in light mode only (dark mode separates by tone).
     ///
     ///     VStack { … }.craftCard()
-    func craftCard(padding: CGFloat = Space.lg) -> some View {
+    public func craftCard(padding: CGFloat = Space.lg) -> some View {
         modifier(CraftCardModifier(padding: padding))
     }
 }
@@ -66,37 +66,37 @@ public struct CardSection<Header: View, Content: View>: View {
     }
 }
 
-public extension CardSection where Header == Text? {
+extension CardSection where Header == Text? {
     /// A card with an optional plain title.
-    init(_ title: String? = nil, padding: CGFloat = Space.lg, @ViewBuilder content: () -> Content) {
+    public init(_ title: String? = nil, padding: CGFloat = Space.lg, @ViewBuilder content: () -> Content) {
         self.init(padding: padding, content: content) { title.map { Text($0) } }
     }
 }
 
 #if DEBUG
-private struct CardPreview: View {
-    var body: some View {
-        ScrollView {
-            VStack(spacing: Space.xl) {
-                Text("A plain card with some text that wraps onto a second line.")
-                    .craftCard()
-                CardSection("This week") {
-                    Text("3 workouts")
-                    Text("2 h 40 min")
+    private struct CardPreview: View {
+        var body: some View {
+            ScrollView {
+                VStack(spacing: Space.xl) {
+                    Text("A plain card with some text that wraps onto a second line.")
+                        .craftCard()
+                    CardSection("This week") {
+                        Text("3 workouts")
+                        Text("2 h 40 min")
+                    }
+                    CardSection(padding: Space.md) {
+                        Text("Compact padding")
+                    } header: {
+                        Label("Custom header", systemImage: "star")
+                    }
                 }
-                CardSection(padding: Space.md) {
-                    Text("Compact padding")
-                } header: {
-                    Label("Custom header", systemImage: "star")
-                }
+                .padding(Space.gutter)
             }
-            .padding(Space.gutter)
+            .background(Theme.system.palette.canvas)
         }
-        .background(Theme.system.palette.canvas)
     }
-}
 
-#Preview("Light") { CardPreview() }
-#Preview("Dark") { CardPreview().preferredColorScheme(.dark) }
-#Preview("AX3") { CardPreview().dynamicTypeSize(.accessibility3) }
+    #Preview("Light") { CardPreview() }
+    #Preview("Dark") { CardPreview().preferredColorScheme(.dark) }
+    #Preview("AX3") { CardPreview().dynamicTypeSize(.accessibility3) }
 #endif

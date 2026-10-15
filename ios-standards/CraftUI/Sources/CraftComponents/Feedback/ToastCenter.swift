@@ -32,7 +32,7 @@ public final class ToastCenter {
             do {
                 try await clock.sleep(for: duration)
             } catch {
-                return // Cancelled: a newer toast or a dismiss took over.
+                return  // Cancelled: a newer toast or a dismiss took over.
             }
             self?.expire(id)
         }

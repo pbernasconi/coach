@@ -2,7 +2,7 @@ import CraftTokens
 
 extension Tone {
     /// The SF Symbol that carries this tone's meaning next to its colour, so status never reads by colour alone.
-    var feedbackSymbol: String {
+    nonisolated var feedbackSymbol: String {
         switch self {
         case .neutral: "info.circle.fill"
         case .accent: "sparkle"

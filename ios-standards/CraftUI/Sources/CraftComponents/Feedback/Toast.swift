@@ -29,12 +29,12 @@ nonisolated public struct Toast: Identifiable, Equatable, Sendable {
 
     /// - Parameter duration: `nil` picks `defaultDuration(hasAction:)`: longer when there is an action to reach.
     public init(
-        id: UUID = UUID(),
         _ message: String,
         tone: Tone = .neutral,
         symbol: String? = nil,
         action: Action? = nil,
-        duration: Duration? = nil
+        duration: Duration? = nil,
+        id: UUID = UUID()
     ) {
         self.id = id
         self.message = message

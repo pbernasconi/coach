@@ -130,30 +130,30 @@ private struct IconSurface: ViewModifier {
 }
 
 #if DEBUG
-private struct IconButtonGallery: View {
-    @Environment(\.craftTheme) private var theme
+    private struct IconButtonGallery: View {
+        @Environment(\.craftTheme) private var theme
 
-    var body: some View {
-        VStack(spacing: Space.lg) {
-            HStack(spacing: Space.md) {
-                IconButton("pause.fill", accessibilityLabel: "Pause") {}
-                IconButton("plus", accessibilityLabel: "Add", style: .solid) {}
-                IconButton("ellipsis", accessibilityLabel: "More", style: .tonal) {}
-                IconButton("gearshape", accessibilityLabel: "Settings", style: .plain) {}
+        var body: some View {
+            VStack(spacing: Space.lg) {
+                HStack(spacing: Space.md) {
+                    IconButton("pause.fill", accessibilityLabel: "Pause") {}
+                    IconButton("plus", accessibilityLabel: "Add", style: .solid) {}
+                    IconButton("ellipsis", accessibilityLabel: "More", style: .tonal) {}
+                    IconButton("gearshape", accessibilityLabel: "Settings", style: .plain) {}
+                }
+                HStack(spacing: Space.md) {
+                    IconButton("minus", accessibilityLabel: "Less", style: .tonal, size: .large) {}
+                    IconButton("chevron.up", accessibilityLabel: "Up", style: .tonal, size: .small) {}
+                    IconButton("trash", accessibilityLabel: "Delete", style: .solid) {}.disabled(true)
+                    CloseButton {}
+                }
             }
-            HStack(spacing: Space.md) {
-                IconButton("minus", accessibilityLabel: "Less", style: .tonal, size: .large) {}
-                IconButton("chevron.up", accessibilityLabel: "Up", style: .tonal, size: .small) {}
-                IconButton("trash", accessibilityLabel: "Delete", style: .solid) {}.disabled(true)
-                CloseButton {}
-            }
+            .padding(Space.gutter)
+            .background(theme.palette.canvas)
         }
-        .padding(Space.gutter)
-        .background(theme.palette.canvas)
     }
-}
 
-#Preview("Icon button") { IconButtonGallery() }
-#Preview("Icon button · dark") { IconButtonGallery().preferredColorScheme(.dark) }
-#Preview("Icon button · AX3") { IconButtonGallery().dynamicTypeSize(.accessibility3) }
+    #Preview("Icon button") { IconButtonGallery() }
+    #Preview("Icon button · dark") { IconButtonGallery().preferredColorScheme(.dark) }
+    #Preview("Icon button · AX3") { IconButtonGallery().dynamicTypeSize(.accessibility3) }
 #endif

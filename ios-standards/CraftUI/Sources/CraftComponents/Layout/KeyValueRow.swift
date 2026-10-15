@@ -50,21 +50,21 @@ public struct KeyValueRow: View {
 }
 
 #if DEBUG
-private struct KeyValueRowPreview: View {
-    var body: some View {
-        ScrollView {
-            ListSection("Summary") {
-                KeyValueRow("Duration", value: "1 h 12 min")
-                KeyValueRow("Total volume", value: "4,200 kg")
-                KeyValueRow("Change", value: "+5%", valueTone: .success)
+    private struct KeyValueRowPreview: View {
+        var body: some View {
+            ScrollView {
+                ListSection("Summary") {
+                    KeyValueRow("Duration", value: "1 h 12 min")
+                    KeyValueRow("Total volume", value: "4,200 kg")
+                    KeyValueRow("Change", value: "+5%", valueTone: .success)
+                }
+                .padding(Space.gutter)
             }
-            .padding(Space.gutter)
+            .background(Theme.system.palette.canvas)
         }
-        .background(Theme.system.palette.canvas)
     }
-}
 
-#Preview("Light") { KeyValueRowPreview() }
-#Preview("Dark") { KeyValueRowPreview().preferredColorScheme(.dark) }
-#Preview("AX3") { KeyValueRowPreview().dynamicTypeSize(.accessibility3) }
+    #Preview("Light") { KeyValueRowPreview() }
+    #Preview("Dark") { KeyValueRowPreview().preferredColorScheme(.dark) }
+    #Preview("AX3") { KeyValueRowPreview().dynamicTypeSize(.accessibility3) }
 #endif

@@ -54,20 +54,20 @@ public struct SectionHeader: View {
 }
 
 #if DEBUG
-private struct SectionHeaderPreview: View {
-    var body: some View {
-        VStack(spacing: Space.xxl) {
-            SectionHeader("Recent")
-            SectionHeader("This week", subtitle: "3 of 4 workouts")
-            SectionHeader("Exercises", subtitle: "Sorted by last used", actionTitle: "See all") {}
+    private struct SectionHeaderPreview: View {
+        var body: some View {
+            VStack(spacing: Space.xxl) {
+                SectionHeader("Recent")
+                SectionHeader("This week", subtitle: "3 of 4 workouts")
+                SectionHeader("Exercises", subtitle: "Sorted by last used", actionTitle: "See all") {}
+            }
+            .padding(Space.gutter)
+            .frame(maxHeight: .infinity, alignment: .top)
+            .background(Theme.system.palette.canvas)
         }
-        .padding(Space.gutter)
-        .frame(maxHeight: .infinity, alignment: .top)
-        .background(Theme.system.palette.canvas)
     }
-}
 
-#Preview("Light") { SectionHeaderPreview() }
-#Preview("Dark") { SectionHeaderPreview().preferredColorScheme(.dark) }
-#Preview("AX3") { SectionHeaderPreview().dynamicTypeSize(.accessibility3) }
+    #Preview("Light") { SectionHeaderPreview() }
+    #Preview("Dark") { SectionHeaderPreview().preferredColorScheme(.dark) }
+    #Preview("AX3") { SectionHeaderPreview().dynamicTypeSize(.accessibility3) }
 #endif

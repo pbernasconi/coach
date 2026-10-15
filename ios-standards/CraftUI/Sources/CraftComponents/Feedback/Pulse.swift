@@ -2,7 +2,7 @@ import CraftTokens
 import Foundation
 import SwiftUI
 
-public extension View {
+extension View {
     /// A soft ring that keeps expanding and fading behind this view while `active`, for a "go" state that wants
     /// attention. With Reduce Motion on the ring holds still as a quiet halo, so the state still reads.
     ///
@@ -11,29 +11,8 @@ public extension View {
     /// - Parameters:
     ///   - shape: the outline of the ring; match the view's own shape.
     ///   - color: the ring colour; the theme accent when `nil`.
-    func pulse(active: Bool, in shape: some Shape = Circle(), color: Color? = nil) -> some View {
+    public func pulse(active: Bool, in shape: some Shape = Circle(), color: Color? = nil) -> some View {
         modifier(PulseModifier(active: active, shape: shape, color: color))
-    }
-}
-
-/// The ring's curve. Pure, so tests check it without rendering.
-enum PulseMotion {
-    /// One full pulse: the ring grows from the edge and fades out.
-    static let period: TimeInterval = Motion.Duration.pulse * 2
-    /// How far past the view's edge the ring travels.
-    static let spread: CGFloat = Space.sm
-    /// The ring's opacity as it leaves the edge.
-    static let peakOpacity = 0.55
-    /// The still halo shown with Reduce Motion on.
-    static let reducedSpread: CGFloat = Space.xs
-    static let reducedOpacity = 0.35
-
-    /// The ring at `seconds`: how far out it is and how visible.
-    static func frame(at seconds: TimeInterval) -> (spread: CGFloat, opacity: Double) {
-        var progress = seconds.truncatingRemainder(dividingBy: period) / period
-        if progress < 0 { progress += 1 }
-        let eased = 1 - (1 - progress) * (1 - progress) // ease out: fast from the edge, settling as it fades
-        return (spread * CGFloat(eased), peakOpacity * (1 - progress))
     }
 }
 

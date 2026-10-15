@@ -28,7 +28,12 @@ public struct ErrorState: View {
     }
 
     public var body: some View {
-        FeedbackStateLayout(symbol: "exclamationmark.triangle.fill", symbolTone: .danger, title: title, message: message) {
+        FeedbackStateLayout(
+            symbol: "exclamationmark.triangle.fill",
+            symbolTone: .danger,
+            title: title,
+            message: message
+        ) {
             if let retry {
                 Button(action: retry) {
                     buttonTitle

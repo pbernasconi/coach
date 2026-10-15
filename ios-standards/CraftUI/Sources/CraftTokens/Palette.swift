@@ -33,10 +33,24 @@ public struct Palette: Sendable, Equatable {
     public var neutral: StatusColors
 
     public init(
-        accent: Color, onAccent: Color, accentSoft: Color, accentText: Color,
-        canvas: Color, surface: Color, surfaceRaised: Color, surfaceSunken: Color, separator: Color, scrim: Color,
-        textPrimary: Color, textSecondary: Color, textTertiary: Color,
-        success: StatusColors, warning: StatusColors, danger: StatusColors, info: StatusColors, neutral: StatusColors
+        accent: Color,
+        onAccent: Color,
+        accentSoft: Color,
+        accentText: Color,
+        canvas: Color,
+        surface: Color,
+        surfaceRaised: Color,
+        surfaceSunken: Color,
+        separator: Color,
+        scrim: Color,
+        textPrimary: Color,
+        textSecondary: Color,
+        textTertiary: Color,
+        success: StatusColors,
+        warning: StatusColors,
+        danger: StatusColors,
+        info: StatusColors,
+        neutral: StatusColors
     ) {
         self.accent = accent; self.onAccent = onAccent; self.accentSoft = accentSoft; self.accentText = accentText
         self.canvas = canvas; self.surface = surface; self.surfaceRaised = surfaceRaised
@@ -70,31 +84,35 @@ public enum Tone: String, Sendable, CaseIterable {
     case neutral, accent, success, warning, danger, info
 }
 
-public extension Color {
+extension Color {
     /// A colour that resolves per appearance (and increased contrast, when given).
-    init(light: Color, dark: Color, highContrastLight: Color? = nil, highContrastDark: Color? = nil) {
+    public init(light: Color, dark: Color, highContrastLight: Color? = nil, highContrastDark: Color? = nil) {
         #if canImport(UIKit)
-        self.init(uiColor: UIColor { traits in
-            let dark = traits.userInterfaceStyle == .dark
-            let high = traits.accessibilityContrast == .high
-            switch (dark, high) {
-            case (false, false): return UIColor(light)
-            case (true, false): return UIColor(dark)
-            case (false, true): return UIColor(highContrastLight ?? light)
-            case (true, true): return UIColor(highContrastDark ?? dark)
-            }
-        })
+            self.init(
+                uiColor: UIColor { traits in
+                    let dark = traits.userInterfaceStyle == .dark
+                    let high = traits.accessibilityContrast == .high
+                    switch (dark, high) {
+                    case (false, false): return UIColor(light)
+                    case (true, false): return UIColor(dark)
+                    case (false, true): return UIColor(highContrastLight ?? light)
+                    case (true, true): return UIColor(highContrastDark ?? dark)
+                    }
+                }
+            )
         #elseif canImport(AppKit)
-        self.init(nsColor: NSColor(name: nil) { appearance in
-            appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(dark) : NSColor(light)
-        })
+            self.init(
+                nsColor: NSColor(name: nil) { appearance in
+                    appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(dark) : NSColor(light)
+                }
+            )
         #else
-        self = light
+            self = light
         #endif
     }
 
     /// A colour from a 0xRRGGBB literal. Only token files may use this.
-    init(hex: UInt32, opacity: Double = 1) {
+    public init(hex: UInt32, opacity: Double = 1) {
         self.init(
             .sRGB,
             red: Double((hex >> 16) & 0xFF) / 255,

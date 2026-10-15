@@ -5,26 +5,29 @@ import SwiftUI
 public enum PinnedFooterStyle: Sendable, Equatable {
     /// Follows the theme: `.glass` for `Theme.SurfaceStyle.glass`, otherwise `.material`.
     case automatic
-    /// A floating Liquid Glass panel inset from the screen edges.
+    /// Floating Liquid Glass controls with no panel behind them, grouped in one `GlassEffectContainer` so
+    /// neighbouring buttons blend and morph. Pass glass buttons; the footer adds no glass of its own, so
+    /// glass never stacks on glass (UI-10).
     case glass
     /// An edge-to-edge bar material with a top hairline.
     case material
 }
 
-public extension View {
+extension View {
     /// Pins primary actions to the bottom of the screen. The footer sits in the bottom safe area inset,
     /// so scrolling content stops above it and the home indicator area stays clear.
     ///
     ///     ScrollView { … }
     ///         .pinnedFooter { Button("Save", action: save).buttonStyle(.glassProminent) }
-    func pinnedFooter<Footer: View>(
+    public func pinnedFooter<Footer: View>(
         style: PinnedFooterStyle = .automatic,
         isPresented: Bool = true,
         @ViewBuilder footer: () -> Footer
     ) -> some View {
-        safeAreaInset(edge: .bottom, spacing: 0) {
+        let content = footer()
+        return safeAreaInset(edge: .bottom, spacing: 0) {
             if isPresented {
-                PinnedFooter(style: style, content: footer)
+                PinnedFooter(style: style) { content }
             }
         }
     }
@@ -44,12 +47,12 @@ public struct PinnedFooter<Content: View>: View {
     public var body: some View {
         switch resolvedStyle {
         case .glass:
-            VStack(spacing: Space.sm) { content }
-                .padding(Space.md)
-                .frame(maxWidth: .infinity)
-                .glassEffect(.regular, in: .rect(cornerRadius: Radius.xl, style: .continuous))
-                .padding(.horizontal, Space.gutter)
-                .padding(.bottom, Space.sm)
+            GlassEffectContainer(spacing: Space.sm) {
+                VStack(spacing: Space.sm) { content }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, Space.gutter)
+            .padding(.bottom, Space.sm)
         case .automatic, .material:
             VStack(spacing: Space.sm) { content }
                 .padding(.horizontal, Space.gutter)
@@ -68,30 +71,30 @@ public struct PinnedFooter<Content: View>: View {
 }
 
 #if DEBUG
-private struct PinnedFooterPreview: View {
-    let style: PinnedFooterStyle
+    private struct PinnedFooterPreview: View {
+        let style: PinnedFooterStyle
 
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: Space.md) {
-                ForEach(1..<31) { index in
-                    Text("Row \(index)")
+        var body: some View {
+            ScrollView {
+                VStack(alignment: .leading, spacing: Space.md) {
+                    ForEach(1..<31) { index in
+                        Text("Row \(index)")
+                    }
                 }
+                .padding(Space.gutter)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(Space.gutter)
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .background(Theme.system.palette.canvas)
-        .pinnedFooter(style: style) {
-            Button("Save workout") {}
-                .buttonStyle(.glassProminent)
-                .controlSize(.large)
-                .frame(maxWidth: .infinity)
+            .background(Theme.system.palette.canvas)
+            .pinnedFooter(style: style) {
+                Button("Save workout") {}
+                    .buttonStyle(.glassProminent)
+                    .controlSize(.large)
+                    .frame(maxWidth: .infinity)
+            }
         }
     }
-}
 
-#Preview("Glass") { PinnedFooterPreview(style: .glass) }
-#Preview("Material, dark") { PinnedFooterPreview(style: .material).preferredColorScheme(.dark) }
-#Preview("AX3") { PinnedFooterPreview(style: .automatic).dynamicTypeSize(.accessibility3) }
+    #Preview("Glass") { PinnedFooterPreview(style: .glass) }
+    #Preview("Material, dark") { PinnedFooterPreview(style: .material).preferredColorScheme(.dark) }
+    #Preview("AX3") { PinnedFooterPreview(style: .automatic).dynamicTypeSize(.accessibility3) }
 #endif

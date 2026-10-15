@@ -26,13 +26,13 @@ public struct Theme: Sendable, Equatable {
     public func font(_ role: Typography.Role) -> Font { typography.font(role) }
 }
 
-public extension EnvironmentValues {
-    @Entry var craftTheme: Theme = .system
+extension EnvironmentValues {
+    @Entry public var craftTheme: Theme = .system
 }
 
-public extension View {
+extension View {
     /// Applies a theme to this subtree, and its accent as the system tint.
-    func craftTheme(_ theme: Theme) -> some View {
+    public func craftTheme(_ theme: Theme) -> some View {
         environment(\.craftTheme, theme).tint(theme.palette.accent)
     }
 }

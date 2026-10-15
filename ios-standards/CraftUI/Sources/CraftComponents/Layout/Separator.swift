@@ -27,22 +27,22 @@ public struct Separator: View {
 }
 
 #if DEBUG
-private struct SeparatorPreview: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: Space.md) {
-            Text("Full width")
-            Separator()
-            Text("Inset by Space.lg")
-            Separator(leadingInset: Space.lg)
-            Text("Inset both sides")
-            Separator(leadingInset: Space.xxl, trailingInset: Space.xxl)
+    private struct SeparatorPreview: View {
+        var body: some View {
+            VStack(alignment: .leading, spacing: Space.md) {
+                Text("Full width")
+                Separator()
+                Text("Inset by Space.lg")
+                Separator(leadingInset: Space.lg)
+                Text("Inset both sides")
+                Separator(leadingInset: Space.xxl, trailingInset: Space.xxl)
+            }
+            .padding(.vertical, Space.lg)
+            .background(Theme.system.palette.surface)
         }
-        .padding(.vertical, Space.lg)
-        .background(Theme.system.palette.surface)
     }
-}
 
-#Preview("Light") { SeparatorPreview() }
-#Preview("Dark") { SeparatorPreview().preferredColorScheme(.dark) }
-#Preview("AX3") { SeparatorPreview().dynamicTypeSize(.accessibility3) }
+    #Preview("Light") { SeparatorPreview() }
+    #Preview("Dark") { SeparatorPreview().preferredColorScheme(.dark) }
+    #Preview("AX3") { SeparatorPreview().dynamicTypeSize(.accessibility3) }
 #endif

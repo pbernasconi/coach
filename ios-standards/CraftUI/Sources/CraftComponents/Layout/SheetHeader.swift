@@ -28,8 +28,11 @@ public struct SheetHeader: View {
     private let confirm: SheetHeaderAction?
 
     public init(
-        _ title: String, subtitle: String? = nil, closeAccessibilityLabel: String,
-        onClose: @escaping () -> Void, confirm: SheetHeaderAction? = nil
+        _ title: String,
+        subtitle: String? = nil,
+        closeAccessibilityLabel: String,
+        onClose: @escaping () -> Void,
+        confirm: SheetHeaderAction? = nil
     ) {
         self.title = title
         self.subtitle = subtitle
@@ -71,6 +74,7 @@ public struct SheetHeader: View {
     @ViewBuilder
     private func iconButton(_ item: SheetHeaderAction, systemImage: String, prominent: Bool) -> some View {
         let label = Image(systemName: systemImage)
+            .accessibilityHidden(true)  // the button carries the label
             .font(theme.font(.body).weight(.semibold))
             .frame(width: buttonSize, height: buttonSize)
         if prominent {
@@ -90,34 +94,39 @@ public struct SheetHeader: View {
 }
 
 #if DEBUG
-private struct SheetHeaderPreview: View {
-    var body: some View {
-        VStack(spacing: Space.xxl) {
-            SheetHeader("Library", closeAccessibilityLabel: "Close", onClose: {})
-            SheetHeader(
-                "Edit set", subtitle: "Bench press · set 2", closeAccessibilityLabel: "Cancel", onClose: {},
-                confirm: SheetHeaderAction(accessibilityLabel: "Save") {}
-            )
-            SheetHeader(
-                "Pinned note", closeAccessibilityLabel: "Close", onClose: {},
-                confirm: SheetHeaderAction(accessibilityLabel: "Save", isEnabled: false) {}
-            )
+    private struct SheetHeaderPreview: View {
+        var body: some View {
+            VStack(spacing: Space.xxl) {
+                SheetHeader("Library", closeAccessibilityLabel: "Close", onClose: {})
+                SheetHeader(
+                    "Edit set",
+                    subtitle: "Bench press · set 2",
+                    closeAccessibilityLabel: "Cancel",
+                    onClose: {},
+                    confirm: SheetHeaderAction(accessibilityLabel: "Save") {}
+                )
+                SheetHeader(
+                    "Pinned note",
+                    closeAccessibilityLabel: "Close",
+                    onClose: {},
+                    confirm: SheetHeaderAction(accessibilityLabel: "Save", isEnabled: false) {}
+                )
+            }
+            .frame(maxHeight: .infinity, alignment: .top)
+            .background(Theme.system.palette.surface)
         }
-        .frame(maxHeight: .infinity, alignment: .top)
-        .background(Theme.system.palette.surface)
     }
-}
 
-#Preview("Light") { SheetHeaderPreview() }
-#Preview("Dark") { SheetHeaderPreview().preferredColorScheme(.dark) }
-#Preview("AX3") { SheetHeaderPreview().dynamicTypeSize(.accessibility3) }
-#Preview("In a sheet") {
-    Color.clear.sheet(isPresented: .constant(true)) {
-        VStack {
-            SheetHeader("Library", closeAccessibilityLabel: "Close", onClose: {})
-            Spacer()
+    #Preview("Light") { SheetHeaderPreview() }
+    #Preview("Dark") { SheetHeaderPreview().preferredColorScheme(.dark) }
+    #Preview("AX3") { SheetHeaderPreview().dynamicTypeSize(.accessibility3) }
+    #Preview("In a sheet") {
+        Color.clear.sheet(isPresented: .constant(true)) {
+            VStack {
+                SheetHeader("Library", closeAccessibilityLabel: "Close", onClose: {})
+                Spacer()
+            }
+            .presentationDetents([.medium, .large])
         }
-        .presentationDetents([.medium, .large])
     }
-}
 #endif

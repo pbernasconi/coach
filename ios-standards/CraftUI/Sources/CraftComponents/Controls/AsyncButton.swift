@@ -124,9 +124,9 @@ public struct AsyncButton<Label: View>: View {
     }
 }
 
-public extension AsyncButton where Label == Text {
+extension AsyncButton where Label == Text {
     /// A text-labelled async button.
-    init(
+    public init(
         _ titleKey: LocalizedStringKey,
         variant: CraftButtonStyle.Variant = .primary,
         size: CraftButtonStyle.Size = .regular,
@@ -136,33 +136,39 @@ public extension AsyncButton where Label == Text {
         action: @escaping () async throws -> Void
     ) {
         self.init(
-            variant, size: size, width: width, confirmation: confirmation, clock: clock, action: action,
+            variant,
+            size: size,
+            width: width,
+            confirmation: confirmation,
+            clock: clock,
+            action: action,
             label: { Text(titleKey) }
         )
     }
 }
 
 #if DEBUG
-private struct PreviewFailure: Error {}
+    private struct PreviewFailure: Error {}
 
-private struct AsyncButtonGallery: View {
-    @Environment(\.craftTheme) private var theme
+    private struct AsyncButtonGallery: View {
+        @Environment(\.craftTheme) private var theme
 
-    var body: some View {
-        VStack(spacing: Space.md) {
-            AsyncButton("Save (fast)", width: .full) {}
-            AsyncButton("Save (slow)", width: .full) { try await ContinuousClock().sleep(for: .seconds(2)) }
-            AsyncButton("Fails", variant: .destructive, width: .full) { throw PreviewFailure() }
-            AsyncButton(.glass, size: .compact, confirmation: .off) {} label: {
-                Label("Sync", systemImage: "arrow.clockwise")
+        var body: some View {
+            VStack(spacing: Space.md) {
+                AsyncButton("Save (fast)", width: .full) {}
+                AsyncButton("Save (slow)", width: .full) { try await ContinuousClock().sleep(for: .seconds(2)) }
+                AsyncButton("Fails", variant: .destructive, width: .full) { throw PreviewFailure() }
+                AsyncButton(.glass, size: .compact, confirmation: .off) {
+                } label: {
+                    Label("Sync", systemImage: "arrow.clockwise")
+                }
             }
+            .padding(Space.gutter)
+            .background(theme.palette.canvas)
         }
-        .padding(Space.gutter)
-        .background(theme.palette.canvas)
     }
-}
 
-#Preview("Async button") { AsyncButtonGallery() }
-#Preview("Async button · dark") { AsyncButtonGallery().preferredColorScheme(.dark) }
-#Preview("Async button · AX3") { AsyncButtonGallery().dynamicTypeSize(.accessibility3) }
+    #Preview("Async button") { AsyncButtonGallery() }
+    #Preview("Async button · dark") { AsyncButtonGallery().preferredColorScheme(.dark) }
+    #Preview("Async button · AX3") { AsyncButtonGallery().dynamicTypeSize(.accessibility3) }
 #endif

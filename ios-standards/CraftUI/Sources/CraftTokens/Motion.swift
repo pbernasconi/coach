@@ -61,86 +61,74 @@ public enum Motion: CaseIterable, Sendable {
         }
     }
 
-    /// Timing values, in seconds.
-    public enum Duration {
-        public static let instant: TimeInterval = 0.10
-        public static let state: TimeInterval = 0.15
-        public static let enter: TimeInterval = 0.25
-        public static let overlay: TimeInterval = 0.30
-        public static let exit: TimeInterval = 0.20
-        public static let crossfade: TimeInterval = 0.15
-        public static let reducedMotionFade: TimeInterval = 0.15
-        /// Half a skeleton breath / one pulse half-cycle.
-        public static let pulse: TimeInterval = 0.9
-        /// A spinner answering a tap shows at least this long, so fast answers still read as an attempt.
-        public static let spinnerHold: TimeInterval = 0.3
-        /// A save that is still running after this long swaps in a spinner.
-        public static let spinnerDelay: TimeInterval = 0.4
-        /// Selection fill shown before a picker sheet closes.
-        public static let pickHold: TimeInterval = 0.15
-        /// A new list row starts fading in after the rows below have moved.
-        public static let listRowFadeInDelay: TimeInterval = 0.10
-    }
-
     /// Material 3 easing curves.
     public enum Curve {
-        public static let standard = UnitCurve.bezier(startControlPoint: UnitPoint(x: 0.2, y: 0), endControlPoint: UnitPoint(x: 0, y: 1))
-        public static let enter = UnitCurve.bezier(startControlPoint: UnitPoint(x: 0.05, y: 0.7), endControlPoint: UnitPoint(x: 0.1, y: 1))
-        public static let exit = UnitCurve.bezier(startControlPoint: UnitPoint(x: 0.3, y: 0), endControlPoint: UnitPoint(x: 0.8, y: 0.15))
-    }
-
-    /// The error shake.
-    public enum Shake {
-        public static let distance: CGFloat = 8
-        public static let settle: TimeInterval = 0.04
-        public static let swing: TimeInterval = 0.08
-        public static let swings = 3
+        public static let standard = UnitCurve.bezier(
+            startControlPoint: UnitPoint(x: 0.2, y: 0),
+            endControlPoint: UnitPoint(x: 0, y: 1)
+        )
+        public static let enter = UnitCurve.bezier(
+            startControlPoint: UnitPoint(x: 0.05, y: 0.7),
+            endControlPoint: UnitPoint(x: 0.1, y: 1)
+        )
+        public static let exit = UnitCurve.bezier(
+            startControlPoint: UnitPoint(x: 0.3, y: 0),
+            endControlPoint: UnitPoint(x: 0.8, y: 0.15)
+        )
     }
 }
 
 // MARK: - Transitions
 
-public extension Motion {
+extension Motion {
     /// Fade in on `enter`, out on the faster `exit`. Identity with Reduce Motion on.
-    static func fade(reduceMotion: Bool) -> AnyTransition {
+    public static func fade(reduceMotion: Bool) -> AnyTransition {
         guard !reduceMotion else { return .identity }
-        return .asymmetric(insertion: .opacity.animation(Motion.enter.animation), removal: .opacity.animation(Motion.exit.animation))
+        return .asymmetric(
+            insertion: .opacity.animation(Motion.enter.animation),
+            removal: .opacity.animation(Motion.exit.animation)
+        )
     }
 
     /// A presentation that moves; with Reduce Motion it becomes a short cross-fade instead.
-    static func presentation(_ movement: AnyTransition, reduceMotion: Bool) -> AnyTransition {
+    public static func presentation(_ movement: AnyTransition, reduceMotion: Bool) -> AnyTransition {
         reduceMotion ? .opacity.animation(.timingCurve(Curve.standard, duration: Duration.reducedMotionFade)) : movement
     }
 
     /// A glyph that swaps with a state change.
-    static func crossFade(reduceMotion: Bool) -> AnyTransition {
+    public static func crossFade(reduceMotion: Bool) -> AnyTransition {
         reduceMotion ? .identity : .opacity.animation(Motion.state.animation)
     }
 
     /// A live-list row: new rows fade in once the rows below have moved; removed rows fade out fast.
-    static func listRow(reduceMotion: Bool) -> AnyTransition {
+    public static func listRow(reduceMotion: Bool) -> AnyTransition {
         guard !reduceMotion else { return .identity }
-        let fadeIn = Animation.timingCurve(Curve.standard, duration: Duration.crossfade).delay(Duration.listRowFadeInDelay)
-        return .asymmetric(insertion: .opacity.animation(fadeIn), removal: .opacity.animation(Motion.fastEffects.animation))
+        let fadeIn = Animation.timingCurve(Curve.standard, duration: Duration.crossfade).delay(
+            Duration.listRowFadeInDelay
+        )
+        return .asymmetric(
+            insertion: .opacity.animation(fadeIn),
+            removal: .opacity.animation(Motion.fastEffects.animation)
+        )
     }
 
     /// Scale-and-fade "pop" for confirmations (a check appearing, a badge landing).
-    static func pop(reduceMotion: Bool) -> AnyTransition {
+    public static func pop(reduceMotion: Bool) -> AnyTransition {
         guard !reduceMotion else { return .opacity }
         return .scale(scale: 0.86).combined(with: .opacity).animation(Motion.pop.animation)
     }
 
     /// Slide up from the bottom edge, for toasts and accessories.
-    static func rise(reduceMotion: Bool) -> AnyTransition {
+    public static func rise(reduceMotion: Bool) -> AnyTransition {
         presentation(.move(edge: .bottom).combined(with: .opacity), reduceMotion: reduceMotion)
     }
 }
 
 // MARK: - View helpers
 
-public extension View {
+extension View {
     /// Animates changes to `value` with a preset, honouring Reduce Motion automatically.
-    func craftAnimation<V: Equatable>(_ motion: Motion, value: V) -> some View {
+    public func craftAnimation<V: Equatable>(_ motion: Motion, value: V) -> some View {
         modifier(CraftAnimationModifier(motion: motion, value: value))
     }
 }
@@ -157,6 +145,8 @@ private struct CraftAnimationModifier<V: Equatable>: ViewModifier {
 
 /// Runs `body` inside a preset animation (or none with Reduce Motion), for state changes in actions.
 @MainActor
-public func withCraftAnimation<Result>(_ motion: Motion, reduceMotion: Bool, _ body: () throws -> Result) rethrows -> Result {
+public func withCraftAnimation<Result>(_ motion: Motion, reduceMotion: Bool, _ body: () throws -> Result) rethrows
+    -> Result
+{
     try withAnimation(motion.animation(reduceMotion: reduceMotion), body)
 }
