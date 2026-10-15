@@ -16,6 +16,7 @@ public struct ListRow<Leading: View, Trailing: View>: View {
     @Environment(\.koboTheme) private var theme
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.listRowDensity) private var density
+    @Environment(\.listRowEmphasis) private var emphasis
     @Environment(\.listSectionStyle) private var style
     @State private var leadingWidth: CGFloat = 0
     private let title: Text
@@ -129,7 +130,7 @@ public struct ListRow<Leading: View, Trailing: View>: View {
         VStack(alignment: .leading, spacing: Space.xxs) {
             title
                 .font(theme.font(.body))
-                .foregroundStyle(theme.palette.textPrimary)
+                .foregroundStyle(theme.palette.rowTitle(emphasis))
             if let subtitle {
                 subtitle
                     .font(theme.font(density == .compact ? .footnote : .subheadline))
@@ -142,7 +143,7 @@ public struct ListRow<Leading: View, Trailing: View>: View {
 
     private func valueText(_ value: String) -> some View {
         Text(verbatim: value)
-            .font(theme.font(.body))
+            .font(theme.font(density == .compact ? .subheadline : .body).monospacedDigit())
             .foregroundStyle(theme.palette.textSecondary)
             .multilineTextAlignment(stacksValue ? .leading : .trailing)
     }
@@ -219,7 +220,7 @@ extension ListRow where Leading == EmptyView, Trailing == EmptyView {
         var body: some View {
             ScrollView {
                 ListSection("Rows") {
-                    ListRow("Static title")
+                    ListRow("Quiet placeholder", subtitle: "Nothing here yet").listRowEmphasis(.quiet)
                     ListRow("With subtitle", subtitle: "A longer secondary line that wraps", value: "Value")
                     ListRow("Tappable", action: {})
                     ListRow(verbatim: "Book flights", subtitle: "Due Friday", value: "30 min", action: {})

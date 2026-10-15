@@ -2,7 +2,8 @@ import KoboTokens
 import SwiftUI
 
 /// How tightly `ListRow` (and the rows built on it, such as `CheckRow`) packs its content. `compact` fits long lists
-/// of short items on one screen: less vertical padding, a 44pt minimum height and a footnote subtitle. Rows still grow
+/// of short items on one screen: less vertical padding, a 44pt minimum height, a footnote subtitle and a subheadline
+/// trailing value (one step above the subtitle, as body is in a regular row). Rows still grow
 /// with Dynamic Type, so nothing truncates at accessibility sizes.
 ///
 ///     ListSection { ForEach(items) { ListRow(verbatim: $0.name, subtitle: $0.detail) } }

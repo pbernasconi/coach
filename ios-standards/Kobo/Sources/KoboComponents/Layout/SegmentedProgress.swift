@@ -2,8 +2,10 @@ import Foundation
 import KoboTokens
 import SwiftUI
 
-/// A row of capsule segments showing progress toward a goal (for example "2 of 4 tasks this week").
-/// VoiceOver reads the label and "x of y".
+/// A row of capsule segments showing progress toward a goal (for example "2 of 4 tasks this week"): done segments in
+/// the accent, planned ones in the soft accent, and the rest as a quiet filled track (a firmer grey where a minimum
+/// still needs them). No outlines, so an empty bar reads as a calm track, not as noise. VoiceOver reads the label and
+/// "x of y".
 ///
 ///     SegmentedProgress(done: 2, planned: 1, minimum: 3, goal: 4, accessibilityLabel: "Weekly goal")
 ///     SegmentedProgress(done: 1, goal: 3, verbatimAccessibilityLabel: "\(plan.name) this week")
@@ -59,12 +61,9 @@ public struct SegmentedProgress: View {
         case .planned:
             Capsule().fill(theme.palette.accentSoft)
         case .required:
-            Capsule().fill(theme.palette.surfaceSunken)
+            Capsule().fill(theme.palette.textTertiary)
         case .optional:
-            Capsule().strokeBorder(
-                theme.palette.textTertiary,
-                style: StrokeStyle(lineWidth: Space.xxs, dash: [Space.xs, Space.xxs])
-            )
+            Capsule().fill(theme.palette.surfaceSunken)
         }
     }
 }

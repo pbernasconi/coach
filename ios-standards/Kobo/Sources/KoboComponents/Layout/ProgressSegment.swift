@@ -6,9 +6,9 @@ public nonisolated enum ProgressSegment: Hashable, Sendable, CaseIterable, Ident
     case done
     /// Scheduled but not yet done: soft accent.
     case planned
-    /// Needed to meet the minimum, not yet scheduled: a sunken fill.
+    /// Needed to meet the minimum, not yet scheduled: a firm grey fill.
     case required
-    /// Above the minimum and unscheduled: a dashed outline.
+    /// Above the minimum and unscheduled: the quiet track fill.
     case optional
 
     public var id: Self { self }
