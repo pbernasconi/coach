@@ -40,8 +40,8 @@ final class ExampleViewModel {
             state.destination = nil
             return nil
         case .saveTapped:
-            guard state.save != .saving else { return nil }   // double tap guard
-            state.save = .saving                               // set before the Task starts
+            guard state.save != .saving else { return nil }  // double tap guard
+            state.save = .saving  // set before the Task starts
             let name = state.draftName
             return Task {
                 do {

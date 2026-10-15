@@ -1,6 +1,7 @@
 ## What changed
 
 ## Definition of done (IOS_GUIDELINES §15)
+
 - [ ] `scripts/lint.sh` and `scripts/test.sh` pass; CI green
 - [ ] New screens use the 8-file set with fixtures + previews (SCR-1)
 - [ ] One test per new Action; table tests for new Core rules

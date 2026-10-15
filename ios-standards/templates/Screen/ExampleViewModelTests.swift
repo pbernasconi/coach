@@ -1,6 +1,7 @@
 import Core
 import Testing
 import TestingSupport
+
 @testable import App
 
 /// One test per Action case (TEST-2). No sleeps, no real time (TEST-3).
@@ -36,7 +37,7 @@ import TestingSupport
         let vm = self.vm
         vm.send(.nameChanged("Squat"))
         let first = vm.send(.saveTapped)
-        let second = vm.send(.saveTapped)          // double tap is ignored
+        let second = vm.send(.saveTapped)  // double tap is ignored
         #expect(second == nil)
         await first?.value
         #expect(repository.created == ["Squat"])

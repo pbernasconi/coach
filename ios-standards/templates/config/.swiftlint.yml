@@ -1,19 +1,67 @@
 # SwiftLint is used for size limits and bans only; formatting belongs to swift-format (STACK, TOOL-2).
 included: [App, AppWidgets, Packages]
 excluded: [Packages/AppKit/.build, "**/Generated"]
-disabled_rules: [trailing_comma, opening_brace, line_length, identifier_name]   # swift-format owns style
+disabled_rules:
+  - trailing_comma                   # swift-format owns style
+  - opening_brace
+  - line_length
+  - identifier_name
+  - multiple_closures_with_trailing_closure  # SwiftUI slots (`action:` + trailing `label:`) are idiomatic
 opt_in_rules:
+  # Correctness
   - force_unwrapping
+  - implicitly_unwrapped_optional
+  - unhandled_throwing_task          # Task { try … } silently drops errors
+  - identical_operands
+  - unused_parameter
   - discouraged_optional_boolean
-  - empty_count
-  - first_where
-  - contains_over_filter_count
-  - sorted_first_last
+  - discouraged_optional_collection
   - fatal_error_message
   - unowned_variable_capture
-  - private_swiftui_state
+  - weak_delegate
+  - yoda_condition
+  - legacy_objc_type
+  - override_in_extension
+  - return_value_from_void_function
+  - self_binding
+  - shorthand_optional_binding
+  - static_over_final_class
+  - local_doc_comment
+  # SwiftUI and accessibility
+  - private_swiftui_state            # @State/@StateObject must be private
+  - accessibility_label_for_image
+  - accessibility_trait_for_button   # .onTapGesture needs .isButton (we ban it outright too)
+  # Performance and clarity
+  - empty_count
+  - empty_string
+  - first_where
+  - last_where
+  - contains_over_filter_count
+  - contains_over_filter_is_empty
+  - contains_over_first_not_nil
+  - contains_over_range_nil_comparison
+  - sorted_first_last
+  - flatmap_over_map_reduce
+  - reduce_into
+  - toggle_bool
+  - prefer_key_path
+  - prefer_zero_over_explicit_init
+  - direct_return
+  - closure_body_length
+  # Tests
+  - final_test_case
+  - empty_xctest_method
+analyzer_rules:                      # run by `swiftlint analyze` in lint-all.sh --deep (needs a build log)
+  - unused_declaration
+  - unused_import
+  - capture_variable
+  - typesafe_array_init
 file_length: { warning: 250, error: 250, ignore_comment_only_lines: true }            # LAY-5
 function_body_length: { warning: 40, error: 40 }
+closure_body_length: { warning: 40, error: 60 }
+large_tuple: { warning: 3, error: 3 }
+prefer_key_path: { restrict_to_standard_functions: true }
+unused_parameter: { severity: error }
 type_body_length: { warning: 200, error: 250 }
 cyclomatic_complexity: { warning: 10, error: 12 }
 nesting: { type_level: 2 }

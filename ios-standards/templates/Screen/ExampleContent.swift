@@ -17,7 +17,11 @@ struct ExampleContent: View {
                 ErrorRow(kind: kind, retry: { send(.retryTapped) })
             case .loaded(let items):
                 ForEach(items) { item in
-                    Button { send(.itemTapped(item.id)) } label: { ExampleRow(item: item) }
+                    Button {
+                        send(.itemTapped(item.id))
+                    } label: {
+                        ExampleRow(item: item)
+                    }
                 }
             }
             Section {

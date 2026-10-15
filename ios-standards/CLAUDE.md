@@ -8,13 +8,15 @@ Do not work around it.
 
 ```bash
 ios/scripts/generate.sh      # XcodeGen → .xcodeproj (never edit the project by hand)
-ios/scripts/lint.sh          # swift-format + SwiftLint --strict + ios-guard.sh
+ios/scripts/lint.sh          # quick loop: swift-format + SwiftLint --strict + ios-guard.sh
+ios/scripts/lint-all.sh      # full suite (also shell, workflows, YAML, Markdown, typos, secrets); --fix formats
+ios/scripts/install-tools.sh # once per machine: pinned lint tools into ios/.tools/
 ios/scripts/test.sh          # Core package tests (macOS/Linux), then app tests on a simulator
 ios/scripts/test.sh --ui     # demo-mode UI smoke test with screenshots
 (cd ios/Packages/*Kit && swift test)   # Core logic only; works without Xcode
 ```
 
-Run `lint.sh` and `test.sh` before saying anything is done. On Linux, run the package tests and say
+Run `lint-all.sh` and `test.sh` before saying anything is done. On Linux, run the package tests and say
 plainly that the simulator tests were not run.
 
 ## Where code goes
@@ -48,7 +50,8 @@ plainly that the simulator tests were not run.
   `default:`), and force unwraps outside tests and previews.
 - **SwiftUI:** `AnyView`, `.onTapGesture` on things that should be Buttons, and `ForEach(…, id: \.self)` on
   strings or indices.
-- **Design:** colour literals or hex colours outside `Design`.
+- **Design:** colour literals or hex colours outside `Design`, and glass on content or glass on glass (UI-10).
+- **Identity:** `UUID()` or `.id(UUID())` while building a view (PERF-5).
 - **Size:** more than 250 lines per file, 40 per function, 80 per `body`.
 
 ## Data (DATA-1…8)

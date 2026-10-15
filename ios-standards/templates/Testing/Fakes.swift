@@ -2,7 +2,7 @@ import Core
 
 /// Hand-written fakes and recorders (TEST-2). Tests assert whole call lists.
 
-public final class FakeExampleRepository: ExampleRepository, @unchecked Sendable { // ios-guard: allow test-only fake, MainActor tests
+public final class FakeExampleRepository: ExampleRepository, @unchecked Sendable {  // ios-guard: allow test fake
     public private(set) var created: [String] = []
     public var createError: AppError?
     private var buffered: [[ExampleItem]] = []
@@ -25,7 +25,7 @@ public final class FakeExampleRepository: ExampleRepository, @unchecked Sendable
         created.append(name)
     }
 
-    public func delete(id: ExampleItem.ID) async throws {}
+    public func delete(id _: ExampleItem.ID) async throws {}
 }
 
 public final class RecordingRouter: Navigating {

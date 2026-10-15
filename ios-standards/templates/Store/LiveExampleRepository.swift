@@ -15,7 +15,10 @@ public struct LiveExampleRepository: ExampleRepository {
     }
 
     public func observeAll() -> AsyncStream<[ExampleItem]> {
-        let (stream, continuation) = AsyncStream.makeStream(of: [ExampleItem].self, bufferingPolicy: .bufferingNewest(1))
+        let (stream, continuation) = AsyncStream.makeStream(
+            of: [ExampleItem].self,
+            bufferingPolicy: .bufferingNewest(1)
+        )
         let observation = ValueObservation.tracking { db in
             try ExampleItem.filter(Column("deletedAt") == nil).order(Column("createdAt")).fetchAll(db)
         }
@@ -42,7 +45,7 @@ public struct LiveExampleRepository: ExampleRepository {
     public func delete(id: ExampleItem.ID) async throws {
         try await db.write { db in
             guard var item = try ExampleItem.fetchOne(db, key: id) else { return }
-            item.deletedAt = now()          // tombstone, never hard-delete before sync (DATA-2)
+            item.deletedAt = now()  // tombstone, never hard-delete before sync (DATA-2)
             item.updatedAt = now()
             try item.update(db)
             try OutboxEntry(id: newID(), table: "example", rowID: id, op: .upsert, createdAt: now()).insert(db)
