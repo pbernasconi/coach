@@ -55,7 +55,8 @@ import Testing
 
     @Test func mediaImageLoadMapsErrorsToFailed() async throws {
         let failing = LiveExerciseMediaLoader(transport: FakeMediaTransport(responses: []), cache: makeCache())
-        #expect(await MediaImage.load(try #require(url), with: failing) == .failed)
+        let url: URL = try #require(url)
+        #expect(await MediaImage.load(url, with: failing) == .failed)
         #expect(await MediaImage.load(nil, with: failing) == .failed)
     }
 }
