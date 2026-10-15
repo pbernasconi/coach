@@ -1,0 +1,83 @@
+import Foundation
+import LiftCore
+import LiftStore
+
+/// Everything the Workout screen renders. Exclusive states are enums or optionals (SCR-6).
+nonisolated struct WorkoutState: Equatable, Sendable {
+    /// The session; `.empty` once it was removed or if it never existed.
+    var workout: Loadable<WorkoutOverview> = .loading
+    /// The weight and reps editor, while it is open.
+    var editor: SetEditor?
+    /// The rest countdown after a set was logged.
+    var rest: RestTimer?
+    /// The latest message for the toast slot.
+    var toast: WorkoutToast?
+}
+
+/// The session header and its exercises in order.
+nonisolated struct WorkoutOverview: Equatable, Sendable {
+    var title: String
+    /// "Thursday, 5 March".
+    var dayTitle: String
+    var loggedSets: Int
+    var totalSets: Int
+    var exercises: [WorkoutExercise]
+}
+
+/// One exercise section: name, plain hint lines and its sets.
+nonisolated struct WorkoutExercise: Equatable, Sendable, Identifiable {
+    var id: UUID
+    var name: String
+    /// "3 × 5 @ 100 kg" when every working set shares one target.
+    var target: String?
+    /// "Warm-up: 20×10 · 50×5 · 70×3 · 85×1 kg".
+    var warmUp: String?
+    /// "Per side: 25 + 15 · 20 kg bar".
+    var plates: String?
+    /// "Next time: 5 @ 102.5 kg".
+    var progression: String?
+    var sets: [WorkoutSetItem]
+}
+
+/// One set row.
+nonisolated struct WorkoutSetItem: Equatable, Sendable, Identifiable {
+    var id: UUID
+    /// "Set 2".
+    var title: String
+    /// "8 @ 60 kg".
+    var target: String
+    /// The values saved or logged on the set ("6 @ 62.5 kg"); nil while there are none.
+    var actual: String?
+    var status: SetStatus
+}
+
+/// The weight and reps editor for one set. Done saves the values only; it never logs the set.
+nonisolated struct SetEditor: Equatable, Sendable, Identifiable {
+    /// The set being edited.
+    var id: UUID
+    /// "Set 2 · Back squat".
+    var title: String
+    var unit: WeightUnit
+    /// The weight stepper's step in `unit`.
+    var step: Double
+    var weight: Double
+    var reps: Int
+    /// The values when the editor opened, to tell whether anything changed.
+    var savedWeight: Double
+    var savedReps: Int
+
+    var hasChanges: Bool { weight != savedWeight || reps != savedReps }
+}
+
+/// A short message for the toast slot. `serial` changes with every message, so the same message can show twice.
+nonisolated struct WorkoutToast: Equatable, Sendable {
+    enum Kind: Equatable, Sendable {
+        /// A set was removed; the toast offers Undo.
+        case removed(setID: UUID)
+        /// A write failed.
+        case failed
+    }
+
+    var serial: Int
+    var kind: Kind
+}

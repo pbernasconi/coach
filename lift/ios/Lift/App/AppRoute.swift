@@ -14,7 +14,11 @@ protocol Navigating: AnyObject {
 /// The navigation path of one tab. Owned by the tab's view; handed to ViewModels as `any Navigating`.
 @Observable
 final class TabRouter: Navigating {
-    var path: [AppRoute] = []
+    var path: [AppRoute]
+
+    init(path: [AppRoute] = []) {
+        self.path = path
+    }
 
     func open(_ route: AppRoute) {
         path.append(route)

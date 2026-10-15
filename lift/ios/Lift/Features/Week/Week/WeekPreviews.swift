@@ -15,11 +15,21 @@
 
     #Preview("Default") { WeekPreview(state: .fixtureDefault) }
     #Preview("Dark") { WeekPreview(state: .fixtureDefault).preferredColorScheme(.dark) }
+    #Preview("AX3") {
+        WeekPreview(state: .fixtureDefault)
+            .dynamicTypeSize(.accessibility3)
+    }
     #Preview("Loading") { WeekPreview(state: .fixtureLoading) }
     #Preview("Empty") { WeekPreview(state: .fixtureEmpty) }
     #Preview("Failed") { WeekPreview(state: .fixtureFailed) }
     #Preview("Long text, AX3") {
         WeekPreview(state: .fixtureLongText)
+            .dynamicTypeSize(.accessibility3)
+    }
+    #Preview("Lift sheet") { WeekPreview(state: .fixtureOptions) }
+    #Preview("Lift sheet, dark") { WeekPreview(state: .fixtureOptions).preferredColorScheme(.dark) }
+    #Preview("Move, AX3") {
+        WeekPreview(state: .fixtureMove)
             .dynamicTypeSize(.accessibility3)
     }
 #endif

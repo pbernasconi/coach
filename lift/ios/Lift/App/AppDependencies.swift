@@ -9,6 +9,8 @@ final class AppDependencies {
     let exercises: any ExerciseRepository
     let sets: any SetRepository
     let now: @Sendable () -> Date
+    /// Drives countdowns such as the rest timer; tests and previews pass their own.
+    let clock: any Clock<Duration>
     let calendar: Calendar
     let info: AppInfo
     private var isPrepared = false
@@ -18,6 +20,7 @@ final class AppDependencies {
         exercises: any ExerciseRepository,
         sets: any SetRepository,
         now: @escaping @Sendable () -> Date,
+        clock: any Clock<Duration>,
         calendar: Calendar,
         info: AppInfo
     ) {
@@ -25,6 +28,7 @@ final class AppDependencies {
         self.exercises = exercises
         self.sets = sets
         self.now = now
+        self.clock = clock
         self.calendar = calendar
         self.info = info
     }
@@ -45,5 +49,15 @@ final class AppDependencies {
         } catch {
             AppLog.launch.error("Preparing data failed: \(String(describing: error), privacy: .private)")
         }
+    }
+
+    /// The first session from today on that still has planned sets (or else the first one), for `-open workout`.
+    func upcomingSessionID() async -> UUID? {
+        let today = LocalDay(now(), calendar: calendar)
+        for await details in sessions.observeSessions(from: today, through: today.adding(days: 14)) {
+            let open = details.first { detail in detail.items.contains { $0.sets.contains { $0.status == .planned } } }
+            return (open ?? details.first)?.id
+        }
+        return nil
     }
 }
