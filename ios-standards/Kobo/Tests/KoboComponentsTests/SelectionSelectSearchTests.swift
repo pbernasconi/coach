@@ -69,9 +69,9 @@ import Testing
     @Test func searchTurnsOnAtTheThresholdUnlessTheCallerDecides() {
         let threshold = SelectSearch.autoThreshold
         #expect(threshold == 8)
-        #expect(!SelectSearch.isEnabled(nil, optionCount: threshold - 1))
-        #expect(SelectSearch.isEnabled(nil, optionCount: threshold))
-        #expect(SelectSearch.isEnabled(true, optionCount: 0))
-        #expect(!SelectSearch.isEnabled(false, optionCount: 100))
+        #expect(!SelectSearch.isEnabled(.automatic, optionCount: threshold - 1))
+        #expect(SelectSearch.isEnabled(.automatic, optionCount: threshold))
+        #expect(SelectSearch.isEnabled(.shown, optionCount: 0))
+        #expect(!SelectSearch.isEnabled(.hidden, optionCount: 100))
     }
 }

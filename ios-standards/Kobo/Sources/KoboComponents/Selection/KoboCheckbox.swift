@@ -70,7 +70,9 @@ public struct KoboCheckbox: View {
     private struct KoboCheckboxGallery: View {
         @Environment(\.koboTheme) private var theme
         @State private var warmUps = true
-        @State private var plates = [Plate(kilograms: 5, isOn: true), Plate(kilograms: 10), Plate(kilograms: 20, isOn: true)]
+        @State private var plates = [
+            Plate(kilograms: 5, isOn: true), Plate(kilograms: 10), Plate(kilograms: 20, isOn: true),
+        ]
         @State private var selected = false
 
         var body: some View {

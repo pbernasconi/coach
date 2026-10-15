@@ -24,12 +24,24 @@ nonisolated enum SelectSearch {
         let titleRanges: [Range<String.Index>]
     }
 
+    /// Whether the caller wants the search field.
+    enum Preference: Sendable, Equatable {
+        /// From `autoThreshold` options up.
+        case automatic
+        case shown
+        case hidden
+    }
+
     /// Search turns on by itself at this many options, unless the caller decides.
     static let autoThreshold = 8
 
     /// Whether the sheet shows its search field: the caller's choice, else from `autoThreshold` options up.
-    static func isEnabled(_ searchable: Bool?, optionCount: Int) -> Bool {
-        searchable ?? (optionCount >= autoThreshold)
+    static func isEnabled(_ preference: Preference, optionCount: Int) -> Bool {
+        switch preference {
+        case .automatic: optionCount >= autoThreshold
+        case .shown: true
+        case .hidden: false
+        }
     }
 
     /// The options that match `query`, best rank first.
@@ -65,7 +77,9 @@ nonisolated enum SelectSearch {
     }
 
     /// The rank of one option and its title match, or `nil` when nothing matches.
-    private static func rank(_ candidate: Candidate, needle: String, query: String) -> (rank: Rank, match: SearchMatch?)? {
+    private static func rank(_ candidate: Candidate, needle: String, query: String) -> (
+        rank: Rank, match: SearchMatch?
+    )? {
         let title = SearchMatch(candidate.title, query: query)
         let options = SearchMatch.options
         if candidate.keywords.contains(where: { $0.compare(needle, options: options) == .orderedSame }) {

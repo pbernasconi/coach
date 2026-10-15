@@ -111,7 +111,8 @@ extension RadioRow where Trailing == EmptyView {
         isSelected: Bool,
         action: @escaping () -> Void
     ) {
-        self.init(verbatim: title, subtitle: subtitle, systemImage: systemImage, isSelected: isSelected, action: action) {
+        self.init(verbatim: title, subtitle: subtitle, systemImage: systemImage, isSelected: isSelected, action: action)
+        {
             EmptyView()
         }
     }

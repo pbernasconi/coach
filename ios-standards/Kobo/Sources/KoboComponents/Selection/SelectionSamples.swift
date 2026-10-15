@@ -30,7 +30,12 @@ import SwiftUI
         ]
 
         static let dayTemplates: [SelectOption<String>] = [
-            SelectOption("push", title: "Push", subtitle: "Chest, shoulders, triceps", systemImage: "figure.strengthtraining.traditional"),
+            SelectOption(
+                "push",
+                title: "Push",
+                subtitle: "Chest, shoulders, triceps",
+                systemImage: "figure.strengthtraining.traditional"
+            ),
             SelectOption("pull", title: "Pull", subtitle: "Back and biceps", systemImage: "figure.rower"),
             SelectOption("legs", title: "Legs", subtitle: "Squat, hinge, lunge", systemImage: "figure.walk"),
             SelectOption("rest", title: "Rest", subtitle: "Not on a plan week", isEnabled: false),
