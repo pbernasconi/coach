@@ -17,6 +17,7 @@ import LiftCore
 ///     -open templates                         with -demo: pushes the templates list on Exercises
 ///     -open template                          with -demo: pushes the first template's editor on Exercises
 ///     -open summary                           with -demo: pushes the latest logged session's summary on Week
+///     -open progress                          with -demo: opens History on Progress (hard sets per muscle)
 nonisolated struct LaunchOptions: Equatable, Sendable {
     enum Appearance: String, Equatable, Sendable {
         case dark
@@ -33,13 +34,15 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
         case templates
         case template
         case summary
+        /// History's Progress view: a segment of the History tab rather than a pushed route.
+        case progress
 
         /// The tab whose stack the screen is pushed on.
         var tab: AppTab {
             switch self {
             case .workout, .summary: .week
             case .exercise, .catalog, .templates, .template: .exercises
-            case .importNotes: .history
+            case .importNotes, .progress: .history
             }
         }
     }
@@ -96,7 +99,13 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
         case .exercise: return .exercise(ExerciseLibrary.seedID(1))
         case .catalog: return .catalog
         case .importNotes: return nil  // a modal page, opened through `opensImportSample`
+        case .progress: return nil  // a segment of History, picked through `historySegment`
         }
+    }
+
+    /// The History tab's first view: Progress for `-open progress` in demo mode, Sessions otherwise.
+    var historySegment: HistorySegment {
+        isDemo && opening == .progress ? .progress : .sessions
     }
 
     /// `-open import` in demo mode: the shell opens the import flow with the made-up sample note already read.

@@ -14,13 +14,19 @@ import Testing
     let router = RecordingNavigator()
     let importFlow = RecordingImportFlow()
 
-    func makeViewModel(_ repository: FakeSessionRepository) -> HistoryViewModel {
+    func makeViewModel(
+        _ repository: FakeSessionRepository,
+        library: [Exercise] = ExerciseLibrary.seed,
+        segment: HistorySegment = .sessions
+    ) -> HistoryViewModel {
         HistoryViewModel(
             sessions: repository,
+            exercises: FakeExerciseRepository(emissions: [library]),
             router: router,
             importFlow: importFlow,
             now: SessionBuilder.now,
-            calendar: SessionBuilder.calendar
+            calendar: SessionBuilder.calendar,
+            segment: segment
         )
     }
 

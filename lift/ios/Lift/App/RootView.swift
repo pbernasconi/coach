@@ -45,7 +45,12 @@ private struct AppShell: View {
         Group {
             if isReady {
                 TabShell(tabs: tabs, selection: $tab) { tab in
-                    TabStack(tab: tab, dependencies: dependencies, initialPath: initialPath(for: tab))
+                    TabStack(
+                        tab: tab,
+                        dependencies: dependencies,
+                        initialPath: initialPath(for: tab),
+                        historySegment: options.historySegment
+                    )
                 }
                 .koboModalPage(item: importRequest, style: .sheet) { request in
                     ImportFlowPage(request: request, dependencies: dependencies)
@@ -106,15 +111,19 @@ private struct TabStack: View {
     @State private var router: TabRouter
     @State private var toasts = ToastCenter()
 
-    init(tab: AppTab, dependencies: AppDependencies, initialPath: [AppRoute]) {
+    /// The History tab's first view: Sessions, or Progress for `-open progress`.
+    let historySegment: HistorySegment
+
+    init(tab: AppTab, dependencies: AppDependencies, initialPath: [AppRoute], historySegment: HistorySegment) {
         self.tab = tab
         self.dependencies = dependencies
+        self.historySegment = historySegment
         _router = State(initialValue: TabRouter(path: initialPath))
     }
 
     var body: some View {
         NavigationStack(path: $router.path) {
-            TabRootScreen(tab: tab, dependencies: dependencies, router: router)
+            TabRootScreen(tab: tab, dependencies: dependencies, router: router, historySegment: historySegment)
                 .navigationDestination(for: AppRoute.self) { route in
                     RouteScreen(route: route, dependencies: dependencies, router: router, toasts: toasts)
                 }
@@ -128,6 +137,7 @@ private struct TabRootScreen: View {
     let tab: AppTab
     let dependencies: AppDependencies
     let router: any Navigating
+    let historySegment: HistorySegment
 
     var body: some View {
         switch tab {
@@ -147,10 +157,12 @@ private struct TabRootScreen: View {
             HistoryScreen(
                 viewModel: HistoryViewModel(
                     sessions: dependencies.sessions,
+                    exercises: dependencies.exercises,
                     router: router,
                     importFlow: dependencies.importFlow,
                     now: dependencies.now,
-                    calendar: dependencies.calendar
+                    calendar: dependencies.calendar,
+                    segment: historySegment
                 )
             )
         case .exercises:
