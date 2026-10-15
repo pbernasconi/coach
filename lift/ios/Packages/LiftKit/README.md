@@ -1,8 +1,8 @@
 # LiftKit
 
-The local Swift package for Lift (`IOS_GUIDELINES.md` LAY-2). Today it has one target, `LiftCore`: the pure
-domain core. It uses Foundation only, with no SwiftUI, no I/O and no logging, so it builds and tests on macOS,
-iOS and Linux.
+The local Swift package for Lift (`IOS_GUIDELINES.md` LAY-2). `LiftCore` is the pure domain core. It uses
+Foundation only, with no SwiftUI, no I/O and no logging, so it builds and tests on macOS, iOS and Linux.
+`LiftStore` is the GRDB persistence layer (see below) and `LiftTesting` holds test helpers and fakes.
 
 ## What's in LiftCore
 
@@ -27,6 +27,22 @@ Unchecked `- [ ]` sets get `actual = nil`: in a session before the reference day
 and in today's session they count as planned. A plain set line with no checkbox counts as done.
 `ExerciseMatcher` only accepts exact matches after normalization: the name, an alias, or the same words in
 another order. Anything weaker returns nil. The importer always keeps `displayName`.
+
+## What's in LiftStore
+
+GRDB 7 (pinned exactly) on SQLite. `LiftDatabase.onDisk(at:)` / `.inMemory()` open and migrate.
+
+- **Schema** (`Database/`): `LiftMigrations` lists every migration; `SchemaV1` creates `exercise`, `session`
+  (`day` is "YYYY-MM-DD" text), `sessionExercise`, `workoutSet` and `outbox`. Every synced row has a UUID
+  `id`, `createdAt`, `updatedAt` and a `deletedAt` tombstone. Sets keep target and actual, with `unit`,
+  `loadMode` and `status` (planned | done | skipped) on the row.
+- **Repositories** (`Repositories/` protocols, `Live/` GRDB implementations): `ExerciseRepository`,
+  `SessionRepository` (including move / push a week / remove with `undo`), `SetRepository`, `OutboxRepository`.
+  Reads are `AsyncStream`s over `ValueObservation`; every write is one transaction that changes one row and
+  appends one outbox entry with the full row as JSON and an idempotency key. `now` and `makeID` are injected.
+- **Product rule:** `SetRepository.saveValues` (Done in the editor) never changes `status`; `log` is its own
+  write.
+- **Demo:** `DemoSeeder` writes a made-up block (Lower A / Upper A) through the same repositories.
 
 ## Test
 

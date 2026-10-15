@@ -5,10 +5,7 @@ import GRDB
 /// dates as GRDB writes them ("yyyy-MM-dd HH:mm:ss.SSS", UTC).
 enum OutboxPayload {
     static func json(for record: some EncodableRecord) throws -> String {
-        let columns = try record.databaseDictionary.mapValues(JSONScalar.init)
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
-        return String(decoding: try encoder.encode(columns), as: UTF8.self)
+        try JSONText.encode(record.databaseDictionary.mapValues(JSONScalar.init))
     }
 }
 

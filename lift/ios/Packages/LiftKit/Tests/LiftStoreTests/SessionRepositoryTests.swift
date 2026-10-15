@@ -25,7 +25,12 @@ import Testing
         let store = try TestStore.make()
         var stream = store.sessions.observeSessions(from: week.first, through: week.last).makeAsyncIterator()
         #expect(await stream.next() == [])
-        let session = try await store.sessions.createSession(on: week.last, title: "Upper A", unit: .kg, templateID: nil)
+        let session = try await store.sessions.createSession(
+            on: week.last,
+            title: "Upper A",
+            unit: .kg,
+            templateID: nil
+        )
         #expect(await stream.next()?.map(\.session) == [session])
         _ = try await store.sessions.addExercise(ExerciseSlot(exercise: Fixtures.squat), to: session.id)
         #expect(await stream.next()?.first?.items.map(\.exercise.displayName) == ["Back squat"])
@@ -35,7 +40,12 @@ import Testing
         let store = try TestStore.make()
         let late = try await store.sessions.createSession(on: week.last, title: "B", unit: .kg, templateID: nil)
         let early = try await store.sessions.createSession(on: week.first, title: "A", unit: .kg, templateID: nil)
-        _ = try await store.sessions.createSession(on: week.last.adding(days: 1), title: "C", unit: .kg, templateID: nil)
+        _ = try await store.sessions.createSession(
+            on: week.last.adding(days: 1),
+            title: "C",
+            unit: .kg,
+            templateID: nil
+        )
         var stream = store.sessions.observeSessions(from: week.first, through: week.last).makeAsyncIterator()
         #expect(await stream.next()?.map(\.id) == [early.id, late.id])
     }

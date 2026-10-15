@@ -15,7 +15,12 @@ extension TestStore {
 
     /// A kg session on `Fixtures.monday` with one squat slot, outbox drained.
     func sessionWithSquat(unit: WeightUnit = .kg) async throws -> (SessionRecord, SessionExerciseRecord) {
-        let session = try await sessions.createSession(on: Fixtures.monday, title: "Lower A", unit: unit, templateID: nil)
+        let session = try await sessions.createSession(
+            on: Fixtures.monday,
+            title: "Lower A",
+            unit: unit,
+            templateID: nil
+        )
         let slot = try await sessions.addExercise(ExerciseSlot(exercise: Fixtures.squat), to: session.id)
         try await drainOutbox()
         return (session, slot)
