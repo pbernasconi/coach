@@ -33,6 +33,8 @@ final class AppDependencies {
     /// The preferred weight unit; Settings changes it, and new sessions and templates read it when they are made.
     let units: any UnitPreference
     private let baseInfo: AppInfo
+    /// The gym's bars, plates and collars; the Workout screen and planned barbell loads read it.
+    let gym: any GymPreference
     /// The clipboard, for the import flow's Paste button.
     let pasteboard: any TextPasteboard
     /// The local changes waiting to be pushed; the sync coordinator watches its count.
@@ -62,6 +64,7 @@ final class AppDependencies {
         calendar: Calendar,
         info: AppInfo,
         units: any UnitPreference,
+        gym: any GymPreference,
         pasteboard: any TextPasteboard,
         outbox: any OutboxRepository,
         sync: any Syncing,
@@ -81,6 +84,7 @@ final class AppDependencies {
         self.calendar = calendar
         self.baseInfo = info
         self.units = units
+        self.gym = gym
         self.pasteboard = pasteboard
         self.outbox = outbox
         self.sync = sync
