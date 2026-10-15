@@ -52,6 +52,19 @@ import Testing
         try queue.write { db in try db.execute(sql: insert, arguments: ["kg"]) }
     }
 
+    @Test func foreignKeysAreEnforcedOnParentLinks() async throws {
+        let database = try LiftDatabase.inMemory()
+        let enabled = try await database.writer.read { db in try Bool.fetchOne(db, sql: "PRAGMA foreign_keys") }
+        #expect(enabled == true)
+        let orphan = """
+            INSERT INTO sessionExercise (id, sessionID, position, displayName, loadMode, createdAt, updatedAt)
+            VALUES (x'02', x'99', 0, 'Orphan', 'total', '2026-03-02 09:00:00.000', '2026-03-02 09:00:00.000')
+            """
+        await #expect(throws: DatabaseError.self) {
+            try await database.writer.write { db in try db.execute(sql: orphan) }
+        }
+    }
+
     @Test func sessionDayQueryUsesThePartialIndex() throws {
         let database = try LiftDatabase.inMemory()
         let plan = try database.writer.read { db in
