@@ -5,10 +5,13 @@ import UIKit
 
 /// A small rounded still of an exercise for list rows: a skeleton while it loads, a figure symbol when it cannot.
 /// The 180 px still is downsampled off the main actor to the pixels the tile needs. In light mode the still multiplies
-/// onto the tile, so its white background takes the tile's colour.
+/// onto the tile, so its white background takes the tile's colour; in dark mode the white tile is dimmed a little, as on
+/// the exercise screens.
 struct ExerciseThumbnail: View {
     /// The tile in compact rows.
     static let compactSide = Size.thumbnail - Space.lg
+    /// How much of the white still shows in dark mode: enough to read the drawing, without glare.
+    static let darkOpacity = 0.86
 
     @Environment(\.displayScale) private var displayScale
     @Environment(\.colorScheme) private var colorScheme
@@ -41,6 +44,7 @@ struct ExerciseThumbnail: View {
                         .scaledToFill()
                         .blendMode(colorScheme == .light ? .multiply : .normal)
                 }
+                .opacity(colorScheme == .dark ? Self.darkOpacity : 1)
             } else if decoded?.data == data {
                 Thumbnail(systemName: "figure.strengthtraining.traditional", side: side)
             } else {
