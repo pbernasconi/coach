@@ -26,6 +26,9 @@ settings:
     # The coach web app's origin for sync (https://…), copied into Info.plist as LiftSyncBaseURL. Empty keeps sync
     # off; the TestFlight job can pass it (xcodebuild LIFT_SYNC_BASE_URL=https://…). Demo data never syncs.
     LIFT_SYNC_BASE_URL: ""
+    # The App Group the app shares with LiftWidgets (the rest Live Activity's +30s and Skip). Each target's
+    # entitlements and Info.plist (LiftAppGroup) take it from here.
+    LIFT_APP_GROUP: group.$(LIFT_BUNDLE_ID)
 targets:
   Lift:
     type: application
@@ -42,6 +45,10 @@ targets:
       - package: Kobo
         products: [KoboTokens, KoboComponents, KoboPatterns]
       - target: LiftWidgets                           # embedded in PlugIns/; draws the rest Live Activity
+    entitlements:
+      path: Lift/Lift.entitlements
+      properties:
+        com.apple.security.application-groups: [$(LIFT_APP_GROUP)]
     info:
       path: Lift/Info.plist
       properties:
@@ -51,20 +58,32 @@ targets:
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         ITSAppUsesNonExemptEncryption: false
         LiftSyncBaseURL: $(LIFT_SYNC_BASE_URL)
+        LiftAppGroup: $(LIFT_APP_GROUP)
   LiftWidgets:
     type: app-extension
     platform: iOS
     sources:
       - LiftWidgets
-      # The Live Activity's attributes, compiled by both the app and the extension.
+      # Compiled by both the app and the extension: the Live Activity's attributes, and the +30s and Skip intents with
+      # the shared rest they change.
       - Lift/Features/Workout/LiveActivity/RestActivityAttributes.swift
+      - Lift/Features/Workout/LiveActivity/RestSnapshot.swift
+      - Lift/Features/Workout/LiveActivity/RestSnapshotStore.swift
+      - Lift/App/RestActivityIntents.swift
+      - Lift/App/AppGroup.swift
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(LIFT_BUNDLE_ID).widgets   # must start with the app's bundle id
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: $(inherited) LIFT_EXTENSION
+    entitlements:
+      path: LiftWidgets/LiftWidgets.entitlements
+      properties:
+        com.apple.security.application-groups: [$(LIFT_APP_GROUP)]
     info:
       path: LiftWidgets/Info.plist
       properties:
         CFBundleDisplayName: Lift
+        LiftAppGroup: $(LIFT_APP_GROUP)
         NSExtension: { NSExtensionPointIdentifier: com.apple.widgetkit-extension }
   LiftTests:
     type: bundle.unit-test

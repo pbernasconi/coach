@@ -1,3 +1,4 @@
+import AppIntents
 import SwiftUI
 
 /// "1:30", counting down to the end of the rest. The system updates it; the app sends no ticks.
@@ -49,7 +50,45 @@ struct RestNextSetText: View {
     }
 }
 
-/// The Lock Screen banner: exercise and set, a big countdown, the bar and the next set.
+/// +30s and Skip. Each is an App Intent the system runs in the background (`AddRestTimeIntent`, `SkipRestIntent`), so
+/// they work from the Lock Screen and the Dynamic Island without opening Lift, and the in-app rest bar follows them.
+struct RestActivityButtons: View {
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Button(intent: AddRestTimeIntent()) {
+                Text("+30s")
+            }
+            .accessibilityLabel(Text("Add 30 seconds"))
+            Button(intent: SkipRestIntent()) {
+                Text("Skip")
+            }
+            .accessibilityLabel(Text("Skip rest"))
+        }
+        .font(.subheadline.weight(.semibold))
+        .buttonStyle(.bordered)
+        .buttonBorderShape(.capsule)
+        .controlSize(.small)
+        .tint(WidgetColors.accentText(for: colorScheme))
+        .fixedSize()
+    }
+}
+
+/// The next set beside the buttons, or the buttons alone after the last planned set.
+struct RestNextSetRow: View {
+    let state: RestActivityAttributes.ContentState
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 8) {
+            RestNextSetText(state: state)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            RestActivityButtons()
+        }
+    }
+}
+
+/// The Lock Screen banner: exercise and set, a big countdown, the bar, then the next set beside +30s and Skip.
 struct RestLockScreenView: View {
     @Environment(\.colorScheme) private var colorScheme
     let attributes: RestActivityAttributes
@@ -75,7 +114,7 @@ struct RestLockScreenView: View {
                     .frame(maxWidth: 120, alignment: .trailing)
             }
             RestProgressBar(state: state)
-            RestNextSetText(state: state)
+            RestNextSetRow(state: state)
         }
         .padding(16)
     }
@@ -99,14 +138,14 @@ struct RestExpandedLeading: View {
     }
 }
 
-/// The expanded Dynamic Island's bottom region: the bar and the next set.
+/// The expanded Dynamic Island's bottom region: the bar, then the next set beside +30s and Skip.
 struct RestExpandedBottom: View {
     let state: RestActivityAttributes.ContentState
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             RestProgressBar(state: state)
-            RestNextSetText(state: state)
+            RestNextSetRow(state: state)
         }
         .padding(.horizontal, 4)
     }

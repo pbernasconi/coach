@@ -9,11 +9,28 @@ protocol RestActivityController: AnyObject {
     func update(endsAt: Date, totalSeconds: Int)
     /// Removes the rest from the Lock Screen and the Dynamic Island at once.
     func end()
+    /// The rest as it stands outside the app: the Live Activity's +30s and Skip change it while Lift is in the
+    /// background. Nil when there is none (it was skipped there, or ended).
+    func currentRest() -> RestSnapshot?
 }
 
-/// Used when Live Activities are turned off for Lift: the rest shows in the app only.
+/// Used when Live Activities are turned off for Lift: the rest shows in the app only, so only the app changes it.
 final class DisabledRestActivityController: RestActivityController {
-    func start(_: RestActivityAttributes, state _: RestActivityAttributes.ContentState) {}
-    func update(endsAt _: Date, totalSeconds _: Int) {}
-    func end() {}
+    private var rest: RestSnapshot?
+
+    func start(_: RestActivityAttributes, state: RestActivityAttributes.ContentState) {
+        rest = RestSnapshot(endsAt: state.endsAt, totalSeconds: state.totalSeconds)
+    }
+
+    func update(endsAt: Date, totalSeconds: Int) {
+        rest = RestSnapshot(endsAt: endsAt, totalSeconds: totalSeconds)
+    }
+
+    func end() {
+        rest = nil
+    }
+
+    func currentRest() -> RestSnapshot? {
+        rest
+    }
 }
