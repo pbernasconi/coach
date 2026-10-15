@@ -11,7 +11,7 @@ struct WeekSessionList: View {
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                VStack(alignment: .leading, spacing: Space.xl) {
+                VStack(alignment: .leading, spacing: Space.section) {
                     content
                 }
                 .pageColumn()
@@ -47,7 +47,8 @@ struct WeekSessionList: View {
     }
 }
 
-/// One day: its header (accented and marked when selected) and its sessions, or a plain line when it has none.
+/// One day: its header (accented and marked when selected) and its sessions, or a quiet placeholder row when it has
+/// none.
 private struct WeekDaySectionView: View {
     @Environment(\.koboTheme) private var theme
     let section: WeekDaySection
@@ -56,7 +57,8 @@ private struct WeekDaySectionView: View {
     var body: some View {
         ListSection {
             if section.sessions.isEmpty {
-                ListRow("Nothing planned")
+                ListRow("Nothing planned", subtitle: "Rest day") { WeekRowMark(kind: .empty) }
+                    .listRowEmphasis(.quiet)
             }
             ForEach(section.sessions) { session in
                 WeekSessionRow(session: session, send: send)
@@ -69,13 +71,15 @@ private struct WeekDaySectionView: View {
     private var header: some View {
         HStack(spacing: Space.xs) {
             if section.isSelected {
+                // A fill, so the bright accent, like the strip's day dots; the title beside it is text (accentText).
                 Image(systemName: "circle.fill")
                     .imageScale(.small)
+                    .foregroundStyle(theme.palette.accent)
                     .accessibilityHidden(true)
             }
             Text(verbatim: section.title)
+                .foregroundStyle(section.isSelected ? theme.palette.accentText : theme.palette.textSecondary)
         }
-        .foregroundStyle(section.isSelected ? theme.palette.accentText : theme.palette.textSecondary)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(section.isSelected ? .isSelected : [])
     }
