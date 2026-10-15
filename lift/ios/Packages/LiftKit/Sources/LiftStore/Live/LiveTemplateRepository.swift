@@ -43,7 +43,7 @@ public struct LiveTemplateRepository: TemplateRepository {
         let store = store
         return try await store.transaction { db, stamp in
             _ = try TemplateQueries.liveTemplate(db, id: templateID)
-            let builder = SessionBuilder(store: store, db: db, stamp: stamp)
+            let builder = SessionBuilder(store: store, db: db, stamp: stamp, gym: .standard)  // history only
             let last = try builder.history(of: exercise.id).last
             let slot = SlotPlanner.slot(id: store.makeID(), exercise: exercise, last: last)
             let record = TemplateExerciseRecord(
