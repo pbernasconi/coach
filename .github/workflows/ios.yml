@@ -51,24 +51,17 @@ jobs:
       - name: Lint
         run: ios-standards/scripts/lint-all.sh
 
-  macos:
-    # One macOS job (macOS minutes are billed at 10x and rounded up per job): Kobo's tests with the real SwiftUI
-    # SDK, LiftKit's tests, then the app: generate the Xcode project, build, run its unit tests on a simulator, and
-    # capture demo-mode screenshots (light, dark, AX3) as a downloadable artifact. The app build also compiles
-    # Kobo for iOS. Later steps run even when an earlier one fails, so one push reports every problem.
+  kobo:
+    # Kobo tests with the real SwiftUI SDK (macOS).
     runs-on: macos-26
-    timeout-minutes: 75
+    timeout-minutes: 30
     concurrency:
-      group: ios-macos-${{ github.ref }}
+      group: ios-kobo-${{ github.ref }}
       cancel-in-progress: true
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
         with:
           persist-credentials: false
-      - name: Toolchain
-        run: |
-          xcodebuild -version
-          swift --version
       - name: Kobo tests (macOS)
         working-directory: ios-standards/Kobo
         run: |
@@ -79,8 +72,19 @@ jobs:
           grep -E "(error|warning):|✘|recorded an issue" ../../kobo-macos.log | grep -v "^ *|" | sort -u | head -n 150 || true
           echo "::endgroup::"
           exit "$status"
+
+  liftkit:
+    # LiftKit tests (domain, store, sync) on macOS.
+    runs-on: macos-26
+    timeout-minutes: 30
+    concurrency:
+      group: ios-liftkit-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+        with:
+          persist-credentials: false
       - name: LiftKit tests
-        if: ${{ !cancelled() }}
         working-directory: lift/ios/Packages/LiftKit
         run: |
           status=0
@@ -90,14 +94,25 @@ jobs:
           grep -E "(error|warning):|✘|recorded an issue" ../../../../liftkit.log | grep -v "^ *|" | sort -u | head -n 150 || true
           echo "::endgroup::"
           exit "$status"
+
+  app:
+    # The app: generate the Xcode project, build, run unit tests on a simulator, and capture demo screenshots
+    # (light, dark, AX3). It also compiles Kobo for iOS.
+    runs-on: macos-26
+    timeout-minutes: 60
+    concurrency:
+      group: ios-app-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+        with:
+          persist-credentials: false
       - name: Generate the Xcode project
-        if: ${{ !cancelled() }}
         working-directory: lift/ios
         run: |
           command -v xcodegen >/dev/null || brew install xcodegen
           xcodegen generate
       - name: Build and unit test
-        if: ${{ !cancelled() }}
         working-directory: lift/ios
         run: |
           udid="$(scripts/simulator.sh)"
