@@ -43,7 +43,7 @@ enum CatalogSamples {
 }
 
 /// A made-up place for list demos.
-struct CatalogPlace: Identifiable, Equatable, Sendable {
+nonisolated struct CatalogPlace: Identifiable, Equatable, Sendable {
     let id: String
     let name: String
     let detail: String

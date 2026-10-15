@@ -62,7 +62,7 @@ enum DemoPhase: String, CaseIterable, Identifiable {
     }
 }
 
-struct DemoItem: Identifiable, Equatable, Sendable {
+nonisolated struct DemoItem: Identifiable, Equatable, Sendable {
     let name: String
     var id: String { name }
 }
