@@ -3,7 +3,7 @@ import Foundation
 /// One cleaned line of a note, classified by shape only (no context).
 enum NoteLine: Equatable {
     case blank
-    /// Dashes or em-dashes only (`—-`, `---`). Not a session boundary by itself.
+    /// Dashes or em-dashes only (`—`, `—-`, `---`). Not a session boundary by itself.
     case separator
     case title(SessionTitle)
     /// `Warmup`, optionally with inline text (`Warmup: 10 min bike`).
@@ -27,7 +27,7 @@ enum NoteLine: Equatable {
     }
 
     private static func isSeparator(_ line: String) -> Bool {
-        line.count >= 2 && line.allSatisfy { "-—–_=~".contains($0) }
+        line.allSatisfy { "-—–_=~".contains($0) }
     }
 
     private static func checklist(_ line: String) -> NoteLine? {

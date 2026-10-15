@@ -5,7 +5,7 @@ import SwiftUI
 /// A row of capsule segments showing progress toward a goal (for example "2 of 4 workouts this week").
 /// VoiceOver reads the label and "x of y".
 ///
-///     SegmentedProgress(done: 2, planned: 1, required: 3, goal: 4, accessibilityLabel: "Weekly goal")
+///     SegmentedProgress(done: 2, planned: 1, minimum: 3, goal: 4, accessibilityLabel: "Weekly goal")
 public struct SegmentedProgress: View {
     @Environment(\.craftTheme) private var theme
     @ScaledMetric(relativeTo: .body) private var height = Space.sm
@@ -17,9 +17,9 @@ public struct SegmentedProgress: View {
         self.accessibilityLabel = accessibilityLabel
     }
 
-    public init(done: Int, planned: Int = 0, required: Int = 0, goal: Int, accessibilityLabel: LocalizedStringKey) {
+    public init(done: Int, planned: Int = 0, minimum: Int = 0, goal: Int, accessibilityLabel: LocalizedStringKey) {
         self.init(
-            segments: ProgressSegment.segments(done: done, planned: planned, required: required, goal: goal),
+            segments: ProgressSegment.segments(done: done, planned: planned, minimum: minimum, goal: goal),
             accessibilityLabel: accessibilityLabel
         )
     }
@@ -64,7 +64,7 @@ public struct SegmentedProgress: View {
                     SegmentedProgress(segments: [segment, segment, segment], accessibilityLabel: "Sample")
                 }
                 Text("2 done, 1 planned, required 3, goal 4")
-                SegmentedProgress(done: 2, planned: 1, required: 3, goal: 4, accessibilityLabel: "Weekly goal")
+                SegmentedProgress(done: 2, planned: 1, minimum: 3, goal: 4, accessibilityLabel: "Weekly goal")
                 Text("Goal passed")
                 SegmentedProgress(done: 5, goal: 3, accessibilityLabel: "Weekly goal")
             }

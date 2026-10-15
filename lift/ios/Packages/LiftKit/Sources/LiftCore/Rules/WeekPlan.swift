@@ -15,7 +15,8 @@ public enum WeekPlan {
             done: done,
             planned: planned,
             required: max(0, minimum - done - planned),
-            goal: max(goal ?? minimum, minimum)
+            goal: max(goal ?? minimum, minimum),
+            minimum: minimum
         )
     }
 

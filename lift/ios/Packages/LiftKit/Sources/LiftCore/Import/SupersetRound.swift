@@ -21,14 +21,18 @@ struct SupersetRound: Equatable {
         }
         let trailing = tail.count > 1 ? tail[1] : ""
         let rest = NoteHintParser.restSeconds(in: trailing)
-        return SupersetRound(members: members, restSeconds: rest, note: rest == nil ? SetLineParser.tidy(trailing) : nil)
+        return SupersetRound(
+            members: members,
+            restSeconds: rest,
+            note: rest == nil ? SetLineParser.tidy(trailing) : nil
+        )
     }
 
     /// The member names, normalized, to tell whether two rounds belong to the same superset.
     var keys: [String] { members.map { NameNormalizer.key($0.name) } }
 
     private static func member(_ part: String) -> SupersetMember? {
-        guard let match = part.wholeMatch(of: /(?<name>.*?\p{L}.*?)\s+(?<set>\d.*)/),
+        guard let match = part.wholeMatch(of: /(?<name>\p{L}.*?)\s+(?<set>\d.*)/),
             let set = SetLineParser.parse(String(match.output.set))
         else { return nil }
         return SupersetMember(name: String(match.output.name), set: set)

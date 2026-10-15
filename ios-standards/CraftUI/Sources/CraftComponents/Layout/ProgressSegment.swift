@@ -13,16 +13,18 @@ public nonisolated enum ProgressSegment: Hashable, Sendable, CaseIterable, Ident
 
     public var id: Self { self }
 
-    /// Builds segments for a goal: done first, then planned, then required up to `required`, then optional.
-    /// Shows at least `goal` segments, and more when `done` passes the goal.
-    public static func segments(done: Int, planned: Int = 0, required: Int = 0, goal: Int) -> [ProgressSegment] {
+    /// Builds segments for a goal: done first, then planned, then required until `minimum` is reached, then
+    /// optional. Shows at least `goal` segments, and more when `done` passes the goal.
+    ///
+    ///     segments(done: 1, planned: 0, minimum: 2, goal: 3)  // [.done, .required, .optional]
+    public static func segments(done: Int, planned: Int = 0, minimum: Int = 0, goal: Int) -> [ProgressSegment] {
         let done = max(0, done)
         let planned = max(0, planned)
         let count = max(goal, done, 0)
         return (0..<count).map { index in
             if index < done { return .done }
             if index < done + planned { return .planned }
-            if index < required { return .required }
+            if index < minimum { return .required }
             return .optional
         }
     }

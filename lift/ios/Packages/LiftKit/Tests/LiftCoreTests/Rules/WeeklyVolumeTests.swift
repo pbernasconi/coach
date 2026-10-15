@@ -29,13 +29,16 @@ import Testing
     }
 
     @Test func countsPrimaryAsOneAndSecondaryAsHalf() {
-        let squat = Self.exercise(1, [
-            TestCalendar.done(10, .lb(45), kind: .warmUp),
-            TestCalendar.done(5, .lb(225)),
-            TestCalendar.done(5, .lb(225), kind: .failure),
-            TestCalendar.done(8, .lb(185), kind: .drop),
-            LoggedSet(id: TestCalendar.id(5), target: SetTarget(reps: 5), isSkipped: true),
-        ])
+        let squat = Self.exercise(
+            1,
+            [
+                TestCalendar.done(10, .lb(45), kind: .warmUp),
+                TestCalendar.done(5, .lb(225)),
+                TestCalendar.done(5, .lb(225), kind: .failure),
+                TestCalendar.done(8, .lb(185), kind: .drop),
+                LoggedSet(id: TestCalendar.id(5), target: SetTarget(reps: 5), isSkipped: true),
+            ]
+        )
         let unknown = Self.exercise(nil, [TestCalendar.done(10, .lb(20))])
         let volume = WeeklyVolume.volume(sessions: [Self.session([squat, unknown])], library: ExerciseLibrary.seed)
         let byMuscle = Dictionary(uniqueKeysWithValues: volume.map { ($0.muscle, $0.hardSets) })
@@ -49,7 +52,10 @@ import Testing
 
     @Test func ignoresDeletedSessionsAndEmptyInput() {
         let bench = Self.exercise(5, Array(repeating: TestCalendar.done(5, .lb(135)), count: 12))
-        let volume = WeeklyVolume.volume(sessions: [Self.session([bench], deleted: true)], library: ExerciseLibrary.seed)
+        let volume = WeeklyVolume.volume(
+            sessions: [Self.session([bench], deleted: true)],
+            library: ExerciseLibrary.seed
+        )
         #expect(volume.allSatisfy { $0.hardSets == 0 && $0.status == .below })
         #expect(WeeklyVolume.volume(sessions: [], library: []).count == Muscle.allCases.count)
     }

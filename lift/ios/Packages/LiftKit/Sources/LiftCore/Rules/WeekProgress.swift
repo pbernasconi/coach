@@ -10,15 +10,15 @@ public struct WeekProgress: Hashable, Sendable {
     public let required: Int
     /// Segments to show: the goal, never below the minimum.
     public let goal: Int
+    /// The weekly minimum; pass it to `SegmentedProgress(done:planned:minimum:goal:)`.
+    public let minimum: Int
 
-    public init(done: Int, planned: Int, required: Int, goal: Int) {
+    public init(done: Int, planned: Int, required: Int, goal: Int, minimum: Int) {
         self.done = done
         self.planned = planned
         self.required = required
         self.goal = goal
+        self.minimum = minimum
     }
 
-    /// The value for `SegmentedProgress(required:)`, which treats `required` as a position (segments
-    /// before it that are neither done nor planned are drawn as required), not as a count.
-    public var requiredThrough: Int { done + planned + required }
 }

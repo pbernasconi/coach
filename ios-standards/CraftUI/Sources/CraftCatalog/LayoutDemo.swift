@@ -61,7 +61,7 @@ struct LayoutDemo: View {
         case .dayStrip:
             DayStrip(items: sampleDays, today: today, week: $week, onSelect: { _ in })
         case .segmentedProgress:
-            SegmentedProgress(done: 1, planned: 1, required: 0, goal: 3, accessibilityLabel: "Sessions this week")
+            SegmentedProgress(done: 1, planned: 1, minimum: 2, goal: 3, accessibilityLabel: "Sessions this week")
         case .miniPlayerBar:
             MiniPlayerBar(verbatim: "Back squat", subtitle: "Set 2 of 3 · 1:24", chrome: .floating, action: {}) {
                 Image(systemName: "figure.strengthtraining.traditional").accessibilityHidden(true)
