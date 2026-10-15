@@ -4,7 +4,7 @@ import LiftCore
 
 /// GRDB-backed `SessionRepository`.
 public struct LiveSessionRepository: SessionRepository {
-    private let store: StoreWriter
+    let store: StoreWriter
 
     public init(database: LiftDatabase, now: @escaping @Sendable () -> Date, makeID: @escaping @Sendable () -> UUID) {
         store = StoreWriter(writer: database.writer, now: now, makeID: makeID)

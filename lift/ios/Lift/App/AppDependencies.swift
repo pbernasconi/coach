@@ -8,6 +8,10 @@ final class AppDependencies {
     let sessions: any SessionRepository
     let exercises: any ExerciseRepository
     let sets: any SetRepository
+    /// Day templates ("Upper A") and their exercise slots.
+    let templates: any TemplateRepository
+    /// Sessions planned from templates, with targets from progression.
+    let plans: any WorkoutPlanRepository
     /// The logged history of one exercise, for the exercise detail screen.
     let history: any ExerciseHistoryRepository
     let now: @Sendable () -> Date
@@ -35,6 +39,8 @@ final class AppDependencies {
         sessions: any SessionRepository,
         exercises: any ExerciseRepository,
         sets: any SetRepository,
+        templates: any TemplateRepository,
+        plans: any WorkoutPlanRepository,
         history: any ExerciseHistoryRepository,
         now: @escaping @Sendable () -> Date,
         clock: any Clock<Duration>,
@@ -50,6 +56,8 @@ final class AppDependencies {
         self.sessions = sessions
         self.exercises = exercises
         self.sets = sets
+        self.templates = templates
+        self.plans = plans
         self.history = history
         self.now = now
         self.clock = clock
@@ -75,7 +83,13 @@ final class AppDependencies {
             case .device:
                 _ = try await exercises.installLibrary()
             case .demo:
-                let seeder = DemoSeeder(exercises: exercises, sessions: sessions, sets: sets)
+                let seeder = DemoSeeder(
+                    exercises: exercises,
+                    sessions: sessions,
+                    sets: sets,
+                    templates: templates,
+                    plans: plans
+                )
                 try await seeder.seed(today: LocalDay(now(), calendar: calendar))
             }
         } catch {

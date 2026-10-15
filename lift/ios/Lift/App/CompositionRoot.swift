@@ -45,6 +45,8 @@ enum CompositionRoot {
             sessions: sessions,
             exercises: LiveExerciseRepository(database: database, now: now, makeID: makeID),
             sets: LiveSetRepository(database: database, now: now, makeID: makeID),
+            templates: LiveTemplateRepository(database: database, now: now, makeID: makeID),
+            plans: LiveWorkoutPlanRepository(database: database, now: now, makeID: makeID),
             history: sessions,
             now: now,
             clock: ContinuousClock(),

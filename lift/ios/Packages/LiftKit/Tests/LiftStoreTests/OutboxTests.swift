@@ -66,4 +66,15 @@ import Testing
         try await store.drainOutbox()
         #expect(await stream.next() == 0)
     }
+
+    @Test func pendingEntriesComeInWriteOrderNotIDOrder() async throws {
+        let store = try TestStore.make()
+        let template = try await store.templates.createTemplate(name: "Full")
+        let first = try await store.templates.addExercise(Fixtures.squat, to: template.id)
+        let second = try await store.templates.addExercise(Fixtures.dumbbellBench, to: template.id)
+        try await store.drainOutbox()
+        // The later row (higher id) is written first.
+        try await store.templates.reorderExercises(in: template.id, ids: [second.id, first.id])
+        #expect(try await store.pendingOutbox().map(\.rowID) == [second.id, first.id])
+    }
 }

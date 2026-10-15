@@ -45,6 +45,18 @@ nonisolated final class FakeSessionDetailRepository: SessionRepository {
         throw AppError(.unknown, detail: "not used")
     }
 
+    func restoreExercise(id _: UUID) async throws {
+        throw AppError(.unknown, detail: "not used")
+    }
+
+    func reorderExercises(in _: UUID, ids _: [UUID]) async throws {
+        throw AppError(.unknown, detail: "not used")
+    }
+
+    func finish(sessionID _: UUID) async throws -> SessionRecord {
+        throw AppError(.unknown, detail: "not used")
+    }
+
     func reschedule(_: UUID, _: RescheduleAction) async throws -> RescheduleUndo {
         throw AppError(.unknown, detail: "not used")
     }

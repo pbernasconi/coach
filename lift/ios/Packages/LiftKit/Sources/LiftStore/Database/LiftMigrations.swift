@@ -6,15 +6,17 @@ enum LiftMigrations {
     static let v1Initial = "v1_initial"
     static let v2SyncState = "v2_syncState"
     static let v3CatalogID = "v3_catalogID"
+    static let v4Templates = "v4_templates"
 
     /// Identifiers in the order they run.
-    static let all = [v1Initial, v2SyncState, v3CatalogID]
+    static let all = [v1Initial, v2SyncState, v3CatalogID, v4Templates]
 
     static var migrator: DatabaseMigrator {
         var migrator = DatabaseMigrator()
         migrator.registerMigration(v1Initial, migrate: SchemaV1.create)
         migrator.registerMigration(v2SyncState, migrate: SchemaV2.create)
         migrator.registerMigration(v3CatalogID, migrate: SchemaV3.create)
+        migrator.registerMigration(v4Templates, migrate: SchemaV4.create)
         return migrator
     }
 }

@@ -41,6 +41,16 @@ public protocol SessionRepository: Sendable {
     /// Soft-deletes a session exercise; its sets disappear with it.
     func removeExercise(id: UUID) async throws
 
+    /// Undoes `removeExercise`.
+    func restoreExercise(id: UUID) async throws
+
+    /// Puts the session's live exercises in the order of `ids`, which must hold each of them once.
+    func reorderExercises(in sessionID: UUID, ids: [UUID]) async throws
+
+    /// Marks a live session finished now. Planned sets stay planned; nothing is logged. When the start was never
+    /// stamped, it becomes the first logged set's time.
+    func finish(sessionID: UUID) async throws -> SessionRecord
+
     /// Moves, pushes or removes a live session. Returns what `undo` needs.
     func reschedule(_ sessionID: UUID, _ action: RescheduleAction) async throws -> RescheduleUndo
 

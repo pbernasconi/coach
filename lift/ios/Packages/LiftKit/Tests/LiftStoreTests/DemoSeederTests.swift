@@ -7,7 +7,13 @@ import Testing
 @Suite struct DemoSeederTests {
     private func seeded() async throws -> (TestStore, [SessionDetail]) {
         let store = try TestStore.make()
-        let seeder = DemoSeeder(exercises: store.exercises, sessions: store.sessions, sets: store.sets)
+        let seeder = DemoSeeder(
+            exercises: store.exercises,
+            sessions: store.sessions,
+            sets: store.sets,
+            templates: store.templates,
+            plans: store.plans
+        )
         let ids = try await seeder.seed(today: Fixtures.monday)
         var stream = store.sessions.observeSessions(
             from: Fixtures.monday.adding(days: -30),
@@ -41,6 +47,16 @@ import Testing
             detail.items.first { $0.exercise.exerciseID == Fixtures.squat.id }?.sets.first?.target.weight?.value
         }
         #expect(squatLoads == [80, 82.5, 85, 87.5])
+    }
+
+    @Test func upperAAndLowerATemplatesPlanEverySession() async throws {
+        let (store, details) = try await seeded()
+        var stream = store.templates.observeTemplates().makeAsyncIterator()
+        let templates = await stream.next() ?? []
+        #expect(templates.map(\.name) == ["Upper A", "Lower A"])
+        #expect(templates.map(\.exercises.count) == [3, 3])
+        let byName = Dictionary(uniqueKeysWithValues: templates.map { ($0.name, $0.id) })
+        #expect(details.allSatisfy { $0.session.templateID == byName[$0.session.title] })
     }
 
     @Test func thisWeekHasTwoPlannedSessionsTowardTheMinimum() async throws {

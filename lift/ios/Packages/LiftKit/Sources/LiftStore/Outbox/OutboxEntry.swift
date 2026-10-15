@@ -7,6 +7,8 @@ public enum OutboxEntity: String, Codable, Hashable, Sendable, CaseIterable {
     case session
     case sessionExercise
     case set
+    case template
+    case templateExercise
 }
 
 /// What happened to the row. A soft delete is `.delete`; the payload still carries the whole row.

@@ -42,7 +42,10 @@ enum DemoPlan {
         ]
     )
 
-    /// Three past weeks of two sessions, then two upcoming sessions.
+    /// The days the demo templates are made from.
+    static let days = [upper, lower]
+
+    /// Three past weeks of two sessions, then two upcoming sessions planned from the templates.
     static let slots: [Slot] = [
         Slot(dayOffset: -20, day: lower, week: 0),
         Slot(dayOffset: -17, day: upper, week: 0),
