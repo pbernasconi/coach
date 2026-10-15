@@ -1,19 +1,21 @@
 import KoboTokens
 import SwiftUI
 
-/// A list row with a checkbox: an optional leading slot (an icon, a thumbnail), the title, an optional subtitle and the
-/// box on the trailing edge. The whole row is the target and reads as one checkbox ("Wi-Fi, Fibre, Checked"),
-/// and a tap plays one toggle haptic. It is a `ListRow` underneath, so it draws its separator and press fill inside a
+/// A list row with a checkbox: an optional leading slot (an icon, a thumbnail), the title, an optional subtitle, an
+/// optional value (a count of matching items) and the box on the trailing edge. The whole row is the target and reads
+/// as one checkbox ("Wi-Fi, Fibre, Checked"), and a tap plays one toggle haptic. It is a `ListRow` underneath, so it draws its separator and press fill inside a
 /// `ListSection` and works at AX3 the same way.
 ///
 ///     CheckRow("Wi-Fi", subtitle: "Fibre", isOn: $hasWiFi) { Image(systemName: "wifi") }
 ///     CheckRow("All amenities", state: $allAmenities)
 ///     CheckRow(verbatim: item.name, isOn: $item.isPacked)
+///     CheckRow(verbatim: cuisine.name, value: "42", isOn: $isThai)
 public struct CheckRow<Leading: View>: View {
     @State private var taps = 0
     @State private var tappedOn = false
     private let title: Text
     private let subtitle: Text?
+    private let value: String?
     private let state: Binding<CheckboxState>
     private let leading: Leading
 
@@ -21,28 +23,51 @@ public struct CheckRow<Leading: View>: View {
     public init(
         _ title: LocalizedStringKey,
         subtitle: LocalizedStringKey? = nil,
+        value: String? = nil,
         isOn: Binding<Bool>,
         @ViewBuilder leading: () -> Leading
     ) {
         let subtitle = subtitle.map { Text($0) }
-        self.init(title: Text(title), subtitle: subtitle, state: KoboCheckbox.state(isOn), leading: leading())
+        let state = KoboCheckbox.state(isOn)
+        self.init(
+            title: Text(title),
+            subtitle: subtitle,
+            value: value,
+            state: state,
+            leading: leading()
+        )
     }
 
     /// A row whose title and subtitle are shown as is, with a leading slot.
     public init(
         verbatim title: String,
         subtitle: String? = nil,
+        value: String? = nil,
         isOn: Binding<Bool>,
         @ViewBuilder leading: () -> Leading
     ) {
         let subtitle = subtitle.map { Text(verbatim: $0) }
-        self.init(title: Text(verbatim: title), subtitle: subtitle, state: KoboCheckbox.state(isOn), leading: leading())
+        let state = KoboCheckbox.state(isOn)
+        self.init(
+            title: Text(verbatim: title),
+            subtitle: subtitle,
+            value: value,
+            state: state,
+            leading: leading()
+        )
     }
 
     /// The one place every initialiser lands; `SelectSheet` passes a highlighted title.
-    init(title: Text, subtitle: Text?, state: Binding<CheckboxState>, leading: Leading) {
+    init(
+        title: Text,
+        subtitle: Text?,
+        value: String? = nil,
+        state: Binding<CheckboxState>,
+        leading: Leading
+    ) {
         self.title = title
         self.subtitle = subtitle
+        self.value = value
         self.state = state
         self.leading = leading
     }
@@ -51,7 +76,7 @@ public struct CheckRow<Leading: View>: View {
         ListRow(
             title: title,
             subtitle: subtitle,
-            value: nil,
+            value: value,
             action: tap,
             leading: leading,
             trailing: CheckboxBox(state: state.wrappedValue)
@@ -82,8 +107,17 @@ extension CheckRow where Leading == EmptyView {
 
     /// A three-state row with a localized title: a parent over other rows ("All amenities"). A tap on a mixed row
     /// turns it on.
-    public init(_ title: LocalizedStringKey, subtitle: LocalizedStringKey? = nil, state: Binding<CheckboxState>) {
-        self.init(title: Text(title), subtitle: subtitle.map { Text($0) }, state: state, leading: EmptyView())
+    public init(
+        _ title: LocalizedStringKey,
+        subtitle: LocalizedStringKey? = nil,
+        state: Binding<CheckboxState>
+    ) {
+        self.init(
+            title: Text(title),
+            subtitle: subtitle.map { Text($0) },
+            state: state,
+            leading: EmptyView()
+        )
     }
 
     /// A three-state row whose title and subtitle are shown as is.
@@ -111,6 +145,7 @@ extension CheckRow where Leading == EmptyView {
                         )
                     }
                     CheckRow("Sauna", subtitle: "Ask your host", isOn: .constant(false)).disabled(true)
+                    CheckRow(verbatim: "Balcony", value: "12", isOn: .constant(true))
                 }
                 .padding(Space.gutter)
             }
@@ -136,6 +171,8 @@ extension CheckRow where Leading == EmptyView {
     }
 
     #Preview("Check row") { CheckRowGallery() }
-    #Preview("Check row · dark, Amber") { CheckRowGallery().koboTheme(.amber).preferredColorScheme(.dark) }
+    #Preview("Check row · dark, Amber") {
+        CheckRowGallery().koboTheme(.amber).preferredColorScheme(.dark)
+    }
     #Preview("Check row · AX3") { CheckRowGallery().dynamicTypeSize(.accessibility3) }
 #endif

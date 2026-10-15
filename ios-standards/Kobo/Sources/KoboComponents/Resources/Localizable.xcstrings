@@ -97,6 +97,18 @@
         }
       }
     },
+    "%lld on" : {
+      "comment" : "FilterBar Filters chip spoken value: how many filters are on (\"2 on\").",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld on"
+          }
+        }
+      }
+    },
     "%lld selected" : {
       "comment" : "MultiSelectField summary for several chosen options (\"3 selected\").",
       "extractionState" : "manual",
@@ -489,6 +501,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Expanded"
+          }
+        }
+      }
+    },
+    "Filters" : {
+      "comment" : "FilterBar leading chip that opens every filter at once.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filters"
           }
         }
       }

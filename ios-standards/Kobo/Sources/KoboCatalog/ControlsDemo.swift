@@ -17,7 +17,9 @@ struct ControlsDemo: View {
     private let places = ["Lisbon", "Kyoto", "Oaxaca", "Reykjavík", "Tallinn"].map {
         ChoiceOption($0, verbatim: $0)
     }
-    private let tagOptions = ["Work", "Home", "Errands", "Ideas"].map { ChoiceOption($0, verbatim: $0) }
+    private let tagOptions = ["Work", "Home", "Errands", "Ideas"].map {
+        ChoiceOption($0, verbatim: $0)
+    }
     private let unitOptions = ["km", "mi"].map { ChoiceOption($0, verbatim: $0) }
 
     var body: some View {
@@ -34,18 +36,35 @@ struct ControlsDemo: View {
         case .closeButton: CloseButton {}
         case .chip:
             HStack {
-                Chip(verbatim: "Selected", isSelected: true) {}; Chip(verbatim: "Not selected", isSelected: false) {}
+                Chip(verbatim: "Selected", isSelected: true) {}
+                Chip(verbatim: "Not selected", isSelected: false) {}
             }
         case .chipGroup: ChipGroup("Tags", options: tagOptions, selection: $tags)
+        case .filterBar:
+            FilterBar(activeCount: tags.isEmpty ? 0 : 1, onFilters: {}) {
+                FilterChip("Tags", selection: tags.sorted(), onClear: { tags = [] }) { tags = ["Work"] }
+                FilterChip("Place", selection: [], onClear: {}) {}
+            }
+        case .filterChip:
+            FilterChip("Tags", selection: tags.sorted(), onClear: { tags = [] }) {
+                tags = ["Work", "Home"]
+            }
         case .tag:
             HStack {
-                KoboTag(verbatim: "New", tone: .success, systemImage: "sparkles"); KoboTag(verbatim: "2 h")
+                KoboTag(verbatim: "New", tone: .success, systemImage: "sparkles")
+                KoboTag(verbatim: "2 h")
             }
         case .segmentedPicker: SegmentedPicker("Unit", selection: $unit, options: unitOptions)
         case .toggleRow:
-            ToggleRow("Focus mode", subtitle: "Silence alerts while a timer runs", systemImage: "moon", isOn: $isOn)
+            ToggleRow(
+                "Focus mode",
+                subtitle: "Silence alerts while a timer runs",
+                systemImage: "moon",
+                isOn: $isOn
+            )
         case .stepperField: StepperField("Duration", value: $minutes, in: 0...240, step: 5, unit: "min")
-        case .quickPickRow: QuickPickRow("Servings", values: [1, 2, 4, 6, 8], selection: $servings) { "\($0)" }
+        case .quickPickRow:
+            QuickPickRow("Servings", values: [1, 2, 4, 6, 8], selection: $servings) { "\($0)" }
         case .flowLayout:
             FlowLayout {
                 ForEach(places) { KoboTag(verbatim: $0.value) }

@@ -10,6 +10,8 @@ extension CatalogComponent {
         case .closeButton: "Standard close button for sheets"
         case .chip: "Selectable capsule"
         case .chipGroup: "Single, single-or-none or multiple selection from chips"
+        case .filterBar: "Scrolling filter chips with a Filters chip and active count"
+        case .filterChip: "Facet chip: names its filter, or shows the choice with a clear"
         case .tag: "Small non-interactive label with a tone"
         case .segmentedPicker: "Animated segmented control backed by a native Picker for VoiceOver"
         case .toggleRow: "Row with title, subtitle, icon and a toggle"

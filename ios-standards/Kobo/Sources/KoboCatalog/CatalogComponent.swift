@@ -31,6 +31,8 @@ nonisolated public enum CatalogComponent: String, CaseIterable, Identifiable, Se
     case closeButton = "CloseButton"
     case chip = "Chip"
     case chipGroup = "ChipGroup"
+    case filterBar = "FilterBar"
+    case filterChip = "FilterChip"
     case tag = "KoboTag"
     case segmentedPicker = "SegmentedPicker"
     case toggleRow = "ToggleRow"
