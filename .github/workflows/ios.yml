@@ -51,43 +51,81 @@ jobs:
       - name: Lint
         run: ios-standards/scripts/lint-all.sh
 
-  changes:
-    # Which parts changed, so the package tests run only when Kobo, LiftKit or this workflow changed.
-    # The app and screenshot jobs always run: they compile both packages.
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      contents: read
-      pull-requests: read  # paths-filter lists a pull request's files through the API
-    outputs:
-      packages: ${{ steps.filter.outputs.packages }}
-    steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
-        with:
-          persist-credentials: false
-      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d  # v4.0.3
-        id: filter
-        with:
-          filters: |
-            packages:
-              - "ios-standards/Kobo/**"
-              - "lift/ios/Packages/**"
-              - ".github/workflows/ios.yml"
-
-  packages:
-    # Kobo and LiftKit tests on macOS (the real SwiftUI SDK), side by side in one job: one macOS runner instead
-    # of two keeps this workflow within the five concurrent macOS jobs a free account gets.
-    needs: changes
-    if: ${{ needs.changes.outputs.packages == 'true' || github.event_name == 'workflow_dispatch' }}
+  build:
+    # Builds the app and its unit tests once (build-for-testing) and hands the products to the simulator jobs.
+    # No simulator boots here, so the cache restore and the build get the whole machine. Xcode's compilation
+    # cache (build/cas) comes from the last run and is saved after the upload, even when a later job fails.
+    # SwiftPM checkouts are not cached: restoring their 260 MB archive took longer than xcodebuild's own clone.
+    # It also compiles Kobo for iOS.
     runs-on: macos-26
-    timeout-minutes: 30
+    timeout-minutes: 45
     concurrency:
-      group: ios-packages-${{ github.ref }}-${{ github.event_name == 'workflow_dispatch' && github.run_id || 'auto' }}
+      group: ios-build-${{ github.ref }}-${{ github.event_name == 'workflow_dispatch' && github.run_id || 'auto' }}
       cancel-in-progress: true
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
         with:
           persist-credentials: false
+      - name: Generate the Xcode project
+        # XcodeGen's release binary, checked by hash: faster than brew.
+        env:
+          XCODEGEN_URL: https://github.com/yonaskolb/XcodeGen/releases/download/2.46.0/xcodegen.zip
+          XCODEGEN_SHA256: 4d9e34b62172d645eed6457cac13fc222569974098ef4ee9c3368bedf0196806
+        run: |
+          curl -fsSLo "$RUNNER_TEMP/xcodegen.zip" "$XCODEGEN_URL"
+          echo "$XCODEGEN_SHA256  $RUNNER_TEMP/xcodegen.zip" | shasum -a 256 -c -
+          unzip -q "$RUNNER_TEMP/xcodegen.zip" -d "$RUNNER_TEMP"
+          (cd lift/ios && "$RUNNER_TEMP/xcodegen/bin/xcodegen" generate)
+          echo "XCODE=$(basename "$(dirname "$(dirname "$(xcode-select -p)")")" .app)" >> "$GITHUB_ENV"
+      - name: Restore the compilation cache
+        id: cas
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: build/cas
+          key: lift-cas-${{ env.XCODE }}-${{ github.sha }}
+          restore-keys: lift-cas-${{ env.XCODE }}-
+      - name: Build for testing
+        run: lift/ios/scripts/ci-xcodebuild.sh build lift-build.log
+      - name: Pack the products
+        run: lift/ios/scripts/ci-products.sh pack "$RUNNER_TEMP/lift-products.tar.zst"
+      - name: Upload the products
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: lift-products
+          path: ${{ runner.temp }}/lift-products.tar.zst
+          compression-level: 0
+          retention-days: 1
+      - name: Save the compilation cache
+        if: ${{ !cancelled() && steps.cas.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: build/cas
+          key: lift-cas-${{ env.XCODE }}-${{ github.sha }}
+
+  test:
+    # Kobo and LiftKit tests (macOS, the real SwiftUI SDK) while the simulator boots and the build job builds,
+    # then the app's unit tests on the simulator from the build job's products. It starts with the build job
+    # rather than after it, so the simulator is ready when the products arrive.
+    runs-on: macos-26
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      actions: read  # ci-products.sh polls this run's artifacts and jobs
+    concurrency:
+      group: ios-test-${{ github.ref }}-${{ github.event_name == 'workflow_dispatch' && github.run_id || 'auto' }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+        with:
+          persist-credentials: false
+      - name: Boot a simulator in the background
+        run: |
+          udid="$(lift/ios/scripts/simulator.sh)"
+          echo "SIM_UDID=$udid" >> "$GITHUB_ENV"
+          xcrun simctl boot "$udid" > /dev/null 2>&1 &
+          # Notes how long the boot took, for the timing printed before the simulator is used.
+          (start=$SECONDS; xcrun simctl bootstatus "$udid" -b > /dev/null 2>&1
+            echo "simulator booted after $((SECONDS - start)) s, at $(date -u +%T)" > "$RUNNER_TEMP/booted") &
       - name: Kobo and LiftKit tests
         run: |
           (cd ios-standards/Kobo && swift test > "$RUNNER_TEMP/kobo.log" 2>&1) & kobo=$!
@@ -105,68 +143,28 @@ jobs:
             echo "::endgroup::"
           done
           exit "$status"
-
-  app:
-    # The app: generate the Xcode project, build for testing, run the unit tests on a simulator. It also compiles
-    # Kobo for iOS. The simulator boots while the build runs; the compilation cache is
-    # restored from the last run and saved after the build (even when tests fail). SwiftPM checkouts are not
-    # cached: restoring their 260 MB archive took longer than xcodebuild's own clone.
-    runs-on: macos-26
-    timeout-minutes: 60
-    concurrency:
-      group: ios-app-${{ github.ref }}-${{ github.event_name == 'workflow_dispatch' && github.run_id || 'auto' }}
-      cancel-in-progress: true
-    steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
-        with:
-          persist-credentials: false
-      - name: Generate the Xcode project
-        # XcodeGen's release binary, checked by hash: faster than brew, which crawls once the simulator boots.
+      - name: Wait for the build job's products
+        if: ${{ !cancelled() }}
         env:
-          XCODEGEN_URL: https://github.com/yonaskolb/XcodeGen/releases/download/2.46.0/xcodegen.zip
-          XCODEGEN_SHA256: 4d9e34b62172d645eed6457cac13fc222569974098ef4ee9c3368bedf0196806
-        run: |
-          curl -fsSLo "$RUNNER_TEMP/xcodegen.zip" "$XCODEGEN_URL"
-          echo "$XCODEGEN_SHA256  $RUNNER_TEMP/xcodegen.zip" | shasum -a 256 -c -
-          unzip -q "$RUNNER_TEMP/xcodegen.zip" -d "$RUNNER_TEMP"
-          (cd lift/ios && "$RUNNER_TEMP/xcodegen/bin/xcodegen" generate)
-      - name: Boot a simulator in the background
-        id: sim
-        run: |
-          udid="$(lift/ios/scripts/simulator.sh)"
-          echo "SIM_UDID=$udid" >> "$GITHUB_ENV"
-          xcrun simctl boot "$udid" > /dev/null 2>&1 &
-          # Notes how long the boot took, for the timing printed before the simulator is used.
-          (start=$SECONDS; xcrun simctl bootstatus "$udid" -b > /dev/null 2>&1
-            echo "simulator booted after $((SECONDS - start)) s, at $(date -u +%T)" > "$RUNNER_TEMP/booted") &
-          echo "xcode=$(basename "$(dirname "$(dirname "$(xcode-select -p)")")" .app)" >> "$GITHUB_OUTPUT"
-      - name: Restore the compilation cache
-        id: cas
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
-        with:
-          path: build/cas
-          key: lift-cas-${{ steps.sim.outputs.xcode }}-${{ github.sha }}
-          restore-keys: lift-cas-${{ steps.sim.outputs.xcode }}-
-      - name: Build for testing
-        run: lift/ios/scripts/ci-xcodebuild.sh lift-build.log build-for-testing
-      - name: Save the compilation cache
-        if: ${{ !cancelled() && steps.cas.outputs.cache-hit != 'true' }}
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
-        with:
-          path: build/cas
-          key: lift-cas-${{ steps.sim.outputs.xcode }}-${{ github.sha }}
-      - name: Unit test
+          GH_TOKEN: ${{ github.token }}
+        run: lift/ios/scripts/ci-products.sh fetch lift-products build/products
+      - name: Wait for the simulator
+        if: ${{ !cancelled() }}
         run: |
           xcrun simctl bootstatus "$SIM_UDID" -b > /dev/null
           cat "$RUNNER_TEMP/booted" || true
-          lift/ios/scripts/ci-xcodebuild.sh lift-test.log test-without-building -disableAutomaticPackageResolution \
-            -parallel-testing-enabled NO
+      - name: Unit test
+        if: ${{ !cancelled() }}
+        run: lift/ios/scripts/ci-xcodebuild.sh test lift-test.log build/products/*.xctestrun
 
   screenshots:
-    # Demo screenshots, one job per variant (light, dark, AX3), in parallel with the app job. Each builds the same
-    # way as the app job, so it gets its compilation cache; the simulator boots while the build runs.
+    # Demo screenshots, one job per variant (light, dark, AX3), from the build job's products. Like the test job
+    # it starts with the build job and boots its simulator while it waits.
     runs-on: macos-26
-    timeout-minutes: 60
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      actions: read  # ci-products.sh polls this run's artifacts and jobs
     strategy:
       fail-fast: false
       matrix:
@@ -178,18 +176,7 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
         with:
           persist-credentials: false
-      - name: Generate the Xcode project
-        # XcodeGen's release binary, checked by hash: faster than brew, which crawls once the simulator boots.
-        env:
-          XCODEGEN_URL: https://github.com/yonaskolb/XcodeGen/releases/download/2.46.0/xcodegen.zip
-          XCODEGEN_SHA256: 4d9e34b62172d645eed6457cac13fc222569974098ef4ee9c3368bedf0196806
-        run: |
-          curl -fsSLo "$RUNNER_TEMP/xcodegen.zip" "$XCODEGEN_URL"
-          echo "$XCODEGEN_SHA256  $RUNNER_TEMP/xcodegen.zip" | shasum -a 256 -c -
-          unzip -q "$RUNNER_TEMP/xcodegen.zip" -d "$RUNNER_TEMP"
-          (cd lift/ios && "$RUNNER_TEMP/xcodegen/bin/xcodegen" generate)
       - name: Boot a simulator in the background
-        id: sim
         run: |
           udid="$(lift/ios/scripts/simulator.sh)"
           echo "SIM_UDID=$udid" >> "$GITHUB_ENV"
@@ -197,23 +184,18 @@ jobs:
           # Notes how long the boot took, for the timing printed before the simulator is used.
           (start=$SECONDS; xcrun simctl bootstatus "$udid" -b > /dev/null 2>&1
             echo "simulator booted after $((SECONDS - start)) s, at $(date -u +%T)" > "$RUNNER_TEMP/booted") &
-          echo "xcode=$(basename "$(dirname "$(dirname "$(xcode-select -p)")")" .app)" >> "$GITHUB_OUTPUT"
-      - name: Restore the compilation cache
-        id: cas
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
-        with:
-          path: build/cas
-          key: lift-cas-${{ steps.sim.outputs.xcode }}-${{ github.sha }}
-          restore-keys: lift-cas-${{ steps.sim.outputs.xcode }}-
-      - name: Build
-        run: lift/ios/scripts/ci-xcodebuild.sh lift-build.log build-for-testing
-      - name: Screenshots
+      - name: Wait for the build job's products
         env:
-          VARIANTS: ${{ matrix.variant }}
+          GH_TOKEN: ${{ github.token }}
+        run: lift/ios/scripts/ci-products.sh fetch lift-products build/products
+      - name: Wait for the simulator
         run: |
           xcrun simctl bootstatus "$SIM_UDID" -b > /dev/null
           cat "$RUNNER_TEMP/booted" || true
-          lift/ios/scripts/screenshots.sh build/lift/Build/Products/Debug-iphonesimulator/Lift.app screenshots
+      - name: Screenshots
+        env:
+          VARIANTS: ${{ matrix.variant }}
+        run: lift/ios/scripts/screenshots.sh build/products/Debug-iphonesimulator/Lift.app screenshots
       - name: Upload screenshots
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2

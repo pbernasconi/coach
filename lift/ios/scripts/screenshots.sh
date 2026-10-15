@@ -61,14 +61,17 @@ shoot() { # variant appearance content-size
   xcrun simctl ui "$UDID" appearance "$2"
   xcrun simctl ui "$UDID" content_size "$3"
   local entry name args
+  echo "variant $1: appearance $2, content size $3"
   for entry in $SCREENS; do
     name="${entry%%:*}"
     args="${entry#*:}"
+    local start=$SECONDS
     xcrun simctl terminate "$UDID" "$BUNDLE" 2>/dev/null || true
     # shellcheck disable=SC2086 # args are space-separated launch arguments
     xcrun simctl launch "$UDID" "$BUNDLE" -demo ${args//,/ } >/dev/null
+    local launched=$SECONDS
     settle "$OUT/$name-$1.png"
-    echo "captured $name-$1 (${SECONDS}s)"
+    echo "captured $name-$1: launch $((launched - start)) s, settle $((SECONDS - launched)) s (at ${SECONDS}s)"
   done
 }
 
