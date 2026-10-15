@@ -94,7 +94,7 @@ import Testing
         #expect(review.days.map(\.id) == [ImportHarness.dayA, ImportHarness.dayB])
         #expect(
             review.days.map(\.title) == [
-                days.shortTitle(of: ImportHarness.dayA), days.shortTitle(of: ImportHarness.dayB),
+                days.longTitle(of: ImportHarness.dayA), days.longTitle(of: ImportHarness.dayB),
             ]
         )
         let first = try #require(review.days.first?.sessions.first)

@@ -3,6 +3,10 @@ import LiftCore
 
 /// Calendar maths and day labels for the session lists. The calendar is injected, so weeks start on the person's
 /// first weekday and tests can pin the time zone and locale.
+///
+/// The one date rule for every screen: `longTitle` ("Thursday, October 15") names a day where it is a title (a
+/// screen's kicker, a section header); `shortTitle` ("Thu, Oct 15") names it inside a row, toast or caption, where
+/// space is tight; `weekTitle` heads a week. No screen formats a day any other way.
 nonisolated struct DayCalendar: Sendable {
     let calendar: Calendar
 
