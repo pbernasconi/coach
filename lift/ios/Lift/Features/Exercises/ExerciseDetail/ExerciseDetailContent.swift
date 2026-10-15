@@ -65,42 +65,26 @@ private struct ExerciseDetailBody: View {
                 }
             }
         }
-        .pageGutter()
+        .pageColumn()
         .padding(.top, Space.xs)
         .padding(.bottom, Space.xxl)
     }
 }
 
-/// The "How to" card. Its header carries "Videos", a compact link to a YouTube search in the browser or the YouTube
-/// app; nothing is embedded.
+/// The "How to" part, flat on the page like the rest. Its heading carries "Videos", a compact link to a YouTube search
+/// in the browser or the YouTube app; nothing is embedded.
 private struct HowToSection<Content: View>: View {
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let send: (ExerciseDetailAction) -> Void
     @ViewBuilder let content: Content
 
     var body: some View {
-        CardSection(padding: Space.md) {
+        DetailSection("How to") {
             content
-        } header: {
-            if dynamicTypeSize.isAccessibilitySize {
-                VStack(alignment: .leading, spacing: Space.xs) {
-                    Text("How to")
-                    videos
-                }
-            } else {
-                HStack(alignment: .center, spacing: Space.md) {
-                    Text("How to")
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    videos
-                }
-            }
+        } accessory: {
+            Button("Videos", systemImage: "play.rectangle.fill") { send(.videosTapped) }
+                .buttonStyle(.kobo(.plain, size: .compact, width: .inline))
+                .accessibilityLabel(Text("Watch technique videos"))
+                .accessibilityHint(Text("Opens a YouTube search."))
         }
-    }
-
-    private var videos: some View {
-        Button("Videos", systemImage: "play.rectangle.fill") { send(.videosTapped) }
-            .buttonStyle(.kobo(.plain, size: .compact))
-            .accessibilityLabel(Text("Watch technique videos"))
-            .accessibilityHint(Text("Opens a YouTube search."))
     }
 }

@@ -20,7 +20,8 @@ struct SettingsContent: View {
                             ChoiceOption(WeightUnit.lb, title: "Pounds (lb)"),
                         ]
                     )
-                    .padding(Space.md)
+                    .padding(.vertical, Space.sm)
+                    .pageGutter()
                 }
                 dataSection
                 SettingsSyncSection(section: state.sync, send: send)
@@ -29,7 +30,7 @@ struct SettingsContent: View {
                     ListRow("Acknowledgements", action: { send(.acknowledgementsTapped) })
                 }
             }
-            .pageGutter()
+            .pageColumn()
             .padding(.bottom, Space.xxl)
         }
         .screenCanvas()

@@ -27,7 +27,7 @@ struct HistoryContent: View {
                     }
                 }
             }
-            .pageGutter()
+            .pageColumn()
             .padding(.bottom, Space.xxl)
         }
         .screenCanvas()

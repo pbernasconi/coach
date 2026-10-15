@@ -4,8 +4,8 @@ import SwiftUI
 
 /// Sizes of the exercise overview card.
 enum ExerciseOverviewMetrics {
-    /// The card's inner padding; the media tile's corners are concentric with it.
-    static let padding = Space.md
+    /// The card's inner padding, every card's inset; the media tile's corners are concentric with it.
+    static let padding = Space.cardInset
     /// The animation's side next to the facts.
     static let mediaSide: CGFloat = 148
     /// The animation's largest side above the facts, at accessibility text sizes.
