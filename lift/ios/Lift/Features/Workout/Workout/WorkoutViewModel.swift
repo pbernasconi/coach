@@ -91,7 +91,7 @@ final class WorkoutViewModel {
 
     /// One tap logs a planned set; a logged or skipped set goes back to planned.
     private func toggleLog(_ id: UUID) -> Task<Void, Never>? {
-        guard case let (item, set)? = find(id), !inFlight.contains(id) else { return nil }
+        guard case (let item, let set)? = find(id), !inFlight.contains(id) else { return nil }
         inFlight.insert(id)
         let isPlanned = set.status == .planned
         let restSeconds = item.exercise.restSeconds ?? RestTimer.defaultSeconds
@@ -146,7 +146,7 @@ final class WorkoutViewModel {
     // MARK: Editor
 
     private func openEditor(_ id: UUID) -> Task<Void, Never>? {
-        guard case let (item, set)? = find(id) else { return nil }
+        guard case (let item, let set)? = find(id) else { return nil }
         let row = WorkoutExercise(item: item, unit: set.unit).sets.first { $0.id == id }
         let title = [row?.title, item.exercise.displayName].compactMap(\.self).joined(separator: " · ")
         state.editor = SetEditor(set: set, title: title)

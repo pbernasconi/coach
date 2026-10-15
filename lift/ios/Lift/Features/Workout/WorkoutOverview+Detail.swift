@@ -38,14 +38,14 @@ extension WorkoutExercise {
             plates: barbellWeight.map { weight in
                 WorkoutText.plates(PlateMath.load(for: weight, using: plateSet), bar: plateSet.bar)
             },
-            progression: Self.progression(item: item, working: working, unit: unit),
+            progression: Self.progression(item: item, working: working),
             sets: Self.rows(item.sets)
         )
     }
 
     /// Once every working set is logged or skipped, the next target from `Progression`; otherwise a weight the user
     /// wrote down for next time, if any.
-    private static func progression(item: SessionDetail.Item, working: [SetRecord], unit: WeightUnit) -> String? {
+    private static func progression(item: SessionDetail.Item, working: [SetRecord]) -> String? {
         let hint = item.exercise.nextTimeHint.map(WorkoutText.nextTimeHint)
         guard !working.isEmpty, working.allSatisfy({ $0.status != .planned }), let first = working.first else {
             return hint

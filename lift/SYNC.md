@@ -42,6 +42,21 @@ server as `LIFT_SYNC_TOKEN` and stored on the iPhone in the Keychain. Wrong or m
   again without effect. A change older than the stored row (by `updatedAt`) is accepted but does not
   overwrite.
 
+Server clarifications (added with the server implementation; the client contract above is unchanged):
+
+- Dates: LiftStore's `OutboxPayload` stores GRDB text (`2026-10-15 07:30:00.000`, UTC, no zone). LiftSync
+  converts that text to ISO 8601 with `Z` before it pushes. The server accepts both forms, plus ISO
+  offsets, for `updatedAt` and `deletedAt`. It stores the payload verbatim, so a pull returns whatever
+  form was pushed. ISO 8601 with `Z` is still the wire format.
+- UUIDs are compared case-insensitively. `payload.id` must equal `rowId`. Pulled `rowId`s are lower case,
+  and payloads keep the case they were pushed with.
+- A tie on `updatedAt` keeps the stored row: only a strictly newer row overwrites.
+- The whole request fails with `400` if the body isn't JSON, if `deviceId` is missing, if there are more
+  than 500 changes, or if any change lacks a UUID `idempotencyKey`. Any other problem with a single change
+  goes in `rejected` with a reason (`invalid entity`, `invalid op`, `invalid rowId`, `invalid payload`,
+  `payload.id missing or invalid`, `payload.id does not match rowId`, `payload.updatedAt missing or
+  invalid`, `payload.deletedAt invalid`, `payload too large` (over 64 KB)).
+
 Response `200`:
 
 ```json
@@ -56,6 +71,8 @@ invalid change cannot succeed). Network errors and `5xx` keep the entries for th
 `GET /api/lift/sync/pull?cursor=<string>&limit=<1…500>`
 
 - `cursor` is opaque to the client; omit it for a full pull.
+- `limit` defaults to 500. A malformed `cursor` or `limit` gets `400`. When there is nothing new, the
+  response repeats the cursor it was given (`"0"` for a full pull of an empty server).
 
 Response `200`:
 
