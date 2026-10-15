@@ -43,12 +43,13 @@ enum CompositionRoot {
         let makeID: @Sendable () -> UUID = { UUID() }
         let sessions = LiveSessionRepository(database: database, now: now, makeID: makeID)
         let mediaLoader = makeMediaLoader()
+        let gym = gym(source: source)
         return AppDependencies(
             sessions: sessions,
             exercises: LiveExerciseRepository(database: database, now: now, makeID: makeID),
             sets: LiveSetRepository(database: database, now: now, makeID: makeID),
             templates: LiveTemplateRepository(database: database, now: now, makeID: makeID),
-            plans: LiveWorkoutPlanRepository(database: database, now: now, makeID: makeID),
+            plans: LiveWorkoutPlanRepository(database: database, now: now, makeID: makeID, gym: { gym.setup }),
             history: sessions,
             now: now,
             clock: ContinuousClock(),
@@ -58,6 +59,7 @@ enum CompositionRoot {
             calendar: .autoupdatingCurrent,
             info: info(source: source),
             units: units(source: source),
+            gym: gym,
             pasteboard: SystemPasteboard(),
             outbox: LiveOutboxRepository(database: database),
             sync: makeSync(database: database, isSaved: source.isSaved, now: now, makeID: makeID),
@@ -102,6 +104,12 @@ enum CompositionRoot {
     private static func units(source: AppInfo.DataSource) -> any UnitPreference {
         guard source.isSaved else { return InMemoryUnitSettings(.kg) }
         return UserDefaultsUnitSettings.standard(fallback: localUnit)
+    }
+
+    /// The saved bars and plates on this iPhone (the defaults until changed); the defaults in memory for demo data.
+    private static func gym(source: AppInfo.DataSource) -> any GymPreference {
+        guard source.isSaved else { return InMemoryGymSettings(.standard) }
+        return UserDefaultsGymSettings.standard()
     }
 
     private static var localUnit: WeightUnit {
