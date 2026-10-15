@@ -16,6 +16,7 @@ import Testing
 
     @Test(arguments: [(28.0, 8.0, 20.0), (10.0, 12.0, 0.0)])
     func concentricRadius(outer: Double, inset: Double, expected: Double) {
-        #expect(Radius.concentric(outer: outer, inset: inset) == expected)
+        let radius = Radius.concentric(outer: CGFloat(outer), inset: CGFloat(inset))
+        #expect(Double(radius) == expected)
     }
 }
