@@ -1,0 +1,7 @@
+# Words the Notes importer must recognise on purpose.
+[default.extend-words]
+nd = "nd"            # ordinal suffix: "2nd"
+dumbell = "dumbell"  # common misspelling mapped to "dumbbell"
+
+[files]
+extend-exclude = [".build/"]

@@ -1,0 +1,75 @@
+# XcodeGen spec: the committed source of truth (LAY-1). `scripts/generate.sh` writes the .xcodeproj (gitignored).
+name: App
+options:
+  bundleIdPrefix: com.example
+  deploymentTarget: { iOS: "26.0" }
+  createIntermediateGroups: true
+packages:
+  AppKit: { path: Packages/AppKit }
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+    SWIFT_APPROACHABLE_CONCURRENCY: "YES"
+    SWIFT_TREAT_WARNINGS_AS_ERRORS: "YES"
+    GCC_TREAT_WARNINGS_AS_ERRORS: "YES"
+    ENABLE_USER_SCRIPT_SANDBOXING: "YES"
+    TARGETED_DEVICE_FAMILY: "1"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    VERSIONING_SYSTEM: apple-generic
+    DEVELOPMENT_TEAM: ""   # set locally or via CI secret
+targets:
+  App:
+    type: application
+    platform: iOS
+    sources: [App]
+    dependencies:
+      - package: AppKit
+        products: [Core, Store, Sync, Design]
+      - target: AppWidgets
+    info:
+      path: App/Info.plist
+      properties:
+        UILaunchScreen: {}
+        NSSupportsLiveActivities: true
+        NSHealthUpdateUsageDescription: "Saves your workouts to Apple Health."
+        ITSAppUsesNonExemptEncryption: false
+        NSAppTransportSecurity: { NSAllowsLocalNetworking: true }   # NET-6: local dev only
+    entitlements:
+      path: App/App.entitlements
+      properties:
+        com.apple.developer.healthkit: true
+  AppWidgets:
+    type: app-extension
+    platform: iOS
+    sources: [AppWidgets]
+    dependencies:
+      - package: AppKit
+        products: [Core, Store, Design]
+    info:
+      path: AppWidgets/Info.plist
+      properties:
+        NSExtension: { NSExtensionPointIdentifier: com.apple.widgetkit-extension }
+  AppTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [AppTests]
+    dependencies:
+      - target: App
+      - package: AppKit
+        products: [TestingSupport]
+  AppUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [AppUITests]
+    dependencies: [{ target: App }]
+schemes:
+  App:      # fast: unit tests only (UI tests in their own scheme so a simulator flake never blocks)
+    build: { targets: { App: all } }
+    test: { config: Debug, gatherCoverageData: true, targets: [AppTests] }
+    archive: { config: Release }
+  AppUITests:
+    build: { targets: { App: all, AppUITests: all } }
+    test: { config: Debug, targets: [AppUITests] }
