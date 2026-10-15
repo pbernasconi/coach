@@ -68,9 +68,8 @@ shoot() { # variant appearance content-size
     name="${entry%%:*}"
     args="${entry#*:}"
     local start=$SECONDS
-    xcrun simctl terminate "$UDID" "$BUNDLE" 2>/dev/null || true
     # shellcheck disable=SC2086 # args are space-separated launch arguments
-    xcrun simctl launch "$UDID" "$BUNDLE" -demo ${args//,/ } >/dev/null
+    xcrun simctl launch --terminate-running-process "$UDID" "$BUNDLE" -demo ${args//,/ } >/dev/null
     local launched=$SECONDS
     settle "$OUT/$name-$1.png"
     echo "captured $name-$1: launch $((launched - start)) s, settle $((SECONDS - launched)) s (at ${SECONDS}s)"
