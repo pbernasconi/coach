@@ -20,9 +20,12 @@ Each decision and why it was made. Change a decision here before changing the co
 
 ## Build order
 
-1. **LiftCore:** models, progression, warm-ups, plate maths, weekly volume and the Notes importer.
-2. **Store:** GRDB schema, migrations, repositories with outbox writes, and a demo data set.
-3. **App:** the Week, Workout, Exercises and Days screens, plus the rest timer, Live Activity and
-   Dynamic Island.
+1. **LiftCore:** models, progression, warm-ups, plate maths, weekly volume and the Notes importer. Done.
+2. **Store:** GRDB schema, migrations, repositories with outbox writes, and a demo data set. Done.
+3. **App:** in progress.
+   - Phase 1, done: the XcodeGen project, composition root, `-demo` mode, the amber `.lift` theme, and a
+     tab shell with the Week, History, Exercises and Settings screens.
+   - Next: the Workout screen, the rest timer, Live Activity and Dynamic Island, then the widget extension
+     and HealthKit.
 4. **Notes import flow:** paste or share notes, review the parsed sessions, then import.
 5. **Sync and the web dashboard.**
