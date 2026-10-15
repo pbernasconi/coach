@@ -3,10 +3,8 @@ import LiftCore
 
 /// Where the catalog's media lives: the dataset repository on raw.githubusercontent.com at the commit the catalog was
 /// built from. Media is © Gym visual: it is loaded at runtime at its published 180 × 180 size and never bundled or
-/// re-hosted, and every view that shows it carries `attribution` (see `MediaAttribution`).
+/// re-hosted. Lift is for personal use only, so the screens show no credit.
 nonisolated struct ExerciseMediaSource: Equatable, Sendable {
-    /// The page the credit links to.
-    static let creditURL = URL(string: "https://gymvisual.com/")
     private static let repository = "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/"
 
     /// The pinned dataset commit (40 hex digits).

@@ -30,14 +30,11 @@ already done around it. The build keeps going around these; nothing here blocks 
   5. In the app, Settings → Sync → Sync token: paste the same token and tap Save and sync. The status row should
      read "Synced just now". Demo mode (`-demo`) never syncs.
 
-- **Gym visual licence for exercise animations.** The exercise GIFs and thumbnails come from
-  [hasaneyldrm/exercises-dataset](https://github.com/hasaneyldrm/exercises-dataset), whose media is
-  © Gym visual (https://gymvisual.com/). The dataset's text is MIT, but its license says cloning it grants no
-  rights to the media. The app loads the GIFs at runtime from that repository (pinned commit) with the required
-  attribution and does not bundle them. That is your call for personal TestFlight use; before any public App Store
-  release, get a licence from Gym visual (their terms page blocked automated reading, so I could not check the
-  tiers), or switch to Everkinetic line art (CC BY-SA 4.0); a hand mapping for 21 of 30 exercises is in git history
-  (commit 48f512b, `lift/ios/ExerciseArt/`).
+- **Gym visual licence (only if Lift ever goes public).** The exercise animations come from
+  [hasaneyldrm/exercises-dataset](https://github.com/hasaneyldrm/exercises-dataset); the media is © Gym visual and
+  loads at runtime, never bundled. Lift is personal, so the screens show no credit. Before any public App Store
+  release, get a licence from Gym visual and restore a credit, or switch to Everkinetic line art (CC BY-SA 4.0; a
+  mapping for 21 of 30 exercises is in commit 48f512b, `lift/ios/ExerciseArt/`).
 - **Two approximate animations.** Hip thrust shows a floor glute bridge and Plank shows a weighted front plank;
   the dataset has no exact match.
 

@@ -20,7 +20,7 @@ lift/
 │   │   ├── Features/<Feature>/<Screen>/   the eight-file screen set: Week, History, Exercises, Settings, Workout
 │   │   │                                  and Catalog (browse the bundled exercise catalog, catalog detail)
 │   │   ├── Features/ExerciseMedia/        catalog media: URLs at the pinned dataset commit, the cached loader,
-│   │   │                                  GIF and thumbnail views, the "© Gym visual" credit
+│   │   │                                  GIF and thumbnail views
 │   │   ├── Features/Sessions/             SessionSummary, DayCalendar, SessionText (shared by Week and History)
 │   │   └── Resources/      Localizable.xcstrings
 │   ├── LiftWidgets/        widget extension: the rest Live Activity (Lock Screen, Dynamic Island); it also
@@ -70,5 +70,5 @@ used inside `Loadable`.
   remove it. Each action offers Undo instead of a confirmation dialog.
 - **Real data stays out of the repo.** Fixtures and tests use made-up sessions, never imported notes.
 - **Catalog media is never bundled.** The dataset's text is MIT; its images and GIFs are © Gym visual. They load at
-  runtime from the pinned commit, and every view that shows them carries `MediaAttribution` ("© Gym visual"). See
-  `ios/ExerciseMedia/ATTRIBUTION.md`.
+  runtime from the pinned commit. Lift is a personal app, so screens show no credit; keep it that way only while it
+  stays personal (no public App Store release). See `ios/ExerciseMedia/ATTRIBUTION.md`.

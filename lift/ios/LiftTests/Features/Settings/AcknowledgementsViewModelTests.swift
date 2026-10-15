@@ -11,7 +11,7 @@ import Testing
 
         await vm.run()
 
-        #expect(vm.state.items.map(\.id) == ["grdb", "exercises-dataset", "gym-visual"])
+        #expect(vm.state.items.map(\.id) == ["grdb", "exercises-dataset"])
         #expect(vm.state.link == nil)
     }
 

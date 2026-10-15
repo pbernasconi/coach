@@ -75,9 +75,7 @@ private struct ExerciseList: View {
             } header: {
                 EmptyView()
             } footer: {
-                if items.contains(where: { $0.catalogID != nil }) {
-                    MediaAttribution()  // the credit for the thumbnails
-                }
+                EmptyView()
             }
         }
     }
