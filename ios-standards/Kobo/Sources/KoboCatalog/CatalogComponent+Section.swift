@@ -2,7 +2,7 @@ import Foundation
 
 extension CatalogComponent {
     /// The catalog section the component is listed under.
-    public var section: CatalogSection {
+    nonisolated public var section: CatalogSection {
         switch self {
         case .buttonStyle, .asyncButton, .iconButton, .closeButton, .chip, .chipGroup, .tag, .segmentedPicker,
             .toggleRow, .stepperField, .quickPickRow, .flowLayout, .pressFeedback, .shake:
