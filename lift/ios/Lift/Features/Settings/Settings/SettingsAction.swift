@@ -3,6 +3,8 @@ import LiftCore
 /// Every user intent on the Settings screen, named for what happened (SCR-1).
 nonisolated enum SettingsAction: Equatable, Sendable {
     case unitSelected(WeightUnit)
+    /// The "Plates and bars" row: opens the gym's bars, plates and collars.
+    case platesTapped
     /// The Acknowledgements row: opens the list of bundled third-party work.
     case acknowledgementsTapped
     /// "Sync now": push then pull at once.

@@ -65,7 +65,7 @@ library only; it wins over `-demo`, never syncs and never touches Apple Health),
 `-demo`, `-open workout` pushes today's or the next planned session onto the Week tab, `-open exercise` pushes the Back squat detail onto the Exercises tab, `-open templates` and
 `-open template` push the templates list and the first template's editor onto the Exercises tab, `-open summary`
 pushes the latest logged session's summary onto the Week tab, `-open progress` opens History on its Progress view
-(hard sets per muscle and per week), and `-open import` opens Import from Notes over
+(hard sets per muscle and per week), `-open plates` pushes Plates and bars onto the Settings tab, and `-open import` opens Import from Notes over
 History with a made-up note already read to the review step (for screenshots). Without `-demo` the app uses `Application Support/lift.sqlite`.
 
 Note: the app target defaults to MainActor isolation, so screen value types (`State`, `Action`, row items)

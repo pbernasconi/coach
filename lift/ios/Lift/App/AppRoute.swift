@@ -12,6 +12,8 @@ nonisolated enum AppRoute: Hashable, Sendable {
     case catalogExercise(String)
     /// Third-party work bundled with the app and its licences.
     case acknowledgements
+    /// The gym's bars, plates and collars, from Settings.
+    case plates
     /// The day templates ("Upper A"), to plan workouts from.
     case templates
     /// One template's name and exercise slots.
