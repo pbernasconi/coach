@@ -1,5 +1,6 @@
 import KoboComponents
 import KoboTokens
+import LiftCore
 import SwiftUI
 
 /// Dumb view: past sessions grouped by week, newest first, or (Progress) hard sets per muscle and per week (SCR-2).

@@ -63,7 +63,7 @@ private struct SpanLayout: Layout {
     }
 }
 
-private struct SpanKey: LayoutValueKey {
+private nonisolated struct SpanKey: LayoutValueKey {
     static let defaultValue: ClosedRange<Double> = 0...1
 }
 
