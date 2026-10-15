@@ -25,6 +25,10 @@ lift/
 │   │   └── Resources/      Localizable.xcstrings
 │   ├── LiftWidgets/        widget extension: the rest Live Activity (Lock Screen, Dynamic Island); it also
 │   │                       compiles Lift/Features/Workout/LiveActivity/RestActivityAttributes.swift
+│   │                       and the +30s/Skip LiveActivityIntents (Lift/App/RestActivityIntents.swift) with the rest
+│   │                       they share with the app through the App Group (RestSnapshot)
+│   ├── LiftShare/          Share extension: a note shared from Apple Notes goes to the App Group inbox, then
+│   │                       Lift's Import (lift://import, IncomingNoteRouter; the app also checks on foreground)
 │   ├── LiftTests/          Swift Testing ViewModel tests, hand-written fakes in Fakes/
 │   └── Packages/LiftKit/   one package (LAY-2):
 │         LiftCore      pure domain: models, rules, Notes importer, LocalDay arithmetic, the bundled exercise
