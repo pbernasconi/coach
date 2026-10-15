@@ -96,8 +96,9 @@ jobs:
           exit "$status"
 
   app:
-    # The app: generate the Xcode project, build, run unit tests on a simulator, and capture demo screenshots
-    # (light, dark, AX3). It also compiles Kobo for iOS.
+    # The app: generate the Xcode project, build for testing, run the unit tests on a simulator. It also compiles
+    # Kobo for iOS. The simulator boots while the build runs; the compilation cache and SwiftPM checkouts are
+    # restored from the last run and saved after the build (even when tests fail).
     runs-on: macos-26
     timeout-minutes: 60
     concurrency:
@@ -107,36 +108,92 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
         with:
           persist-credentials: false
+      - name: Boot a simulator in the background
+        id: sim
+        run: |
+          udid="$(lift/ios/scripts/simulator.sh)"
+          echo "SIM_UDID=$udid" >> "$GITHUB_ENV"
+          xcrun simctl boot "$udid" > /dev/null 2>&1 &
+          echo "xcode=$(xcodebuild -version | shasum | cut -c1-12)" >> "$GITHUB_OUTPUT"
+      - name: Restore SwiftPM checkouts
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: build/spm
+          key: lift-spm-${{ steps.sim.outputs.xcode }}-${{ hashFiles('lift/ios/Packages/LiftKit/Package.resolved') }}
+      - name: Restore the compilation cache
+        id: cas
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: build/cas
+          key: lift-cas-${{ steps.sim.outputs.xcode }}-${{ github.sha }}
+          restore-keys: lift-cas-${{ steps.sim.outputs.xcode }}-
       - name: Generate the Xcode project
         working-directory: lift/ios
         run: |
           command -v xcodegen >/dev/null || brew install xcodegen
           xcodegen generate
-      - name: Build and unit test
+      - name: Build for testing
+        run: lift/ios/scripts/ci-xcodebuild.sh lift-build.log build-for-testing
+      - name: Save SwiftPM checkouts
+        if: ${{ !cancelled() }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: build/spm
+          key: lift-spm-${{ steps.sim.outputs.xcode }}-${{ hashFiles('lift/ios/Packages/LiftKit/Package.resolved') }}
+      - name: Save the compilation cache
+        if: ${{ !cancelled() && steps.cas.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: build/cas
+          key: lift-cas-${{ steps.sim.outputs.xcode }}-${{ github.sha }}
+      - name: Unit test
+        run: |
+          xcrun simctl bootstatus "$SIM_UDID" -b > /dev/null
+          lift/ios/scripts/ci-xcodebuild.sh lift-test.log test-without-building
+      - name: Cache sizes
+        if: ${{ !cancelled() }}
+        run: du -sh build/* || true
+
+  screenshots:
+    # Demo screenshots (light, dark, AX3) from the same build-for-testing as the app job, so it shares its
+    # compilation cache. Runs in parallel with the app job; the simulator boots while the build runs.
+    runs-on: macos-26
+    timeout-minutes: 60
+    concurrency:
+      group: ios-screenshots-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+        with:
+          persist-credentials: false
+      - name: Boot a simulator in the background
+        id: sim
+        run: |
+          udid="$(lift/ios/scripts/simulator.sh)"
+          echo "SIM_UDID=$udid" >> "$GITHUB_ENV"
+          xcrun simctl boot "$udid" > /dev/null 2>&1 &
+          echo "xcode=$(xcodebuild -version | shasum | cut -c1-12)" >> "$GITHUB_OUTPUT"
+      - name: Restore SwiftPM checkouts
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: build/spm
+          key: lift-spm-${{ steps.sim.outputs.xcode }}-${{ hashFiles('lift/ios/Packages/LiftKit/Package.resolved') }}
+      - name: Restore the compilation cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: build/cas
+          key: lift-cas-${{ steps.sim.outputs.xcode }}-${{ github.sha }}
+          restore-keys: lift-cas-${{ steps.sim.outputs.xcode }}-
+      - name: Generate the Xcode project
         working-directory: lift/ios
         run: |
-          udid="$(scripts/simulator.sh)"
-          echo "SIM_UDID=$udid" >> "$GITHUB_ENV"
-          status=0
-          xcodebuild test \
-            -project Lift.xcodeproj \
-            -scheme Lift \
-            -destination "id=$udid" \
-            -derivedDataPath ../../build/lift \
-            CODE_SIGNING_ALLOWED=NO \
-            > ../../lift-app.log 2>&1 || status=$?
-          tail -n 25 ../../lift-app.log
-          echo "::group::Unique errors (Lift app)"
-          grep -E "(error|warning):|✘|recorded an issue|\*\* (BUILD|TEST) " ../../lift-app.log \
-            | grep -v "^ *|" | sort -u | head -n 150 || true
-          echo "::endgroup::"
-          exit "$status"
+          command -v xcodegen >/dev/null || brew install xcodegen
+          xcodegen generate
+      - name: Build
+        run: lift/ios/scripts/ci-xcodebuild.sh lift-build.log build-for-testing
       - name: Screenshots
-        if: ${{ !cancelled() }}
         run: |
-          app="$(find build/lift/Build/Products -maxdepth 2 -path '*iphonesimulator/Lift.app' | head -n 1)"
-          if [ -z "$app" ] || [ ! -x "$app/Lift" ]; then echo "no app build to screenshot"; exit 0; fi
-          lift/ios/scripts/screenshots.sh "$app" screenshots
+          lift/ios/scripts/screenshots.sh build/lift/Build/Products/Debug-iphonesimulator/Lift.app screenshots
       - name: Upload screenshots
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
