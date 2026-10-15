@@ -5,13 +5,6 @@ already done around it. The build keeps going around these; nothing here blocks 
 
 ## Needs your accounts or devices
 
-- **GitHub Actions is blocked (urgent).** Since 08:22 UTC every CI job on this repository fails before its first
-  step, including the Linux one, which points to the account's Actions minutes or spending limit (macOS minutes
-  count 10x on private repositories). Check GitHub → Settings → Billing and plans → Actions (usage and spending
-  limit), or make the repository public (Actions minutes are free for public repos). Until then nothing new can be
-  compiled for iOS or screenshotted. The last green run is 42 (commit d47703f). CI now uses one macOS job instead of
-  three to cut the minutes used.
-
 - **Apple developer details (TestFlight).** The upload pipeline is built (`.github/workflows/testflight.yml`)
   and skips itself until these exist. In GitHub → Settings → Secrets and variables → Actions (repository level,
   or the `testflight` environment):
