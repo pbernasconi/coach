@@ -123,7 +123,9 @@ jobs:
 
   test:
     # The app's unit tests on a simulator, from the build job's products. It starts with the build job rather
-    # than after it, so the simulator has booted when the products arrive.
+    # than after it, so the simulator has booted when the products arrive. The simulator boots from a cached
+    # snapshot of one that booted before (keyed by runner image, runtime and device); when there is none, this
+    # job saves one after the tests.
     runs-on: macos-26
     timeout-minutes: 45
     permissions:
@@ -136,14 +138,16 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
         with:
           persist-credentials: false
-      - name: Boot a simulator in the background
-        run: |
-          udid="$(lift/ios/scripts/simulator.sh)"
-          echo "SIM_UDID=$udid" >> "$GITHUB_ENV"
-          xcrun simctl boot "$udid" > /dev/null 2>&1 &
-          # Notes how long the boot took, for the timing printed before the simulator is used.
-          (start=$SECONDS; xcrun simctl bootstatus "$udid" -b > /dev/null 2>&1
-            echo "simulator booted after $((SECONDS - start)) s, at $(date -u +%T)" > "$RUNNER_TEMP/booted") &
+      - name: Pick a simulator
+        run: lift/ios/scripts/ci-simulator.sh pick
+      - name: Restore the simulator snapshot
+        id: simcache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: ~/sim-data
+          key: ${{ env.SIM_CACHE_KEY }}
+      - name: Boot the simulator in the background
+        run: lift/ios/scripts/ci-simulator.sh boot
       - name: Wait for the build job's products
         if: ${{ !cancelled() }}
         env:
@@ -157,6 +161,15 @@ jobs:
       - name: Unit test
         if: ${{ !cancelled() }}
         run: lift/ios/scripts/ci-xcodebuild.sh test lift-test.log build/products/*.xctestrun
+      - name: Pack the simulator snapshot
+        if: ${{ !cancelled() && steps.simcache.outputs.cache-hit != 'true' }}
+        run: lift/ios/scripts/ci-simulator.sh pack
+      - name: Save the simulator snapshot
+        if: ${{ !cancelled() && steps.simcache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: ~/sim-data
+          key: ${{ env.SIM_CACHE_KEY }}
 
   screenshots:
     # Demo screenshots, one job per variant (light, dark, AX3), from the build job's products. Like the test job
@@ -177,14 +190,16 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
         with:
           persist-credentials: false
-      - name: Boot a simulator in the background
-        run: |
-          udid="$(lift/ios/scripts/simulator.sh)"
-          echo "SIM_UDID=$udid" >> "$GITHUB_ENV"
-          xcrun simctl boot "$udid" > /dev/null 2>&1 &
-          # Notes how long the boot took, for the timing printed before the simulator is used.
-          (start=$SECONDS; xcrun simctl bootstatus "$udid" -b > /dev/null 2>&1
-            echo "simulator booted after $((SECONDS - start)) s, at $(date -u +%T)" > "$RUNNER_TEMP/booted") &
+      - name: Pick a simulator
+        run: lift/ios/scripts/ci-simulator.sh pick
+      - name: Restore the simulator snapshot
+        id: simcache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: ~/sim-data
+          key: ${{ env.SIM_CACHE_KEY }}
+      - name: Boot the simulator in the background
+        run: lift/ios/scripts/ci-simulator.sh boot
       - name: Wait for the build job's products
         env:
           GH_TOKEN: ${{ github.token }}
@@ -196,16 +211,7 @@ jobs:
       - name: Screenshots
         env:
           VARIANTS: ${{ matrix.variant }}
-        run: |
-          top -l 1 -o cpu -n 12 -stats pid,command,cpu,mem | tail -n 13
-          lift/ios/scripts/screenshots.sh build/products/Debug-iphonesimulator/Lift.app screenshots
-          top -l 1 -o cpu -n 12 -stats pid,command,cpu,mem | tail -n 13
-      - name: Simulator disk use
-        if: ${{ !cancelled() }}
-        run: |
-          du -sh ~/Library/Developer/CoreSimulator/Devices/"$SIM_UDID" ~/Library/Developer/CoreSimulator/Caches \
-            /Library/Developer/CoreSimulator/Caches 2>/dev/null || true
-          ls -la ~/Library/Developer/CoreSimulator/Caches/dyld /Library/Developer/CoreSimulator/Caches/dyld 2>/dev/null || true
+        run: lift/ios/scripts/screenshots.sh build/products/Debug-iphonesimulator/Lift.app screenshots
       - name: Upload screenshots
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
