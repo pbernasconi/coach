@@ -95,12 +95,15 @@ enum BannerSlot<ID: Hashable>: Hashable, Identifiable {
 nonisolated public enum NoBanner: StackableBanner {
     public var id: Never { switch self {} }
     public var priority: BannerPriority { switch self {} }
+
+    /// The banner view of a value that cannot exist.
+    static func view(for banner: Self) -> EmptyView { switch banner {} }
 }
 
 extension BannerStack where Item == NoBanner, Banner == EmptyView {
     /// A stack that shows only the offline banner.
     public init(isOffline: Bool, clock: any Clock<Duration> = ContinuousClock()) {
-        self.init([], isOffline: isOffline, clock: clock) { (item: NoBanner) -> EmptyView in switch item {} }
+        self.init([], isOffline: isOffline, clock: clock, banner: NoBanner.view(for:))
     }
 }
 
