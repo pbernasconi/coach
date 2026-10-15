@@ -96,8 +96,7 @@ struct WorkoutExerciseSection: View {
             IconButton(
                 "info",
                 verbatimAccessibilityLabel: String(localized: "How to \(exercise.name)"),
-                style: .tinted,
-                size: .small
+                style: .tinted
             ) { send(.howToTapped(exerciseID: libraryID)) }
         }
     }
