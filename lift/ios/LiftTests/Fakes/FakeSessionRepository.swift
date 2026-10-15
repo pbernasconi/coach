@@ -7,7 +7,7 @@ import Synchronization
 /// A `SessionRepository` whose stream yields the given values, then finishes, so `await vm.run()` returns.
 /// Records each requested day range, reschedule and undo. `reschedule` answers with the session's day from the
 /// emissions (or `Fixtures.monday`), and throws `rescheduleError` when one is given; `undo` throws `undoError`.
-/// The other writes are not used by the screens yet and throw.
+/// `createSession` records and returns the session. The other writes are not used by the screens yet and throw.
 nonisolated final class FakeSessionRepository: SessionRepository {
     private let emissions: [[SessionDetail]]
     private let rescheduleError: AppError?
@@ -15,6 +15,13 @@ nonisolated final class FakeSessionRepository: SessionRepository {
     private let requests = Mutex<[ClosedRange<LocalDay>]>([])
     private let reschedules = Mutex<[Reschedule]>([])
     private let undos = Mutex<[RescheduleUndo]>([])
+    private let creations = Mutex<[SessionRecord]>([])
+
+    /// The id `createSession` hands out.
+    static let createdID = IDSequence.id(1, prefix: 0xC4)
+
+    /// Every session `createSession` made, in order.
+    var created: [SessionRecord] { creations.withLock { $0 } }
 
     /// One `reschedule(_:_:)` call.
     struct Reschedule: Equatable, Sendable {
@@ -52,10 +59,20 @@ nonisolated final class FakeSessionRepository: SessionRepository {
         AsyncStream { $0.finish() }
     }
 
-    func createSession(on _: LocalDay, title _: String, unit _: WeightUnit, templateID _: UUID?) async throws
+    func createSession(on day: LocalDay, title: String, unit: WeightUnit, templateID: UUID?) async throws
         -> SessionRecord
     {
-        throw AppError(.unknown, detail: "not used")
+        let record = SessionRecord(
+            id: Self.createdID,
+            day: day,
+            title: title,
+            templateID: templateID,
+            unitsAtLog: unit,
+            createdAt: ManualNow.start,
+            updatedAt: ManualNow.start
+        )
+        creations.withLock { $0.append(record) }
+        return record
     }
 
     func addExercise(_: ExerciseSlot, to _: UUID) async throws -> SessionExerciseRecord {

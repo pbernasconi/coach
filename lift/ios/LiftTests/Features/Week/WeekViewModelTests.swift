@@ -15,7 +15,15 @@ import Testing
     let router = RecordingNavigator()
 
     func makeViewModel(_ repository: FakeSessionRepository) -> WeekViewModel {
-        WeekViewModel(sessions: repository, router: router, now: SessionBuilder.now, calendar: calendar)
+        WeekViewModel(
+            sessions: repository,
+            templates: FakeTemplateRepository(),
+            plans: FakeWorkoutPlanRepository(),
+            router: router,
+            now: SessionBuilder.now,
+            calendar: calendar,
+            unit: .kg
+        )
     }
 
     func date(_ day: LocalDay) -> Date {

@@ -17,17 +17,37 @@ nonisolated struct WeekState: Equatable, Sendable {
     var destination: Destination?
     /// The latest result of a lift sheet action, shown as a toast; a new value replaces the old one.
     var toast: WeekToast?
+    /// The templates a day can be planned from, by list order.
+    var templates: [WeekTemplateChoice] = []
+    /// Whether the visible week has template days to copy to the next week.
+    var canPlanNextWeek = false
 
     enum Destination: Equatable, Sendable {
         /// The lift sheet for a planned session.
         case options(WeekSessionRef)
         /// The day picker for moving a planned session.
         case move(WeekMove)
+        /// The template picker for adding a workout to a day.
+        case add(WeekAddDay)
+        /// The template picker for changing a planned session's workout.
+        case change(WeekSessionRef)
     }
 
     /// The session the lift sheet is open for.
     var optionsTarget: WeekSessionRef? {
         guard case .options(let session) = destination else { return nil }
+        return session
+    }
+
+    /// The day the add-workout picker is open for.
+    var addTarget: WeekAddDay? {
+        guard case .add(let day) = destination else { return nil }
+        return day
+    }
+
+    /// The session the change-workout picker is open for.
+    var changeTarget: WeekSessionRef? {
+        guard case .change(let session) = destination else { return nil }
         return session
     }
 
@@ -74,6 +94,10 @@ nonisolated struct WeekSessionRef: Equatable, Sendable, Identifiable {
     let title: String
     /// The session's day, as the sheet's message shows it.
     let dayTitle: String
+    /// The template the session was planned from, if any.
+    var templateID: UUID?
+    /// "Change workout" shows when there is a template to change to.
+    var canChangeWorkout = false
 }
 
 /// The day picker for one session: where it is now and the days it can move to.
@@ -94,5 +118,25 @@ nonisolated struct WeekToast: Equatable, Sendable, Identifiable {
     /// Counts up, so the same message twice is still a new toast.
     let id: Int
     let message: String
-    let undo: RescheduleUndo?
+    let undo: WeekUndo?
+}
+
+/// What Undo on a Week toast puts back.
+nonisolated enum WeekUndo: Equatable, Sendable {
+    case reschedule(RescheduleUndo)
+    case template(TemplateChangeUndo)
+    case plan(WeekPlanUndo)
+}
+
+/// A template in the add and change pickers.
+nonisolated struct WeekTemplateChoice: Equatable, Sendable, Identifiable {
+    let id: UUID
+    let name: String
+}
+
+/// The day the add-workout picker plans for.
+nonisolated struct WeekAddDay: Equatable, Sendable, Identifiable {
+    let id: LocalDay
+    /// "Thursday, 5 March", as the sheet's message shows it.
+    let dayTitle: String
 }

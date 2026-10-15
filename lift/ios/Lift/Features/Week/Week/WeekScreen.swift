@@ -22,7 +22,13 @@ struct WeekScreen: View {
         guard let toast else { return }
         let viewModel = viewModel
         let undo = toast.undo.map { change in
-            Toast.Action("Undo") { viewModel.send(.undoTapped(change)) }
+            Toast.Action("Undo") {
+                switch change {
+                case .reschedule(let undo): viewModel.send(.undoTapped(undo))
+                case .template(let undo): viewModel.send(.templateUndoTapped(undo))
+                case .plan(let undo): viewModel.send(.planUndoTapped(undo))
+                }
+            }
         }
         toasts.show(Toast(verbatim: toast.message, action: undo))
     }

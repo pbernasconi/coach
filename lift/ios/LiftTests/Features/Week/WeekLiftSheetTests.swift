@@ -31,7 +31,15 @@ import Testing
             rescheduleError: rescheduleError,
             undoError: undoError
         )
-        let vm = WeekViewModel(sessions: repository, router: router, now: SessionBuilder.now, calendar: calendar)
+        let vm = WeekViewModel(
+            sessions: repository,
+            templates: FakeTemplateRepository(),
+            plans: FakeWorkoutPlanRepository(),
+            router: router,
+            now: SessionBuilder.now,
+            calendar: calendar,
+            unit: .kg
+        )
         await vm.run()
         return (vm, repository)
     }
@@ -95,7 +103,7 @@ import Testing
         #expect(repository.rescheduled == [.init(sessionID: planned.id, action: .move(to: wednesday))])
         let undo = RescheduleUndo(sessionID: planned.id, previousDay: friday)
         let message = String(localized: "Moved to \(days.shortTitle(of: wednesday))")
-        #expect(vm.state.toast == WeekToast(id: 1, message: message, undo: undo))
+        #expect(vm.state.toast == WeekToast(id: 1, message: message, undo: .reschedule(undo)))
     }
 
     @Test func moveDayPickedOnTheSameDayOnlyCloses() async {
@@ -119,7 +127,10 @@ import Testing
         #expect(second == nil)
         #expect(repository.rescheduled == [.init(sessionID: planned.id, action: .pushToNextWeek)])
         let undo = RescheduleUndo(sessionID: planned.id, previousDay: friday)
-        #expect(vm.state.toast == WeekToast(id: 1, message: String(localized: "Pushed to next week"), undo: undo))
+        #expect(
+            vm.state.toast
+                == WeekToast(id: 1, message: String(localized: "Pushed to next week"), undo: .reschedule(undo))
+        )
     }
 
     @Test func removeTappedRemovesAtOnceAndOffersUndo() async {
@@ -129,7 +140,7 @@ import Testing
 
         #expect(repository.rescheduled == [.init(sessionID: planned.id, action: .remove)])
         #expect(vm.state.toast?.message == String(localized: "Removed Upper A"))
-        #expect(vm.state.toast?.undo == RescheduleUndo(sessionID: planned.id, previousDay: friday))
+        #expect(vm.state.toast?.undo == .reschedule(RescheduleUndo(sessionID: planned.id, previousDay: friday)))
     }
 
     @Test func aFailedChangeShowsAToastWithoutUndo() async {
@@ -146,7 +157,7 @@ import Testing
     @Test func undoTappedPutsTheSessionBack() async {
         let (vm, repository) = await loaded()
         await vm.send(.removeTapped(planned.id))?.value
-        guard let undo = vm.state.toast?.undo else {
+        guard case .reschedule(let undo)? = vm.state.toast?.undo else {
             Issue.record("expected an undo")
             return
         }
