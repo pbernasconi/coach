@@ -73,7 +73,7 @@ public struct ReviewScaffold<Sections: View>: View {
             barTitle: barTitle,
             primary: submit.action,
             secondary: nil,
-            banner: submit.visibleBanner,
+            banner: submit.banner,
             submitState: submit.state,
             exit: exit,
             onBack: onBack,
@@ -98,3 +98,35 @@ public struct ReviewScaffold<Sections: View>: View {
         .modifier(chrome)
     }
 }
+
+#if DEBUG
+    private struct ReviewScaffoldPreview: View {
+        @State private var state = LoadableStepState()
+
+        var body: some View {
+            NavigationStack {
+                ReviewScaffold(
+                    "Check the import",
+                    flowTitle: "Import notes",
+                    summary: ReviewSummary(verbatim: "3 workouts", caption: "Ready to import", onEdit: {}),
+                    submit: ReviewSubmit(
+                        "Import workouts",
+                        state: state,
+                        footnote: "Imported workouts count toward this week's goal.",
+                        banner: FlowStepBanner(tone: .warning, title: "2 lines couldn't be read")
+                    ) { state.send(.submit) },
+                    exit: FlowExitAction(hasUnsavedProgress: true) {}
+                ) {
+                    ReviewSection("Mon 14 Oct", onEdit: {}) {
+                        ReviewRow(verbatim: "Bench press", value: "3 × 8 · 80 kg")
+                    }
+                    Button("Fail the import") { state.send(.fail(message: "Couldn't save. Try again.")) }
+                }
+            }
+        }
+    }
+
+    #Preview("Light") { ReviewScaffoldPreview() }
+    #Preview("Dark, Lift") { ReviewScaffoldPreview().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("AX3") { ReviewScaffoldPreview().dynamicTypeSize(.accessibility3) }
+#endif

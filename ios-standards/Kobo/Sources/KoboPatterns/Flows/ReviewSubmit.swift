@@ -48,8 +48,4 @@ public struct ReviewSubmit {
         self.banner = banner
     }
 
-    /// The banner that shows: the failure while there is one, else the caller's.
-    var visibleBanner: FlowStepBanner? {
-        FlowStepBanner.failure(of: state) ?? banner
-    }
 }

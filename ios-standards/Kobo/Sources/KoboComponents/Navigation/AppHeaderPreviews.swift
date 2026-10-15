@@ -15,7 +15,7 @@ import SwiftUI
                 }
                 .screenCanvas()
                 .tabRootHeader {
-                    AppHeader("Today", kicker: "Week 3", profile: .init(name: "Ada Lovelace") {}) {
+                    AppHeader("Today", kicker: "Week 3", profile: .init(name: "Mira Castellan") {}) {
                         Button("Search", systemImage: "magnifyingglass") {}
                         Button("Notifications", systemImage: "bell") {}.countBadge(3)
                     }

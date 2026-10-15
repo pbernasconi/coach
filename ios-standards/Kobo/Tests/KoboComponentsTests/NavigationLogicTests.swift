@@ -17,8 +17,8 @@ import Testing
     }
 
     @Test func theProfileTitleIsTheTrimmedNameOrNothing() {
-        #expect(HeaderProfileTitle.title(name: "Ada Lovelace") == "Ada Lovelace")
-        #expect(HeaderProfileTitle.title(name: "  Ada \n") == "Ada")
+        #expect(HeaderProfileTitle.title(name: "Mira Castellan") == "Mira Castellan")
+        #expect(HeaderProfileTitle.title(name: "  Mira \n") == "Mira")
         #expect(HeaderProfileTitle.title(name: nil) == nil)
         #expect(HeaderProfileTitle.title(name: "   ") == nil)
     }
