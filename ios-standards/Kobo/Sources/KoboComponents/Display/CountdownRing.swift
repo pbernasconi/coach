@@ -5,8 +5,9 @@ import SwiftUI
 /// A ring that drains from full at `start` to empty at `end`, with the time left in the middle and an optional
 /// "of 3:00" total under it. It only draws: the caller decides what happens at zero (it owns the clock and the dates).
 ///
-///     CountdownRing(start: restStart, end: restStart.addingTimeInterval(180))
-///         .frame(width: 120, height: 120)
+///     CountdownRing(start: restStart, end: restStart.addingTimeInterval(180), accessibilityLabel: "Rest")
+///         .frame(width: Size.thumbnail * 2, height: Size.thumbnail * 2)
+///     CountdownRing(start: start, end: end, verbatimAccessibilityLabel: timer.name)
 ///
 /// The arc follows the display's frame rate; with Reduce Motion on it steps once a second instead.
 public struct CountdownRing: View {
@@ -30,12 +31,30 @@ public struct CountdownRing: View {
         tone: Tone = .accent,
         accessibilityLabel: LocalizedStringKey? = nil
     ) {
+        let label = accessibilityLabel.map { Text($0) }
+        self.init(start, end, showsTotal: showsTotal, lineWidth: lineWidth, tone: tone, label: label)
+    }
+
+    /// A countdown whose VoiceOver name is shown as is (a timer the user named).
+    public init(
+        start: Date,
+        end: Date,
+        showsTotal: Bool = true,
+        lineWidth: CGFloat = Space.sm,
+        tone: Tone = .accent,
+        verbatimAccessibilityLabel: String
+    ) {
+        let label = Text(verbatim: verbatimAccessibilityLabel)
+        self.init(start, end, showsTotal: showsTotal, lineWidth: lineWidth, tone: tone, label: label)
+    }
+
+    private init(_ start: Date, _ end: Date, showsTotal: Bool, lineWidth: CGFloat, tone: Tone, label: Text?) {
         self.start = start
         self.end = end
         self.showsTotal = showsTotal
         self.lineWidth = lineWidth
         self.tint = .tone(tone)
-        self.label = accessibilityLabel.map { Text($0) }
+        self.label = label
     }
 
     public var body: some View {

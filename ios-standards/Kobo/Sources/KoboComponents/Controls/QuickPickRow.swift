@@ -6,9 +6,10 @@ import SwiftUI
 /// the chips wrap instead of squeezing. The row is one container named by `title`; each chip carries the selected trait.
 ///
 ///     QuickPickRow("Reps", values: [5, 6, 8, 10, 12], selection: $reps) { "\($0)" }
+///     QuickPickRow(verbatim: exercise.name, values: weights, selection: $weight, format: .number)
 public struct QuickPickRow<Value: Hashable & Sendable>: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    private let title: LocalizedStringKey
+    private let title: Text
     private let items: [QuickPickItem<Value>]
     private let selection: Binding<Value>
     private let feedback: HapticFeedback?
@@ -20,6 +21,44 @@ public struct QuickPickRow<Value: Hashable & Sendable>: View {
         values: [Value],
         selection: Binding<Value>,
         feedback: HapticFeedback? = .selection,
+        label: @escaping (Value) -> String
+    ) {
+        self.init(title: Text(title), values: values, selection: selection, feedback: feedback, label: label)
+    }
+
+    /// A row named as is (an exercise name), whose chip titles come from `label`. Values must be unique.
+    public init(
+        verbatim title: String,
+        values: [Value],
+        selection: Binding<Value>,
+        feedback: HapticFeedback? = .selection,
+        label: @escaping (Value) -> String
+    ) {
+        self.init(title: Text(verbatim: title), values: values, selection: selection, feedback: feedback, label: label)
+    }
+
+    /// A row named as is, whose chip titles come from a `FormatStyle`.
+    public init<Style: FormatStyle>(
+        verbatim title: String,
+        values: [Value],
+        selection: Binding<Value>,
+        feedback: HapticFeedback? = .selection,
+        format style: Style
+    ) where Style.FormatInput == Value, Style.FormatOutput == String {
+        self.init(
+            verbatim: title,
+            values: values,
+            selection: selection,
+            feedback: feedback,
+            label: { style.format($0) }
+        )
+    }
+
+    private init(
+        title: Text,
+        values: [Value],
+        selection: Binding<Value>,
+        feedback: HapticFeedback?,
         label: @escaping (Value) -> String
     ) {
         self.title = title
@@ -49,7 +88,7 @@ public struct QuickPickRow<Value: Hashable & Sendable>: View {
             }
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(Text(title))
+        .accessibilityLabel(title)
         .koboFeedback(feedback, trigger: selection.wrappedValue)
     }
 

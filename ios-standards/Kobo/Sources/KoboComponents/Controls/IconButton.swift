@@ -2,9 +2,11 @@ import KoboTokens
 import SwiftUI
 
 /// A round, icon-only button. The label is required because VoiceOver has nothing else to read. The visible circle
-/// can be smaller than 44pt, but the target never is.
+/// can be smaller than 44pt, but the target never is. While `isLoading`, a spinner takes the glyph's place in the same
+/// circle, presses are ignored and VoiceOver hears "In progress".
 ///
 ///     IconButton("pause.fill", accessibilityLabel: "Pause timer", style: .solid, size: .large) { pause() }
+///     IconButton("pencil", verbatimAccessibilityLabel: "Rename \(list.name)", style: .plain) { rename() }
 public struct IconButton: View {
     /// The fill of the circle.
     public enum Style: Sendable, Equatable, CaseIterable {
@@ -49,6 +51,7 @@ public struct IconButton: View {
     private let systemImage: String
     private let label: Text
     private let style: Style
+    private let isLoading: Bool
     private let action: () -> Void
 
     public init(
@@ -56,16 +59,39 @@ public struct IconButton: View {
         accessibilityLabel: LocalizedStringKey,
         style: Style = .glass,
         size: Size = .regular,
+        isLoading: Bool = false,
         action: @escaping () -> Void
     ) {
-        self.init(systemImage, label: Text(accessibilityLabel), style: style, size: size, action: action)
+        let label = Text(accessibilityLabel)
+        self.init(systemImage, label: label, style: style, size: size, isLoading: isLoading, action: action)
+    }
+
+    /// An icon button whose accessibility label is shown as is, because it names user data ("Rename Push day").
+    public init(
+        _ systemImage: String,
+        verbatimAccessibilityLabel: String,
+        style: Style = .glass,
+        size: Size = .regular,
+        isLoading: Bool = false,
+        action: @escaping () -> Void
+    ) {
+        let label = Text(verbatim: verbatimAccessibilityLabel)
+        self.init(systemImage, label: label, style: style, size: size, isLoading: isLoading, action: action)
     }
 
     /// An icon button labelled with a ready-made `Text`, for the library's own labels ("Close", "Increase").
-    init(_ systemImage: String, label: Text, style: Style, size: Size, action: @escaping () -> Void) {
+    init(
+        _ systemImage: String,
+        label: Text,
+        style: Style,
+        size: Size,
+        isLoading: Bool = false,
+        action: @escaping () -> Void
+    ) {
         self.systemImage = systemImage
         self.label = label
         self.style = style
+        self.isLoading = isLoading
         self.action = action
         _diameter = ScaledMetric(wrappedValue: size.diameter, relativeTo: .body)
         _iconSize = ScaledMetric(wrappedValue: size.iconSize, relativeTo: .body)
@@ -73,12 +99,20 @@ public struct IconButton: View {
 
     public var body: some View {
         Button(action: action) {
+            // The glyph scales with the disc, not with the text style: `iconSize` is a `@ScaledMetric`.
             Image(systemName: systemImage)
                 .font(.system(size: iconSize, weight: .semibold))
+                .opacity(isLoading ? 0 : 1)
+                .overlay {
+                    if isLoading { ProgressView().controlSize(.small).accessibilityHidden(true) }
+                }
                 .frame(width: diameter, height: diameter)
         }
         .buttonStyle(IconButtonStyle(style: style))
+        .allowsHitTesting(!isLoading)
+        .koboAnimation(.state, value: isLoading)
         .accessibilityLabel(label)
+        .accessibilityValue(isLoading ? Text("In progress", bundle: .module) : Text(verbatim: ""))
     }
 }
 
@@ -150,6 +184,7 @@ private struct IconSurface: ViewModifier {
                     IconButton("minus", accessibilityLabel: "Less", style: .tonal, size: .large) {}
                     IconButton("chevron.up", accessibilityLabel: "Up", style: .tonal, size: .small) {}
                     IconButton("trash", accessibilityLabel: "Delete", style: .solid) {}.disabled(true)
+                    IconButton("arrow.clockwise", verbatimAccessibilityLabel: "Sync Push day", isLoading: true) {}
                     CloseButton {}
                 }
             }

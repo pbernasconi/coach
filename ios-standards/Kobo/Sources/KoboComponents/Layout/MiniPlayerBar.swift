@@ -5,7 +5,8 @@ import SwiftUI
 public enum MiniPlayerChrome: Sendable, Equatable {
     /// No background of its own: the system draws the glass inside `.tabViewBottomAccessory`.
     case accessory
-    /// Draws its own Liquid Glass capsule, for use as a floating overlay.
+    /// Draws its own capsule, for use as a floating overlay: Liquid Glass, or the raised surface under a `.solid`
+    /// theme.
     case floating
 }
 
@@ -32,7 +33,7 @@ public struct MiniPlayerBar<Leading: View, Trailing: View>: View {
 
     /// A bar with a localized title and subtitle.
     public init(
-        title: LocalizedStringKey,
+        _ title: LocalizedStringKey,
         subtitle: LocalizedStringKey? = nil,
         chrome: MiniPlayerChrome = .accessory,
         action: @escaping () -> Void,
@@ -69,9 +70,12 @@ public struct MiniPlayerBar<Leading: View, Trailing: View>: View {
         case .accessory:
             bar
         case .floating:
-            bar
-                .padding(.vertical, Space.xs)
-                .glassEffect(.regular.interactive(), in: .capsule)
+            switch theme.surfaceStyle {
+            case .glass:
+                bar.padding(.vertical, Space.xs).glassEffect(.regular.interactive(), in: .capsule)
+            case .solid:
+                bar.padding(.vertical, Space.xs).background(theme.palette.surfaceRaised, in: Capsule())
+            }
         }
     }
 
@@ -109,14 +113,14 @@ public struct MiniPlayerBar<Leading: View, Trailing: View>: View {
 extension MiniPlayerBar where Trailing == EmptyView {
     /// A bar with a localized title, a leading slot and no trailing button.
     public init(
-        title: LocalizedStringKey,
+        _ title: LocalizedStringKey,
         subtitle: LocalizedStringKey? = nil,
         chrome: MiniPlayerChrome = .accessory,
         action: @escaping () -> Void,
         @ViewBuilder leading: () -> Leading
     ) {
         self.init(
-            title: title,
+            title,
             subtitle: subtitle,
             chrome: chrome,
             action: action,
@@ -163,7 +167,7 @@ extension MiniPlayerBar where Trailing == EmptyView {
         var body: some View {
             VStack(spacing: Space.xl) {
                 MiniPlayerSample(chrome: .floating)
-                MiniPlayerBar(title: "Rest", subtitle: "01:30", chrome: .floating, action: {}) {
+                MiniPlayerBar("Rest", subtitle: "01:30", chrome: .floating, action: {}) {
                     Image(systemName: "timer").accessibilityHidden(true)
                 }
             }

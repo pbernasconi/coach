@@ -6,22 +6,36 @@ import SwiftUI
 /// VoiceOver reads the label and "x of y".
 ///
 ///     SegmentedProgress(done: 2, planned: 1, minimum: 3, goal: 4, accessibilityLabel: "Weekly goal")
+///     SegmentedProgress(done: 1, goal: 3, verbatimAccessibilityLabel: "\(plan.name) this week")
 public struct SegmentedProgress: View {
     @Environment(\.koboTheme) private var theme
     @ScaledMetric(relativeTo: .body) private var height = Space.sm
     private let segments: [ProgressSegment]
-    private let accessibilityLabel: LocalizedStringKey
+    private let label: Text
 
     public init(segments: [ProgressSegment], accessibilityLabel: LocalizedStringKey) {
-        self.segments = segments
-        self.accessibilityLabel = accessibilityLabel
+        self.init(segments, label: Text(accessibilityLabel))
+    }
+
+    /// Segments whose accessibility label is shown as is (it names user data).
+    public init(segments: [ProgressSegment], verbatimAccessibilityLabel: String) {
+        self.init(segments, label: Text(verbatim: verbatimAccessibilityLabel))
     }
 
     public init(done: Int, planned: Int = 0, minimum: Int = 0, goal: Int, accessibilityLabel: LocalizedStringKey) {
-        self.init(
-            segments: ProgressSegment.segments(done: done, planned: planned, minimum: minimum, goal: goal),
-            accessibilityLabel: accessibilityLabel
-        )
+        let segments = ProgressSegment.segments(done: done, planned: planned, minimum: minimum, goal: goal)
+        self.init(segments, label: Text(accessibilityLabel))
+    }
+
+    /// Progress toward a goal, with an accessibility label shown as is.
+    public init(done: Int, planned: Int = 0, minimum: Int = 0, goal: Int, verbatimAccessibilityLabel: String) {
+        let segments = ProgressSegment.segments(done: done, planned: planned, minimum: minimum, goal: goal)
+        self.init(segments, label: Text(verbatim: verbatimAccessibilityLabel))
+    }
+
+    private init(_ segments: [ProgressSegment], label: Text) {
+        self.segments = segments
+        self.label = label
     }
 
     public var body: some View {
@@ -33,7 +47,7 @@ public struct SegmentedProgress: View {
         .frame(height: height)
         .koboAnimation(.state, value: segments)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text(accessibilityLabel))
+        .accessibilityLabel(label)
         .accessibilityValue(Text(verbatim: ProgressSegment.accessibilityValue(for: segments)))
     }
 

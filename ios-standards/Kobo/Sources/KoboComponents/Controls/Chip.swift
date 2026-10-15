@@ -4,12 +4,17 @@ import SwiftUI
 /// A selectable capsule: a filter, a preset, a choice. The selected chip takes the solid tone fill and the selected
 /// accessibility trait, so selection never rests on hue alone. Group chips with `ChipGroup`.
 ///
+/// An active filter chip can carry a clear control: pass `onClear` and the selected chip shows a trailing ✕ with its
+/// own 44pt target. VoiceOver gets one element with a "Clear …" action instead of a second button.
+///
 ///     Chip("Barbell", systemImage: "dumbbell", isSelected: filter == .barbell) { filter = .barbell }
+///     Chip(verbatim: tag.name, isSelected: true, onClear: { remove(tag) }) { edit(tag) }
 public struct Chip: View {
     private let title: Text
     private let systemImage: String?
     private let tone: Tone
     private let isSelected: Bool
+    private let onClear: (() -> Void)?
     private let action: () -> Void
 
     /// A chip with a localized title.
@@ -18,9 +23,17 @@ public struct Chip: View {
         systemImage: String? = nil,
         tone: Tone = .accent,
         isSelected: Bool,
+        onClear: (() -> Void)? = nil,
         action: @escaping () -> Void
     ) {
-        self.init(title: Text(titleKey), systemImage: systemImage, tone: tone, isSelected: isSelected, action: action)
+        self.init(
+            title: Text(titleKey),
+            systemImage: systemImage,
+            tone: tone,
+            isSelected: isSelected,
+            onClear: onClear,
+            action: action
+        )
     }
 
     /// A chip whose title is shown as is (user data, numbers).
@@ -29,6 +42,7 @@ public struct Chip: View {
         systemImage: String? = nil,
         tone: Tone = .accent,
         isSelected: Bool,
+        onClear: (() -> Void)? = nil,
         action: @escaping () -> Void
     ) {
         self.init(
@@ -36,15 +50,24 @@ public struct Chip: View {
             systemImage: systemImage,
             tone: tone,
             isSelected: isSelected,
+            onClear: onClear,
             action: action
         )
     }
 
-    init(title: Text, systemImage: String?, tone: Tone, isSelected: Bool, action: @escaping () -> Void) {
+    init(
+        title: Text,
+        systemImage: String?,
+        tone: Tone,
+        isSelected: Bool,
+        onClear: (() -> Void)? = nil,
+        action: @escaping () -> Void
+    ) {
         self.title = title
         self.systemImage = systemImage
         self.tone = tone
         self.isSelected = isSelected
+        self.onClear = onClear
         self.action = action
     }
 
@@ -55,10 +78,34 @@ public struct Chip: View {
                     Image(systemName: systemImage).imageScale(.small).accessibilityHidden(true)
                 }
                 title.lineLimit(1)
+                if showsClear {
+                    Image(systemName: "xmark").imageScale(.small).fontWeight(.bold).accessibilityHidden(true)
+                }
             }
         }
         .buttonStyle(ChipStyle(tone: tone, isSelected: isSelected))
+        .overlay(alignment: .trailing) { clearTarget }
         .accessibilityAddTraits(isSelected ? [.isSelected] : [])
+        .accessibilityActions {
+            if let onClear, showsClear {
+                Button(action: onClear) { Text("Clear \(title)", bundle: .module) }
+            }
+        }
+    }
+
+    private var showsClear: Bool { isSelected && onClear != nil }
+
+    /// The ✕ draws inside the chip; this clear target sits over it, 44pt square, so it is easy to hit.
+    @ViewBuilder private var clearTarget: some View {
+        if let onClear, showsClear {
+            Button(action: onClear) {
+                Color.clear
+                    .frame(width: Size.minTouch, height: Size.minTouch)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHidden(true)
+        }
     }
 }
 
@@ -123,6 +170,9 @@ struct ChipStyle: ButtonStyle {
                     Chip("Done", systemImage: "checkmark", tone: .success, isSelected: true) {}
                     Chip("Skipped", tone: .danger, isSelected: true) {}
                     Chip("Off", isSelected: false) {}.disabled(true)
+                }
+                HStack(spacing: Space.sm) {
+                    Chip(verbatim: "Leg day", systemImage: "tag", isSelected: true, onClear: {}) {}
                 }
             }
             .padding(Space.gutter)

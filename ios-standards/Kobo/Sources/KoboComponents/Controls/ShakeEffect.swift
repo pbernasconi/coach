@@ -11,8 +11,9 @@ extension View {
     }
 }
 
-/// The horizontal error shake: `travel` counts completed shakes, and each whole unit swings `Motion.Shake.swings`
-/// times out to `Motion.Shake.distance` and back to rest.
+/// The horizontal error shake: `travel` counts completed shakes. Each whole unit settles out to
+/// `Motion.Shake.distance`, swings `Motion.Shake.swings` times from side to side and settles back to rest
+/// (`ShakeMath.legs`), over `ShakeMath.duration`.
 struct ShakeEffect: GeometryEffect {
     var travel: CGFloat
 
@@ -36,7 +37,7 @@ private struct ShakeModifier<Trigger: Equatable>: ViewModifier {
             .modifier(ShakeEffect(travel: shakes))
             .onChange(of: trigger) {
                 guard !reduceMotion else { return }
-                // A linear sweep of `travel`: the sine in `ShakeEffect` shapes the swings, timed by `Motion.Shake`.
+                // A linear sweep of `travel`: the eased legs in `ShakeMath` shape the swings, timed by `Motion.Shake`.
                 withAnimation(.linear(duration: ShakeMath.duration)) { shakes += 1 }
             }
     }

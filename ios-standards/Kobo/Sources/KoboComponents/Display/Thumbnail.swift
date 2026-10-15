@@ -7,6 +7,10 @@ import SwiftUI
 ///     Thumbnail(systemName: "figure.strengthtraining.traditional", tone: .accent) {
 ///         ThumbnailBadge(systemName: "play.fill")
 ///     }
+///
+/// Rule 9 exception (CONVENTIONS.md): the tile has a fixed `side`, so an SF Symbol inside it takes a size computed from
+/// the side (maths inside a shape) instead of a Dynamic Type role, keeping its proportion at every tile size. Text that
+/// must be read belongs next to the tile, where it scales.
 public struct Thumbnail<Content: View, Badge: View>: View {
     private let tone: Tone
     private let side: CGFloat
@@ -51,7 +55,7 @@ public struct Thumbnail<Content: View, Badge: View>: View {
                 content.scaledToFill()
             } else {
                 content
-                    // Maths inside the tile: the glyph keeps its proportion at every tile size.
+                    // Maths inside the tile (rule 9 exception, see above): the glyph keeps its proportion.
                     .font(.system(size: side * 0.42, weight: .semibold))
                     .foregroundStyle(colors.ink)
             }

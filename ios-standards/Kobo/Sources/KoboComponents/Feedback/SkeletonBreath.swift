@@ -5,7 +5,7 @@ import SwiftUI
 extension View {
     /// Breathes this view's opacity between full and a dimmer low point, the calm alternative to a shimmer.
     /// Every breathing view reads the same frame clock, so a whole screen of placeholders dims together.
-    /// Static at full opacity with Reduce Motion on.
+    /// Static at full opacity with Reduce Motion on, or under `koboFreezesMotion` (snapshots).
     public func skeletonBreath() -> some View {
         modifier(SkeletonBreathModifier())
     }
@@ -13,12 +13,12 @@ extension View {
 
 private struct SkeletonBreathModifier: ViewModifier {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.koboFreezesMotion) private var freezesMotion
 
     func body(content: Content) -> some View {
-        TimelineView(.animation(minimumInterval: nil, paused: reduceMotion)) { context in
-            content.opacity(
-                reduceMotion ? 1 : SkeletonBreathMotion.opacity(at: context.date.timeIntervalSinceReferenceDate)
-            )
+        let still = reduceMotion || freezesMotion
+        TimelineView(.animation(minimumInterval: nil, paused: still)) { context in
+            content.opacity(still ? 1 : SkeletonBreathMotion.opacity(at: context.date.timeIntervalSinceReferenceDate))
         }
     }
 }

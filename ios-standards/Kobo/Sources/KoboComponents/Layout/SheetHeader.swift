@@ -11,6 +11,11 @@ public struct SheetHeaderAction {
         self.init(label: Text(accessibilityLabel), isEnabled: isEnabled, action: action)
     }
 
+    /// An action whose accessibility label is shown as is, because it names user data ("Save Push day").
+    public init(verbatimAccessibilityLabel: String, isEnabled: Bool = true, action: @escaping () -> Void) {
+        self.init(label: Text(verbatim: verbatimAccessibilityLabel), isEnabled: isEnabled, action: action)
+    }
+
     init(label: Text, isEnabled: Bool = true, action: @escaping () -> Void) {
         self.accessibilityLabel = label
         self.isEnabled = isEnabled
@@ -19,7 +24,8 @@ public struct SheetHeaderAction {
 }
 
 /// The header of an iOS 26 sheet, without a grabber: a glass circular close button, a centred title and
-/// optional subtitle, and an optional prominent confirm (checkmark) button.
+/// optional subtitle, and an optional prominent confirm (checkmark) button. Under a `.solid` theme the buttons are
+/// flat circles (`KoboButtonStyle` `.secondary` and `.primary` at `.icon` size) instead of glass.
 ///
 ///     SheetHeader("Edit set", onClose: dismiss, confirm: SheetHeaderAction(accessibilityLabel: "Save", action: save))
 public struct SheetHeader: View {
@@ -98,24 +104,29 @@ public struct SheetHeader: View {
         .padding(.bottom, Space.sm)
     }
 
-    @ViewBuilder
     private func iconButton(_ item: SheetHeaderAction, systemImage: String, prominent: Bool) -> some View {
         let label = Image(systemName: systemImage)
             .accessibilityHidden(true)  // the button carries the label
             .font(theme.font(.body).weight(.semibold))
             .frame(width: buttonSize, height: buttonSize)
-        if prominent {
-            Button(action: item.action) { label }
-                .buttonStyle(.glassProminent)
-                .buttonBorderShape(.circle)
-                .disabled(!item.isEnabled)
-                .accessibilityLabel(item.accessibilityLabel)
-        } else {
-            Button(action: item.action) { label }
-                .buttonStyle(.glass)
-                .buttonBorderShape(.circle)
-                .disabled(!item.isEnabled)
-                .accessibilityLabel(item.accessibilityLabel)
+        return Button(action: item.action) { label }
+            .modifier(SheetHeaderButtonLook(prominent: prominent))
+            .disabled(!item.isEnabled)
+            .accessibilityLabel(item.accessibilityLabel)
+    }
+}
+
+/// Glass circles under a glass theme; flat Kobo circles under a solid one (glass yields to `.solid`, rule 16).
+private struct SheetHeaderButtonLook: ViewModifier {
+    @Environment(\.koboTheme) private var theme
+    let prominent: Bool
+
+    func body(content: Content) -> some View {
+        switch (theme.surfaceStyle, prominent) {
+        case (.glass, true): content.buttonStyle(.glassProminent).buttonBorderShape(.circle)
+        case (.glass, false): content.buttonStyle(.glass).buttonBorderShape(.circle)
+        case (.solid, true): content.buttonStyle(.kobo(.primary, size: .icon))
+        case (.solid, false): content.buttonStyle(.kobo(.secondary, size: .icon))
         }
     }
 }
@@ -135,8 +146,10 @@ public struct SheetHeader: View {
                 SheetHeader(
                     verbatim: "Pinned note",
                     onClose: {},
-                    confirm: SheetHeaderAction(accessibilityLabel: "Save", isEnabled: false) {}
+                    confirm: SheetHeaderAction(verbatimAccessibilityLabel: "Save Pinned note", isEnabled: false) {}
                 )
+                SheetHeader("Solid theme", onClose: {}, confirm: SheetHeaderAction(accessibilityLabel: "Save") {})
+                    .koboTheme(Theme(palette: .lift, surfaceStyle: .solid))
             }
             .frame(maxHeight: .infinity, alignment: .top)
             .background(Theme.system.palette.surface)

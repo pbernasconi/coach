@@ -3,10 +3,11 @@ import SwiftUI
 
 /// A button that runs an async, throwing action, such as a save. Taps are ignored while it runs. A spinner replaces
 /// the label only if the action is still running after `Motion.Duration.spinnerDelay`, and then stays for at least
-/// `Motion.Duration.spinnerHold`, so a quick answer never flickers. A success can pop a check mark; success and
-/// failure each play a haptic.
+/// `Motion.Duration.spinnerHold`, so a quick answer never flickers. A success can pop a check mark (VoiceOver hears
+/// "Done"); success and failure each play a haptic. The label keeps its width under the spinner and the check.
 ///
 ///     AsyncButton("Save", width: .full) { try await store.save(draft) }
+///     AsyncButton(verbatim: "Send to \(name)", failureFeedback: nil) { try await send() }
 public struct AsyncButton<Label: View>: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var phase = AsyncButtonPhase.idle
@@ -98,6 +99,9 @@ public struct AsyncButton<Label: View>: View {
             try await action()
             outcome = Outcome(run: run, succeeded: true)
             send(.finished(succeeded: true))
+            if confirmation == .checkmark {
+                AccessibilityNotification.Announcement(String(localized: "Done", bundle: .module)).post()
+            }
         } catch is CancellationError {
             send(.finished(succeeded: false))
         } catch {
@@ -125,13 +129,15 @@ public struct AsyncButton<Label: View>: View {
 }
 
 extension AsyncButton where Label == Text {
-    /// A text-labelled async button.
+    /// A text-labelled async button with localized copy.
     public init(
         _ titleKey: LocalizedStringKey,
         variant: KoboButtonStyle.Variant = .primary,
         size: KoboButtonStyle.Size = .regular,
         width: KoboButtonStyle.Width = .hug,
         confirmation: Confirmation = .checkmark,
+        successFeedback: HapticFeedback? = .success,
+        failureFeedback: HapticFeedback? = .error,
         clock: any Clock<Duration> = ContinuousClock(),
         action: @escaping () async throws -> Void
     ) {
@@ -140,9 +146,36 @@ extension AsyncButton where Label == Text {
             size: size,
             width: width,
             confirmation: confirmation,
+            successFeedback: successFeedback,
+            failureFeedback: failureFeedback,
             clock: clock,
             action: action,
             label: { Text(titleKey) }
+        )
+    }
+
+    /// A text-labelled async button whose title is shown as is (it names user data).
+    public init(
+        verbatim title: String,
+        variant: KoboButtonStyle.Variant = .primary,
+        size: KoboButtonStyle.Size = .regular,
+        width: KoboButtonStyle.Width = .hug,
+        confirmation: Confirmation = .checkmark,
+        successFeedback: HapticFeedback? = .success,
+        failureFeedback: HapticFeedback? = .error,
+        clock: any Clock<Duration> = ContinuousClock(),
+        action: @escaping () async throws -> Void
+    ) {
+        self.init(
+            variant,
+            size: size,
+            width: width,
+            confirmation: confirmation,
+            successFeedback: successFeedback,
+            failureFeedback: failureFeedback,
+            clock: clock,
+            action: action,
+            label: { Text(verbatim: title) }
         )
     }
 }
@@ -158,6 +191,7 @@ extension AsyncButton where Label == Text {
                 AsyncButton("Save (fast)", width: .full) {}
                 AsyncButton("Save (slow)", width: .full) { try await ContinuousClock().sleep(for: .seconds(2)) }
                 AsyncButton("Fails", variant: .destructive, width: .full) { throw PreviewFailure() }
+                AsyncButton(verbatim: "Send to Maya", variant: .tonal, failureFeedback: nil) {}
                 AsyncButton(.glass, size: .compact, confirmation: .off) {
                 } label: {
                     Label("Sync", systemImage: "arrow.clockwise")

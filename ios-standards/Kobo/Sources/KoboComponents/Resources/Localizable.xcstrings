@@ -25,6 +25,18 @@
         }
       }
     },
+    "%@ new" : {
+      "comment" : "CountBadge spoken count, the badge text then \"new\" (\"3 new\", \"99+ new\").",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ new"
+          }
+        }
+      }
+    },
     "%lld of %lld" : {
       "comment" : "SegmentedProgress accessibility value: done segments of all segments (\"2 of 4\").",
       "extractionState" : "manual",
@@ -33,6 +45,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld of %lld"
+          }
+        }
+      }
+    },
+    "%lld of %lld steps done" : {
+      "comment" : "SetupChecklistCard progress bar accessibility label (\"1 of 3 steps done\").",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld of %lld steps done"
+          }
+        }
+      }
+    },
+    "About %@" : {
+      "comment" : "InfoButton accessibility label naming the term it explains (\"About Training load\").",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About %@"
+          }
+        }
+      }
+    },
+    "Back" : {
+      "comment" : "Accessibility label of the back HeaderButton.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Back"
+          }
+        }
+      }
+    },
+    "Back online" : {
+      "comment" : "OfflineBanner message after the connection returns from a long drop.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Back online"
+          }
+        }
+      }
+    },
+    "Cancel" : {
+      "comment" : "ModalPage toolbar button that closes the page without saving.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
           }
         }
       }
@@ -73,6 +145,30 @@
         }
       }
     },
+    "Discard changes" : {
+      "comment" : "Destructive button of the confirmation shown when closing a sheet or page with unsaved edits.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Discard changes"
+          }
+        }
+      }
+    },
+    "Discard changes?" : {
+      "comment" : "Title of the confirmation shown when closing a sheet or page with unsaved edits.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Discard changes?"
+          }
+        }
+      }
+    },
     "Dismiss" : {
       "comment" : "Accessibility label or action that dismisses a NoticeBanner or a toast.",
       "extractionState" : "manual",
@@ -81,6 +177,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dismiss"
+          }
+        }
+      }
+    },
+    "Dismiss suggestion" : {
+      "comment" : "Accessibility label of the SuggestionCard close button.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dismiss suggestion"
           }
         }
       }
@@ -105,6 +213,42 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Expanded"
+          }
+        }
+      }
+    },
+    "Hidden" : {
+      "comment" : "MaskedValue accessibility label when nothing of the value is shown.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hidden"
+          }
+        }
+      }
+    },
+    "Hidden, ending in %@" : {
+      "comment" : "MaskedValue accessibility label with the visible tail (\"Hidden, ending in 4242\").",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hidden, ending in %@"
+          }
+        }
+      }
+    },
+    "Hide" : {
+      "comment" : "RevealableValue button label that masks the value again; SetupChecklistCard menu item that hides the card.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide"
           }
         }
       }
@@ -145,6 +289,30 @@
         }
       }
     },
+    "Keep editing" : {
+      "comment" : "Cancel button of the discard-changes confirmation; returns to the sheet or page.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep editing"
+          }
+        }
+      }
+    },
+    "Learn more" : {
+      "comment" : "InfoSheet link to a longer explanation.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Learn more"
+          }
+        }
+      }
+    },
     "Loading" : {
       "comment" : "LoadingState accessibility label when it has no caption.",
       "extractionState" : "manual",
@@ -153,6 +321,42 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Loading"
+          }
+        }
+      }
+    },
+    "More options" : {
+      "comment" : "Accessibility label of the SetupChecklistCard \"…\" menu.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More options"
+          }
+        }
+      }
+    },
+    "No internet connection" : {
+      "comment" : "OfflineBanner message while the device is offline.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No internet connection"
+          }
+        }
+      }
+    },
+    "Not done" : {
+      "comment" : "SetupChecklistCard accessibility value of an open step.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not done"
           }
         }
       }
@@ -193,6 +397,18 @@
         }
       }
     },
+    "Opens your profile" : {
+      "comment" : "HeaderProfileButton accessibility hint.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens your profile"
+          }
+        }
+      }
+    },
     "Person" : {
       "comment" : "Avatar accessibility label when the name is empty.",
       "extractionState" : "manual",
@@ -217,6 +433,42 @@
         }
       }
     },
+    "Profile" : {
+      "comment" : "HeaderProfileButton title and label when there is no name.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profile"
+          }
+        }
+      }
+    },
+    "Save" : {
+      "comment" : "ModalPage confirm button and InputModal checkmark accessibility label.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save"
+          }
+        }
+      }
+    },
+    "Show" : {
+      "comment" : "RevealableValue button label that reveals the value.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show"
+          }
+        }
+      }
+    },
     "Shows the content" : {
       "comment" : "Collapsible accessibility hint when collapsed.",
       "extractionState" : "manual",
@@ -225,6 +477,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Shows the content"
+          }
+        }
+      }
+    },
+    "Still working on it…" : {
+      "comment" : "Slow-wait line after a short wait (SlowWait.slow): LoadingState, SlowWaitNote.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Still working on it…"
+          }
+        }
+      }
+    },
+    "This is taking longer than usual." : {
+      "comment" : "Slow-wait line after a long wait (SlowWait.verySlow): LoadingState, SlowWaitNote.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This is taking longer than usual."
           }
         }
       }
@@ -261,6 +537,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Try again"
+          }
+        }
+      }
+    },
+    "Your edits will be lost." : {
+      "comment" : "Message of the discard-changes confirmation.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your edits will be lost."
           }
         }
       }

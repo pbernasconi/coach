@@ -1,7 +1,8 @@
 import KoboTokens
 import SwiftUI
 
-/// One tappable day of a `DayStrip`: the day number (ringed today, filled when done) above a planned dot.
+/// One tappable day of a `DayStrip`: the day number (ringed today, filled when done, a soft disc or an outer ring when
+/// selected) above a planned dot.
 struct DayStripCell: View {
     @Environment(\.koboTheme) private var theme
     @ScaledMetric(relativeTo: .body) private var diameter = Size.buttonHeightCompact
@@ -9,6 +10,7 @@ struct DayStripCell: View {
     let dayNumber: String
     let marker: DayMarker
     let isToday: Bool
+    var isSelected = false
     let isPast: Bool
     let accessibilityText: String
     let action: () -> Void
@@ -34,6 +36,8 @@ struct DayStripCell: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text(accessibilityText))
+        .accessibilityAddTraits(isSelected ? [.isSelected] : [])
+        .koboAnimation(.state, value: isSelected)
         .accessibilityShowsLargeContentViewer {
             Text(dayNumber)
         }
@@ -44,9 +48,12 @@ struct DayStripCell: View {
         switch marker {
         case .done(let tone):
             Circle().fill(fill(tone))
+                .padding(isSelected ? Space.xs : 0)
+                .background { if isSelected { Circle().strokeBorder(theme.palette.textPrimary, lineWidth: Space.xxs) } }
         case .none, .planned:
-            if isToday {
-                Circle().strokeBorder(theme.palette.accent, lineWidth: Space.xxs)
+            ZStack {
+                if isSelected { Circle().fill(theme.palette.accentSoft) }
+                if isToday { Circle().strokeBorder(theme.palette.accent, lineWidth: Space.xxs) }
             }
         }
     }
@@ -55,7 +62,7 @@ struct DayStripCell: View {
         if case .done(let tone) = marker {
             return tone == .accent ? theme.palette.onAccent : theme.palette.surface
         }
-        if isToday { return theme.palette.accentText }
+        if isToday || isSelected { return theme.palette.accentText }
         return isPast ? theme.palette.textTertiary : theme.palette.textPrimary
     }
 

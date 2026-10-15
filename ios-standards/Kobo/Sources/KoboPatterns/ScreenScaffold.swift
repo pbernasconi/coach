@@ -13,7 +13,10 @@ public enum ScreenHeaderStyle: Sendable, Equatable {
 }
 
 /// The standard screen frame: large title with optional kicker and subtitle, trailing toolbar buttons,
-/// scrolling content inside the page gutter on the canvas, and an optional pinned footer.
+/// scrolling content inside the page gutter on the canvas, and an optional pinned footer. The scroll view is the root,
+/// so the navigation bar's scroll-edge effect attaches to it, `.refreshable { … }` on the scaffold adds pull to
+/// refresh, and dragging the content dismisses the keyboard. Inline toolbar buttons are glass circles, or flat ones
+/// under a `.solid` theme.
 ///
 ///     ScreenScaffold("Week", subtitle: "3 of 4 workouts") {
 ///         DayStrip(…)
@@ -99,6 +102,7 @@ public struct ScreenScaffold<Content: View, Toolbar: View, Footer: View>: View {
             .padding(.bottom, Space.xxl)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .scrollDismissesKeyboard(.interactively)
         .background(theme.palette.canvas)
         .modifier(ScaffoldNavigation(style: headerStyle, title: title, toolbar: toolbar))
         .pinnedFooter(isPresented: Footer.self != EmptyView.self) { footer }
