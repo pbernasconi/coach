@@ -103,9 +103,12 @@ extension CheckRow where Leading == EmptyView {
                 ListSection("Equipment you have", footer: "We only suggest exercises you can do.") {
                     CheckRow("All equipment", state: allOwned)
                     ForEach(SelectionSamples.equipment) { option in
-                        CheckRow(title: option.title, subtitle: option.subtitle, state: binding(option.value)) {
-                            Image(systemName: option.systemImage ?? "circle").accessibilityHidden(true)
-                        }
+                        CheckRow(
+                            title: option.title,
+                            subtitle: option.subtitle,
+                            state: binding(option.value),
+                            leading: Image(systemName: option.systemImage ?? "circle").accessibilityHidden(true)
+                        )
                     }
                     CheckRow("Cable stack", subtitle: "Ask your gym", isOn: .constant(false)).disabled(true)
                 }
