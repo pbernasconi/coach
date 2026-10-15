@@ -3,7 +3,9 @@ import SwiftUI
 
 /// A list row: optional `leading` slot (icon, avatar), title, optional subtitle and value text, and a
 /// `trailing` slot. A row with an `action` is one `Button` with a press highlight and, when it has no
-/// trailing slot, a chevron. A row without an action reads as one VoiceOver element.
+/// trailing slot, a chevron. A row without an action reads as one VoiceOver element. The press highlight fills the
+/// whole row inside a `ListSection` (the card clips it) and is an inset rounded rectangle on the canvas or in a sheet,
+/// where a full-bleed fill would look like a selection; every tap shows it once, however quick (`ListRowButtonStyle`).
 ///
 ///     ListRow("Units", value: "kg", action: openUnits) { Image(systemName: "scalemass").accessibilityHidden(true) }
 ///
@@ -179,30 +181,6 @@ extension ListRow where Leading == EmptyView, Trailing == EmptyView {
             leading: { EmptyView() },
             trailing: { EmptyView() }
         )
-    }
-}
-
-/// The pressed fill of a tappable row: in on `Motion.instant`, out on the faster-feeling `Motion.exit`.
-private struct ListRowButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        ListRowPressLook(label: configuration.label, isPressed: configuration.isPressed)
-    }
-}
-
-private struct ListRowPressLook<Label: View>: View {
-    @Environment(\.koboTheme) private var theme
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    let label: Label
-    let isPressed: Bool
-
-    var body: some View {
-        label
-            .foregroundStyle(theme.palette.textPrimary)
-            .background(isPressed ? theme.palette.surfaceRaised : Color.clear)
-            .animation(
-                (isPressed ? Motion.instant : Motion.exit).animation(reduceMotion: reduceMotion),
-                value: isPressed
-            )
     }
 }
 

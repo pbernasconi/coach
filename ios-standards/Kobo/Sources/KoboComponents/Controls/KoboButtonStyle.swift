@@ -8,7 +8,9 @@ import SwiftUI
 ///     Button("Skip", action: skip).buttonStyle(.kobo(.glass, size: .compact))
 ///
 /// A press shrinks the capsule a little and veils its fill on `Motion.instant`. While `isLoading`, a spinner replaces
-/// the label, which stays laid out (hidden) so the width never changes, and presses are ignored.
+/// the label, which stays laid out (hidden) so the width never changes, the enabled fill stays (a red destructive
+/// confirm never turns grey while it works), and presses are ignored. A disabled button draws the palette's disabled
+/// roles, never an opacity, and the fill and ink change together in one `Motion.instant` step when it wakes up.
 public struct KoboButtonStyle: ButtonStyle {
     @Environment(\.koboTheme) private var theme
     @Environment(\.isEnabled) private var isEnabled
@@ -51,6 +53,7 @@ public struct KoboButtonStyle: ButtonStyle {
             .scaleEffect(isPressed ? PressMetrics.scale : 1)
             .koboAnimation(.instant, value: isPressed)
             .koboAnimation(.state, value: isLoading)
+            .koboAnimation(.instant, value: isEnabled)
             .padding(.vertical, size.targetInset)
             .contentShape(Rectangle())
             .allowsHitTesting(!isLoading)

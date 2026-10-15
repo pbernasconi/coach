@@ -9,13 +9,14 @@ public enum PinnedFooterStyle: Sendable, Equatable {
     /// neighbouring buttons blend and morph. Pass glass buttons; the footer adds no glass of its own, so
     /// glass never stacks on glass (UI-10).
     case glass
-    /// An edge-to-edge bar material with a top hairline.
+    /// An edge-to-edge bar material with a top hairline that shows while content scrolls under the footer.
     case material
 }
 
 extension View {
     /// Pins primary actions to the bottom of the screen. The footer sits in the bottom safe area inset,
-    /// so scrolling content stops above it and the home indicator area stays clear.
+    /// so scrolling content stops above it and the home indicator area stays clear. Apply it to the scroll view: the
+    /// `.material` footer then draws its top hairline only while content runs under it.
     ///
     ///     ScrollView { … }
     ///         .pinnedFooter { Button("Save", action: save).buttonStyle(.glassProminent) }
@@ -24,12 +25,33 @@ extension View {
         isPresented: Bool = true,
         @ViewBuilder footer: () -> Footer
     ) -> some View {
-        let content = footer()
-        return safeAreaInset(edge: .bottom, spacing: 0) {
-            if isPresented {
-                PinnedFooter(style: style) { content }
+        modifier(PinnedFooterHost(style: style, isPresented: isPresented, footer: footer()))
+    }
+}
+
+/// Watches the scroll view it is applied to, so the footer knows when content runs under it.
+private struct PinnedFooterHost<Footer: View>: ViewModifier {
+    let style: PinnedFooterStyle
+    let isPresented: Bool
+    let footer: Footer
+    @State private var contentIsUnder = false
+
+    func body(content: Content) -> some View {
+        content
+            .onScrollGeometryChange(for: Bool.self) { geometry in
+                FooterEdge.showsHairline(
+                    contentHeight: geometry.contentSize.height,
+                    visibleMaxY: geometry.visibleRect.maxY,
+                    bottomInset: geometry.contentInsets.bottom
+                )
+            } action: { _, isUnder in
+                contentIsUnder = isUnder
             }
-        }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                if isPresented {
+                    PinnedFooter(style: style, showsEdge: contentIsUnder) { footer }
+                }
+            }
     }
 }
 
@@ -37,10 +59,17 @@ extension View {
 public struct PinnedFooter<Content: View>: View {
     @Environment(\.koboTheme) private var theme
     private let style: PinnedFooterStyle
+    private let showsEdge: Bool
     private let content: Content
 
+    /// A footer for a custom layout; its `.material` hairline always shows.
     public init(style: PinnedFooterStyle = .automatic, @ViewBuilder content: () -> Content) {
+        self.init(style: style, showsEdge: true, content: content)
+    }
+
+    init(style: PinnedFooterStyle, showsEdge: Bool, @ViewBuilder content: () -> Content) {
         self.style = style
+        self.showsEdge = showsEdge
         self.content = content()
     }
 
@@ -60,7 +89,9 @@ public struct PinnedFooter<Content: View>: View {
                 .padding(.bottom, Space.sm)
                 .frame(maxWidth: .infinity)
                 .background(.bar)
-                .overlay(alignment: .top) { Separator() }
+                .overlay(alignment: .top) {
+                    Separator().opacity(showsEdge ? 1 : 0).koboAnimation(.state, value: showsEdge)
+                }
         }
     }
 

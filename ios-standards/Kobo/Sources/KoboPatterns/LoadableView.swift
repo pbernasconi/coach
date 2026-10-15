@@ -1,4 +1,5 @@
 import Foundation
+import KoboComponents
 import KoboTokens
 import SwiftUI
 
@@ -37,7 +38,9 @@ extension Loadable {
 }
 
 /// Renders a `Loadable` with one slot per phase, cross-fading between phases on `Motion.crossfade`
-/// (instant with Reduce Motion). Changes inside `.loaded` do not fade.
+/// (instant with Reduce Motion). Changes inside `.loaded` do not fade. The standard slots are Kobo's own states, so
+/// they follow the theme: `LoadingState` (a spinner that says so when a wait runs long), `LoadableEmptyView` (an
+/// `EmptyState`) and `LoadableFailedView` (an `ErrorState`-style failure that VoiceOver announces).
 ///
 ///     LoadableView(state.workouts, onRetry: { send(.retryTapped) }) { rows in
 ///         WorkoutList(rows: rows)
@@ -113,20 +116,20 @@ extension LoadableView where Failed == LoadableFailedView {
     }
 }
 
-extension LoadableView where Placeholder == ProgressView<EmptyView, EmptyView>, Failed == LoadableFailedView {
-    /// Custom loaded and empty slots; a spinner while loading and the standard failure view.
+extension LoadableView where Placeholder == LoadingState, Failed == LoadableFailedView {
+    /// Custom loaded and empty slots; a `LoadingState` spinner while loading and the standard failure view.
     public init(
         _ state: Loadable<Value>,
         onRetry: (() -> Void)? = nil,
         @ViewBuilder loaded: @escaping (Value) -> Loaded,
         @ViewBuilder empty: () -> Empty
     ) {
-        self.init(state, onRetry: onRetry, loaded: loaded, placeholder: { ProgressView() }, empty: empty)
+        self.init(state, onRetry: onRetry, loaded: loaded, placeholder: { LoadingState() }, empty: empty)
     }
 }
 
 extension LoadableView
-where Placeholder == ProgressView<EmptyView, EmptyView>, Empty == LoadableEmptyView, Failed == LoadableFailedView {
+where Placeholder == LoadingState, Empty == LoadableEmptyView, Failed == LoadableFailedView {
     /// Only the loaded slot custom; standard spinner, empty and failure views.
     public init(
         _ state: Loadable<Value>,
@@ -141,7 +144,8 @@ where Placeholder == ProgressView<EmptyView, EmptyView>, Empty == LoadableEmptyV
     }
 }
 
-/// The standard failure view: the message and, when given, a retry button.
+/// The standard failure view: the danger art, "Couldn't load", the message and, when given, a retry button. VoiceOver
+/// announces the title and message when it appears.
 public struct LoadableFailedView: View {
     private let message: String
     private let retry: LoadableRetry?
@@ -152,52 +156,47 @@ public struct LoadableFailedView: View {
     }
 
     public var body: some View {
-        ContentUnavailableView {
-            Label {
-                Text("Couldn't load", bundle: .module)
-            } icon: {
-                Image(systemName: "exclamationmark.triangle")
-            }
-        } description: {
-            Text(verbatim: message)
+        let title = String(localized: "Couldn't load", bundle: .module)
+        EmptyState(verbatim: title, message: message) {
+            EmptyStateArt(systemImage: "exclamationmark.triangle.fill", tone: .danger)
         } actions: {
             if let retry {
                 Button(action: retry.action) { retry.label }
-                    .buttonStyle(.glassProminent)
+                    .buttonStyle(.kobo(.primary))
             }
         }
+        .onAppear { AccessibilityNotification.Announcement(title + ". " + message).post() }
     }
 }
 
-/// The standard empty view: an icon, a title and an optional message.
+/// The standard empty view: an `EmptyState` with an icon, a title and an optional message.
 public struct LoadableEmptyView: View {
-    private let title: Text
+    private enum Copy {
+        case localized(LocalizedStringKey, message: LocalizedStringKey?)
+        case verbatim(String, message: String?)
+    }
+
+    private let copy: Copy
     private let systemImage: String
-    private let message: Text?
 
     /// An empty view with localized copy.
     public init(_ title: LocalizedStringKey, systemImage: String = "tray", message: LocalizedStringKey? = nil) {
-        self.title = Text(title)
+        self.copy = .localized(title, message: message)
         self.systemImage = systemImage
-        self.message = message.map { Text($0) }
     }
 
     /// An empty view whose copy is shown as is (a search term, user data).
     public init(verbatim title: String, systemImage: String = "tray", message: String? = nil) {
-        self.title = Text(verbatim: title)
+        self.copy = .verbatim(title, message: message)
         self.systemImage = systemImage
-        self.message = message.map { Text(verbatim: $0) }
     }
 
     public var body: some View {
-        ContentUnavailableView {
-            Label {
-                title
-            } icon: {
-                Image(systemName: systemImage)
-            }
-        } description: {
-            if let message { message }
+        switch copy {
+        case .localized(let title, let message):
+            EmptyState(symbol: systemImage, title: title, message: message)
+        case .verbatim(let title, let message):
+            EmptyState(symbol: systemImage, verbatim: title, message: message)
         }
     }
 }

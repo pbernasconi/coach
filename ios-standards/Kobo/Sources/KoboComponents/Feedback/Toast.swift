@@ -31,6 +31,9 @@ nonisolated public struct Toast: Identifiable, Equatable, Sendable {
     public let action: Action?
     /// How long the toast stays before it dismisses itself.
     public let duration: Duration
+    /// Whether the toast may play its tone's haptic (success and danger only). Turn it off when the control that led
+    /// to the toast already played one, such as an `AsyncButton`, so one event never buzzes twice.
+    public let playsFeedback: Bool
 
     /// A toast whose message is shown as is (user data, names).
     ///
@@ -41,6 +44,7 @@ nonisolated public struct Toast: Identifiable, Equatable, Sendable {
         symbol: String? = nil,
         action: Action? = nil,
         duration: Duration? = nil,
+        playsFeedback: Bool = true,
         id: UUID = UUID()
     ) {
         self.id = id
@@ -49,6 +53,7 @@ nonisolated public struct Toast: Identifiable, Equatable, Sendable {
         self.symbol = symbol
         self.action = action
         self.duration = duration ?? Self.defaultDuration(hasAction: action != nil)
+        self.playsFeedback = playsFeedback
     }
 
     /// The glyph drawn in the toast.
@@ -59,6 +64,20 @@ nonisolated public struct Toast: Identifiable, Equatable, Sendable {
     /// A plain toast reads in 4 s; one with an action stays 7 s so there is time to reach it.
     public static func defaultDuration(hasAction: Bool) -> Duration {
         hasAction ? .seconds(7) : .seconds(4)
+    }
+
+    /// How long the toast stays: `duration`, or `nil` (until dismissed or replaced) for a toast with an action while
+    /// VoiceOver runs. A VoiceOver user reaches a top toast only by swiping to it, so a timer would take the action
+    /// away before they get there.
+    public func lifetime(screenReaderRunning: Bool) -> Duration? {
+        action != nil && screenReaderRunning ? nil : duration
+    }
+
+    /// Whether this toast plays its tone's haptic when it replaces a toast of `previous` tone (or none). Only success
+    /// and danger play, and a quick replacement of the same tone ("Copied", then "Copied") buzzes once.
+    public func shouldPlayFeedback(replacing previous: Tone?) -> Bool {
+        guard playsFeedback, tone == .success || tone == .danger else { return false }
+        return previous != tone
     }
 
     /// What VoiceOver speaks when the toast appears: the message, then "Undo available" when there is an action.

@@ -25,6 +25,66 @@
         }
       }
     },
+    "Couldn't load more" : {
+      "comment" : "LoadMoreFooter line after a failed page load.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't load more"
+          }
+        }
+      }
+    },
+    "Load more" : {
+      "comment" : "LoadMoreFooter button that loads the next page.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Load more"
+          }
+        }
+      }
+    },
+    "Loading" : {
+      "comment" : "Accessibility label of a loading section (LoadableSection, LoadableCaptionSection, SectionState retry).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading"
+          }
+        }
+      }
+    },
+    "Showing %lld" : {
+      "comment" : "LoadMoreFooter count line without a total (\"Showing 20\").",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Showing %lld"
+          }
+        }
+      }
+    },
+    "Showing %lld of %lld" : {
+      "comment" : "LoadMoreFooter count line with a total (\"Showing 20 of 54\").",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Showing %lld of %lld"
+          }
+        }
+      }
+    },
     "Try again" : {
       "comment" : "LoadableView retry button title when the state gives none.",
       "extractionState" : "manual",

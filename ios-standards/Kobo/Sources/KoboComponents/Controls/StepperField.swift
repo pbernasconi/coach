@@ -7,13 +7,14 @@ import SwiftUI
 ///
 ///     StepperField("Weight", value: $weight, in: 0...500, step: 2.5, unit: "kg")
 ///     StepperField("Reps", value: $reps, in: 1...50)
+///     StepperField(verbatim: exercise.name, value: $weight, in: 0...500, unit: settings.unitSymbol)
 public struct StepperField: View {
     @Environment(\.koboTheme) private var theme
-    private let title: LocalizedStringKey
+    private let title: Text
     private let value: Binding<Double>
     private let range: ClosedRange<Double>
     private let step: Double
-    private let unit: LocalizedStringKey?
+    private let unit: Text?
     private let playsHaptics: Bool
     private let format: (Double) -> String
 
@@ -26,6 +27,27 @@ public struct StepperField: View {
         unit: LocalizedStringKey? = nil,
         playsHaptics: Bool = true,
         format: @escaping (Double) -> String = { $0.formatted(.number.precision(.fractionLength(0...2))) }
+    ) {
+        self.init(
+            title: Text(title),
+            value: value,
+            in: range,
+            step: step,
+            unit: unit.map { Text($0) },
+            playsHaptics: playsHaptics,
+            format: format
+        )
+    }
+
+    /// The one place every initialiser lands: ready-made texts and a formatter.
+    init(
+        title: Text,
+        value: Binding<Double>,
+        in range: ClosedRange<Double>,
+        step: Double,
+        unit: Text?,
+        playsHaptics: Bool,
+        format: @escaping (Double) -> String
     ) {
         self.title = title
         self.value = value
@@ -104,12 +126,12 @@ public struct StepperField: View {
                     .contentTransition(.numericText(value: current))
                     .koboAnimation(.defaultEffects, value: current)
                 if let unit {
-                    Text(unit).font(theme.font(.footnote)).foregroundStyle(theme.palette.textSecondary)
+                    unit.font(theme.font(.footnote)).foregroundStyle(theme.palette.textSecondary)
                 }
             }
             .frame(maxWidth: .infinity)
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel(Text(title))
+            .accessibilityLabel(title)
             .accessibilityValue(spokenValue(current))
             .accessibilityAdjustableAction { direction in
                 switch direction {
@@ -137,7 +159,7 @@ public struct StepperField: View {
 
     private func spokenValue(_ current: Double) -> Text {
         guard let unit else { return Text(verbatim: format(current)) }
-        return Text("\(format(current)) \(Text(unit))", bundle: .module)
+        return Text("\(format(current)) \(unit)", bundle: .module)
     }
 }
 

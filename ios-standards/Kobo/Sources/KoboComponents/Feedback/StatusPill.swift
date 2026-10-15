@@ -19,6 +19,13 @@ public struct StatusPill: View {
         self.symbol = symbol
     }
 
+    /// The On or Off pill of a setting: success with "On", neutral with "Off" (the library's own words).
+    public init(isOn: Bool) {
+        self.label = isOn ? Text("On", bundle: .module) : Text("Off", bundle: .module)
+        self.tone = isOn ? .success : .neutral
+        self.symbol = isOn ? "checkmark.circle.fill" : "minus.circle.fill"
+    }
+
     /// A pill whose label is shown as is (user data, numbers).
     public init(verbatim label: String, tone: Tone, symbol: String? = nil) {
         self.label = Text(verbatim: label)
@@ -51,6 +58,8 @@ private struct StatusPillPreviews: View {
                 StatusPill(verbatim: tone.rawValue.capitalized, tone: tone)
             }
             StatusPill("Personal record", tone: .accent, symbol: "trophy.fill")
+            StatusPill(isOn: true)
+            StatusPill(isOn: false)
         }
         .padding()
     }

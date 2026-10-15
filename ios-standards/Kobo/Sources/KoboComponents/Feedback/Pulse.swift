@@ -4,7 +4,8 @@ import SwiftUI
 
 extension View {
     /// A soft ring that keeps expanding and fading behind this view while `active`, for a "go" state that wants
-    /// attention. With Reduce Motion on the ring holds still as a quiet halo, so the state still reads.
+    /// attention. With Reduce Motion on (or under `koboFreezesMotion`) the ring holds still as a quiet halo, so the
+    /// state still reads.
     ///
     ///     Text("GO").padding().background(theme.palette.accent, in: Circle()).pulse(active: isGo)
     ///
@@ -21,12 +22,13 @@ private struct PulseModifier<S: Shape>: ViewModifier {
     let shape: S
     let color: Color?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.koboFreezesMotion) private var freezesMotion
     @Environment(\.koboTheme) private var theme
 
     func body(content: Content) -> some View {
         content.background {
             if active {
-                if reduceMotion {
+                if reduceMotion || freezesMotion {
                     ring(spread: PulseMotion.reducedSpread, opacity: PulseMotion.reducedOpacity)
                 } else {
                     TimelineView(.animation(minimumInterval: nil, paused: false)) { context in

@@ -4,7 +4,7 @@ import SwiftUI
 
 extension View {
     /// Sweeps a soft highlight across this view's drawn pixels while `active`: skeletons, or text under
-    /// `.redacted(reason: .placeholder)`. Frozen (no sweep) with Reduce Motion on.
+    /// `.redacted(reason: .placeholder)`. Frozen (no sweep) with Reduce Motion on, or under `koboFreezesMotion`.
     public func shimmering(active: Bool = true) -> some View {
         modifier(ShimmerModifier(active: active))
     }
@@ -13,12 +13,13 @@ extension View {
 private struct ShimmerModifier: ViewModifier {
     let active: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.koboFreezesMotion) private var freezesMotion
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.koboTheme) private var theme
 
     func body(content: Content) -> some View {
         content.overlay {
-            if active && !reduceMotion {
+            if active && !reduceMotion && !freezesMotion {
                 TimelineView(.animation(minimumInterval: nil, paused: false)) { context in
                     band(phase: ShimmerMotion.phase(at: context.date.timeIntervalSinceReferenceDate))
                 }

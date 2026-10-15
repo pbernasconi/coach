@@ -6,8 +6,9 @@ import SwiftUI
 ///
 ///     ChipGroup("Equipment", options: equipment, selection: $filters, mode: .multiple)
 ///     ChipGroup("Split", options: splits, selection: $split)
+///     ChipGroup(verbatim: category.name, options: tags, selection: $tags)
 public struct ChipGroup<Value: Hashable & Sendable>: View {
-    private let title: LocalizedStringKey
+    private let title: Text
     private let options: [ChoiceOption<Value>]
     private let selection: Binding<Set<Value>>
     private let mode: SelectionMode
@@ -22,6 +23,62 @@ public struct ChipGroup<Value: Hashable & Sendable>: View {
         mode: SelectionMode = .multiple,
         tone: Tone = .accent,
         feedback: HapticFeedback? = .selection
+    ) {
+        self.init(
+            title: Text(title),
+            options: options,
+            selection: selection,
+            mode: mode,
+            tone: tone,
+            feedback: feedback
+        )
+    }
+
+    /// A group over a set of selected values, named as is (a category from user data).
+    public init(
+        verbatim title: String,
+        options: [ChoiceOption<Value>],
+        selection: Binding<Set<Value>>,
+        mode: SelectionMode = .multiple,
+        tone: Tone = .accent,
+        feedback: HapticFeedback? = .selection
+    ) {
+        self.init(
+            title: Text(verbatim: title),
+            options: options,
+            selection: selection,
+            mode: mode,
+            tone: tone,
+            feedback: feedback
+        )
+    }
+
+    /// A single-select group over one value, named as is.
+    public init(
+        verbatim title: String,
+        options: [ChoiceOption<Value>],
+        selection: Binding<Value>,
+        tone: Tone = .accent,
+        feedback: HapticFeedback? = .selection
+    ) {
+        let values = Self.single(selection)
+        self.init(
+            title: Text(verbatim: title),
+            options: options,
+            selection: values,
+            mode: .single,
+            tone: tone,
+            feedback: feedback
+        )
+    }
+
+    private init(
+        title: Text,
+        options: [ChoiceOption<Value>],
+        selection: Binding<Set<Value>>,
+        mode: SelectionMode,
+        tone: Tone,
+        feedback: HapticFeedback?
     ) {
         self.title = title
         self.options = options
@@ -39,13 +96,25 @@ public struct ChipGroup<Value: Hashable & Sendable>: View {
         tone: Tone = .accent,
         feedback: HapticFeedback? = .selection
     ) {
-        let values = Binding<Set<Value>>(
+        let values = Self.single(selection)
+        self.init(
+            title: Text(title),
+            options: options,
+            selection: values,
+            mode: .single,
+            tone: tone,
+            feedback: feedback
+        )
+    }
+
+    /// A one-value binding seen as a set of exactly one.
+    private static func single(_ selection: Binding<Value>) -> Binding<Set<Value>> {
+        Binding<Set<Value>>(
             get: { [selection.wrappedValue] },
             set: { newValue in
                 if let first = newValue.first { selection.wrappedValue = first }
             }
         )
-        self.init(title, options: options, selection: values, mode: .single, tone: tone, feedback: feedback)
     }
 
     public var body: some View {
@@ -62,7 +131,7 @@ public struct ChipGroup<Value: Hashable & Sendable>: View {
             }
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(Text(title))
+        .accessibilityLabel(title)
         .koboFeedback(feedback, trigger: selection.wrappedValue)
     }
 }

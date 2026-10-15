@@ -29,7 +29,7 @@ public struct KoboToggleStyle: ToggleStyle {
     }
 
     /// The switch trait where the platform has it.
-    private static var toggleTrait: AccessibilityTraits {
+    static var toggleTrait: AccessibilityTraits {
         #if os(iOS)
             .isToggle
         #else
@@ -43,8 +43,8 @@ extension ToggleStyle where Self == KoboToggleStyle {
     public static var kobo: KoboToggleStyle { KoboToggleStyle() }
 }
 
-/// The switch itself: a capsule track and a round knob, sized like the system switch.
-private struct SwitchTrack: View {
+/// The switch itself: a capsule track and a round knob, sized like the system switch. `ToggleRow` draws it too.
+struct SwitchTrack: View {
     @Environment(\.koboTheme) private var theme
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.colorScheme) private var colorScheme

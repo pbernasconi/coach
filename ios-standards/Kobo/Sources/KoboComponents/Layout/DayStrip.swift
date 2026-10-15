@@ -3,11 +3,13 @@ import KoboTokens
 import SwiftUI
 
 /// A week strip: weekday letters over seven day numbers, paged horizontally one week at a time.
-/// Today has a ring, done days a filled circle, planned days a dot. `week` is the visible page as an
-/// offset from the week containing `today` (0 = this week, -1 = last week); swiping updates it and
-/// setting it scrolls. The first weekday comes from `@Environment(\.calendar)`.
+/// Today has a ring, done days a filled circle, planned days a dot, and the `selection` (when given) a soft disc
+/// (or a ring around a done day) with the selected trait, so the picked day never rests on colour alone. `week` is
+/// the visible page as an offset from the week containing `today` (0 = this week, -1 = last week); swiping updates
+/// it and setting it scrolls. The first weekday comes from `@Environment(\.calendar)`.
 ///
 ///     DayStrip(items: days, today: now, week: $week) { date in open(date) }
+///     DayStrip(items: days, today: now, week: $week, selection: picked) { picked = $0 }
 ///
 /// Day numbers stop growing at `.xxxLarge` so seven columns always fit; long-press shows the large
 /// content viewer and VoiceOver reads the full date.
@@ -18,6 +20,7 @@ public struct DayStrip: View {
     private let items: [DayItem]
     private let today: Date
     private let weeks: ClosedRange<Int>
+    private let selection: Date?
     private let onSelect: (Date) -> Void
 
     /// - Parameters:
@@ -25,17 +28,20 @@ public struct DayStrip: View {
     ///   - today: the injected current date (never read from the clock here).
     ///   - week: the visible week offset.
     ///   - weeks: the pageable range of week offsets.
+    ///   - selection: the picked day, compared by calendar day; `nil` marks none.
     public init(
         items: [DayItem],
         today: Date,
         week: Binding<Int>,
         weeks: ClosedRange<Int> = -4...4,
+        selection: Date? = nil,
         onSelect: @escaping (Date) -> Void
     ) {
         self.items = items
         self.today = today
         self._week = week
         self.weeks = weeks
+        self.selection = selection
         self.onSelect = onSelect
     }
 
@@ -81,6 +87,7 @@ public struct DayStrip: View {
                     dayNumber: String(calendar.component(.day, from: day.date)),
                     marker: day.marker,
                     isToday: isToday,
+                    isSelected: selection.map { calendar.isDate($0, inSameDayAs: day.date) } ?? false,
                     isPast: math.isPast(day.date, today: today),
                     accessibilityText: accessibilityText(for: day, isToday: isToday),
                     action: { onSelect(day.date) }
@@ -125,7 +132,7 @@ public struct DayStrip: View {
 
         var body: some View {
             VStack(spacing: Space.lg) {
-                DayStrip(items: items, today: today, week: $week) { selected = $0 }
+                DayStrip(items: items, today: today, week: $week, selection: selected) { selected = $0 }
                     .padding(.vertical, Space.md)
                     .koboCard(padding: 0)
                 Text("Week offset \(week)")

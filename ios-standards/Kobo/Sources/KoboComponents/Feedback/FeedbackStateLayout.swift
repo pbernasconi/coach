@@ -1,37 +1,25 @@
 import KoboTokens
 import SwiftUI
 
-/// The shared, centred layout of `EmptyState` and `ErrorState`: a glyph, a title, a message, then actions.
-/// Text wraps at every size and nothing has a fixed height, so it holds up at AX3.
-struct FeedbackStateLayout<Actions: View>: View {
-    let symbol: String
-    let symbolTone: Tone
+/// The shared, centred layout of `EmptyState` and `ErrorState`: art (an `EmptyStateArt` disc or an illustration), a
+/// title, a message, then actions. Text wraps at every size and nothing has a fixed height, so it holds up at AX3.
+struct FeedbackStateLayout<Art: View, Actions: View>: View {
+    let art: Art
     let title: Text
     let message: Text?
     let actions: Actions
     @Environment(\.koboTheme) private var theme
-    @ScaledMetric(relativeTo: .largeTitle) private var discSide = Size.thumbnail
 
-    init(symbol: String, symbolTone: Tone, title: Text, message: Text?, actions: Actions) {
-        self.symbol = symbol
-        self.symbolTone = symbolTone
+    init(art: Art, title: Text, message: Text?, actions: Actions) {
+        self.art = art
         self.title = title
         self.message = message
         self.actions = actions
     }
 
-    init(symbol: String, symbolTone: Tone, title: Text, message: Text?, @ViewBuilder actions: () -> Actions) {
-        self.init(symbol: symbol, symbolTone: symbolTone, title: title, message: message, actions: actions())
-    }
-
     var body: some View {
         VStack(spacing: Space.lg) {
-            Image(systemName: symbol)
-                .font(theme.font(.title2))
-                .foregroundStyle(theme.palette.status(symbolTone).ink)
-                .frame(width: discSide, height: discSide)
-                .background(theme.palette.status(symbolTone).soft, in: Circle())
-                .accessibilityHidden(true)
+            art
             VStack(spacing: Space.sm) {
                 title
                     .font(theme.font(.title2))

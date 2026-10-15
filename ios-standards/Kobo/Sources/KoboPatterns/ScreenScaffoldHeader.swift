@@ -1,3 +1,4 @@
+import KoboComponents
 import KoboTokens
 import SwiftUI
 
@@ -34,12 +35,28 @@ struct ScaffoldHeader<Toolbar: View>: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             if showsTitle {
                 HStack(spacing: Space.sm) { toolbar }
-                    .buttonStyle(.glass)
-                    .buttonBorderShape(.circle)
+                    .modifier(InlineToolbarLook())
                     .labelStyle(.iconOnly)
             }
         }
         .padding(.top, showsTitle ? Space.lg : 0)
+    }
+}
+
+/// Glass circles beside an inline title, in one `GlassEffectContainer`; flat Kobo circles under a `.solid` theme
+/// (glass yields to `.solid`, CONVENTIONS rule 16).
+private struct InlineToolbarLook: ViewModifier {
+    @Environment(\.koboTheme) private var theme
+
+    func body(content: Content) -> some View {
+        switch theme.surfaceStyle {
+        case .glass:
+            GlassEffectContainer(spacing: Space.sm) {
+                content.buttonStyle(.glass).buttonBorderShape(.circle)
+            }
+        case .solid:
+            content.buttonStyle(.kobo(.secondary, size: .icon))
+        }
     }
 }
 

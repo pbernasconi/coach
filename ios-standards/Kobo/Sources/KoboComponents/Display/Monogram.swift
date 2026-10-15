@@ -6,7 +6,7 @@ public enum Monogram {
     /// The tones an avatar may take. Danger is left out on purpose: a red person reads as an error.
     public static let tones: [Tone] = [.accent, .info, .success, .warning, .neutral]
 
-    /// "Ada Lovelace" → "AL", "ada" → "A", "Jean-Luc Picard" → "JP", "  " → "".
+    /// "Maya Chen" → "MC", "maya" → "M", "Jean-Luc Moreau" → "JM", "  " → "".
     /// Takes the first letter or digit of the first and last words; words with none ("&") do not count.
     public static func initials(from name: String) -> String {
         let letters =
