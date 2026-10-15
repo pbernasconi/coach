@@ -45,7 +45,7 @@ struct TemplateEditorContent: View {
         .koboSheet(
             item: Binding<SlotEditor?>.action(state.editor) { if $0 == nil { send(.editorDismissed) } },
             title: \.title,
-            subtitle: \.subtitle,
+            subtitle: { $0.subtitle },
             detents: [.large],
             hasChanges: state.editor?.hasChanges ?? false
         ) { editor in

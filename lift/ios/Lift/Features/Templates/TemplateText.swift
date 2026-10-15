@@ -29,7 +29,8 @@ nonisolated enum TemplateText {
 
     /// "3 exercises · 8 sets".
     static func size(exercises: Int, sets: Int) -> String {
-        String(localized: "^[\(exercises) exercise](inflect: true) · ^[\(sets) set](inflect: true)")
+        let setText = sets == 1 ? String(localized: "1 set") : String(localized: "\(sets) sets")
+        return "\(SessionText.exercises(exercises)) · \(setText)"
     }
 
     /// The exercise names in order, "Back squat, Romanian deadlift", or a note that there are none yet.
