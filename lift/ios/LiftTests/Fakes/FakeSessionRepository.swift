@@ -77,4 +77,8 @@ nonisolated final class FakeSessionRepository: SessionRepository {
         undos.withLock { $0.append(change) }
         if let undoError { throw undoError }
     }
+
+    func createImportedSession(_: Session) async throws -> SessionRecord {
+        throw AppError(.unknown, detail: "not used")
+    }
 }

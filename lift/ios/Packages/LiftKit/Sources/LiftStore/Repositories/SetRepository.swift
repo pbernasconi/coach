@@ -9,6 +9,11 @@ public protocol SetRepository: Sendable {
     /// Appends a planned set, stamped with the session's unit and the exercise's load mode (DATA-6).
     func addSet(to sessionExerciseID: UUID, kind: SetKind, target: SetTarget) async throws -> SetRecord
 
+    /// Appends a set as an import read it, in one write: its kind, target, note and values, logged or skipped when the
+    /// note says so, and stamped `completedAt` (the import passes noon on the workout's day, not the time of import).
+    /// A set with neither an actual nor a skip stays planned and gets no `completedAt`.
+    func addImported(_ set: LoggedSet, to sessionExerciseID: UUID, completedAt: Date?) async throws -> SetRecord
+
     /// Saves the values shown in the editor. Never changes `status` or `completedAt`.
     func saveValues(setID: UUID, reps: Int?, weight: Weight?) async throws -> SetRecord
 

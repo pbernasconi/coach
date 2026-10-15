@@ -37,6 +37,22 @@ public struct LiveSessionRepository: SessionRepository {
         }
     }
 
+    public func createImportedSession(_ session: Session) async throws -> SessionRecord {
+        let id = store.makeID()
+        return try await store.insert { _, stamp in
+            SessionRecord(
+                id: id,
+                day: session.date,
+                title: session.title,
+                warmUpNote: session.warmUpNote,
+                note: session.note,
+                unitsAtLog: session.unitsAtLog,
+                createdAt: stamp,
+                updatedAt: stamp
+            )
+        }
+    }
+
     public func addExercise(_ slot: ExerciseSlot, to sessionID: UUID) async throws -> SessionExerciseRecord {
         let id = store.makeID()
         return try await store.insert { db, stamp in

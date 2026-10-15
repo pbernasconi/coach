@@ -52,4 +52,8 @@ nonisolated final class FakeSessionDetailRepository: SessionRepository {
     func undo(_: RescheduleUndo) async throws {
         throw AppError(.unknown, detail: "not used")
     }
+
+    func createImportedSession(_: Session) async throws -> SessionRecord {
+        throw AppError(.unknown, detail: "not used")
+    }
 }

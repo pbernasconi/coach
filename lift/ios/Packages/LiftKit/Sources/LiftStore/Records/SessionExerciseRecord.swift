@@ -39,7 +39,7 @@ public struct SessionExerciseRecord: Hashable, Sendable, Identifiable {
         self.restSeconds = slot.restSeconds
         self.note = slot.note
         self.supersetGroup = slot.supersetGroup
-        self.nextTimeHint = nil
+        self.nextTimeHint = slot.nextTimeHint
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.deletedAt = deletedAt

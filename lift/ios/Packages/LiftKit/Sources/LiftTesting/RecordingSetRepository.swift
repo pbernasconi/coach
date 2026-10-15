@@ -8,6 +8,7 @@ import Synchronization
 public final class RecordingSetRepository: SetRepository {
     public enum Call: Hashable, Sendable {
         case addSet(sessionExerciseID: UUID, kind: SetKind, target: SetTarget)
+        case addImported(LoggedSet, sessionExerciseID: UUID, completedAt: Date?)
         case saveValues(setID: UUID, reps: Int?, weight: Weight?)
         case log(UUID)
         case skip(UUID)
@@ -30,6 +31,12 @@ public final class RecordingSetRepository: SetRepository {
 
     public func addSet(to sessionExerciseID: UUID, kind: SetKind, target: SetTarget) async throws -> SetRecord {
         try record(.addSet(sessionExerciseID: sessionExerciseID, kind: kind, target: target))
+    }
+
+    public func addImported(_ set: LoggedSet, to sessionExerciseID: UUID, completedAt: Date?) async throws
+        -> SetRecord
+    {
+        try record(.addImported(set, sessionExerciseID: sessionExerciseID, completedAt: completedAt))
     }
 
     public func saveValues(setID: UUID, reps: Int?, weight: Weight?) async throws -> SetRecord {

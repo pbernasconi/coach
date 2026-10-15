@@ -33,6 +33,33 @@ public struct LiveSetRepository: SetRepository {
         }
     }
 
+    public func addImported(_ set: LoggedSet, to sessionExerciseID: UUID, completedAt: Date?) async throws
+        -> SetRecord
+    {
+        let id = store.makeID()
+        return try await store.insert { db, stamp in
+            let (exercise, session) = try SessionQueries.liveExercise(db, id: sessionExerciseID)
+            let position = try SessionQueries.nextPosition(
+                db,
+                table: SetRecord.databaseTableName,
+                parentColumn: "sessionExerciseID",
+                parentID: sessionExerciseID
+            )
+            var record = SetRecord(
+                id: id,
+                sessionExerciseID: sessionExerciseID,
+                position: position,
+                kind: set.kind,
+                target: set.target,
+                unit: session.unitsAtLog,
+                loadMode: exercise.loadMode,
+                createdAt: stamp
+            )
+            record.apply(imported: set, completedAt: completedAt)
+            return record
+        }
+    }
+
     public func saveValues(setID: UUID, reps: Int?, weight: Weight?) async throws -> SetRecord {
         try await store.change(SetRecord.self, id: setID) { set, _ in
             set.actualReps = reps

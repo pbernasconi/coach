@@ -26,10 +26,15 @@ nonisolated enum ImportEnding: Equatable, Sendable {
 /// Writes reviewed workouts through the normal repositories, so each row is one transaction with an outbox entry
 /// (DATA-3) and syncs like anything logged by hand. Checks for cancellation before every write. One writer per
 /// import: it remembers the exercises it created so a name used twice is created once.
+///
+/// Everything a note says is kept: the session's note and warm-up note, each exercise's note and next-time weight, and
+/// each set's note. A note has days but no times, so logged and skipped sets are stamped at noon local on the
+/// workout's day (`LocalDay.noon(in:)`), never with the time of the import.
 final class ImportWriter {
     private let sessions: any SessionRepository
     private let sets: any SetRepository
     private let exercises: any ExerciseRepository
+    private let calendar: Calendar
     private let onProgress: (ImportTally) -> Void
     private(set) var tally = ImportTally()
     private var created: [String: UUID] = [:]
@@ -38,11 +43,13 @@ final class ImportWriter {
         sessions: any SessionRepository,
         sets: any SetRepository,
         exercises: any ExerciseRepository,
+        calendar: Calendar,
         onProgress: @escaping (ImportTally) -> Void
     ) {
         self.sessions = sessions
         self.sets = sets
         self.exercises = exercises
+        self.calendar = calendar
         self.onProgress = onProgress
     }
 
@@ -62,22 +69,18 @@ final class ImportWriter {
 
     private func write(_ session: Session) async throws {
         try Task.checkCancellation()
-        let record = try await sessions.createSession(
-            on: session.date,
-            title: session.title,
-            unit: session.unitsAtLog,
-            templateID: nil
-        )
+        let record = try await sessions.createImportedSession(session)
         tally.incompleteSession = session.title
+        let loggedAt = session.date.noon(in: calendar)
         for exercise in session.exercises {
-            try await write(exercise, to: record.id)
+            try await write(exercise, to: record.id, loggedAt: loggedAt)
         }
         tally.incompleteSession = nil
         tally.sessions += 1
         onProgress(tally)
     }
 
-    private func write(_ exercise: SessionExercise, to sessionID: UUID) async throws {
+    private func write(_ exercise: SessionExercise, to sessionID: UUID, loggedAt: Date?) async throws {
         try Task.checkCancellation()
         let exerciseID = try await libraryID(for: exercise)
         let slot = ExerciseSlot(
@@ -87,30 +90,17 @@ final class ImportWriter {
             equipment: exercise.equipment,
             restSeconds: exercise.restSeconds,
             note: exercise.note,
-            supersetGroup: exercise.supersetGroup
+            supersetGroup: exercise.supersetGroup,
+            nextTimeHint: exercise.nextTimeHint
         )
         let item = try await sessions.addExercise(slot, to: sessionID)
         for set in exercise.sets {
-            try await write(set, to: item.id)
-        }
-    }
-
-    /// Adds the set with its target; a done set then gets its actual values and is logged, a skipped one is
-    /// skipped, and a planned one (today's unchecked sets) stays planned.
-    private func write(_ set: LoggedSet, to sessionExerciseID: UUID) async throws {
-        try Task.checkCancellation()
-        let record = try await sets.addSet(to: sessionExerciseID, kind: set.kind, target: set.target)
-        tally.sets += 1
-        if set.isDone, let actual = set.actual {
             try Task.checkCancellation()
-            _ = try await sets.saveValues(setID: record.id, reps: actual.reps, weight: actual.weight)
-            _ = try await sets.log(setID: record.id)
-            tally.loggedSets += 1
-        } else if set.isSkipped {
-            try Task.checkCancellation()
-            _ = try await sets.skip(setID: record.id)
+            _ = try await sets.addImported(set, to: item.id, completedAt: loggedAt)
+            tally.sets += 1
+            if set.isDone { tally.loggedSets += 1 }
+            onProgress(tally)
         }
-        onProgress(tally)
     }
 
     /// The matched library id, or a new library exercise for an unmatched name (created once per name).

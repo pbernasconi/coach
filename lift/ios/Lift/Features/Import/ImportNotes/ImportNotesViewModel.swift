@@ -139,7 +139,12 @@ final class ImportNotesViewModel {
     }
 
     private func write(_ plan: [Session]) async {
-        let writer = ImportWriter(sessions: sessions, sets: sets, exercises: exercises) { [weak self] tally in
+        let writer = ImportWriter(
+            sessions: sessions,
+            sets: sets,
+            exercises: exercises,
+            calendar: days.calendar
+        ) { [weak self] tally in
             guard let self, case .importing(var progress) = state.step else { return }
             progress.tally = tally
             state.step = .importing(progress)
