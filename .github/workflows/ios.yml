@@ -150,7 +150,7 @@ jobs:
         if: ${{ !cancelled() }}
         run: |
           app="$(find build/lift/Build/Products -maxdepth 2 -path '*iphonesimulator/Lift.app' | head -n 1)"
-          if [ -z "$app" ]; then echo "no app build to screenshot"; exit 0; fi
+          if [ -z "$app" ] || [ ! -x "$app/Lift" ]; then echo "no app build to screenshot"; exit 0; fi
           lift/ios/scripts/screenshots.sh "$app" screenshots
       - name: Upload screenshots
         if: ${{ !cancelled() }}
