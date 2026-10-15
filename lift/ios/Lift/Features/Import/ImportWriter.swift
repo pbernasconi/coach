@@ -55,10 +55,8 @@ final class ImportWriter {
             return .finished
         } catch is CancellationError {
             return .cancelled
-        } catch let error as AppError {
-            return .failed(error.kind)
         } catch {
-            return .failed(.unknown)
+            return .failed(AppError.kind(of: error))
         }
     }
 

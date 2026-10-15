@@ -26,7 +26,7 @@ final class CatalogViewModel {
             state.total = loaded.entries.count
             refresh()
         } catch {
-            state.rows = .failed((error as? AppError)?.kind ?? .unknown)
+            state.rows = .failed(AppError.kind(of: error))
         }
     }
 
