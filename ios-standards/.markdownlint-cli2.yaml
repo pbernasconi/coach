@@ -1,0 +1,11 @@
+config:
+  default: true
+  MD013: false          # long lines are fine in prose; editors wrap
+  MD033: false          # inline HTML allowed (details/summary)
+  MD041: false          # files may start with a non-heading (front matter)
+  MD024: { siblings_only: true }
+  MD004: { style: dash }
+  MD029: false          # rule numbers continue across sections on purpose (CONVENTIONS 1–15)
+ignores:
+  - ".tools/**"
+  - "**/node_modules/**"
