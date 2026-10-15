@@ -5,8 +5,8 @@ extension View {
     /// Presents a `KoboSheet` while `isPresented` is true: a `SheetHeader`, scrolling `content`, a pinned `footer`,
     /// and the Kobo detents, grabber, background and corners. `onDismiss` runs once the sheet has finished closing.
     ///
-    ///     .koboSheet(isPresented: $editing, title: "Edit set", hasChanges: draft != saved) {
-    ///         StepperField("Reps", value: $draft.reps, in: 1...50)
+    ///     .koboSheet(isPresented: $editing, title: "Edit order", hasChanges: draft != saved) {
+    ///         StepperField("Quantity", value: $draft.quantity, in: 1...50)
     ///     } footer: {
     ///         Button("Save", action: save).buttonStyle(.kobo(.primary, width: .full))
     ///     }
@@ -129,30 +129,30 @@ extension View {
         @Environment(\.koboTheme) private var theme
         @State private var isPresented = true
         @State private var isResizable = false
-        @State private var reps = 8
-        private let savedReps = 8
+        @State private var quantity = 8
+        private let savedQuantity = 8
 
         var body: some View {
             VStack(spacing: Space.lg) {
                 Toggle("Medium and large detents", isOn: $isResizable)
-                Button("Edit set") { isPresented = true }
+                Button("Edit order") { isPresented = true }
             }
             .padding(Space.gutter)
             .frame(maxHeight: .infinity)
             .background(theme.palette.canvas)
             .koboSheet(
                 isPresented: $isPresented,
-                title: "Edit set",
-                subtitle: "Bench press · set 2",
+                title: "Edit order",
+                subtitle: "Lemons · line 2",
                 detents: isResizable ? [.medium, .large] : [.fitted],
-                hasChanges: reps != savedReps
+                hasChanges: quantity != savedQuantity
             ) {
-                StepperField("Reps", value: $reps, in: 1...50)
-                Text("Change the reps, then try to close: the sheet asks first.")
+                StepperField("Quantity", value: $quantity, in: 1...50)
+                Text("Change the quantity, then try to close: the sheet asks first.")
                     .font(theme.font(.footnote))
                     .foregroundStyle(theme.palette.textSecondary)
             } footer: {
-                Button("Save set") { isPresented = false }
+                Button("Save order") { isPresented = false }
                     .buttonStyle(.glassProminent)
                     .controlSize(.large)
             }

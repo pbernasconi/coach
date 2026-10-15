@@ -7,7 +7,7 @@ import SwiftUI
 /// consequence as the message, and a verb as the confirm button ("Delete", not "OK").
 ///
 ///     .koboConfirm(isPresented: $confirmingDelete, .destructive(
-///         title: "Delete this workout?", message: "Its sets will be removed from your history.",
+///         title: "Delete this project?", message: "Its tasks will be deleted too.",
 ///         confirmLabel: "Delete", perform: { send(.deleteConfirmed) }))
 ///
 /// Copy is held as `Text`, like SwiftUI's own labels: literals localize from the app's bundle, and the `verbatim:`
@@ -144,15 +144,15 @@ extension View {
         var body: some View {
             VStack(spacing: Space.lg) {
                 Text(result)
-                Button("Delete workout", role: .destructive) { isPresented = true }
+                Button("Delete project", role: .destructive) { isPresented = true }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Theme.system.palette.canvas)
             .koboConfirm(
                 isPresented: $isPresented,
                 .destructive(
-                    title: "Delete this workout?",
-                    message: "Its sets will be removed from your history.",
+                    title: "Delete this project?",
+                    message: "Its tasks will be deleted too.",
                     confirmLabel: "Delete",
                     perform: { result = "Deleted" }
                 )

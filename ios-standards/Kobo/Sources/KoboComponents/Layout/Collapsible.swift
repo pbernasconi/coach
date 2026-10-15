@@ -5,7 +5,7 @@ import SwiftUI
 /// `Motion.enter` and out on the faster `Motion.exit`; with Reduce Motion it changes at once.
 /// VoiceOver reads the header as a button with an "Expanded" or "Collapsed" value.
 ///
-///     Collapsible("Hidden exercises (2)", isExpanded: $showHidden) { … }
+///     Collapsible("Archived lists (2)", isExpanded: $showArchived) { … }
 public struct Collapsible<Content: View>: View {
     @Environment(\.koboTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -96,12 +96,12 @@ public struct Collapsible<Content: View>: View {
 
         var body: some View {
             VStack(alignment: .leading, spacing: Space.lg) {
-                Collapsible("Hidden exercises (2)", isExpanded: $first) {
-                    Text("Face pull")
-                    Text("Calf raise")
+                Collapsible("Archived lists (2)", isExpanded: $first) {
+                    Text("Summer reading")
+                    Text("Moving house")
                 }
-                Collapsible("Notes", subtitle: "Pinned to this workout", isExpanded: $second) {
-                    Text("Keep the rest short on the last two sets.")
+                Collapsible("Notes", subtitle: "Pinned to this project", isExpanded: $second) {
+                    Text("Order the tiles before booking the fitter.")
                 }
             }
             .padding(Space.gutter)

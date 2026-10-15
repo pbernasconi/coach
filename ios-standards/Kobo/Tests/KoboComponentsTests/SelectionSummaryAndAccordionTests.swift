@@ -3,18 +3,18 @@ import Testing
 @testable import KoboComponents
 
 @Suite struct SelectionSummaryAndAccordionTests {
-    private let rest = ["60", "90", "120", "180"]
+    private let timers = ["60", "90", "120", "180"]
 
     @Test func summaryNamesNothingOneAllOrACount() {
-        #expect(SelectSummary.of([], in: rest) == .none)
-        #expect(SelectSummary.of(["120"], in: rest) == .one(index: 2))
-        #expect(SelectSummary.of(["60", "180"], in: rest) == .count(2))
-        #expect(SelectSummary.of(Set(rest), in: rest) == .all)
+        #expect(SelectSummary.of([], in: timers) == .none)
+        #expect(SelectSummary.of(["120"], in: timers) == .one(index: 2))
+        #expect(SelectSummary.of(["60", "180"], in: timers) == .count(2))
+        #expect(SelectSummary.of(Set(timers), in: timers) == .all)
     }
 
     @Test func summaryIgnoresValuesTheOptionsNoLongerList() {
-        #expect(SelectSummary.of(["300"], in: rest) == .none)
-        #expect(SelectSummary.of(["300", "90"], in: rest) == .one(index: 1))
+        #expect(SelectSummary.of(["300"], in: timers) == .none)
+        #expect(SelectSummary.of(["300", "90"], in: timers) == .one(index: 1))
     }
 
     @Test func aSingleOptionChosenIsNamedNotAll() {
@@ -22,7 +22,7 @@ import Testing
     }
 
     @Test func orderedKeepsTheOptionsOrder() {
-        #expect(SelectSummary.ordered(["180", "60"], in: rest) == ["60", "180"])
+        #expect(SelectSummary.ordered(["180", "60"], in: timers) == ["60", "180"])
     }
 
     @Test func atMostOneOpensOneAndClosesTheOpenOneOnATap() {

@@ -10,7 +10,7 @@ import SwiftUI
 /// a small spinner takes the switch's place only if the save outlasts `Motion.Duration.spinnerDelay`, and the row
 /// takes no taps. `.waiting` keeps a row's ink but ignores taps while another row saves.
 ///
-///     ToggleRow("Auto-start rest", subtitle: "Starts when you log a set", systemImage: "timer", isOn: $autoRest)
+///     ToggleRow("Auto-start timer", subtitle: "Starts when you open a task", systemImage: "timer", isOn: $autoStart)
 ///     ToggleRow(verbatim: device.name, isOn: $device.isPaired, interaction: isSaving ? .saving : .enabled)
 public struct ToggleRow: View {
     @Environment(\.koboTheme) private var theme
@@ -172,21 +172,21 @@ public struct ToggleRow: View {
 #if DEBUG
     private struct ToggleRowGallery: View {
         @Environment(\.koboTheme) private var theme
-        @State private var autoRest = true
+        @State private var autoStart = true
         @State private var sounds = false
         @State private var paired = true
 
         var body: some View {
             ListSection("Settings") {
                 ToggleRow(
-                    "Auto-start rest",
-                    subtitle: "Starts the timer when you log a set.",
+                    "Auto-start timer",
+                    subtitle: "Starts the timer when you open a task.",
                     systemImage: "timer",
-                    isOn: $autoRest
+                    isOn: $autoStart
                 )
                 ToggleRow("Sounds", systemImage: "speaker.wave.2", isOn: $sounds)
                 ToggleRow(verbatim: "Kitchen speaker", subtitle: "Saving…", isOn: $paired, interaction: .saving)
-                ToggleRow("Plate maths", isOn: .constant(true)).disabled(true)
+                ToggleRow("Smart suggestions", isOn: .constant(true)).disabled(true)
             }
             .padding(Space.gutter)
             .frame(maxHeight: .infinity, alignment: .top)

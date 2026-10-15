@@ -1,7 +1,7 @@
 import KoboTokens
 import SwiftUI
 
-/// A single-line text field: a label above, a prompt inside, optional unit suffix ("lb"), clear button and
+/// A single-line text field: a label above, a prompt inside, optional unit suffix ("km"), clear button and
 /// leading/trailing slots, and helper text or an error below. Errors show only after the user leaves the field or
 /// submits. Keyboard type, content type, submit label and autocapitalisation are the usual SwiftUI modifiers at the
 /// call site; they pass through to the field. Link a screen's `@FocusState` with `focused(by:)`.
@@ -9,7 +9,7 @@ import SwiftUI
 ///     KoboTextField("Email", text: $email, prompt: "name@example.com", error: emailError)
 ///         .keyboardType(.emailAddress).textContentType(.emailAddress).submitLabel(.next)
 ///         .focused(by: $focus, equals: .email)
-///     KoboTextField("Body weight", text: $weight, unit: "lb").keyboardType(.decimalPad)
+///     KoboTextField("Distance", text: $distance, unit: "km").keyboardType(.decimalPad)
 public struct KoboTextField<Leading: View, Trailing: View>: View {
     @Environment(\.koboTheme) private var theme
     @Environment(\.isEnabled) private var isEnabled
@@ -31,7 +31,7 @@ public struct KoboTextField<Leading: View, Trailing: View>: View {
     /// - Parameters:
     ///   - prompt: shown inside the box while it is empty.
     ///   - helper: the line under the box; VoiceOver reads it as the hint.
-    ///   - unit: a suffix after the text ("lb", "min"), also spoken after the value.
+    ///   - unit: a suffix after the text ("km", "min"), also spoken after the value.
     ///   - error: the validation state; shown after the user leaves the field or submits.
     ///   - clearable: shows a clear button while the field is enabled and has text.
     public init(

@@ -14,11 +14,11 @@ import Testing
         ("CH", .init(title: "Switzerland", keywords: ["CH"])),
     ]
 
-    private static let equipment: [(String, SelectSearch.Candidate)] = [
-        ("plate", .init(title: "Bumper plates", subtitle: "Load them on the bar")),
-        ("bar", .init(title: "Barbell", subtitle: "Olympic bar, 20 kg")),
-        ("db", .init(title: "Dumbbells", subtitle: "Pairs from 2 to 40 kg")),
-        ("kb", .init(title: "Kettlebell", subtitle: "Single bell, 16 kg")),
+    private static let fruit: [(String, SelectSearch.Candidate)] = [
+        ("jar", .init(title: "Mason jars", subtitle: "With blue lids")),
+        ("blue", .init(title: "Blueberries", subtitle: "Local punnet, 400 g")),
+        ("straw", .init(title: "Strawberries", subtitle: "Boxes from 250 to 500 g")),
+        ("elder", .init(title: "Elderberries", subtitle: "Single box, 150 g")),
     ]
 
     private static func values(_ set: [(String, SelectSearch.Candidate)], _ query: String) -> [String] {
@@ -39,31 +39,31 @@ import Testing
     }
 
     @Test(arguments: [
-        ("bell", ["bar", "db", "kb"]),
-        ("bar", ["bar", "plate"]),
-        ("BARBELL", ["bar"]),
-        ("20 kg", ["bar"]),
-        ("kg", ["bar", "db", "kb"]),
-        ("load", ["plate"]),
-        ("pairs", ["db"]),
+        ("berr", ["blue", "straw", "elder"]),
+        ("blue", ["blue", "jar"]),
+        ("BLUEBERRIES", ["blue"]),
+        ("400 g", ["blue"]),
+        ("g", ["blue", "straw", "elder"]),
+        ("lids", ["jar"]),
+        ("boxes", ["straw"]),
     ])
     func subtitlesMatchButRankBelowTitles(query: String, expected: [String]) {
-        #expect(Self.values(Self.equipment, query) == expected)
+        #expect(Self.values(Self.fruit, query) == expected)
     }
 
     @Test func titleMatchingIgnoresDiacriticsAndWordOrder() {
         let options: [(String, SelectSearch.Candidate)] = [
-            ("a", .init(title: "Incline bench press")),
-            ("b", .init(title: "Crème brûlée curls")),
+            ("a", .init(title: "Mushroom risotto")),
+            ("b", .init(title: "Crème brûlée tarts")),
         ]
-        #expect(Self.values(options, "bench inc") == ["a"])
+        #expect(Self.values(options, "risotto mush") == ["a"])
         #expect(Self.values(options, "creme") == ["b"])
     }
 
     @Test func resultsCarryTheTitleRangesToHighlight() throws {
-        let results = SelectSearch.filter([.init(title: "Barbell")], query: "bell")
+        let results = SelectSearch.filter([.init(title: "Strawberry")], query: "berry")
         let result = try #require(results.first)
-        #expect(result.titleRanges.map { String("Barbell"[$0]) } == ["bell"])
+        #expect(result.titleRanges.map { String("Strawberry"[$0]) } == ["berry"])
     }
 
     @Test func searchTurnsOnAtTheThresholdUnlessTheCallerDecides() {

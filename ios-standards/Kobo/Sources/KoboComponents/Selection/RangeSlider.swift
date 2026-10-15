@@ -1,13 +1,13 @@
 import KoboTokens
 import SwiftUI
 
-/// A two-thumb slider over a `ClosedRange`: a filter such as "weight between 40 and 120 kg". Thumbs snap to `step`
+/// A two-thumb slider over a `ClosedRange`: a filter such as "distance between 40 and 120 km". Thumbs snap to `step`
 /// on a grid anchored at the lower bound, stay inside `bounds` and never cross; while they sit on one value the drag's
 /// direction decides which moves. The title and the formatted range sit above the track. VoiceOver reads two
-/// adjustable elements ("Minimum Weight, 40 kg"; swipe up or down to step), and each change plays `feedback`.
+/// adjustable elements ("Minimum Distance, 40 km"; swipe up or down to step), and each change plays `feedback`.
 ///
-///     RangeSlider("Weight", range: $weights, in: 0...200, step: 2.5) { "\($0.formatted()) kg" }
-///     RangeSlider(verbatim: filter.name, range: $reps, in: 1...30)
+///     RangeSlider("Distance", range: $distances, in: 0...200, step: 2.5) { "\($0.formatted()) km" }
+///     RangeSlider(verbatim: filter.name, range: $nights, in: 1...30)
 public struct RangeSlider: View {
     @Environment(\.koboTheme) private var theme
     @Environment(\.isEnabled) private var isEnabled
@@ -201,14 +201,14 @@ private struct RangeSliderKnob: View {
 #if DEBUG
     private struct RangeSliderGallery: View {
         @Environment(\.koboTheme) private var theme
-        @State private var weight = 40.0...120.0
-        @State private var reps = 6.0...12.0
+        @State private var distance = 40.0...120.0
+        @State private var nights = 6.0...12.0
         @State private var stacked = 200.0...200.0
 
         var body: some View {
             VStack(spacing: Space.xxl) {
-                RangeSlider("Weight", range: $weight, in: 0...200, step: 2.5) { "\(RangeSlider.defaultFormat($0)) kg" }
-                RangeSlider(verbatim: "Reps", range: $reps, in: 1...30)
+                RangeSlider("Distance", range: $distance, in: 0...200, step: 2.5) { "\(RangeSlider.defaultFormat($0)) km" }
+                RangeSlider(verbatim: "Nights", range: $nights, in: 1...30)
                 RangeSlider("Both at the top", range: $stacked, in: 0...200, step: 10)
                 RangeSlider("Locked", range: .constant(20...60), in: 0...100).disabled(true)
             }

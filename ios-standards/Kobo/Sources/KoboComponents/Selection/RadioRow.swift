@@ -2,11 +2,11 @@ import KoboTokens
 import SwiftUI
 
 /// A list row for one choice of several: the radio disc, an optional symbol, the title, an optional subtitle that
-/// explains the choice ("Longer rest for heavy sets") and an optional trailing view (a "New" tag). The whole row is
+/// explains the choice ("Quieter, but slower") and an optional trailing view (a "New" tag). The whole row is
 /// one target that speaks its title with the selected trait. It is a `ListRow` underneath, so it draws its separator
 /// and press fill inside a `ListSection`. A tap calls `action`; `RadioGroup` wires a group of them to one binding.
 ///
-///     RadioRow("90 seconds", subtitle: "Hypertrophy", isSelected: rest == 90) { rest = 90 }
+///     RadioRow("90 seconds", subtitle: "Oolong", isSelected: timer == 90) { timer = 90 }
 ///     RadioRow(verbatim: template.name, isSelected: chosen == template.id, action: { chosen = template.id }) {
 ///         KoboTag("New", tone: .info)
 ///     }
@@ -121,17 +121,17 @@ extension RadioRow where Trailing == EmptyView {
 #if DEBUG
     private struct RadioRowGallery: View {
         @Environment(\.koboTheme) private var theme
-        @State private var day = "push"
+        @State private var day = "focus"
 
         var body: some View {
             ScrollView {
-                ListSection("Today's template") {
-                    RadioRow("Push", subtitle: "Chest, shoulders, triceps", isSelected: day == "push") { day = "push" }
-                    RadioRow("Pull", subtitle: "Back and biceps", isSelected: day == "pull", action: { day = "pull" }) {
+                ListSection("Today's plan") {
+                    RadioRow("Focus", subtitle: "Deep work, no meetings", isSelected: day == "focus") { day = "focus" }
+                    RadioRow("Meetings", subtitle: "Calls and reviews", isSelected: day == "meetings", action: { day = "meetings" }) {
                         KoboTag("New", tone: .info)
                     }
-                    RadioRow(verbatim: "Legs", systemImage: "figure.walk", isSelected: day == "legs") { day = "legs" }
-                    RadioRow("Rest day", subtitle: "Not available on a plan week", isSelected: false) {}
+                    RadioRow(verbatim: "Errands", systemImage: "cart", isSelected: day == "errands") { day = "errands" }
+                    RadioRow("Day off", subtitle: "Not available in a holiday week", isSelected: false) {}
                         .disabled(true)
                 }
                 .padding(Space.gutter)

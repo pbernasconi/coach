@@ -3,7 +3,7 @@ import KoboTokens
 
 /// One short, transient message for `ToastCenter`: copy, a tone, an optional glyph and an optional action.
 ///
-///     center.show(Toast("Set deleted", tone: .neutral, action: .init("Undo") { restore() }))
+///     center.show(Toast("Task deleted", tone: .neutral, action: .init("Undo") { restore() }))
 ///
 /// Two toasts are equal only when they are the same toast (same `id`), because a closure has no identity to compare.
 ///

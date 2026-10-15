@@ -76,18 +76,18 @@ extension KoboTextField where Leading == EmptyView, Trailing == EmptyView {
         @Environment(\.koboTheme) private var theme
         @State private var email = "sam@example"
         @State private var name = ""
-        @State private var weight = "182.5"
+        @State private var distance = "12.5"
         @State private var member = "0042 7781"
         @FocusState private var focus: Int?
 
         var body: some View {
             ScrollView {
                 VStack(spacing: Space.lg) {
-                    KoboTextField("Name", text: $name, prompt: "Your first name", helper: "Shown to your coach")
+                    KoboTextField("Name", text: $name, prompt: "Your first name", helper: "Shown to your team")
                         .focused(by: $focus, equals: 0)
                     KoboTextField("Email", text: $email, error: .message("Enter a full email address"), clearable: true)
                         .focused(by: $focus, equals: 1)
-                    KoboTextField("Body weight", text: $weight, unit: "lb")
+                    KoboTextField("Distance", text: $distance, unit: "km")
                     KoboTextField("Member number", text: $member) {
                         Image(systemName: "person.text.rectangle").accessibilityHidden(true)
                     } trailing: {

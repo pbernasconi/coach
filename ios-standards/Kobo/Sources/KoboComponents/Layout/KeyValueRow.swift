@@ -2,9 +2,9 @@ import KoboTokens
 import SwiftUI
 
 /// A label and its value on one line (label leading, value trailing), stacked at accessibility sizes.
-/// Reads as one VoiceOver element ("Total volume, 4,200 kg"). Inside a `ListSection` it draws its separator.
+/// Reads as one VoiceOver element ("Total distance, 1,240 km"). Inside a `ListSection` it draws its separator.
 ///
-///     KeyValueRow("Total volume", value: "4,200 kg")
+///     KeyValueRow("Total distance", value: "1,240 km")
 public struct KeyValueRow: View {
     @Environment(\.koboTheme) private var theme
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -64,7 +64,7 @@ public struct KeyValueRow: View {
             ScrollView {
                 ListSection("Summary") {
                     KeyValueRow("Duration", value: "1 h 12 min")
-                    KeyValueRow("Total volume", value: "4,200 kg")
+                    KeyValueRow("Total distance", value: "1,240 km")
                     KeyValueRow("Change", value: "+5%", valueTone: .success)
                 }
                 .padding(Space.gutter)

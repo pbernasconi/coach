@@ -4,7 +4,7 @@ import SwiftUI
 /// A static, tonal label: a status, a category, a count. It always shows text (and optionally a symbol), so its
 /// meaning never rests on colour alone. It is never a tap target; use `Chip` for that.
 ///
-///     KoboTag("PR", tone: .success, systemImage: "trophy")
+///     KoboTag("New", tone: .success, systemImage: "sparkles")
 ///     KoboTag("Owner", style: .outline)
 public struct KoboTag: View {
     /// How the tag is drawn.
@@ -76,8 +76,8 @@ public struct KoboTag: View {
                     KoboTag("Info", tone: .info, systemImage: "info.circle")
                 }
                 HStack(spacing: Space.sm) {
-                    KoboTag("PR", tone: .success, systemImage: "trophy")
-                    KoboTag("Deload", tone: .warning, systemImage: "exclamationmark.triangle")
+                    KoboTag("Done", tone: .success, systemImage: "checkmark")
+                    KoboTag("Due soon", tone: .warning, systemImage: "exclamationmark.triangle")
                     KoboTag("Missed", tone: .danger, systemImage: "xmark")
                     KoboTag(verbatim: "3 × 8")
                     KoboTag("Owner", style: .outline)

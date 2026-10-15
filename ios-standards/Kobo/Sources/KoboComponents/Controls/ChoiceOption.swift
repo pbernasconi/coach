@@ -3,7 +3,7 @@ import SwiftUI
 
 /// One choice in a `ChipGroup` or `SegmentedPicker`: a value, its visible title and an optional SF Symbol.
 ///
-///     ChoiceOption(Split.upper, title: "Upper", systemImage: "figure.arms.open")
+///     ChoiceOption(Meal.lunch, title: "Lunch", systemImage: "fork.knife")
 public struct ChoiceOption<Value: Hashable & Sendable>: Identifiable {
     public let value: Value
     public let title: Text

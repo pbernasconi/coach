@@ -5,7 +5,7 @@ import SwiftUI
 /// A preview section with nothing to show that keeps its card, so the layout does not jump when rows arrive: one row
 /// with a muted glyph disc, a title and a caption. Not a button. VoiceOver reads it as one element.
 ///
-///     SectionEmptyCard("No sessions yet", caption: "Logged sessions show here.", systemImage: "figure.run")
+///     SectionEmptyCard("No trips yet", caption: "Saved trips show here.", systemImage: "airplane")
 public struct SectionEmptyCard: View {
     @Environment(\.koboTheme) private var theme
     @ScaledMetric(relativeTo: .body) private var discSize = Size.minTouch
@@ -56,7 +56,7 @@ public struct SectionEmptyCard: View {
     private struct SectionEmptyCardPreview: View {
         var body: some View {
             VStack(spacing: Space.lg) {
-                SectionEmptyCard("No sessions yet", caption: "Logged sessions show here.", systemImage: "figure.run")
+                SectionEmptyCard("No trips yet", caption: "Saved trips show here.", systemImage: "airplane")
                 SectionEmptyCard(verbatim: "Nothing shared with you")
             }
             .padding(Space.gutter)

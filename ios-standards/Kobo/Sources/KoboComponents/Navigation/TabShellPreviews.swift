@@ -26,8 +26,8 @@ import SwiftUI
                         .navigationTitle(Text(verbatim: "\(tab)"))
                 }
             } accessory: {
-                MiniPlayerBar(verbatim: "Lower A", subtitle: "12:40", action: {}) {
-                    Image(systemName: "dumbbell").accessibilityHidden(true)
+                MiniPlayerBar(verbatim: "Focus timer", subtitle: "12:40", action: {}) {
+                    Image(systemName: "timer").accessibilityHidden(true)
                 } trailing: {
                     Button("Pause", systemImage: "pause.fill") {}.labelStyle(.iconOnly)
                 }

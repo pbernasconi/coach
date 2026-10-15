@@ -1,13 +1,13 @@
 import Foundation
 
 /// An action chosen inside a sheet, held until the sheet has finished closing. iOS cannot present another modal
-/// (a confirmation, a second sheet, a full-screen page) while a sheet is still animating away, so "Change workout"
+/// (a confirmation, a second sheet, a full-screen page) while a sheet is still animating away, so "Change project"
 /// in an action sheet must wait for the sheet's `onDismiss` before it opens the next screen.
 ///
 ///     @State private var pending = PendingSheetAction<() -> Void>()
 ///
 ///     .sheet(isPresented: $isOpen, onDismiss: { pending.runAfterClose() }) {
-///         Button("Change workout") { pending.choose(openPicker); isOpen = false }
+///         Button("Change project") { pending.choose(openPicker); isOpen = false }
 ///     }
 ///
 /// It is a plain value: any `Action` works, so tests can hold an enum instead of a closure.

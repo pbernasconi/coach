@@ -1,7 +1,7 @@
 import KoboTokens
 import SwiftUI
 
-// `StepperField` initialisers whose title and unit are shown as is (an exercise name, a unit the user picked).
+// `StepperField` initialisers whose title and unit are shown as is (a recipe name, a unit the user picked).
 extension StepperField {
     /// A field over a `Double` with a title and unit shown as is, formatted by `format`.
     public init(

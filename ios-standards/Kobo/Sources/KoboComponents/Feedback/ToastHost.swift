@@ -88,14 +88,14 @@ struct ToastHostModifier: ViewModifier {
     #Preview("Toast host") {
         @Previewable @State var center = ToastCenter()
         VStack(spacing: Space.md) {
-            Button("Saved") { center.show(Toast("Workout saved", tone: .success)) }
+            Button("Saved") { center.show(Toast("Task saved", tone: .success)) }
             Button("Deleted, with Undo") {
-                center.show(Toast("Set deleted", action: .init("Undo") {}))
+                center.show(Toast("Task deleted", action: .init("Undo") {}))
             }
             Button("Error") { center.show(Toast("Couldn't sync. We'll retry.", tone: .danger)) }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .toastHost(center)
-        .onAppear { center.show(Toast("Set deleted", action: .init("Undo") {})) }
+        .onAppear { center.show(Toast("Task deleted", action: .init("Undo") {})) }
     }
 #endif

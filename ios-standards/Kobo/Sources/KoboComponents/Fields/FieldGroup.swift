@@ -78,7 +78,7 @@ public struct FieldGroup<Content: View>: View {
         @Environment(\.koboTheme) private var theme
         @State private var email = ""
         @State private var password = ""
-        @State private var split = "upper"
+        @State private var plan = "monthly"
 
         var body: some View {
             ScrollView {
@@ -87,11 +87,11 @@ public struct FieldGroup<Content: View>: View {
                         KoboTextField("Email", text: $email, prompt: "name@example.com")
                         KoboSecureField("Password", text: $password)
                     }
-                    FieldGroup("Split", error: .message("Pick a split to continue")) {
+                    FieldGroup("Plan", error: .message("Pick a plan to continue")) {
                         SegmentedPicker(
-                            "Split",
-                            selection: $split,
-                            options: [ChoiceOption("upper", title: "Upper"), ChoiceOption("lower", title: "Lower")]
+                            "Plan",
+                            selection: $plan,
+                            options: [ChoiceOption("monthly", title: "Monthly"), ChoiceOption("yearly", title: "Yearly")]
                         )
                     }
                 }

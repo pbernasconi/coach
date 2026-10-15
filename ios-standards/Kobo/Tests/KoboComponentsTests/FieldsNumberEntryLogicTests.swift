@@ -7,12 +7,12 @@ import Testing
 /// two-decimal rule set standing in for the money field.
 @Suite struct FieldsNumberEntryLogicTests {
     static let money = NumberEntryRules(range: 0...999_999_999.99, decimalPlaces: 2)
-    static let weight = NumberEntryRules(range: 0...500, decimalPlaces: 1)
+    static let amount = NumberEntryRules(range: 0...500, decimalPlaces: 1)
     static let us = LocalizedNumberText.Separators(decimal: ".", grouping: ",")
 
     @Test func integerDigitsFollowTheUpperBound() {
         #expect(Self.money.maxIntegerDigits == 9)
-        #expect(Self.weight.maxIntegerDigits == 3)
+        #expect(Self.amount.maxIntegerDigits == 3)
         #expect(NumberEntryRules(range: 0...0.5, decimalPlaces: 2).maxIntegerDigits == 1)
         #expect(NumberEntryRules(range: 0...50, maxIntegerDigits: 4).maxIntegerDigits == 4)
     }
@@ -36,9 +36,9 @@ import Testing
     }
 
     @Test func aWholeNumberFieldCutsTheDecimalPoint() {
-        let reps = NumberEntryRules(range: 1...50)
-        #expect(NumberEntryLogic.sanitize("12.", rules: reps) == .init(value: "12", rejected: true))
-        #expect(NumberEntryLogic.sanitize("123", rules: reps) == .init(value: "12", rejected: true))
+        let guests = NumberEntryRules(range: 1...50)
+        #expect(NumberEntryLogic.sanitize("12.", rules: guests) == .init(value: "12", rejected: true))
+        #expect(NumberEntryLogic.sanitize("123", rules: guests) == .init(value: "12", rejected: true))
     }
 
     @Test(
@@ -94,31 +94,31 @@ import Testing
     }
 
     @Test func commitClampsAndRounds() {
-        #expect(NumberEntryLogic.committed(612, rules: Self.weight) == 500)
-        #expect(NumberEntryLogic.committed(102.46, rules: Self.weight) == 102.5)
+        #expect(NumberEntryLogic.committed(612, rules: Self.amount) == 500)
+        #expect(NumberEntryLogic.committed(102.46, rules: Self.amount) == 102.5)
         #expect(NumberEntryLogic.committed(5, rules: NumberEntryRules(range: 20...500)) == 20)
-        #expect(NumberEntryLogic.isOver("501", rules: Self.weight))
-        #expect(!NumberEntryLogic.isOver("500", rules: Self.weight))
-        #expect(!NumberEntryLogic.isOver("", rules: Self.weight))
+        #expect(NumberEntryLogic.isOver("501", rules: Self.amount))
+        #expect(!NumberEntryLogic.isOver("500", rules: Self.amount))
+        #expect(!NumberEntryLogic.isOver("", rules: Self.amount))
     }
 
     @Test func keypadAppendsDeletesAndAddsOneDecimalPoint() {
         var value = ""
         for key: NumberEntryKey in [.digit(1), .digit(0), .digit(2), .decimal, .digit(5)] {
-            value = NumberEntryLogic.pressing(key, on: value, rules: Self.weight).value
+            value = NumberEntryLogic.pressing(key, on: value, rules: Self.amount).value
         }
         #expect(value == "102.5")
         #expect(
-            NumberEntryLogic.pressing(.decimal, on: value, rules: Self.weight) == .init(value: value, rejected: true)
+            NumberEntryLogic.pressing(.decimal, on: value, rules: Self.amount) == .init(value: value, rejected: true)
         )
         #expect(
-            NumberEntryLogic.pressing(.digit(7), on: value, rules: Self.weight) == .init(value: "102.5", rejected: true)
+            NumberEntryLogic.pressing(.digit(7), on: value, rules: Self.amount) == .init(value: "102.5", rejected: true)
         )
-        #expect(NumberEntryLogic.pressing(.delete, on: value, rules: Self.weight).value == "102.")
-        #expect(NumberEntryLogic.pressing(.delete, on: "", rules: Self.weight) == .init(value: "", rejected: true))
-        #expect(NumberEntryLogic.pressing(.decimal, on: "", rules: Self.weight).value == "0.")
-        #expect(NumberEntryLogic.pressing(.digit(0), on: "0", rules: Self.weight).value == "0")
-        #expect(NumberEntryLogic.pressing(.digit(4), on: "999", rules: Self.weight).rejected)
+        #expect(NumberEntryLogic.pressing(.delete, on: value, rules: Self.amount).value == "102.")
+        #expect(NumberEntryLogic.pressing(.delete, on: "", rules: Self.amount) == .init(value: "", rejected: true))
+        #expect(NumberEntryLogic.pressing(.decimal, on: "", rules: Self.amount).value == "0.")
+        #expect(NumberEntryLogic.pressing(.digit(0), on: "0", rules: Self.amount).value == "0")
+        #expect(NumberEntryLogic.pressing(.digit(4), on: "999", rules: Self.amount).rejected)
     }
 
     @Test func keypadRowsFollowThePhoneLayout() {

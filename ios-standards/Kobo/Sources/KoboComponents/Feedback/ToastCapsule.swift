@@ -91,10 +91,10 @@ private struct ToastSurface<S: Shape>: ViewModifier {
 #if DEBUG
     #Preview("Capsules") {
         VStack(spacing: Space.md) {
-            ToastCapsule(toast: Toast("Workout saved", tone: .success), onDismiss: {}, onAction: {})
-            ToastCapsule(toast: Toast("Set deleted", action: .init("Undo") {}), onDismiss: {}, onAction: {})
+            ToastCapsule(toast: Toast("Task saved", tone: .success), onDismiss: {}, onAction: {})
+            ToastCapsule(toast: Toast("Task deleted", action: .init("Undo") {}), onDismiss: {}, onAction: {})
             ToastCapsule(
-                toast: Toast(verbatim: "Lower A moved to Thursday, and its rest timer settings came with it"),
+                toast: Toast(verbatim: "Garden plan moved to Thursday, and its reminder settings came with it"),
                 onDismiss: {},
                 onAction: {}
             )
@@ -105,7 +105,7 @@ private struct ToastSurface<S: Shape>: ViewModifier {
     #Preview("Capsules, dark, solid") {
         VStack(spacing: Space.md) {
             ToastCapsule(toast: Toast("Couldn't sync. We'll retry.", tone: .danger), onDismiss: {}, onAction: {})
-            ToastCapsule(toast: Toast("Set deleted", action: .init("Undo") {}), onDismiss: {}, onAction: {})
+            ToastCapsule(toast: Toast("Task deleted", action: .init("Undo") {}), onDismiss: {}, onAction: {})
         }
         .padding()
         .koboTheme(Theme(palette: .amber, surfaceStyle: .solid))
@@ -113,7 +113,7 @@ private struct ToastSurface<S: Shape>: ViewModifier {
     }
 
     #Preview("Capsule, AX3") {
-        let toast = Toast(verbatim: "Set deleted from Bench Press", action: .init("Undo") {})
+        let toast = Toast(verbatim: "Task deleted from Garden plan", action: .init("Undo") {})
         ToastCapsule(toast: toast, onDismiss: {}, onAction: {})
             .padding()
             .dynamicTypeSize(.accessibility3)

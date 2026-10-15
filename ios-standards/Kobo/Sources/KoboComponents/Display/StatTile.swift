@@ -2,7 +2,7 @@ import Foundation
 import KoboTokens
 import SwiftUI
 
-/// A change shown under a stat ("+5 lb"), toned and always with a glyph, so it never reads by colour alone.
+/// A change shown under a stat ("+5 km"), toned and always with a glyph, so it never reads by colour alone.
 public struct StatDelta {
     public let text: Text
     public let tone: Tone
@@ -27,8 +27,8 @@ public struct StatDelta {
 
 /// A compact card with a caption, a big value, an optional unit and an optional delta. Reads as one VoiceOver element.
 ///
-///     StatTile(label: "Volume", value: "12.4k", unit: "lb", delta: StatDelta(verbatim: "+8%", tone: .success))
-///     StatTile(label: "Sets", value: Double(done), unit: "/18")
+///     StatTile(label: "Steps", value: "12.4k", unit: "today", delta: StatDelta(verbatim: "+8%", tone: .success))
+///     StatTile(label: "Tasks", value: Double(done), unit: "/18")
 public struct StatTile<Value: View>: View {
     private let label: Text
     private let value: Value
@@ -119,15 +119,15 @@ private struct StatTilePreviews: View {
     var body: some View {
         VStack(spacing: Space.sm) {
             HStack(spacing: Space.sm) {
-                StatTile(label: "Sets", value: 16, unit: "/18")
-                StatTile(label: "Volume", value: "12.4k", unit: "lb")
+                StatTile(label: "Tasks", value: 16, unit: "/18")
+                StatTile(label: "Steps", value: "12.4k", unit: "today")
                 StatTile(label: "Time", value: "52", unit: "min")
             }
             StatTile(
-                label: "Est. 1RM",
-                value: "245",
-                unit: "lb",
-                delta: StatDelta(verbatim: "+5 lb", tone: .success, symbol: "arrow.up")
+                label: "Longest walk",
+                value: "24.5",
+                unit: "km",
+                delta: StatDelta(verbatim: "+5 km", tone: .success, symbol: "arrow.up")
             )
         }
         .padding()

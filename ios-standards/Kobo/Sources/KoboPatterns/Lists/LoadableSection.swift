@@ -9,7 +9,7 @@ import SwiftUI
 /// do not fade. Put the section's title above it, so the title stays in every phase.
 ///
 ///     SectionHeader("Recent")
-///     LoadableSection(state.recent, emptyTitle: "No sessions yet", onRetry: { send(.retryRecent) }) { rows in
+///     LoadableSection(state.recent, emptyTitle: "No projects yet", onRetry: { send(.retryRecent) }) { rows in
 ///         ListSection { ForEach(rows) { ListRow(verbatim: $0.name, action: { open($0) }) } }
 ///     }
 public struct LoadableSection<Value: Equatable & Sendable, Content: View>: View {
@@ -79,7 +79,7 @@ public struct LoadableSection<Value: Equatable & Sendable, Content: View>: View 
         let state: Loadable<[String]>
 
         var body: some View {
-            LoadableSection(state, skeletonRows: 2, emptyTitle: "No sessions yet", onRetry: {}) { names in
+            LoadableSection(state, skeletonRows: 2, emptyTitle: "No projects yet", onRetry: {}) { names in
                 ListSection {
                     ForEach(Array(names.enumerated()), id: \.offset) { _, name in
                         ListRow(verbatim: name, action: {})
@@ -94,9 +94,9 @@ public struct LoadableSection<Value: Equatable & Sendable, Content: View>: View 
             ScrollView {
                 VStack(alignment: .leading, spacing: Space.xxl) {
                     LoadableSectionPreview(state: .loading)
-                    LoadableSectionPreview(state: .loaded(["Lower A", "Upper B"]))
+                    LoadableSectionPreview(state: .loaded(["Garden plan", "Kitchen remodel"]))
                     LoadableSectionPreview(state: .empty)
-                    LoadableSectionPreview(state: .failed(message: "Couldn't load recent sessions."))
+                    LoadableSectionPreview(state: .failed(message: "Couldn't load recent projects."))
                 }
                 .pageGutter()
             }

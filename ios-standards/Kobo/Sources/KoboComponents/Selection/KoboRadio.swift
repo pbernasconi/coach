@@ -1,11 +1,11 @@
 import KoboTokens
 import SwiftUI
 
-/// One radio choice on its own: the disc and its label as one target, for a short inline choice ("kg" or "lb") laid
+/// One radio choice on its own: the disc and its label as one target, for a short inline choice ("km" or "mi") laid
 /// out by the caller. A tap calls `action`; the caller sets the selection. VoiceOver reads the label with the selected
 /// trait. For a list of choices use `RadioGroup` (or `RadioRow` rows in a `ListSection`).
 ///
-///     HStack { KoboRadio("kg", isSelected: unit == .kg) { unit = .kg }; KoboRadio("lb", isSelected: unit == .lb) { unit = .lb } }
+///     HStack { KoboRadio("km", isSelected: unit == .km) { unit = .km }; KoboRadio("mi", isSelected: unit == .mi) { unit = .mi } }
 ///     KoboRadio(verbatim: template.name, isSelected: template.id == chosen) { chosen = template.id }
 public struct KoboRadio: View {
     @Environment(\.koboTheme) private var theme
@@ -70,23 +70,23 @@ public struct KoboRadio: View {
 #if DEBUG
     private struct KoboRadioGallery: View {
         @Environment(\.koboTheme) private var theme
-        @State private var unit = "kg"
+        @State private var unit = "km"
         @State private var side = "both"
 
         var body: some View {
             VStack(alignment: .leading, spacing: Space.lg) {
                 HStack(spacing: Space.xl) {
-                    KoboRadio(verbatim: "kg", isSelected: unit == "kg") { unit = "kg" }
-                    KoboRadio(verbatim: "lb", isSelected: unit == "lb") { unit = "lb" }
+                    KoboRadio(verbatim: "km", isSelected: unit == "km") { unit = "km" }
+                    KoboRadio(verbatim: "mi", isSelected: unit == "mi") { unit = "mi" }
                 }
                 VStack(alignment: .leading, spacing: 0) {
-                    KoboRadio("Both sides", isSelected: side == "both") { side = "both" }
-                    KoboRadio("Left side first, then the right side after a short rest", isSelected: side == "left") {
+                    KoboRadio("Print both sides", isSelected: side == "both") { side = "both" }
+                    KoboRadio("Print the fronts first, then the backs once you flip the stack", isSelected: side == "left") {
                         side = "left"
                     }
-                    KoboRadio("One side only", isSelected: false) {}.disabled(true)
+                    KoboRadio("Print one side only", isSelected: false) {}.disabled(true)
                 }
-                KoboRadio(isSelected: side == "both", accessibilityLabel: "Use both sides") { side = "both" }
+                KoboRadio(isSelected: side == "both", accessibilityLabel: "Print both sides") { side = "both" }
             }
             .padding(Space.gutter)
             .frame(maxHeight: .infinity, alignment: .top)

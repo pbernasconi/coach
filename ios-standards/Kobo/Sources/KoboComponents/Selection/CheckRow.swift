@@ -2,12 +2,12 @@ import KoboTokens
 import SwiftUI
 
 /// A list row with a checkbox: an optional leading slot (an icon, a thumbnail), the title, an optional subtitle and the
-/// box on the trailing edge. The whole row is the target and reads as one checkbox ("Barbell, Olympic bar, Checked"),
+/// box on the trailing edge. The whole row is the target and reads as one checkbox ("Wi-Fi, Fibre, Checked"),
 /// and a tap plays one toggle haptic. It is a `ListRow` underneath, so it draws its separator and press fill inside a
 /// `ListSection` and works at AX3 the same way.
 ///
-///     CheckRow("Barbell", subtitle: "Olympic bar", isOn: $hasBarbell) { Image(systemName: "dumbbell") }
-///     CheckRow("All equipment", state: $allEquipment)
+///     CheckRow("Wi-Fi", subtitle: "Fibre", isOn: $hasWiFi) { Image(systemName: "wifi") }
+///     CheckRow("All amenities", state: $allAmenities)
 ///     CheckRow(verbatim: item.name, isOn: $item.isPacked)
 public struct CheckRow<Leading: View>: View {
     @State private var taps = 0
@@ -80,7 +80,7 @@ extension CheckRow where Leading == EmptyView {
         self.init(verbatim: title, subtitle: subtitle, isOn: isOn) { EmptyView() }
     }
 
-    /// A three-state row with a localized title: a parent over other rows ("All equipment"). A tap on a mixed row
+    /// A three-state row with a localized title: a parent over other rows ("All amenities"). A tap on a mixed row
     /// turns it on.
     public init(_ title: LocalizedStringKey, subtitle: LocalizedStringKey? = nil, state: Binding<CheckboxState>) {
         self.init(title: Text(title), subtitle: subtitle.map { Text($0) }, state: state, leading: EmptyView())
@@ -96,13 +96,13 @@ extension CheckRow where Leading == EmptyView {
 #if DEBUG
     private struct CheckRowGallery: View {
         @Environment(\.koboTheme) private var theme
-        @State private var owned: Set<String> = ["barbell", "bench"]
+        @State private var owned: Set<String> = ["wifi", "desk"]
 
         var body: some View {
             ScrollView {
-                ListSection("Equipment you have", footer: "We only suggest exercises you can do.") {
-                    CheckRow("All equipment", state: allOwned)
-                    ForEach(SelectionSamples.equipment) { option in
+                ListSection("Must-haves", footer: "We only suggest stays that have them.") {
+                    CheckRow("All amenities", state: allOwned)
+                    ForEach(SelectionSamples.amenities) { option in
                         CheckRow(
                             title: option.title,
                             subtitle: option.subtitle,
@@ -110,7 +110,7 @@ extension CheckRow where Leading == EmptyView {
                             leading: Image(systemName: option.systemImage ?? "circle").accessibilityHidden(true)
                         )
                     }
-                    CheckRow("Cable stack", subtitle: "Ask your gym", isOn: .constant(false)).disabled(true)
+                    CheckRow("Sauna", subtitle: "Ask your host", isOn: .constant(false)).disabled(true)
                 }
                 .padding(Space.gutter)
             }
@@ -118,7 +118,7 @@ extension CheckRow where Leading == EmptyView {
         }
 
         private var allOwned: Binding<CheckboxState> {
-            let all = SelectionSamples.equipment.map(\.value)
+            let all = SelectionSamples.amenities.map(\.value)
             return Binding(
                 get: { CheckboxState(children: all.map { owned.contains($0) }) },
                 set: { owned = $0.isOn ? Set(all) : [] }

@@ -19,7 +19,8 @@ Every component in Kobo follows these rules. They are what make the library reus
 5. **Composable modifiers.** Cross-cutting behaviour is a `View` extension (`.koboCard()`, `.shimmering()`,
    `.shake(trigger:)`, `.pressFeedback()`), so it works on any view, not only ours.
 6. **Generic, not domain.** Name things for what they are (`CountdownRing`, `StepperField`, `DayStrip`),
-   never for one app (`RestTimer`, `SetRow`). Domain composites belong in the app.
+   never for one app (`RestTimer`, `SetRow`). Domain composites belong in the app, and so does domain copy: samples,
+   previews and doc examples use neutral, made-up content.
 
 ## Behaviour
 
@@ -71,9 +72,12 @@ Every component in Kobo follows these rules. They are what make the library reus
 verify: R2 system colours, R7 raw animation curves, R9 fixed font sizes, R11 UIKit haptics, R13 `///`
 summaries on public API, R14 previews (inside `#if DEBUG`, with dark and AX3 variants), R15 `nonisolated`
 pure-logic types, R16 glass without a `surfaceStyle` check, R17 `verbatim:` forms and `bundle: .module`
-strings, DOC a reference page per public view, and DATA no real people's names. `ios-guard.sh` covers the
-bans (rule 12), `catalog-coverage.sh` the catalogue (rule 14) and `linux-logic-tests.sh` the logic (rule 15).
+strings, DOC a reference page per public view, DATA no real people's names, and DOMAIN (rule 6) no one app's
+vocabulary (workouts, exercises, sets and reps, barbells, gyms, kg and lb...) anywhere in `Sources`, code, strings
+and comments alike, so samples, previews and doc examples stay neutral (tasks, notes, trips, recipes). `ios-guard.sh`
+covers the bans (rule 12), `catalog-coverage.sh` the catalogue (rule 14) and `linux-logic-tests.sh` the logic (rule
+15).
 
-A justified exception carries its reason on the same line: `// kobo: allow R9 fixed-size disc`. Rules a
-script cannot judge (touch targets, VoiceOver wording, AX3 layout quality) are checked in review against the
-component's reference page.
+A justified exception carries its reason on the same line: `// kobo: allow R9 fixed-size disc`, or
+`// kobo: allow DOMAIN <reason>`. Rules a script cannot judge (touch targets, VoiceOver wording, AX3 layout quality)
+are checked in review against the component's reference page.

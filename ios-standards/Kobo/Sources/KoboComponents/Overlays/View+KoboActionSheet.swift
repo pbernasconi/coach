@@ -6,10 +6,10 @@ extension View {
     /// sheet; the chosen action runs only after the sheet has gone (`PendingSheetAction`), so it may present
     /// another modal. A swipe or a tap outside closes it without running anything.
     ///
-    ///     .koboActionSheet(isPresented: $showsOptions, title: "Lower A") {
+    ///     .koboActionSheet(isPresented: $showsOptions, title: "Garden plan") {
     ///         ActionSheetItem("Move to another day", systemImage: "calendar", action: pickDay)
     ///         ActionSheetItem("Push to next week", systemImage: "arrow.right.to.line", action: push)
-    ///         ActionSheetItem("Change workout", systemImage: "arrow.triangle.2.circlepath", action: change)
+    ///         ActionSheetItem("Change project", systemImage: "arrow.triangle.2.circlepath", action: change)
     ///         ActionSheetItem("Remove", systemImage: "trash", role: .destructive, action: remove)
     ///     }
     ///
@@ -79,14 +79,14 @@ private struct ActionSheetPresenter: ViewModifier {
         var body: some View {
             VStack(spacing: Space.lg) {
                 Text(verbatim: result).foregroundStyle(theme.palette.textSecondary)
-                Button("Workout options") { isPresented = true }
+                Button("Task options") { isPresented = true }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(theme.palette.canvas)
-            .koboActionSheet(isPresented: $isPresented, title: "Lower A", message: "Planned for Tuesday") {
+            .koboActionSheet(isPresented: $isPresented, title: "Garden plan", message: "Planned for Tuesday") {
                 ActionSheetItem("Move to another day", systemImage: "calendar") { result = "Move" }
                 ActionSheetItem("Push to next week", systemImage: "arrow.right.to.line") { result = "Pushed" }
-                ActionSheetItem("Change workout", systemImage: "arrow.triangle.2.circlepath", isEnabled: false) {}
+                ActionSheetItem("Change project", systemImage: "arrow.triangle.2.circlepath", isEnabled: false) {}
                 ActionSheetItem("Remove", systemImage: "trash", role: .destructive) { result = "Removed" }
             }
         }

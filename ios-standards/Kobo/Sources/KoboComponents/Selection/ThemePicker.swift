@@ -7,7 +7,7 @@ import SwiftUI
 /// accessibility sizes the previews stack as rows. The themes are the caller's: pass any list of named `Theme`s.
 ///
 ///     ThemePicker(appearance: $appearance)
-///     ThemePicker(appearance: $appearance, themes: [ThemeChoice("lift", title: "Lift", theme: .amber),
+///     ThemePicker(appearance: $appearance, themes: [ThemeChoice("amber", title: "Amber", theme: .amber),
 ///                                                  ThemeChoice("system", title: "Classic", theme: .system)],
 ///                 selection: $themeID)
 public struct ThemePicker<ID: Hashable & Sendable>: View {
@@ -145,9 +145,9 @@ private struct ThemePickerTile: View {
     private struct ThemePickerGallery: View {
         @Environment(\.koboTheme) private var theme
         @State private var appearance = AppearanceMode.system
-        @State private var brand = "lift"
+        @State private var brand = "amber"
         private let themes = [
-            ThemeChoice("lift", title: "Lift", theme: .amber),
+            ThemeChoice("amber", title: "Amber", theme: .amber),
             ThemeChoice("classic", title: "Classic", theme: .system),
             ThemeChoice("flat", title: "Flat", theme: Theme(palette: .amber, surfaceStyle: .solid)),
         ]

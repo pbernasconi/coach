@@ -117,7 +117,7 @@ public struct PinnedFooter<Content: View>: View {
             }
             .background(Theme.system.palette.canvas)
             .pinnedFooter(style: style) {
-                Button("Save workout") {}
+                Button("Save trip") {}
                     .buttonStyle(.glassProminent)
                     .controlSize(.large)
                     .frame(maxWidth: .infinity)

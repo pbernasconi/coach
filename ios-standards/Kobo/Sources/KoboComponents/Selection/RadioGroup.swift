@@ -6,8 +6,8 @@ import SwiftUI
 /// each row speaks its title, subtitle and the selected trait, so VoiceOver and Full Keyboard Access move row by row.
 /// Put it in a `ListSection` for the card and separators.
 ///
-///     ListSection("Default rest") {
-///         RadioGroup("Default rest", options: restOptions, selection: $rest)
+///     ListSection("Default timer") {
+///         RadioGroup("Default timer", options: timerOptions, selection: $timer)
 ///     }
 ///     RadioGroup(verbatim: plan.name, options: days.map { SelectOption($0) }, selection: $day)
 public struct RadioGroup<Value: Hashable & Sendable>: View {
@@ -51,17 +51,17 @@ public struct RadioGroup<Value: Hashable & Sendable>: View {
 #if DEBUG
     private struct RadioGroupGallery: View {
         @Environment(\.koboTheme) private var theme
-        @State private var rest = 90
-        @State private var day = "push"
+        @State private var timer = 90
+        @State private var day = "focus"
 
         var body: some View {
             ScrollView {
                 VStack(spacing: Space.xxl) {
-                    ListSection("Default rest", footer: "Applies to new exercises.") {
-                        RadioGroup("Default rest", options: SelectionSamples.restPresets, selection: $rest)
+                    ListSection("Default timer", footer: "Applies to new tasks.") {
+                        RadioGroup("Default timer", options: SelectionSamples.timerPresets, selection: $timer)
                     }
-                    ListSection(verbatim: "Upper / lower") {
-                        RadioGroup(verbatim: "Upper / lower", options: SelectionSamples.dayTemplates, selection: $day)
+                    ListSection(verbatim: "Weekday plan") {
+                        RadioGroup(verbatim: "Weekday plan", options: SelectionSamples.dayPlans, selection: $day)
                     }
                 }
                 .padding(Space.gutter)

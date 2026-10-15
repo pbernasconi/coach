@@ -2,44 +2,39 @@ import KoboTokens
 import SwiftUI
 
 #if DEBUG
-    /// Gym sample content for the Selection previews: equipment, rest presets and day templates.
+    /// Made-up sample content for the Selection previews: a stay's amenities, timer presets and day plans.
     enum SelectionSamples {
-        static let equipment: [SelectOption<String>] = [
-            SelectOption("barbell", title: "Barbell", subtitle: "Olympic bar, 20 kg", systemImage: "dumbbell"),
-            SelectOption("dumbbells", title: "Dumbbells", subtitle: "Pairs from 2 to 40 kg", keywords: ["DB"]),
-            SelectOption("kettlebell", title: "Kettlebell", subtitle: "16 and 24 kg", keywords: ["KB"]),
-            SelectOption("bench", title: "Adjustable bench", systemImage: "bed.double"),
-            SelectOption("rack", title: "Squat rack", subtitle: "With safety pins"),
-            SelectOption("pullup", title: "Pull-up bar", systemImage: "figure.climbing"),
-            SelectOption("bands", title: "Resistance bands", keywords: ["loop"]),
-            SelectOption("rower", title: "Rowing machine", subtitle: "Booked through the front desk", isEnabled: false),
-            SelectOption("sled", title: "Sled", subtitle: "Turf lane only"),
+        static let amenities: [SelectOption<String>] = [
+            SelectOption("wifi", title: "Wi-Fi", subtitle: "Fibre, 500 Mbit/s", systemImage: "wifi"),
+            SelectOption("kitchen", title: "Kitchen", subtitle: "Oven and two hobs", keywords: ["cooking"]),
+            SelectOption("parking", title: "Parking", subtitle: "One car, on site", keywords: ["car"]),
+            SelectOption("desk", title: "Work desk", systemImage: "desktopcomputer"),
+            SelectOption("washer", title: "Washing machine", subtitle: "Shared, ground floor"),
+            SelectOption("balcony", title: "Balcony", systemImage: "sun.max"),
+            SelectOption("bikes", title: "Bike storage", keywords: ["cycle"]),
+            SelectOption("pool", title: "Pool", subtitle: "Closed for the season", isEnabled: false),
+            SelectOption("garden", title: "Garden", subtitle: "Shared courtyard"),
         ]
 
-        static let restPresets: [SelectOption<Int>] = [
-            SelectOption(60, title: "60 seconds", subtitle: "Accessories and supersets"),
-            SelectOption(90, title: "90 seconds", subtitle: "Most working sets"),
-            SelectOption(120, title: "2 minutes", subtitle: "Heavy compound lifts"),
-            SelectOption(180, title: "3 minutes", subtitle: "Near-maximal sets"),
+        static let timerPresets: [SelectOption<Int>] = [
+            SelectOption(60, title: "60 seconds", subtitle: "A quick check-in"),
+            SelectOption(90, title: "90 seconds", subtitle: "A short stretch"),
+            SelectOption(120, title: "2 minutes", subtitle: "Green tea"),
+            SelectOption(180, title: "3 minutes", subtitle: "Black tea"),
         ]
 
-        static let restChoices: [ChoiceOption<Int>] = [
+        static let timerChoices: [ChoiceOption<Int>] = [
             ChoiceOption(60, title: "60 s"),
             ChoiceOption(90, title: "90 s"),
             ChoiceOption(120, title: "2 min"),
             ChoiceOption(180, title: "3 min", systemImage: "tortoise"),
         ]
 
-        static let dayTemplates: [SelectOption<String>] = [
-            SelectOption(
-                "push",
-                title: "Push",
-                subtitle: "Chest, shoulders, triceps",
-                systemImage: "figure.strengthtraining.traditional"
-            ),
-            SelectOption("pull", title: "Pull", subtitle: "Back and biceps", systemImage: "figure.rower"),
-            SelectOption("legs", title: "Legs", subtitle: "Squat, hinge, lunge", systemImage: "figure.walk"),
-            SelectOption("rest", title: "Rest", subtitle: "Not on a plan week", isEnabled: false),
+        static let dayPlans: [SelectOption<String>] = [
+            SelectOption("focus", title: "Focus", subtitle: "Deep work, no meetings", systemImage: "brain.head.profile"),
+            SelectOption("meetings", title: "Meetings", subtitle: "Calls and reviews", systemImage: "person.2"),
+            SelectOption("errands", title: "Errands", subtitle: "Shopping, post and bank", systemImage: "cart"),
+            SelectOption("off", title: "Day off", subtitle: "Not in a holiday week", isEnabled: false),
         ]
     }
 #endif

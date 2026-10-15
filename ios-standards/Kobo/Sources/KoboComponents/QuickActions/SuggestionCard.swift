@@ -6,7 +6,7 @@ import SwiftUI
 /// 44 pt close button. On a card surface; VoiceOver reads the copy, then the link and the close button.
 ///
 ///     SuggestionCard(
-///         "Plan your week", message: "Pick three sessions and we'll remind you.", systemImage: "calendar",
+///         "Plan your week", message: "Pick three focus days and we'll remind you.", systemImage: "calendar",
 ///         actionTitle: "Plan now", onAction: plan, onDismiss: hide
 ///     )
 public struct SuggestionCard: View {
@@ -102,7 +102,7 @@ public struct SuggestionCard: View {
             VStack(spacing: Space.lg) {
                 SuggestionCard(
                     "Plan your week",
-                    message: "Pick three sessions and we'll remind you the evening before each one.",
+                    message: "Pick three focus days and we'll remind you the evening before each one.",
                     systemImage: "calendar",
                     actionTitle: "Plan now",
                     onAction: {},

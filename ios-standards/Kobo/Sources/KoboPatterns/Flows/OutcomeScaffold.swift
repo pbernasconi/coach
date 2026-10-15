@@ -9,10 +9,10 @@ import SwiftUI
 /// `.error`, or `.warning` for unknown) and VoiceOver focus moves to the title. With `shareText` the bar offers the
 /// system share sheet. The system back chevron is hidden: the work is done, so the way out is the primary action.
 ///
-///     OutcomeScaffold(phase: .success, title: "Workout finished", detail: "Nice work. It's in your history.",
-///                     facts: [OutcomeFact("Duration", value: "1 h 12 min"), OutcomeFact("Sets", value: "18")],
+///     OutcomeScaffold(phase: .success, title: "Project finished", detail: "Nice work. It's in your history.",
+///                     facts: [OutcomeFact("Duration", value: "1 h 12 min"), OutcomeFact("Tasks", value: "18")],
 ///                     primary: OutcomeAction("Done", action: close),
-///                     shareText: OutcomeShareText.text(title: "Workout finished", facts: facts))
+///                     shareText: OutcomeShareText.text(title: "Project finished", facts: facts))
 public struct OutcomeScaffold<Extra: View>: View {
     @Environment(\.koboTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -201,7 +201,7 @@ extension OutcomeScaffold where Extra == EmptyView {
                     detail: "Tap the phases to walk through the outcome.",
                     facts: phase.isSettled ? [OutcomeFact(verbatim: "Duration", value: "1 h 12 min")] : [],
                     primary: OutcomeAction("Next phase") { phase = OutcomePhase.allCases.next(after: phase) },
-                    shareText: "Workout finished"
+                    shareText: "Project finished"
                 )
             }
         }

@@ -83,13 +83,13 @@ private struct ModalPageSheetSizing: ViewModifier {
         @Environment(\.koboTheme) private var theme
         @State private var isPresented = true
         @State private var isSheet = false
-        @State private var sessions = 3
-        @State private var name = "Strength block"
+        @State private var steps = 3
+        @State private var name = "Spring cleaning"
 
         var body: some View {
             VStack(spacing: Space.lg) {
                 Toggle("Present as a sheet", isOn: $isSheet)
-                Button("New program") { isPresented = true }
+                Button("New project") { isPresented = true }
             }
             .padding(Space.gutter)
             .frame(maxHeight: .infinity)
@@ -99,11 +99,11 @@ private struct ModalPageSheetSizing: ViewModifier {
                     verbatim: name,
                     subtitle: "8 weeks",
                     confirmLabel: "Create",
-                    hasChanges: sessions != 3,
+                    hasChanges: steps != 3,
                     onConfirm: {}
                 ) {
-                    StepperField("Sessions per week", value: $sessions, in: 1...7)
-                    Text("Change the sessions, then tap Cancel: the page asks before discarding.")
+                    StepperField("Rooms per week", value: $steps, in: 1...7)
+                    Text("Change the rooms, then tap Cancel: the page asks before discarding.")
                         .font(theme.font(.footnote))
                         .foregroundStyle(theme.palette.textSecondary)
                 }

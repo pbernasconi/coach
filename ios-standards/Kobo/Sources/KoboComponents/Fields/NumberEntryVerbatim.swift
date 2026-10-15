@@ -1,7 +1,7 @@
 import KoboTokens
 import SwiftUI
 
-// `NumberEntry` initialisers whose label is shown as is: a runtime name such as the exercise being logged.
+// `NumberEntry` initialisers whose label is shown as is: a runtime name such as the item being counted.
 extension NumberEntry {
     /// An editor over an optional number, labelled as is.
     public init(

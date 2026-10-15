@@ -1,13 +1,13 @@
 import KoboTokens
 import SwiftUI
 
-/// A settings row whose value opens a native menu of choices: units, default rest, a start day. It looks like a
+/// A settings row whose value opens a native menu of choices: units, a default timer, a start day. It looks like a
 /// `ListRow` (leading slot, title, subtitle) with the chosen title and an up-down caret on the trailing edge, draws its
 /// separator and press fill inside a `ListSection`, and the menu shows a check beside the current choice. A change plays
 /// the selection haptic. VoiceOver reads the title and the chosen value; the menu is the system one.
 ///
-///     MenuRow("Units", selection: $unit, options: [ChoiceOption(.kg, title: "Kilograms"), ChoiceOption(.lb, title: "Pounds")])
-///     MenuRow("Default rest", selection: $rest, options: restOptions) { Image(systemName: "timer") }
+///     MenuRow("Units", selection: $unit, options: [ChoiceOption(.km, title: "Kilometres"), ChoiceOption(.mi, title: "Miles")])
+///     MenuRow("Default timer", selection: $timer, options: timerOptions) { Image(systemName: "timer") }
 public struct MenuRow<Value: Hashable & Sendable, Leading: View>: View {
     @Environment(\.koboTheme) private var theme
     private let title: Text
@@ -147,23 +147,23 @@ extension ChoiceMenuPicker where Tag == Value {
 #if DEBUG
     private struct MenuRowGallery: View {
         @Environment(\.koboTheme) private var theme
-        @State private var unit = "kg"
-        @State private var rest = 90
+        @State private var unit = "km"
+        @State private var timer = 90
         @State private var week = "monday"
 
         var body: some View {
             ScrollView {
-                ListSection("Workout", footer: "Changes apply to new sessions.") {
+                ListSection("Tasks", footer: "Changes apply to new tasks.") {
                     MenuRow(
                         "Units",
                         selection: $unit,
-                        options: [ChoiceOption("kg", title: "Kilograms"), ChoiceOption("lb", title: "Pounds")]
+                        options: [ChoiceOption("km", title: "Kilometres"), ChoiceOption("mi", title: "Miles")]
                     )
                     MenuRow(
-                        "Default rest",
-                        subtitle: "Between working sets",
-                        selection: $rest,
-                        options: SelectionSamples.restChoices
+                        "Default timer",
+                        subtitle: "For each focus block",
+                        selection: $timer,
+                        options: SelectionSamples.timerChoices
                     ) {
                         Image(systemName: "timer").accessibilityHidden(true)
                     }
@@ -172,7 +172,7 @@ extension ChoiceMenuPicker where Tag == Value {
                         selection: $week,
                         options: [ChoiceOption("monday", title: "Monday"), ChoiceOption("sunday", title: "Sunday")]
                     )
-                    MenuRow("Plate set", selection: .constant("std"), options: [ChoiceOption("std", title: "Standard")])
+                    MenuRow("Calendar", selection: .constant("std"), options: [ChoiceOption("std", title: "Gregorian")])
                         .disabled(true)
                 }
                 .padding(Space.gutter)

@@ -4,7 +4,7 @@ import SwiftUI
 /// A rounded square tile that shows an SF Symbol, an image or any custom content on a tone's soft fill, with an
 /// optional corner badge (a play glyph on a video, a check on a done item). Decorative unless given a label.
 ///
-///     Thumbnail(systemName: "figure.strengthtraining.traditional", tone: .accent) {
+///     Thumbnail(systemName: "fork.knife", tone: .accent) {
 ///         ThumbnailBadge(systemName: "play.fill")
 ///     }
 ///
@@ -156,11 +156,11 @@ extension Thumbnail where Content == Image, Badge == EmptyView {
 private struct ThumbnailPreviews: View {
     var body: some View {
         HStack(spacing: Space.md) {
-            Thumbnail(systemName: "dumbbell.fill", tone: .accent, accessibilityLabel: "Bench press, has video") {
+            Thumbnail(systemName: "fork.knife", tone: .accent, accessibilityLabel: "Lemon risotto, has video") {
                 ThumbnailBadge(systemName: "play.fill")
             }
-            Thumbnail(systemName: "figure.run", tone: .info)
-            Thumbnail(systemName: "dumbbell.fill", tone: .success, side: Size.minTouch)
+            Thumbnail(systemName: "map", tone: .info)
+            Thumbnail(systemName: "book.closed", tone: .success, side: Size.minTouch)
             Thumbnail(tone: .warning) {
                 Text("A1")
             }

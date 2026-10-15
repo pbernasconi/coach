@@ -36,18 +36,18 @@ import Testing
     @Test func shareTextListsTheFactsLineByLine() {
         let facts = [
             OutcomeFact(verbatim: "Duration", value: "1 h 12 min"),
-            OutcomeFact(verbatim: "Sets", value: "18"),
+            OutcomeFact(verbatim: "Tasks", value: "18"),
         ]
         let lines = OutcomeShareText.lines(
-            title: "Workout finished",
-            status: "Upper A",
+            title: "Project finished",
+            status: "Launch prep",
             facts: facts,
-            footer: "lift.app"
+            footer: "example.app"
         )
-        #expect(lines == ["Workout finished", "Upper A", "Duration: 1 h 12 min", "Sets: 18", "lift.app"])
+        #expect(lines == ["Project finished", "Launch prep", "Duration: 1 h 12 min", "Tasks: 18", "example.app"])
         #expect(
-            OutcomeShareText.text(title: "Workout finished", facts: facts)
-                == "Workout finished\nDuration: 1 h 12 min\nSets: 18"
+            OutcomeShareText.text(title: "Project finished", facts: facts)
+                == "Project finished\nDuration: 1 h 12 min\nTasks: 18"
         )
     }
 
@@ -57,8 +57,8 @@ import Testing
     }
 
     @Test func factsKeyOnTheirIdOrTheirLabel() {
-        #expect(OutcomeFact(verbatim: "Sets", value: "18").id == "Sets")
-        #expect(OutcomeFact(verbatim: "Sets", value: "18", id: "sets-1").id == "sets-1")
+        #expect(OutcomeFact(verbatim: "Tasks", value: "18").id == "Tasks")
+        #expect(OutcomeFact(verbatim: "Tasks", value: "18", id: "tasks-1").id == "tasks-1")
     }
 
     /// Reduce Motion never scales and never draws: everything is whole at once.
@@ -84,7 +84,7 @@ import Testing
 
     @Test func aPrimerShowsAtMostThreeReasons() {
         let reasons = (1...5).map { PrimerPageModel.Reason(symbol: "star", verbatim: "Reason \($0)") }
-        let model = PrimerPageModel(verbatim: "Turn on alerts", message: "So rest never runs over.", reasons: reasons)
+        let model = PrimerPageModel(verbatim: "Turn on alerts", message: "So a timer never runs over.", reasons: reasons)
         #expect(model.reasons.count == PrimerPageModel.maxReasons)
         #expect(model.reasons.map(\.text) == ["Reason 1", "Reason 2", "Reason 3"])
         #expect(model.symbol == nil)

@@ -1,10 +1,10 @@
 import Foundation
 
 /// How a text matches a search query: case- and diacritic-insensitive, token by token. Every word of the query must
-/// appear in the text ("bench inc" matches "Incline Bench Press"); the match keeps the ranges to highlight and a score
+/// appear in the text ("risotto mush" matches "Mushroom Risotto"); the match keeps the ranges to highlight and a score
 /// to rank results by.
 ///
-///     let results = SearchMatch.ranked(exercises, query: query) { $0.name }
+///     let results = SearchMatch.ranked(recipes, query: query) { $0.name }
 ///     ForEach(results, id: \.element.id) { HighlightedText($0.element.name, ranges: $0.match.ranges) }
 nonisolated public struct SearchMatch: Hashable, Sendable {
     /// The matched ranges in the text, sorted and never overlapping.

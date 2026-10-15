@@ -7,9 +7,9 @@ import SwiftUI
 /// "Continue") and an optional quiet secondary one ("Not now"). Show it at the moment the feature needs the
 /// permission, never at launch.
 ///
-///     PrimerPage(model: PrimerPageModel("Turn on notifications", message: "We'll tell you when rest is over.",
+///     PrimerPage(model: PrimerPageModel("Turn on notifications", message: "We'll tell you when a timer ends.",
 ///                                       symbol: "bell.badge",
-///                                       reasons: [.init(symbol: "timer", "Rest timer alerts")]),
+///                                       reasons: [.init(symbol: "timer", "Timer alerts")]),
 ///                primary: PrimerPageAction("Allow notifications", action: ask),
 ///                secondary: .notNow(action: skip))
 ///
@@ -138,11 +138,11 @@ extension PrimerPage where Extra == EmptyView {
 #if DEBUG
     private let primerSample = PrimerPageModel(
         verbatim: "Turn on notifications",
-        message: "Lift tells you when rest is over, even with the screen off.",
+        message: "Atlas tells you when a timer ends, even with the screen off.",
         symbol: "bell.badge",
         reasons: [
-            .init(symbol: "timer", verbatim: "Rest timer alerts"),
-            .init(symbol: "calendar", verbatim: "A nudge on training days"),
+            .init(symbol: "timer", verbatim: "Timer alerts"),
+            .init(symbol: "calendar", verbatim: "A nudge on planned days"),
         ]
     )
 

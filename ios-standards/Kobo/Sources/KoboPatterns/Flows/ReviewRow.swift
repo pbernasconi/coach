@@ -8,7 +8,7 @@ import SwiftUI
 /// hint "Edit".
 ///
 ///     ReviewRow("Date", value: "Mon 14 Oct", onEdit: { step = .paste })
-///     ReviewRow(verbatim: exercise.name, value: "3 × 8 · 80 kg")
+///     ReviewRow(verbatim: task.title, value: "Due Fri · 30 min")
 public struct ReviewRow: View {
     private enum Label {
         case localized(LocalizedStringKey)

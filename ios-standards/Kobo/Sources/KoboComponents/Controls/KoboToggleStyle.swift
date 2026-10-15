@@ -4,7 +4,7 @@ import SwiftUI
 /// An iOS-style switch drawn from the theme: the track fills with the accent when on and the knob slides on
 /// `Motion.snappy`. The whole label is the target, so a row toggles wherever it is tapped. It plays the toggle haptic.
 ///
-///     Toggle("Auto-start rest timer", isOn: $autoRest).toggleStyle(.kobo)
+///     Toggle("Auto-start the timer", isOn: $autoStart).toggleStyle(.kobo)
 public struct KoboToggleStyle: ToggleStyle {
     @Environment(\.koboTheme) private var theme
     @Environment(\.isEnabled) private var isEnabled
@@ -91,12 +91,12 @@ struct SwitchTrack: View {
 #if DEBUG
     private struct KoboToggleGallery: View {
         @Environment(\.koboTheme) private var theme
-        @State private var autoRest = true
+        @State private var autoStart = true
         @State private var sounds = false
 
         var body: some View {
             VStack(spacing: Space.md) {
-                Toggle("Auto-start rest timer", isOn: $autoRest)
+                Toggle("Auto-start the timer", isOn: $autoStart)
                 Toggle("Sounds", isOn: $sounds)
                 Toggle("Locked", isOn: .constant(true)).disabled(true)
             }

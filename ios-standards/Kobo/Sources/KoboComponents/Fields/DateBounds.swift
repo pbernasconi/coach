@@ -1,7 +1,7 @@
 import Foundation
 
 /// The days a `DateField` or `KoboCalendar` accepts: an optional first and last day, and an optional rule that turns
-/// single days off (rest days, holidays, days already full). Days compare by calendar day, never by time.
+/// single days off (weekends, holidays, days already full). Days compare by calendar day, never by time.
 ///
 ///     DateBounds(minDate: today, isDateDisabled: { calendar.isDateInWeekend($0) })
 nonisolated public struct DateBounds: Sendable {

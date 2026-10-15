@@ -45,7 +45,7 @@ extension View {
     }
 }
 
-/// The spoken value of a field: "135 lb, Too heavy".
+/// The spoken value of a field: "12 km, Too far".
 enum FieldSpeech {
     static func value(_ value: String, unit: Text?, error: FieldError) -> Text {
         let base = unit.map { Text("\(value) \($0)", bundle: .module) } ?? Text(verbatim: value)

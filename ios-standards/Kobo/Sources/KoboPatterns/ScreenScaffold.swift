@@ -18,12 +18,12 @@ public enum ScreenHeaderStyle: Sendable, Equatable {
 /// refresh, and dragging the content dismisses the keyboard. Inline toolbar buttons are glass circles, or flat ones
 /// under a `.solid` theme.
 ///
-///     ScreenScaffold("Week", subtitle: "3 of 4 workouts") {
+///     ScreenScaffold("Week", subtitle: "3 of 4 tasks") {
 ///         DayStrip(…)
 ///     } toolbar: {
 ///         Button("Add", systemImage: "plus", action: add)
 ///     } footer: {
-///         Button("Start workout", action: start).buttonStyle(.glassProminent)
+///         Button("Plan the week", action: plan).buttonStyle(.glassProminent)
 ///     }
 public struct ScreenScaffold<Content: View, Toolbar: View, Footer: View>: View {
     @Environment(\.koboTheme) private var theme
@@ -114,14 +114,14 @@ public struct ScreenScaffold<Content: View, Toolbar: View, Footer: View>: View {
         let style: ScreenHeaderStyle
 
         var body: some View {
-            ScreenScaffold("Week", subtitle: "3 of 4 workouts", kicker: "October", headerStyle: style) {
+            ScreenScaffold("Week", subtitle: "3 of 4 tasks", kicker: "October", headerStyle: style) {
                 ForEach(1..<12) { index in
                     Text("Card \(index)").koboCard()
                 }
             } toolbar: {
-                Button("Add workout", systemImage: "plus") {}
+                Button("Add task", systemImage: "plus") {}
             } footer: {
-                Button("Start workout") {}
+                Button("Plan the week") {}
                     .buttonStyle(.glassProminent)
                     .controlSize(.large)
             }

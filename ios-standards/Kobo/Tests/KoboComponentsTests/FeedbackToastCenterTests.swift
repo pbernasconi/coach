@@ -11,7 +11,7 @@ import Testing
 
     @Test func showMakesTheToastCurrent() {
         let center = ToastCenter(clock: TestClock())
-        let toast = Toast(verbatim: "Workout saved", tone: .success)
+        let toast = Toast(verbatim: "Task saved", tone: .success)
         center.show(toast)
         #expect(center.current == toast)
     }
@@ -19,7 +19,7 @@ import Testing
     @Test func dismissesItselfAfterItsDuration() async {
         let clock = TestClock()
         let center = ToastCenter(clock: clock)
-        let toast = Toast(verbatim: "Workout saved", duration: .seconds(4))
+        let toast = Toast(verbatim: "Task saved", duration: .seconds(4))
 
         center.show(toast)
         await clock.waitForSleepers(1)
@@ -131,13 +131,13 @@ import Testing
 
     #if canImport(SwiftUI)  // the LocalizedStringResource initialisers live in a SwiftUI file
         @Test func localizedCopyResolvesWithoutATranslation() {
-            let toast = Toast("Set deleted", action: .init("Undo") {})
-            #expect(toast.message == "Set deleted")
+            let toast = Toast("Task deleted", action: .init("Undo") {})
+            #expect(toast.message == "Task deleted")
             #expect(toast.action?.label == "Undo")
         }
 
         @Test func keyValueItemIdDefaultsToTheCatalogKey() {
-            #expect(KeyValueItem("Volume", value: "9,840 lb").id == "Volume")
+            #expect(KeyValueItem("Distance", value: "1,240 km").id == "Distance")
             #expect(KeyValueItem(verbatim: "Grip", value: "Hook").id == "Grip")
         }
     #endif

@@ -30,7 +30,7 @@ public struct FlowStepAction {
         )
     }
 
-    /// An action whose title and hint are shown as is ("Import 14 workouts").
+    /// An action whose title and hint are shown as is ("Import 14 tasks").
     public init(
         verbatim title: String,
         isEnabled: Bool = true,

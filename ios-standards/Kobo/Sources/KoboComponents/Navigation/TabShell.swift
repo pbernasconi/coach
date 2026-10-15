@@ -9,7 +9,7 @@ import SwiftUI
 ///     TabShell(tabs: tabs, selection: $router.tab, layout: .forDevice(isPad: isPad)) { tab in
 ///         NavigationStack(path: $router[tab]) { root(for: tab) }
 ///     } accessory: {
-///         MiniPlayerBar(verbatim: workout.name, subtitle: elapsed, action: open) { … } trailing: { … }
+///         MiniPlayerBar(verbatim: episode.title, subtitle: elapsed, action: open) { … } trailing: { … }
 ///     }
 public struct TabShell<Value: Hashable, Content: View, Accessory: View>: View {
     @Environment(\.koboTheme) private var theme

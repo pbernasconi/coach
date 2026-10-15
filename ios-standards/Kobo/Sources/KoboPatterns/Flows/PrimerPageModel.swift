@@ -5,8 +5,8 @@ import Foundation
 /// model is `Equatable` and `Sendable` and can live in a screen's state.
 ///
 ///     PrimerPageModel(
-///         verbatim: "Turn on notifications", message: "We'll tell you when rest is over.",
-///         symbol: "bell.badge", reasons: [.init(symbol: "timer", verbatim: "Rest timer alerts")])
+///         verbatim: "Turn on notifications", message: "We'll tell you when a timer ends.",
+///         symbol: "bell.badge", reasons: [.init(symbol: "timer", verbatim: "Timer alerts")])
 nonisolated public struct PrimerPageModel: Equatable, Sendable {
     /// One reason row: a small accent glyph and one short sentence.
     public struct Reason: Identifiable, Equatable, Sendable {

@@ -6,8 +6,8 @@ extension View {
     /// identity: a new payload with the same `id` updates it in place (see `itemSheet`). A swipe or the close button
     /// sets `item` to `nil`; `onDismiss` runs once the sheet has finished closing.
     ///
-    ///     .koboSheet(item: $editingSet, title: \.exerciseName) { set in
-    ///         StepperField("Reps", value: $draftReps, in: 1...50)
+    ///     .koboSheet(item: $editingLine, title: \.productName) { line in
+    ///         StepperField("Quantity", value: $draftQuantity, in: 1...50)
     ///     }
     public func koboSheet<Item: Identifiable, Content: View, Footer: View>(
         item: Binding<Item?>,
@@ -77,9 +77,9 @@ extension View {
             Button("Open Tuesday") { day = KoboSheetItemPreviewDay(id: 2, name: "Tuesday") }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(theme.palette.canvas)
-                .koboSheet(item: $day, title: \.name, subtitle: { _ in "Lower A" }) { _ in
-                    ListRow("Back squat", value: "3 × 5")
-                    ListRow("Romanian deadlift", value: "3 × 8")
+                .koboSheet(item: $day, title: \.name, subtitle: { _ in "Errands" }) { _ in
+                    ListRow("Pick up parcel", value: "10 min")
+                    ListRow("Return library books", value: "15 min")
                 }
         }
     }

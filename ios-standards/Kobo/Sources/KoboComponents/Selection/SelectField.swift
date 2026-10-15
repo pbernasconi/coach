@@ -8,8 +8,8 @@ import SwiftUI
 /// label, the value and any error as one control. For a short list of plain values, `MenuSelectField` opens a native
 /// menu instead; for several choices use `MultiSelectField`.
 ///
-///     SelectField("Equipment", selection: $equipment, options: equipmentOptions, placeholder: "Choose equipment")
-///     SelectField("Default rest", selection: $rest, options: restOptions, helper: "Used for new exercises")
+///     SelectField("Project", selection: $project, options: projectOptions, placeholder: "Choose a project")
+///     SelectField("Default timer", selection: $timer, options: timerOptions, helper: "Used for new tasks")
 ///     SelectField(verbatim: plan.name, selection: $day, options: days, error: dayError)
 public struct SelectField<Value: Hashable & Sendable>: View {
     @State private var isOpen = false
@@ -59,7 +59,7 @@ public struct SelectField<Value: Hashable & Sendable>: View {
         self.search = search
     }
 
-    /// A field over a choice that always has a value (a default rest), with localized copy.
+    /// A field over a choice that always has a value (a default timer), with localized copy.
     public init(
         _ label: LocalizedStringKey,
         selection: Binding<Value>,
@@ -127,35 +127,35 @@ public struct SelectField<Value: Hashable & Sendable>: View {
 #if DEBUG
     private struct SelectFieldGallery: View {
         @Environment(\.koboTheme) private var theme
-        @State private var equipment: String?
-        @State private var rest = 90
-        @State private var day: String? = "pull"
-        @State private var gear: Set<String> = ["barbell", "bench", "rack"]
+        @State private var amenity: String?
+        @State private var timer = 90
+        @State private var day: String? = "meetings"
+        @State private var wanted: Set<String> = ["wifi", "desk", "washer"]
 
         var body: some View {
             ScrollView {
                 FieldGroup {
                     SelectField(
-                        "Equipment",
-                        selection: $equipment,
-                        options: SelectionSamples.equipment,
-                        placeholder: "Choose equipment",
-                        error: equipment == nil ? .message("Pick the equipment for this exercise") : .none
+                        "Amenity",
+                        selection: $amenity,
+                        options: SelectionSamples.amenities,
+                        placeholder: "Choose one",
+                        error: amenity == nil ? .message("Pick the amenity that matters most") : .none
                     )
                     SelectField(
-                        "Default rest",
-                        selection: $rest,
-                        options: SelectionSamples.restPresets,
-                        helper: "Used for new exercises"
+                        "Default timer",
+                        selection: $timer,
+                        options: SelectionSamples.timerPresets,
+                        helper: "Used for new tasks"
                     )
-                    SelectField(verbatim: "Day template", selection: $day, options: SelectionSamples.dayTemplates)
+                    SelectField(verbatim: "Day plan", selection: $day, options: SelectionSamples.dayPlans)
                     MultiSelectField(
-                        "Gym equipment",
-                        selection: $gear,
-                        options: SelectionSamples.equipment,
+                        "Must-haves",
+                        selection: $wanted,
+                        options: SelectionSamples.amenities,
                         placeholder: "None yet"
                     )
-                    SelectField("Locked", selection: $rest, options: SelectionSamples.restPresets).disabled(true)
+                    SelectField("Locked", selection: $timer, options: SelectionSamples.timerPresets).disabled(true)
                 }
                 .padding(Space.gutter)
             }

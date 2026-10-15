@@ -103,7 +103,7 @@ public struct ActionCircle: View {
         var body: some View {
             HStack(alignment: .top, spacing: 0) {
                 ActionCircle("Start", systemImage: "play.fill", style: .solid) {}
-                ActionCircle("Log a set", systemImage: "plus") {}
+                ActionCircle("Add a task", systemImage: "plus") {}
                 ActionCircle("Plan week", systemImage: "calendar", isLoading: true) {}
                 ActionCircle("Share", systemImage: "square.and.arrow.up") {}.disabled(true)
             }

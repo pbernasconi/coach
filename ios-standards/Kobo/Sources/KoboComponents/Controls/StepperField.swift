@@ -1,13 +1,13 @@
 import KoboTokens
 import SwiftUI
 
-/// A big, centred number with large − and + buttons: weights, reps, minutes. Steps snap to `step` within `range`
+/// A big, centred number with large − and + buttons: distances, counts, minutes. Steps snap to `step` within `range`
 /// (2.5 steps from 21 go to 22.5); holding a button repeats. VoiceOver reads one adjustable element (swipe up or
 /// down to step). Pair it with a `QuickPickRow` for one-tap nearby values.
 ///
-///     StepperField("Weight", value: $weight, in: 0...500, step: 2.5, unit: "kg")
-///     StepperField("Reps", value: $reps, in: 1...50)
-///     StepperField(verbatim: exercise.name, value: $weight, in: 0...500, unit: settings.unitSymbol)
+///     StepperField("Distance", value: $distance, in: 0...500, step: 2.5, unit: "km")
+///     StepperField("Guests", value: $guests, in: 1...50)
+///     StepperField(verbatim: recipe.name, value: $amount, in: 0...500, unit: settings.unitSymbol)
 public struct StepperField: View {
     @Environment(\.koboTheme) private var theme
     private let title: Text
@@ -79,7 +79,7 @@ public struct StepperField: View {
         )
     }
 
-    /// A field over an `Int` (reps, minutes).
+    /// A field over an `Int` (guests, minutes).
     public init(
         _ title: LocalizedStringKey,
         value: Binding<Int>,
@@ -166,19 +166,19 @@ public struct StepperField: View {
 #if DEBUG
     private struct StepperFieldGallery: View {
         @Environment(\.koboTheme) private var theme
-        @State private var weight = 102.5
-        @State private var reps = 8
+        @State private var distance = 102.5
+        @State private var guests = 8
 
         var body: some View {
             VStack(spacing: Space.xl) {
-                StepperField("Weight", value: $weight, in: 0...500, step: 2.5, unit: "kg")
+                StepperField("Distance", value: $distance, in: 0...500, step: 2.5, unit: "km")
                 QuickPickRow(
-                    "Quick weights",
-                    values: StepperField.nearbyValues(around: weight, step: 2.5, in: 0...500),
-                    selection: $weight,
+                    "Quick distances",
+                    values: StepperField.nearbyValues(around: distance, step: 2.5, in: 0...500),
+                    selection: $distance,
                     format: .number.precision(.fractionLength(0...1))
                 )
-                StepperField("Reps", value: $reps, in: 1...50, unit: "reps")
+                StepperField("Guests", value: $guests, in: 1...50, unit: "people")
                 StepperField("At limit", value: .constant(0.0), in: 0...10, step: 0.5)
             }
             .padding(Space.gutter)

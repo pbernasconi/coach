@@ -5,7 +5,7 @@ import SwiftUI
 /// A ring that drains from full at `start` to empty at `end`, with the time left in the middle and an optional
 /// "of 3:00" total under it. It only draws: the caller decides what happens at zero (it owns the clock and the dates).
 ///
-///     CountdownRing(start: restStart, end: restStart.addingTimeInterval(180), accessibilityLabel: "Rest")
+///     CountdownRing(start: timerStart, end: timerStart.addingTimeInterval(180), accessibilityLabel: "Tea timer")
 ///         .frame(width: Size.thumbnail * 2, height: Size.thumbnail * 2)
 ///     CountdownRing(start: start, end: end, verbatimAccessibilityLabel: timer.name)
 ///
@@ -22,7 +22,7 @@ public struct CountdownRing: View {
 
     /// - Parameters:
     ///   - showsTotal: draws "of 3:00" under the time left.
-    ///   - accessibilityLabel: what VoiceOver calls the timer ("Rest"); "Timer" when `nil`.
+    ///   - accessibilityLabel: what VoiceOver calls the timer ("Tea timer"); "Timer" when `nil`.
     public init(
         start: Date,
         end: Date,
@@ -103,7 +103,7 @@ public struct CountdownRing: View {
     #Preview("Countdown ring") {
         let now = Date.now
         HStack(spacing: Space.xl) {
-            CountdownRing(start: now, end: now.addingTimeInterval(180), accessibilityLabel: "Rest")
+            CountdownRing(start: now, end: now.addingTimeInterval(180), accessibilityLabel: "Tea timer")
                 .frame(width: Size.thumbnail * 2, height: Size.thumbnail * 2)
             CountdownRing(
                 start: now.addingTimeInterval(-50),

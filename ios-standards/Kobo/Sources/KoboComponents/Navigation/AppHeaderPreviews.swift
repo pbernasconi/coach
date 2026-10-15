@@ -28,7 +28,7 @@ import SwiftUI
         var body: some View {
             VStack(spacing: 0) {
                 AppHeader("Library")
-                AppHeader(verbatim: "Alexandria's very long training plan", kicker: "Shared with you") {
+                AppHeader(verbatim: "Alexandria's very long reading list", kicker: "Shared with you") {
                     Button("Share", systemImage: "square.and.arrow.up") {}
                 }
                 AppHeader("Profile", profile: .init(name: nil, showsName: true) {})

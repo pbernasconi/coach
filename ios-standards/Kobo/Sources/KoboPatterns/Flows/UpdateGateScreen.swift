@@ -7,7 +7,7 @@ import SwiftUI
 /// listing (`storeURL`) or run the app's own `onUpdate`; with neither, it names the App Store instead of showing a
 /// button.
 ///
-///     UpdateGateScreen(appName: "Lift", storeURL: URL(string: "https://apps.apple.com/app/id0000000000"))
+///     UpdateGateScreen(appName: "Atlas", storeURL: URL(string: "https://apps.apple.com/app/id0000000000"))
 ///     UpdateGateScreen("Time to update", message: "This version can't sync any more.", onUpdate: openStore)
 public struct UpdateGateScreen: View {
     @Environment(\.koboTheme) private var theme
@@ -114,11 +114,11 @@ public struct UpdateGateScreen: View {
 }
 
 #if DEBUG
-    #Preview("Store link") { UpdateGateScreen(appName: "Lift", storeURL: URL(string: "https://apps.apple.com")) }
+    #Preview("Store link") { UpdateGateScreen(appName: "Atlas", storeURL: URL(string: "https://apps.apple.com")) }
     #Preview("No store link, dark") { UpdateGateScreen().preferredColorScheme(.dark) }
     #Preview("Custom copy, Amber") {
-        UpdateGateScreen("Time to update", message: "This version can't sync your workouts any more.") {}
+        UpdateGateScreen("Time to update", message: "This version can't sync your notes any more.") {}
             .koboTheme(.amber)
     }
-    #Preview("AX3") { UpdateGateScreen(appName: "Lift") {}.dynamicTypeSize(.accessibility3) }
+    #Preview("AX3") { UpdateGateScreen(appName: "Atlas") {}.dynamicTypeSize(.accessibility3) }
 #endif

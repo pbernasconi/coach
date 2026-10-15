@@ -81,8 +81,8 @@ public struct SectionHeader: View {
         var body: some View {
             VStack(spacing: Space.xxl) {
                 SectionHeader("Recent")
-                SectionHeader("This week", subtitle: "3 of 4 workouts")
-                SectionHeader("Exercises", subtitle: "Sorted by last used", actionTitle: "See all") {}
+                SectionHeader("This week", subtitle: "3 of 4 tasks")
+                SectionHeader("Recipes", subtitle: "Sorted by last used", actionTitle: "See all") {}
             }
             .padding(Space.gutter)
             .frame(maxHeight: .infinity, alignment: .top)

@@ -16,8 +16,8 @@ public enum MiniPlayerChrome: Sendable, Equatable {
 ///
 ///     TabView { … }
 ///         .tabViewBottomAccessory {
-///             MiniPlayerBar(verbatim: workout.name, subtitle: elapsed, action: open) {
-///                 Image(systemName: "dumbbell")
+///             MiniPlayerBar(verbatim: episode.title, subtitle: elapsed, action: open) {
+///                 Image(systemName: "waveform")
 ///             } trailing: {
 ///                 Button("Open", action: open)
 ///             }
@@ -48,7 +48,7 @@ public struct MiniPlayerBar<Leading: View, Trailing: View>: View {
         self.trailing = trailing()
     }
 
-    /// A bar whose title and subtitle are shown as is (a workout name, a running time).
+    /// A bar whose title and subtitle are shown as is (an episode title, a running time).
     public init(
         verbatim title: String,
         subtitle: String? = nil,
@@ -153,9 +153,9 @@ extension MiniPlayerBar where Trailing == EmptyView {
         let chrome: MiniPlayerChrome
 
         var body: some View {
-            MiniPlayerBar(verbatim: "Push day", subtitle: "12:40 · Bench press, set 3 of 5", chrome: chrome, action: {})
+            MiniPlayerBar(verbatim: "Focus timer", subtitle: "12:40 · Write the report, block 3 of 5", chrome: chrome, action: {})
             {
-                Image(systemName: "dumbbell.fill").accessibilityHidden(true)
+                Image(systemName: "timer").accessibilityHidden(true)
             } trailing: {
                 Button("Open") {}
                     .buttonStyle(.kobo(.plain, size: .compact))  // no glass inside the bar's glass
@@ -167,8 +167,8 @@ extension MiniPlayerBar where Trailing == EmptyView {
         var body: some View {
             VStack(spacing: Space.xl) {
                 MiniPlayerSample(chrome: .floating)
-                MiniPlayerBar("Rest", subtitle: "01:30", chrome: .floating, action: {}) {
-                    Image(systemName: "timer").accessibilityHidden(true)
+                MiniPlayerBar("Break", subtitle: "01:30", chrome: .floating, action: {}) {
+                    Image(systemName: "cup.and.saucer").accessibilityHidden(true)
                 }
             }
             .padding(Space.gutter)

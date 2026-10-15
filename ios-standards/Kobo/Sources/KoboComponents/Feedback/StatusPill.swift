@@ -57,7 +57,7 @@ private struct StatusPillPreviews: View {
             ForEach(Tone.allCases, id: \.rawValue) { tone in
                 StatusPill(verbatim: tone.rawValue.capitalized, tone: tone)
             }
-            StatusPill("Personal record", tone: .accent, symbol: "trophy.fill")
+            StatusPill("Best week yet", tone: .accent, symbol: "star.fill")
             StatusPill(isOn: true)
             StatusPill(isOn: false)
         }

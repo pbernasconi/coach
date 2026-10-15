@@ -5,8 +5,8 @@ import SwiftUI
 /// A titled group of review rows: a heading with an optional "Edit" button that jumps back to the step that set these
 /// values, then the rows in a rounded `ListSection` card. Key a `ForEach` of rows on a stable id, never on the label.
 ///
-///     ReviewSection("Workouts", onEdit: { step = .paste }) {
-///         ReviewRow("Found", value: "3 workouts")
+///     ReviewSection("Tasks", onEdit: { step = .paste }) {
+///         ReviewRow("Found", value: "12 tasks")
 ///         ReviewRow("Skipped lines", value: "2")
 ///     }
 public struct ReviewSection<Content: View>: View {
@@ -71,16 +71,16 @@ public struct ReviewSection<Content: View>: View {
         var body: some View {
             ScrollView {
                 VStack(spacing: Space.xl) {
-                    ReviewSection("Workout", onEdit: {}) {
+                    ReviewSection("List", onEdit: {}) {
                         ReviewRow("Date", value: "Mon 14 Oct", onEdit: {})
-                        ReviewRow("Exercises", value: "3")
+                        ReviewRow("Tasks", value: "3")
                     }
-                    ReviewSection(verbatim: "Bench press") {
-                        ReviewRow("Sets", value: "3 × 8")
-                        ReviewRow("Load", value: "80 kg")
+                    ReviewSection(verbatim: "Write the report") {
+                        ReviewRow("Due", value: "Friday")
+                        ReviewRow("Estimate", value: "2 h")
                     }
                     ReviewDisclosure("Show the pasted text", subtitle: "4 lines") {
-                        Text(verbatim: "Mon 14 Oct\nBench press 3x8 80kg")
+                        Text(verbatim: "Mon 14 Oct\nWrite the report 2h")
                     }
                 }
                 .padding(Space.gutter)

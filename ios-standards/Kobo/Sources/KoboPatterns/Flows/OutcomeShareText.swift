@@ -4,7 +4,7 @@ import Foundation
 /// an optional closing line (a reference, a link). Every value is something the screen already shows, so sharing never
 /// reveals more than the screen did.
 ///
-///     OutcomeShareText.text(title: "Workout finished", status: "Completed", facts: facts)
+///     OutcomeShareText.text(title: "Project finished", status: "Completed", facts: facts)
 nonisolated public enum OutcomeShareText {
     public static func text(title: String, status: String? = nil, facts: [OutcomeFact], footer: String? = nil)
         -> String

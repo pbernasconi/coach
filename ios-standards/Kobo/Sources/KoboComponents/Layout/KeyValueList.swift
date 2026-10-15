@@ -60,15 +60,15 @@ public struct KeyValueList: View {
 #if DEBUG
     private struct KeyValueListPreview: View {
         private let items = [
-            KeyValueItem("Duration", value: "1 h 12 min"),
-            KeyValueItem("Sets", value: "18"),
-            KeyValueItem("Volume", value: "4,200 kg"),
-            KeyValueItem("Personal records", value: "2", valueTone: .success),
+            KeyValueItem("Duration", value: "4 days"),
+            KeyValueItem("Stops", value: "18"),
+            KeyValueItem("Distance", value: "1,240 km"),
+            KeyValueItem("Under budget", value: "€60", valueTone: .success),
         ]
 
         var body: some View {
             ScrollView {
-                KeyValueList("Summary", items: items, footer: "Volume counts working sets only.")
+                KeyValueList("Summary", items: items, footer: "Distance counts travel days only.")
                     .padding(Space.gutter)
             }
             .background(Theme.system.palette.canvas)

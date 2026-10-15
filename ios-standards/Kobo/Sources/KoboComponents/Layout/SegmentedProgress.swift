@@ -2,7 +2,7 @@ import Foundation
 import KoboTokens
 import SwiftUI
 
-/// A row of capsule segments showing progress toward a goal (for example "2 of 4 workouts this week").
+/// A row of capsule segments showing progress toward a goal (for example "2 of 4 tasks this week").
 /// VoiceOver reads the label and "x of y".
 ///
 ///     SegmentedProgress(done: 2, planned: 1, minimum: 3, goal: 4, accessibilityLabel: "Weekly goal")

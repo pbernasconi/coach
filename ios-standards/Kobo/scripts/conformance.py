@@ -15,6 +15,8 @@ from collections import defaultdict
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SOURCES = [os.path.join(ROOT, "Sources", d) for d in ("KoboComponents", "KoboPatterns")]
+# DOMAIN reads every target, the catalog and tokens included, and the String Catalogs' comments.
+DOMAIN_SOURCES = os.path.join(ROOT, "Sources")
 REFERENCE = os.environ.get("KOBO_REFERENCE_DIR", os.path.join(ROOT, "Reference", "components"))
 
 RULES = {
@@ -29,6 +31,7 @@ RULES = {
     "R17": "Text: localized title inits have a verbatim: form; library strings use bundle: .module",
     "DOC": "Every public view has a reference page (README.md and preview.html)",
     "DATA": "No real people's names in samples",
+    "DOMAIN": "Generic, not domain: no one app's vocabulary (workouts, sets, reps, kg...) in code or comments",
 }
 
 SYSTEM_COLOR = re.compile(
@@ -45,6 +48,15 @@ FIXED_FONT = re.compile(r"\.font\(\s*\.system\(\s*size:")
 GLASS = re.compile(r"\.glassEffect\(|\.buttonStyle\(\s*\.glass(Prominent)?\b|GlassEffectContainer")
 UNBUNDLED_STRING = re.compile(r'String\(localized:\s*"(?:[^"\\]|\\.)*"(?![^)]*bundle:)')
 REAL_NAMES = re.compile(r"Lovelace|Grace Hopper|Alan Turing|Katherine Johnson|Picard|Steve Jobs|Tim Cook")
+# Rule 6: Kobo serves any app, so samples, previews and doc comments use neutral content. These words belong to one
+# domain (strength training); "set" the verb and "a set of" are fine, so only the counted forms are listed.
+DOMAIN_WORDS = re.compile(
+    r"\b(workouts?|exercises?|squats?|bench(es)?|barbells?|dumbbells?|kettlebells?|deadlifts?|reps?|gyms?|lift"
+    r"|lifting|lifters?|plates?|1RM|kg|lbs?|deloads?|hypertrophy|bodyweight|supersets?|powerlifting|RPE)\b"
+    r"|\bsets? of \d|\b\d+ sets\b|\b(warm-?up|working) sets?\b|\brest[- ]timers?\b|\btraining (load|days?|plan)\b"
+    r"|\bpersonal records?\b|figure\.strengthtraining",
+    re.IGNORECASE,
+)
 PUBLIC_VIEW = re.compile(r"^\s*(?:@\w+\s+)*public\s+struct\s+(\w+)(?:<[^>{]*>)?\s*:\s*[^{]*\bView\b")
 PUBLIC_DECL = re.compile(
     r"^\s*(?:@\w+(?:\([^)]*\))?\s+)*(?:nonisolated\s+)?public\s+(?:nonisolated\s+)?(?:final\s+)?"
@@ -65,6 +77,25 @@ def swift_files():
             for f in sorted(fs):
                 if f.endswith(".swift"):
                     yield os.path.join(d, f)
+
+
+def domain_files():
+    for d, _, fs in os.walk(DOMAIN_SOURCES):
+        for f in sorted(fs):
+            if f.endswith((".swift", ".xcstrings")):
+                yield os.path.join(d, f)
+
+
+def domain_findings():
+    """Rule 6 over every source line, strings and comments included: a word from one app's domain."""
+    found = []
+    for path in sorted(domain_files()):
+        with open(path, encoding="utf-8") as handle:
+            for i, line in enumerate(handle, 1):
+                m = DOMAIN_WORDS.search(line)
+                if m and not allowed(line, "DOMAIN"):
+                    found.append(("DOMAIN", os.path.relpath(path, ROOT), i, f"domain word \"{m.group(0)}\"; use neutral sample content"))
+    return found
 
 
 def strip_strings(line):
@@ -160,13 +191,15 @@ def main():
             if os.path.isdir(os.path.dirname(REFERENCE)) and not os.path.isfile(os.path.join(REFERENCE, name, "README.md")):
                 add("DOC", path, i, f"{name} has no reference page at Reference/components/{name}/")
 
+    findings += domain_findings()
+
     by_rule = defaultdict(list)
     for f in findings:
         by_rule[f[0]].append(f)
     print("Kobo conformance (CONVENTIONS.md)")
     for rule, desc in RULES.items():
         n = len(by_rule.get(rule, []))
-        print(f"  {'✓' if n == 0 else '✗'} {rule:<4} {n:>3}  {desc}")
+        print(f"  {'✓' if n == 0 else '✗'} {rule:<6} {n:>3}  {desc}")
     if not summary:
         for rule in RULES:
             for _, rel, ln, msg in by_rule.get(rule, []):

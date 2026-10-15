@@ -5,7 +5,7 @@ import SwiftUI
 /// A number whose digits roll to each new value (`.numericText`), with tabular digits so the width holds still.
 /// The roll uses `Motion.defaultEffects`; with Reduce Motion on the value swaps at once. Style it with `.font`.
 ///
-///     AnimatedNumber(volume, format: .number.precision(.fractionLength(1)))
+///     AnimatedNumber(distance, format: .number.precision(.fractionLength(1)))
 public struct AnimatedNumber<Format: FormatStyle>: View
 where Format.FormatInput == Double, Format.FormatOutput == String {
     private let value: Double
@@ -45,7 +45,7 @@ private struct AnimatedNumberPreview: View {
             AnimatedNumber(value).font(theme.font(.display))
             AnimatedNumber(Double(value) / 1000, format: .number.precision(.fractionLength(1)))
                 .font(theme.font(.title2))
-            Button("Add a set") { value += 135 }
+            Button("Add a donation") { value += 135 }
         }
         .padding()
     }

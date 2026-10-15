@@ -131,13 +131,13 @@ extension KoboTextArea {
     private struct KoboTextAreaGallery: View {
         @Environment(\.koboTheme) private var theme
         @State private var notes = ""
-        @State private var cue = "Brace before each rep, drive through the heels."
+        @State private var note = "Leave the key under the blue pot by the door."
 
         var body: some View {
             ScrollView {
                 VStack(spacing: Space.lg) {
                     KoboTextArea("Notes", text: $notes, prompt: "How did it feel?", helper: "Only you see this")
-                    KoboTextArea("Coaching cue", text: $cue, lines: 2...4, characterLimit: 50)
+                    KoboTextArea("Note for the host", text: $note, lines: 2...4, characterLimit: 50)
                     KoboTextArea("Reason", text: .constant(" "), error: .message("Add a short reason"))
                 }
                 .padding(Space.gutter)

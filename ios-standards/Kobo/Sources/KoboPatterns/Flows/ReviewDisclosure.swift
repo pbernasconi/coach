@@ -2,7 +2,7 @@ import KoboComponents
 import KoboTokens
 import SwiftUI
 
-/// Detail on a review that most people skip: the raw lines behind a summary, every set of a long workout. A
+/// Detail on a review that most people skip: the raw lines behind a summary, every line of a long import. A
 /// `Collapsible` header in a card that shows or hides the content; VoiceOver reads "Expanded" or "Collapsed". It keeps
 /// its own open state unless the caller passes `isExpanded`.
 ///

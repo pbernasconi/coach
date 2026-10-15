@@ -5,9 +5,9 @@ import SwiftUI
 /// "Learn more" link. It has no buttons: a swipe, a tap outside or the VoiceOver escape gesture closes it. Present
 /// it with `.infoSheet`, or let an `InfoButton` own it.
 ///
-///     InfoSheet("Training load", learnMore: URL(string: "https://example.com/load")) {
-///         Text("Training load adds up how hard each session was over the last seven days.")
-///         Text("A steady rise is good. A sudden jump is a reason to take an easy day.")
+///     InfoSheet("Focus score", learnMore: URL(string: "https://example.com/focus")) {
+///         Text("Focus score adds up the uninterrupted time in each of the last seven days.")
+///         Text("A steady rise is good. A sudden drop is a reason to clear some meetings.")
 ///     }
 public struct InfoSheet<Content: View>: View {
     @Environment(\.koboTheme) private var theme
@@ -100,8 +100,8 @@ private struct InfoSheetLink: View {
 extension View {
     /// Shows an `InfoSheet` while `isPresented` is true.
     ///
-    ///     .infoSheet(isPresented: $explainsLoad, title: "Training load") {
-    ///         Text("Training load adds up how hard each session was over the last seven days.")
+    ///     .infoSheet(isPresented: $explainsScore, title: "Focus score") {
+    ///         Text("Focus score adds up the uninterrupted time in each of the last seven days.")
     ///     }
     public func infoSheet<Content: View>(
         isPresented: Binding<Bool>,
@@ -133,16 +133,16 @@ extension View {
         @State private var isPresented = true
 
         var body: some View {
-            Button("What is training load?") { isPresented = true }
+            Button("What is the focus score?") { isPresented = true }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(theme.palette.canvas)
                 .infoSheet(
                     isPresented: $isPresented,
-                    title: "Training load",
-                    learnMore: URL(string: "https://example.com/training-load")
+                    title: "Focus score",
+                    learnMore: URL(string: "https://example.com/focus-score")
                 ) {
-                    Text("Training load adds up how hard each session was over the last seven days.")
-                    Text("A steady rise is good. A sudden jump is a reason to take an easy day.")
+                    Text("Focus score adds up the uninterrupted time in each of the last seven days.")
+                    Text("A steady rise is good. A sudden drop is a reason to clear some meetings.")
                 }
         }
     }

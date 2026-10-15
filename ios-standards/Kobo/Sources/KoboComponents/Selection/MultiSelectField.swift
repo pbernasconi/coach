@@ -5,7 +5,7 @@ import SwiftUI
 /// the one title, "All", or a count ("3 selected"), else the placeholder. The sheet stays open while the person ticks
 /// rows and searches like `SelectField`'s. VoiceOver reads the label, the summary and any error as one control.
 ///
-///     MultiSelectField("Equipment", selection: $equipment, options: equipmentOptions, placeholder: "None")
+///     MultiSelectField("Amenities", selection: $amenities, options: amenityOptions, placeholder: "None")
 ///     MultiSelectField(verbatim: group.name, selection: $members, options: members, error: membersError)
 public struct MultiSelectField<Value: Hashable & Sendable>: View {
     @State private var isOpen = false
@@ -103,31 +103,31 @@ public struct MultiSelectField<Value: Hashable & Sendable>: View {
     private struct MultiSelectFieldGallery: View {
         @Environment(\.koboTheme) private var theme
         @State private var none: Set<String> = []
-        @State private var one: Set<String> = ["kettlebell"]
-        @State private var some: Set<String> = ["barbell", "bench", "rack"]
-        @State private var templates: Set<String> = ["push", "pull", "legs", "rest"]
+        @State private var one: Set<String> = ["parking"]
+        @State private var some: Set<String> = ["wifi", "desk", "washer"]
+        @State private var plans: Set<String> = ["focus", "meetings", "errands", "off"]
 
         var body: some View {
             ScrollView {
                 FieldGroup {
                     MultiSelectField(
-                        "Equipment",
+                        "Amenities",
                         selection: $none,
-                        options: SelectionSamples.equipment,
+                        options: SelectionSamples.amenities,
                         placeholder: "Choose what you have",
                         error: none.isEmpty ? .message("Pick at least one") : .none
                     )
-                    MultiSelectField("Travel kit", selection: $one, options: SelectionSamples.equipment)
+                    MultiSelectField("Weekend stay", selection: $one, options: SelectionSamples.amenities)
                     MultiSelectField(
-                        "Home gym",
+                        "Home office",
                         selection: $some,
-                        options: SelectionSamples.equipment,
+                        options: SelectionSamples.amenities,
                         helper: "Shown on every plan"
                     )
                     MultiSelectField(
                         verbatim: "Plan days",
-                        selection: $templates,
-                        options: SelectionSamples.dayTemplates
+                        selection: $plans,
+                        options: SelectionSamples.dayPlans
                     )
                 }
                 .padding(Space.gutter)

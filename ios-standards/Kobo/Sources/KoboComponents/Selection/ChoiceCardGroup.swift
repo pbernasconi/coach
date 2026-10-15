@@ -7,7 +7,7 @@ import SwiftUI
 /// choice plays `feedback`. The group is one accessibility container named by `title`.
 ///
 ///     ChoiceCardGroup("Goal", options: goals, selection: $goal)
-///     ChoiceCardGroup("Training days", options: days, selection: $days)   // Set: several cards
+///     ChoiceCardGroup("Work days", options: days, selection: $days)   // Set: several cards
 ///     ChoiceCardGroup(verbatim: plan.name, options: templates, selection: $template) { option in TemplateArt(option.value) }
 public struct ChoiceCardGroup<Value: Hashable & Sendable, Illustration: View>: View {
     private let title: Text
@@ -152,16 +152,16 @@ extension ChoiceCardGroup where Illustration == EmptyView {
 #if DEBUG
     private struct ChoiceCardGroupGallery: View {
         @Environment(\.koboTheme) private var theme
-        @State private var template = "push"
-        @State private var days: Set<String> = ["push", "legs"]
+        @State private var template = "focus"
+        @State private var days: Set<String> = ["focus", "errands"]
 
         var body: some View {
             ScrollView {
                 VStack(alignment: .leading, spacing: Space.xxl) {
-                    ChoiceCardGroup("Today's template", options: SelectionSamples.dayTemplates, selection: $template)
+                    ChoiceCardGroup("Today's plan", options: SelectionSamples.dayPlans, selection: $template)
                     ChoiceCardGroup(
                         verbatim: "Plan days",
-                        options: SelectionSamples.dayTemplates,
+                        options: SelectionSamples.dayPlans,
                         selection: $days
                     ) { option in
                         Text(verbatim: option.value.prefix(1).uppercased())

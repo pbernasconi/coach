@@ -66,7 +66,7 @@ public struct IconButton: View {
         self.init(systemImage, label: label, style: style, size: size, isLoading: isLoading, action: action)
     }
 
-    /// An icon button whose accessibility label is shown as is, because it names user data ("Rename Push day").
+    /// An icon button whose accessibility label is shown as is, because it names user data ("Rename Garden plan").
     public init(
         _ systemImage: String,
         verbatimAccessibilityLabel: String,
@@ -184,7 +184,7 @@ private struct IconSurface: ViewModifier {
                     IconButton("minus", accessibilityLabel: "Less", style: .tonal, size: .large) {}
                     IconButton("chevron.up", accessibilityLabel: "Up", style: .tonal, size: .small) {}
                     IconButton("trash", accessibilityLabel: "Delete", style: .solid) {}.disabled(true)
-                    IconButton("arrow.clockwise", verbatimAccessibilityLabel: "Sync Push day", isLoading: true) {}
+                    IconButton("arrow.clockwise", verbatimAccessibilityLabel: "Sync Garden plan", isLoading: true) {}
                     CloseButton {}
                 }
             }

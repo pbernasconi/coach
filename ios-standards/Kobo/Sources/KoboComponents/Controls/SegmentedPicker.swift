@@ -125,7 +125,7 @@ private enum SelectionIndicator {
     private struct SegmentedPickerGallery: View {
         @Environment(\.koboTheme) private var theme
         @State private var range = "week"
-        @State private var unit = "kg"
+        @State private var unit = "km"
 
         var body: some View {
             VStack(spacing: Space.lg) {
@@ -134,7 +134,7 @@ private enum SelectionIndicator {
                     selection: $range,
                     options: [
                         ChoiceOption("week", title: "Week"),
-                        ChoiceOption("exercises", title: "Exercises"),
+                        ChoiceOption("tasks", title: "Tasks"),
                         ChoiceOption("days", title: "Days"),
                     ]
                 )
@@ -142,8 +142,8 @@ private enum SelectionIndicator {
                     "Unit",
                     selection: $unit,
                     options: [
-                        ChoiceOption("kg", verbatim: "kg", systemImage: "scalemass"),
-                        ChoiceOption("lb", verbatim: "lb"),
+                        ChoiceOption("km", verbatim: "km", systemImage: "ruler"),
+                        ChoiceOption("mi", verbatim: "mi"),
                     ]
                 )
             }

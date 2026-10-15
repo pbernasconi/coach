@@ -6,8 +6,8 @@ import SwiftUI
 /// The `symbol:` initialisers draw the standard disc (`EmptyStateArt`). The `art:` slot takes anything else: a large
 /// first-run disc, or an app's own illustration (mark it decorative; the title carries the meaning).
 ///
-///     EmptyState(symbol: "dumbbell", title: "No workouts yet", message: "Start one to see it here.") {
-///         Button("Start a workout", action: start).buttonStyle(.kobo(.primary))
+///     EmptyState(symbol: "checklist", title: "No tasks yet", message: "Add one to see it here.") {
+///         Button("Add a task", action: add).buttonStyle(.kobo(.primary))
 ///     }
 ///     EmptyState(title: "Plan your first week") {
 ///         EmptyStateArt(systemImage: "calendar.badge.plus", tone: .accent, scale: .large)
@@ -106,8 +106,8 @@ extension EmptyState where Actions == EmptyView {
 
 #if DEBUG
     #Preview("Empty") {
-        EmptyState(symbol: "dumbbell", title: "No workouts yet", message: "Start one and it shows up here.") {
-            Button("Start a workout") {}
+        EmptyState(symbol: "checklist", title: "No tasks yet", message: "Add one and it shows up here.") {
+            Button("Add a task") {}
                 .buttonStyle(.kobo(.primary))
         }
     }
@@ -129,8 +129,8 @@ extension EmptyState where Actions == EmptyView {
     }
 
     #Preview("Empty, AX3") {
-        EmptyState(symbol: "dumbbell", title: "No workouts yet", message: "Start one and it shows up here.") {
-            Button("Start a workout") {}
+        EmptyState(symbol: "checklist", title: "No tasks yet", message: "Add one and it shows up here.") {
+            Button("Add a task") {}
                 .buttonStyle(.kobo(.primary))
         }
         .dynamicTypeSize(.accessibility3)

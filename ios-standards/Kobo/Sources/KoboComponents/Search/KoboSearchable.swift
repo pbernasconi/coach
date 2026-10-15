@@ -18,7 +18,7 @@ extension View {
     /// The caller filters as `text` changes (`SearchMatch.ranked` ranks and highlights).
     ///
     ///     List(results) { … }
-    ///         .koboSearchable(text: $query, prompt: "Search exercises", placement: .bottom)
+    ///         .koboSearchable(text: $query, prompt: "Search recipes", placement: .bottom)
     public func koboSearchable(
         text: Binding<String>,
         prompt: LocalizedStringKey? = nil,
@@ -188,15 +188,15 @@ extension KoboSearchPlacement {
     private struct KoboSearchableGallery: View {
         @Environment(\.koboTheme) private var theme
         @State private var query = ""
-        private let names = ["Back squat", "Bench press", "Incline bench press", "Front squat", "Crème brûlée curls"]
+        private let names = ["Miso soup", "Lemon risotto", "Mushroom risotto", "Pea soup", "Crème brûlée tarts"]
 
         var body: some View {
             NavigationStack {
                 List(SearchMatch.ranked(names, query: query) { $0 }, id: \.element) { result in
                     HighlightedText(result.element, ranges: result.match.ranges)
                 }
-                .navigationTitle(Text(verbatim: "Exercises"))
-                .koboSearchable(text: $query, prompt: "Search exercises", placement: .bottom)
+                .navigationTitle(Text(verbatim: "Recipes"))
+                .koboSearchable(text: $query, prompt: "Search recipes", placement: .bottom)
             }
         }
     }
