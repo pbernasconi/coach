@@ -66,14 +66,18 @@ private struct AppShell: View {
             }
             if options.opensImportSample {
                 dependencies.importFlow.present(text: ImportSample.note, readsOnOpen: true)
+            } else {
+                dependencies.incomingNotes.checkInbox()
             }
             isReady = true
             await syncCoordinator.launched()  // after the tabs show: logging never waits for the network
         }
         .onChange(of: scenePhase) { _, phase in
             guard phase == .active else { return }
+            dependencies.incomingNotes.checkInbox()
             Task { await syncCoordinator.sceneBecameActive() }
         }
+        .onOpenURL { url in _ = dependencies.incomingNotes.open(url) }
     }
 
     /// Import from Notes, shown over the tabs while the presenter holds a request.

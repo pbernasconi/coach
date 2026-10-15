@@ -32,7 +32,9 @@ final class AppDependencies {
     /// Push and pull with the coach web app, or a stand-in that never syncs (demo data, or no server in this build).
     let sync: any Syncing
     /// Opens and closes Import from Notes, which the shell shows as a modal page above the tabs.
-    let importFlow = ImportFlowPresenter()
+    let importFlow: ImportFlowPresenter
+    /// Opens Import from Notes for `lift://import` links and for notes shared through the Share extension.
+    let incomingNotes: IncomingNoteRouter
     private var isPrepared = false
 
     init(
@@ -69,6 +71,9 @@ final class AppDependencies {
         self.pasteboard = pasteboard
         self.outbox = outbox
         self.sync = sync
+        let importFlow = ImportFlowPresenter()
+        self.importFlow = importFlow
+        incomingNotes = IncomingNoteRouter(inbox: AppGroupNoteInbox(bundle: .main), importFlow: importFlow)
     }
 
     /// Work that finishes before the tabs show: the seed exercise library on this iPhone, or the fabricated demo
