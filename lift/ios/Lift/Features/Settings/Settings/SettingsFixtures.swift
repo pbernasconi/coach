@@ -3,8 +3,50 @@
 
     /// Named states for previews and snapshots. Fake data only (TEST-8).
     extension SettingsState {
-        static let fixtureDefault = SettingsState(unit: .kg, version: "0.1.0 (1)", dataSource: .device)
-        static let fixturePounds = SettingsState(unit: .lb, version: "0.1.0 (1)", dataSource: .device)
-        static let fixtureDemo = SettingsState(unit: .kg, version: "0.1.0 (1)", dataSource: .demo)
+        static let fixtureDefault = SettingsState(
+            unit: .kg,
+            version: "0.1.0 (1)",
+            dataSource: .device,
+            sync: .available(SyncSummary(status: "Synced 2 min ago", isSyncing: false, hasToken: true))
+        )
+        static let fixturePounds = SettingsState(
+            unit: .lb,
+            version: "0.1.0 (1)",
+            dataSource: .device,
+            sync: .available(SyncSummary(status: "Synced 3 h ago", isSyncing: false, hasToken: true))
+        )
+        static let fixtureDemo = SettingsState(unit: .kg, version: "0.1.0 (1)", dataSource: .demo, sync: .demo)
+        static let fixtureSyncing = SettingsState(
+            unit: .kg,
+            version: "0.1.0 (1)",
+            dataSource: .device,
+            sync: .available(SyncSummary(status: "Syncing…", isSyncing: true, hasToken: true))
+        )
+        static let fixtureNotSetUp = SettingsState(
+            unit: .kg,
+            version: "0.1.0 (1)",
+            dataSource: .device,
+            sync: .available(SyncSummary(status: "Not set up", isSyncing: false, hasToken: false))
+        )
+        static let fixtureTokenRejected = SettingsState(
+            unit: .kg,
+            version: "0.1.0 (1)",
+            dataSource: .device,
+            sync: .available(SyncSummary(status: "Token rejected", isSyncing: false, hasToken: true))
+        )
+        static let fixtureNoServer = SettingsState(
+            unit: .kg,
+            version: "0.1.0 (1)",
+            dataSource: .device,
+            sync: .unavailable
+        )
+        /// The token sheet over a stored token, with a made-up draft.
+        static let fixtureTokenEditor = SettingsState(
+            unit: .kg,
+            version: "0.1.0 (1)",
+            dataSource: .device,
+            sync: .available(SyncSummary(status: "Token rejected", isSyncing: false, hasToken: true)),
+            tokenEditor: TokenEditor(draft: "made-up-token-0000", canRemove: true)
+        )
     }
 #endif

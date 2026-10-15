@@ -21,7 +21,8 @@ already done around it. The build keeps going around these; nothing here blocks 
     Users and Access → Integrations → App Store Connect API, role App Manager.
   - Create the app record in App Store Connect with that bundle ID.
   Every push to `main` that touches the app then archives with automatic signing and uploads a build numbered by
-  the CI run.
+  the CI run. Optional variable `LIFT_SYNC_BASE_URL` (https origin of the coach web app) turns sync on in
+  those builds.
 - **Real-device check.** Haptics (an earlier app found `.sensoryFeedback` silent on an iOS 26 device), Liquid
   Glass rendering, and the rest-timer Live Activity can only be confirmed on your iPhone.
 
@@ -29,7 +30,12 @@ already done around it. The build keeps going around these; nothing here blocks 
   1. Generate a token (`openssl rand -base64 48`) and set `LIFT_SYNC_TOKEN` in Vercel (Production).
   2. Create the tables once: `psql "$DATABASE_URL" -f drizzle/0009_lift_sync.sql`.
   3. Redeploy; `GET /api/lift/sync/pull` with the token should return `{"changes":[],"cursor":"0","hasMore":false}`.
-  4. Enter the same token in the app's Settings (Sync) once that screen ships.
+  4. Point the app at the server: set the `LIFT_SYNC_BASE_URL` build setting to the origin of your deployed coach
+     web app (for example `https://<your-vercel-domain>`, https only, no path). It defaults to empty in
+     `ios/project.yml`, which keeps sync off; the TestFlight job can pass it (`xcodebuild … LIFT_SYNC_BASE_URL=…`,
+     for example from a repository variable). Xcode copies it into Info.plist as `LiftSyncBaseURL`.
+  5. In the app, Settings → Sync → Sync token: paste the same token and tap Save and sync. The status row should
+     read "Synced just now". Demo mode (`-demo`) never syncs.
 
 - **Gym visual licence for exercise animations.** The exercise GIFs and thumbnails come from
   [hasaneyldrm/exercises-dataset](https://github.com/hasaneyldrm/exercises-dataset), whose media is

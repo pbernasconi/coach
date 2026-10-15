@@ -14,6 +14,8 @@ lift/
 │   ├── Lift/               app target
 │   │   ├── App/            @main, CompositionRoot (the only Date()/UUID()/database opening), AppDependencies,
 │   │   │                   LaunchOptions (-demo, -tab, -appearance, -open), RootView (Kobo TabShell)
+│   │   │                   Sync/: Syncing (LiveSync over SyncEngine + Keychain, DisabledSync for demo or no
+│   │   │                   server), SyncCoordinator (launch, foreground, outbox growth), SyncServer (LiftSyncBaseURL)
 │   │   ├── Design/         LiftTheme: Theme.lift / Palette.lift (amber); the only place with hex colours
 │   │   ├── Features/<Feature>/<Screen>/   the eight-file screen set: Week, History, Exercises, Settings, Workout
 │   │   │                                  and Catalog (browse the bundled exercise catalog, catalog detail)

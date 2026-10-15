@@ -31,6 +31,7 @@ jobs:
       ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
       TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
       BUNDLE_ID: ${{ vars.LIFT_BUNDLE_ID }}
+      SYNC_BASE_URL: ${{ vars.LIFT_SYNC_BASE_URL }}   # optional; empty leaves sync off in the build
     steps:
       - name: Check configuration
         id: config
@@ -78,6 +79,7 @@ jobs:
             -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
             DEVELOPMENT_TEAM="$TEAM_ID" \
             LIFT_BUNDLE_ID="$BUNDLE_ID" \
+            LIFT_SYNC_BASE_URL="$SYNC_BASE_URL" \
             CODE_SIGN_STYLE=Automatic \
             CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER"
       - name: Upload to App Store Connect
