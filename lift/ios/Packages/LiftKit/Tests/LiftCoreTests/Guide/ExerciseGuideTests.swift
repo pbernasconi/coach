@@ -37,6 +37,9 @@ import Testing
             guide.videoURL?.absoluteString
                 == "https://www.youtube.com/results?search_query=romanian%20deadlift%20technique"
         )
-        #expect(ExerciseGuide.videoSearchURL(for: "a&b")?.absoluteString == "https://www.youtube.com/results?search_query=a%26b")
+        #expect(
+            ExerciseGuide.videoSearchURL(for: "a&b")?.absoluteString
+                == "https://www.youtube.com/results?search_query=a%26b"
+        )
     }
 }

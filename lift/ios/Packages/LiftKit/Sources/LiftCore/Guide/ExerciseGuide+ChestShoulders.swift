@@ -24,7 +24,8 @@ extension ExerciseGuide {
                 "Lifting the hips off the bench.",
                 "Letting the wrists bend back under the bar.",
             ],
-            breathing: "Breathe in and hold it as the bar comes down. Breathe out once the bar is past the hardest part of the press.",
+            breathing:
+                "Breathe in and hold it as the bar comes down. Breathe out once the bar is past the hardest part of the press.",
             videoQuery: "barbell bench press technique"
         ),
         ExerciseGuide(

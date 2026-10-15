@@ -23,7 +23,8 @@ extension ExerciseGuide {
                 "Hips shooting up first so the squat turns into a good morning.",
                 "Losing the brace and rounding the lower back at the bottom.",
             ],
-            breathing: "Take a big breath and brace before each descent. Hold it through the bottom and breathe out near the top.",
+            breathing:
+                "Take a big breath and brace before each descent. Hold it through the bottom and breathe out near the top.",
             videoQuery: "back squat technique"
         ),
         ExerciseGuide(

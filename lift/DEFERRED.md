@@ -24,7 +24,8 @@ already done around it. The build keeps going around these; nothing here blocks 
   rights to the media. The app loads the GIFs at runtime from that repository (pinned commit) with the required
   attribution and does not bundle them. That is your call for personal TestFlight use; before any public App Store
   release, get a licence from Gym visual (their terms page blocked automated reading, so I could not check the
-  tiers), or switch to the Everkinetic line art (CC BY-SA 4.0) that is already mapped in `lift/ios/ExerciseArt/`.
+  tiers), or switch to Everkinetic line art (CC BY-SA 4.0); a hand mapping for 21 of 30 exercises is in git history
+  (commit 48f512b, `lift/ios/ExerciseArt/`).
 - **Two approximate animations.** Hip thrust shows a floor glute bridge and Plank shows a weighted front plank;
   the dataset has no exact match.
 

@@ -20,7 +20,10 @@ import Testing
         (["Lift", "-open", "Workout"], LaunchOptions(opening: .workout)),
         (["Lift", "-open", "nope"], LaunchOptions()),
         (["Lift", "-open"], LaunchOptions()),
-        (["Lift", "-demo", "-tab", "exercises", "-open", "exercise"], LaunchOptions(isDemo: true, initialTab: .exercises, opening: .exercise)),
+        (
+            ["Lift", "-demo", "-tab", "exercises", "-open", "exercise"],
+            LaunchOptions(isDemo: true, initialTab: .exercises, opening: .exercise)
+        ),
     ])
     func parsesArguments(arguments: [String], expected: LaunchOptions) {
         #expect(LaunchOptions(arguments: arguments) == expected)

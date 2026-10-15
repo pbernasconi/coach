@@ -116,7 +116,9 @@ import Testing
 
         let task = vm.send(.videosTapped)
         #expect(task == nil)
-        #expect(vm.state.link?.url.absoluteString == "https://www.youtube.com/results?search_query=back%20squat%20technique")
+        #expect(
+            vm.state.link?.url.absoluteString == "https://www.youtube.com/results?search_query=back%20squat%20technique"
+        )
         #expect(vm.state.link?.serial == 1)
 
         vm.send(.videosTapped)
