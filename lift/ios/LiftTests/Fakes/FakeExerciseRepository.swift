@@ -31,6 +31,10 @@ nonisolated final class FakeExerciseRepository: ExerciseRepository {
         throw AppError(.unknown, detail: "not used")
     }
 
+    func create(fromCatalog _: CatalogExercise) async throws -> Exercise {
+        throw AppError(.unknown, detail: "not used")
+    }
+
     func update(_: Exercise) async throws -> Exercise {
         throw AppError(.unknown, detail: "not used")
     }

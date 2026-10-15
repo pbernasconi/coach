@@ -25,6 +25,11 @@ public protocol ExerciseRepository: Sendable {
     /// Undoes `remove`.
     func restore(id: UUID) async throws
 
+    /// Adds `entry` from the bundled catalog to the library: its name, mapped equipment, load mode and muscles, with
+    /// `catalogID` set. Idempotent per catalog id: a live row with that id is returned as is (unarchived if it was
+    /// archived), and a removed one is restored instead of adding a second row.
+    func create(fromCatalog entry: CatalogExercise) async throws -> Exercise
+
     /// Inserts the `ExerciseLibrary.seed` rows that are missing (a removed seed row stays removed).
     /// Returns how many were inserted.
     func installLibrary() async throws -> Int

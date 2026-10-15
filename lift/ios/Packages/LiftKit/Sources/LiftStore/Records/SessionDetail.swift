@@ -6,12 +6,15 @@ public struct SessionDetail: Hashable, Sendable, Identifiable {
     public struct Item: Hashable, Sendable, Identifiable {
         public var exercise: SessionExerciseRecord
         public var sets: [SetRecord]
+        /// The bundled catalog entry of the linked library exercise, for its thumbnail; nil when there is none.
+        public var catalogID: String?
 
         public var id: UUID { exercise.id }
 
-        public init(exercise: SessionExerciseRecord, sets: [SetRecord]) {
+        public init(exercise: SessionExerciseRecord, sets: [SetRecord], catalogID: String? = nil) {
             self.exercise = exercise
             self.sets = sets
+            self.catalogID = catalogID
         }
     }
 
