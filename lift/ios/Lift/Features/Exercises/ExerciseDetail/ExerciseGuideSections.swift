@@ -90,7 +90,8 @@ private struct GuideList: View {
                 .accessibilityLabel(Text("Step \(number)"))
         case .symbol(let name, let tone):
             Image(systemName: name)
-                .font(theme.font(.footnote))
+                .font(theme.font(.caption))
+                .imageScale(.small)
                 .foregroundStyle(theme.palette.status(tone).ink)
                 .frame(minWidth: badge)
                 .accessibilityHidden(true)

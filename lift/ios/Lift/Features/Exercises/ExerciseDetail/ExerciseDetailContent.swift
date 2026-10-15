@@ -33,8 +33,8 @@ struct ExerciseDetailContent: View {
     }
 }
 
-/// The loaded exercise, top to bottom: name, the animation beside its muscles and equipment, how to do it (with the
-/// technique videos link in its header), then recent history.
+/// The loaded exercise, top to bottom: name, the animation beside its muscles and equipment, recent history in compact
+/// rows, then how to do it (with the technique videos link in its header), which is the longest part.
 private struct ExerciseDetailBody: View {
     let item: ExerciseDetailItem
     let state: ExerciseDetailState
@@ -44,6 +44,8 @@ private struct ExerciseDetailBody: View {
         VStack(alignment: .leading, spacing: Space.lg) {
             ExerciseTitle(name: item.name)
             ExerciseMediaView(item: item, media: state.media, animation: state.animation)
+            ExerciseHistorySection(history: state.history)
+                .listRowDensity(.compact)
             if let guide = item.guide {
                 HowToSection(send: send) { ExerciseGuideSections(guide: guide) }
             } else if !state.librarySteps.isEmpty {
@@ -62,7 +64,6 @@ private struct ExerciseDetailBody: View {
                     BodyText(String(localized: "There are no instructions for this exercise yet."))
                 }
             }
-            ExerciseHistorySection(history: state.history)
         }
         .pageGutter()
         .padding(.top, Space.xs)
@@ -98,7 +99,7 @@ private struct HowToSection<Content: View>: View {
 
     private var videos: some View {
         Button("Videos", systemImage: "play.rectangle.fill") { send(.videosTapped) }
-            .buttonStyle(.kobo(.tonal, size: .compact))
+            .buttonStyle(.kobo(.plain, size: .compact))
             .accessibilityLabel(Text("Watch technique videos"))
             .accessibilityHint(Text("Opens a YouTube search."))
     }
