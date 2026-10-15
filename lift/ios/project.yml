@@ -22,6 +22,7 @@ settings:
     CURRENT_PROJECT_VERSION: "1"
     VERSIONING_SYSTEM: apple-generic
     DEVELOPMENT_TEAM: ""   # set locally or via CI secret
+    LIFT_BUNDLE_ID: com.example.lift   # placeholder; the TestFlight job overrides it from the LIFT_BUNDLE_ID variable
 targets:
   Lift:
     type: application
@@ -29,7 +30,7 @@ targets:
     sources: [Lift]
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.example.lift   # placeholder until the App Store record exists
+        PRODUCT_BUNDLE_IDENTIFIER: $(LIFT_BUNDLE_ID)
         SWIFT_EMIT_LOC_STRINGS: "YES"                 # fills Resources/Localizable.xcstrings on build (UI-8)
         LOCALIZATION_PREFERS_STRING_CATALOGS: "YES"
     dependencies:
@@ -55,7 +56,7 @@ targets:
       - Lift/Features/Workout/LiveActivity/RestActivityAttributes.swift
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.example.lift.widgets   # must start with the app's bundle id
+        PRODUCT_BUNDLE_IDENTIFIER: $(LIFT_BUNDLE_ID).widgets   # must start with the app's bundle id
     info:
       path: LiftWidgets/Info.plist
       properties:
@@ -67,7 +68,7 @@ targets:
     sources: [LiftTests]
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.example.lift.tests
+        PRODUCT_BUNDLE_IDENTIFIER: $(LIFT_BUNDLE_ID).tests
         GENERATE_INFOPLIST_FILE: "YES"
     dependencies:
       - target: Lift
