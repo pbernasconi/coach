@@ -55,7 +55,6 @@ jobs:
     # Builds the app and its unit tests once (build-for-testing) and hands the products to the simulator jobs.
     # No simulator boots here, so the cache restore and the build get the whole machine. Xcode's compilation
     # cache (build/cas) comes from the last run and is saved after the upload, even when a later job fails.
-    # SwiftPM checkouts are not cached: restoring their 260 MB archive took longer than xcodebuild's own clone.
     # It also compiles Kobo for iOS.
     runs-on: macos-26
     timeout-minutes: 45
@@ -80,6 +79,13 @@ jobs:
           unzip -q "$RUNNER_TEMP/xcodegen.zip" -d "$RUNNER_TEMP"
           (cd lift/ios && "$RUNNER_TEMP/xcodegen/bin/xcodegen" generate)
           echo "XCODE=$(basename "$(dirname "$(dirname "$(xcode-select -p)")")" .app)" >> "$GITHUB_ENV"
+      - name: Restore SwiftPM checkouts
+        # Saves xcodebuild's GRDB clone (about 45 s). Restoring them is quick here, with no simulator booting.
+        id: spm
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: build/spm
+          key: lift-spm-${{ env.XCODE }}-${{ hashFiles('lift/ios/Packages/LiftKit/Package.resolved') }}
       - name: Restore the compilation cache
         id: cas
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
@@ -110,6 +116,12 @@ jobs:
           path: ${{ runner.temp }}/lift-products.tar.zst
           compression-level: 0
           retention-days: 1
+      - name: Save SwiftPM checkouts
+        if: ${{ !cancelled() && steps.spm.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: build/spm
+          key: lift-spm-${{ env.XCODE }}-${{ hashFiles('lift/ios/Packages/LiftKit/Package.resolved') }}
       - name: Save the compilation cache
         if: ${{ !cancelled() && steps.cas.outputs.cache-hit != 'true' }}
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
