@@ -59,6 +59,9 @@ jobs:
     # It also compiles Kobo for iOS.
     runs-on: macos-26
     timeout-minutes: 45
+    permissions:
+      contents: read
+      pull-requests: read  # paths-filter lists a pull request's files through the API
     concurrency:
       group: ios-build-${{ github.ref }}-${{ github.event_name == 'workflow_dispatch' && github.run_id || 'auto' }}
       cancel-in-progress: true
@@ -113,11 +116,31 @@ jobs:
         with:
           path: build/cas
           key: lift-cas-${{ env.XCODE }}-${{ github.sha }}
+      - name: Did a package change?
+        id: changes
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d  # v4.0.3
+        with:
+          filters: |
+            packages:
+              - "ios-standards/Kobo/**"
+              - "lift/ios/Packages/**"
+              - ".github/workflows/ios.yml"
+      - name: Kobo and LiftKit tests
+        # macOS, the real SwiftUI SDK. Last, after the uploads, and only when a package (or this workflow)
+        # changed or the run was started by hand: the app build above compiles both packages either way.
+        if: ${{ !cancelled() && (steps.changes.outputs.packages == 'true' || github.event_name == 'workflow_dispatch') }}
+        run: |
+          lift/ios/scripts/ci-package-tests.sh start ios-standards/Kobo
+          lift/ios/scripts/ci-package-tests.sh start lift/ios/Packages/LiftKit
+          status=0
+          lift/ios/scripts/ci-package-tests.sh wait ios-standards/Kobo || status=1
+          lift/ios/scripts/ci-package-tests.sh wait lift/ios/Packages/LiftKit || status=1
+          exit "$status"
   test:
     # The app's unit tests on a simulator, from the build job's products. It starts with the build job rather
     # than after it, so the simulator has booted when the products arrive. The simulator boots from a cached
-    # snapshot of one that booted before (keyed by runner image, runtime and device); when there is none, this
-    # job saves one after the tests.
+    # snapshot of one that booted before (keyed by runner image, runtime and device); when there is none, the
+    # job saves one at its end.
     runs-on: macos-26
     timeout-minutes: 45
     permissions:
@@ -165,8 +188,8 @@ jobs:
 
   screenshots:
     # Demo screenshots, one job per variant (light, dark, AX3), from the build job's app. Like the test job it
-    # starts with the build job and boots its simulator while it waits; two of them also run the Kobo and
-    # LiftKit tests in that time.
+    # starts with the build job and boots its simulator while it waits, and saves a simulator snapshot when
+    # there was none for its runner image (images rotate, so any simulator job may be the first).
     runs-on: macos-26
     timeout-minutes: 45
     permissions:
@@ -176,12 +199,6 @@ jobs:
       fail-fast: false
       matrix:
         variant: [light, dark, ax3]
-        include:
-          # Package tests (macOS, the real SwiftUI SDK) run in the background while a job waits for the app.
-          - variant: light
-            package: ios-standards/Kobo
-          - variant: dark
-            package: lift/ios/Packages/LiftKit
     concurrency:
       group: ios-shots-${{ matrix.variant }}-${{ github.ref }}-${{ github.event_name == 'workflow_dispatch' && github.run_id || 'auto' }}
       cancel-in-progress: true
@@ -189,11 +206,6 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
         with:
           persist-credentials: false
-      - name: Start the package tests
-        if: ${{ matrix.package }}
-        env:
-          PACKAGE: ${{ matrix.package }}
-        run: lift/ios/scripts/ci-package-tests.sh start "$PACKAGE"
       - name: Pick a simulator
         run: lift/ios/scripts/ci-simulator.sh pick
       - name: Restore the simulator snapshot
@@ -226,8 +238,12 @@ jobs:
           path: screenshots
           if-no-files-found: ignore
           retention-days: 14
-      - name: Package tests
-        if: ${{ !cancelled() && matrix.package }}
-        env:
-          PACKAGE: ${{ matrix.package }}
-        run: lift/ios/scripts/ci-package-tests.sh wait "$PACKAGE"
+      - name: Pack the simulator snapshot
+        if: ${{ !cancelled() && steps.simcache.outputs.cache-hit != 'true' }}
+        run: lift/ios/scripts/ci-simulator.sh pack
+      - name: Save the simulator snapshot
+        if: ${{ !cancelled() && steps.simcache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: ~/sim-data
+          key: ${{ env.SIM_CACHE_KEY }}
