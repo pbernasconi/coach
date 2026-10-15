@@ -109,8 +109,8 @@ private struct CaptionRhythm: ViewModifier {
     }
 
     #Preview("Loadable caption section") { LoadableCaptionSectionGallery() }
-    #Preview("Loadable caption section · dark, Lift") {
-        LoadableCaptionSectionGallery().koboTheme(.lift).preferredColorScheme(.dark)
+    #Preview("Loadable caption section · dark, Amber") {
+        LoadableCaptionSectionGallery().koboTheme(.amber).preferredColorScheme(.dark)
     }
     #Preview("Loadable caption section · AX3") { LoadableCaptionSectionGallery().dynamicTypeSize(.accessibility3) }
 #endif

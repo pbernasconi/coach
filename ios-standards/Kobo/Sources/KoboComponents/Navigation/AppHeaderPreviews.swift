@@ -40,7 +40,7 @@ import SwiftUI
 
     #Preview("App header") { AppHeaderPreview() }
     #Preview("App header · variants") { AppHeaderVariants() }
-    #Preview("App header · dark, Lift") { AppHeaderPreview().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("App header · dark, Amber") { AppHeaderPreview().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("App header · solid") {
         AppHeaderVariants().koboTheme(Theme(palette: .system, surfaceStyle: .solid))
     }

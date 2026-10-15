@@ -122,6 +122,6 @@ public struct SuggestionCard: View {
     }
 
     #Preview("Suggestion card") { SuggestionCardPreview() }
-    #Preview("Suggestion card · dark, Lift") { SuggestionCardPreview().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Suggestion card · dark, Amber") { SuggestionCardPreview().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Suggestion card · AX3") { SuggestionCardPreview().dynamicTypeSize(.accessibility3) }
 #endif

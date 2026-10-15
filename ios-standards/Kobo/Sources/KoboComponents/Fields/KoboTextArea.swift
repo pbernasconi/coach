@@ -147,6 +147,6 @@ extension KoboTextArea {
     }
 
     #Preview("Text area") { KoboTextAreaGallery() }
-    #Preview("Text area · dark, Lift") { KoboTextAreaGallery().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Text area · dark, Amber") { KoboTextAreaGallery().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Text area · AX3") { KoboTextAreaGallery().dynamicTypeSize(.accessibility3) }
 #endif

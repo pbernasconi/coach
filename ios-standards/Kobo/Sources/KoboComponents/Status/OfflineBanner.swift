@@ -53,6 +53,6 @@ public struct OfflineBanner: View {
     }
 
     #Preview("Offline banner") { OfflineBannerPreview() }
-    #Preview("Offline banner · dark, Lift") { OfflineBannerPreview().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Offline banner · dark, Amber") { OfflineBannerPreview().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Offline banner · AX3") { OfflineBannerPreview().dynamicTypeSize(.accessibility3) }
 #endif

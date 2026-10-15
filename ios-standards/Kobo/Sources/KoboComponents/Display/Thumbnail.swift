@@ -170,7 +170,7 @@ private struct ThumbnailPreviews: View {
 }
 
 #if DEBUG
-    #Preview("Thumbnail") { ThumbnailPreviews().koboTheme(.lift) }
-    #Preview("Thumbnail, dark") { ThumbnailPreviews().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Thumbnail") { ThumbnailPreviews().koboTheme(.amber) }
+    #Preview("Thumbnail, dark") { ThumbnailPreviews().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Thumbnail, AX3") { ThumbnailPreviews().dynamicTypeSize(.accessibility3) }
 #endif

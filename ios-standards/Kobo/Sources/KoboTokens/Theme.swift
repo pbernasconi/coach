@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Everything an app customises, in one value. Inject once at the root:
 ///
-///     ContentView().koboTheme(.lift)
+///     ContentView().koboTheme(.amber)
 ///
 /// Components read it with `@Environment(\.koboTheme)`. A theme is a plain value, so previews can render
 /// any component under any theme, and two apps can share every component with different brands.
@@ -21,7 +21,7 @@ public struct Theme: Sendable, Equatable {
     }
 
     public static let system = Theme(palette: .system)
-    public static let lift = Theme(palette: .lift, typography: .system)
+    public static let amber = Theme(palette: .amber, typography: .system)
 
     public func font(_ role: Typography.Role) -> Font { typography.font(role) }
 }

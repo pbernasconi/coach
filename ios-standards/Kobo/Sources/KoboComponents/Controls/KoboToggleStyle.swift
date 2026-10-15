@@ -108,6 +108,6 @@ struct SwitchTrack: View {
     }
 
     #Preview("Toggle style") { KoboToggleGallery() }
-    #Preview("Toggle style · dark, Lift") { KoboToggleGallery().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Toggle style · dark, Amber") { KoboToggleGallery().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Toggle style · AX3") { KoboToggleGallery().dynamicTypeSize(.accessibility3) }
 #endif

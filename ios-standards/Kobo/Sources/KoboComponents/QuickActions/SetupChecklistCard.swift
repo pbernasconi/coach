@@ -129,8 +129,8 @@ public struct SetupChecklistCard: View {
     }
 
     #Preview("Setup checklist card") { SetupChecklistCardPreview() }
-    #Preview("Setup checklist card · dark, Lift") {
-        SetupChecklistCardPreview().koboTheme(.lift).preferredColorScheme(.dark)
+    #Preview("Setup checklist card · dark, Amber") {
+        SetupChecklistCardPreview().koboTheme(.amber).preferredColorScheme(.dark)
     }
     #Preview("Setup checklist card · AX3") { SetupChecklistCardPreview().dynamicTypeSize(.accessibility3) }
 #endif

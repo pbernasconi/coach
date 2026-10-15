@@ -70,8 +70,8 @@ public struct HeaderProfileButton: View {
     }
 
     #Preview("Header profile button") { HeaderProfileButtonPreview() }
-    #Preview("Header profile button · dark, Lift") {
-        HeaderProfileButtonPreview().koboTheme(.lift).preferredColorScheme(.dark)
+    #Preview("Header profile button · dark, Amber") {
+        HeaderProfileButtonPreview().koboTheme(.amber).preferredColorScheme(.dark)
     }
     #Preview("Header profile button · AX3") { HeaderProfileButtonPreview().dynamicTypeSize(.accessibility3) }
 #endif

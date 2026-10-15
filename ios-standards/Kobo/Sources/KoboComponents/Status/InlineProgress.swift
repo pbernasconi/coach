@@ -98,6 +98,6 @@ public struct InlineProgress: View {
     }
 
     #Preview("Inline progress") { InlineProgressPreview() }
-    #Preview("Inline progress · dark, Lift") { InlineProgressPreview().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Inline progress · dark, Amber") { InlineProgressPreview().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Inline progress · AX3") { InlineProgressPreview().dynamicTypeSize(.accessibility3) }
 #endif

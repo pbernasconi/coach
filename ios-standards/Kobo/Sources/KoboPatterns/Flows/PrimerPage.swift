@@ -149,9 +149,9 @@ extension PrimerPage where Extra == EmptyView {
     #Preview("Light") {
         PrimerPage(model: primerSample, primary: PrimerPageAction("Allow notifications") {}, secondary: .notNow {})
     }
-    #Preview("Loading, dark, Lift") {
+    #Preview("Loading, dark, Amber") {
         PrimerPage(model: primerSample, primary: PrimerPageAction("Allow", isLoading: true) {}, secondary: .notNow {})
-            .koboTheme(.lift)
+            .koboTheme(.amber)
             .preferredColorScheme(.dark)
     }
     #Preview("AX3") {

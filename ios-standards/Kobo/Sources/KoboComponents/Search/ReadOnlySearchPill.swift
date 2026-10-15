@@ -80,6 +80,6 @@ extension View {
     }
 
     #Preview("Search field") { SearchFieldGallery() }
-    #Preview("Search field · dark, Lift") { SearchFieldGallery().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Search field · dark, Amber") { SearchFieldGallery().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Search field · AX3") { SearchFieldGallery().dynamicTypeSize(.accessibility3) }
 #endif

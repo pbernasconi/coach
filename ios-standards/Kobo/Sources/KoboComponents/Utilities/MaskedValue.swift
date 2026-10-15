@@ -60,6 +60,6 @@ public struct MaskedValue: View {
     }
 
     #Preview("Masked value") { MaskedValuePreview() }
-    #Preview("Masked value · dark, Lift") { MaskedValuePreview().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Masked value · dark, Amber") { MaskedValuePreview().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Masked value · AX3") { MaskedValuePreview().dynamicTypeSize(.accessibility3) }
 #endif

@@ -97,6 +97,6 @@ extension ButtonStyle where Self == TextLinkStyle {
     }
 
     #Preview("Text link") { TextLinkPreview() }
-    #Preview("Text link · dark, Lift") { TextLinkPreview().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Text link · dark, Amber") { TextLinkPreview().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Text link · AX3") { TextLinkPreview().dynamicTypeSize(.accessibility3) }
 #endif

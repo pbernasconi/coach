@@ -40,8 +40,8 @@ public struct AccessibilitySizeReader<Content: View>: View {
     }
 
     #Preview("Accessibility size reader") { AccessibilitySizeReaderPreview() }
-    #Preview("Accessibility size reader · dark, Lift") {
-        AccessibilitySizeReaderPreview().koboTheme(.lift).preferredColorScheme(.dark)
+    #Preview("Accessibility size reader · dark, Amber") {
+        AccessibilitySizeReaderPreview().koboTheme(.amber).preferredColorScheme(.dark)
     }
     #Preview("Accessibility size reader · AX3") { AccessibilitySizeReaderPreview().dynamicTypeSize(.accessibility3) }
 #endif

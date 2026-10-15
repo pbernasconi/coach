@@ -190,6 +190,6 @@ extension View {
     }
 
     #Preview("Secure field") { KoboSecureFieldGallery() }
-    #Preview("Secure field · dark, Lift") { KoboSecureFieldGallery().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Secure field · dark, Amber") { KoboSecureFieldGallery().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Secure field · AX3") { KoboSecureFieldGallery().dynamicTypeSize(.accessibility3) }
 #endif

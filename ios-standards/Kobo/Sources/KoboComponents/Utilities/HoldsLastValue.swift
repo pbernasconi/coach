@@ -47,6 +47,6 @@ public struct HoldsLastValue<Value: Equatable, Content: View>: View {
     }
 
     #Preview("Holds last value") { HoldsLastValuePreview() }
-    #Preview("Holds last value · dark, Lift") { HoldsLastValuePreview().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Holds last value · dark, Amber") { HoldsLastValuePreview().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Holds last value · AX3") { HoldsLastValuePreview().dynamicTypeSize(.accessibility3) }
 #endif

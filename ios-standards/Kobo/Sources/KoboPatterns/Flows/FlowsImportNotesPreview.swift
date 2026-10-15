@@ -102,13 +102,13 @@
     }
 
     #Preview("Import notes flow") { FlowsImportNotesPreview() }
-    #Preview("Import notes flow · dark, Lift") {
-        FlowsImportNotesPreview().koboTheme(.lift).preferredColorScheme(.dark)
+    #Preview("Import notes flow · dark, Amber") {
+        FlowsImportNotesPreview().koboTheme(.amber).preferredColorScheme(.dark)
     }
     #Preview("Import notes flow · AX3") { FlowsImportNotesPreview().dynamicTypeSize(.accessibility3) }
     #Preview("Workout finished") { FlowsWorkoutFinishedPreview(phase: .success) }
     #Preview("Workout saving · dark") { FlowsWorkoutFinishedPreview(phase: .pending).preferredColorScheme(.dark) }
-    #Preview("Workout finished · AX3, Lift") {
-        FlowsWorkoutFinishedPreview(phase: .success).koboTheme(.lift).dynamicTypeSize(.accessibility3)
+    #Preview("Workout finished · AX3, Amber") {
+        FlowsWorkoutFinishedPreview(phase: .success).koboTheme(.amber).dynamicTypeSize(.accessibility3)
     }
 #endif

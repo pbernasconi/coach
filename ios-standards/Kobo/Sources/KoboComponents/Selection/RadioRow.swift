@@ -141,6 +141,6 @@ extension RadioRow where Trailing == EmptyView {
     }
 
     #Preview("Radio row") { RadioRowGallery() }
-    #Preview("Radio row · dark, Lift") { RadioRowGallery().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Radio row · dark, Amber") { RadioRowGallery().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Radio row · AX3") { RadioRowGallery().dynamicTypeSize(.accessibility3) }
 #endif

@@ -105,6 +105,8 @@ public struct LoadableSection<Value: Equatable & Sendable, Content: View>: View 
     }
 
     #Preview("Loadable section") { LoadableSectionGallery() }
-    #Preview("Loadable section · dark, Lift") { LoadableSectionGallery().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Loadable section · dark, Amber") {
+        LoadableSectionGallery().koboTheme(.amber).preferredColorScheme(.dark)
+    }
     #Preview("Loadable section · AX3") { LoadableSectionGallery().dynamicTypeSize(.accessibility3) }
 #endif

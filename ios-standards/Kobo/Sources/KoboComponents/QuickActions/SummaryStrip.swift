@@ -97,6 +97,6 @@ public struct SummaryStrip: View {
     }
 
     #Preview("Summary strip") { SummaryStripPreview() }
-    #Preview("Summary strip · dark, Lift") { SummaryStripPreview().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Summary strip · dark, Amber") { SummaryStripPreview().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Summary strip · AX3") { SummaryStripPreview().dynamicTypeSize(.accessibility3) }
 #endif

@@ -45,7 +45,7 @@ private struct BadgeSurface: ViewModifier {
     }
 
     #Preview("Thumbnail badge, dark, solid") {
-        ThumbnailBadge().padding().koboTheme(Theme(palette: .lift, surfaceStyle: .solid)).preferredColorScheme(.dark)
+        ThumbnailBadge().padding().koboTheme(Theme(palette: .amber, surfaceStyle: .solid)).preferredColorScheme(.dark)
     }
 
     #Preview("Thumbnail badge, AX3") {

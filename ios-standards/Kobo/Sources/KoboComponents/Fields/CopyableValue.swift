@@ -135,6 +135,6 @@ public struct CopyableValue: View {
     }
 
     #Preview("Copyable value") { CopyableValueGallery() }
-    #Preview("Copyable value · dark, Lift") { CopyableValueGallery().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Copyable value · dark, Amber") { CopyableValueGallery().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Copyable value · AX3") { CopyableValueGallery().dynamicTypeSize(.accessibility3) }
 #endif

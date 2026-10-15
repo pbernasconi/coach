@@ -164,6 +164,6 @@ public struct SelectField<Value: Hashable & Sendable>: View {
     }
 
     #Preview("Select field") { SelectFieldGallery() }
-    #Preview("Select field · dark, Lift") { SelectFieldGallery().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Select field · dark, Amber") { SelectFieldGallery().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Select field · AX3") { SelectFieldGallery().dynamicTypeSize(.accessibility3) }
 #endif

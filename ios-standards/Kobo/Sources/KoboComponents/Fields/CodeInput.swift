@@ -171,6 +171,6 @@ enum CodeInputMetrics {
     }
 
     #Preview("Code input") { CodeInputGallery() }
-    #Preview("Code input · dark, Lift") { CodeInputGallery().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Code input · dark, Amber") { CodeInputGallery().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Code input · AX3") { CodeInputGallery().dynamicTypeSize(.accessibility3) }
 #endif

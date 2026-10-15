@@ -116,6 +116,6 @@ public struct SectionState: View {
     }
 
     #Preview("Section state") { SectionStatePreview() }
-    #Preview("Section state · dark, Lift") { SectionStatePreview().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Section state · dark, Amber") { SectionStatePreview().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Section state · AX3") { SectionStatePreview().dynamicTypeSize(.accessibility3) }
 #endif

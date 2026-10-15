@@ -86,6 +86,6 @@ public struct IconNotice: View {
     }
 
     #Preview("Icon notice") { IconNoticePreview() }
-    #Preview("Icon notice · dark, Lift") { IconNoticePreview().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Icon notice · dark, Amber") { IconNoticePreview().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Icon notice · AX3") { IconNoticePreview().dynamicTypeSize(.accessibility3) }
 #endif

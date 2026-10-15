@@ -88,6 +88,6 @@ public struct EmptyStateArt: View {
     }
 
     #Preview("Empty state art") { EmptyStateArtGallery() }
-    #Preview("Empty state art · dark, Lift") { EmptyStateArtGallery().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Empty state art · dark, Amber") { EmptyStateArtGallery().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Empty state art · AX3") { EmptyStateArtGallery().dynamicTypeSize(.accessibility3) }
 #endif

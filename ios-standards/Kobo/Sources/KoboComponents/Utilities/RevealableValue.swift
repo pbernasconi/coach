@@ -76,8 +76,8 @@ public struct RevealableValue: View {
     }
 
     #Preview("Revealable value") { RevealableValuePreview() }
-    #Preview("Revealable value · dark, Lift") {
-        RevealableValuePreview().koboTheme(.lift).preferredColorScheme(.dark)
+    #Preview("Revealable value · dark, Amber") {
+        RevealableValuePreview().koboTheme(.amber).preferredColorScheme(.dark)
     }
     #Preview("Revealable value · AX3") { RevealableValuePreview().dynamicTypeSize(.accessibility3) }
 #endif

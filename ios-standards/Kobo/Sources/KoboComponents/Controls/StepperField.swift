@@ -187,6 +187,6 @@ public struct StepperField: View {
     }
 
     #Preview("Stepper field") { StepperFieldGallery() }
-    #Preview("Stepper field · dark, Lift") { StepperFieldGallery().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Stepper field · dark, Amber") { StepperFieldGallery().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Stepper field · AX3") { StepperFieldGallery().dynamicTypeSize(.accessibility3) }
 #endif

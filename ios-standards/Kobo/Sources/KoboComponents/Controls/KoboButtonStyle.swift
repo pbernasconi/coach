@@ -129,6 +129,6 @@ private struct ButtonSurface: ViewModifier {
     }
 
     #Preview("Button") { KoboButtonGallery() }
-    #Preview("Button · dark, Lift") { KoboButtonGallery().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Button · dark, Amber") { KoboButtonGallery().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Button · AX3") { KoboButtonGallery().dynamicTypeSize(.accessibility3) }
 #endif

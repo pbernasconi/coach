@@ -149,7 +149,7 @@ public struct ErrorState: View {
             kind: .restricted,
             retryLabel: "Go back"
         ) {}
-        .koboTheme(Theme(palette: .lift, surfaceStyle: .solid))
+        .koboTheme(Theme(palette: .amber, surfaceStyle: .solid))
     }
 
     #Preview("Error, AX3") {

@@ -99,6 +99,6 @@ public struct LoadMoreFooter: View {
     }
 
     #Preview("Load more footer") { LoadMoreFooterPreview() }
-    #Preview("Load more footer · dark, Lift") { LoadMoreFooterPreview().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Load more footer · dark, Amber") { LoadMoreFooterPreview().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Load more footer · AX3") { LoadMoreFooterPreview().dynamicTypeSize(.accessibility3) }
 #endif

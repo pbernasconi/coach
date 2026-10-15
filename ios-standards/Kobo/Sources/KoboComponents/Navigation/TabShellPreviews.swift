@@ -36,6 +36,6 @@ import SwiftUI
     }
 
     #Preview("Tab shell") { TabShellPreview() }
-    #Preview("Tab shell · dark, Lift") { TabShellPreview().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Tab shell · dark, Amber") { TabShellPreview().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Tab shell · AX3") { TabShellPreview().dynamicTypeSize(.accessibility3) }
 #endif

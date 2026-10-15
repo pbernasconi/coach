@@ -94,6 +94,6 @@ private struct ActionSheetPresenter: ViewModifier {
 
     #Preview("Light") { KoboActionSheetPreview() }
     #Preview("Dark") { KoboActionSheetPreview().preferredColorScheme(.dark) }
-    #Preview("Lift") { KoboActionSheetPreview().koboTheme(.lift) }
+    #Preview("Amber") { KoboActionSheetPreview().koboTheme(.amber) }
     #Preview("AX3") { KoboActionSheetPreview().dynamicTypeSize(.accessibility3) }
 #endif

@@ -77,7 +77,7 @@ extension View {
     }
 
     #Preview("Number entry") { NumberEntryGallery() }
-    #Preview("Number entry · dark, Lift") { NumberEntryGallery().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Number entry · dark, Amber") { NumberEntryGallery().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Number entry · AX3") { NumberEntryGallery().dynamicTypeSize(.accessibility3) }
     #Preview("Number entry · German") { NumberEntryGallery().environment(\.locale, Locale(identifier: "de_DE")) }
 #endif

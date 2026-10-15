@@ -95,6 +95,6 @@ public struct KoboRadio: View {
     }
 
     #Preview("Radio") { KoboRadioGallery() }
-    #Preview("Radio · dark, Lift") { KoboRadioGallery().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Radio · dark, Amber") { KoboRadioGallery().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Radio · AX3") { KoboRadioGallery().dynamicTypeSize(.accessibility3) }
 #endif

@@ -89,6 +89,6 @@ public struct KoboTag: View {
     }
 
     #Preview("Tag") { TagGallery() }
-    #Preview("Tag · dark, Lift") { TagGallery().koboTheme(.lift).preferredColorScheme(.dark) }
+    #Preview("Tag · dark, Amber") { TagGallery().koboTheme(.amber).preferredColorScheme(.dark) }
     #Preview("Tag · AX3") { TagGallery().dynamicTypeSize(.accessibility3) }
 #endif
