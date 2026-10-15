@@ -52,7 +52,11 @@ export function parseTimestamp(value) {
   const minute = Number(mi);
   const second = Number(s);
   if (month < 1 || month > 12 || day < 1 || day > 31 || hour > 23 || minute > 59 || second > 59) return null;
-  const utc = Date.UTC(year, month - 1, day, hour, minute, second, ms);
+  // Not Date.UTC: it reads years 0-99 as 1900-1999.
+  const instant = new Date(0);
+  instant.setUTCFullYear(year, month - 1, day);
+  instant.setUTCHours(hour, minute, second, ms);
+  const utc = instant.getTime();
   // Reject days that roll over (2026-02-30).
   const check = new Date(utc);
   if (check.getUTCFullYear() !== year || check.getUTCMonth() !== month - 1 || check.getUTCDate() !== day) {
@@ -139,6 +143,7 @@ export function validateChange(raw) {
     if (!deletedAt) return reject('payload.deletedAt invalid');
   }
   if (new TextEncoder().encode(JSON.stringify(row)).length > MAX_PAYLOAD_BYTES) return reject('payload too large');
+  if (!storableInJsonb(row)) return reject('payload has text Postgres cannot store');
 
   return {
     ok: true,
@@ -152,6 +157,30 @@ export function validateChange(raw) {
       deletedAt,
     },
   };
+}
+
+// A UTF-16 surrogate without its pair (with the `u` flag a well-formed pair is one code point).
+const LONE_SURROGATE_RE = /\p{Surrogate}/u;
+
+/** @param {string} text */
+function storableText(text) {
+  return !text.includes('\u0000') && !LONE_SURROGATE_RE.test(text);
+}
+
+/**
+ * Whether Postgres jsonb accepts every key and string in `value`. It refuses U+0000 and unpaired surrogates;
+ * letting one through made the insert fail with a 500, which the iPhone retries forever, so a single such row
+ * blocked every later change in its outbox.
+ * @param {unknown} value
+ * @returns {boolean}
+ */
+export function storableInJsonb(value) {
+  if (typeof value === 'string') return storableText(value);
+  if (Array.isArray(value)) return value.every(storableInJsonb);
+  if (value !== null && typeof value === 'object') {
+    return Object.entries(value).every(([key, item]) => storableText(key) && storableInJsonb(item));
+  }
+  return true;
 }
 
 /**

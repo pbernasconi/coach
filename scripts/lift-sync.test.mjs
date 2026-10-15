@@ -10,7 +10,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { handlePush, handlePull } from '../src/lib/lift-sync/sync.mjs';
 import { createMemoryRepository } from '../src/lib/lift-sync/memory-repository.mjs';
-import { parseTimestamp, validateChange, parsePullLimit } from '../src/lib/lift-sync/contract.mjs';
+import { parseTimestamp, storableInJsonb, validateChange, parsePullLimit } from '../src/lib/lift-sync/contract.mjs';
 import { decodeCursor, encodeCursor } from '../src/lib/lift-sync/cursor.mjs';
 import { isAuthorized } from '../src/lib/lift-sync/auth.mjs';
 import { incomingWins } from '../src/lib/lift-sync/lww.mjs';
@@ -147,6 +147,25 @@ test('validation: bad changes are rejected individually with a reason, good ones
   assert.equal(repo.appliedKeys.size, 1, 'rejected keys are not recorded');
 });
 
+test('validation: text Postgres jsonb cannot store is rejected, not a 500 that blocks the outbox', async () => {
+  const repo = createMemoryRepository();
+  const nul = change({ payload: { name: 'Bench\u0000press' } });
+  const loneSurrogate = change({ payload: { name: 'Bench \ud83d press' } });
+  const nulKey = change({ payload: { ['note\u0000']: 'x' } });
+  const nested = change({ payload: { aliases: ['ok', 'bad\u0000'] } });
+  const emoji = change({ payload: { name: 'Bench \ud83d\udcaa' } }); // a well-formed pair is fine
+  const literal = change({ payload: { name: 'C:\\u0000 is just text' } }); // backslash, u, zeros
+  const res = await handlePush(pushReq([nul, loneSurrogate, nulKey, nested, emoji, literal]), repo);
+  assert.equal(res.status, 200);
+  const reason = 'payload has text Postgres cannot store';
+  assert.deepEqual(
+    res.body.rejected,
+    [nul, loneSurrogate, nulKey, nested].map((c) => ({ idempotencyKey: c.idempotencyKey, reason }))
+  );
+  assert.deepEqual(res.body.accepted, [emoji.idempotencyKey, literal.idempotencyKey]);
+  assert.equal(storableInJsonb({ a: [1, null, true, { b: 'ok' }] }), true);
+});
+
 test('validation: rowId and payload.id compare case-insensitively; the payload is stored verbatim', () => {
   const rowId = uuid();
   const result = validateChange(change({ rowId, payload: { id: rowId.toLowerCase(), extra: [1, 2] } }));
@@ -167,6 +186,13 @@ test('timestamps: ISO 8601 with Z or offset, and GRDB text as UTC', () => {
 });
 
 // --- Idempotency ---
+
+test('timestamps: years before 100 are not read as 19xx', () => {
+  assert.equal(parseTimestamp('0099-01-01T00:00:00.000Z')?.toISOString(), '0099-01-01T00:00:00.000Z');
+  assert.equal(parseTimestamp('0001-03-01 12:00:00.250')?.toISOString(), '0001-03-01T12:00:00.250Z');
+  assert.equal(parseTimestamp('0004-02-29T00:00:00Z')?.getUTCDate(), 29); // a leap year
+  assert.equal(parseTimestamp('0003-02-29T00:00:00Z'), null);
+});
 
 test('idempotency: a repeated key is accepted again without effect', async () => {
   const repo = createMemoryRepository();
