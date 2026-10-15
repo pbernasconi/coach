@@ -3,7 +3,8 @@ import SwiftUI
 
 /// A round, icon-only button. The label is required because VoiceOver has nothing else to read. The visible circle
 /// can be smaller than 44pt, but the target never is. While `isLoading`, a spinner takes the glyph's place in the same
-/// circle, presses are ignored and VoiceOver hears "In progress".
+/// circle, presses are ignored and VoiceOver hears "In progress". The circle grows with Dynamic Type up to one and a half
+/// times its size (`IconButtonMetrics`), so at accessibility sizes it never dwarfs its row.
 ///
 ///     IconButton("pause.fill", accessibilityLabel: "Pause timer", style: .solid, size: .large) { pause() }
 ///     IconButton("pencil", verbatimAccessibilityLabel: "Rename \(list.name)", style: .plain) { rename() }
@@ -16,6 +17,9 @@ public struct IconButton: View {
         case solid
         /// A neutral raised fill.
         case tonal
+        /// The soft accent fill with the accent ink: a secondary action that should read as tappable at a glance
+        /// ("How to", "Info") without the weight of the solid accent.
+        case tinted
         /// No fill at rest; a soft veil while pressed.
         case plain
     }
@@ -95,18 +99,25 @@ public struct IconButton: View {
         self.action = action
         _diameter = ScaledMetric(wrappedValue: size.diameter, relativeTo: .body)
         _iconSize = ScaledMetric(wrappedValue: size.iconSize, relativeTo: .body)
+        baseDiameter = size.diameter
+        baseIconSize = size.iconSize
     }
+
+    private let baseDiameter: CGFloat
+    private let baseIconSize: CGFloat
+    private var cappedDiameter: CGFloat { IconButtonMetrics.capped(diameter, base: baseDiameter) }
+    private var cappedIconSize: CGFloat { IconButtonMetrics.capped(iconSize, base: baseIconSize) }
 
     public var body: some View {
         Button(action: action) {
             // The glyph scales with the disc, not with the text style: `iconSize` is a `@ScaledMetric`.
             Image(systemName: systemImage)
-                .font(.system(size: iconSize, weight: .semibold))
+                .font(.system(size: cappedIconSize, weight: .semibold))
                 .opacity(isLoading ? 0 : 1)
                 .overlay {
                     if isLoading { ProgressView().controlSize(.small).accessibilityHidden(true) }
                 }
-                .frame(width: diameter, height: diameter)
+                .frame(width: cappedDiameter, height: cappedDiameter)
         }
         .buttonStyle(IconButtonStyle(style: style))
         .allowsHitTesting(!isLoading)
@@ -134,13 +145,18 @@ private struct IconButtonStyle: ButtonStyle {
 
     private var foreground: Color {
         guard isEnabled else { return theme.palette.textTertiary }
-        return style == .solid ? theme.palette.onAccent : theme.palette.textPrimary
+        switch style {
+        case .solid: return theme.palette.onAccent
+        case .tinted: return theme.palette.accentText
+        case .glass, .tonal, .plain: return theme.palette.textPrimary
+        }
     }
 
     private var fill: Color {
         switch style {
         case .solid: isEnabled ? theme.palette.accent : theme.palette.surfaceRaised
         case .tonal, .glass: theme.palette.surfaceRaised
+        case .tinted: isEnabled ? theme.palette.accentSoft : theme.palette.surfaceRaised
         case .plain: .clear
         }
     }
@@ -179,6 +195,7 @@ private struct IconSurface: ViewModifier {
                     IconButton("plus", accessibilityLabel: "Add", style: .solid) {}
                     IconButton("ellipsis", accessibilityLabel: "More", style: .tonal) {}
                     IconButton("gearshape", accessibilityLabel: "Settings", style: .plain) {}
+                    IconButton("info", accessibilityLabel: "About", style: .tinted, size: .small) {}
                 }
                 HStack(spacing: Space.md) {
                     IconButton("minus", accessibilityLabel: "Less", style: .tonal, size: .large) {}

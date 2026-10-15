@@ -115,8 +115,9 @@ public struct Chip: View {
     }
 }
 
-/// The capsule look shared by `Chip` and `QuickPickRow`: idle is the raised neutral fill, selected is the solid tone
-/// fill. The capsule keeps its compact height and is padded to a 44pt target.
+/// The capsule look shared by `Chip` and `QuickPickRow`: idle is the field surface with the separator rim (the same
+/// surface as the search pill above a filter row, DL-F1), selected is the solid tone fill. The capsule keeps its compact
+/// height and is padded to a 44pt target.
 struct ChipStyle: ButtonStyle {
     @Environment(\.koboTheme) private var theme
     @Environment(\.isEnabled) private var isEnabled
@@ -149,6 +150,11 @@ struct ChipStyle: ButtonStyle {
                     Capsule().fill(theme.palette.pressVeil(configuration.isPressed))
                 }
             }
+            .overlay {
+                if isEnabled && !isSelected {
+                    Capsule().strokeBorder(theme.palette.separator, lineWidth: Size.hairline)
+                }
+            }
             .contentShape(Capsule())
             .scaleEffect(configuration.isPressed ? PressMetrics.scale : 1)
             .koboAnimation(.instant, value: configuration.isPressed)
@@ -165,7 +171,7 @@ struct ChipStyle: ButtonStyle {
             return StatusColors(ink: palette.textTertiary, soft: palette.surfaceRaised)
         }
         guard isSelected else {
-            return StatusColors(ink: palette.textPrimary, soft: palette.surfaceRaised)
+            return StatusColors(ink: palette.textPrimary, soft: palette.surface)
         }
         if tone == .accent { return StatusColors(ink: palette.onAccent, soft: palette.accent) }
         return StatusColors(ink: palette.surface, soft: palette.status(tone).ink)

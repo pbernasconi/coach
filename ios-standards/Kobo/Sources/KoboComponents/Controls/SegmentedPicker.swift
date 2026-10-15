@@ -53,13 +53,16 @@ public struct SegmentedPicker<Value: Hashable & Sendable>: View {
 
     public var body: some View {
         let stacks = dynamicTypeSize.isAccessibilitySize
-        let layout = stacks ? AnyLayout(VStackLayout(spacing: Space.xxs)) : AnyLayout(HStackLayout(spacing: Space.xxs))
+        let layout =
+            stacks
+            ? AnyLayout(VStackLayout(spacing: SegmentedPickerMetrics.inset))
+            : AnyLayout(HStackLayout(spacing: SegmentedPickerMetrics.inset))
         layout {
             ForEach(options) { option in
                 segment(option, isSelected: option.value == selection.wrappedValue)
             }
         }
-        .padding(Space.xxs)
+        .padding(SegmentedPickerMetrics.inset)
         .background(theme.palette.surfaceRaised, in: RoundedRectangle(cornerRadius: trackRadius, style: .continuous))
         .koboAnimation(.snappy, value: selection.wrappedValue)
         .koboFeedback(feedback, trigger: changeTaps)
@@ -91,13 +94,16 @@ public struct SegmentedPicker<Value: Hashable & Sendable>: View {
             .foregroundStyle(isSelected ? theme.palette.textPrimary : theme.palette.textSecondary)
             .padding(.horizontal, Space.sm)
             .padding(.vertical, Space.xs)
-            .frame(maxWidth: .infinity, minHeight: Size.minTouch - Space.xxs * 2)
+            .frame(maxWidth: .infinity, minHeight: Size.minTouch - SegmentedPickerMetrics.inset * 2)
             .background {
                 if isSelected {
-                    RoundedRectangle(cornerRadius: Radius.concentric(outer: trackRadius, inset: Space.xxs))
-                        .fill(indicatorFill)
-                        .shadow(color: theme.palette.scrim, radius: Space.xs, y: Space.xxs)
-                        .matchedGeometryEffect(id: SelectionIndicator.id, in: namespace)
+                    RoundedRectangle(
+                        cornerRadius: Radius.concentric(outer: trackRadius, inset: SegmentedPickerMetrics.inset),
+                        style: .continuous
+                    )
+                    .fill(indicatorFill)
+                    .shadow(color: theme.palette.scrim, radius: Space.xxs, y: Size.hairline * 2)
+                    .matchedGeometryEffect(id: SelectionIndicator.id, in: namespace)
                 }
             }
             .contentShape(Rectangle())
@@ -115,6 +121,12 @@ public struct SegmentedPicker<Value: Hashable & Sendable>: View {
     private var indicatorFill: Color {
         colorScheme == .dark ? theme.palette.surfaceSunken : theme.palette.surface
     }
+}
+
+/// The track's inner inset: the same on every side, so the thumb floats evenly inside the track, and the gap between
+/// segments matches it.
+enum SegmentedPickerMetrics {
+    static let inset = Space.xs
 }
 
 private enum SelectionIndicator {

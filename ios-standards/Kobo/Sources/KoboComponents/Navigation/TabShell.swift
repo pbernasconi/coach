@@ -1,9 +1,10 @@
 import KoboTokens
 import SwiftUI
 
-/// The app's tab controller over the system `TabView`: Kobo tab definitions (title, symbol, badge), the theme accent
-/// as tint, a selection haptic on each switch the person makes in the bar (not on programmatic switches), the adaptable
-/// sidebar layout on iPad, and an optional bottom accessory (a `MiniPlayerBar`) through `.tabViewBottomAccessory`. Each
+/// The app's tab controller over the system `TabView`: Kobo tab definitions (title, symbol, badge), the accent text ink
+/// on the selected tab (its label is text, so it never takes the paler fill accent), a selection haptic on each switch
+/// the person makes in the bar (not on programmatic switches), the adaptable sidebar layout on iPad, and an optional
+/// bottom accessory (a `MiniPlayerBar`) through `.tabViewBottomAccessory`. Each
 /// tab owns its own `NavigationStack` inside `content`.
 ///
 ///     TabShell(tabs: tabs, selection: $router.tab, layout: .forDevice(isPad: isPad)) { tab in
@@ -45,7 +46,8 @@ public struct TabShell<Value: Hashable, Content: View, Accessory: View>: View {
         TabView(selection: barSelection) {
             ForEach(tabs) { tab in
                 Tab(value: tab.value) {
-                    content(tab.value)
+                    // The content keeps the fill accent as its tint; only the bar's labels take the text ink.
+                    content(tab.value).tint(theme.palette.accent)
                 } label: {
                     Label {
                         tab.title
@@ -58,7 +60,8 @@ public struct TabShell<Value: Hashable, Content: View, Accessory: View>: View {
         }
         .modifier(TabShellChrome(layout: layout, minimizesOnScroll: minimizesOnScroll))
         .modifier(TabShellAccessory(accessory: accessory))
-        .tint(theme.palette.accent)
+        // The selected tab's label is text, so it takes the accent text ink (4.5:1 in light mode), not the fill accent.
+        .tint(theme.palette.accentText)
         .koboFeedback(.selection, trigger: userSwitches)
     }
 
