@@ -36,7 +36,13 @@ struct RouteScreen: View {
             )
             .id(route)
         case .catalog:
-            CatalogScreen(viewModel: CatalogViewModel(catalog: dependencies.catalog, router: router))
+            CatalogScreen(
+                viewModel: CatalogViewModel(
+                    catalog: dependencies.catalog,
+                    exercises: dependencies.exercises,
+                    router: router
+                )
+            )
         case .catalogExercise(let catalogID):
             CatalogDetailScreen(
                 viewModel: CatalogDetailViewModel(

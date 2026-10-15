@@ -4,9 +4,14 @@ import SwiftUI
 import UIKit
 
 /// A small rounded still of an exercise for list rows: a skeleton while it loads, a figure symbol when it cannot.
-/// The 180 px still is downsampled off the main actor to the pixels the tile needs.
+/// The 180 px still is downsampled off the main actor to the pixels the tile needs. In light mode the still multiplies
+/// onto the tile, so its white background takes the tile's colour.
 struct ExerciseThumbnail: View {
+    /// The tile in compact rows.
+    static let compactSide = Size.thumbnail - Space.lg
+
     @Environment(\.displayScale) private var displayScale
+    @Environment(\.colorScheme) private var colorScheme
     @State private var decoded: DecodedThumbnail?
     let image: MediaImage
     /// The exercise name, for VoiceOver.
@@ -29,8 +34,13 @@ struct ExerciseThumbnail: View {
         case .loaded(let data):
             if let decoded, decoded.data == data, let still = decoded.image {
                 // Thumbnail labels the tile itself with the exercise name.
-                // swiftlint:disable:next accessibility_label_for_image
-                Thumbnail(image: Image(uiImage: still), side: side, accessibilityLabel: "\(name)")
+                Thumbnail(side: side, accessibilityLabel: "\(name)") {
+                    // swiftlint:disable:next accessibility_label_for_image
+                    Image(uiImage: still)
+                        .resizable()
+                        .scaledToFill()
+                        .blendMode(colorScheme == .light ? .multiply : .normal)
+                }
             } else if decoded?.data == data {
                 Thumbnail(systemName: "figure.strengthtraining.traditional", side: side)
             } else {
@@ -43,7 +53,9 @@ struct ExerciseThumbnail: View {
     private func decode() async {
         guard let data = image.data else { return }
         let pixels = side * displayScale
-        let still = await UIImage(data: data)?.byPreparingThumbnail(ofSize: CGSize(width: pixels, height: pixels))
+        let still = await UIImage(data: data)?.byPreparingThumbnail(
+            ofSize: CGSize(width: pixels, height: pixels)
+        )
         decoded = DecodedThumbnail(data: data, image: still)
     }
 }
