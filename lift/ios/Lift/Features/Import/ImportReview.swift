@@ -96,7 +96,7 @@ nonisolated enum ImportReviewBuilder {
             if grouped.last?.id == day {
                 grouped[grouped.count - 1].sessions.append(candidate)
             } else {
-                grouped.append(ImportReviewDay(id: day, title: days.shortTitle(of: day), sessions: [candidate]))
+                grouped.append(ImportReviewDay(id: day, title: days.longTitle(of: day), sessions: [candidate]))
             }
         }
         return ImportReview(days: grouped, issues: result.issues)

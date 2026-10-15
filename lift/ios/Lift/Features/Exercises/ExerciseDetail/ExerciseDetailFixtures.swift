@@ -13,21 +13,21 @@
         private static let history: [ExerciseHistoryRow] = [
             ExerciseHistoryRow(
                 id: .fixture(1),
-                dayTitle: "Thursday, 5 March",
+                dayTitle: "Thu 5 Mar",
                 best: "5 @ 102.5 kg",
                 sets: "3 sets",
                 estimate: "Est. 1RM 119.5 kg"
             ),
             ExerciseHistoryRow(
                 id: .fixture(2),
-                dayTitle: "Monday, 2 March",
+                dayTitle: "Mon 2 Mar",
                 best: "5 @ 100 kg",
                 sets: "3 sets",
                 estimate: "Est. 1RM 116.5 kg"
             ),
             ExerciseHistoryRow(
                 id: .fixture(3),
-                dayTitle: "Thursday, 26 February",
+                dayTitle: "Thu 26 Feb",
                 best: "6 @ 97.5 kg",
                 sets: "4 sets",
                 estimate: "Est. 1RM 117 kg"

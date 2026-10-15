@@ -15,7 +15,7 @@ extension ExerciseHistoryRow {
         let best = scored.max(by: Scored.isWeaker)
         self.init(
             id: entry.id,
-            dayTitle: days.longTitle(of: entry.session.day),
+            dayTitle: days.shortTitle(of: entry.session.day),
             best: best.map { Self.setText($0.set) } ?? String(localized: "Logged"),
             sets: String(localized: "\(entry.sets.count) sets"),
             estimate: best?.estimate.map {

@@ -95,7 +95,7 @@ import Testing
 
         let expected = ExerciseHistoryRow(
             id: IDSequence.id(1, prefix: 0xA0),
-            dayTitle: DayCalendar(calendar: SessionBuilder.calendar).longTitle(of: Fixtures.monday),
+            dayTitle: DayCalendar(calendar: SessionBuilder.calendar).shortTitle(of: Fixtures.monday),
             best: "3 @ 110 kg",
             sets: "3 sets",
             estimate: "Est. 1RM 121 kg"
