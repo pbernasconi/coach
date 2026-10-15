@@ -10,6 +10,9 @@ const isPublicRoute = createRouteMatcher([
   '/sign-in(.*)',
   '/sign-up(.*)',
   '/api/webhooks(.*)',
+  // Lift sync: the iPhone authenticates with its own bearer token (LIFT_SYNC_TOKEN), not Clerk.
+  '/api/lift/sync/push',
+  '/api/lift/sync/pull',
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
