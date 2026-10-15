@@ -25,7 +25,7 @@ struct ExampleContent: View {
                 }
             }
             Section {
-                TextField("Name", text: binding(state.draftName) { send(.nameChanged($0)) })
+                TextField("Name", text: binding(state.draftName) { send(.nameChanged($0)) })  // ios-guard: allow UI-12
                 Button("Save") { send(.saveTapped) }
                     .buttonStyle(.glassProminent)
                     .disabled(state.save == .saving)

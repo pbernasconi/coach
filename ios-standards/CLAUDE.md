@@ -24,7 +24,11 @@ plainly that the simulator tests were not run.
 - **Domain logic** (rules, parsers, maths, state machines): the `Core` target, as pure functions with no
   UIKit, SwiftUI or I/O. Test it with table-driven Swift Testing.
 - **Database and repositories:** the `Store` target. **API and sync:** the `Sync` target.
-  **Tokens and components:** the `Design` target. **Fakes and fixtures:** the `Testing` target.
+  **Fakes and fixtures:** the `Testing` target.
+- **UI components:** Kobo (`ios-standards/Kobo`) is the only component library (UI-11). Build screens from Kobo
+  components and tokens; use Kobo wrappers instead of raw `TextField`, `.searchable`, `.sheet` and
+  `.confirmationDialog` (UI-12). Missing a reusable component? Add it to Kobo first, with previews, tests, a
+  catalogue entry and a reference page. Only domain composites live in the app.
 - **Screens:** `ios/<App>/Features/<Feature>/<Screen>/`, using the eight-file set (copy `templates/Screen/`).
 - **New targets:** do not add folders or targets called Utils, Helpers, Common, Shared or Manager.
 
