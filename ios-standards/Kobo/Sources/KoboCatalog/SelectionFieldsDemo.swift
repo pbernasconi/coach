@@ -20,14 +20,20 @@ struct SelectionFieldsDemo: View {
         switch component {
         case .menuRow:
             ListSection("Task defaults") {
-                MenuRow("Reminder", subtitle: "For new tasks", selection: $reminder, options: CatalogSamples.reminders) {
+                MenuRow("Reminder", subtitle: "For new tasks", selection: $reminder, options: CatalogSamples.reminders)
+                {
                     Image(systemName: "bell").accessibilityHidden(true)
                 }
                 MenuRow(verbatim: "Default view", selection: $view, options: CatalogSamples.views)
             }
         case .menuSelectField:
             FieldGroup {
-                MenuSelectField("Reminder", selection: $reminder, options: CatalogSamples.reminders, helper: "For new tasks")
+                MenuSelectField(
+                    "Reminder",
+                    selection: $reminder,
+                    options: CatalogSamples.reminders,
+                    helper: "For new tasks"
+                )
                 MenuSelectField(verbatim: "Default view", selection: $view, options: CatalogSamples.views)
             }
         case .selectField:

@@ -42,7 +42,10 @@ struct OverlaysDemo: View {
         case .infoButton:
             HStack(spacing: Space.xs) {
                 Text("Focus time").font(theme.font(.headline))
-                InfoButton("Focus time", message: "Focus time adds up the minutes you spent on tasks marked as deep work.")
+                InfoButton(
+                    "Focus time",
+                    message: "Focus time adds up the minutes you spent on tasks marked as deep work."
+                )
             }
         case .infoSheet:
             Button("What is a project?") { explaining = DemoTopic(id: "projects") }

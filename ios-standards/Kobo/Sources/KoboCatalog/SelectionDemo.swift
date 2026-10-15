@@ -63,7 +63,12 @@ struct SelectionDemo: View {
 
     private var choiceCards: some View {
         VStack(spacing: Space.md) {
-            ChoiceCard("List", description: "Tasks in one column", systemImage: "list.bullet", isSelected: layout == "list") {
+            ChoiceCard(
+                "List",
+                description: "Tasks in one column",
+                systemImage: "list.bullet",
+                isSelected: layout == "list"
+            ) {
                 layout = "list"
             }
             ChoiceCard("Board", description: "Columns by status", isSelected: layout == "board") { layout = "board" }
@@ -94,7 +99,12 @@ struct SelectionDemo: View {
 
     private var sections: [DemoSection] {
         [
-            DemoSection(id: "today", name: "Today", detail: "3 tasks", items: ["Water the plants", "Reply to the landlord"]),
+            DemoSection(
+                id: "today",
+                name: "Today",
+                detail: "3 tasks",
+                items: ["Water the plants", "Reply to the landlord"]
+            ),
             DemoSection(id: "later", name: "Later", detail: "2 tasks", items: ["Plan the weekend trip"]),
         ]
     }

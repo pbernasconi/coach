@@ -14,9 +14,10 @@ accessible, motion-aware, tested building blocks.
 ```text
 KoboTokens      Space, Radius, Size, Palette, Tone, Typography, Theme, Motion   (no default isolation)
    ↑
-KoboComponents  Controls · Feedback · Display · Layout                           (MainActor)
+KoboComponents  Controls · Selection · Fields · Search · Feedback · Status        (MainActor)
+                Display · Layout · Navigation · Overlays · QuickActions · Utilities
    ↑
-KoboPatterns    Loadable + LoadableView, ScreenScaffold, koboConfirm, StateGallery
+KoboPatterns    Loadable + LoadableView, ScreenScaffold, koboConfirm, StateGallery · Lists · Flows
    ↑
 KoboCatalog     CatalogGallery: every component, live, with theme / dark / AX3 switches (debug only)
 ```
@@ -55,10 +56,20 @@ A brand is one value: `Palette.make(accent:onAccent:accentText:)` builds a full 
 | Section | Components |
 | --- | --- |
 | Controls | `KoboButtonStyle` (`.kobo(.primary)`), `AsyncButton`, `IconButton`, `CloseButton`, `Chip`, `ChipGroup`, `KoboTag`, `SegmentedPicker`, `KoboToggleStyle`, `ToggleRow`, `StepperField`, `QuickPickRow`, `FlowLayout`, `.pressFeedback()`, `.shake(trigger:)`, `HapticFeedback` |
-| Feedback | `Toast` + `ToastCenter` + `.toastHost(_:)`, `Skeleton`, `.shimmering()`, `.skeletonBreath()`, `LoadingState`, `EmptyState`, `ErrorState`, `NoticeBanner`, `StatusPill`, `.pulse(active:)` |
+| Selection | `KoboCheckbox`, `KoboRadio`, `CheckRow`, `RadioRow`, `RadioGroup`, `ChoiceCard`, `ChoiceCardGroup`, `MenuRow`, `MenuSelectField`, `SelectField`, `MultiSelectField`, `SelectSheet`, `RangeSlider`, `AccordionGroup`, `ThemePicker` |
+| Fields | `KoboTextField`, `KoboSecureField`, `KoboTextArea`, `FieldGroup`, `NumberEntry`, `CodeInput`, `DateField`, `KoboCalendar`, `CopyButton`, `CopyableValue`, `.tapToCopy`, `KeyboardAccessoryBar` |
+| Search | `SearchField`, `HighlightedText`, `.koboSearchable`, `SearchMatch` |
+| Feedback | `Toast` + `ToastCenter` + `.toastHost(_:)`, `Skeleton`, `.shimmering()`, `.skeletonBreath()`, `LoadingState`, `EmptyState`, `EmptyStateArt`, `ErrorState`, `NoticeBanner`, `StatusPill`, `.pulse(active:)` |
+| Status | `BannerStack` + `.bannerStack`, `NudgeBanner`, `SystemNotice`, `OfflineBanner`, `InlineNotice`, `IconNotice`, `InlineProgress`, `SectionState`, `SlowWaitNote` |
 | Display | `ProgressRing`, `CountdownRing`, `AnimatedNumber`, `StatTile`, `Avatar`, `Monogram`, `Thumbnail`, `ThumbnailBadge` |
 | Layout | `.koboCard()`, `CardSection`, `ListRow`, `ListSection`, `KeyValueRow`, `KeyValueList`, `SectionHeader`, `Separator`, `Collapsible`, `.pinnedFooter`, `SheetHeader`, `DayStrip`, `SegmentedProgress`, `MiniPlayerBar` |
+| Navigation | `AppHeader` + `.tabRootHeader`, `HeaderButton`, `HeaderProfileButton`, `CountBadge` + `.countBadge`, `TabShell`, `TextLink` |
+| Overlays | `KoboSheet` + `.koboSheet`, `.koboActionSheet`, `ModalPage` + `.koboModalPage`, `InputModal`, `InfoButton`, `InfoSheet`, `.itemSheet` |
+| QuickActions | `ActionChipRow`, `ActionCircle`, `SetupChecklistCard`, `SuggestionCard`, `SummaryStrip`, `TonalCardRow` |
+| Utilities | `AccessibilitySizeReader`, `WideWindowReader`, `AdaptiveColumns`, `HoldsLastValue`, `MaskedValue`, `RevealableValue`, `DeferredRow`, `.pageGutter()`, `.readableWidth()`, `.screenCanvas()`, `.onArrival` |
 | Patterns | `Loadable` + `LoadableView`, `ScreenScaffold`, `.koboConfirm`, `StateGallery`, `.previewMatrix()` |
+| Lists | `ListRowSkeleton`, `LoadMoreFooter`, `LoadableSection`, `LoadableCaptionSection`, `SectionEmptyCard`, `.koboRefreshable` |
+| Flows | `FlowStep`, `ProgressFlowStep`, `ValueStep`, `StepIndicator`, `ReviewScaffold`, `ReviewSection`, `ReviewRow`, `ReviewDisclosure`, `OutcomeScaffold`, `PrimerPage`, `UpdateGateScreen`, `FormFocus` |
 
 Open `CatalogGallery()` to browse them all, interactively, under any theme, in light, dark and AX3.
 
@@ -87,7 +98,7 @@ scripts/lint-all.sh                    # guard, parse, swift-format, SwiftLint, 
 | Script | What it proves |
 | --- | --- |
 | `Kobo/scripts/catalog-coverage.sh` | Every public view appears in `KoboCatalog`. |
-| `Kobo/scripts/linux-logic-tests.sh` | Every SwiftUI-free file compiles with the package's strict settings, and its tests pass. Today that is 81 tests in 12 suites, covering stepper maths, chip selection, flow layout, the async-button state machine, toast timing on a test clock, week maths across month, year and DST boundaries, countdown text, ring clamping, motion curves, `Loadable` and catalog search. |
+| `Kobo/scripts/linux-logic-tests.sh` | Every SwiftUI-free file compiles with the package's strict settings, and its tests pass. Today that is 325 tests in 47 suites, covering stepper maths, chip selection, flow layout, the async-button state machine, toast timing on a test clock, week maths across month, year and DST boundaries, countdown text, ring clamping, motion curves, `Loadable` and catalog search. |
 | `swift test` (macOS) | Everything, including the SwiftUI-dependent tests. |
 
 ## Known gaps

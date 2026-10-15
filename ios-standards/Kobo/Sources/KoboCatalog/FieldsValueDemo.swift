@@ -14,7 +14,13 @@ struct FieldsValueDemo: View {
         switch component {
         case .dateField:
             VStack(spacing: Space.lg) {
-                DateField("Due date", selection: $due, today: today, bounds: DateBounds(minDate: today), quickPicks: true)
+                DateField(
+                    "Due date",
+                    selection: $due,
+                    today: today,
+                    bounds: DateBounds(minDate: today),
+                    quickPicks: true
+                )
                 DateField(verbatim: "Start date", selection: $picked, today: today, showsCalendar: false)
             }
         case .calendar:

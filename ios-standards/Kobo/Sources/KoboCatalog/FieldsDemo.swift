@@ -18,7 +18,13 @@ struct FieldsDemo: View {
         switch component {
         case .textField:
             VStack(spacing: Space.lg) {
-                KoboTextField("Task", text: $title, prompt: "What needs doing?", helper: "Keep it short", clearable: true)
+                KoboTextField(
+                    "Task",
+                    text: $title,
+                    prompt: "What needs doing?",
+                    helper: "Keep it short",
+                    clearable: true
+                )
                 KoboTextField("Email", text: $email, error: .message("Enter a full email address"))
                 KoboTextField(verbatim: "Estimate", text: .constant("2"), unit: "h") {
                     Image(systemName: "clock").accessibilityHidden(true)

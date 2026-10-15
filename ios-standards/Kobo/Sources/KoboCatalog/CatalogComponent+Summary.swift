@@ -2,7 +2,7 @@ import Foundation
 
 extension CatalogComponent {
     /// One line on what it is for. Shown under the title and matched by search.
-    public var summary: String {
+    nonisolated public var summary: String {
         switch self {
         case .buttonStyle: "Primary, secondary, tonal, glass, destructive and plain buttons"
         case .asyncButton: "Runs an async action with progress, success and failure states"
