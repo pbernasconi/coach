@@ -1,3 +1,5 @@
+import KoboComponents
+import KoboTokens
 import SwiftUI
 
 /// A footer action of a `PrimerPage`: "Allow notifications", "Not now". While `isLoading` the button spins in place

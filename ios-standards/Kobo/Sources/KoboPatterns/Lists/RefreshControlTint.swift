@@ -1,4 +1,5 @@
 #if canImport(UIKit)
+    import KoboComponents
     import KoboTokens
     import SwiftUI
     import UIKit

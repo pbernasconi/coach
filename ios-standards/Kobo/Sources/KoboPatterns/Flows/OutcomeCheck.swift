@@ -1,3 +1,5 @@
+import KoboComponents
+import KoboTokens
 import SwiftUI
 
 /// The check of a successful outcome as one stroke, so it can draw itself on with `trim`: the short leg first, as a

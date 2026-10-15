@@ -1,4 +1,5 @@
 #if DEBUG
+    import KoboComponents
     import KoboTokens
     import SwiftUI
 
