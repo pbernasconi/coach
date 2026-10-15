@@ -18,6 +18,8 @@ lift/
 │   │   ├── Features/<Feature>/<Screen>/   the eight-file screen set: Week, History, Exercises, Settings, Workout
 │   │   ├── Features/Sessions/             SessionSummary, DayCalendar, SessionText (shared by Week and History)
 │   │   └── Resources/      Localizable.xcstrings
+│   ├── LiftWidgets/        widget extension: the rest Live Activity (Lock Screen, Dynamic Island); it also
+│   │                       compiles Lift/Features/Workout/LiveActivity/RestActivityAttributes.swift
 │   ├── LiftTests/          Swift Testing ViewModel tests, hand-written fakes in Fakes/
 │   └── Packages/LiftKit/   one package (LAY-2):
 │         LiftCore      pure domain: models, rules, Notes importer, LocalDay arithmetic
@@ -26,7 +28,7 @@ lift/
 │         LiftTesting   IDSequence, ManualNow, TestStore (in-memory DB), fakes, fixtures
 │         LiftSync      SyncEngine (push outbox, pull with LWW), URLSessionSyncTransport, wire types
 │                       (SYNC.md), KeychainTokenStore; the pull applier and syncState live in LiftStore/Sync
-│         (the widget extension and HealthKit arrive later)
+│         (HealthKit arrives later)
 └── README.md               product notes and the Foundations decision log
 ```
 
@@ -46,7 +48,7 @@ xcodebuild test -project ios/Lift.xcodeproj -scheme Lift \
 Launch arguments (scheme or `simctl launch`): `-demo` opens an in-memory database seeded by `DemoSeeder`
 (fabricated data, nothing saved); `-tab week|history|exercises|settings` picks the first tab; `-appearance
 dark|light` forces an appearance; with `-demo`, `-open workout` pushes today's or the next planned session onto
-the Week tab (for screenshots). Without `-demo` the app uses `Application Support/lift.sqlite`.
+the Week tab and `-open exercise` pushes the Back squat detail onto the Exercises tab (for screenshots). Without `-demo` the app uses `Application Support/lift.sqlite`.
 
 Note: the app target defaults to MainActor isolation, so screen value types (`State`, `Action`, row items)
 are declared `nonisolated`; otherwise their `Equatable` conformance is main-actor-isolated and cannot be

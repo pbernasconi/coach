@@ -34,7 +34,10 @@ import Testing
     @Test func runLoadsTheLibraryWithoutArchivedExercises() async {
         var archived = ExercisesViewModelTests.exercise(4, "Old press", aliases: [], .machine, [.chest])
         archived.isArchived = true
-        let vm = ExercisesViewModel(exercises: FakeExerciseRepository(emissions: [[], [squat, archived, rdl]]))
+        let vm = ExercisesViewModel(
+            exercises: FakeExerciseRepository(emissions: [[], [squat, archived, rdl]]),
+            router: RecordingNavigator()
+        )
 
         await vm.run()
 
@@ -43,7 +46,7 @@ import Testing
     }
 
     @Test func runShowsEmptyForAnEmptyLibrary() async {
-        let vm = ExercisesViewModel(exercises: FakeExerciseRepository(emissions: [[]]))
+        let vm = ExercisesViewModel(exercises: FakeExerciseRepository(emissions: [[]]), router: RecordingNavigator())
 
         await vm.run()
 
@@ -58,7 +61,10 @@ import Testing
         ("zercher", []),
     ])
     func queryChangedFiltersByNameAndAlias(query: String, expected: [String]) async {
-        let vm = ExercisesViewModel(exercises: FakeExerciseRepository(emissions: [[squat, rdl, crunch]]))
+        let vm = ExercisesViewModel(
+            exercises: FakeExerciseRepository(emissions: [[squat, rdl, crunch]]),
+            router: RecordingNavigator()
+        )
         await vm.run()
 
         let task = vm.send(.queryChanged(query))
@@ -66,5 +72,15 @@ import Testing
         #expect(task == nil)
         #expect(vm.state.query == query)
         #expect(vm.state.visible.map(\.name) == expected)
+    }
+
+    @Test func exerciseTappedOpensTheDetail() {
+        let router = RecordingNavigator()
+        let vm = ExercisesViewModel(exercises: FakeExerciseRepository(emissions: []), router: router)
+
+        let task = vm.send(.exerciseTapped(rdl.id))
+
+        #expect(task == nil)
+        #expect(router.opened == [.exercise(rdl.id)])
     }
 }

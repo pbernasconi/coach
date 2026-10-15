@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Launches the demo build on a simulator and captures each screen in light, dark and AX3 (accessibility
 # extra large). Screens are "name:arg,arg" pairs (comma-separated launch arguments); the app reads -demo,
-# -tab and -open workout.
+# -tab and -open workout|exercise.
 #   scripts/screenshots.sh <path/to/Lift.app> <out dir>
 set -euo pipefail
 APP="$1"
 OUT="$2"
-SCREENS="${SCREENS:-week:-tab,week workout:-open,workout history:-tab,history exercises:-tab,exercises settings:-tab,settings}"
+SCREENS="${SCREENS:-week:-tab,week workout:-open,workout history:-tab,history exercises:-tab,exercises exercise:-tab,exercises,-open,exercise settings:-tab,settings}"
 mkdir -p "$OUT"
 UDID="${SIM_UDID:-$("$(dirname "$0")/simulator.sh")}"
 BUNDLE="$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$APP/Info.plist")"

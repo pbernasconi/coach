@@ -1,4 +1,5 @@
 import Foundation
+import LiftCore
 import Testing
 
 @testable import Lift
@@ -19,6 +20,7 @@ import Testing
         (["Lift", "-open", "Workout"], LaunchOptions(opening: .workout)),
         (["Lift", "-open", "nope"], LaunchOptions()),
         (["Lift", "-open"], LaunchOptions()),
+        (["Lift", "-demo", "-tab", "exercises", "-open", "exercise"], LaunchOptions(isDemo: true, initialTab: .exercises, opening: .exercise)),
     ])
     func parsesArguments(arguments: [String], expected: LaunchOptions) {
         #expect(LaunchOptions(arguments: arguments) == expected)
@@ -29,6 +31,18 @@ import Testing
         let options = LaunchOptions(arguments: ["Lift", "-demo", "-open", "workout"])
         #expect(options.initialRoute(upcomingSessionID: id) == .workout(id))
         #expect(options.initialRoute(upcomingSessionID: nil) == nil)
+    }
+
+    @Test func openExerciseInDemoModePushesBackSquatOnExercises() {
+        let options = LaunchOptions(arguments: ["Lift", "-demo", "-open", "exercise"])
+        #expect(options.initialRoute(upcomingSessionID: nil) == .exercise(ExerciseLibrary.seedID(1)))
+        #expect(options.opening?.tab == .exercises)
+        #expect(LaunchOptions(opening: .exercise).initialRoute(upcomingSessionID: nil) == nil)
+    }
+
+    @Test func eachOpeningPushesOnItsTab() {
+        #expect(LaunchOptions.Opening.workout.tab == .week)
+        #expect(LaunchOptions.Opening.exercise.tab == .exercises)
     }
 
     @Test func openWorkoutNeedsDemoMode() {
