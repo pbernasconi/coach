@@ -6,8 +6,12 @@ extension View {
     ///
     ///     KoboTextField("Email", text: $email).formField(.email, in: form)
     public func formField<Field: Hashable & Sendable>(_ field: Field, in form: FormFocus<Field>) -> some View {
+        focused(form.focus, equals: field).formReturn(field, in: form)
+    }
+
+    /// The return half of `formField`: the key's label, the return sent to the form, and a scoped `onSubmit`.
+    func formReturn<Field: Hashable & Sendable>(_ field: Field, in form: FormFocus<Field>) -> some View {
         self
-            .focused(form.focus, equals: field)
             .submitLabel(form.order.returnKey(for: field).submitLabel)
             .onSubmit { form.onReturn(field) }
             .submitScope()
