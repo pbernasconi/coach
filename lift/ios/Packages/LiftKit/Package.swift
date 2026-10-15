@@ -27,7 +27,8 @@ let package = Package(
         .package(url: "https://github.com/groue/GRDB.swift", exact: "7.11.1")
     ],
     targets: [
-        .target(name: "LiftCore", swiftSettings: logic),
+        // Resources: the bundled exercise catalog (text only; see ExerciseMedia/ATTRIBUTION.md).
+        .target(name: "LiftCore", resources: [.process("Resources")], swiftSettings: logic),
         .target(name: "LiftStore", dependencies: ["LiftCore", grdb], swiftSettings: logic),
         .target(name: "LiftTesting", dependencies: ["LiftCore", "LiftStore"], swiftSettings: logic),
         .target(name: "LiftSync", dependencies: ["LiftCore", "LiftStore"], swiftSettings: logic),

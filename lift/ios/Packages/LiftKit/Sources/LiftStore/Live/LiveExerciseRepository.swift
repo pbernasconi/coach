@@ -45,6 +45,10 @@ public struct LiveExerciseRepository: ExerciseRepository {
         return row.exercise
     }
 
+    public func create(fromCatalog entry: CatalogExercise) async throws -> Exercise {
+        try await CatalogExerciseWrite.add(entry, store: store)
+    }
+
     public func update(_ exercise: Exercise) async throws -> Exercise {
         let change = try await store.change(ExerciseRow.self, id: exercise.id) { row, _ in
             var edited = exercise

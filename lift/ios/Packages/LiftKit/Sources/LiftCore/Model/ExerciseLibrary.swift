@@ -213,6 +213,7 @@ private struct SeedRow {
             loadMode: loadMode,
             primary: primary,
             secondary: secondary,
+            catalogID: CatalogSeedLinks.seedLink(seedNumber: number)?.catalogID,
             createdAt: ExerciseLibrary.seedDate,
             updatedAt: ExerciseLibrary.seedDate
         )

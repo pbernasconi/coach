@@ -25,8 +25,11 @@ extension ExerciseRow: SyncedRecord {
 
     init(row: Row) throws {
         let url: String? = try row.optional("videoURL")
+        let id: UUID = try row.required("id")
+        // A seed row always links to its entry, even from a pulled payload written before v3 added the column.
+        let catalogID: String? = try row.optional("catalogID") ?? CatalogSeedLinks.catalogID(forSeedExerciseID: id)
         exercise = Exercise(
-            id: try row.required("id"),
+            id: id,
             name: try row.required("name"),
             aliases: try row.jsonArray("aliases"),
             equipment: try row.raw("equipment"),
@@ -34,6 +37,7 @@ extension ExerciseRow: SyncedRecord {
             primary: try row.jsonArray("primaryMuscles"),
             secondary: try row.jsonArray("secondaryMuscles"),
             videoURL: url.flatMap(URL.init(string:)),
+            catalogID: catalogID,
             isArchived: try row.required("isArchived"),
             createdAt: try row.required("createdAt"),
             updatedAt: try row.required("updatedAt"),
@@ -50,6 +54,7 @@ extension ExerciseRow: SyncedRecord {
         try container.setJSONArray(exercise.primary, forKey: "primaryMuscles")
         try container.setJSONArray(exercise.secondary, forKey: "secondaryMuscles")
         container["videoURL"] = exercise.videoURL?.absoluteString
+        container["catalogID"] = exercise.catalogID
         container["isArchived"] = exercise.isArchived
         container["createdAt"] = exercise.createdAt
         container["updatedAt"] = exercise.updatedAt
