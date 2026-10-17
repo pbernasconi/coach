@@ -21,8 +21,8 @@ jobs:
           persist-credentials: false
       - name: Register App IDs and capabilities
         env:
-          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
-          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID || 'TTPPF7B89U' }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID || '69a6de7d-2335-47e3-e053-5b8c7c11a4d1' }}
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
-          BUNDLE_ID: ${{ vars.LIFT_BUNDLE_ID }}
+          BUNDLE_ID: ${{ vars.LIFT_BUNDLE_ID || 'com.pbernasconi.lift' }}
         run: python3 lift/ios/scripts/asc-setup.py

@@ -26,11 +26,12 @@ jobs:
     timeout-minutes: 60
     environment: testflight
     env:
-      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
-      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      # Not secret: identifiers only. Repository secrets or variables of the same name override them.
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID || 'TTPPF7B89U' }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID || '69a6de7d-2335-47e3-e053-5b8c7c11a4d1' }}
       ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
-      TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
-      BUNDLE_ID: ${{ vars.LIFT_BUNDLE_ID }}
+      TEAM_ID: ${{ vars.APPLE_TEAM_ID || '36K65DLG2U' }}
+      BUNDLE_ID: ${{ vars.LIFT_BUNDLE_ID || 'com.pbernasconi.lift' }}
       SYNC_BASE_URL: ${{ vars.LIFT_SYNC_BASE_URL }}   # optional; empty leaves sync off in the build
     steps:
       - name: Check configuration
