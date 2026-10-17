@@ -49,7 +49,8 @@ targets:
     entitlements:
       path: Lift/Lift.entitlements
       properties:
-        com.apple.security.application-groups: [$(LIFT_APP_GROUP)]
+        # App Group entitlement left out until group.$(LIFT_BUNDLE_ID) is registered and assigned to the three App IDs
+        # (lift/DEFERRED.md). Without it the app works; the Share extension cannot hand notes over yet.
         # Apple Health: Lift saves finished workouts (write only, no clinical records).
         com.apple.developer.healthkit: true
         com.apple.developer.healthkit.access: []
@@ -88,8 +89,7 @@ targets:
         SWIFT_ACTIVE_COMPILATION_CONDITIONS: $(inherited) LIFT_EXTENSION
     entitlements:
       path: LiftWidgets/LiftWidgets.entitlements
-      properties:
-        com.apple.security.application-groups: [$(LIFT_APP_GROUP)]
+      properties: {}   # App Group left out for now; see the Lift target.
     info:
       path: LiftWidgets/Info.plist
       properties:
@@ -111,8 +111,7 @@ targets:
         SWIFT_ACTIVE_COMPILATION_CONDITIONS: $(inherited) LIFT_EXTENSION
     entitlements:
       path: LiftShare/LiftShare.entitlements
-      properties:
-        com.apple.security.application-groups: [$(LIFT_APP_GROUP)]
+      properties: {}   # App Group left out for now; see the Lift target.
     info:
       path: LiftShare/Info.plist
       properties:
