@@ -1,0 +1,28 @@
+---
+name: Apple setup
+
+# Registers Lift's App IDs (app, widgets, share) and their capabilities (App Groups, HealthKit) through the App
+# Store Connect API, then reports whether the App Store Connect app record exists. Safe to re-run: existing
+# identifiers are left alone. Uses the same secrets and variables as the TestFlight workflow.
+"on":
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  register:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: testflight
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+        with:
+          persist-credentials: false
+      - name: Register App IDs and capabilities
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          BUNDLE_ID: ${{ vars.LIFT_BUNDLE_ID }}
+        run: python3 lift/ios/scripts/asc-setup.py

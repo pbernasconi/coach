@@ -9,7 +9,10 @@ already done around it. The build keeps going around these; nothing here blocks 
   and skips itself until these exist. In GitHub → Settings → Secrets and variables → Actions (repository level,
   or the `testflight` environment):
   - Variables: `APPLE_TEAM_ID` (your Team ID, Membership page) and `LIFT_BUNDLE_ID` (e.g. `com.yourname.lift`).
-  - In the developer portal (Certificates, Identifiers & Profiles), with `<id>` your `LIFT_BUNDLE_ID`:
+  - Shortcut: once the secrets and variables below exist, run the **Apple setup** workflow (Actions → Apple setup →
+    Run workflow). It registers the three App IDs with App Groups (and HealthKit on the app) through the App Store
+    Connect API and says whether the app record exists. Use an API key with the **Admin** role for this.
+  - By hand instead, in the developer portal (Certificates, Identifiers & Profiles), with `<id>` your `LIFT_BUNDLE_ID`:
     1. Identifiers → App Groups → register `group.<id>` (e.g. `group.com.yourname.lift`).
     2. Identifiers → App IDs → register three explicit App IDs: `<id>` (the app), `<id>.widgets` (the rest Live
        Activity) and `<id>.share` (the Share extension). On each, turn on **App Groups** and assign `group.<id>`.
