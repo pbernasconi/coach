@@ -1,5 +1,6 @@
 #if DEBUG
     import KoboTokens
+    import LiftCore
     import SwiftUI
 
     private struct WeekPreview: View {
@@ -10,6 +11,7 @@
                 WeekContent(state: state, send: { _ in })
             }
             .koboTheme(.lift)
+            .environment(\.calendar, Calendar.autoupdatingCurrent.startingWeeksOnMonday())  // as CompositionRoot
         }
     }
 

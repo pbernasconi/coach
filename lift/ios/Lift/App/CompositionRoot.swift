@@ -56,7 +56,7 @@ enum CompositionRoot {
             restActivity: restActivity(),
             mediaLoader: mediaLoader,
             catalog: LiveExerciseCatalog(loader: mediaLoader),
-            calendar: .autoupdatingCurrent,
+            calendar: appCalendar,
             info: info(source: source),
             units: units(source: source),
             gym: gym,
@@ -110,6 +110,15 @@ enum CompositionRoot {
     private static func gym(source: AppInfo.DataSource) -> any GymPreference {
         guard source.isSaved else { return InMemoryGymSettings(.standard) }
         return UserDefaultsGymSettings.standard()
+    }
+
+    /// The app's one calendar: the person's, following their locale and time zone, with weeks starting on Monday
+    /// everywhere (the strip, the month calendar, History, weekly volume, "Plan next week").
+    private static var appCalendar: Calendar {
+        var calendar = Calendar.autoupdatingCurrent
+        calendar.locale = .autoupdatingCurrent
+        calendar.timeZone = .autoupdatingCurrent
+        return calendar.startingWeeksOnMonday()
     }
 
     private static var localUnit: WeightUnit {
