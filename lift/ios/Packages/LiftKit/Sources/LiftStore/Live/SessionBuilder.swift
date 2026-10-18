@@ -53,6 +53,19 @@ struct SessionBuilder {
         return (sets.first ?? [], sets.dropFirst().first ?? [])
     }
 
+    /// What a planned session exercise starts with: the library name, load mode and equipment, the slot's rest and
+    /// note.
+    private static func sessionSlot(_ slot: TemplateExercise, exercise: Exercise?) -> ExerciseSlot {
+        ExerciseSlot(
+            exerciseID: slot.exerciseID,
+            displayName: exercise?.name ?? slot.displayName,
+            loadMode: exercise?.loadMode ?? .total,
+            equipment: exercise?.equipment,
+            restSeconds: slot.restSeconds,
+            note: slot.note
+        )
+    }
+
     private func insert(
         _ slot: TemplateExercise,
         exercise: Exercise?,
@@ -64,14 +77,7 @@ struct SessionBuilder {
         let record = SessionExerciseRecord(
             id: store.makeID(),
             sessionID: session.id,
-            slot: ExerciseSlot(
-                exerciseID: slot.exerciseID,
-                displayName: exercise?.name ?? slot.displayName,
-                loadMode: loadMode,
-                equipment: equipment,
-                restSeconds: slot.restSeconds,
-                note: slot.note
-            ),
+            slot: Self.sessionSlot(slot, exercise: exercise),
             position: position,
             createdAt: stamp,
             updatedAt: stamp
