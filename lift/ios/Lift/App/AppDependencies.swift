@@ -45,7 +45,9 @@ final class AppDependencies {
     let health: any WorkoutHealthRecording
     /// Opens and closes Import from Notes, which the shell shows as a modal page above the tabs.
     let importFlow: ImportFlowPresenter
-    /// Opens Import from Notes for `lift://import` links and for notes shared through the Share extension.
+    /// Opens, closes and undoes `lift://templates` links, which the shell shows as a sheet above the tabs.
+    let templateLinks: TemplateLinkPresenter
+    /// Routes `lift://` links: Import from Notes (and notes shared through the Share extension), and template links.
     let incomingNotes: IncomingNoteRouter
     private var isPrepared = false
 
@@ -91,7 +93,13 @@ final class AppDependencies {
         self.health = health
         let importFlow = ImportFlowPresenter()
         self.importFlow = importFlow
-        incomingNotes = IncomingNoteRouter(inbox: AppGroupNoteInbox(bundle: .main), importFlow: importFlow)
+        let templateLinks = TemplateLinkPresenter(templates: templates, exercises: exercises)
+        self.templateLinks = templateLinks
+        incomingNotes = IncomingNoteRouter(
+            inbox: AppGroupNoteInbox(bundle: .main),
+            importFlow: importFlow,
+            templateLinks: templateLinks
+        )
     }
 
     /// Work that finishes before the tabs show: the seed exercise library on this iPhone (and in `-fresh`), or the

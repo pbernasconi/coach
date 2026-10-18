@@ -19,6 +19,8 @@ import LiftCore
 ///     -open summary                           with -demo: pushes the latest logged session's summary on Week
 ///     -open progress                          with -demo: opens History on Progress (hard sets per muscle)
 ///     -open plates                            with -demo: pushes Plates and bars on Settings
+///     -open template-link                     with -demo: opens the template link review over Exercises with the
+///                                             made-up `TemplateLinkSample`
 nonisolated struct LaunchOptions: Equatable, Sendable {
     enum Appearance: String, Equatable, Sendable {
         case dark
@@ -39,12 +41,14 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
         case progress
         /// Settings → Plates and bars.
         case plates
+        /// The template link review: a sheet over Exercises rather than a pushed route.
+        case templateLink = "template-link"
 
         /// The tab whose stack the screen is pushed on.
         var tab: AppTab {
             switch self {
             case .workout, .summary: .week
-            case .exercise, .catalog, .templates, .template: .exercises
+            case .exercise, .catalog, .templates, .template, .templateLink: .exercises
             case .importNotes, .progress: .history
             case .plates: .settings
             }
@@ -104,8 +108,9 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
         case .exercise: return .exercise(ExerciseLibrary.seedID(1))
         case .catalog: return .catalog
         case .plates: return .plates
-        case .importNotes: return nil  // a modal page, opened through `opensImportSample`
-        case .progress: return nil  // a segment of History, picked through `historySegment`
+        // A modal page (`opensImportSample`), a sheet (`opensTemplateLinkSample`), or a segment of History
+        // (`historySegment`).
+        case .importNotes, .templateLink, .progress: return nil
         }
     }
 
@@ -116,6 +121,9 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
 
     /// `-open import` in demo mode: the shell opens the import flow with the made-up sample note already read.
     var opensImportSample: Bool { isDemo && opening == .importNotes }
+
+    /// `-open template-link` in demo mode: the shell opens the template link review with the made-up sample link.
+    var opensTemplateLinkSample: Bool { isDemo && opening == .templateLink }
 
     private static func value(after flag: String, in arguments: [String]) -> String? {
         guard let index = arguments.firstIndex(of: flag), arguments.indices.contains(index + 1) else { return nil }
