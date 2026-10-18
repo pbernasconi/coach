@@ -48,4 +48,25 @@ import Testing
         #expect(result.deferred.count == 1)
         #expect(result.applied == 0)
     }
+
+    @Test func aSlotNoteTravelsAndAPayloadFromBeforeV6ReadsAsNone() async throws {
+        for keepsNote in [true, false] {
+            let remote = try RemoteDevice()
+            let template = try await remote.store.templates.createTemplate(name: "Lower A")
+            var slot = try await remote.store.templates.addExercise(Fixtures.squat, to: template.id)
+            slot.note = "Made-up cue"
+            _ = try await remote.store.templates.updateExercise(slot)
+            let changes = try await remote.takeChanges().map { change in
+                var old = change
+                if !keepsNote { old.payload["note"] = nil }  // as written by a build before v6
+                return old
+            }
+            let harness = try SyncHarness()
+            harness.transport.queuePull(PullResponse(changes: changes, cursor: "2", hasMore: false))
+            _ = await harness.engine.syncNow()
+            var stream = harness.store.templates.observeTemplate(id: template.id).makeAsyncIterator()
+            let pulled = try #require(await stream.next() ?? nil)
+            #expect(pulled.exercises.first?.note == (keepsNote ? "Made-up cue" : nil))
+        }
+    }
 }

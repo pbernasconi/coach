@@ -35,7 +35,8 @@ extension TemplateExerciseRecord: SyncedRecord {
             repRange: repMin...repMax,
             weight: try row.weight("weightValue", unitColumn: "weightUnit"),
             restSeconds: try row.optional("restSeconds"),
-            kind: try row.raw("kind")
+            kind: try row.raw("kind"),
+            note: try row.optional("note")
         )
         createdAt = try row.required("createdAt")
         updatedAt = try row.required("updatedAt")
@@ -55,6 +56,7 @@ extension TemplateExerciseRecord: SyncedRecord {
         container["weightUnit"] = slot.weight?.unit.rawValue
         container["restSeconds"] = slot.restSeconds
         container["kind"] = slot.kind.rawValue
+        container["note"] = slot.note
         container["createdAt"] = createdAt
         container["updatedAt"] = updatedAt
         container["deletedAt"] = deletedAt
