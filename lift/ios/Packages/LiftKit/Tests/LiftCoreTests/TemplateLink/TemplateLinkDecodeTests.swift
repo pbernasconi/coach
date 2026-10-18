@@ -104,3 +104,22 @@ import Testing
         #expect(try TemplateLink.decode(encoded).first?.exercises.first?.sets == 2)
     }
 }
+
+/// The made-up example in TEMPLATE-LINKS.md, as `lift/scripts/make-template-link.py` prints it, reads here too.
+@Suite struct TemplateLinkScriptTests {
+    static let documented =
+        "eyJ2IjoxLCJ1bml0IjoibGIiLCJ0ZW1wbGF0ZXMiOlt7Im5hbWUiOiJTYW1wbGUgbG93ZXIiLCJleGVyY2lzZXMiOlt7Im5hbWUiOiJCYWNrIHNx"
+        + "dWF0Iiwic2V0cyI6MywicmVwcyI6OCwicmVwTWF4IjpudWxsLCJ3ZWlnaHQiOjEzNSwicmVzdCI6MTgwLCJub3RlIjoiTWFkZS11cCBjdWUifSx7"
+        + "Im5hbWUiOiJEdW1iYmVsbCBiZW5jaCBwdWxsIiwic2V0cyI6MywicmVwcyI6MTAsInJlcE1heCI6MTIsIndlaWdodCI6MzAsImxvYWQiOiJoYW5k"
+        + "In1dfV19"
+
+    @Test func theDocumentedLinkReads() throws {
+        let template = try #require(try TemplateLink.decode(Self.documented).first)
+        #expect(template.name == "Sample lower")
+        #expect(template.unit == .lb)
+        #expect(template.exercises.map(\.name) == ["Back squat", "Dumbbell bench pull"])
+        #expect(template.exercises[1].repRange == 10...12)
+        #expect(template.exercises[1].load == .hand)
+        #expect(template.exercises[0].note == "Made-up cue")
+    }
+}
