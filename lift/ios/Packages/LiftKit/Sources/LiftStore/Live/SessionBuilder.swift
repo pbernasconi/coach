@@ -69,7 +69,8 @@ struct SessionBuilder {
                 displayName: exercise?.name ?? slot.displayName,
                 loadMode: loadMode,
                 equipment: equipment,
-                restSeconds: slot.restSeconds
+                restSeconds: slot.restSeconds,
+                note: slot.note
             ),
             position: position,
             createdAt: stamp,

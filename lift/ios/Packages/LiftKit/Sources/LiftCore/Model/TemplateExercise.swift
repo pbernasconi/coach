@@ -19,6 +19,8 @@ public struct TemplateExercise: Codable, Hashable, Sendable, Identifiable {
     public var weight: Weight?
     public var restSeconds: Int?
     public var kind: SetKind
+    /// A cue for the exercise ("Deep squat"); a session planned from the template starts with it as its note.
+    public var note: String?
 
     public init(
         id: UUID,
@@ -28,7 +30,8 @@ public struct TemplateExercise: Codable, Hashable, Sendable, Identifiable {
         repRange: ClosedRange<Int> = TemplateExercise.defaultRepRange,
         weight: Weight? = nil,
         restSeconds: Int? = TemplateExercise.defaultRestSeconds,
-        kind: SetKind = .working
+        kind: SetKind = .working,
+        note: String? = nil
     ) {
         self.id = id
         self.exerciseID = exerciseID
@@ -38,6 +41,7 @@ public struct TemplateExercise: Codable, Hashable, Sendable, Identifiable {
         self.weight = weight
         self.restSeconds = restSeconds
         self.kind = kind
+        self.note = note
     }
 
     /// The set target before any history: the rep target and the planned load.

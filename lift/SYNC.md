@@ -44,6 +44,9 @@ server as `LIFT_SYNC_TOKEN` and stored on the iPhone in the Keychain. Wrong or m
   finished, or `null`. It syncs so a second device sees the workout is already in Health and never saves it again;
   it is cleared when Lift deletes that workout (the session was discarded). Payloads from builds before v5 omit the
   key, which reads as `null`. The server stores it like any other column and validates nothing about it.
+- `templateExercise.note` (schema v6): a cue for the slot ("Deep squat", text or `null`) that a session planned from
+  the template starts with as its exercise note; template links write it (`TEMPLATE-LINKS.md`). Payloads from builds
+  before v6 omit the key, which reads as `null`. The server stores it like any other column.
 - At most 500 changes per request.
 - `payload` is the outbox entry's JSON object as written by LiftStore (column names as keys, UUIDs as
   strings, dates as ISO 8601 with milliseconds and `Z`).
