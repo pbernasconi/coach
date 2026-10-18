@@ -25,8 +25,9 @@ import Testing
             ("row single arm db", 11),
         ] as [(String, UInt8)]
     )
-    func libraryNamesMatchTheLibrary(name: String, seed: UInt8) {
-        #expect(resolve(name) == .library(ExerciseLibrary.seed.first { $0.id == ExerciseLibrary.seedID(seed) }!))
+    func libraryNamesMatchTheLibrary(name: String, seed: UInt8) throws {
+        let exercise = try #require(ExerciseLibrary.seed.first { $0.id == ExerciseLibrary.seedID(seed) })
+        #expect(resolve(name) == .library(exercise))
     }
 
     @Test func aCatalogNameComesFromTheCatalog() throws {
