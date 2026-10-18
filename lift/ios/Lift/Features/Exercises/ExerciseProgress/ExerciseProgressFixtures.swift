@@ -6,7 +6,7 @@
     extension ExerciseProgressState {
         private static let today = LocalDay(year: 2026, month: 3, day: 5)
         private static let builder = ExerciseProgressBuilder(
-            days: DayCalendar(calendar: Calendar(identifier: .gregorian)),
+            days: DayCalendar(calendar: Calendar(identifier: .gregorian).startingWeeksOnMonday()),
             unit: .kg
         )
 

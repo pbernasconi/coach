@@ -1,8 +1,8 @@
 import Foundation
 import LiftCore
 
-/// Calendar maths and day labels for the session lists. The calendar is injected, so weeks start on the person's
-/// first weekday and tests can pin the time zone and locale.
+/// Calendar maths and day labels for the session lists. The calendar is injected: the app's starts weeks on Monday
+/// (`Calendar.startingWeeksOnMonday()`, set once in `CompositionRoot`), and tests pin the time zone and locale.
 ///
 /// The one date rule for every screen: `longTitle` ("Thursday, October 15") names a day where it is a title (a
 /// screen's kicker, a section header); `shortTitle` ("Thu, Oct 15") names it inside a row, toast or caption, where
@@ -23,10 +23,7 @@ nonisolated struct DayCalendar: Sendable {
 
     /// The first day of the week that contains `day`.
     func weekStart(of day: LocalDay) -> LocalDay {
-        guard let date = date(of: day), let start = calendar.dateInterval(of: .weekOfYear, for: date)?.start else {
-            return day
-        }
-        return LocalDay(start, calendar: calendar)
+        calendar.weekStart(of: day)
     }
 
     /// "Thursday, 15 October" in the calendar's locale.

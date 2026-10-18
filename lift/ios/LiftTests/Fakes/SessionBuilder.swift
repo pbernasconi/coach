@@ -9,9 +9,8 @@ nonisolated enum SessionBuilder {
     static let calendar: Calendar = {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? .gmt
-        calendar.firstWeekday = 2
         calendar.locale = Locale(identifier: "en_US_POSIX")
-        return calendar
+        return calendar.startingWeeksOnMonday()
     }()
 
     /// `ManualNow.start`: Monday 2026-03-02, 09:00 UTC (`Fixtures.monday`).

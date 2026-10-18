@@ -43,7 +43,8 @@
             let start = LocalDay(year: 2026, month: 3, day: 2).adding(days: -7 * (7 - index))
             return VolumeTrendBar(
                 id: start,
-                date: start.startDate(in: Calendar(identifier: .gregorian)) ?? Date(timeIntervalSince1970: 0),
+                date: start.startDate(in: Calendar(identifier: .gregorian).startingWeeksOnMonday())
+                    ?? Date(timeIntervalSince1970: 0),
                 sets: sets,
                 isSelected: index == 7
             )

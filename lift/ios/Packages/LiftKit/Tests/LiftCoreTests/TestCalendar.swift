@@ -2,13 +2,13 @@ import Foundation
 
 @testable import LiftCore
 
-/// The fixed calendar every test uses: Gregorian, UTC, en_US_POSIX.
+/// The fixed calendar every test uses: Gregorian, UTC, en_US_POSIX, weeks starting on Monday as in the app.
 enum TestCalendar {
     static let gregorian: Calendar = {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "UTC") ?? TimeZone(secondsFromGMT: 0) ?? calendar.timeZone
         calendar.locale = Locale(identifier: "en_US_POSIX")
-        return calendar
+        return calendar.startingWeeksOnMonday()
     }()
 
     /// Noon UTC on the given day, so time-zone slips cannot change the day.

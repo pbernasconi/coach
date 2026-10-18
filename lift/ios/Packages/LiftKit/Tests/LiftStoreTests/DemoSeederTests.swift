@@ -8,7 +8,7 @@ import Testing
     private static let calendar: Calendar = {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "UTC") ?? calendar.timeZone
-        return calendar
+        return calendar.startingWeeksOnMonday()
     }()
 
     private func seeded() async throws -> (TestStore, [SessionDetail]) {

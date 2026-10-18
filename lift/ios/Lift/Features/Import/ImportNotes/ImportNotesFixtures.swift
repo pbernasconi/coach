@@ -8,7 +8,7 @@
             var calendar = Calendar(identifier: .gregorian)
             calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? .gmt
             calendar.locale = Locale(identifier: "en_GB")
-            return calendar
+            return calendar.startingWeeksOnMonday()
         }()
 
         /// 2026-10-15T12:00:00Z, a made-up "now" after the sample's dates.
