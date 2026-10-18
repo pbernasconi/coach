@@ -49,7 +49,9 @@ def link(payload):
     """The link for `payload`: compact JSON, base64url without padding."""
     data = json.dumps(payload, separators=(",", ":"), ensure_ascii=False).encode()
     if len(data) > MAX_JSON_BYTES:
-        raise ValueError(f"the JSON is {len(data)} bytes; the app reads at most {MAX_JSON_BYTES}")
+        raise ValueError(
+            f"the JSON is {len(data)} bytes; the app reads at most {MAX_JSON_BYTES}"
+        )
     encoded = base64.urlsafe_b64encode(data).decode().rstrip("=")
     return f"lift://templates?d={encoded}"
 
@@ -58,9 +60,11 @@ def main(argv):
     if len(argv) != 2:
         print(__doc__.strip(), file=sys.stderr)
         return 2
-    source = sys.stdin if argv[1] == "-" else open(argv[1], encoding="utf-8")
-    with source:
-        payload = json.load(source)
+    if argv[1] == "-":
+        payload = json.load(sys.stdin)
+    else:
+        with open(argv[1], encoding="utf-8") as source:
+            payload = json.load(source)
     try:
         check(payload)
         print(link(payload))
