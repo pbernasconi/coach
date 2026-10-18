@@ -72,7 +72,7 @@ targets:
           Lift does not read your Health data. It only saves the workouts you finish.
         LiftSyncBaseURL: $(LIFT_SYNC_BASE_URL)
         LiftAppGroup: $(LIFT_APP_GROUP)
-        # lift://import opens Import from Notes (AppLink.swift).
+        # lift://import opens Import from Notes; lift://templates opens the template link review (AppLink.swift).
         CFBundleURLTypes:
           - CFBundleURLName: $(LIFT_BUNDLE_ID)
             CFBundleURLSchemes: [lift]

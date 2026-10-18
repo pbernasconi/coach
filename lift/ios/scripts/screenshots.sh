@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Launches the demo build on a simulator and captures each screen in light, dark and AX3 (accessibility
 # extra large). Screens are "name:arg,arg" pairs (comma-separated launch arguments); the app reads -demo,
-# -tab and -open workout|exercise|catalog|import.
+# -tab and -open workout|exercise|catalog|import|template-link and the rest LaunchOptions lists.
 #   scripts/screenshots.sh <path/to/Lift.app> <out dir>
 # Instead of fixed sleeps, each capture waits until the screen settles: it polls `simctl io screenshot` until
 # SETTLE_FRAMES frames in a row are identical (at most SETTLE_MAX polls, so an animated GIF cannot stall it).
@@ -10,7 +10,7 @@
 set -euo pipefail
 APP="$1"
 OUT="$2"
-SCREENS="${SCREENS:-week:-tab,week workout:-open,workout history:-tab,history progress:-tab,history,-open,progress import:-tab,history,-open,import exercises:-tab,exercises exercise:-tab,exercises,-open,exercise catalog:-tab,exercises,-open,catalog templates:-tab,exercises,-open,templates template:-tab,exercises,-open,template summary:-tab,week,-open,summary settings:-tab,settings plates:-tab,settings,-open,plates fresh-week:-fresh,-tab,week fresh-history:-fresh,-tab,history fresh-exercises:-fresh,-tab,exercises}"
+SCREENS="${SCREENS:-week:-tab,week workout:-open,workout history:-tab,history progress:-tab,history,-open,progress import:-tab,history,-open,import exercises:-tab,exercises exercise:-tab,exercises,-open,exercise catalog:-tab,exercises,-open,catalog templates:-tab,exercises,-open,templates template:-tab,exercises,-open,template template-link:-tab,exercises,-open,template-link summary:-tab,week,-open,summary settings:-tab,settings plates:-tab,settings,-open,plates fresh-week:-fresh,-tab,week fresh-history:-fresh,-tab,history fresh-exercises:-fresh,-tab,exercises}"
 SETTLE_FRAMES="${SETTLE_FRAMES:-2}"
 SETTLE_MAX="${SETTLE_MAX:-6}"
 MIN_BYTES="${MIN_BYTES:-120000}"

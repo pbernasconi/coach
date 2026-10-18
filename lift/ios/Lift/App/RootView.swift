@@ -55,6 +55,7 @@ private struct AppShell: View {
                 .koboModalPage(item: importRequest, style: .sheet) { request in
                     ImportFlowPage(request: request, dependencies: dependencies)
                 }
+                .templateLinkFlow(dependencies)
                 .task { await syncCoordinator.watchOutbox() }
             } else {
                 LoadingState()
@@ -68,6 +69,8 @@ private struct AppShell: View {
             openedRoute = await dependencies.openingRoute(for: options)
             if options.opensImportSample {
                 dependencies.importFlow.present(text: ImportSample.note, readsOnOpen: true)
+            } else if options.opensTemplateLinkSample {
+                dependencies.templateLinks.present(payload: TemplateLinkSample.encoded)
             } else {
                 dependencies.incomingNotes.checkInbox()
             }

@@ -9,6 +9,7 @@ import Testing
 @Suite struct IncomingNoteRouterTests {
     static let note = "Workout A - Oct 6\nGoblet squat\n- [x] 10 x 20kg"
     let flow = RecordingImportTextPresenter()
+    let links = RecordingTemplateLinkFlow()
 
     func url(_ text: String) throws -> URL {
         try #require(URL(string: text))
@@ -16,7 +17,7 @@ import Testing
 
     @Test func anImportLinkOpensTheSharedNoteOnTheReviewStep() throws {
         let inbox = InMemoryNoteInbox(Self.note)
-        let router = IncomingNoteRouter(inbox: inbox, importFlow: flow)
+        let router = IncomingNoteRouter(inbox: inbox, importFlow: flow, templateLinks: links)
 
         #expect(router.open(try url("lift://import")))
 
@@ -25,7 +26,7 @@ import Testing
     }
 
     @Test func anImportLinkWithTextOpensThatText() throws {
-        let router = IncomingNoteRouter(inbox: InMemoryNoteInbox(), importFlow: flow)
+        let router = IncomingNoteRouter(inbox: InMemoryNoteInbox(), importFlow: flow, templateLinks: links)
         let link = try #require(AppLink.importNote(text: Self.note).url)
 
         router.open(link)
@@ -34,7 +35,7 @@ import Testing
     }
 
     @Test func anImportLinkWithNothingSharedOpensAnEmptyImport() throws {
-        let router = IncomingNoteRouter(inbox: InMemoryNoteInbox(), importFlow: flow)
+        let router = IncomingNoteRouter(inbox: InMemoryNoteInbox(), importFlow: flow, templateLinks: links)
 
         router.open(try url("lift://import"))
 
@@ -42,7 +43,7 @@ import Testing
     }
 
     @Test func anImportLinkWithNothingSharedLeavesAnOpenImportAlone() throws {
-        let router = IncomingNoteRouter(inbox: InMemoryNoteInbox(), importFlow: flow)
+        let router = IncomingNoteRouter(inbox: InMemoryNoteInbox(), importFlow: flow, templateLinks: links)
         flow.isShowingImport = true
 
         router.open(try url("lift://import"))
@@ -51,16 +52,29 @@ import Testing
     }
 
     @Test func otherLinksAreNotHandled() throws {
-        let router = IncomingNoteRouter(inbox: InMemoryNoteInbox(Self.note), importFlow: flow)
+        let router = IncomingNoteRouter(inbox: InMemoryNoteInbox(Self.note), importFlow: flow, templateLinks: links)
 
         #expect(!router.open(try url("https://example.com/import")))
         #expect(!router.open(try url("lift://settings")))
         #expect(flow.openings.isEmpty)
+        #expect(links.payloads.isEmpty)
+    }
+
+    @Test func aTemplateLinkOpensTheReviewWithItsPayloadAndLeavesTheInboxAlone() throws {
+        let inbox = InMemoryNoteInbox(Self.note)
+        let router = IncomingNoteRouter(inbox: inbox, importFlow: flow, templateLinks: links)
+
+        #expect(router.open(try url("lift://templates?d=eyJ2IjoxfQ")))
+        #expect(router.open(try url("lift://templates")))
+
+        #expect(links.payloads == ["eyJ2IjoxfQ", ""])
+        #expect(flow.openings.isEmpty)
+        #expect(inbox.take() == Self.note)
     }
 
     @Test func comingToTheFrontOpensANoteSharedMeanwhile() {
         let inbox = InMemoryNoteInbox(Self.note)
-        let router = IncomingNoteRouter(inbox: inbox, importFlow: flow)
+        let router = IncomingNoteRouter(inbox: inbox, importFlow: flow, templateLinks: links)
 
         router.checkInbox()
         router.checkInbox()
@@ -69,8 +83,8 @@ import Testing
     }
 
     @Test func comingToTheFrontWithAnEmptyInboxDoesNothing() {
-        IncomingNoteRouter(inbox: InMemoryNoteInbox(), importFlow: flow).checkInbox()
-        IncomingNoteRouter(inbox: nil, importFlow: flow).checkInbox()
+        IncomingNoteRouter(inbox: InMemoryNoteInbox(), importFlow: flow, templateLinks: links).checkInbox()
+        IncomingNoteRouter(inbox: nil, importFlow: flow, templateLinks: links).checkInbox()
 
         #expect(flow.openings.isEmpty)
     }
@@ -88,6 +102,10 @@ import Testing
                 AppLink.importNote(text: "Day 1\n- [x] 5 x 60kg")
             ),
             ("lift://import?text=", AppLink.importNote(text: nil)),
+            ("lift://templates?d=eyJ2IjoxfQ", AppLink.templates(payload: "eyJ2IjoxfQ")),
+            ("LIFT://Templates?d=a-b_c", AppLink.templates(payload: "a-b_c")),
+            ("lift:templates?d=abc", AppLink.templates(payload: "abc")),
+            ("lift://templates", AppLink.templates(payload: "")),
         ] as [(String, AppLink?)]
     )
     func parses(text: String, link: AppLink?) throws {
@@ -100,10 +118,15 @@ import Testing
     }
 
     @Test func buildsLinksThatParseBack() throws {
-        for link in [AppLink.importNote(text: nil), .importNote(text: "A & B = 5 x 60kg?\nnext")] {
+        let links = [
+            AppLink.importNote(text: nil), .importNote(text: "A & B = 5 x 60kg?\nnext"),
+            .templates(payload: TemplateLinkSample.encoded),
+        ]
+        for link in links {
             #expect(AppLink(url: try #require(link.url)) == link)
         }
         #expect(AppLink.importNote(text: nil).url?.absoluteString == "lift://import")
+        #expect(AppLink.templates(payload: "eyJ2IjoxfQ").url?.absoluteString == "lift://templates?d=eyJ2IjoxfQ")
     }
 
     @Test func theInboxHandsANoteOverOnce() {
