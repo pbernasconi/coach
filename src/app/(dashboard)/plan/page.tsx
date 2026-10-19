@@ -1,4 +1,4 @@
-import { auth } from '@clerk/nextjs/server';
+import { ownerForSignedInUser } from '@/lib/owner';
 import { cookies } from 'next/headers';
 import { loadWeek } from '@/lib/plan/queries';
 import { mondayOf, todayIn } from '@/lib/plan/week.mjs';
@@ -19,8 +19,8 @@ function validTimeZone(tz: string | undefined) {
 }
 
 export default async function PlanPage({ searchParams }: { searchParams: Promise<{ week?: string }> }) {
-  const { userId } = await auth();
-  if (!userId) return null;
+  const userId = await ownerForSignedInUser();
+  if (!userId) return <p className="text-sm text-muted-foreground">This account has no Coach data.</p>;
   const timeZone = validTimeZone((await cookies()).get('tz')?.value);
   const today = todayIn(timeZone);
   const { week: weekParam } = await searchParams;

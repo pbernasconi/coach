@@ -397,12 +397,20 @@ export async function syncStrava(sql, opts = {}) {
   log(`\nDone. Activities upserted: ${upsertCount}, detailed: ${detailedCount}, streams: ${streamCount}.`);
   log(`Strava API calls used in current window: ${apiCallsInWindow}.`);
 
+  await rebuildTrainingLoad(sql, conn.user_id, log);
+
+  await sql`UPDATE strava_connections SET last_synced_at = NOW() WHERE id = ${conn.id}`;
+  return { upserted: upsertCount, detailed: detailedCount, streams: streamCount, apiCalls: apiCallsInWindow };
+}
+
+/** Rebuilds daily_training_load (CTL/ATL/TSB) for the last 180 days from strava_activities.tss. */
+export async function rebuildTrainingLoad(sql, userId, log = console.log) {
   // ===== Rebuild daily_training_load (CTL/ATL/TSB) =====
   // Uses persisted tss column — single source of truth.
   const allActs = await sql`
     SELECT start_date_local, tss
     FROM strava_activities
-    WHERE user_id = ${conn.user_id}
+    WHERE user_id = ${userId}
       AND COALESCE(commute, false) = false
       AND start_date_local >= NOW() - INTERVAL '180 days'
     ORDER BY start_date_local ASC`;
@@ -422,7 +430,7 @@ export async function syncStrava(sql, opts = {}) {
     // Get prior CTL/ATL starting point — use the row before our first date, if it exists.
     const [priorRow] = await sql`
       SELECT ctl, atl FROM daily_training_load
-      WHERE user_id = ${conn.user_id} AND date < ${sortedDates[0]}
+      WHERE user_id = ${userId} AND date < ${sortedDates[0]}
       ORDER BY date DESC LIMIT 1`;
     let ctl = priorRow?.ctl ?? 0;
     let atl = priorRow?.atl ?? 0;
@@ -446,7 +454,7 @@ export async function syncStrava(sql, opts = {}) {
     for (const r of rows) {
       await sql`
         INSERT INTO daily_training_load (id, user_id, date, tss, ctl, atl, tsb, computed_at)
-        VALUES (${createId()}, ${conn.user_id}, ${r.date}, ${r.tss}, ${r.ctl}, ${r.atl}, ${r.tsb}, NOW())
+        VALUES (${createId()}, ${userId}, ${r.date}, ${r.tss}, ${r.ctl}, ${r.atl}, ${r.tsb}, NOW())
         ON CONFLICT (user_id, date) DO UPDATE SET
           tss = EXCLUDED.tss, ctl = EXCLUDED.ctl, atl = EXCLUDED.atl, tsb = EXCLUDED.tsb,
           computed_at = NOW()`;
@@ -454,8 +462,6 @@ export async function syncStrava(sql, opts = {}) {
     log(`Rebuilt daily_training_load: ${rows.length} day rows. Latest: ${rows.at(-1)?.date} CTL=${rows.at(-1)?.ctl} ATL=${rows.at(-1)?.atl} TSB=${rows.at(-1)?.tsb}`);
   }
 
-  await sql`UPDATE strava_connections SET last_synced_at = NOW() WHERE id = ${conn.id}`;
-  return { upserted: upsertCount, detailed: detailedCount, streams: streamCount, apiCalls: apiCallsInWindow };
 }
 
 /** Removes one activity that was deleted on Strava. Laps, splits and streams cascade. */
