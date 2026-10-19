@@ -171,10 +171,13 @@ export const trainingPlans = pgTable('training_plans', {
   // Status
   status: text('status').notNull().default('active'), // active, completed, archived
 
+  // "How do you feel" check-ins from the week page: [{ date: 'YYYY-MM-DD', feel, at }]
+  feelLog: jsonb('feel_log').$type<{ date: string; feel: string; at: string }[]>().notNull().default([]),
+
   // Metadata
   createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow(),
-});
+}, (table) => [uniqueIndex('training_plans_user_week_idx').on(table.userId, table.weekStartDate)]);
 
 /**
  * Training Plan Activities
@@ -209,10 +212,23 @@ export const trainingPlanActivities = pgTable('training_plan_activities', {
   completedAt: timestamp('completed_at', { mode: 'date' }),
   stravaActivityId: text('strava_activity_id'), // Link to actual Strava activity
 
+  // Week page (plans/*.json import, drag to move, adapt to how I feel)
+  startTime: text('start_time'), // 'HH:MM' local time, or null for any time
+  endTime: text('end_time'),
+  timeZone: text('time_zone'),
+  workoutType: text('workout_type'), // e.g. strength-heavy, vo2-bike, long-ride
+  tss: real('tss'),
+  why: text('why'),
+  status: text('status').notNull().default('planned'), // planned | skipped
+  adaptedFrom: jsonb('adapted_from').$type<Record<string, unknown> | null>(), // fields before an adapt, for undo
+  editedAt: timestamp('edited_at', { mode: 'date' }), // set when moved or changed on the web; import then leaves it
+  sourceKey: text('source_key'), // '<weekStart>#<index>' from plans/<weekStart>.json
+  sortOrder: integer('sort_order').notNull().default(0),
+
   // Metadata
   createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow(),
-});
+}, (table) => [uniqueIndex('training_plan_activities_source_idx').on(table.planId, table.sourceKey)]);
 
 /**
  * User Goals
