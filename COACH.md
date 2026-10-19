@@ -12,6 +12,19 @@ This repo doubles as my personal coach. Open it in Claude Code and use the slash
 
 Both commands are non-interactive defaults plus 2–3 questions per run.
 
+## Running in the cloud
+
+`/plan` and `/check-in` also work in a Claude Code cloud session (claude.ai/code or a Claude project). One-time setup
+in the cloud environment:
+
+- **Environment variables** (copy from `.env.local`): `DATABASE_URL`, `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET`.
+  Add `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` too if you want `calendar-sync` to run there.
+- **Allowed domains**: `*.neon.tech`, `www.strava.com`, `*.open-meteo.com` (plus `oauth2.googleapis.com` and
+  `www.googleapis.com` for `calendar-sync`).
+
+A SessionStart hook installs dependencies. Apple Notes is skipped there, and calendar reads and pushes go through the
+Google Calendar connector. Details: "Running in a Claude Code cloud session" in `.claude/commands/plan.md`.
+
 ## What `/plan` actually does
 
 1. Refreshes the athlete profile (Strava 90d, fitness state CTL/ATL/TSB, calendar, weather, Apple Notes).

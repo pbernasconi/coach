@@ -9,7 +9,7 @@ description: Mid-week training check-in. Compares planned vs actual, asks how th
 - 2 strength/wk, ≥1 above-threshold quality/wk
 - Apple Notes templates authoritative for lifts
 - Celsius / km / min/km
-- All scripts via `/opt/homebrew/bin/node --env-file=.env.local`
+- All scripts via `/opt/homebrew/bin/node --env-file=.env.local` on the Mac. In a Claude Code cloud session, follow "Running in a Claude Code cloud session" in `.claude/commands/plan.md` (plain `node`, connectors for calendar).
 
 ## Workflow
 

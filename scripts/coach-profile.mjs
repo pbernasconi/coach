@@ -26,6 +26,10 @@ import { resolveTravel, dateKeysBetween, HOME_TZ } from './travel.mjs';
 import { rotationState } from './rotation.mjs';
 import { untrusted } from './untrusted.mjs';
 
+if (!process.env.DATABASE_URL) {
+  console.error('DATABASE_URL is not set. On the Mac it comes from .env.local; in a Claude Code cloud session it comes from the cloud environment\'s variables.');
+  process.exit(1);
+}
 const sql = neon(process.env.DATABASE_URL);
 const args = process.argv.slice(2);
 const weekOfIdx = args.indexOf('--week-of');
@@ -60,13 +64,13 @@ const HOME = { lat: 37.7749, lon: -122.4194, label: 'San Francisco, CA', tz: HOM
 if (!SKIP_SYNC) {
   try {
     console.error('Syncing calendar…');
-    execFileSync('/opt/homebrew/bin/node', [resolve(import.meta.dirname, 'calendar-sync.mjs')], { stdio: 'inherit', env: process.env });
+    execFileSync(process.execPath, [resolve(import.meta.dirname, 'calendar-sync.mjs')], { stdio: 'inherit', env: process.env });
   } catch (e) {
     console.error('calendar-sync failed (continuing):', e.message);
   }
   try {
     console.error('Incremental Strava sync…');
-    execFileSync('/opt/homebrew/bin/node', [resolve(import.meta.dirname, 'strava-backfill.mjs')], { stdio: 'inherit', env: process.env });
+    execFileSync(process.execPath, [resolve(import.meta.dirname, 'strava-backfill.mjs')], { stdio: 'inherit', env: process.env });
   } catch (e) {
     console.error('strava-backfill failed (continuing):', e.message);
   }
@@ -289,11 +293,16 @@ try {
 
 // ===== 8. Apple Notes workouts (recent) =====
 let appleNotes = [];
-try {
-  const out = execFileSync('/opt/homebrew/bin/node', [resolve(import.meta.dirname, 'apple-notes-workouts.mjs'), '--since', new Date(Date.now() - 90 * 86400_000).toISOString().slice(0, 10)], { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
-  const jsonEnd = out.lastIndexOf(']');
-  if (jsonEnd > 0) appleNotes = JSON.parse(out.slice(0, jsonEnd + 1));
-} catch (e) { console.error('apple notes fail:', e.message); }
+// Apple Notes is read with osascript, so it only works on the Mac.
+if (process.platform !== 'darwin') {
+  console.error('apple notes skipped: not on macOS');
+} else {
+  try {
+    const out = execFileSync(process.execPath, [resolve(import.meta.dirname, 'apple-notes-workouts.mjs'), '--since', new Date(Date.now() - 90 * 86400_000).toISOString().slice(0, 10)], { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
+    const jsonEnd = out.lastIndexOf(']');
+    if (jsonEnd > 0) appleNotes = JSON.parse(out.slice(0, jsonEnd + 1));
+  } catch (e) { console.error('apple notes fail:', e.message); }
+}
 
 // ===== 8b. Quality rotation state (from prior plans, not vibes) =====
 const rotation = rotationState(resolve('plans'), weekStart.toISOString().slice(0, 10));
