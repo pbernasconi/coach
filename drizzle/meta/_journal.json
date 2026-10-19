@@ -71,6 +71,13 @@
       "when": 1792049628400,
       "tag": "0009_lift_sync",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792452674316,
+      "tag": "0010_plan_board",
+      "breakpoints": true
     }
   ]
 }

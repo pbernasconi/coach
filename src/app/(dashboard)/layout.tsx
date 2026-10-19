@@ -14,7 +14,7 @@ import {
 import { useState } from 'react';
 
 const navLinks = [
-  { href: '/', label: 'Goals' },
+  { href: '/', label: 'Performance' },
   { href: '/workouts', label: 'Workouts' },
   { href: '/lift', label: 'Lift' },
   { href: '/calendar', label: 'Calendar' },
