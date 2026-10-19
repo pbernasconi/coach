@@ -148,6 +148,12 @@ must have actually happened; this step is not a route around it.
 ```
 This is **idempotent** — re-running deletes existing tagged events for that week and creates fresh. Safe to re-invoke.
 
+Then copy the plan to the database, so the web week page (`/plan`) and the Dia start page show it:
+```bash
+/opt/homebrew/bin/node --env-file=.env.local scripts/plan-import.mjs --plan plans/YYYY-MM-DD.json
+```
+Also idempotent. Workouts he moved, skipped or adapted on the web keep their web version.
+
 ### Step 8 — Report to user (short)
 - 1 line confirming the calendar events landed (with weekly TSS target + CTL trajectory)
 - The plan table as inline preview
