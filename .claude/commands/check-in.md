@@ -62,6 +62,12 @@ Edit `plans/YYYY-MM-DD.md` in place:
 - {what you changed and why}
 ```
 
+Before you change the JSON, read what he changed on the web week page (moves, skips, "how I feel" adapts):
+```bash
+/opt/homebrew/bin/node --env-file=.env.local scripts/plan-import.mjs --show plans/YYYY-MM-DD.json
+```
+Treat those web changes as his decisions. Put them in the JSON too, so the JSON and the web agree.
+
 If any **future** events were modified (time, sport, intensity, removed), update `plans/YYYY-MM-DD.json` events array to match — keep IDs stable where possible (don't replace events that didn't change).
 
 ### Step 7 — Sync calendar (only if .json events changed)
@@ -70,6 +76,10 @@ If you modified the events array in the .json:
 /opt/homebrew/bin/node --env-file=.env.local scripts/add-workouts-to-calendar.mjs --plan plans/YYYY-MM-DD.json
 ```
 This will delete the old tagged events for the week and create the new ones (idempotent).
+Then copy the plan to the database (web changes are kept):
+```bash
+/opt/homebrew/bin/node --env-file=.env.local scripts/plan-import.mjs --plan plans/YYYY-MM-DD.json
+```
 
 If only **past** days were annotated (no future event changes), skip the calendar sync — nothing changed in the future.
 
