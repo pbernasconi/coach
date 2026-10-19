@@ -1,13 +1,13 @@
 'use server';
 
-import { auth } from '@clerk/nextjs/server';
+import { ownerForSignedInUser } from '@/lib/owner';
 import { revalidatePath } from 'next/cache';
 import { FEELS, moveWorkout, setFeel, setSkipped, undoWeek, type Feel } from '@/lib/plan/queries';
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 async function user() {
-  const { userId } = await auth();
+  const userId = await ownerForSignedInUser();
   if (!userId) throw new Error('Not signed in');
   return userId;
 }

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { auth } from '@clerk/nextjs/server';
+import { ownerForSignedInUser } from '@/lib/owner';
 import { cookies } from 'next/headers';
 import { loadPerformance } from '@/lib/performance/queries';
 import { todayIn } from '@/lib/plan/week.mjs';
@@ -18,8 +18,8 @@ function zone(tz: string | undefined) {
 }
 
 export default async function PerformancePage() {
-  const { userId } = await auth();
-  if (!userId) return null;
+  const userId = await ownerForSignedInUser();
+  if (!userId) return <p className="text-sm text-muted-foreground">This account has no Coach data.</p>;
   const today = todayIn(zone((await cookies()).get('tz')?.value));
   const perf = await loadPerformance(userId, today);
   return (
