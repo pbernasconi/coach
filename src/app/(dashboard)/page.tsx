@@ -1,20 +1,37 @@
-'use client';
+import Link from 'next/link';
+import { auth } from '@clerk/nextjs/server';
+import { cookies } from 'next/headers';
+import { loadPerformance } from '@/lib/performance/queries';
+import { todayIn } from '@/lib/plan/week.mjs';
+import PerformanceView from './PerformanceView';
 
-import { useUser } from '@clerk/nextjs';
+export const dynamic = 'force-dynamic';
 
-export default function Dashboard() {
-  const { isLoaded } = useUser();
+function zone(tz: string | undefined) {
+  try {
+    if (tz) {
+      new Intl.DateTimeFormat('en-US', { timeZone: tz });
+      return tz;
+    }
+  } catch {}
+  return 'America/Los_Angeles';
+}
 
-  if (!isLoaded) {
-    return null;
-  }
-
+export default async function PerformancePage() {
+  const { userId } = await auth();
+  if (!userId) return null;
+  const today = todayIn(zone((await cookies()).get('tz')?.value));
+  const perf = await loadPerformance(userId, today);
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold">Welcome to your dashboard</h1>
-      <p className="mt-2 text-gray-600">
-        {'You are signed in.'}
-      </p>
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold tracking-tight">Performance</h1>
+          <p className="text-muted-foreground">The last 12 weeks: Strava, Lift and your plan.</p>
+        </div>
+        <Link href="/plan" className="text-sm underline underline-offset-4">This week&apos;s plan →</Link>
+      </div>
+      <PerformanceView perf={perf} today={today} />
     </div>
   );
 }
