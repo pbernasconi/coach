@@ -16,18 +16,6 @@ All scripts use `node --env-file=.env.local` (env vars come from `.env.local`).
 | `strava-backfill.mjs` | Incremental sync by default (uses `last_synced_at`). Pulls list, optionally `--detailed` (description, laps, splits, suffer_score) and `--streams` (HR/watts/etc.). Computes & persists `tss`, `tss_method`, `zone_times` per activity, then rebuilds `daily_training_load` (CTL/ATL/TSB). `--days N` or `--force` for explicit windows. | `coach-profile.mjs` auto, manual |
 | `calendar-sync.mjs` | Pull events from all active calendar connections into `calendar_events`. Refreshes OAuth on each run. Marks deleted events as cancelled. `--days-back 7` / `--days-forward 30` configurable. | `coach-profile.mjs` auto, manual |
 
-## One-off (kept for reference, not in the workflow)
-
-| Script | Purpose |
-|---|---|
-| `coach-query.mjs` | Original DB exploration query |
-| `coach-cal.mjs` | Original calendar freshness check |
-| `coach-fitness.mjs` | Original standalone fitness compute (superseded by coach-profile.mjs) |
-| `coach-context.mjs` | Original context aggregator (superseded by coach-profile.mjs) |
-| `coach-write.mjs` | One-off — wrote first weekly plan to DB |
-| `coach-reshuffle.mjs` | One-off — first reshuffle + weather wire-up |
-| `coach-update-monday.mjs` | One-off — first Monday-update test |
-
 ## Tests
 
 ```bash
