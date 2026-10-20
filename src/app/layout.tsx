@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 
 // Without Clerk keys the pages cannot sign in. The token routes (Lift sync, /api/home, cron, Strava
 // webhook) do not use Clerk, so the app still builds and serves them.
-const clerkConfigured = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
+const clerkConfigured = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY);
 
 export default function RootLayout({
   children,
