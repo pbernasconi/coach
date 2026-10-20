@@ -1,5 +1,9 @@
-import { StatCard } from '@/components/stat-card';
-import type { LoadPoint, Performance, WeekStats } from '@/lib/performance/queries';
+import Sparkline from '@/components/charts/Sparkline';
+import TrainingLoadChart from '@/components/charts/TrainingLoadChart';
+import { zoneOf } from '@/lib/performance/form';
+import WeeklyHoursChart from '@/components/charts/WeeklyHoursChart';
+import type { Performance, WeekStats } from '@/lib/performance/queries';
+import { mondayOf } from '@/lib/plan/week.mjs';
 
 const fmtWeek = (w: string) =>
   new Date(`${w}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
@@ -10,136 +14,130 @@ function pace(min: number, km: number) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}/km`;
 }
 
-function sum(ws: WeekStats[], key: keyof WeekStats) {
-  return ws.reduce((n, w) => n + Number(w[key]), 0);
-}
+const sum = (ws: WeekStats[], key: keyof WeekStats) => ws.reduce((n, w) => n + Number(w[key]), 0);
+const hm = (h: number) => `${Math.floor(h)}:${String(Math.round((h % 1) * 60)).padStart(2, '0')}`;
 
-function change(now: number, before: number) {
-  if (!before) return undefined;
+function Delta({ now, before, label }: { now: number; before: number; label: string }) {
+  if (!before) return <span className="text-[var(--viz-muted)]">{label}</span>;
   const pct = Math.round(((now - before) / before) * 100);
-  return `${pct >= 0 ? '+' : ''}${pct}% vs the 4 weeks before`;
-}
-
-/** Stacked weekly bars: run hours, ride hours and other hours, with the strength count on top. */
-function WeeklyBars({ weeks }: { weeks: WeekStats[] }) {
-  const max = Math.max(4, ...weeks.map((w) => w.hours));
-  const H = 160;
+  const up = pct >= 0;
   return (
-    <div className="rounded-lg border p-4">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="font-semibold">Hours per week</h2>
-        <div className="flex gap-3 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1"><i className="inline-block h-2 w-2 rounded-sm bg-orange-500" /> run</span>
-          <span className="flex items-center gap-1"><i className="inline-block h-2 w-2 rounded-sm bg-sky-500" /> ride</span>
-          <span className="flex items-center gap-1"><i className="inline-block h-2 w-2 rounded-sm bg-zinc-400" /> other</span>
-          <span>🏋️ strength sessions</span>
-        </div>
-      </div>
-      <div className="flex items-end gap-1.5" style={{ height: H + 36 }}>
-        {weeks.map((w) => {
-          const run = w.runMin / 60;
-          const other = Math.max(0, w.hours - run - w.rideHours);
-          const px = (h: number) => `${(h / max) * H}px`;
-          return (
-            <div key={w.week} className="flex flex-1 flex-col items-center gap-1" title={`${fmtWeek(w.week)}: ${w.hours.toFixed(1)} h, run ${w.runKm.toFixed(0)} km, ride ${w.rideHours.toFixed(1)} h, strength ${w.strength}`}>
-              <span className="text-[10px] text-muted-foreground">{w.strength ? `🏋️${w.strength}` : ''}</span>
-              <div className="flex w-full max-w-10 flex-col-reverse overflow-hidden rounded-sm">
-                <div className="bg-orange-500" style={{ height: px(run) }} />
-                <div className="bg-sky-500" style={{ height: px(w.rideHours) }} />
-                <div className="bg-zinc-400" style={{ height: px(other) }} />
-              </div>
-              <span className="text-[10px] text-muted-foreground">{fmtWeek(w.week)}</span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
+    <span className="text-[var(--viz-muted)]">
+      <span className={up ? 'text-[var(--viz-up)]' : 'text-[var(--viz-down)]'}>{up ? '▲' : '▼'} {Math.abs(pct)}%</span> vs the 4 weeks before
+    </span>
   );
 }
 
-/** CTL (fitness), ATL (fatigue) and TSB (form) as lines. */
-function LoadChart({ load }: { load: LoadPoint[] }) {
-  if (load.length < 2) return null;
-  const W = 600;
-  const H = 160;
-  const vals = load.flatMap((p) => [p.ctl, p.atl, p.tsb]);
-  const lo = Math.min(0, ...vals);
-  const hi = Math.max(...vals);
-  const x = (i: number) => (i / (load.length - 1)) * W;
-  const y = (v: number) => H - ((v - lo) / (hi - lo || 1)) * H;
-  const line = (k: 'ctl' | 'atl' | 'tsb') => load.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p[k]).toFixed(1)}`).join('');
-  const last = load[load.length - 1];
+/** A stat tile: label, value, a signed change vs a named period, and a 12-week trend. */
+function Tile({ label, value, foot, trend }: { label: string; value: string; foot: React.ReactNode; trend: React.ReactNode }) {
   return (
-    <div className="rounded-lg border p-4">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="font-semibold">Fitness, fatigue and form</h2>
-        <div className="flex gap-3 text-xs text-muted-foreground">
-          <span className="text-sky-600">Fitness (CTL) {Math.round(last.ctl)}</span>
-          <span className="text-rose-500">Fatigue (ATL) {Math.round(last.atl)}</span>
-          <span className="text-emerald-600">Form (TSB) {last.tsb > 0 ? '+' : ''}{Math.round(last.tsb)}</span>
-        </div>
-      </div>
-      <svg viewBox={`0 0 ${W} ${H}`} className="h-40 w-full" preserveAspectRatio="none" role="img" aria-label="Training load">
-        <line x1="0" x2={W} y1={y(0)} y2={y(0)} className="stroke-border" strokeDasharray="4 4" />
-        <path d={line('ctl')} fill="none" className="stroke-sky-600" strokeWidth="2" vectorEffect="non-scaling-stroke" />
-        <path d={line('atl')} fill="none" className="stroke-rose-500" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
-        <path d={line('tsb')} fill="none" className="stroke-emerald-600" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
-      </svg>
-      <p className="mt-1 text-xs text-muted-foreground">{load[0].date} to {last.date}. Estimated from Strava (power, heart rate or duration).</p>
+    <div className="rounded-lg border bg-[var(--viz-surface)] p-4">
+      <div className="text-xs font-medium text-[var(--viz-muted)]">{label}</div>
+      <div className="mt-1 text-3xl font-semibold tracking-tight text-[var(--viz-ink)]">{value}</div>
+      <div className="mt-1 text-xs">{foot}</div>
+      {trend}
     </div>
   );
 }
 
 export default function PerformanceView({ perf, today, strengthTarget = 2 }: { perf: Performance; today: string; strengthTarget?: number }) {
   const weeks = perf.weeks;
-  const last4 = weeks.slice(-4);
-  const prev4 = weeks.slice(-8, -4);
+  const currentWeek = mondayOf(today);
+  // Compare complete weeks: the last 4 before this one, against the 4 before those.
+  const complete = weeks.filter((w) => w.week !== currentWeek);
+  const last4 = complete.slice(-4);
+  const prev4 = complete.slice(-8, -4);
+  const labels = weeks.map((w) => `Week of ${fmtWeek(w.week)}`);
   const daysSince = perf.latestActivity ? Math.round((Date.parse(today) - Date.parse(perf.latestActivity)) / 864e5) : null;
+  const lastLoad = perf.load.at(-1);
+  const weeklyLoad = perf.load.filter((_, i) => i % 7 === 6 || i === perf.load.length - 1);
+
   return (
     <div className="space-y-6">
       {daysSince !== null && daysSince > 7 && (
         <div className="rounded-lg border border-amber-500/50 bg-amber-500/10 p-3 text-sm">
-          The newest Strava activity here is from {perf.latestActivity}. Strava syncs again after the Strava app secret is set up.
+          The newest Strava activity is from {perf.latestActivity}.
         </div>
       )}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard title="Hours, last 4 weeks" value={sum(last4, 'hours').toFixed(1)} subtitle={change(sum(last4, 'hours'), sum(prev4, 'hours'))} />
-        <StatCard title="Run km, last 4 weeks" value={sum(last4, 'runKm').toFixed(0)} subtitle={`Pace ${pace(sum(last4, 'runMin'), sum(last4, 'runKm'))}`} />
-        <StatCard title="Ride hours, last 4 weeks" value={sum(last4, 'rideHours').toFixed(1)} subtitle={change(sum(last4, 'rideHours'), sum(prev4, 'rideHours'))} />
-        <StatCard title="Strength, last 4 weeks" value={String(sum(last4, 'strength'))} subtitle={`Target: ${strengthTarget * 4} (${strengthTarget} a week)`} />
+        <Tile
+          label="Hours, last 4 weeks"
+          value={hm(sum(last4, 'hours'))}
+          foot={<Delta now={sum(last4, 'hours')} before={sum(prev4, 'hours')} label="Moving time" />}
+          trend={<Sparkline values={weeks.map((w) => w.hours)} labels={labels} display={weeks.map((w) => `${hm(w.hours)} h`)} />}
+        />
+        <Tile
+          label="Run, last 4 weeks"
+          value={`${Math.round(sum(last4, 'runKm'))} km`}
+          foot={<span className="text-[var(--viz-muted)]">Pace {pace(sum(last4, 'runMin'), sum(last4, 'runKm'))}</span>}
+          trend={<Sparkline values={weeks.map((w) => w.runKm)} labels={labels} display={weeks.map((w) => `${w.runKm.toFixed(1)} km`)} accent="var(--viz-run)" />}
+        />
+        <Tile
+          label="Ride, last 4 weeks"
+          value={`${hm(sum(last4, 'rideHours'))} h`}
+          foot={<Delta now={sum(last4, 'rideHours')} before={sum(prev4, 'rideHours')} label="Moving time" />}
+          trend={<Sparkline values={weeks.map((w) => w.rideHours)} labels={labels} display={weeks.map((w) => `${hm(w.rideHours)} h`)} accent="var(--viz-ride)" />}
+        />
+        <Tile
+          label="Form today"
+          value={lastLoad ? `${lastLoad.tsb > 0 ? '+' : ''}${Math.round(lastLoad.tsb)}` : '-'}
+          foot={
+            <span className="text-[var(--viz-muted)]">
+              {lastLoad ? `${zoneOf(lastLoad.tsb)} · fitness ${Math.round(lastLoad.ctl)}` : 'No load data'} · strength {sum(last4, 'strength')}/{strengthTarget * 4}
+            </span>
+          }
+          trend={<Sparkline values={weeklyLoad.map((p) => p.ctl)} labels={weeklyLoad.map((p) => p.date)} display={weeklyLoad.map((p) => `fitness ${Math.round(p.ctl)}`)} />}
+        />
       </div>
-      <WeeklyBars weeks={weeks} />
-      <LoadChart load={perf.load} />
-      <div className="overflow-x-auto rounded-lg border">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/50 text-left text-xs text-muted-foreground">
-            <tr>
-              <th className="p-2">Week</th>
-              <th className="p-2 text-right">Hours</th>
-              <th className="p-2 text-right">Run km</th>
-              <th className="p-2 text-right">Run pace</th>
-              <th className="p-2 text-right">Ride km</th>
-              <th className="p-2 text-right">Strength</th>
-              <th className="p-2 text-right">TSS</th>
-              <th className="p-2 text-right">Plan done</th>
-            </tr>
-          </thead>
-          <tbody>
-            {[...weeks].reverse().map((w) => (
-              <tr key={w.week} className="border-t">
-                <td className="p-2">{fmtWeek(w.week)}</td>
-                <td className="p-2 text-right">{w.hours.toFixed(1)}</td>
-                <td className="p-2 text-right">{w.runKm ? w.runKm.toFixed(1) : '-'}</td>
-                <td className="p-2 text-right">{pace(w.runMin, w.runKm)}</td>
-                <td className="p-2 text-right">{w.rideKm ? w.rideKm.toFixed(0) : '-'}</td>
-                <td className="p-2 text-right">{w.strength || '-'}</td>
-                <td className="p-2 text-right">{w.tss ? Math.round(w.tss) : '-'}</td>
-                <td className="p-2 text-right">{w.planned ? `${w.done}/${w.planned}` : '-'}</td>
+
+      <WeeklyHoursChart
+        currentWeek={currentWeek}
+        weeks={weeks.map((w) => ({
+          week: w.week,
+          rideHours: w.rideHours,
+          runHours: w.runMin / 60,
+          otherHours: Math.max(0, w.hours - w.rideHours - w.runMin / 60),
+          rideKm: w.rideKm,
+          runKm: w.runKm,
+          strength: w.strength,
+          tss: w.tss,
+        }))}
+      />
+      <TrainingLoadChart days={perf.load} />
+
+      <details className="rounded-lg border bg-[var(--viz-surface)]">
+        <summary className="cursor-pointer select-none p-3 text-sm font-medium">Table: every week</summary>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm tabular-nums">
+            <thead className="bg-muted/50 text-left text-xs text-[var(--viz-muted)]">
+              <tr>
+                <th className="p-2">Week</th>
+                <th className="p-2 text-right">Hours</th>
+                <th className="p-2 text-right">Run km</th>
+                <th className="p-2 text-right">Run pace</th>
+                <th className="p-2 text-right">Ride km</th>
+                <th className="p-2 text-right">Strength</th>
+                <th className="p-2 text-right">TSS</th>
+                <th className="p-2 text-right">Plan done</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {[...weeks].reverse().map((w) => (
+                <tr key={w.week} className="border-t">
+                  <td className="p-2">{fmtWeek(w.week)}{w.week === currentWeek ? ' (this week)' : ''}</td>
+                  <td className="p-2 text-right">{hm(w.hours)}</td>
+                  <td className="p-2 text-right">{w.runKm ? w.runKm.toFixed(1) : '-'}</td>
+                  <td className="p-2 text-right">{pace(w.runMin, w.runKm)}</td>
+                  <td className="p-2 text-right">{w.rideKm ? w.rideKm.toFixed(0) : '-'}</td>
+                  <td className="p-2 text-right">{w.strength || '-'}</td>
+                  <td className="p-2 text-right">{w.tss ? Math.round(w.tss) : '-'}</td>
+                  <td className="p-2 text-right">{w.planned ? `${w.done}/${w.planned}` : '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </details>
     </div>
   );
 }
