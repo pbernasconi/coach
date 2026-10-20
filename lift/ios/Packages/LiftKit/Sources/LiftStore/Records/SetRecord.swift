@@ -20,6 +20,8 @@ public struct SetRecord: Hashable, Sendable, Identifiable {
     public var status: SetStatus
     public var completedAt: Date?
     public var note: String?
+    /// The effort on the `RPE` scale (v7); nil when it was not recorded.
+    public var rpe: Double?
     public var createdAt: Date
     public var updatedAt: Date
     public var deletedAt: Date?
@@ -49,15 +51,17 @@ public struct SetRecord: Hashable, Sendable, Identifiable {
         self.status = .planned
         self.completedAt = nil
         self.note = nil
+        self.rpe = nil
         self.createdAt = createdAt
         self.updatedAt = createdAt
         self.deletedAt = nil
     }
 
-    /// Takes an imported set's note, values and status. A done set without values gets its target's, as `log` does;
+    /// Takes an imported set's note, RPE (when it is on the scale), values and status. A done set without values gets its target's, as `log` does;
     /// a skipped set keeps any values it has.
     mutating func apply(imported set: LoggedSet, completedAt: Date?) {
         note = set.note
+        rpe = set.rpe.flatMap { RPE.isValid($0) ? $0 : nil }
         actualReps = set.actual?.reps
         actualWeight = set.actual?.weight?.converted(to: unit)
         if set.isSkipped {
@@ -79,6 +83,7 @@ public struct SetRecord: Hashable, Sendable, Identifiable {
             actual: status == .planned
                 ? nil : SetActual(reps: actualReps, weight: actualWeight, completedAt: completedAt),
             note: note,
+            rpe: rpe,
             isSkipped: status == .skipped
         )
     }
@@ -109,6 +114,7 @@ extension SetRecord: SyncedRecord {
         status = try row.raw("status")
         completedAt = try row.optional("completedAt")
         note = try row.optional("note")
+        rpe = try row.optional("rpe")  // absent from payloads written before v7
         createdAt = try row.required("createdAt")
         updatedAt = try row.required("updatedAt")
         deletedAt = try row.optional("deletedAt")
@@ -130,6 +136,7 @@ extension SetRecord: SyncedRecord {
         container["status"] = status.rawValue
         container["completedAt"] = completedAt
         container["note"] = note
+        container["rpe"] = rpe
         container["createdAt"] = createdAt
         container["updatedAt"] = updatedAt
         container["deletedAt"] = deletedAt

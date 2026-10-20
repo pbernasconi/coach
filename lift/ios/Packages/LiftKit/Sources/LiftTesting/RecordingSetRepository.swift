@@ -10,6 +10,7 @@ public final class RecordingSetRepository: SetRepository {
         case addSet(sessionExerciseID: UUID, kind: SetKind, target: SetTarget)
         case addImported(LoggedSet, sessionExerciseID: UUID, completedAt: Date?)
         case saveValues(setID: UUID, reps: Int?, weight: Weight?)
+        case saveDetails(setID: UUID, rpe: Double?, note: String?)
         case log(UUID)
         case skip(UUID)
         case unlog(UUID)
@@ -41,6 +42,10 @@ public final class RecordingSetRepository: SetRepository {
 
     public func saveValues(setID: UUID, reps: Int?, weight: Weight?) async throws -> SetRecord {
         try record(.saveValues(setID: setID, reps: reps, weight: weight))
+    }
+
+    public func saveDetails(setID: UUID, rpe: Double?, note: String?) async throws -> SetRecord {
+        try record(.saveDetails(setID: setID, rpe: rpe, note: note))
     }
 
     public func log(setID: UUID) async throws -> SetRecord { try record(.log(setID)) }

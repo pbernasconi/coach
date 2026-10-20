@@ -5,11 +5,13 @@ import LiftTesting
 import Synchronization
 
 /// A `SessionRepository` whose `observeSession` yields the given values, then finishes, so `await vm.run()`
-/// returns. Records each requested id. Day ranges yield nothing. The Workout screen's writes (remove, restore and
-/// reorder exercises, finish, discard and its undo) are recorded, then throw `writeError` when one is given; the
+/// returns. Records each requested id. Day ranges yield nothing. The Workout screen's writes (notes, remove, restore
+/// and reorder exercises, finish, discard and its undo) are recorded, then throw `writeError` when one is given; the
 /// others are not used by the Workout screen and throw.
 nonisolated final class FakeSessionDetailRepository: SessionRepository {
     enum Call: Equatable, Sendable {
+        case saveNote(UUID, String?)
+        case saveExerciseNote(UUID, String?)
         case removeExercise(UUID)
         case restoreExercise(UUID)
         case reorder(UUID, [UUID])
@@ -57,6 +59,21 @@ nonisolated final class FakeSessionDetailRepository: SessionRepository {
 
     func addExercise(_: ExerciseSlot, to _: UUID) async throws -> SessionExerciseRecord {
         throw AppError(.unknown, detail: "not used")
+    }
+
+    func saveNote(sessionID: UUID, note: String?) async throws -> SessionRecord {
+        try record(.saveNote(sessionID, note))
+        guard let session = emissions.compactMap(\.self).last(where: { $0.id == sessionID })?.session else {
+            throw AppError(.notFound)
+        }
+        return session
+    }
+
+    func saveExerciseNote(id: UUID, note: String?) async throws -> SessionExerciseRecord {
+        try record(.saveExerciseNote(id, note))
+        let items = emissions.compactMap(\.self).flatMap(\.items)
+        guard let exercise = items.last(where: { $0.id == id })?.exercise else { throw AppError(.notFound) }
+        return exercise
     }
 
     func removeExercise(id: UUID) async throws { try record(.removeExercise(id)) }

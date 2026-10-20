@@ -7,6 +7,8 @@ public struct LoggedSet: Codable, Hashable, Sendable, Identifiable {
     public var target: SetTarget
     public var actual: SetActual?
     public var note: String?
+    /// The effort on the `RPE` scale (6 to 10 in half steps); nil when it was not recorded.
+    public var rpe: Double?
     public var isSkipped: Bool
 
     public init(
@@ -15,6 +17,7 @@ public struct LoggedSet: Codable, Hashable, Sendable, Identifiable {
         target: SetTarget = .none,
         actual: SetActual? = nil,
         note: String? = nil,
+        rpe: Double? = nil,
         isSkipped: Bool = false
     ) {
         self.id = id
@@ -22,6 +25,7 @@ public struct LoggedSet: Codable, Hashable, Sendable, Identifiable {
         self.target = target
         self.actual = actual
         self.note = note
+        self.rpe = rpe
         self.isSkipped = isSkipped
     }
 

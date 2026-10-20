@@ -48,6 +48,12 @@ public protocol SessionRepository: Sendable {
     /// Puts the session's live exercises in the order of `ids`, which must hold each of them once.
     func reorderExercises(in sessionID: UUID, ids: [UUID]) async throws
 
+    /// Saves what was written for the whole session. The note is trimmed; an empty one clears it.
+    func saveNote(sessionID: UUID, note: String?) async throws -> SessionRecord
+
+    /// Saves what was written about one exercise of a session. The note is trimmed; an empty one clears it.
+    func saveExerciseNote(id: UUID, note: String?) async throws -> SessionExerciseRecord
+
     /// Marks a live session finished now. Planned sets stay planned; nothing is logged. When the start was never
     /// stamped, it becomes the first logged set's time.
     func finish(sessionID: UUID) async throws -> SessionRecord

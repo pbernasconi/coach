@@ -17,6 +17,10 @@ public protocol SetRepository: Sendable {
     /// Saves the values shown in the editor. Never changes `status` or `completedAt`.
     func saveValues(setID: UUID, reps: Int?, weight: Weight?) async throws -> SetRecord
 
+    /// Saves the set's RPE and note from the editor, in one write. The note is trimmed (empty clears it); an RPE off the
+    /// `RPE` scale throws `.invalidInput`. Never changes `status`, `completedAt` or the values.
+    func saveDetails(setID: UUID, rpe: Double?, note: String?) async throws -> SetRecord
+
     /// Logs the set as done now. Missing values are filled from the target.
     func log(setID: UUID) async throws -> SetRecord
 
