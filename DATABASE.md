@@ -12,8 +12,9 @@ migrations, and the migrations are the only way the schema changes.
    The old deploy keeps serving while the new one builds, so it must work on the new schema. Drop or rename in
    a later PR, after no deployed code reads the old shape.
 4. Commit `drizzle/` with the schema change. CI fails a PR whose schema and migrations differ ("web checks").
-5. Merge. The production build runs `scripts/db/migrate.mjs` before `next build`, so production has the new
-   schema before the new code is live. A failed migration fails the build, and the old deploy keeps serving.
+5. Merge. The Deploy workflow (`deploy.yml`) runs `scripts/db/migrate.mjs` before it promotes the new build, so
+   production has the new schema before the new code is live. A failed migration stops the deploy, and the old
+   build keeps serving.
 
 `/api/health` fails its `migrations` check when production is missing a migration of the deployed code.
 
