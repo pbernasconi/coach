@@ -28,6 +28,7 @@
         WeekPreview(state: .fixtureFirstRun)
             .dynamicTypeSize(.accessibility3)
     }
+    #Preview("Two on a day") { WeekPreview(state: .fixtureTwoOnADay) }
     #Preview("Failed") { WeekPreview(state: .fixtureFailed) }
     #Preview("Long text, AX3") {
         WeekPreview(state: .fixtureLongText)

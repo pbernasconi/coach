@@ -227,6 +227,10 @@ export const trainingPlanActivities = pgTable('training_plan_activities', {
   sourceKey: text('source_key'), // '<weekStart>#<index>' from plans/<weekStart>.json
   sortOrder: integer('sort_order').notNull().default(0),
 
+  // Strength: the Lift template the workout uses, and the Lift session planned from it (scripts/lift-plan.mjs)
+  liftTemplate: text('lift_template'),
+  liftSessionId: text('lift_session_id'), // lower-case UUID of the lift_rows 'session' row
+
   // Metadata
   createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow(),

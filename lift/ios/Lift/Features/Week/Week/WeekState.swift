@@ -11,7 +11,7 @@ nonisolated struct WeekState: Equatable, Sendable {
     var strip: WeekStrip?
     /// The visible strip page.
     var weekOffset = 0
-    /// The visible week's sessions, grouped by day. `.empty` only when the whole week has none.
+    /// The visible week's seven days, Monday first, each with its sessions (none on a rest day).
     var sessions: Loadable<[WeekDaySection]> = .loading
     /// The open lift sheet or day picker, if any.
     var destination: Destination?
@@ -79,11 +79,16 @@ nonisolated struct WeekDay: Equatable, Sendable {
     var status: Status
 }
 
-/// One day of the visible week in the list: a day with sessions, or the selected day even when it has none.
+/// One day of the visible week in the list. A day with no sessions is a rest day.
 nonisolated struct WeekDaySection: Equatable, Sendable, Identifiable {
     let id: LocalDay
-    /// "Monday, 2 March", or "Today · Monday, 2 March".
+    /// "Monday, 2 March", or "Today · Monday, 2 March": what VoiceOver reads for the date badge.
     let title: String
+    /// "Mon", the badge's top line.
+    let weekday: String
+    /// "2", the badge's number.
+    let dayNumber: String
+    let isToday: Bool
     let isSelected: Bool
     let sessions: [SessionSummary]
 }

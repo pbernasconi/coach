@@ -48,6 +48,49 @@ import Testing
         #expect(target == expected)
     }
 
+    @Test(arguments: [
+        // 13 days: no break, the normal step up.
+        (13, slot(5...5), SetTarget(reps: 5, weight: .kg(82.5))),
+        // 14 days or more: 90% of 80 kg is 72 kg, on the 2.5 kg increment, from the bottom of the range.
+        (14, slot(5...5), SetTarget(reps: 5, weight: .kg(72.5))),
+        (25, slot(8...12), SetTarget(reps: 8, repRange: 8...12, weight: .kg(72.5))),
+        // A heavier planned load does not win after a break.
+        (25, slot(5...5, weight: .kg(100)), SetTarget(reps: 5, weight: .kg(72.5))),
+    ])
+    func aBreakStartsLighter(days: Int, slot: TemplateExercise, expected: SetTarget) {
+        let target = SlotPlanner.target(
+            for: slot,
+            last: Self.sets([5, 5, 5], .kg(80)),
+            increment: Self.increment,
+            unit: .kg,
+            daysSinceLast: days
+        )
+        #expect(target == expected)
+    }
+
+    @Test func aBreakWithoutLoadKeepsBodyweight() {
+        let target = SlotPlanner.target(
+            for: Self.slot(8...10),
+            last: Self.sets([10, 10, 8], nil),
+            increment: Self.increment,
+            unit: .kg,
+            daysSinceLast: 30
+        )
+        #expect(target == SetTarget(reps: 8, repRange: 8...10))
+    }
+
+    @Test(arguments: [
+        // The nearest step to 90%; the same load when the step is too coarse for a lighter one.
+        (Weight.lb(255), Weight.lb(5), Weight.lb(230)),
+        (Weight.lb(27.5), Weight.lb(5), Weight.lb(25)),
+        (Weight.lb(45), Weight.lb(5), Weight.lb(40)),
+        (Weight.lb(15), Weight.lb(5), Weight.lb(15)),
+        (Weight.lb(25), Weight.lb(5), Weight.lb(25)),
+    ])
+    func afterBreakRounding(weight: Weight, increment: Weight, expected: Weight) {
+        #expect(SlotPlanner.afterBreak(weight, increment) == expected)
+    }
+
     @Test func aHeavierPlannedLoadWinsOverHistory() {
         let target = SlotPlanner.target(
             for: Self.slot(5...5, weight: .kg(100)),

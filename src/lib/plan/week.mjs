@@ -27,6 +27,7 @@ export function todayIn(timeZone, now = new Date()) {
 export function sportOf(w) {
   const t = `${w.workoutType ?? ''} ${w.sport ?? ''} ${w.title ?? ''}`.toLowerCase();
   if (/rest|off day/.test(t) && !/interval/.test(t)) return 'rest';
+  if (/\bski\b/.test(t)) return 'other'; // a ski tour matches Strava's BackcountrySki, which is "other" too
   if (/strength|lift|barbell|dumbbell|gym|squat/.test(t)) return 'strength';
   if (/swim/.test(t)) return 'swim';
   if (/yoga|mobility|stretch/.test(t)) return 'yoga';
@@ -60,7 +61,7 @@ export function isHard(w) {
   if (['hard', 'threshold', 'vo2', 'quality', 'race', 'tempo'].includes(String(w.intensity ?? '').toLowerCase())) {
     return true;
   }
-  return /vo2|threshold|interval|tempo|race|sweet.?spot/i.test(`${w.workoutType ?? ''} ${w.title ?? ''}`);
+  return /vo2|threshold|interval|tempo|race|sweet.?spot|test-10k|10k test/i.test(`${w.workoutType ?? ''} ${w.title ?? ''}`);
 }
 
 /**
@@ -82,7 +83,8 @@ export function matchWeek(workouts, activities, liftSessions, today) {
     let match = null;
     if (w.status !== 'skipped' && sport !== 'rest') {
       if (sport === 'strength') {
-        const lift = liftSessions.find((s) => s.date === w.date && !used.has(`lift:${s.id}`));
+        // A session planned in Lift (scripts/lift-plan.mjs) counts only once a set is logged.
+        const lift = liftSessions.find((s) => s.date === w.date && (s.setsLogged ?? 1) > 0 && !used.has(`lift:${s.id}`));
         if (lift) {
           used.add(`lift:${lift.id}`);
           match = { source: 'lift', id: lift.id, name: lift.name };

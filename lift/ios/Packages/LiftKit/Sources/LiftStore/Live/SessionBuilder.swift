@@ -43,14 +43,15 @@ struct SessionBuilder {
         }
     }
 
-    /// The done sets of the latest two sessions that logged `exerciseID`, newest first, leaving out `sessionID`.
+    /// The done sets of the latest two sessions that logged `exerciseID`, newest first, leaving out `sessionID`, and
+    /// the day of the latest one.
     func history(of exerciseID: UUID, excluding sessionID: UUID? = nil) throws -> (
-        last: [LoggedSet], previous: [LoggedSet]
+        last: [LoggedSet], previous: [LoggedSet], lastDay: LocalDay?
     ) {
         let entries = try ExerciseHistoryQuery.entries(db, exerciseID: exerciseID, limit: 3)
             .filter { $0.session.id != sessionID }
         let sets = entries.prefix(2).map { $0.sets.map(\.loggedSet) }
-        return (sets.first ?? [], sets.dropFirst().first ?? [])
+        return (sets.first ?? [], sets.dropFirst().first ?? [], entries.first?.session.day)
     }
 
     /// What a planned session exercise starts with: the library name, load mode and equipment, the slot's rest and
@@ -84,13 +85,14 @@ struct SessionBuilder {
         )
         try store.insertRow(record, at: stamp, db)
         let unit = session.unitsAtLog
-        let (last, previous) = try history(of: slot.exerciseID, excluding: session.id)
+        let (last, previous, lastDay) = try history(of: slot.exerciseID, excluding: session.id)
         let target = SlotPlanner.target(
             for: slot,
             last: last,
             previous: previous,
             increment: gym.increment(for: equipment, in: unit),
-            unit: unit
+            unit: unit,
+            daysSinceLast: lastDay.map { session.day.daysSinceEpoch - $0.daysSinceEpoch }
         )
         for index in 0..<max(1, slot.sets) {
             let set = SetRecord(
