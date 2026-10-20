@@ -16,6 +16,7 @@ import { cleanNewWorkout } from '@/lib/plan/create.mjs';
 import { loadActivity, loadActivityContext, type ActivityContext, type ActivityView } from '@/lib/activity/queries';
 import { loadLiftModel } from '@/lib/lift-dashboard/queries';
 import { sessionDetail } from '@/lib/lift-dashboard/stats.mjs';
+import { richSession, type RichSession } from '@/lib/lift/session';
 
 export type LiftDetail = NonNullable<ReturnType<typeof sessionDetail>>;
 
@@ -105,10 +106,10 @@ export async function activityPreviewAction(id: string): Promise<{ v: ActivityVi
 }
 
 /** One Lift session for the Plan modal: the same data as /lift/sessions/<id>. */
-export async function liftPreviewAction(id: string): Promise<{ detail: LiftDetail; unit: string } | null> {
+export async function liftPreviewAction(id: string): Promise<{ detail: RichSession; unit: string } | null> {
   await user();
   const { model, unit } = await loadLiftModel();
-  const detail = sessionDetail(model, String(id).slice(0, 64), unit) as LiftDetail | null;
+  const detail = richSession(model, String(id).slice(0, 64), unit);
   return detail ? { detail, unit } : null;
 }
 
