@@ -1,4 +1,6 @@
+import journal from '../../drizzle/meta/_journal.json';
 import { GET as homeSummary } from '@/app/api/home/route';
+import { sql } from '@/db';
 import { loadLiftModel } from '@/lib/lift-dashboard/queries';
 import { exerciseDetail, exerciseList, muscleSets, sessionSummaries, topLifts, weeklyVolume } from '@/lib/lift-dashboard/stats.mjs';
 import { loadPerformance } from '@/lib/performance/queries';
@@ -46,6 +48,18 @@ export async function runChecks(now = new Date()): Promise<Check[]> {
       for (const e of exerciseList(model, unit)) exerciseDetail(model, e.key, unit);
     }),
   ]);
+  // Every migration in this deploy is applied (production builds run them). Preview builds do not migrate, so a
+  // preview with a new migration would fail here; previews skip this check.
+  if (process.env.VERCEL_ENV !== 'preview') {
+    checks.push(
+      await check('migrations', async () => {
+        const rows = (await sql`SELECT hash FROM drizzle.__drizzle_migrations`) as { hash: string }[];
+        if (rows.length < journal.entries.length) {
+          throw new Error(`${journal.entries.length - rows.length} migration(s) not applied; run npm run db:migrate`);
+        }
+      })
+    );
+  }
   if (process.env.HOME_TOKEN) {
     checks.push(
       await check('/api/home', async () => {

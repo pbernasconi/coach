@@ -4,17 +4,17 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
+    "build": "node scripts/db/migrate.mjs && next build --turbopack",
     "start": "next start",
     "lint": "eslint",
     "test": "node --test scripts/*.test.mjs src/lib/*.test.mjs src/lib/plan/*.test.mjs src/lib/lift-dashboard/*.test.mjs src/lib/lift-sync/*.test.mjs src/lib/calendar-sync/*.test.mjs",
     "db:generate": "drizzle-kit generate",
-    "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "db:migrate": "drizzle-kit migrate",
+    "db:migrate": "node scripts/db/migrate.mjs --yes",
     "typecheck": "tsc --noEmit -p .",
     "test:integration": "node --import tsx --test scripts/integration/*.test.ts",
-    "smoke": "node scripts/smoke.mjs"
+    "smoke": "node scripts/smoke.mjs",
+    "db:check": "drizzle-kit check"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.39.8",
