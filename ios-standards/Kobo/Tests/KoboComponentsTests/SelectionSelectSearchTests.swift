@@ -2,7 +2,7 @@ import Testing
 
 @testable import KoboComponents
 
-/// Ported from an earlier app's `SelectSearchVectorsTests` (shared vectors: select-search.json), plus Kobo's
+/// The select search vectors, plus Kobo's
 /// word-by-word, diacritic-insensitive title matching.
 @Suite struct SelectionSelectSearchTests {
     private static let countries: [(String, SelectSearch.Candidate)] = [

@@ -3,7 +3,7 @@ import Testing
 
 @testable import KoboComponents
 
-/// `DateFieldLogic.evaluate` and the text state, ported from an earlier app's date vectors and `DateFieldTextTests`.
+/// `DateFieldLogic.evaluate` and the text state.
 @Suite struct FieldsDateEvaluationTests {
     private typealias Logic = FieldsDateFieldLogicTests
     private let calendar = Logic.calendar

@@ -2,7 +2,7 @@ import Testing
 
 @testable import KoboComponents
 
-/// Ported from an earlier app's `PressFillTests`: a press you can always see, and never a flicker.
+/// A press you can always see, and never a flicker.
 @Suite struct ControlsPressFillTests {
     @Test func aQuickTapShowsTheWholeFillBeforeItFades() {
         var schedule = PressFillSchedule()

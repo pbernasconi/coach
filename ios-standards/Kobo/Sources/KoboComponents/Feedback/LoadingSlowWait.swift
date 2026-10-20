@@ -2,7 +2,7 @@ import Foundation
 
 /// How long a wait has lasted, in the stages that change what it should say. A spinner alone is enough at first;
 /// after `slowAfter` the wait says it is still working, and after `verySlowAfter` it admits it is taking longer than
-/// usual. Ported from an earlier app's `SlowWait`; `LoadingState` and `.slowWait(isWaiting:stage:)` use it.
+/// usual. `LoadingState` and `.slowWait(isWaiting:stage:)` use it.
 nonisolated public enum SlowWait: Sendable, Equatable, CaseIterable {
     /// A normal wait: no copy beyond the spinner's own.
     case none

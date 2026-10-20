@@ -2,7 +2,7 @@ import Testing
 
 @testable import KoboComponents
 
-/// The counter rule under a limited field (ported from an earlier app `CharacterCounterTests`).
+/// The counter rule under a limited field.
 @Suite struct FieldsCharacterCounterTests {
     @Test func shortLimitAlwaysShowsTheFraction() {
         #expect(CharacterCounter.caption(count: 0, limit: 40) == .fraction(count: 0, limit: 40))

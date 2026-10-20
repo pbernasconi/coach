@@ -38,7 +38,7 @@ import SwiftUI
                 systemImage: "brain.head.profile"
             ),
             SelectOption("meetings", title: "Meetings", subtitle: "Calls and reviews", systemImage: "person.2"),
-            SelectOption("errands", title: "Errands", subtitle: "Shopping, post and bank", systemImage: "cart"),
+            SelectOption("errands", title: "Errands", subtitle: "Shopping, post and laundry", systemImage: "cart"),
             SelectOption("off", title: "Day off", subtitle: "Not in a holiday week", isEnabled: false),
         ]
     }

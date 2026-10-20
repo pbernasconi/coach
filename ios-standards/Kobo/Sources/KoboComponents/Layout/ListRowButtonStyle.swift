@@ -6,7 +6,6 @@ import SwiftUI
 /// clipped by the card's corners in a grouped one. Outside a section (a lone row in a sheet), the fill is a rounded
 /// rectangle inset `Space.xs`, in `surfaceSunken`. The fill comes in on `Motion.instant` and goes out on
 /// `Motion.exit`, and a quick tap shows the whole fill once (`PressFillSchedule`).
-/// Ported from an earlier app's `ListRowPressLook` and `PressFillSchedule`.
 struct ListRowButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         ListRowPressBody(label: configuration.label, isPressed: configuration.isPressed)

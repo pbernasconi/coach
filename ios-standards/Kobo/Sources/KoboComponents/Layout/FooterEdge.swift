@@ -2,7 +2,7 @@ import Foundation
 
 /// When a pinned footer draws its top hairline: only while content runs under it. At rest above the footer, and at
 /// the end of the scroll, the edge draws nothing, so the hairline never cuts through the last row for no reason.
-/// Ported from an earlier app's `FooterEdge`; pure, so it is tested without rendering.
+/// Pure, so it is tested without rendering.
 nonisolated enum FooterEdge {
     /// Half a point of slack absorbs layout rounding at the end of the scroll.
     static let slack: CGFloat = 0.5

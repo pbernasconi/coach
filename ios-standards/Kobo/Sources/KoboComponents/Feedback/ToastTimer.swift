@@ -2,7 +2,7 @@ import Foundation
 
 /// The auto-dismiss timer of the toast on screen. A finger on the toast stops it (`hold`), so someone reading with a
 /// finger on it keeps it; the release starts it again with the time that was left, and never with less than
-/// `minimumAfterHold`, so the toast does not vanish the moment the finger lifts. Ported from an earlier app's `ToastTimer`.
+/// `minimumAfterHold`, so the toast does not vanish the moment the finger lifts.
 nonisolated struct ToastTimer: Equatable, Sendable {
     /// A release never leaves less than this, so the toast is seen leaving.
     static let minimumAfterHold: Duration = .seconds(1)
