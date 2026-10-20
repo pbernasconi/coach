@@ -21,6 +21,13 @@ export const metadata: Metadata = {
 
 // Without Clerk keys the pages cannot sign in. The token routes (Lift sync, /api/home, cron, Strava
 // webhook) do not use Clerk, so the app still builds and serves them.
+const DARK_MODE_SCRIPT = `(() => {
+  const m = window.matchMedia('(prefers-color-scheme: dark)');
+  const set = () => document.documentElement.classList.toggle('dark', m.matches);
+  set();
+  m.addEventListener('change', set);
+})();`;
+
 const clerkConfigured = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY);
 
 export default function RootLayout({
@@ -42,7 +49,11 @@ export default function RootLayout({
   }
   return (
     <ClerkProvider>
-      <html lang="en">
+      <html lang="en" suppressHydrationWarning>
+        <head>
+          {/* The colour tokens switch on the .dark class; follow the system setting, before paint and on change. */}
+          <script dangerouslySetInnerHTML={{ __html: DARK_MODE_SCRIPT }} />
+        </head>
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
