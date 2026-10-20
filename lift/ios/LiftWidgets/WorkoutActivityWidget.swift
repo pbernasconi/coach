@@ -103,7 +103,8 @@ struct IslandBottom: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 SetDots(dots: state.dots, size: 6)
-                Spacer(minLength: 8)
+                IslandUpNext(state: state, isResting: isResting)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 Text("\(state.loggedSets)/\(state.totalSets) sets")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -115,6 +116,28 @@ struct IslandBottom: View {
             }
         }
         .padding(.horizontal, 4)
+    }
+}
+
+/// Beside the dots: the load waiting while resting ("Next 100 kg × 5"), otherwise the exercise after this one.
+struct IslandUpNext: View {
+    let state: WorkoutActivityAttributes.ContentState
+    let isResting: Bool
+
+    var body: some View {
+        Group {
+            if isResting, let set = state.current {
+                HStack(spacing: 4) {
+                    Text("Next")
+                    LoadText(set: set)
+                }
+            } else if let next = state.nextExercise {
+                Text("Then \(next)")
+            }
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
+        .lineLimit(1)
     }
 }
 

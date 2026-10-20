@@ -97,7 +97,7 @@ final class WorkoutActivityCenter: RestActivityController {
         }
         let seconds = item.exercise.restSeconds ?? RestTimer.defaultSeconds
         let endsAt = now().addingTimeInterval(TimeInterval(seconds))
-        rest = seconds > 0 ? RestSnapshot(endsAt: endsAt, totalSeconds: seconds) : nil
+        rest = seconds > 0 ? RestSnapshot(endsAt: endsAt, totalSeconds: seconds, setID: setID) : nil
         focus = nil
         received(await latest(sessionID))
         await publishNow()

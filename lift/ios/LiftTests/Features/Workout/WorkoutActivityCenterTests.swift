@@ -62,7 +62,9 @@ import Testing
             rest: nil,
             nextExercise: nil
         )
-        #expect(presenter.calls == [.show(WorkoutActivityAttributes(sessionID: started.id, title: "Lower A"), expected)])
+        #expect(
+            presenter.calls == [.show(WorkoutActivityAttributes(sessionID: started.id, title: "Lower A"), expected)]
+        )
     }
 
     @Test func aWorkoutNotStartedShowsNothing() async {
@@ -101,8 +103,9 @@ import Testing
         await center.logSet(sets[1].id, in: started.id)
 
         #expect(recorder.calls == [.log(sets[1].id)])
-        #expect(presenter.shown?.rest == RestSnapshot(endsAt: ManualNow.start.addingTimeInterval(90), totalSeconds: 90))
-        #expect(center.currentRest()?.totalSeconds == 90)
+        let rest = RestSnapshot(endsAt: ManualNow.start.addingTimeInterval(90), totalSeconds: 90, setID: sets[1].id)
+        #expect(presenter.shown?.rest == rest)
+        #expect(center.currentRest() == rest)
     }
 
     @Test func doneOnASetLoggedMeanwhileDoesNothing() async {
@@ -150,7 +153,9 @@ import Testing
         center.start(RestActivityAttributes(exerciseName: "Back squat", setLabel: "Set 1"), state: state)
         await center.settle()
 
-        #expect(presenter.shown?.rest == RestSnapshot(endsAt: ManualNow.start.addingTimeInterval(120), totalSeconds: 120))
+        #expect(
+            presenter.shown?.rest == RestSnapshot(endsAt: ManualNow.start.addingTimeInterval(120), totalSeconds: 120)
+        )
     }
 
     @Test func endingTheRestKeepsTheWorkout() async {
@@ -171,7 +176,8 @@ import Testing
 
         await center.extendRest()
 
-        #expect(center.currentRest() == RestSnapshot(endsAt: ManualNow.start.addingTimeInterval(120), totalSeconds: 120))
+        #expect(center.currentRest()?.endsAt == ManualNow.start.addingTimeInterval(120))
+        #expect(center.currentRest()?.setID == sets[1].id)
         #expect(presenter.shown?.rest?.totalSeconds == 120)
     }
 

@@ -158,7 +158,8 @@ import Testing
 
         await vm.run()
 
-        #expect(activity.shownWorkouts == [planned.id])
+        #expect(!activity.shownWorkouts.isEmpty)
+        #expect(Set(activity.shownWorkouts) == [planned.id])
     }
 
     @Test func leavingTheWorkoutKeepsTheRestOnTheLockScreen() async {

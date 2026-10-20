@@ -11,12 +11,18 @@ nonisolated struct RestSnapshot: Codable, Hashable, Sendable {
     var endsAt: Date
     /// The whole rest in seconds, including time added with +30s.
     var totalSeconds: Int
+    /// The set logged with Done on the Lock Screen that started this rest, so the Workout screen picks it up; nil for a
+    /// rest the app started.
+    var setID: UUID? = nil
 
     /// The rest with `seconds` more on it, or nil once it is over at `now` (there is nothing left to extend).
     func extended(by seconds: Int, at now: Date) -> RestSnapshot? {
         guard endsAt > now else { return nil }
         let added = max(0, seconds)
-        return RestSnapshot(endsAt: endsAt.addingTimeInterval(TimeInterval(added)), totalSeconds: totalSeconds + added)
+        var next = self
+        next.endsAt = endsAt.addingTimeInterval(TimeInterval(added))
+        next.totalSeconds = totalSeconds + added
+        return next
     }
 
     /// Whole seconds left at `now`, rounded up; 0 once the rest is over.

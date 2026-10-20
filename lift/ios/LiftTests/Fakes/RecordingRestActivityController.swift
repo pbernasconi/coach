@@ -47,6 +47,11 @@ final class RecordingRestActivityController: RestActivityController {
         rest = rest?.extended(by: RestSnapshot.extensionSeconds, at: now)
     }
 
+    /// Done on the Lock Screen at `now`: a new rest of `seconds` for `setID`.
+    func lockScreenDone(_ setID: UUID, seconds: Int, at now: Date) {
+        rest = RestSnapshot(endsAt: now.addingTimeInterval(TimeInterval(seconds)), totalSeconds: seconds, setID: setID)
+    }
+
     /// Skip on the Lock Screen.
     func lockScreenSkip() {
         rest = nil
