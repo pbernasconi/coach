@@ -9,6 +9,7 @@ import { sql } from '@/db';
  * verified primary email is the owner's email. Anyone else gets null.
  */
 export async function ownerForSignedInUser(): Promise<string | null> {
+  if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || !process.env.CLERK_SECRET_KEY) return null;
   const { userId } = await auth();
   if (!userId) return null;
   const [owner] = (await sql`SELECT id, email FROM users ORDER BY created_at LIMIT 1`) as { id: string; email: string }[];
