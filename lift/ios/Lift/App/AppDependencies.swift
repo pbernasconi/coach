@@ -47,7 +47,8 @@ final class AppDependencies {
     let importFlow: ImportFlowPresenter
     /// Opens, closes and undoes `lift://templates` links, which the shell shows as a sheet above the tabs.
     let templateLinks: TemplateLinkPresenter
-    /// Routes `lift://` links: Import from Notes (and notes shared through the Share extension), and template links.
+    /// Routes `lift://` links: Import from Notes (and notes shared through the Share extension), template links and
+    /// sync links.
     let incomingNotes: IncomingNoteRouter
     private var isPrepared = false
 
@@ -98,7 +99,8 @@ final class AppDependencies {
         incomingNotes = IncomingNoteRouter(
             inbox: AppGroupNoteInbox(bundle: .main),
             importFlow: importFlow,
-            templateLinks: templateLinks
+            templateLinks: templateLinks,
+            syncLinks: SyncTokenLink(sync: sync)
         )
     }
 

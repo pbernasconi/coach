@@ -16,20 +16,24 @@ extension ImportFlowPresenter: ImportTextPresenting {
 /// Share extension, which leaves it in the App Group inbox, go to Import from Notes. A share extension cannot reliably
 /// open its app, so the app also checks the inbox whenever it comes to the foreground. A shared note opens straight on
 /// the review step; nothing is written until Import is tapped there. A `lift://templates` link opens the template link
-/// review, which writes nothing until its Add button is tapped.
+/// review, which writes nothing until its Add button is tapped. A `lift://sync?token=…` link stores the sync token and
+/// syncs (`SyncTokenLink`).
 final class IncomingNoteRouter {
     private let inbox: (any NoteInboxing)?
     private let importFlow: any ImportTextPresenting
     private let templateLinks: any TemplateLinkPresenting
+    private let syncLinks: (any SyncTokenApplying)?
 
     init(
         inbox: (any NoteInboxing)?,
         importFlow: any ImportTextPresenting,
-        templateLinks: any TemplateLinkPresenting
+        templateLinks: any TemplateLinkPresenting,
+        syncLinks: (any SyncTokenApplying)? = nil
     ) {
         self.inbox = inbox
         self.importFlow = importFlow
         self.templateLinks = templateLinks
+        self.syncLinks = syncLinks
     }
 
     /// Handles `url`. Returns false when it is not a Lift link.
@@ -42,6 +46,9 @@ final class IncomingNoteRouter {
         case .templates(let payload)?:
             templateLinks.present(payload: payload)
             return true
+        case .syncToken(let token)?:
+            syncLinks?.apply(token: token)
+            return syncLinks != nil
         case nil:
             return false
         }

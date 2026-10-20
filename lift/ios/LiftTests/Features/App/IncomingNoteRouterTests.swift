@@ -88,6 +88,26 @@ import Testing
 
         #expect(flow.openings.isEmpty)
     }
+
+    @Test func aSyncLinkPassesItsTokenOn() throws {
+        let syncLinks = RecordingSyncTokenLink()
+        let router = IncomingNoteRouter(inbox: InMemoryNoteInbox(), importFlow: flow, templateLinks: links, syncLinks: syncLinks)
+        let link = try #require(AppLink.syncToken("a1b2+c3/=").url)
+
+        #expect(router.open(link))
+
+        #expect(syncLinks.tokens == ["a1b2+c3/="])  // the round trip keeps every character
+        #expect(flow.openings.isEmpty)
+    }
+
+    @Test func aSyncLinkWithoutATokenIsNotALiftLink() throws {
+        let syncLinks = RecordingSyncTokenLink()
+        let router = IncomingNoteRouter(inbox: InMemoryNoteInbox(), importFlow: flow, templateLinks: links, syncLinks: syncLinks)
+
+        #expect(!router.open(try url("lift://sync")))
+        #expect(!router.open(try url("lift://sync?token=%20")))
+        #expect(syncLinks.tokens.isEmpty)
+    }
 }
 
 /// Parsing and building `lift://` links, and the App Group inbox the Share extension writes.
