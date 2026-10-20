@@ -56,7 +56,7 @@ export async function GET(request: Request) {
       loadWeek(userId, weekStart, today),
       loadWeek(userId, addDays(weekStart, 7), today),
       sql`
-        SELECT name, sport_type, start_date_local, distance, moving_time, total_elevation_gain,
+        SELECT strava_activity_id, name, sport_type, start_date_local, distance, moving_time, total_elevation_gain,
                location_city, location_state, location_country, suffer_score, tss
         FROM strava_activities
         WHERE user_id = ${userId} AND start_date_local >= ${addDays(today, -35)}
@@ -104,7 +104,10 @@ export async function GET(request: Request) {
         },
         upcoming,
         // feed.json shape
+        appUrl: base,
         activities: acts.map((a) => ({
+          id: String(a.strava_activity_id ?? ''),
+          url: a.strava_activity_id ? `https://www.strava.com/activities/${a.strava_activity_id}` : null,
           name: String(a.name ?? ''),
           sport: String(a.sport_type ?? ''),
           start: iso(a.start_date_local),
