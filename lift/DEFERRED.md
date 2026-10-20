@@ -74,8 +74,13 @@ already done around it. The build keeps going around these; nothing here blocks 
   No multi-week program (periodisation) yet. Coach plans its strength workouts as Lift sessions through
   `tools/LiftSeed` (`scripts/lift-plan.mjs`).
 
+- **Effort:** RPE (6 to 10 in half steps), not RIR, optional on each set and edited in the set editor. The progression
+  rules ignore it; they still judge from reps against the range. RIR would be 10 − RPE if you prefer it.
+
 ## Smaller gaps (no input needed; noted so nothing is lost)
 
 - The Share extension cannot open Lift by itself: iOS refuses `NSExtensionContext.open` from share extensions, and
   Lift does not use the private workarounds. After Send it says "Open Lift"; Lift then opens the note in Import
   (it checks the shared inbox whenever it comes to the front). If a later iOS allows the open, it happens at once.
+- The web Lift pages (`src/lib/lift-dashboard/`) do not show a set's RPE yet. The rows carry `rpe` (SYNC.md), so only
+  the web views need it.

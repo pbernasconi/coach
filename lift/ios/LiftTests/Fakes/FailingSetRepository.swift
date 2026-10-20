@@ -39,6 +39,10 @@ nonisolated final class FailingSetRepository: SetRepository {
         try await base.saveValues(setID: setID, reps: reps, weight: weight)
     }
 
+    func saveDetails(setID: UUID, rpe: Double?, note: String?) async throws -> SetRecord {
+        try await base.saveDetails(setID: setID, rpe: rpe, note: note)
+    }
+
     func log(setID: UUID) async throws -> SetRecord { try await base.log(setID: setID) }
     func skip(setID: UUID) async throws -> SetRecord { try await base.skip(setID: setID) }
     func unlog(setID: UUID) async throws -> SetRecord { try await base.unlog(setID: setID) }

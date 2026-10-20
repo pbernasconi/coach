@@ -96,6 +96,17 @@ nonisolated enum WorkoutText {
         return lines.isEmpty ? nil : lines.joined(separator: "\n")
     }
 
+    /// "RPE 8.5".
+    static func rpe(_ value: Double) -> String {
+        String(localized: "RPE \(number(value))", comment: "Rate of perceived exertion of one set")
+    }
+
+    /// One set's line under its row: "RPE 8 · paused", either part alone, or nil when there is neither.
+    static func setDetail(rpe: String?, note: String?) -> String? {
+        let parts = [rpe, note].compactMap(\.self)
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
     /// "Set 2" for working sets, "Warm-up 1" and so on for the others.
     static func setTitle(number: Int, kind: SetKind) -> String {
         switch kind {

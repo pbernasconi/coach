@@ -1,0 +1,47 @@
+# After Paolo accepts a cloud plan on the Plan page (Coach has already written the plan and the calendar), this
+# plans the strength workouts as Lift sessions (scripts/lift-plan.mjs, with Lift's own planner: Swift, so macOS) and
+# puts the runs on the Garmin calendar at once (the hourly Garmin push would also do it). Coach dispatches it.
+# Secrets: PROD_DATABASE_URL, CRON_SECRET, LIFT_SYNC_TOKEN (the same value as in Vercel).
+name: Plan apply
+
+on:
+  workflow_dispatch:
+
+concurrency: plan-apply
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  apply:
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install
+        run: npm ci --no-audit --no-fund
+      - name: Lift sessions for the strength workouts
+        id: lift
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+          LIFT_SYNC_TOKEN: ${{ secrets.LIFT_SYNC_TOKEN }}
+        run: node scripts/lift-plan.mjs | tee lift-plan.log; grep '^weeks=' lift-plan.log >> "$GITHUB_OUTPUT" || true
+      - name: Calendar with the planned sets
+        if: steps.lift.outputs.weeks != ''
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          WEEKS: ${{ steps.lift.outputs.weeks }}
+        run: |
+          curl -fsS --max-time 90 -X POST -H "Authorization: Bearer $CRON_SECRET" -H 'content-type: application/json' \
+            -d "{\"action\":\"push\",\"weeks\":\"$WEEKS\"}" https://coach.paolobernasconi.com/api/plan/proposals
+      - name: Runs onto the Garmin calendar
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run garmin.yml --repo "$GITHUB_REPOSITORY" -f workouts_only=true

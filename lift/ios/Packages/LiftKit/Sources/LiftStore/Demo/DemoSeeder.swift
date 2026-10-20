@@ -104,14 +104,16 @@ public struct DemoSeeder: Sendable {
         return session.id
     }
 
-    /// One lift's done sets in week `week` of the block, each stamped by `times`.
+    /// One lift's done sets in week `week` of the block, each stamped by `times`. The last set carries an RPE that climbs
+    /// half a point a week from 7.5, as the load does.
     private static func sets(_ lift: DemoPlan.Lift, week: Int, times: inout DemoSetTimes) -> [LoggedSet] {
         let weight = Weight.kg(lift.startKg + lift.weeklyStepKg * Double(week))
         return (0..<lift.sets).map { index in
             LoggedSet(
                 id: placeholderID,
                 target: SetTarget(reps: lift.reps, weight: weight),
-                actual: SetActual(reps: lift.reps, weight: weight, completedAt: times.next(newLift: index == 0))
+                actual: SetActual(reps: lift.reps, weight: weight, completedAt: times.next(newLift: index == 0)),
+                rpe: index == lift.sets - 1 ? min(10, 7.5 + 0.5 * Double(week)) : nil
             )
         }
     }

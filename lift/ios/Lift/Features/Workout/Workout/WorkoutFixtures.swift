@@ -13,7 +13,8 @@
             kg weight: String,
             previous: String? = nil,
             status: SetStatus = .planned,
-            note: String? = nil
+            note: String? = nil,
+            rpe: String? = nil
         ) -> WorkoutSetItem {
             WorkoutSetItem(
                 id: .fixture(id),
@@ -25,7 +26,8 @@
                 weight: weight,
                 reps: reps,
                 previous: previous,
-                note: note
+                note: note,
+                rpe: rpe
             )
         }
 
@@ -48,7 +50,16 @@
                     reps: "5",
                     previous: "5 × 60"
                 ),
-                set(21, 1, reps: "5", kg: "87.5", previous: "5 × 85", status: .done, note: "Paused at the bottom"),
+                set(
+                    21,
+                    1,
+                    reps: "5",
+                    kg: "87.5",
+                    previous: "5 × 85",
+                    status: .done,
+                    note: "Paused at the bottom",
+                    rpe: "RPE 8"
+                ),
                 set(22, 2, reps: "6", kg: "87.5", previous: "5 × 85"),
                 set(23, 3, reps: "5", kg: "87.5", previous: "4 × 85"),
             ],
@@ -117,7 +128,18 @@
                 savedWeight: 87.5,
                 savedReps: 6,
                 lastTime: "Last time 5 × 85 kg · Thu, Feb 26",
-                laterSets: 1
+                laterSets: 1,
+                rpe: 8.5,
+                note: "Belt on"
+            )
+        )
+        static let fixtureNoteEditing = WorkoutState(
+            workout: .loaded(overview),
+            noteEditor: NoteEditor(
+                target: .session(.fixture(1)),
+                title: "Workout note",
+                text: "Short on time, skipped the lunges",
+                savedText: "Short on time, skipped the lunges"
             )
         )
         /// A planned session nobody started: Start workout under the progress.

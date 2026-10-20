@@ -14,6 +14,28 @@ This repo doubles as my personal coach. Open it in Claude Code and use the slash
 
 Both commands are non-interactive defaults plus 2–3 questions per run.
 
+## In the cloud (no Mac needed)
+
+Coach plans in a GitHub job (`.github/workflows/plan.yml`) with Claude Code, by the same rules as `/plan`
+(`scripts/plan-cloud/PROMPT.md` points the agent at `.claude/commands/plan.md`):
+
+- **Every Sunday at 08:00 PDT** it plans next week from the data alone.
+- **Any time**, Plan page → **Plan with Coach**: pick next week or the rest of this week (a check-in), and say how you
+  feel, the focus and what to lock. The job starts at once and takes a few minutes.
+
+The plan comes back as a proposal on the Plan page: **Review** shows the week and the coach's summary. **Accept**
+writes it into Coach (the same import as `/plan`; workouts you changed on the web stay) and onto Google Calendar,
+then `plan-apply.yml` plans the Lift sessions and puts the runs on Garmin. **Reject** changes nothing. Nothing reaches
+your calendar before Accept: the profile holds calendar text from other people, and the review is the gate.
+
+The agent gets no database URL and no Coach secret; it can only read the repository and write `plans/`. The steps
+before and after it build the profile and send the plan (`scripts/plan-cloud/client.mjs`, `POST /api/plan/proposals`).
+
+Setup (once): GitHub secret `CLAUDE_CODE_OAUTH_TOKEN` (`claude setup-token`) or `ANTHROPIC_API_KEY`, and
+`LIFT_SYNC_TOKEN`; Vercel `GITHUB_DISPATCH_TOKEN` (a fine-grained token for this repository, Actions: read and write).
+
+The local `/plan` and `/check-in` below still work, for a conversation about the week.
+
 ## What `/plan` actually does
 
 1. Refreshes the athlete profile (Strava 90d, fitness state CTL/ATL/TSB, calendar, weather, Lift templates).

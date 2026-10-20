@@ -33,8 +33,8 @@ struct SetRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Space.xxs) {
             if dynamicTypeSize.isAccessibilitySize { stacked } else { grid }
-            if let note = item.note {
-                SetNoteLine(note: note, indent: dynamicTypeSize.isAccessibilitySize ? 0 : badgeWidth + Space.sm)
+            if let detail = WorkoutText.setDetail(rpe: item.rpe, note: item.note) {
+                SetNoteLine(text: detail, indent: dynamicTypeSize.isAccessibilitySize ? 0 : badgeWidth + Space.sm)
                     .padding(.bottom, Space.xs)
             }
         }
@@ -168,5 +168,29 @@ struct SetRow: View {
 
     private var logLabel: String {
         item.status == .planned ? String(localized: "Log \(item.title)") : String(localized: "Undo \(item.title)")
+    }
+}
+
+/// The set editor's optional RPE: one chip per value from 6 to 10 in half steps. Tapping the chosen chip clears it.
+struct SetEditorRPE: View {
+    @Environment(\.koboTheme) private var theme
+    let rpe: Double?
+    let send: (WorkoutAction) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Space.xs) {
+            Text("RPE")
+                .font(theme.font(.subheadline).weight(.semibold))
+                .foregroundStyle(theme.palette.textPrimary)
+                .accessibilityHidden(true)
+            QuickPickRow(
+                "RPE",
+                values: RPE.scale.map(Optional.some),
+                selection: .action(rpe) { value in value.map { send(.editorRPEChanged($0)) } }
+            ) { $0.map(WorkoutText.number) ?? "" }
+            Text("Optional. Tap the chosen value again to clear it.")
+                .font(theme.font(.footnote))
+                .foregroundStyle(theme.palette.textSecondary)
+        }
     }
 }

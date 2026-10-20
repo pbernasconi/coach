@@ -129,9 +129,15 @@ final class WorkoutViewModel {
     private func sendLocal(_ action: WorkoutAction) -> Task<Void, Never>? {
         switch action {
         case .setValuesTapped(let id): openEditor(id)
-        case .editorWeightChanged, .editorRepsChanged, .editorApplyToLaterChanged, .editorDismissed:
+        case .editorWeightChanged, .editorRepsChanged, .editorApplyToLaterChanged, .editorRPEChanged,
+            .editorNoteChanged, .editorDismissed:
             state.editor = state.editor?.applying(action)
         case .editorDoneTapped: return saveEditor()
+        case .sessionNoteTapped, .exerciseNoteTapped: openNote(action)
+        case .noteTextChanged, .noteDismissed: state.noteEditor = state.noteEditor?.applying(action)
+        case .noteDoneTapped:
+            defer { state.noteEditor = nil }
+            return state.noteEditor.flatMap(saveNote)
         case .restExtendTapped: extendRest()
         case .restSkipTapped: endRest()
         case .howToTapped(let exerciseID): router.open(.exercise(exerciseID))
@@ -194,23 +200,23 @@ final class WorkoutViewModel {
 
     private func openEditor(_ id: UUID) {
         guard case (let item, let set)? = detail?.find(setID: id) else { return }
+        state.noteEditor = nil
         state.editor = SetEditor(set: set, in: item, previous: state.previous, days: days, gym: gym.setup)
     }
 
-    /// Done: saves values through `saveValues` only and never logs the set (product rule). "Apply to later sets" also
-    /// saves a new weight onto the later planned sets of the same kind, each keeping its own reps.
+    /// Done: closes the editor and saves it (`saveSetEditor`); it never logs the set (product rule).
     private func saveEditor() -> Task<Void, Never>? {
         guard let editor = state.editor else { return nil }
         state.editor = nil
-        let weight = editor.weight > 0 ? Weight(editor.weight, editor.unit) : nil
-        let reps = editor.reps > 0 ? editor.reps : nil
-        let updates = detail?.find(setID: editor.id).map { editor.laterSets(in: $0.0, weight: weight) } ?? []
-        return write { sets in
-            _ = try await sets.saveValues(setID: editor.id, reps: reps, weight: weight)
-            for set in updates {
-                _ = try await sets.saveValues(setID: set.id, reps: set.actualReps, weight: weight)
-            }
-        }
+        return saveSetEditor(editor)
+    }
+
+    /// The session's or one exercise's note editor; any other sheet closes first.
+    private func openNote(_ action: WorkoutAction) {
+        guard let detail, let editor = NoteEditor(opening: action, in: detail) else { return }
+        state.editor = nil
+        state.options = nil
+        state.noteEditor = editor
     }
 
     /// Starts the countdown in the app and on the Lock Screen and Dynamic Island; leaving the workout ends both.

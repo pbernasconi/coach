@@ -57,6 +57,13 @@
       "when": 1792523762206,
       "tag": "0007_tss_inputs",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792525995497,
+      "tag": "0008_plan_proposals",
+      "breakpoints": true
     }
   ]
 }

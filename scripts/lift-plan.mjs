@@ -101,6 +101,11 @@ for (const res of results) {
 }
 await sql`UPDATE users SET settings = jsonb_set(coalesce(settings, '{}'::jsonb), '{liftPlanned}', ${JSON.stringify([...made])}::jsonb) WHERE id = ${user.id}`;
 
+// Without the Google app keys (the Plan apply job), Coach pushes these weeks instead (POST /api/plan/proposals, push).
+if (!process.env.GOOGLE_CLIENT_ID) {
+  console.log(`weeks=${[...weeks].sort().join(',')}`);
+  weeks.clear();
+}
 for (const week of [...weeks].sort()) {
   const r = await pushWeek(sql, user.id, week, { log: () => {} });
   console.log(r.skipped ? `Calendar ${week}: not pushed (${r.skipped})` : `Calendar ${week}: ${r.created} created, ${r.updated} updated, ${r.deleted} deleted.`);

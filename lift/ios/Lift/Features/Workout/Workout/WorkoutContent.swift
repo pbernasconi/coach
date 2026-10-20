@@ -46,6 +46,16 @@ struct WorkoutContent: View {
             Button("Done") { send(.editorDoneTapped) }
                 .buttonStyle(.kobo(.primary, width: .full))
         }
+        .koboSheet(
+            item: Binding<NoteEditor?>.action(state.noteEditor) { if $0 == nil { send(.noteDismissed) } },
+            title: \.title,
+            hasChanges: state.noteEditor?.hasChanges ?? false
+        ) { editor in
+            NoteEditorField(editor: editor, send: send)
+        } footer: { _ in
+            Button("Done") { send(.noteDoneTapped) }
+                .buttonStyle(.kobo(.primary, width: .full))
+        }
     }
 
     /// The session title in the inline navigation bar, which keeps the page compact.
@@ -78,7 +88,7 @@ private struct WorkoutBody: View {
                 }
                 SegmentedProgress(done: workout.loggedSets, goal: workout.totalSets, accessibilityLabel: "Sets logged")
                 WorkoutClockRow(workout: workout, send: send)
-                WorkoutSessionNotes(note: workout.note, warmUpNote: workout.warmUpNote)
+                WorkoutSessionNotes(note: workout.note, warmUpNote: workout.warmUpNote) { send(.sessionNoteTapped) }
             }
             ForEach(workout.exercises) { exercise in
                 WorkoutExerciseSection(
@@ -107,8 +117,8 @@ private struct WorkoutBody: View {
     }
 }
 
-/// Last time's values, the weight and reps steppers and "Apply to later sets" in the editor sheet. Done (in the sheet
-/// footer) saves; it never logs the set.
+/// Last time's values, the weight and reps steppers, "Apply to later sets", the RPE chips and the note in the editor
+/// sheet. Done (in the sheet footer) saves; it never logs the set.
 private struct SetEditorFields: View {
     @Environment(\.koboTheme) private var theme
     let editor: SetEditor
@@ -140,5 +150,12 @@ private struct SetEditorFields: View {
                 isOn: .action(editor.appliesToLater) { send(.editorApplyToLaterChanged($0)) }
             )
         }
+        SetEditorRPE(rpe: editor.rpe, send: send)
+        KoboTextArea(
+            "Note",
+            text: .action(editor.note) { send(.editorNoteChanged($0)) },
+            prompt: "Optional",
+            lines: 1...4
+        )
     }
 }

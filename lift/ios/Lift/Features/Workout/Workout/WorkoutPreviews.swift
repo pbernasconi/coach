@@ -19,6 +19,8 @@
     #Preview("Editing") { WorkoutPreview(state: .fixtureEditing) }
     #Preview("Not started") { WorkoutPreview(state: .fixtureNotStarted) }
     #Preview("Finished") { WorkoutPreview(state: .fixtureFinished) }
+    #Preview("Editing, AX3") { WorkoutPreview(state: .fixtureEditing).dynamicTypeSize(.accessibility3) }
+    #Preview("Note") { WorkoutPreview(state: .fixtureNoteEditing) }
     #Preview("Loading") { WorkoutPreview(state: .fixtureLoading) }
     #Preview("Empty") { WorkoutPreview(state: .fixtureEmpty) }
     #Preview("Failed") { WorkoutPreview(state: .fixtureFailed) }
