@@ -6,7 +6,7 @@ import LiftStore
 /// is finished or discarded, also after the Workout screen is left. It follows the session in the store, so a tick in
 /// the app moves it on, and its own buttons (`WorkoutActivityIntents.swift`) log sets through the same repository as
 /// the app (PLAT-2). The composition root makes one; the Workout screen reaches it as its `RestActivityController`, and
-/// the buttons through `AppDependencyManager`.
+/// the buttons through `WorkoutActivityButtons`.
 final class WorkoutActivityCenter: RestActivityController {
     private let sessions: any SessionRepository
     private let sets: any SetRepository
@@ -81,6 +81,20 @@ final class WorkoutActivityCenter: RestActivityController {
     }
 
     // MARK: The Live Activity's buttons
+
+    /// Done: logs the set the Live Activity shows (`logSet(_:in:)`).
+    func logShownSet() async {
+        resume()
+        guard let shown = presenter.running(), let set = shown.state.current else { return }
+        await logSet(set.id, in: shown.attributes.sessionID)
+    }
+
+    /// Next: offers the planned set after the one the Live Activity shows (`showNextSet(after:in:)`).
+    func showNextSet() async {
+        resume()
+        guard let shown = presenter.running(), let set = shown.state.current else { return }
+        await showNextSet(after: set.id, in: shown.attributes.sessionID)
+    }
 
     /// Done: logs `setID` and starts its exercise's rest from full, as a tick in the app does. A set that is no longer
     /// planned (logged in the app meanwhile, or a second tap) is left alone.

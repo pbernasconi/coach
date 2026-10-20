@@ -22,7 +22,7 @@ struct WorkoutLockScreenView: View {
                     CurrentSetTrailing(set: set, rest: state.rest, isResting: isResting)
                 }
                 WorkoutBar(state: state, isResting: isResting)
-                WorkoutButtons(sessionID: attributes.sessionID, set: set, isResting: isResting)
+                WorkoutButtons(set: set, isResting: isResting)
             } else {
                 WorkoutCompleteRow(state: state)
                 WorkoutBar(state: state, isResting: false)

@@ -108,7 +108,6 @@ struct WorkoutBar: View {
 /// unlocking or opening Lift.
 struct WorkoutButtons: View {
     @Environment(\.colorScheme) private var colorScheme
-    let sessionID: UUID
     let set: WorkoutActivitySet
     let isResting: Bool
 
@@ -120,13 +119,13 @@ struct WorkoutButtons: View {
                 Button(intent: SkipRestIntent()) { Text("Skip") }
                     .accessibilityLabel(Text("Skip rest"))
             } else {
-                Button(intent: ShowNextSetIntent(sessionID: sessionID, setID: set.id)) {
+                Button(intent: ShowNextSetIntent()) {
                     Label("Next", systemImage: "forward.end.fill")
                 }
                 .accessibilityLabel(Text("Show the next set"))
             }
             Spacer(minLength: 0)
-            Button(intent: LogSetIntent(sessionID: sessionID, setID: set.id)) {
+            Button(intent: LogSetIntent()) {
                 Label("Done", systemImage: "checkmark")
                     .padding(.horizontal, 6)
             }

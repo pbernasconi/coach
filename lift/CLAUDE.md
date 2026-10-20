@@ -32,7 +32,7 @@ lift/
 │   │                       logged set until the workout is finished; it also compiles WorkoutActivityAttributes and
 │   │                       RestSnapshot (Lift/Features/Workout/LiveActivity/) and the Done/Next/+30s/Skip
 │   │                       LiveActivityIntents (Lift/App/WorkoutActivityIntents.swift). The intents run in the app's
-│   │                       process and reach WorkoutActivityCenter through AppDependencyManager (LiftApp.init)
+│   │                       process and reach WorkoutActivityCenter through WorkoutActivityButtons (set in LiftApp.init)
 │   ├── LiftShare/          Share extension: a note shared from Apple Notes goes to the App Group inbox, then
 │   │                       Lift's Import (lift://import, IncomingNoteRouter; the app also checks on foreground)
 │   ├── LiftTests/          Swift Testing ViewModel tests, hand-written fakes in Fakes/

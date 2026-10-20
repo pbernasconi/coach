@@ -108,6 +108,17 @@ import Testing
         #expect(center.currentRest() == rest)
     }
 
+    @Test func theButtonsActOnTheSetShown() async {
+        let recorder = RecordingSetRepository(result: started.items[0].sets[1])
+        let center = await showing(sets: recorder)
+
+        await center.showNextSet()
+        #expect(presenter.shown?.current?.id == sets[2].id)
+
+        await center.logShownSet()
+        #expect(recorder.calls == [.log(sets[2].id)])
+    }
+
     @Test func doneOnASetLoggedMeanwhileDoesNothing() async {
         let recorder = RecordingSetRepository(result: started.items[0].sets[0])
         let center = await showing(sets: recorder)

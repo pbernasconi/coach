@@ -2,8 +2,8 @@ import Foundation
 
 @testable import Lift
 
-/// Records what `WorkoutActivityCenter` puts on the Lock Screen, in order. `running` stands in for a Live Activity left
-/// from an earlier launch.
+/// Records what `WorkoutActivityCenter` puts on the Lock Screen, in order. `leftRunning` stands in for a Live Activity
+/// left from an earlier launch; otherwise the one shown last is running.
 final class RecordingWorkoutActivityPresenter: WorkoutActivityPresenting {
     enum Call: Equatable {
         case show(WorkoutActivityAttributes, WorkoutActivityAttributes.ContentState)
@@ -20,7 +20,9 @@ final class RecordingWorkoutActivityPresenter: WorkoutActivityPresenting {
     }
 
     func running() -> (attributes: WorkoutActivityAttributes, state: WorkoutActivityAttributes.ContentState)? {
-        leftRunning
+        if let leftRunning { return leftRunning }
+        guard case .show(let attributes, let state)? = calls.last else { return nil }
+        return (attributes, state)
     }
 
     func show(_ attributes: WorkoutActivityAttributes, state: WorkoutActivityAttributes.ContentState) async {

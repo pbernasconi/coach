@@ -1,4 +1,3 @@
-import AppIntents
 import KoboTokens
 import SwiftUI
 
@@ -14,7 +13,7 @@ struct LiftApp: App {
         self.launch = launch
         // The workout Live Activity's buttons run in this process, also when they launch Lift in the background.
         if case .ready(let dependencies) = launch {
-            AppDependencyManager.shared.add(dependency: dependencies.workoutActivity)
+            WorkoutActivityButtons.center = dependencies.workoutActivity
         }
     }
 

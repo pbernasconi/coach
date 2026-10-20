@@ -20,7 +20,6 @@ struct WorkoutActivityWidget: Widget {
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     IslandBottom(
-                        attributes: context.attributes,
                         state: context.state,
                         isResting: context.state.isResting(isStale: context.isStale)
                     )
@@ -95,7 +94,6 @@ struct IslandTrailing: View {
 
 /// The expanded island's bottom: the dots and the count, the bar, then the buttons.
 struct IslandBottom: View {
-    let attributes: WorkoutActivityAttributes
     let state: WorkoutActivityAttributes.ContentState
     let isResting: Bool
 
@@ -112,7 +110,7 @@ struct IslandBottom: View {
             }
             WorkoutBar(state: state, isResting: isResting)
             if let set = state.current {
-                WorkoutButtons(sessionID: attributes.sessionID, set: set, isResting: isResting)
+                WorkoutButtons(set: set, isResting: isResting)
             }
         }
         .padding(.horizontal, 4)
