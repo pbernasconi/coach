@@ -20,7 +20,19 @@ export type Status = {
 };
 
 type Row = Record<string, unknown>;
-const iso = (v: unknown) => (v == null ? null : v instanceof Date ? v.toISOString() : new Date(`${String(v).replace(' ', 'T')}Z`).toISOString());
+/**
+ * A database time as ISO 8601, or null. Postgres sends `timestamp` as '2026-10-20 03:00:41.123' (UTC here) and
+ * `timestamptz` as '2026-10-20 03:00:41.123+00'; only a value without a zone gets 'Z'. An unreadable value is null,
+ * so one odd row never breaks the start page.
+ */
+export function iso(v: unknown): string | null {
+  if (v == null) return null;
+  if (v instanceof Date) return Number.isNaN(v.getTime()) ? null : v.toISOString();
+  const text = String(v).trim().replace(' ', 'T');
+  const zoned = /(Z|[+-]\d{2}(:?\d{2})?)$/.test(text);
+  const d = new Date(zoned ? text.replace(/([+-]\d{2})$/, '$1:00') : `${text}Z`);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
 const hoursSince = (at: string | null, now: number) => (at ? (now - Date.parse(at)) / 3_600_000 : Infinity);
 
 function ago(hours: number) {
