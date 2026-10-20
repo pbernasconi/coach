@@ -15,8 +15,8 @@ import {
 import { useState } from 'react';
 import { NAV_KEYS } from '@/lib/hotkeys.mjs';
 
-// Every nav link (and the Coach logo: a partial prefetch of / would take the cache slot first) prefetches its page in full (data included) when it is on screen, so a click is instant; the
-// browser keeps it for staleTimes.static (next.config.ts).
+// The nav links use Next's default (partial) prefetch: the page shell and its loading.tsx, not its data. A full
+// prefetch rendered all six pages, with their database reads, on every page view (Neon compute and transfer).
 const navLinks = [
   { href: '/', label: 'Today' },
   { href: '/plan', label: 'Plan' },
@@ -58,7 +58,6 @@ export default function DashboardNav() {
                   <Link
                     key={link.href}
                     href={link.href}
-                    prefetch
                     onClick={() => setOpen(false)}
                     aria-current={isActive(link.href) ? 'page' : undefined}
                     className={`flex min-h-11 items-center rounded-md px-2 text-lg transition-colors hover:text-foreground/80 ${
@@ -74,19 +73,16 @@ export default function DashboardNav() {
 
           {/* Desktop menu */}
           <div className="mr-4 hidden md:flex">
-            <Link href="/" prefetch className="mr-6 flex items-center space-x-2">
+            <Link href="/" className="mr-6 flex items-center space-x-2">
               <span className="font-bold text-xl">
                 Coach
               </span>
             </Link>
-            {/* key: the links mount again after each navigation, so they prefetch again (the page you came from
-                included) and stay fresh in the router cache. */}
-            <nav key={pathname} className="flex items-center space-x-6 text-sm font-medium">
+            <nav className="flex items-center space-x-6 text-sm font-medium">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
-                  prefetch
                   aria-current={isActive(link.href) ? 'page' : undefined}
                   title={`${link.label} · press ${keyOf(link.href)}`}
                   aria-keyshortcuts={keyOf(link.href)}
@@ -99,7 +95,7 @@ export default function DashboardNav() {
           </div>
 
           {/* Mobile logo */}
-          <Link href="/" prefetch className="flex md:hidden mr-auto items-center">
+          <Link href="/" className="flex md:hidden mr-auto items-center">
             <span className="font-bold text-xl">Coach</span>
           </Link>
 

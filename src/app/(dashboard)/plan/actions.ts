@@ -7,7 +7,7 @@ import { sql } from '@/db';
 import { pushWeek } from '@/lib/calendar-sync/push.mjs';
 import { mondayOf } from '@/lib/plan/week.mjs';
 import { moveWorkout, setSkipped, workoutDate } from '@/lib/plan/queries';
-import { addFromLibrary, createWorkout, duplicateWorkout, loadRange, removeWorkout, type CalendarRange } from '@/lib/plan/month';
+import { addFromLibrary, createWorkout, duplicateWorkout, loadRange, removeWorkout, restoreWorkout, updateWorkout, type CalendarRange, type WorkoutInput } from '@/lib/plan/month';
 import { MAX_SPAN_WEEKS, spanWeeks } from '@/lib/plan/scroll.mjs';
 import { cookieTimeZone } from '@/lib/plan/timezone';
 import { todayIn } from '@/lib/plan/week.mjs';
@@ -76,13 +76,39 @@ export async function addFromLibraryAction(itemId: string, onDate: string) {
   return id;
 }
 
-/** Deletes a planned workout, then removes its Google Calendar event (pushWeek deletes events with no workout). */
-export async function removeWorkoutAction(id: string) {
+/**
+ * Deletes a planned workout, then removes its Google Calendar event (pushWeek deletes events with no workout).
+ * Returns the deleted row, for Undo (restoreWorkoutAction).
+ */
+export async function removeWorkoutAction(id: string): Promise<Record<string, unknown>> {
   const userId = await user();
-  const onDate = await removeWorkout(userId, String(id));
-  if (!onDate) throw new Error('Workout not found');
+  const gone = await removeWorkout(userId, String(id));
+  if (!gone) throw new Error('Workout not found');
   revalidatePath('/plan');
-  pushCalendar(userId, weeksAfterRemove(onDate));
+  pushCalendar(userId, weeksAfterRemove(gone.date));
+  return gone.row;
+}
+
+/** Undo of a delete: puts the workout back with its id, so the calendar event and Lift link come back too. */
+export async function restoreWorkoutAction(row: Record<string, unknown>): Promise<string> {
+  const userId = await user();
+  const onDate = await restoreWorkout(userId, row);
+  if (!onDate) throw new Error('Could not restore the workout');
+  revalidatePath('/plan');
+  pushCalendar(userId, [mondayOf(onDate)]);
+  return onDate;
+}
+
+/** Saves an edit of a planned workout from the modal. Returns the old and new day, or the problem with the input. */
+export async function updateWorkoutAction(id: string, input: Record<string, unknown>): Promise<{ from: string; to: string } | { error: string }> {
+  const userId = await user();
+  const clean = cleanNewWorkout(input) as { value?: WorkoutInput; error?: string };
+  if (!clean.value) return { error: clean.error ?? 'The workout is not valid.' };
+  const r = await updateWorkout(userId, String(id), clean.value);
+  if (!r) return { error: 'The workout is gone.' };
+  revalidatePath('/plan');
+  pushCalendar(userId, [mondayOf(r.from), mondayOf(r.to)]);
+  return r;
 }
 
 /**
@@ -120,7 +146,7 @@ export async function liftPreviewAction(id: string): Promise<{ detail: RichSessi
 /** Adds a new workout from the calendar ("+" on a day). Returns its id, or the problem with the input. */
 export async function createWorkoutAction(input: Record<string, unknown>): Promise<{ id: string } | { error: string }> {
   const userId = await user();
-  const clean = cleanNewWorkout(input) as { value?: Parameters<typeof createWorkout>[1]; error?: string };
+  const clean = cleanNewWorkout(input) as { value?: WorkoutInput; error?: string };
   if (!clean.value) return { error: clean.error ?? 'The workout is not valid.' };
   const id = await createWorkout(userId, clean.value);
   revalidatePath('/plan');

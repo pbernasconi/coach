@@ -29,6 +29,19 @@ const number = (v, lo, hi) => {
 };
 
 /**
+ * The workout_type of a workout: `<sport>-<bank>` for a bank workout (the rotation reads it, scripts/rotation.mjs),
+ * `ride-z2` for an easy ride, `rest` for a day off, or null for a free-text workout.
+ * @param {string} sport
+ * @param {{ bank?: string } | null | undefined} steps
+ */
+export function workoutTypeFor(sport, steps) {
+  if (sport === 'rest') return 'rest';
+  if ((sport !== 'run' && sport !== 'ride') || !steps?.bank) return null;
+  if (sport === 'ride' && steps.bank === 'easy') return 'ride-z2';
+  return `${sport}-${steps.bank}`;
+}
+
+/**
  * A clean new workout, or { error }. With steps, the planned time and TSS come from the steps when the form left
  * them empty. A rest day has no time, distance or TSS.
  * @param {Record<string, unknown>} input
@@ -65,6 +78,7 @@ export function cleanNewWorkout(input) {
       intensity: text(input?.intensity, 200),
       description: text(input?.description, 4000),
       steps,
+      workoutType: workoutTypeFor(sport, /** @type {{ bank?: string } | null} */ (steps)),
     },
   };
 }

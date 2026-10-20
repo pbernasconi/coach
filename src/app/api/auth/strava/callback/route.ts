@@ -1,99 +1,38 @@
-/**
- * Strava OAuth Callback Handler
- * Handles the OAuth callback from Strava
- */
+/** GET /api/auth/strava/callback: Strava's OAuth redirect. Checks the state cookie, stores the tokens. */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { timingSafeEqual } from 'node:crypto';
+import { NextResponse, type NextRequest } from 'next/server';
 import { ownerForSignedInUser } from '@/lib/owner';
-import StravaService from '@/modules/strava/strava-service';
-import { StravaPersister } from '@/modules/strava/strava-persister';
+import { exchangeCode, saveConnection, STATE_COOKIE } from '@/lib/strava-sync/oauth';
 
-const stravaService = new StravaService({
-  clientId: process.env.STRAVA_CLIENT_ID!,
-  clientSecret: process.env.STRAVA_CLIENT_SECRET!,
-  redirectUri: process.env.STRAVA_REDIRECT_URI!,
-});
+export const dynamic = 'force-dynamic';
+
+const back = (request: NextRequest, query: string) => {
+  const res = NextResponse.redirect(new URL(`/settings?${query}`, request.url));
+  res.cookies.delete({ name: STATE_COOKIE, path: '/api/auth/strava' });
+  return res;
+};
+const fail = (request: NextRequest, text: string) => back(request, `error=${encodeURIComponent(text)}`);
+
+function sameState(a: string | null | undefined, b: string | null | undefined) {
+  if (!a || !b || a.length !== b.length) return false;
+  return timingSafeEqual(Buffer.from(a), Buffer.from(b));
+}
 
 export async function GET(request: NextRequest) {
+  const userId = await ownerForSignedInUser();
+  if (!userId) return NextResponse.redirect(new URL('/sign-in', request.url));
+  const q = request.nextUrl.searchParams;
+  if (q.get('error')) return fail(request, 'Strava authorization was denied');
+  if (!sameState(q.get('state'), request.cookies.get(STATE_COOKIE)?.value)) return fail(request, 'The Strava login expired or did not start here. Try again.');
+  const code = q.get('code');
+  if (!code) return fail(request, 'No authorization code received');
   try {
-    // Get user from Clerk
-    const userId = await ownerForSignedInUser();
-    if (!userId) {
-      return NextResponse.redirect(new URL('/sign-in', request.url));
-    }
-
-    // Get code, state, and scope from query params
-    const searchParams = request.nextUrl.searchParams;
-    const code = searchParams.get('code');
-    const state = searchParams.get('state');
-    const scope = searchParams.get('scope');
-    const error = searchParams.get('error');
-
-    // Handle authorization denial
-    if (error) {
-      return NextResponse.redirect(
-        new URL(`/settings?error=${encodeURIComponent('Strava authorization was denied')}`, request.url)
-      );
-    }
-
-    // Validate code
-    if (!code) {
-      return NextResponse.redirect(
-        new URL(`/settings?error=${encodeURIComponent('No authorization code received')}`, request.url)
-      );
-    }
-
-    // Verify state matches userId
-    if (state !== userId) {
-      return NextResponse.redirect(
-        new URL(`/settings?error=${encodeURIComponent('Invalid state parameter')}`, request.url)
-      );
-    }
-
-    // Validate scope
-    if (!scope) {
-      return NextResponse.redirect(
-        new URL(`/settings?error=${encodeURIComponent('No scope received from Strava')}`, request.url)
-      );
-    }
-
-    // Exchange code for tokens
-    const tokenResponse = await stravaService.exchangeAuthorizationCode(code);
-
-    // Use scope from token response, fallback to URL scope, or use default
-    const scopeToSave = tokenResponse.scope || scope || 'read,activity:read_all';
-
-    console.log('Token response:', {
-      athleteId: tokenResponse.athlete.id,
-      scopeFromUrl: scope,
-      scopeFromToken: tokenResponse.scope,
-      scopeToSave,
-      expiresAt: tokenResponse.expires_at,
-    });
-
-    // Save connection to database
-    await StravaPersister.upsertConnection(
-      userId,
-      {
-        accessToken: tokenResponse.access_token,
-        refreshToken: tokenResponse.refresh_token,
-        expiresAt: tokenResponse.expires_at,
-        athleteId: tokenResponse.athlete.id,
-      },
-      scopeToSave
-    );
-
-    // Redirect back to Settings with success message
-    return NextResponse.redirect(
-      new URL('/settings?success=strava_connected', request.url)
-    );
+    const tokens = await exchangeCode(code);
+    await saveConnection(userId, tokens, tokens.scope || q.get('scope') || 'read,activity:read_all');
+    return back(request, 'success=strava_connected');
   } catch (error) {
-    console.error('Strava OAuth callback error:', error);
-    return NextResponse.redirect(
-      new URL(
-        `/settings?error=${encodeURIComponent('Failed to connect Strava account')}`,
-        request.url
-      )
-    );
+    console.error('Strava OAuth callback failed:', error instanceof Error ? error.message : 'unknown error');
+    return fail(request, 'Failed to connect Strava account');
   }
 }
