@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { adaptForFeel, addDays, isHard, matchWeek, mondayOf, sportOf, undoAdapts } from './week.mjs';
+import { adaptForFeel, addDays, isHard, matchWeek, mondayOf, sportOf, sportOfStrava, undoAdapts } from './week.mjs';
 
 const MON = '2026-10-19';
 const day = (n) => addDays(MON, n);
@@ -36,6 +36,14 @@ test('sport and quality detection', () => {
   assert.equal(sportOf({ title: 'VO2 A', workoutType: 'vo2-bike' }), 'ride');
   assert.equal(sportOf({ title: 'Easy run + strides' }), 'run');
   assert.equal(sportOf({ title: 'Rest day' }), 'rest');
+  assert.equal(sportOf({ title: 'Easy hike' }), 'hike');
+  assert.equal(sportOf({ title: 'Recovery walk' }), 'walk');
+  assert.equal(sportOfStrava('Hike'), 'hike');
+  assert.equal(sportOfStrava('Walk'), 'walk');
+  assert.equal(sportOfStrava('VirtualRide'), 'ride');
+  assert.equal(sportOfStrava('TrailRun'), 'run');
+  assert.equal(sportOfStrava('WeightTraining'), 'strength');
+  assert.equal(sportOfStrava('Rowing'), 'other');
   assert.ok(isHard({ title: 'Threshold B run' }));
   assert.ok(!isHard({ title: 'Long ride', intensity: 'easy' }));
 });

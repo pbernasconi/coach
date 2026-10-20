@@ -98,9 +98,33 @@
   }
 }
 
+/* Sport tokens: one per sport, copied from design/sports.json (src/lib/sports.test.mjs checks that they
+   match). Use them through src/lib/sports.ts and <SportIcon>, never raw hex. */
+:root {
+  --sport-ride: #2a78d6;
+  --sport-run: #eb6834;
+  --sport-hike: #1baf7a;
+  --sport-walk: #eda100;
+  --sport-strength: #6250d6;
+  --sport-swim: #008300;
+  --sport-yoga: #e87ba4;
+  --sport-other: #a8a79f;
+  --sport-rest: #a8a79f;
+}
+.dark {
+  --sport-ride: #3987e5;
+  --sport-run: #d95926;
+  --sport-hike: #199e70;
+  --sport-walk: #c98500;
+  --sport-strength: #9085e9;
+  --sport-swim: #008300;
+  --sport-yoga: #d55181;
+  --sport-other: #6b6a65;
+  --sport-rest: #6b6a65;
+}
+
 /* Chart tokens (validated with the dataviz palette checks, light and dark). Charts use these roles,
-   never raw hex. Ride = categorical slot 1 (blue), run = slot 2 (orange); "other" is neutral, not a
-   categorical hue. Fatigue (ATL) is slot 5 (magenta): it is below 3:1 on the light surface, so the
+   never raw hex. Ride and run are the sport tokens. Fatigue (ATL) is slot 5 (magenta): it is below 3:1 on the light surface, so the
    load chart labels its lines directly and has a tooltip. */
 :root {
   --viz-surface: #fcfcfb;
@@ -109,9 +133,8 @@
   --viz-muted: #898781;
   --viz-grid: #e1e0d9;
   --viz-axis: #c3c2b7;
-  --viz-ride: #2a78d6;
-  --viz-run: #eb6834;
-  --viz-other: #c3c2b7;
+  --viz-ride: var(--sport-ride);
+  --viz-run: var(--sport-run);
   --viz-ctl: #2a78d6;
   --viz-atl: #e87ba4;
   --viz-tsb: #52514e;
@@ -127,9 +150,8 @@
   --viz-muted: #898781;
   --viz-grid: #2c2c2a;
   --viz-axis: #383835;
-  --viz-ride: #3987e5;
-  --viz-run: #d95926;
-  --viz-other: #5b5a56;
+  --viz-ride: var(--sport-ride);
+  --viz-run: var(--sport-run);
   --viz-ctl: #3987e5;
   --viz-atl: #d55181;
   --viz-tsb: #c3c2b7;

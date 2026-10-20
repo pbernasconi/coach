@@ -1,25 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { ChartTooltip, LegendItem } from './ChartTooltip';
+import SportIcon from '@/components/SportIcon';
+import type { SportWeek } from '@/lib/performance/queries';
+import { SPORTS, sport, type SportId } from '@/lib/sports';
+import { ChartTooltip, LegendItem, type TooltipRow } from './ChartTooltip';
 import { niceTicks, useMeasure } from './useMeasure';
 
 export type HoursWeek = {
   week: string; // Monday, YYYY-MM-DD
-  rideHours: number;
-  runHours: number;
-  otherHours: number;
-  rideKm: number;
-  runKm: number;
-  strength: number;
+  sports: Partial<Record<SportId, SportWeek>>;
+  strength: number; // strength sessions (Lift and Strava), one per day
   tss: number;
 };
-
-const SERIES = [
-  { key: 'rideHours', label: 'Ride', color: 'var(--viz-ride)' },
-  { key: 'runHours', label: 'Run', color: 'var(--viz-run)' },
-  { key: 'otherHours', label: 'Other', color: 'var(--viz-other)' },
-] as const;
 
 const fmtWeek = (w: string) => new Date(`${w}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
 const hm = (h: number) => `${Math.floor(h)}:${String(Math.round((h % 1) * 60)).padStart(2, '0')}`;
@@ -30,9 +23,21 @@ function topRounded(x: number, y: number, w: number, h: number, r: number) {
   return `M${x},${y + h}V${y + rr}Q${x},${y} ${x + rr},${y}H${x + w - rr}Q${x + w},${y} ${x + w},${y + rr}V${y + h}Z`;
 }
 
+const hoursOf = (w: HoursWeek, id: SportId) => w.sports[id]?.hours ?? 0;
+
+/** The tooltip text for one sport: its exact Strava types where they differ from the sport ("Hike", "Virtual ride"), and km. */
+function detail(id: SportId, sw: SportWeek) {
+  const types = Object.entries(sw.types).sort((a, b) => b[1] - a[1]).map(([t]) => t);
+  const named = types.filter((t) => t !== sport(id).label);
+  const parts = [named.length || id === 'other' ? types.join(', ') : sport(id).label];
+  if (sw.km >= 0.5 && id !== 'strength') parts.push(id === 'ride' ? `${Math.round(sw.km)} km` : `${sw.km.toFixed(1)} km`);
+  return parts.join(' · ');
+}
+
 /**
- * Hours per week, stacked by sport (ride, run, other), with strength sessions as a dot row under the
- * axis and a 12-week average line. The current week is drawn lighter: it is still in progress.
+ * Hours per week, stacked by sport in the design/sports.json order, with strength sessions as a dot row under
+ * the axis and a 12-week average line. Only sports with hours in the window get a series. The current week is
+ * drawn lighter: it is still in progress.
  */
 export default function WeeklyHoursChart({ weeks, currentWeek }: { weeks: HoursWeek[]; currentWeek: string }) {
   const [ref, width] = useMeasure<HTMLDivElement>();
@@ -41,7 +46,8 @@ export default function WeeklyHoursChart({ weeks, currentWeek }: { weeks: HoursW
   const H = 300;
   const plotW = width - M.left - M.right;
   const plotH = H - M.top - M.bottom;
-  const total = (w: HoursWeek) => w.rideHours + w.runHours + w.otherHours;
+  const series = SPORTS.filter((s) => s.id !== 'rest' && weeks.some((w) => hoursOf(w, s.id) > 0));
+  const total = (w: HoursWeek) => series.reduce((n, s) => n + hoursOf(w, s.id), 0);
   const ticks = niceTicks(Math.max(4, ...weeks.map(total)));
   const yMax = ticks[ticks.length - 1];
   const y = (v: number) => M.top + plotH - (v / yMax) * plotH;
@@ -64,8 +70,8 @@ export default function WeeklyHoursChart({ weeks, currentWeek }: { weeks: HoursW
           <p className="text-xs text-[var(--viz-muted)]">Moving time from Strava. Strength counts Lift and Strava sessions, one per day.</p>
         </div>
         <div className="flex flex-wrap gap-3">
-          {SERIES.map((s) => <LegendItem key={s.key} color={s.color} label={s.label} />)}
-          <LegendItem color="var(--viz-ink-2)" label="Strength session" shape="dot" />
+          {series.map((s) => <LegendItem key={s.id} icon={<SportIcon id={s.id} />} label={s.label} />)}
+          <LegendItem color="var(--sport-strength)" label="Strength session" shape="dot" />
         </div>
       </div>
       <div ref={ref} className="relative" onPointerLeave={() => setHover(null)}>
@@ -86,13 +92,13 @@ export default function WeeklyHoursChart({ weeks, currentWeek }: { weeks: HoursW
             let base = 0;
             const current = w.week === currentWeek;
             const dim = hover !== null && hover !== i;
-            const visible = SERIES.filter((s) => w[s.key] > 0);
+            const visible = series.filter((s) => hoursOf(w, s.id) > 0);
             return (
               <g
                 key={w.week}
                 tabIndex={0}
                 role="button"
-                aria-label={`${fmtWeek(w.week)}: ${hm(total(w))} hours, ride ${hm(w.rideHours)}, run ${hm(w.runHours)}, other ${hm(w.otherHours)}, strength ${w.strength}`}
+                aria-label={`${fmtWeek(w.week)}: ${hm(total(w))} hours, ${visible.map((s) => `${s.label.toLowerCase()} ${hm(hoursOf(w, s.id))}`).join(', ')}, strength sessions ${w.strength}`}
                 onPointerEnter={() => setHover(i)}
                 onFocus={() => setHover(i)}
                 onBlur={() => setHover(null)}
@@ -101,16 +107,16 @@ export default function WeeklyHoursChart({ weeks, currentWeek }: { weeks: HoursW
               >
                 <rect x={M.left + band * i} y={M.top} width={band} height={plotH + M.bottom} fill="transparent" />
                 {visible.map((s, k) => {
-                  const v = w[s.key];
+                  const v = hoursOf(w, s.id);
                   const top = y(base + v);
                   const bottom = y(base);
                   base += v;
                   const isTop = k === visible.length - 1;
                   const hgt = Math.max(0, bottom - top - (k > 0 ? GAP : 0));
                   return isTop ? (
-                    <path key={s.key} d={topRounded(cx(i) - barW / 2, top, barW, hgt, 4)} fill={s.color} />
+                    <path key={s.id} d={topRounded(cx(i) - barW / 2, top, barW, hgt, 4)} fill={s.color} />
                   ) : (
-                    <rect key={s.key} x={cx(i) - barW / 2} y={top} width={barW} height={hgt} fill={s.color} />
+                    <rect key={s.id} x={cx(i) - barW / 2} y={top} width={barW} height={hgt} fill={s.color} />
                   );
                 })}
                 {labelled.has(i) && total(w) > 0 && (
@@ -120,7 +126,7 @@ export default function WeeklyHoursChart({ weeks, currentWeek }: { weeks: HoursW
                   {current ? 'This wk' : fmtWeek(w.week)}
                 </text>
                 {Array.from({ length: Math.min(w.strength, 4) }, (_, d) => (
-                  <circle key={d} cx={cx(i) + (d - (Math.min(w.strength, 4) - 1) / 2) * 10} cy={M.top + plotH + 36} r={3.5} fill="var(--viz-surface)" stroke="var(--viz-ink-2)" strokeWidth={2} />
+                  <circle key={d} cx={cx(i) + (d - (Math.min(w.strength, 4) - 1) / 2) * 10} cy={M.top + plotH + 36} r={3.5} fill="var(--viz-surface)" stroke="var(--sport-strength)" strokeWidth={2} />
                 ))}
               </g>
             );
@@ -138,9 +144,10 @@ export default function WeeklyHoursChart({ weeks, currentWeek }: { weeks: HoursW
             title={`Week of ${fmtWeek(h.week)}${h.week === currentWeek ? ' (in progress)' : ''}`}
             rows={[
               { key: 'total', label: 'total', value: hm(total(h)), strong: true },
-              { key: 'ride', label: `ride${h.rideKm ? ` · ${Math.round(h.rideKm)} km` : ''}`, value: hm(h.rideHours), color: 'var(--viz-ride)' },
-              { key: 'run', label: `run${h.runKm ? ` · ${h.runKm.toFixed(1)} km` : ''}`, value: hm(h.runHours), color: 'var(--viz-run)' },
-              { key: 'other', label: 'other', value: hm(h.otherHours), color: 'var(--viz-other)' },
+              ...series.flatMap((s): TooltipRow[] => {
+                const sw = h.sports[s.id];
+                return sw && sw.hours > 0 ? [{ key: s.id, label: detail(s.id, sw), value: hm(sw.hours), icon: <SportIcon id={s.id} className="h-3 w-3" /> }] : [];
+              }),
               { key: 'strength', label: 'strength sessions', value: String(h.strength) },
               { key: 'tss', label: 'TSS', value: String(Math.round(h.tss)) },
             ]}
