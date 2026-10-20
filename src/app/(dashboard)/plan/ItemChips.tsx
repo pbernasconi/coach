@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { sport } from '@/lib/sports';
 import { plainTitle } from '@/lib/plan/calendar.mjs';
 import { dur } from '@/lib/plan/cells.mjs';
+import { loadText } from '@/lib/plan/week-api.mjs';
 import type { CalendarActivity, CalendarLift, CalendarWorkout } from '@/lib/plan/month';
 import type { Item } from './ItemPreview';
 import { WORKOUT_MIME } from './WorkoutLibrary';
@@ -29,8 +30,8 @@ function PlannedChip({ w, actual, roomy, onOpen }: { w: CalendarWorkout; actual:
   const done = w.state === 'done';
   const missed = w.state === 'missed';
   const pct = w.compliance.ratio != null ? `${Math.round(w.compliance.ratio * 100)} % of planned ${w.compliance.basis === 'tss' ? 'TSS' : 'time'}` : null;
-  const plannedText = [w.duration ? dur(w.duration) : null, w.tss ? `${Math.round(w.tss)} TSS` : null].filter(Boolean).join(' · ');
-  const doneText = actual ? [dur(actual.min), actual.tss ? `${Math.round(actual.tss)} TSS` : null].filter(Boolean).join(' · ') : w.match?.name ?? null;
+  const plannedText = loadText(w.duration, w.tss, dur);
+  const doneText = actual ? loadText(actual.min, actual.tss, dur) || dur(0) : w.match?.name ?? null;
   const tooltip = [plainTitle(w.title), `Planned: ${plannedText || 'no target'}`, doneText && `Done: ${doneText}`, `${w.compliance.label}${pct ? ` (${pct})` : ''}`]
     .filter(Boolean)
     .join('\n');

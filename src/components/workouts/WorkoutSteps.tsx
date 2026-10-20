@@ -1,4 +1,4 @@
-import { clock, targetText, zoneOf, stepSeconds } from '@/lib/workouts/steps.mjs';
+import { STEP_KIND, stepLength, stepTarget, stepZone } from '@/lib/workouts/steps.mjs';
 import type { StructuredWorkout } from '@/lib/plan/queries';
 import { ZONE_COLOR } from './WorkoutChart';
 
@@ -13,28 +13,20 @@ type Node = {
   notes?: string;
 };
 
-const KIND: Record<string, string> = { warmup: 'Warm-up', work: 'Work', recovery: 'Recovery', rest: 'Rest', cooldown: 'Cool-down' };
-
-function length(n: Node) {
-  const d = n.duration!;
-  if (d.type === 'distance') return d.m! % 1000 === 0 ? `${d.m! / 1000} km` : `${d.m} m`;
-  if (d.type === 'lap') return 'Lap button';
-  return clock(stepSeconds(n as never));
-}
+const KIND: Record<string, string> = STEP_KIND;
 
 function Row({ n, sport }: { n: Node; sport: string }) {
-  const zone = n.target!.type === 'open' ? (n.kind === 'work' ? 'Z5' : 'Z1') : zoneOf(n.target as never, sport);
+  const zone = stepZone(n as never, sport) as string;
   return (
     <li className="grid grid-cols-[0.5rem_4.5rem_1fr_auto] items-baseline gap-2 py-1 text-xs">
       <span className="h-2.5 w-2 self-center rounded-sm" style={{ background: ZONE_COLOR[zone] }} aria-hidden />
-      <span className="tabular-nums text-[var(--viz-ink)]">{length(n)}</span>
+      <span className="tabular-nums text-[var(--viz-ink)]">{stepLength(n as never)}</span>
       <span className="min-w-0 truncate text-[var(--viz-ink-2)]" title={n.notes}>
         {KIND[n.kind] ?? n.kind}
         {n.notes ? ` · ${n.notes}` : ''}
       </span>
       <span className="whitespace-nowrap text-right tabular-nums text-[var(--viz-ink)]">
-        {n.target!.type === 'open' ? (n.kind === 'work' ? 'All out' : 'Easy') : `${n.ramp ? 'Ramp ' : ''}${targetText(n.target as never)}`}
-        {n.cadence ? ` · ${n.cadence[0]}–${n.cadence[1]} rpm` : ''}
+        {stepTarget(n as never)}
       </span>
     </li>
   );
