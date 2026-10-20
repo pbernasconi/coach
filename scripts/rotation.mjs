@@ -2,59 +2,58 @@
 /**
  * Quality-rotation state — which above-threshold session comes next.
  *
- * The variety mandate alternates bike VO2 ↔ run intervals week to week. This
- * derives the last quality session actually *planned* (from prior plans/*.json)
- * so the next one is deterministic rather than eyeballed. Eyeballing is how the
- * weeks of 2026-07-06 and 2026-07-13 both ended up as ride-vo2.
+ * The variety mandate alternates bike VO2 ↔ run intervals week to week. This derives the last quality session
+ * actually *planned* (from the plans in the database) so the next one is deterministic rather than eyeballed.
+ * Eyeballing is how the weeks of 2026-07-06 and 2026-07-13 both ended up as ride-vo2.
  *
- * Lives in its own module (rather than inline in coach-profile.mjs) so it is
- * testable — coach-profile.mjs runs DB queries at import time and can't be
- * imported by a test. Also mirrors the travel.mjs precedent: non-trivial derived
- * state belongs outside the aggregator.
+ * `rotationFromPlans` is pure (tested in rotation.test.mjs); `loadRotation` reads the database.
  */
-
-import { readdirSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 
 const QUALITY_TYPES = ['ride-vo2', 'run-intervals', 'run-tempo', 'ride-sst'];
 const DEFAULT = { lastQuality: null, lastQualityWeek: null, nextQuality: 'ride-vo2' };
 
 /**
- * @param plansDir  directory holding YYYY-MM-DD.json plan files
- * @param targetKey the Monday being planned ('YYYY-MM-DD'); plans on/after this
- *                  are ignored so re-running /plan for a week doesn't read its
- *                  own output and flip the rotation.
+ * @param {{ weekStart: string, events?: { workoutType?: string | null, start?: string }[] | null }[]} plans
+ * @param {string} targetKey the Monday being planned ('YYYY-MM-DD'); plans on/after it are ignored, so re-running
+ *   /plan for a week doesn't read its own output and flip the rotation.
  */
-export function rotationState(plansDir, targetKey) {
-  try {
-    const priorPlans = readdirSync(plansDir)
-      .filter((f) => /^\d{4}-\d{2}-\d{2}\.json$/.test(f))
-      .map((f) => f.slice(0, 10))
-      .filter((k) => k < targetKey)
-      .sort()
-      .reverse();
-
-    for (const key of priorPlans) {
-      let plan;
-      try {
-        plan = JSON.parse(readFileSync(resolve(plansDir, `${key}.json`), 'utf8'));
-      } catch {
-        continue; // malformed plan — skip, don't abort the whole derivation
-      }
-      const q = (plan.events ?? [])
-        .filter((e) => QUALITY_TYPES.includes(e.workoutType))
-        .sort((a, b) => String(a.start).localeCompare(String(b.start)))
-        .at(-1);
-      if (q) {
-        return {
-          lastQuality: q.workoutType,
-          lastQualityWeek: key,
-          nextQuality: q.workoutType.startsWith('ride') ? 'run-intervals' : 'ride-vo2',
-        };
-      }
+export function rotationFromPlans(plans, targetKey) {
+  const prior = plans
+    .filter((p) => typeof p?.weekStart === 'string' && p.weekStart < targetKey)
+    .sort((a, b) => b.weekStart.localeCompare(a.weekStart));
+  for (const plan of prior) {
+    const q = (Array.isArray(plan.events) ? plan.events : [])
+      .filter((e) => QUALITY_TYPES.includes(e?.workoutType))
+      .sort((a, b) => String(a.start).localeCompare(String(b.start)))
+      .at(-1);
+    if (q) {
+      return {
+        lastQuality: q.workoutType,
+        lastQualityWeek: plan.weekStart,
+        nextQuality: q.workoutType.startsWith('ride') ? 'run-intervals' : 'ride-vo2',
+      };
     }
-  } catch (e) {
-    console.error('rotation state fail (defaulting to ride-vo2):', e.message);
   }
   return { ...DEFAULT };
+}
+
+/** The rotation for `targetKey` from the user's plans in the database (training_plans and their workouts). */
+export async function loadRotation(sql, userId, targetKey) {
+  try {
+    const rows = await sql`
+      SELECT p.week_start_date, a.workout_type, a.scheduled_date, a.start_time
+      FROM training_plans p JOIN training_plan_activities a ON a.plan_id = p.id
+      WHERE p.user_id = ${userId} AND p.week_start_date < ${targetKey} AND a.status <> 'skipped'`;
+    const byWeek = new Map();
+    for (const r of rows) {
+      const week = new Date(r.week_start_date).toISOString().slice(0, 10);
+      const day = new Date(r.scheduled_date).toISOString().slice(0, 10);
+      if (!byWeek.has(week)) byWeek.set(week, { weekStart: week, events: [] });
+      byWeek.get(week).events.push({ workoutType: r.workout_type, start: `${day}T${r.start_time ?? '00:00'}` });
+    }
+    return rotationFromPlans([...byWeek.values()], targetKey);
+  } catch (e) {
+    console.error('rotation state fail (defaulting to ride-vo2):', e.message);
+    return { ...DEFAULT };
+  }
 }

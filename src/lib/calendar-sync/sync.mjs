@@ -9,6 +9,36 @@
 import { createId } from '@paralleldrive/cuid2';
 
 /**
+ * A fresh access token for a calendar connection (and it is saved), or null when Google refuses.
+ * Always refreshes: token_expires_at has been unreliable across connections, and it costs one request.
+ */
+export async function refreshAccessToken(sql, conn, env = process.env, warn = console.warn) {
+  const r = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: env.GOOGLE_CLIENT_ID,
+      client_secret: env.GOOGLE_CLIENT_SECRET,
+      refresh_token: conn.refresh_token,
+      grant_type: 'refresh_token',
+    }),
+  });
+  if (!r.ok) {
+    // Don't echo the body: it may contain token fragments.
+    warn(`[${conn.google_email}] token refresh failed: ${r.status} ${r.statusText}`);
+    return null;
+  }
+  const tok = await r.json();
+  await sql`
+    UPDATE calendar_connections
+       SET access_token = ${tok.access_token},
+           token_expires_at = ${new Date(Date.now() + tok.expires_in * 1000)},
+           updated_at = NOW()
+     WHERE id = ${conn.id}`;
+  return tok.access_token;
+}
+
+/**
  * @param {import('@neondatabase/serverless').NeonQueryFunction<false, false>} sql
  * @param {{ daysBack?: number, daysForward?: number, env?: Record<string, string | undefined>,
  *          log?: (...a: unknown[]) => void, warn?: (...a: unknown[]) => void }} [opts]
@@ -38,34 +68,8 @@ export async function syncCalendars(sql, opts = {}) {
   let totalCancelled = 0;
 
   for (const conn of connections) {
-    // Always refresh — DB token_expires_at is unreliable across connections.
-    // Refresh tokens are long-lived; cost is one extra request per sync.
-    let accessToken;
-    {
-      const r = await fetch('https://oauth2.googleapis.com/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          client_id: env.GOOGLE_CLIENT_ID,
-          client_secret: env.GOOGLE_CLIENT_SECRET,
-          refresh_token: conn.refresh_token,
-          grant_type: 'refresh_token',
-        }),
-      });
-      if (!r.ok) {
-        // Don't echo body — may contain token fragments.
-        warn(`[${conn.google_email}] token refresh failed: ${r.status} ${r.statusText}`);
-        continue;
-      }
-      const tok = await r.json();
-      accessToken = tok.access_token;
-      await sql`
-        UPDATE calendar_connections
-           SET access_token = ${tok.access_token},
-               token_expires_at = ${new Date(Date.now() + tok.expires_in * 1000)},
-               updated_at = NOW()
-         WHERE id = ${conn.id}`;
-    }
+    const accessToken = await refreshAccessToken(sql, conn, env, warn);
+    if (!accessToken) continue;
 
     const calendars = Array.isArray(conn.calendars) && conn.calendars.length ? conn.calendars : [{ id: 'primary', label: 'me' }];
     let upserted = 0;

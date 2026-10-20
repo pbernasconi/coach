@@ -23,7 +23,7 @@ import { execFileSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { resolveTravel, dateKeysBetween, HOME_TZ } from './travel.mjs';
-import { rotationState } from './rotation.mjs';
+import { loadRotation } from './rotation.mjs';
 import { untrusted } from './untrusted.mjs';
 
 const sql = neon(process.env.DATABASE_URL);
@@ -295,8 +295,8 @@ try {
   if (jsonEnd > 0) appleNotes = JSON.parse(out.slice(0, jsonEnd + 1));
 } catch (e) { console.error('apple notes fail:', e.message); }
 
-// ===== 8b. Quality rotation state (from prior plans, not vibes) =====
-const rotation = rotationState(resolve('plans'), weekStart.toISOString().slice(0, 10));
+// ===== 8b. Quality rotation state (from prior plans in the database, not vibes) =====
+const rotation = await loadRotation(sql, user.id, weekStart.toISOString().slice(0, 10));
 
 // ===== 9. Build markdown profile =====
 const md = [];
