@@ -44,9 +44,10 @@ import { isAuthorized } from './auth.mjs';
  * its outbox; changes applied before the error are safe to resend thanks to the idempotency keys.
  * @param {LiftRepository} repo
  * @param {Record<string, unknown>[]} rawChanges
+ * @param {{ applied?: ValidChange[] }} [opts]  applied: gets each change that was written (not stale, not a duplicate)
  * @returns {Promise<PushResponse>}
  */
-export async function push(repo, rawChanges) {
+export async function push(repo, rawChanges, opts = {}) {
   /** @type {PushResponse} */
   const response = { accepted: [], rejected: [] };
   for (const raw of rawChanges) {
@@ -55,7 +56,8 @@ export async function push(repo, rawChanges) {
       response.rejected.push({ idempotencyKey: String(raw.idempotencyKey), reason: result.reason });
       continue;
     }
-    await repo.applyChange(result.change);
+    const outcome = await repo.applyChange(result.change);
+    if (outcome === 'applied') opts.applied?.push(result.change);
     // Echo the key as the client sent it, so it can match its outbox entry.
     response.accepted.push(String(raw.idempotencyKey));
   }
@@ -90,9 +92,10 @@ const UNAUTHORIZED = Object.freeze({ status: 401, body: { error: 'unauthorized' 
  * POST /api/lift/sync/push
  * @param {{ authorization: string | null, rawBody: string, token: string | undefined }} request
  * @param {LiftRepository} repo
+ * @param {{ applied?: ValidChange[] }} [opts]  see push
  * @returns {Promise<HandlerResult>}
  */
-export async function handlePush(request, repo) {
+export async function handlePush(request, repo, opts = {}) {
   if (!isAuthorized(request.authorization, request.token)) return UNAUTHORIZED;
   if (new TextEncoder().encode(request.rawBody).length > MAX_PUSH_BODY_BYTES) {
     return { status: 400, body: { error: 'body too large' } };
@@ -105,7 +108,7 @@ export async function handlePush(request, repo) {
   }
   const envelope = parsePushEnvelope(body);
   if (!envelope.ok) return { status: 400, body: { error: envelope.error } };
-  return { status: 200, body: await push(repo, envelope.changes) };
+  return { status: 200, body: await push(repo, envelope.changes, opts) };
 }
 
 /**

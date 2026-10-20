@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { hm, loadText, notesOf, parseWeekQuery, totalsText, weekItem, weekResponse } from './week-api.mjs';
 import { LIFT_MARKER } from './lift-plan.mjs';
+import { complianceOf } from './compliance.mjs';
 
 const sports = { known: new Set(['ride', 'run', 'strength', 'rest', 'other']), label: (id) => id[0].toUpperCase() + id.slice(1) };
 const NOW = new Date('2026-10-20T20:30:00.000Z'); // Tuesday 13:30 in Los Angeles
@@ -123,4 +124,13 @@ test('the response: 7 days a week, Monday first, items in plan order, plan title
   assert.equal(w1.totals.plannedCount, 2);
   assert.equal(w2.totals.text, 'Nothing planned');
   assert.equal(w2.days.length, 7);
+});
+
+test('a rest day reads "Rest" in every state but skipped', () => {
+  for (const state of ['planned', 'today', 'done']) {
+    const item = weekItem(workout({ title: 'Rest day', sport: 'rest', state, compliance: complianceOf({}, state, null, { rest: true }) }), sports);
+    assert.equal(item.stateLabel, 'Rest');
+    assert.equal(item.compliance, null);
+  }
+  assert.equal(weekItem(workout({ sport: 'rest', state: 'skipped', compliance: complianceOf({}, 'skipped', null, { rest: true }) }), sports).stateLabel, 'Skipped');
 });
