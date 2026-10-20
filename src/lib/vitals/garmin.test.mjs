@@ -243,3 +243,14 @@ test('backfill progress: PUT, GET, and the /health line', async () => {
   await put(repo, { backfill_from: null });
   assert.equal(garminStatusFrom(repo.rows.get('user_test'), NOW).backfill, null);
 });
+
+test('a running backfill with no success yet is info, not a warning', async () => {
+  const { garminStatusFrom } = await import('./garmin.mjs');
+  const now = Date.parse('2026-10-20T06:00:00Z');
+  const row = { tokensCiphertext: 'v1.x', status: 'ok', lastSuccessAt: null, lastAttemptAt: '2026-10-20T05:16:00Z', syncedThrough: null, lastError: null, backfillFrom: '2025-04-20', backfillThrough: '2026-01-24' };
+  const s = garminStatusFrom(row, now);
+  assert.equal(s.warning.level, 'info');
+  assert.match(s.warning.text, /backfill in progress \(from Apr 20\): through Jan 24/);
+  const stale = garminStatusFrom({ ...row, lastAttemptAt: '2026-10-19T20:00:00Z' }, now);
+  assert.equal(stale.warning.level, 'warn');
+});
