@@ -20,7 +20,8 @@ describe('IdleSessionWarning', () => {
 
   it('renders nothing while the end is far', async () => {
     render(<IdleSessionWarning timeoutMs={TIMEOUT} warnBeforeMs={WARN} onExtend={vi.fn()} onTimeout={vi.fn()} />)
-    await advance(TIMEOUT - WARN - 1)
+    // A margin of 1 s: shouldAdvanceTime also moves the clock by the real time that the test takes.
+    await advance(TIMEOUT - WARN - 1_000)
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
   })
 
