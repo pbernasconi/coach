@@ -1,9 +1,9 @@
 import Link from 'next/link';
+import MuscleSetsChart from '@/components/charts/MuscleSetsChart';
 
 type MuscleRow = { muscle: string; sets: number; status: string };
 type TopLift = { key: string; name: string; sessions: number; points: { day: string; e1rm: number }[]; latest: number | null; change: number | null };
 
-const label = (m: string) => m.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^./, (c) => c.toUpperCase());
 
 function Sparkline({ points }: { points: { e1rm: number }[] }) {
   if (points.length < 2) return <span className="text-xs text-muted-foreground">1 session</span>;
@@ -48,29 +48,10 @@ export default function LiftSection({
     .map((muscle) => ({ muscle, week: thisWeek.find((m) => m.muscle === muscle)?.sets ?? 0, avg: avg.get(muscle) ?? 0 }))
     .sort((a, b) => b.avg - a.avg || b.week - a.week)
     .slice(0, 10);
-  const MAX = 24;
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      <div className="rounded-lg border p-4">
-        <div className="mb-3 flex items-baseline justify-between">
-          <h2 className="font-semibold">Hard sets per muscle</h2>
-          <span className="text-xs text-muted-foreground">this week · bar mark: 4-week average · band 10–20</span>
-        </div>
-        <div className="space-y-2">
-          {muscles.map((m) => (
-            <div key={m.muscle} className="grid grid-cols-[7rem_1fr_3rem] items-center gap-2 text-xs">
-              <span className="truncate">{label(m.muscle)}</span>
-              <div className="relative h-2 rounded-full bg-muted">
-                <div className="absolute inset-y-0 rounded-full bg-emerald-500/15" style={{ left: `${(10 / MAX) * 100}%`, width: `${(10 / MAX) * 100}%` }} />
-                <div className="absolute inset-y-0 left-0 rounded-full bg-primary" style={{ width: `${Math.min(100, (m.week / MAX) * 100)}%` }} />
-                <div className="absolute -inset-y-0.5 w-0.5 bg-foreground/60" style={{ left: `${Math.min(100, (m.avg / MAX) * 100)}%` }} title={`4-week average ${m.avg.toFixed(1)}`} />
-              </div>
-              <span className="text-right">{m.week % 1 ? m.week.toFixed(1) : m.week}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="rounded-lg border p-4">
+      <MuscleSetsChart rows={muscles} />
+      <div className="rounded-lg border bg-[var(--viz-surface)] p-4">
         <div className="mb-3 flex items-baseline justify-between">
           <h2 className="font-semibold">Main lifts</h2>
           <span className="text-xs text-muted-foreground">estimated 1RM, last 12 weeks</span>
