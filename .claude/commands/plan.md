@@ -29,7 +29,7 @@ These come from `/Users/paolo/.claude/projects/-Users-paolo-work-personal-coach/
 - **Goals**: Competitive road cycling (Berkeley-style races) + fast 10k/half marathon. Moderate variety dose.
 - **Strength split**: **2 sessions/wk** — 1 heavy barbell ("Workout lift Apr 28" template) + 1 dumbbell ("Hotel Gym Lift" template, condensed when traveling). Separate by ≥24h.
 - **Variety mandate**: Every week must contain ≥1 above-threshold quality session (bike VO2 OR run intervals, alternating weeks).
-- **Calendar**: Personal Gmail (`paolo.enrico.bernasconi@gmail.com`) only. Purple events (colorId 3 / Grape).
+- **Calendar**: the personal Gmail calendar (Coach's active calendar connection) only. Purple events (colorId 3 / Grape).
 - **Timezone**: `America/Los_Angeles` **unless the profile's travel section says otherwise** — use the per-day timezone it reports.
 - **Apple Notes templates are authoritative** for lift programming. Don't invent new lifts.
 
