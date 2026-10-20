@@ -29,6 +29,13 @@
       "when": 1792478510172,
       "tag": "0003_clinician_notes",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792479591805,
+      "tag": "0004_lab_catalog",
+      "breakpoints": true
     }
   ]
 }

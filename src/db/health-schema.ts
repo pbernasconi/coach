@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { bigint, check, date, doublePrecision, index, jsonb, numeric, pgTable, primaryKey, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
+import { bigint, boolean, check, date, doublePrecision, index, integer, jsonb, numeric, pgTable, primaryKey, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
 
 /**
  * Health storage (drizzle/0015_health.sql, COACH-API.md Health).
@@ -122,6 +122,86 @@ export const garminRaw = pgTable(
     primaryKey({ name: 'garmin_raw_pk', columns: [t.userId, t.date, t.kind] }),
     index('garmin_raw_kind_date_idx').on(t.userId, t.kind, t.date),
   ]
+);
+
+/**
+ * `lab_biomarkers`: Function Health's catalog entry for each biomarker Paolo has results for (scripts/function-sync.mjs,
+ * src/lib/vitals/function-catalog.mjs). Function's status, range and the reading text for /health/labs. The values and
+ * the history stay in lab_results; `result_names` are the lab_results.biomarker names of this biomarker's draws.
+ * `content` is { whyItMatters, sources[], recommendations[{ inRange, outOfRangeType, sections[{ key, title, body }] }] }.
+ */
+export const labBiomarkers = pgTable(
+  'lab_biomarkers',
+  {
+    userId: text('user_id').notNull(),
+    source: text('source').notNull().default('function'),
+    key: text('key').notNull(), // Function's biomarker id
+    name: text('name').notNull(),
+    slug: text('slug').notNull(),
+    resultNames: text('result_names').array().notNull(),
+    categories: text('categories').array().notNull(),
+    description: text('description'),
+    units: text('units'),
+    status: text('status').$type<'in_range' | 'out_of_range' | 'other'>().notNull(),
+    outOfRangeType: text('out_of_range_type'),
+    kind: text('kind'), // continuous_range | qualitative | unclassified | deviation | …
+    rangeText: text('range_text'),
+    rangeMin: numeric('range_min'),
+    rangeMax: numeric('range_max'),
+    rangeMinOp: text('range_min_op'),
+    rangeMaxOp: text('range_max_op'),
+    optimalRange: text('optimal_range'),
+    optimalLow: numeric('optimal_low'),
+    optimalHigh: numeric('optimal_high'),
+    currentDisplay: text('current_display'),
+    currentOn: date('current_on', { mode: 'string' }),
+    content: jsonb('content').$type<Record<string, unknown>>(),
+    raw: jsonb('raw').$type<Record<string, unknown>>(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ name: 'lab_biomarkers_pk', columns: [t.userId, t.source, t.key] }),
+    uniqueIndex('lab_biomarkers_user_slug_uq').on(t.userId, t.source, t.slug),
+    check('lab_biomarkers_status_check', sql`${t.status} IN ('in_range', 'out_of_range', 'other')`),
+  ]
+);
+
+/** `lab_categories`: Function's categories with the biomarkers in each (one biomarker can be in several). */
+export const labCategories = pgTable(
+  'lab_categories',
+  {
+    userId: text('user_id').notNull(),
+    source: text('source').notNull().default('function'),
+    key: text('key').notNull(),
+    name: text('name').notNull(),
+    description: text('description'),
+    position: integer('position').notNull(),
+    biomarkerKeys: text('biomarker_keys').array().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ name: 'lab_categories_pk', columns: [t.userId, t.source, t.key] })]
+);
+
+/**
+ * `lab_planned_draws`: the next test order Function plans (pending-schedules): its recommended date, the window to
+ * book it in, and the visit date once it is booked. A sync replaces the rows of its source.
+ */
+export const labPlannedDraws = pgTable(
+  'lab_planned_draws',
+  {
+    userId: text('user_id').notNull(),
+    source: text('source').notNull().default('function'),
+    key: text('key').notNull(),
+    type: text('type'),
+    recommendedOn: date('recommended_on', { mode: 'string' }),
+    windowStart: date('window_start', { mode: 'string' }),
+    windowEnd: date('window_end', { mode: 'string' }),
+    visitOn: date('visit_on', { mode: 'string' }),
+    scheduled: boolean('scheduled').notNull().default(false),
+    raw: jsonb('raw').$type<Record<string, unknown>>(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ name: 'lab_planned_draws_pk', columns: [t.userId, t.source, t.key] })]
 );
 
 export type HealthSampleRow = typeof healthSamples.$inferSelect;
