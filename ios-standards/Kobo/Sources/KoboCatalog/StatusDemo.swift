@@ -92,7 +92,7 @@ struct StatusDemo: View {
 }
 
 /// Made-up app banners for the banner stack demo.
-private enum DemoBanner: String, StackableBanner, CaseIterable {
+nonisolated private enum DemoBanner: String, StackableBanner, CaseIterable {
     case update, maintenance
 
     var id: String { rawValue }

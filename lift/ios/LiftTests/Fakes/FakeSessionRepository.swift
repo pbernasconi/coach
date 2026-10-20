@@ -95,6 +95,10 @@ nonisolated final class FakeSessionRepository: SessionRepository {
         throw AppError(.unknown, detail: "not used")
     }
 
+    func start(sessionID _: UUID) async throws -> SessionRecord {
+        throw AppError(.unknown, detail: "not used")
+    }
+
     func saveNote(sessionID _: UUID, note _: String?) async throws -> SessionRecord {
         throw AppError(.unknown, detail: "not used")
     }

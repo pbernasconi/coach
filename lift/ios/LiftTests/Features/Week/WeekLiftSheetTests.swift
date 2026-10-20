@@ -38,7 +38,8 @@ import Testing
             router: router,
             now: SessionBuilder.now,
             calendar: calendar,
-            units: InMemoryUnitSettings(.kg)
+            units: InMemoryUnitSettings(.kg),
+            coachPlan: DisabledCoachPlan()
         )
         await vm.run()
         return (vm, repository)

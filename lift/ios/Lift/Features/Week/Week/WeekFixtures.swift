@@ -11,11 +11,11 @@
             thursday.addingTimeInterval(TimeInterval(offset) * 86_400)
         }
 
-        private static func day(_ offset: Int) -> LocalDay {
+        static func day(_ offset: Int) -> LocalDay {
             SessionSummary.fixtureDay.adding(days: offset)
         }
 
-        private static let strip = WeekStrip(
+        static let strip = WeekStrip(
             today: thursday,
             selected: thursday,
             days: [
@@ -27,9 +27,10 @@
         private static let dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
         /// A day of the week of 2 March, `offset` days from today (Thursday 5 March).
-        private static func section(
+        static func section(
             _ offset: Int,
             sessions: [SessionSummary] = [],
+            items: [WeekEntry] = [],
             selected: Bool = false
         ) -> WeekDaySection {
             let name = dayNames[offset + 3]
@@ -41,7 +42,7 @@
                 dayNumber: "\(5 + offset)",
                 isToday: offset == 0,
                 isSelected: selected,
-                sessions: sessions
+                entries: items + sessions.map(WeekEntry.session)
             )
         }
 

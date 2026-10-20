@@ -43,6 +43,8 @@ final class AppDependencies {
     let sync: any Syncing
     /// Saves finished workouts to Apple Health, or a stand-in that never touches Health (demo and `-fresh` data).
     let health: any WorkoutHealthRecording
+    /// The coach's full weekly plan for the Week screen, or a stand-in that is always off (lift/WEEK-API.md).
+    let coachPlan: any CoachPlanProviding
     /// Opens and closes Import from Notes, which the shell shows as a modal page above the tabs.
     let importFlow: ImportFlowPresenter
     /// Opens, closes and undoes `lift://templates` links, which the shell shows as a sheet above the tabs.
@@ -71,7 +73,8 @@ final class AppDependencies {
         pasteboard: any TextPasteboard,
         outbox: any OutboxRepository,
         sync: any Syncing,
-        health: any WorkoutHealthRecording
+        health: any WorkoutHealthRecording,
+        coachPlan: any CoachPlanProviding
     ) {
         self.sessions = sessions
         self.exercises = exercises
@@ -92,6 +95,7 @@ final class AppDependencies {
         self.outbox = outbox
         self.sync = sync
         self.health = health
+        self.coachPlan = coachPlan
         let importFlow = ImportFlowPresenter()
         self.importFlow = importFlow
         let templateLinks = TemplateLinkPresenter(templates: templates, exercises: exercises)

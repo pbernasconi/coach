@@ -2,21 +2,31 @@ import KoboComponents
 import KoboTokens
 import SwiftUI
 
-/// One day of the week list: the date badge beside each of its sessions, or beside "Rest" when it has none. A day with
-/// two sessions shows the badge once. The selected day's rows sit on the accent tint.
+/// One day of the week list: the date badge beside each of its rows (plan items and Lift sessions), or beside "Rest"
+/// when it has none. A day with two rows shows the badge once. With the coach plan on, each row also shows its sport
+/// icon. The selected day's rows sit on the accent tint.
 struct WeekDayRows: View {
     @Environment(\.koboTheme) private var theme
     let day: WeekDaySection
+    /// Whether the coach plan is on: rows then show their sport icon.
+    let showsSports: Bool
     let send: (WeekAction) -> Void
 
     var body: some View {
         Group {
-            if day.sessions.isEmpty {
+            if day.entries.isEmpty {
                 restRow
             }
-            ForEach(Array(day.sessions.enumerated()), id: \.element.id) { index, session in
-                WeekSessionRow(session: session, send: send) {
-                    WeekDateBadge(day: day).opacity(index == 0 ? 1 : 0).accessibilityHidden(index != 0)
+            ForEach(Array(day.entries.enumerated()), id: \.element.id) { index, entry in
+                switch entry {
+                case .session(let session):
+                    WeekSessionRow(session: session, send: send) {
+                        WeekRowLeading(day: day, isFirst: index == 0, sport: showsSports ? .strength : nil)
+                    }
+                case .plan(let item):
+                    WeekPlanRow(item: item, send: send) {
+                        WeekRowLeading(day: day, isFirst: index == 0, sport: item.sport)
+                    }
                 }
             }
         }

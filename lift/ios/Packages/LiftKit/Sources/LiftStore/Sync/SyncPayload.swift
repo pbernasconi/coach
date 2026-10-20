@@ -7,7 +7,9 @@ import LiftCore
 /// writes them ("yyyy-MM-dd HH:mm:ss.SSS", UTC), so a push converts the date columns first.
 public enum SyncPayload {
     /// Columns that hold dates in every synced table.
-    static let dateColumns: Set = ["createdAt", "updatedAt", "deletedAt", "startedAt", "finishedAt", "completedAt"]
+    static let dateColumns: Set = [
+        "createdAt", "updatedAt", "deletedAt", "startedAt", "finishedAt", "completedAt", "dayMovedAt",
+    ]
 
     /// Columns that hold UUIDs (blobs locally, strings on the wire).
     static let uuidColumns: Set = [
