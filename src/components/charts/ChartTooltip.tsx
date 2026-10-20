@@ -1,10 +1,12 @@
 'use client';
 
+import type { ReactNode } from 'react';
+
 /** One tooltip for a chart: value first, label second, series keyed with a short line. */
-export type TooltipRow = { key: string; label: string; value: string; color?: string; strong?: boolean };
+export type TooltipRow = { key: string; label: string; value: string; color?: string; icon?: ReactNode; strong?: boolean };
 
 export function ChartTooltip({ x, y, width, title, rows }: { x: number; y: number; width: number; title: string; rows: TooltipRow[] }) {
-  const W = 200;
+  const W = 232;
   const left = Math.min(Math.max(0, x + 14), width - W);
   const flip = x + 14 + W > width;
   return (
@@ -16,7 +18,13 @@ export function ChartTooltip({ x, y, width, title, rows }: { x: number; y: numbe
       <div className="mb-1 font-medium text-[var(--viz-ink-2)]">{title}</div>
       {rows.map((r) => (
         <div key={r.key} className="flex items-center gap-2 py-0.5">
-          {r.color ? <span className="h-0.5 w-3 shrink-0 rounded-full" style={{ background: r.color }} /> : <span className="w-3 shrink-0" />}
+          {r.icon ? (
+            <span className="flex w-3.5 shrink-0 justify-center">{r.icon}</span>
+          ) : r.color ? (
+            <span className="h-0.5 w-3.5 shrink-0 rounded-full" style={{ background: r.color }} />
+          ) : (
+            <span className="w-3.5 shrink-0" />
+          )}
           <span className={`tabular-nums ${r.strong ? 'font-semibold text-[var(--viz-ink)]' : 'text-[var(--viz-ink)]'}`}>{r.value}</span>
           <span className="truncate text-[var(--viz-muted)]">{r.label}</span>
         </div>
@@ -26,7 +34,15 @@ export function ChartTooltip({ x, y, width, title, rows }: { x: number; y: numbe
 }
 
 /** A legend entry: rect for bars and areas, line for lines. Text stays in ink, never the series color. */
-export function LegendItem({ color, label, shape = 'rect' }: { color: string; label: string; shape?: 'rect' | 'line' | 'dot' }) {
+export function LegendItem({ color, label, shape = 'rect', icon }: { color?: string; label: string; shape?: 'rect' | 'line' | 'dot'; icon?: ReactNode }) {
+  if (icon) {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs text-[var(--viz-ink-2)]">
+        {icon}
+        {label}
+      </span>
+    );
+  }
   return (
     <span className="inline-flex items-center gap-1.5 text-xs text-[var(--viz-ink-2)]">
       {shape === 'rect' && <span className="h-2.5 w-2.5 rounded-[2px]" style={{ background: color }} />}

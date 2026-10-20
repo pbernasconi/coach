@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useOptimistic, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { Check, ChevronLeft, ChevronRight, GripVertical, Undo2 } from 'lucide-react';
+import SportIcon from '@/components/SportIcon';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { Feel, Week, Workout } from '@/lib/plan/queries';
@@ -18,9 +19,6 @@ const FEEL_OPTIONS: { feel: Feel; label: string; hint: string }[] = [
   { feel: 'fresh', label: 'Fresh', hint: 'Undo any changes from today on' },
 ];
 
-const SPORT_ICON: Record<string, string> = {
-  run: '🏃', ride: '🚴', swim: '🏊', strength: '🏋️', yoga: '🧘', rest: '😴', other: '•',
-};
 
 function dayLabel(key: string) {
   const d = new Date(`${key}T12:00:00Z`);
@@ -178,8 +176,8 @@ export default function PlanBoard({ week, timeZone }: { week: Week; timeZone: st
           const dayWorkouts = workouts.filter((w) => w.date === d).sort((a, b) => (a.startTime ?? '99').localeCompare(b.startTime ?? '99'));
           const matchedIds = new Set(dayWorkouts.map((w) => w.match?.id).filter(Boolean));
           const extras = [
-            ...week.activities.filter((a) => a.date === d && !matchedIds.has(a.id)).map((a) => ({ id: a.id, text: `${SPORT_ICON[a.sport] ?? '•'} ${a.name}${a.km ? ` · ${a.km} km` : ` · ${a.min} min`}` })),
-            ...week.lifts.filter((l) => l.date === d && !matchedIds.has(l.id)).map((l) => ({ id: l.id, text: `🏋️ ${l.name} · ${l.setsLogged} sets` })),
+            ...week.activities.filter((a) => a.date === d && !matchedIds.has(a.id)).map((a) => ({ id: a.id, sport: a.sport, text: `${a.name}${a.km ? ` · ${a.km} km` : ` · ${a.min} min`}` })),
+            ...week.lifts.filter((l) => l.date === d && !matchedIds.has(l.id)).map((l) => ({ id: l.id, sport: 'strength', text: `${l.name} · ${l.setsLogged} sets` })),
           ];
           return (
             <div
@@ -213,8 +211,9 @@ export default function PlanBoard({ week, timeZone }: { week: Week; timeZone: st
                   />
                 ))}
                 {extras.map((x) => (
-                  <div key={x.id} className="rounded-md px-2 py-1 text-xs text-muted-foreground">
-                    Extra: {x.text}
+                  <div key={x.id} className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-muted-foreground">
+                    <SportIcon id={x.sport} className="h-3 w-3" />
+                    <span>Extra: {x.text}</span>
                   </div>
                 ))}
               </div>
@@ -255,7 +254,7 @@ function WorkoutCard({
       <button type="button" onClick={onToggle} className="flex w-full items-start gap-1 text-left">
         {w.state !== 'done' && <GripVertical className="mt-0.5 hidden h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 md:block" />}
         <span className="flex-1">
-          <span className="font-medium">{SPORT_ICON[w.sport] ?? '•'} {stripEmoji(w.title)}</span>
+          <span className="flex items-center gap-1.5 font-medium"><SportIcon id={w.sport} />{stripEmoji(w.title)}</span>
           <span className="block text-xs text-muted-foreground">
             {[w.startTime, w.duration ? `${w.duration} min` : null, w.tss ? `${Math.round(w.tss)} TSS` : null].filter(Boolean).join(' · ')}
           </span>
