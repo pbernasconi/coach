@@ -97,7 +97,8 @@ async function runOnce() {
 
 async function servedDeployment() {
   try {
-    const { body } = await get(healthPath, { authorization: `Bearer ${token}` });
+    // Only the deployment id: the full checks read several MB from the database, and this polls every 5 s.
+    const { body } = await get('/api/health?only=deployment', { authorization: `Bearer ${token}` });
     return JSON.parse(body).deployment ?? null;
   } catch {
     return null;

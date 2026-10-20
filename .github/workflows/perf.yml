@@ -1,10 +1,13 @@
 # Page speed (scripts/perf.mjs): production, and on a pull request also its staged build side by side (both read
-# the production data). Run it by hand for production alone (Actions → Perf → Run workflow).
+# the production data). On demand: add the label "perf" to a pull request (each later push measures again), or
+# run it by hand for production alone (Actions → Perf → Run workflow). One run renders about 220 pages, about
+# 170 MB from Neon before the data cache (src/lib/data-cache.ts); on every pull request that was most of the
+# free plan's 5 GB a month.
 name: Perf
 
 on:
   pull_request:
-    paths: ["scripts/perf.mjs", ".github/workflows/perf.yml", "vercel.json", "src/**", "next.config.ts"]
+    types: [labeled, synchronize, reopened]
   workflow_dispatch:
 
 permissions:
@@ -12,6 +15,9 @@ permissions:
 
 jobs:
   perf:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (contains(github.event.pull_request.labels.*.name, 'perf') && (github.event.action != 'labeled' || github.event.label.name == 'perf'))
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:

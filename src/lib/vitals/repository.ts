@@ -1,5 +1,6 @@
 import { sql } from '@/db';
 import { toDay, toIso } from '@/lib/db-time.mjs';
+import { clearCache } from '@/lib/data-cache';
 import { ownerId } from '@/lib/plan/queries';
 import type { GarminConnectionRow, GarminRawRepository, GarminRepository, GarminSyncStatus } from './garmin.mjs';
 import { writeSamples, type VitalMetric, type VitalsRepository } from './sync.mjs';
@@ -7,7 +8,11 @@ import { writeSamples, type VitalMetric, type VitalsRepository } from './sync.mj
 /** health_samples in Postgres. The owner is the first row in users (ownerId, the rule for bearer-token routes). */
 export const neonVitalsRepository: VitalsRepository = {
   ownerId,
-  upsert: (userId, samples) => writeSamples(sql, userId, samples),
+  async upsert(userId, samples) {
+    const result = await writeSamples(sql, userId, samples);
+    clearCache('vitals');
+    return result;
+  },
   async latestDates(userId: string, since: string | null) {
     const rows = (await sql`
       SELECT metric, to_char(max(date), 'YYYY-MM-DD') AS latest
@@ -82,5 +87,6 @@ export const neonGarminRawRepository: GarminRawRepository = {
         FROM unnest(${chunk.map((r) => r.date)}::date[], ${chunk.map((r) => r.kind)}::text[], ${chunk.map((r) => r.payload)}::text[]) AS t(d, k, p)
         ON CONFLICT (user_id, date, kind) DO UPDATE SET payload = EXCLUDED.payload, fetched_at = now()`;
     }
+    clearCache('vitals');
   },
 };

@@ -18,6 +18,9 @@ noticed. These guards exist so a bad value, a bad deploy or a bad migration cann
   time as a `Date` or as text, depending on the driver.
 - **A new page section**: load it with `load()` from `src/lib/safe.ts` and render `<SectionError label=… />` when
   it fails; an optional part (a banner) uses `safe()` with a fallback.
+- **A large read** (more than a few KB, or one that runs on every page): read it through `cached()` from
+  `src/lib/data-cache.ts`, with the tag of its data, and clear that tag (`clearCache`) in every writer of the
+  data. Neon's free plan allows 5 GB a month out of the database; see "Data cache" below.
 - **A new loader**: add it to `runChecks()` in `src/lib/health.ts`. `/api/health`, the CI integration test and the
   deploy check all run that list.
 - **A new page**: add it to `PAGES` in `scripts/smoke.mjs`, and put `data-smoke="<name>"` on the root element of
@@ -71,3 +74,22 @@ Run it yourself: `HEALTH_TOKEN=… npm run smoke -- https://coach.paolobernascon
 | `VERCEL_BYPASS_SECRET` | GitHub (Vercel automation bypass) | The check of protected `*.vercel.app` preview URLs |
 | `VERCEL_TOKEN` | GitHub (team token "coach GitHub deploy check (rollback)", expires 2027-10-19) | Staging, promote, rollback |
 | `PROD_DATABASE_URL` | GitHub | Migrations at the merge (`deploy.yml`) |
+
+## Data cache
+
+The large reads (the Lift rows, the lab catalog and pages, the Garmin and Apple Health samples) go through
+Vercel's Data Cache (`src/lib/data-cache.ts`). Each page load and nav prefetch read them again before, and with
+the checks and the Perf runs that was 4.3 GB of Neon's 5 GB free allowance in 20 days (2026-10). A cached read
+also does not wake the database, so cached pages are faster.
+
+| Tag | Data | Cleared by |
+| --- | --- | --- |
+| `lift` | `lift_rows` (8 entries, split by id, each below the 2 MB entry limit) | Each applied Lift sync change |
+| `vitals` | `health_samples`, `garmin_raw` | The vitals push, the Garmin raw push |
+| `labs` | `lab_biomarkers`, `lab_categories`, `lab_results`, `lab_planned_draws`, `clinician_notes` | `POST /api/cron/cache?tag=labs` (the Function workflow calls it) |
+
+A write that clears no tag (a script on the database) shows within an hour. `/api/health` reads through the same
+cache as the pages: the data it checks is the data the pages show. The cache key holds the loader's code, so a
+deploy that changes a query reads fresh data. Outside Next (the CI integration test, scripts) the cache is off.
+
+Perf runs on demand only: add the label `perf` to a pull request.
