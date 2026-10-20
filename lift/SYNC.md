@@ -47,6 +47,11 @@ server as `LIFT_SYNC_TOKEN` and stored on the iPhone in the Keychain. Wrong or m
 - `templateExercise.note` (schema v6): a cue for the slot ("Deep squat", text or `null`) that a session planned from
   the template starts with as its exercise note; template links write it (`TEMPLATE-LINKS.md`). Payloads from builds
   before v6 omit the key, which reads as `null`. The server stores it like any other column.
+- `set.rpe` (schema v7): the set's effort on the RPE scale, 6 to 10 in half steps, as a JSON number (`8` or `8.5`), or
+  `null` when it was not recorded. Payloads from builds before v7 omit the key, which reads as `null`. The server
+  stores it like any other column and validates nothing about it.
+- Notes: `session.note`, `sessionExercise.note` and `set.note` (text or `null`) are written by the Notes import and
+  typed in the Workout screen. They are plain columns; an edit is a normal `update` of the row.
 - At most 500 changes per request.
 - `payload` is the outbox entry's JSON object as written by LiftStore (column names as keys, UUIDs as
   strings, dates as ISO 8601 with milliseconds and `Z`).

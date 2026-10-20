@@ -2,8 +2,22 @@ import Foundation
 import GRDB
 import LiftCore
 
-/// The Workout screen's edits: restore a removed exercise, reorder, finish.
+/// The Workout screen's edits: notes, restore a removed exercise, reorder, finish.
 extension LiveSessionRepository {
+    public func saveNote(sessionID: UUID, note: String?) async throws -> SessionRecord {
+        try await store.change(SessionRecord.self, id: sessionID) { session, _ in
+            session.note = NoteText.normalized(note)
+        }
+        .after
+    }
+
+    public func saveExerciseNote(id: UUID, note: String?) async throws -> SessionExerciseRecord {
+        try await store.change(SessionExerciseRecord.self, id: id) { exercise, _ in
+            exercise.note = NoteText.normalized(note)
+        }
+        .after
+    }
+
     public func restoreExercise(id: UUID) async throws {
         try await store.restore(SessionExerciseRecord.self, id: id)
     }

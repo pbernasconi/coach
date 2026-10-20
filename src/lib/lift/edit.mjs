@@ -103,6 +103,7 @@ export function planLiftEdit(rows, edits, opts = {}) {
         actualWeight: null,
         completedAt: null,
         note: null,
+        rpe: null,
         createdAt: at,
         updatedAt: at,
         deletedAt: null,
