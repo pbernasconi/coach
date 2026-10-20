@@ -227,11 +227,9 @@ jobs:
 
   screenshots:
     needs: changes
-    # Pull requests and manual runs. A push to main carries the code its pull request already shot, and
-    # skipping it leaves macOS runners free for open pull requests (the account runs 5 macOS jobs at a time).
-    # main keeps build and test: they seed the compilation cache and the simulator snapshot that pull requests
-    # restore.
-    if: needs.changes.outputs.app == 'true' && github.event_name != 'push'
+    # Pushes to main (each merge) and manual runs only, not pull requests: a pull request gets lint, build and
+    # unit tests, and its screenshots come from the merge. The screenshots are for review; nothing compares them.
+    if: needs.changes.outputs.app == 'true' && github.event_name != 'pull_request'
     # Demo screenshots, one job per variant (light, dark, AX3), from the build job's app. Like the test job it
     # starts with the build job and boots its simulator while it waits, and saves a simulator snapshot when
     # there was none for its runner image (images rotate, so any simulator job may be the first).
