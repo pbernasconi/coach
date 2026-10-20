@@ -4,13 +4,13 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { ownerForSignedInUser } from '@/lib/owner';
 import calendarService from '@/modules/calendar/calendar-service';
 
 export async function GET(request: NextRequest) {
   try {
     // Get user from Clerk
-    const { userId } = await auth();
+    const userId = await ownerForSignedInUser();
     if (!userId) {
       return NextResponse.redirect(new URL('/sign-in', request.url));
     }
@@ -23,14 +23,14 @@ export async function GET(request: NextRequest) {
     // Handle authorization denial
     if (error) {
       return NextResponse.redirect(
-        new URL(`/admin?error=${encodeURIComponent('Google Calendar authorization was denied')}`, request.url)
+        new URL(`/settings?error=${encodeURIComponent('Google Calendar authorization was denied')}`, request.url)
       );
     }
 
     // Validate code
     if (!code) {
       return NextResponse.redirect(
-        new URL(`/admin?error=${encodeURIComponent('No authorization code received')}`, request.url)
+        new URL(`/settings?error=${encodeURIComponent('No authorization code received')}`, request.url)
       );
     }
 
@@ -53,15 +53,15 @@ export async function GET(request: NextRequest) {
       // Don't fail the connection if sync fails - user can manually sync later
     }
 
-    // Redirect back to admin page with success message
+    // Redirect back to Settings with success message
     return NextResponse.redirect(
-      new URL('/admin?success=calendar_connected', request.url)
+      new URL('/settings?success=calendar_connected', request.url)
     );
   } catch (error) {
     console.error('Google Calendar OAuth callback error:', error);
     return NextResponse.redirect(
       new URL(
-        `/admin?error=${encodeURIComponent('Failed to connect Google Calendar')}`,
+        `/settings?error=${encodeURIComponent('Failed to connect Google Calendar')}`,
         request.url
       )
     );

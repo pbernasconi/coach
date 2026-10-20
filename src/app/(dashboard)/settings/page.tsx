@@ -1,0 +1,110 @@
+import { ownerForSignedInUser } from '@/lib/owner';
+import { loadStatus, loadTargets, type Warning } from '@/lib/status';
+import StravaService from '@/modules/strava/strava-service';
+import { LiftTokenButton, StravaSyncButton, TargetsForm } from './SettingsControls';
+
+export const dynamic = 'force-dynamic';
+
+function when(at: string | null) {
+  if (!at) return 'never';
+  return new Date(at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
+
+function Dot({ level }: { level: 'ok' | Warning['level'] }) {
+  const color = { ok: 'bg-emerald-500', info: 'bg-sky-500', warn: 'bg-amber-500', error: 'bg-rose-500' }[level];
+  return <span className={`inline-block h-2 w-2 shrink-0 rounded-full ${color}`} aria-hidden />;
+}
+
+function Section({ title, level, children }: { title: string; level: 'ok' | Warning['level']; children: React.ReactNode }) {
+  return (
+    <section className="rounded-lg border p-4">
+      <h2 className="mb-3 flex items-center gap-2 font-semibold">
+        <Dot level={level} /> {title}
+      </h2>
+      <div className="space-y-2 text-sm">{children}</div>
+    </section>
+  );
+}
+
+function Row({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex justify-between gap-4">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="text-right">{value}</span>
+    </div>
+  );
+}
+
+export default async function SettingsPage() {
+  const userId = await ownerForSignedInUser();
+  if (!userId) return <p className="text-sm text-muted-foreground">This account has no Coach data.</p>;
+  const [status, targets] = await Promise.all([loadStatus(userId), loadTargets(userId)]);
+  const levelOf = (source: Warning['source']) =>
+    status.warnings.find((w) => w.source === source && w.level === 'error')?.level ??
+    status.warnings.find((w) => w.source === source && w.level === 'warn')?.level ??
+    status.warnings.find((w) => w.source === source)?.level ??
+    'ok';
+  const notes = (source: Warning['source']) =>
+    status.warnings.filter((w) => w.source === source).map((w) => (
+      <p key={w.text} className="flex items-start gap-2 rounded bg-muted/50 p-2"><Dot level={w.level} /> {w.text}</p>
+    ));
+  const connectUrl = status.strava.canConnect
+    ? new StravaService({
+        clientId: process.env.STRAVA_CLIENT_ID!,
+        clientSecret: process.env.STRAVA_CLIENT_SECRET ?? '',
+        redirectUri: process.env.STRAVA_REDIRECT_URI!,
+      }).getAuthorizationUrl()
+    : null;
+
+  return (
+    <div className="space-y-6">
+      <div className="space-y-1">
+        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+        <p className="text-muted-foreground">Connections, sync status and weekly targets.</p>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <Section title="Strava" level={levelOf('strava')}>
+          <Row label="Connection" value={status.strava.connected ? `Athlete ${status.strava.athleteId}` : 'Not connected'} />
+          <Row label="Last sync" value={when(status.strava.lastSyncedAt)} />
+          <Row label="Newest activity" value={status.strava.newestActivity ?? '-'} />
+          <Row label="Auto sync" value={status.strava.canSync ? 'Webhook and daily at 13:00 UTC' : 'Off (Strava app secret not set)'} />
+          {notes('strava')}
+          <div className="flex flex-wrap gap-2 pt-1">
+            {status.strava.canSync && <StravaSyncButton />}
+            {connectUrl && (
+              <a className="rounded-md border px-3 py-1.5 text-sm hover:bg-accent" href={connectUrl}>
+                {status.strava.connected ? 'Reconnect Strava' : 'Connect Strava'}
+              </a>
+            )}
+          </div>
+        </Section>
+
+        <Section title="Lift (iPhone)" level={levelOf('lift')}>
+          <Row label="Last change synced" value={when(status.lift.lastChangeAt)} />
+          <Row label="Sessions on the server" value={status.lift.sessions} />
+          {notes('lift')}
+          {status.lift.tokenSet && (
+            <div className="pt-1">
+              <LiftTokenButton />
+              <p className="mt-2 text-xs text-muted-foreground">Paste it in Lift → Settings → Sync → Sync token, then tap Save and sync.</p>
+            </div>
+          )}
+        </Section>
+
+        <Section title="Google Calendar" level={levelOf('calendar')}>
+          {status.calendars.length === 0 && <p className="text-muted-foreground">No calendar connected.</p>}
+          {status.calendars.map((c) => (
+            <Row key={c.email} label={c.email} value={c.active ? `synced ${when(c.lastSyncedAt)}` : 'off'} />
+          ))}
+          {notes('calendar')}
+        </Section>
+
+        <Section title="Weekly targets" level="ok">
+          <p className="text-muted-foreground">The Today card, Performance and the start page measure the week against these.</p>
+          <TargetsForm targets={targets} />
+        </Section>
+      </div>
+    </div>
+  );
+}
