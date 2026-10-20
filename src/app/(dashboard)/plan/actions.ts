@@ -17,6 +17,8 @@ import { loadActivity, loadActivityContext, type ActivityContext, type ActivityV
 import { loadLiftModel } from '@/lib/lift-dashboard/queries';
 import { sessionDetail } from '@/lib/lift-dashboard/stats.mjs';
 import { richSession, type RichSession } from '@/lib/lift/session';
+import { applyLiftEdit, liftLibrary } from '@/lib/lift/edit-store';
+import type { LiftEdit } from '@/lib/lift/edit.mjs';
 
 export type LiftDetail = NonNullable<ReturnType<typeof sessionDetail>>;
 
@@ -132,4 +134,21 @@ export async function duplicateWorkoutAction(id: string, toDate: string) {
   revalidatePath('/plan');
   pushCalendar(userId, [mondayOf(toDate)]);
   return copy;
+}
+
+/** Edits a planned Lift session (targets, sets, exercises). The iPhone gets the edit on its next sync. */
+export async function editLiftAction(sessionId: string, edits: LiftEdit[]): Promise<{ ok: true } | { error: string }> {
+  const userId = await user();
+  if (!/^[0-9a-f-]{36}$/i.test(String(sessionId)) || !Array.isArray(edits) || edits.length > 200) return { error: 'Bad edit.' };
+  const r = await applyLiftEdit(userId, String(sessionId), edits);
+  if ('error' in r) return r;
+  revalidatePath('/plan');
+  if (r.weeks.length) pushCalendar(userId, r.weeks);
+  return { ok: true };
+}
+
+/** The Lift exercise library, for "Add exercise". */
+export async function liftLibraryAction() {
+  await user();
+  return liftLibrary();
 }
