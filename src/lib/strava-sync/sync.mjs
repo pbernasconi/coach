@@ -22,13 +22,20 @@ export function activityTimes(a) {
 }
 
 // ===== TSS + zone-time helpers =====
-function computeTss(a, athlete) {
+const RIDE_TYPES = new Set(['Ride', 'VirtualRide', 'GravelRide', 'MountainBikeRide', 'EBikeRide', 'EMountainBikeRide', 'Velomobile', 'Handcycle']);
+
+/**
+ * TSS for one activity. Power TSS needs the cycling FTP, so it applies to rides only: running power (a Garmin
+ * or Stryd estimate) against the cycling FTP made runs count far too much. Other sports use heart rate.
+ */
+export function computeTss(a, athlete) {
   const hrs = (a.moving_time ?? a.elapsed_time ?? 0) / 3600;
   if (hrs <= 0) return { tss: 0, method: 'duration_fallback' };
   const ftp = athlete?.ftp;
   const thr = athlete?.thresholdHr ?? 168;
-  // Power-based (preferred) — requires NP, real power meter, and FTP
-  if (a.weighted_average_watts && a.device_watts && ftp) {
+  const ride = RIDE_TYPES.has(a.sport_type ?? a.type);
+  // Power-based (preferred for rides) — requires NP, real power meter, and FTP
+  if (ride && a.weighted_average_watts && a.device_watts && ftp) {
     const IF = a.weighted_average_watts / ftp;
     return { tss: Math.round(IF * IF * hrs * 100 * 10) / 10, method: 'power' };
   }

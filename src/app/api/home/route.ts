@@ -127,7 +127,7 @@ export async function GET(request: Request) {
         appUrl: base,
         activities: acts.map((a) => ({
           id: String(a.strava_activity_id ?? ''),
-          url: a.strava_activity_id ? `https://www.strava.com/activities/${a.strava_activity_id}` : null,
+          url: a.strava_activity_id ? `${base}/activities/${a.strava_activity_id}` : null,
           name: String(a.name ?? ''),
           sport: String(a.sport_type ?? ''),
           start: iso(a.start_date_local),

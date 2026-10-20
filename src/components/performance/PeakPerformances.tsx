@@ -11,9 +11,7 @@ function Cell({ cell, render, best }: { cell: PeakCell; render: (v: number) => {
   return (
     <td className="p-2 text-right align-top">
       <a
-        href={`https://www.strava.com/activities/${cell.activityId}`}
-        target="_blank"
-        rel="noreferrer"
+        href={`/activities/${cell.activityId}`}
         title={`${cell.name ?? 'Activity'} · ${fmtDate(cell.date)}`}
         className="group inline-block"
       >
