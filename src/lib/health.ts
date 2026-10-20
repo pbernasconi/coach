@@ -7,12 +7,12 @@ import { loadPerformance } from '@/lib/performance/queries';
 import { loadWeek, ownerId } from '@/lib/plan/queries';
 import { addDays, mondayOf, todayIn } from '@/lib/plan/week.mjs';
 import { loadCoachingNotes, loadStatus, loadTargets } from '@/lib/status';
-import { loadLibrary, loadMonth } from '@/lib/plan/month';
+import { loadLibrary, loadMonth, loadRange } from '@/lib/plan/month';
 import { loadPmc } from '@/lib/performance/projection';
 import { loadPeakPerformances } from '@/lib/performance/peaks';
 import { loadEventsWithCountdown } from '@/lib/performance/events';
 import { loadClinicianNotes, loadGarminStatus, loadHealth } from '@/lib/vitals/queries';
-import { loadDay, loadGarminSections, loadRecoveryToday, loadTraining } from '@/lib/vitals/garmin-pages';
+import { loadBody, loadDay, loadGarminSections, loadRecoveryToday, loadTraining } from '@/lib/vitals/garmin-pages';
 import { loadBiomarker, loadLabsIndex } from '@/lib/vitals/labs-pages';
 import { loadActivity, loadActivityContext } from '@/lib/activity/queries';
 
@@ -67,6 +67,8 @@ export async function runChecks(now = new Date(), { migrations = true }: { migra
     }),
     check('health garmin sections', () => loadGarminSections(userId, today)),
     check('recovery today', () => loadRecoveryToday(userId, today)),
+    check('body', () => loadBody(userId, today)),
+    check('home week', () => loadRange(userId, monday, monday, today)),
     check('activity (latest)', async () => {
       const v = await loadActivity(userId, 'latest');
       if (v) await loadActivityContext(userId, v, today);
