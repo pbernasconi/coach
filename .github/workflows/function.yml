@@ -1,0 +1,31 @@
+name: Function Health sync
+
+# Lab results change only after a blood draw, so once a week is enough; run it by hand after new results.
+on:
+  schedule:
+    - cron: '30 12 * * 1'
+  workflow_dispatch:
+
+concurrency: function
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install
+        run: npm ci --no-audit --no-fund
+      - name: Sync
+        env:
+          FUNCTION_EMAIL: ${{ secrets.FUNCTION_EMAIL }}
+          FUNCTION_PASSWORD: ${{ secrets.FUNCTION_PASSWORD }}
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+        run: node scripts/function-sync.mjs
