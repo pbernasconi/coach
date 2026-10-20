@@ -2,7 +2,7 @@
 // check twice: with node-postgres's Date objects, and with times as Postgres text ('…+00'), the shape Neon's HTTP
 // driver gives raw `sql`. The 2026-10-19 outage needed that text shape; hand-written test objects never had it.
 //
-// Needs DATABASE_URL to an empty database with the schema (npx drizzle-kit push) and DATABASE_DRIVER=pg.
+// Needs DATABASE_URL to a database built by npm run db:migrate, and DATABASE_DRIVER=pg.
 // Run: npm run test:integration  (CI: .github/workflows/web.yml)
 import assert from 'node:assert/strict';
 import { after, before, test } from 'node:test';

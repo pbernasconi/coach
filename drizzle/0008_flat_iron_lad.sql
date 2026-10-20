@@ -1,1 +1,0 @@
-CREATE UNIQUE INDEX "daily_training_load_user_date_idx" ON "daily_training_load" USING btree ("user_id","date");

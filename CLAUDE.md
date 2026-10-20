@@ -2,6 +2,13 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Rules
+
+- **Schema changes** go through migrations: read DATABASE.md before you edit `src/db/*schema*.ts` or touch a
+  database.
+- **Pages, loaders and database times** follow RELIABILITY.md: the deploy check renders every page and rolls
+  back a deploy that breaks one.
+
 ## Project Overview
 
 This is a Next.js 15.5.4 application built with React 19, TypeScript, and Tailwind CSS v4. The project uses the App Router architecture and Turbopack for faster development and builds.

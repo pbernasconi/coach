@@ -1,4 +1,4 @@
-.PHONY: dev build start lint db-generate db-push db-studio db-migrate help
+.PHONY: dev build start lint db-generate db-studio db-migrate help
 
 # Default target
 .DEFAULT_GOAL := help
@@ -29,15 +29,11 @@ lint:
 db-generate:
 	npm run db:generate
 
-# Push schema changes to database
-db-push:
-	npm run db:push
-
 # Open Drizzle Studio
 db-studio:
 	npm run db:studio
 
-# Run database migrations
+# Apply drizzle/ migrations to DATABASE_URL (DATABASE.md)
 db-migrate:
 	npm run db:migrate
 
@@ -49,6 +45,5 @@ help:
 	@echo "  make start       - Start production server"
 	@echo "  make lint        - Run linter"
 	@echo "  make db-generate - Generate database migrations"
-	@echo "  make db-push     - Push schema changes to database"
 	@echo "  make db-studio   - Open Drizzle Studio"
 	@echo "  make db-migrate  - Run database migrations"
