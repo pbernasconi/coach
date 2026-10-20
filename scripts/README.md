@@ -1,6 +1,6 @@
 # Scripts — Coach Personal Workflow
 
-All scripts use `/opt/homebrew/bin/node --env-file=.env.local` (env vars come from `.env.local`).
+All scripts use `node --env-file=.env.local` (env vars come from `.env.local`).
 
 ## Active (used by /plan and /check-in)
 
@@ -77,19 +77,19 @@ Most of the time you don't run these directly — type `/plan` or `/check-in` in
 
 ### Manual Strava resync (e.g., after a new ride)
 ```bash
-/opt/homebrew/bin/node --env-file=.env.local scripts/strava-backfill.mjs --days 7
+node --env-file=.env.local scripts/strava-backfill.mjs --days 7
 ```
 
 ### Just see the profile without planning
 ```bash
-/opt/homebrew/bin/node --env-file=.env.local scripts/coach-profile.mjs
+node --env-file=.env.local scripts/coach-profile.mjs
 cat profile.md
 
 # Two-week horizon (calendar + weather + travel span both weeks):
-/opt/homebrew/bin/node --env-file=.env.local scripts/coach-profile.mjs --two-weeks
+node --env-file=.env.local scripts/coach-profile.mjs --two-weeks
 
 # Fast re-read with no upstream sync:
-/opt/homebrew/bin/node --env-file=.env.local scripts/coach-profile.mjs --two-weeks --no-sync
+node --env-file=.env.local scripts/coach-profile.mjs --two-weeks --no-sync
 ```
 
 ### Non-interactive plan (skips the 3 questions)
@@ -99,14 +99,14 @@ cat profile.md
 
 ### Re-render a plan's markdown after hand-editing its JSON
 ```bash
-/opt/homebrew/bin/node --env-file=.env.local scripts/render-plan.mjs --plan plans/2026-07-20.json
+node --env-file=.env.local scripts/render-plan.mjs --plan plans/2026-07-20.json
 # Preview without writing:
-/opt/homebrew/bin/node --env-file=.env.local scripts/render-plan.mjs --plan plans/2026-07-20.json --stdout
+node --env-file=.env.local scripts/render-plan.mjs --plan plans/2026-07-20.json --stdout
 ```
 
 ### Push a hand-edited plan to calendar
 ```bash
-/opt/homebrew/bin/node --env-file=.env.local scripts/add-workouts-to-calendar.mjs --plan plans/2026-05-25.json
+node --env-file=.env.local scripts/add-workouts-to-calendar.mjs --plan plans/2026-05-25.json
 # Dry-run:
-/opt/homebrew/bin/node --env-file=.env.local scripts/add-workouts-to-calendar.mjs --plan plans/2026-05-25.json --dry-run
+node --env-file=.env.local scripts/add-workouts-to-calendar.mjs --plan plans/2026-05-25.json --dry-run
 ```

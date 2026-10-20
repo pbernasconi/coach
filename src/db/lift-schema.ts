@@ -34,5 +34,13 @@ export const liftAppliedChanges = pgTable('lift_applied_changes', {
   appliedAt: timestamp('applied_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
 });
 
+/** One-time codes for lift://sync links (src/lib/lift-sync/enroll.mjs); only the SHA-256 is stored. */
+export const liftEnrollments = pgTable('lift_enrollments', {
+  codeHash: text('code_hash').primaryKey(),
+  expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }).notNull(),
+  usedAt: timestamp('used_at', { withTimezone: true, mode: 'date' }),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+});
+
 export type LiftRow = typeof liftRows.$inferSelect;
 export type LiftAppliedChange = typeof liftAppliedChanges.$inferSelect;
