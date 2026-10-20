@@ -18,6 +18,8 @@ export const users = pgTable('users', {
 
   // Preferences
   timezone: text('timezone').default('UTC'),
+  // Settings page: { targets: { runKm, rideHours, strength } }
+  settings: jsonb('settings').$type<{ targets?: { runKm?: number; rideHours?: number; strength?: number } }>().notNull().default({}),
 
   // Status
   isActive: boolean('is_active').notNull().default(true),

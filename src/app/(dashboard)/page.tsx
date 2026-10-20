@@ -2,8 +2,11 @@ import Link from 'next/link';
 import { ownerForSignedInUser } from '@/lib/owner';
 import { cookies } from 'next/headers';
 import { loadPerformance } from '@/lib/performance/queries';
-import { todayIn } from '@/lib/plan/week.mjs';
 import PerformanceView from './PerformanceView';
+import TodayCard from './TodayCard';
+import { loadWeek } from '@/lib/plan/queries';
+import { mondayOf, todayIn } from '@/lib/plan/week.mjs';
+import { loadTargets } from '@/lib/status';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,7 +24,11 @@ export default async function PerformancePage() {
   const userId = await ownerForSignedInUser();
   if (!userId) return <p className="text-sm text-muted-foreground">This account has no Coach data.</p>;
   const today = todayIn(zone((await cookies()).get('tz')?.value));
-  const perf = await loadPerformance(userId, today);
+  const [perf, week, targets] = await Promise.all([
+    loadPerformance(userId, today),
+    loadWeek(userId, mondayOf(today), today),
+    loadTargets(userId),
+  ]);
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -31,7 +38,8 @@ export default async function PerformancePage() {
         </div>
         <Link href="/plan" className="text-sm underline underline-offset-4">This week&apos;s plan →</Link>
       </div>
-      <PerformanceView perf={perf} today={today} />
+      <TodayCard week={week} thisWeek={perf.weeks.at(-1)} targets={targets} />
+      <PerformanceView perf={perf} today={today} strengthTarget={targets.strength} />
     </div>
   );
 }

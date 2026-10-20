@@ -12,6 +12,8 @@ import { loadLiftModel } from '@/lib/lift-dashboard/queries';
 import { sessionSummaries, weeklyVolume } from '@/lib/lift-dashboard/stats.mjs';
 import { loadWeek, ownerId } from '@/lib/plan/queries';
 import { addDays, mondayOf, todayIn } from '@/lib/plan/week.mjs';
+import { loadStatus, loadTargets } from '@/lib/status';
+import { zonesFor } from '@/lib/plan/zones.mjs';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -52,7 +54,7 @@ export async function GET(request: Request) {
     const weekStart = mondayOf(today);
     const base = process.env.BASE_URL ?? 'https://coach-paolo.vercel.app';
 
-    const [week, nextWeek, acts, load, conn, liftChange, lift] = await Promise.all([
+    const [week, nextWeek, acts, load, conn, liftChange, lift, status, targets] = await Promise.all([
       loadWeek(userId, weekStart, today),
       loadWeek(userId, addDays(weekStart, 7), today),
       sql`
@@ -65,6 +67,8 @@ export async function GET(request: Request) {
       sql`SELECT last_synced_at, is_active FROM strava_connections LIMIT 1` as Promise<Row[]>,
       sql`SELECT max(updated_at) AS at FROM lift_rows` as Promise<Row[]>,
       loadLiftModel(),
+      loadStatus(userId),
+      loadTargets(userId),
     ]);
 
     const workouts = [...week.workouts, ...nextWeek.workouts].map((w) => ({
@@ -82,6 +86,7 @@ export async function GET(request: Request) {
       state: w.state,
       match: w.match,
       adapted: Boolean(w.adaptedFrom),
+      zones: zonesFor(w),
     }));
     const upcoming = workouts.filter((w) => w.date >= today && w.date <= addDays(today, 6) && w.state !== 'skipped');
 
@@ -143,6 +148,8 @@ export async function GET(request: Request) {
         fitness: load[0]
           ? { date: String(load[0].date).slice(0, 10), ctl: Number(load[0].ctl), atl: Number(load[0].atl), tsb: Number(load[0].tsb) }
           : null,
+        targets,
+        warnings: status.warnings.filter((w) => w.level !== 'info'),
         sync: {
           stravaLastSyncedAt: conn[0]?.last_synced_at ?? null,
           stravaConnected: Boolean(conn[0]?.is_active),
