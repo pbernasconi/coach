@@ -18,7 +18,7 @@ import { NAV_KEYS } from '@/lib/hotkeys.mjs';
 // Every nav link (and the Coach logo: a partial prefetch of / would take the cache slot first) prefetches its page in full (data included) when it is on screen, so a click is instant; the
 // browser keeps it for staleTimes.static (next.config.ts).
 const navLinks = [
-  { href: '/', label: 'Performance' },
+  { href: '/', label: 'Today' },
   { href: '/plan', label: 'Plan' },
   { href: '/lift', label: 'Lift' },
   { href: '/goals', label: 'Goals' },
