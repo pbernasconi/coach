@@ -1,14 +1,16 @@
 # Checks production on the real data (scripts/smoke.mjs, /api/health). Production deploys are checked by the Deploy
 # workflow (deploy.yml), which rolls back a failed one; previews by preview.yml.
-# - Every 30 minutes, and by hand: production, every page. Data alone can break a page (the 2026-10-19 outage),
+# - After each hourly Sync run (sync.yml), and by hand: production, every page. It runs while Sync has the
+#   database awake, so it costs no extra Neon wake-up. Data alone can break a page (the 2026-10-19 outage),
 #   so this catches a failure that no deploy caused. It opens an issue; it does not roll back (the old build reads
 #   the same data).
-# Secrets: HEALTH_TOKEN (also in Vercel, Production and Preview), VERCEL_BYPASS_SECRET.
+# Secrets: HEALTH_TOKEN (also in Vercel, Production and Preview).
 name: Deploy check
 
 on:
-  schedule:
-    - cron: "7,37 * * * *"
+  workflow_run:
+    workflows: [Sync]
+    types: [completed]
   workflow_dispatch:
 
 permissions:
@@ -16,7 +18,7 @@ permissions:
   issues: write
 
 concurrency:
-  group: deploy-check-${{ github.event.deployment.environment || 'production' }}
+  group: deploy-check
   cancel-in-progress: false
 
 env:
@@ -24,32 +26,20 @@ env:
 
 jobs:
   smoke:
-    if: >-
-      github.event_name != 'deployment_status' ||
-      (github.event.deployment_status.state == 'success' && github.event.deployment.environment != 'Production')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
       HEALTH_TOKEN: ${{ secrets.HEALTH_TOKEN }}
-      VERCEL_BYPASS_SECRET: ${{ secrets.VERCEL_BYPASS_SECRET }}
-      IS_PREVIEW: ${{ github.event_name == 'deployment_status' }}
-      DEPLOY_URL: ${{ github.event.deployment_status.environment_url || github.event.deployment_status.target_url }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
         with:
-          # The deployed commit's own smoke script (its pages and markers); main for production.
-          ref: ${{ github.event.deployment.sha || 'main' }}
-
-      - name: Smoke check (preview)
-        if: env.IS_PREVIEW == 'true'
-        run: node scripts/smoke.mjs "$DEPLOY_URL"
+          ref: main
 
       - name: Smoke check (production)
-        if: env.IS_PREVIEW != 'true'
         run: node scripts/smoke.mjs "$PRODUCTION_URL" --pages
 
       - name: Open or update the outage issue
-        if: failure() && env.IS_PREVIEW != 'true'
+        if: failure()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

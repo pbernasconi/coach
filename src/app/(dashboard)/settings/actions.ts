@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { clearCache } from '@/lib/data-cache';
 import { sql } from '@/db';
 import { ownerForSignedInUser } from '@/lib/owner';
 import { saveCoachingNotes, saveTargets, type Targets } from '@/lib/status';
@@ -21,7 +22,8 @@ export async function syncStravaNow(): Promise<string> {
   await owner();
   try {
     const r = await syncStrava(sql, { detailed: true, waitOnRateLimit: false, log: () => {}, warn: () => {} });
-    revalidatePath('/', 'layout');
+    clearCache('status');
+  revalidatePath('/', 'layout');
     return `Synced ${r.upserted} ${r.upserted === 1 ? 'activity' : 'activities'}.`;
   } catch (e) {
     return `Sync failed: ${(e as Error).message}`;
@@ -38,6 +40,7 @@ export async function saveTargetsAction(t: Targets) {
   const id = await owner();
   const clean = (v: unknown, max: number) => Math.min(max, Math.max(0, Math.round(Number(v) * 10) / 10 || 0));
   await saveTargets(id, { runKm: clean(t.runKm, 300), rideHours: clean(t.rideHours, 40), strength: clean(t.strength, 7) });
+  clearCache('status');
   revalidatePath('/', 'layout');
 }
 
@@ -99,5 +102,6 @@ export async function saveLocationAction(place: { name: string; lat: number; lon
 export async function saveGoalsAction(goals: unknown[]) {
   const id = await owner();
   await saveGoals(sql, id, goals.slice(0, 20));
+  clearCache('status');
   revalidatePath('/', 'layout');
 }
