@@ -58,11 +58,39 @@ async function measure(base) {
   return rows;
 }
 
+/** The network floor: a file from Vercel's CDN, and a function that answers without data (401). */
+async function floor(base) {
+  const cdn = [];
+  const fn = [];
+  for (let i = 0; i <= RUNS; i++) {
+    cdn.push(await time(`${base}/favicon.ico`));
+    fn.push(await time(`${base}/api/health`, { authorization: 'Bearer none' }));
+  }
+  return { cdn: median(cdn.slice(1).map((r) => r.ttfb)), fn: median(fn.slice(1).map((r) => r.ttfb)) };
+}
+
+/** Each loader's time on the server (/api/health runs them all at once), on a cold and then a warm call. */
+async function loaders(base) {
+  const call = async () => {
+    const res = await fetch(`${base}/api/health`, { headers: { ...headers, authorization: `Bearer ${token}` } });
+    return (await res.json()).checks ?? [];
+  };
+  const cold = await call();
+  const warm = await call();
+  return warm.map((c) => `${c.name} ${cold.find((x) => x.name === c.name)?.ms ?? '?'}→${c.ms}`).join(', ');
+}
+
 const results = [];
-for (const base of bases) results.push(await measure(base));
+const floors = [];
+for (const base of bases) {
+  floors.push(await floor(base));
+  results.push(await measure(base));
+}
 const ms = (x) => `${Math.round(x)}`.padStart(6);
 const pct = (a, b) => `${Math.round((1 - b / a) * 100)}%`.padStart(5);
 console.log(`median of ${RUNS} runs, ms${bases.length > 1 ? ` — A: ${bases[0]}  B: ${bases[1]}` : ` — ${bases[0]}`}`);
+floors.forEach((f, i) => console.log(`network floor ${'AB'[i]}: CDN file ${Math.round(f.cdn)} ms, function without data ${Math.round(f.fn)} ms`));
+for (const [i, base] of bases.entries()) console.log(`loaders ${'AB'[i]} (ms, first call→second): ${await loaders(base)}`);
 for (const page of PAGES) {
   const [a, b] = results.map((r) => r[page]);
   const line = `${page.padEnd(20)} ttfb ${ms(a.ttfb)}  load ${ms(a.load)}  nav ${ms(a.nav)}${a.status !== 200 ? `  (status ${a.status})` : ''}`;
