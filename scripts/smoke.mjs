@@ -6,7 +6,8 @@
 //   HEALTH_TOKEN=… node scripts/smoke.mjs https://coach.paolobernasconi.com --pages [--expect-commit <sha>]
 //
 // --expect-commit first waits (up to 6 minutes) until /api/health reports that commit, so the check tests the new
-// deploy and not the one before it. If production never serves it, the exit code is 3.
+// deploy and not the one before it. If production never serves it (a rollback pins production), the exit code is
+// 3. In GitHub Actions it writes the step outputs served_before=<sha> and pinned=true.
 // Env: HEALTH_TOKEN (required); VERCEL_BYPASS_SECRET for protected deployment URLs (*.vercel.app).
 // A page passes when it answers 200, has its data-smoke marker, and has no data-section-error or data-page-error.
 
@@ -90,15 +91,25 @@ async function servedCommit() {
   }
 }
 
+/** Writes a step output when running in GitHub Actions. */
+async function output(key, value) {
+  if (!process.env.GITHUB_OUTPUT) return;
+  const { appendFile } = await import('node:fs/promises');
+  await appendFile(process.env.GITHUB_OUTPUT, `${key}=${value}\n`);
+}
+
 if (expectCommit) {
   const deadline = Date.now() + 6 * 60_000;
   let served = await servedCommit();
+  // The commit production served before this deploy: the rollback target if this deploy fails.
+  if (served && served !== expectCommit) await output('served_before', served);
   while (served !== expectCommit && Date.now() < deadline) {
     console.log(`Waiting for ${base} to serve ${expectCommit.slice(0, 7)} (now ${served?.slice(0, 7) ?? 'unknown'})…`);
     await new Promise((r) => setTimeout(r, 15_000));
     served = await servedCommit();
   }
   if (served !== expectCommit) {
+    await output('pinned', 'true');
     console.error(`${base} still serves ${served ?? 'an unknown commit'}, not ${expectCommit}. Is production pinned by a rollback?`);
     process.exit(3);
   }
