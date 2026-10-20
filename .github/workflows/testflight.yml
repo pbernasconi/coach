@@ -12,7 +12,7 @@ name: TestFlight
 
 permissions:
   contents: read
-  actions: read   # the nightly check reads the last successful run
+  actions: read   # the hourly check reads the last successful run
 
 concurrency:
   group: testflight
