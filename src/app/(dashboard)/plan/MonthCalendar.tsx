@@ -714,7 +714,7 @@ function PlannedChip({ w, actual, disabled, h, roomy }: { w: CalendarWorkout; ac
       </Link>
       <span className={cn('absolute bottom-0.5 right-0.5 items-center gap-0.5', roomy ? 'flex' : 'hidden group-focus-within/chip:flex group-hover/chip:flex')}>
         {actual && (
-          <a href={actual.url} target="_blank" rel="noreferrer" aria-label={`Open ${actual.name} on Strava`}
+          <a href={actual.url} aria-label={`Open ${actual.name}`}
             className="rounded bg-card p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             <ExternalLink aria-hidden className="h-3 w-3" />
           </a>
@@ -736,9 +736,7 @@ function ActivityChip({ a, roomy }: { a: CalendarActivity; roomy: boolean }) {
   return (
     <a
       href={a.url}
-      target="_blank"
-      rel="noreferrer"
-      title={`${a.name}\n${text}\nCompleted, not planned. Opens Strava.`}
+      title={`${a.name}\n${text}\nCompleted, not planned. Opens the workout.`}
       className={cn(chipBase, roomy ? 'py-1.5' : 'h-[34px] shrink-0', 'border-transparent bg-card shadow-sm hover:shadow-md', chipFocus, 'rounded-[5px]')}
       style={{ borderLeftColor: sport(a.sport).color }}
     >

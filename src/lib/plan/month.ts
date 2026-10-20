@@ -119,7 +119,7 @@ export async function loadRange(userId: string, fromMonday: string, toMonday: st
     min: Math.round(Number(r.moving_time ?? 0) / 60),
     tss: num(r.tss),
     commute: Boolean(r.commute),
-    url: `https://www.strava.com/activities/${r.strava_activity_id}`,
+    url: `/activities/${r.strava_activity_id}`,
   }));
 
   const lifts: CalendarLift[] = lift
