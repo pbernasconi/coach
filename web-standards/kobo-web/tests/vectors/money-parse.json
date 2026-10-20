@@ -1,0 +1,311 @@
+{
+  "description": "The strict money parser (parseMoney): a typed or shown dollar string to integer cents, with integer math only. allowNegative defaults to false. A result is {ok: true, cents} or {ok: false, reason}; reason is EMPTY, INVALID, TOO_MANY_DECIMALS, NEGATIVE_NOT_ALLOWED or TOO_LARGE.",
+  "cases": [
+    {
+      "input": "12",
+      "expected": {
+        "ok": true,
+        "cents": 1200
+      }
+    },
+    {
+      "input": "12.5",
+      "expected": {
+        "ok": true,
+        "cents": 1250
+      }
+    },
+    {
+      "input": "12.34",
+      "expected": {
+        "ok": true,
+        "cents": 1234
+      }
+    },
+    {
+      "input": "0.05",
+      "expected": {
+        "ok": true,
+        "cents": 5
+      }
+    },
+    {
+      "input": "0.1",
+      "expected": {
+        "ok": true,
+        "cents": 10
+      }
+    },
+    {
+      "input": "1.1",
+      "expected": {
+        "ok": true,
+        "cents": 110
+      }
+    },
+    {
+      "input": "4.35",
+      "expected": {
+        "ok": true,
+        "cents": 435
+      }
+    },
+    {
+      "input": "007",
+      "expected": {
+        "ok": true,
+        "cents": 700
+      }
+    },
+    {
+      "input": ".5",
+      "expected": {
+        "ok": true,
+        "cents": 50
+      }
+    },
+    {
+      "input": "12.",
+      "expected": {
+        "ok": true,
+        "cents": 1200
+      }
+    },
+    {
+      "input": "$1,234.56",
+      "expected": {
+        "ok": true,
+        "cents": 123456
+      }
+    },
+    {
+      "input": "  $8.52  ",
+      "expected": {
+        "ok": true,
+        "cents": 852
+      }
+    },
+    {
+      "input": "999999999.99",
+      "expected": {
+        "ok": true,
+        "cents": 99999999999
+      }
+    },
+    {
+      "input": "90071992547409.91",
+      "expected": {
+        "ok": true,
+        "cents": 9007199254740991
+      }
+    },
+    {
+      "input": "90071992547409.92",
+      "expected": {
+        "ok": false,
+        "reason": "TOO_LARGE"
+      }
+    },
+    {
+      "input": "−$8.52",
+      "allowNegative": true,
+      "expected": {
+        "ok": true,
+        "cents": -852
+      }
+    },
+    {
+      "input": "-$8.52",
+      "allowNegative": true,
+      "expected": {
+        "ok": true,
+        "cents": -852
+      }
+    },
+    {
+      "input": "$-8.52",
+      "allowNegative": true,
+      "expected": {
+        "ok": true,
+        "cents": -852
+      }
+    },
+    {
+      "input": "−$8.52",
+      "expected": {
+        "ok": false,
+        "reason": "NEGATIVE_NOT_ALLOWED"
+      }
+    },
+    {
+      "input": "-5",
+      "expected": {
+        "ok": false,
+        "reason": "NEGATIVE_NOT_ALLOWED"
+      }
+    },
+    {
+      "input": "−0.00",
+      "expected": {
+        "ok": true,
+        "cents": 0
+      }
+    },
+    {
+      "input": "--5",
+      "allowNegative": true,
+      "expected": {
+        "ok": false,
+        "reason": "INVALID"
+      }
+    },
+    {
+      "input": "-$-5",
+      "allowNegative": true,
+      "expected": {
+        "ok": false,
+        "reason": "INVALID"
+      }
+    },
+    {
+      "input": "",
+      "expected": {
+        "ok": false,
+        "reason": "EMPTY"
+      }
+    },
+    {
+      "input": "   ",
+      "expected": {
+        "ok": false,
+        "reason": "EMPTY"
+      }
+    },
+    {
+      "input": "$",
+      "expected": {
+        "ok": false,
+        "reason": "INVALID"
+      }
+    },
+    {
+      "input": ".",
+      "expected": {
+        "ok": false,
+        "reason": "INVALID"
+      }
+    },
+    {
+      "input": "12.345",
+      "expected": {
+        "ok": false,
+        "reason": "TOO_MANY_DECIMALS"
+      }
+    },
+    {
+      "input": "1.2.3",
+      "expected": {
+        "ok": false,
+        "reason": "INVALID"
+      }
+    },
+    {
+      "input": "1e3",
+      "expected": {
+        "ok": false,
+        "reason": "INVALID"
+      }
+    },
+    {
+      "input": "NaN",
+      "expected": {
+        "ok": false,
+        "reason": "INVALID"
+      }
+    },
+    {
+      "input": "+5",
+      "expected": {
+        "ok": false,
+        "reason": "INVALID"
+      }
+    },
+    {
+      "input": "12 USD",
+      "expected": {
+        "ok": false,
+        "reason": "INVALID"
+      }
+    },
+    {
+      "input": "1 234",
+      "expected": {
+        "ok": false,
+        "reason": "INVALID"
+      }
+    },
+    {
+      "input": "١٢",
+      "expected": {
+        "ok": false,
+        "reason": "INVALID"
+      }
+    },
+    {
+      "input": ",5",
+      "expected": {
+        "ok": false,
+        "reason": "INVALID"
+      }
+    },
+    {
+      "input": "1,23",
+      "expected": {
+        "ok": false,
+        "reason": "INVALID"
+      }
+    },
+    {
+      "input": "1,2,3",
+      "expected": {
+        "ok": false,
+        "reason": "INVALID"
+      }
+    },
+    {
+      "input": "12,",
+      "expected": {
+        "ok": false,
+        "reason": "INVALID"
+      }
+    },
+    {
+      "input": "1234,567",
+      "expected": {
+        "ok": false,
+        "reason": "INVALID"
+      }
+    },
+    {
+      "input": "1,234,567.89",
+      "expected": {
+        "ok": true,
+        "cents": 123456789
+      }
+    },
+    {
+      "input": " 8.52",
+      "expected": {
+        "ok": true,
+        "cents": 852
+      }
+    },
+    {
+      "input": "8.52 ",
+      "expected": {
+        "ok": true,
+        "cents": 852
+      }
+    }
+  ]
+}

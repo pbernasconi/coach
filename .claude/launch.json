@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "next-dev",
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": ["-c", "PATH=/Users/paolo/.nvm/versions/node/v22.14.0/bin:$PATH exec node node_modules/next/dist/bin/next dev --turbopack -p 3001"],
+      "port": 3001
+    }
+  ]
+}

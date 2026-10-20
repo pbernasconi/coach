@@ -79,6 +79,8 @@ type Props = {
   placeName: string;
   library: LibraryItem[];
   timeZone: string; // the zone the server used for "today" (the tz cookie)
+  /** An item key (w-, a- or l-) to open in the modal on load: ?open= from links on the home page. */
+  openItem?: string;
 };
 
 /**
@@ -88,7 +90,7 @@ type Props = {
  *
  * Week rows have a fixed height and are memoized: a scroll, a load or an edit re-renders only the weeks it changed.
  */
-export default function MonthCalendar({ openAt, range, bounds, weather, placeName, library, timeZone }: Props) {
+export default function MonthCalendar({ openAt, range, bounds, weather, placeName, library, timeZone, openItem }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [data, setData] = useState<CalendarRange>(range);
@@ -98,7 +100,7 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
   const [failed, setFailed] = useState<{ before: number | null; after: number | null }>({ before: null, after: null });
   const [height, setHeight] = useState<number | null>(null);
   const [preview, setPreview] = useState<{ date: string; anchor: HTMLElement } | null>(null);
-  const [modalKey, setModalKey] = useState<string | null>(null);
+  const [modalKey, setModalKey] = useState<string | null>(openItem ?? null);
   const [createOn, setCreateOn] = useState<string | null>(null);
   const [clip, setClip] = useState<Clip | null>(null);
   const [libraryOpen, setLibraryOpen] = useState(false);
@@ -642,7 +644,15 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
       {modalItem && (
         <ItemModal
           item={modalItem}
-          onClose={() => setModalKey(null)}
+          onClose={() => {
+            setModalKey(null);
+            // Drop ?open= so a reload does not open it again.
+            const url = new URL(window.location.href);
+            if (url.searchParams.has('open')) {
+              url.searchParams.delete('open');
+              window.history.replaceState(window.history.state, '', url);
+            }
+          }}
           onStep={stepModal}
           canStep={{ prev: modalIndex > 0, next: modalIndex < allItems.length - 1 }}
           onCopy={(w) => copy([w])}

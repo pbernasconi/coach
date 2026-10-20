@@ -9,7 +9,7 @@
 // With two URLs it prints both side by side and the change. Env: HEALTH_TOKEN (required); VERCEL_BYPASS_SECRET for
 // protected *.vercel.app URLs; RUNS (default 5).
 
-const PAGES = ['/', '/plan', '/plan?month=2026-01', '/lift', '/lift/weekly', '/goals', '/health', '/health/training', '/health/day/today', '/settings'];
+const PAGES = ['/', '/plan', '/plan?month=2026-01', '/lift', '/lift/weekly', '/health', '/health/training', '/health/day/today', '/settings'];
 const RUNS = Number(process.env.RUNS ?? 5);
 const token = process.env.HEALTH_TOKEN;
 const bases = process.argv.slice(2).map((b) => b.replace(/\/$/, ''));

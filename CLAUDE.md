@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **Schema changes** go through migrations: read DATABASE.md before you edit `src/db/*schema*.ts` or touch a
   database.
+- **UI components** come from `@kobo/web` (`web-standards/kobo-web`, an npm workspace) when it has one. A new
+  reusable component goes there first, under its CONVENTIONS.md. `npm run check -w @kobo/web` runs its checks.
 - **Pages, loaders and database times** follow RELIABILITY.md: the deploy check renders every page and rolls
   back a deploy that breaks one.
 

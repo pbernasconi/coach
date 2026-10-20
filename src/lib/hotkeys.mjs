@@ -1,14 +1,13 @@
 // Keyboard shortcuts: which key press runs which shortcut. Pure, so node --test can check it
 // (src/components/hotkeys/HotkeysProvider.tsx does the listening).
 
-/** The navigation keys on every page: 1–6 open the nav sections in their order; t opens today's plan. */
+/** The navigation keys on every page: 1–5 open the nav sections in their order; t opens today's plan. */
 export const NAV_KEYS = [
   { key: '1', href: '/', label: 'Performance' },
   { key: '2', href: '/plan', label: 'Plan' },
   { key: '3', href: '/lift', label: 'Lift' },
-  { key: '4', href: '/goals', label: 'Goals' },
-  { key: '5', href: '/health', label: 'Health' },
-  { key: '6', href: '/settings', label: 'Settings' },
+  { key: '4', href: '/health', label: 'Health' },
+  { key: '5', href: '/settings', label: 'Settings' },
 ];
 
 /**

@@ -1,0 +1,320 @@
+{
+  "description": "Typed-date vectors for DateTextInput (dateText.ts). Dates are ISO calendar days. disabledWeekdays stands in for the isUnavailable predicate (ISO weekday: 6 = Saturday, 7 = Sunday). A null message means no error yet.",
+  "defaultErrors": {
+    "invalid": "Please enter a valid date",
+    "min": "That date has already passed",
+    "max": "That date is too far in the future",
+    "unavailable": "That date is not available"
+  },
+  "normalize": [
+    {
+      "raw": "0",
+      "text": "0"
+    },
+    {
+      "raw": "03",
+      "text": "03"
+    },
+    {
+      "raw": "031",
+      "text": "03/1"
+    },
+    {
+      "raw": "0314",
+      "text": "03/14"
+    },
+    {
+      "raw": "03/141",
+      "text": "03/14/1"
+    },
+    {
+      "raw": "03/141971",
+      "text": "03/14/1971"
+    },
+    {
+      "raw": "a0b3c1d4e1971xyz999",
+      "text": "03/14/1971"
+    },
+    {
+      "raw": "12/25/19",
+      "text": "12/25/19"
+    },
+    {
+      "raw": "2026-07-24",
+      "text": "07/24/2026"
+    },
+    {
+      "raw": "3/4/1971",
+      "text": "03/04/1971"
+    },
+    {
+      "raw": "3/4/71",
+      "text": "03/04/1971"
+    },
+    {
+      "raw": "Jul 24, 2026",
+      "text": "07/24/2026"
+    },
+    {
+      "raw": "July 24, 2026",
+      "text": "07/24/2026"
+    },
+    {
+      "raw": "Jul 24 2026",
+      "text": "07/24/2026"
+    },
+    {
+      "raw": "jul 24, 2026",
+      "text": "07/24/2026"
+    },
+    {
+      "raw": "  2026-07-24 ",
+      "text": "07/24/2026"
+    },
+    {
+      "raw": "12/251",
+      "text": "12/25/1"
+    },
+    {
+      "raw": "September 30, 2026",
+      "text": "09/30/2026"
+    },
+    {
+      "raw": "September 30 2026",
+      "text": "09/30/2026"
+    },
+    {
+      "raw": "Sep 30, 2026",
+      "text": "09/30/2026"
+    },
+    {
+      "raw": "2026-12-31",
+      "text": "12/31/2026"
+    }
+  ],
+  "evaluate": [
+    {
+      "text": "",
+      "bounds": {},
+      "status": "EMPTY",
+      "message": null
+    },
+    {
+      "text": "0",
+      "bounds": {},
+      "status": "INCOMPLETE",
+      "message": null
+    },
+    {
+      "text": "03",
+      "bounds": {},
+      "status": "INCOMPLETE",
+      "message": null
+    },
+    {
+      "text": "03/1",
+      "bounds": {},
+      "status": "INCOMPLETE",
+      "message": null
+    },
+    {
+      "text": "03/14",
+      "bounds": {},
+      "status": "INCOMPLETE",
+      "message": null
+    },
+    {
+      "text": "03/14/1",
+      "bounds": {},
+      "status": "INCOMPLETE",
+      "message": null
+    },
+    {
+      "text": "03/14/19",
+      "bounds": {},
+      "status": "INCOMPLETE",
+      "message": null
+    },
+    {
+      "text": "03/14/197",
+      "bounds": {},
+      "status": "INCOMPLETE",
+      "message": null
+    },
+    {
+      "text": "02/30/1971",
+      "bounds": {},
+      "status": "INVALID",
+      "message": "Please enter a valid date"
+    },
+    {
+      "text": "13/01/2026",
+      "bounds": {},
+      "status": "INVALID",
+      "message": "Please enter a valid date"
+    },
+    {
+      "text": "02/29/2023",
+      "bounds": {},
+      "status": "INVALID",
+      "message": "Please enter a valid date"
+    },
+    {
+      "text": "02/29/2024",
+      "bounds": {},
+      "status": "VALID",
+      "date": "2024-02-29",
+      "message": null
+    },
+    {
+      "text": "07/23/2026",
+      "bounds": {
+        "minDate": "2026-07-24",
+        "maxDate": "2026-12-31"
+      },
+      "status": "BEFORE_MIN",
+      "date": "2026-07-23",
+      "message": "That date has already passed"
+    },
+    {
+      "text": "01/01/2027",
+      "bounds": {
+        "minDate": "2026-07-24",
+        "maxDate": "2026-12-31"
+      },
+      "status": "AFTER_MAX",
+      "date": "2027-01-01",
+      "message": "That date is too far in the future"
+    },
+    {
+      "text": "07/24/2026",
+      "bounds": {
+        "minDate": "2026-07-24",
+        "maxDate": "2026-12-31"
+      },
+      "status": "VALID",
+      "date": "2026-07-24",
+      "message": null
+    },
+    {
+      "text": "12/31/2026",
+      "bounds": {
+        "minDate": "2026-07-24",
+        "maxDate": "2026-12-31"
+      },
+      "status": "VALID",
+      "date": "2026-12-31",
+      "message": null
+    },
+    {
+      "text": "07/25/2026",
+      "bounds": {
+        "disabledWeekdays": [
+          6,
+          7
+        ]
+      },
+      "status": "UNAVAILABLE",
+      "date": "2026-07-25",
+      "message": "That date is not available"
+    },
+    {
+      "text": "07/24/2026",
+      "bounds": {
+        "disabledWeekdays": [
+          6,
+          7
+        ]
+      },
+      "status": "VALID",
+      "date": "2026-07-24",
+      "message": null
+    },
+    {
+      "text": "07/25/2026",
+      "bounds": {
+        "minDate": "2026-07-26",
+        "disabledWeekdays": [
+          6,
+          7
+        ]
+      },
+      "status": "BEFORE_MIN",
+      "date": "2026-07-25",
+      "message": "That date has already passed"
+    }
+  ],
+  "format": [
+    {
+      "date": "2026-07-24",
+      "text": "07/24/2026"
+    },
+    {
+      "date": null,
+      "text": ""
+    }
+  ],
+  "quickChips": [
+    {
+      "today": "2026-08-31",
+      "chips": [
+        {
+          "label": "Today",
+          "date": "2026-08-31"
+        },
+        {
+          "label": "Tomorrow",
+          "date": "2026-09-01"
+        }
+      ]
+    },
+    {
+      "today": "2026-08-31",
+      "minDate": "2026-09-01",
+      "chips": [
+        {
+          "label": "Tomorrow",
+          "date": "2026-09-01"
+        }
+      ]
+    },
+    {
+      "today": "2026-08-31",
+      "minDate": "2026-09-03",
+      "chips": [
+        {
+          "label": "Earliest — Sep 3",
+          "date": "2026-09-03"
+        }
+      ]
+    },
+    {
+      "today": "2026-09-04",
+      "disabledWeekdays": [
+        6,
+        7
+      ],
+      "chips": [
+        {
+          "label": "Today",
+          "date": "2026-09-04"
+        }
+      ]
+    },
+    {
+      "today": "2026-08-31",
+      "minDate": "2026-09-05",
+      "disabledWeekdays": [
+        6,
+        7
+      ],
+      "chips": []
+    },
+    {
+      "today": "2026-08-31",
+      "minDate": "2026-09-03",
+      "maxDate": "2026-09-02",
+      "chips": []
+    }
+  ]
+}
