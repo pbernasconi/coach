@@ -9,6 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import SportIcon from '@/components/SportIcon';
 import ComplianceMark, { levelStyle } from '@/components/plan/ComplianceMark';
 import LegendPopover from '@/components/plan/LegendPopover';
+import { useHotkeys } from '@/components/hotkeys/HotkeysProvider';
 import WeatherBadge from '@/components/plan/WeatherBadge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -507,6 +508,12 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
 
   const overIn = (monday: string) => (dragOver && dragOver >= monday && dragOver <= addDays(monday, 6) ? dragOver : null);
   const thisWeek = mondayOf(today);
+  useHotkeys([
+    { key: 't', label: 'Today', run: () => goTo(topWeekFor(thisWeek, bounds.earliest)) },
+    { key: '[', label: 'Previous month', run: () => goTo(firstWeekOfMonth(addMonths(month, -1))) },
+    { key: ']', label: 'Next month', run: () => goTo(firstWeekOfMonth(addMonths(month, 1))) },
+    ...(library.length > 0 ? [{ key: 'l', label: 'Workout library', run: () => setLibraryOpen((o) => !o) }] : []),
+  ]);
   const months = useMemo(() => {
     const out: { month: string; weeks: WeekRow[] }[] = [];
     for (const w of weeks) {
