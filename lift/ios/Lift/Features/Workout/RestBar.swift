@@ -92,16 +92,23 @@ struct RestBar: View {
 }
 
 /// The rest bar's opaque, raised panel. Light mode: a white card with a soft shadow over the grey canvas. Dark mode:
-/// the raised grey, a tone above the set cards, since a shadow does not read on black. A hairline edges both.
-private struct RestBarPanel: View {
+/// the raised grey, a tone above the set cards, since a shadow does not read on black. A hairline edges both; once the
+/// rest is over the edge turns amber.
+struct RestBarPanel: View {
     @Environment(\.koboTheme) private var theme
     @Environment(\.colorScheme) private var colorScheme
+    var isReady = false
 
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: Radius.xl, style: .continuous)
         shape
             .fill(colorScheme == .dark ? theme.palette.surfaceRaised : theme.palette.surface)
-            .overlay { shape.strokeBorder(theme.palette.separator, lineWidth: Size.hairline) }
+            .overlay {
+                shape.strokeBorder(
+                    isReady ? theme.palette.accent : theme.palette.separator,
+                    lineWidth: isReady ? Size.hairline * 3 : Size.hairline
+                )
+            }
             .shadow(color: theme.palette.scrim, radius: Space.lg, y: Space.xs)
     }
 }

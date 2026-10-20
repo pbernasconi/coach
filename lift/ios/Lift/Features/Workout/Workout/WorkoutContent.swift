@@ -3,7 +3,9 @@ import KoboTokens
 import SwiftUI
 
 /// Dumb view: the session header, one section per exercise, the rest bar and the set editor (SCR-2). Ticking a set
-/// brings that set into view, clear of the rest bar, and tapping the rest bar's clock goes back to it.
+/// brings that set into view, clear of the rest bar, and tapping the rest bar's clock goes back to it. When the rest
+/// runs out the bar turns to the next set and brings that one into view instead. Haptics: a tap for each of the last
+/// three seconds, then a success.
 struct WorkoutContent: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let state: WorkoutState
@@ -16,8 +18,13 @@ struct WorkoutContent: View {
         ScrollViewReader { proxy in
             page(proxy)
                 .onChange(of: state.rest?.run) { _, run in
-                    if run != nil { focusRestingSet(proxy) }
+                    if run != nil { focus(state.rest?.setID, proxy) }
                 }
+                .onChange(of: ready?.setID) { _, setID in focus(setID, proxy) }
+                .koboFeedback(trigger: state.rest?.remaining) { _, left in
+                    (1...RestCue.countdownTaps).contains(left ?? 0) ? .tap : nil
+                }
+                .koboFeedback(trigger: ready?.since) { _, since in since == nil ? nil : .success }
         }
     }
 
@@ -51,7 +58,7 @@ struct WorkoutContent: View {
         .navigationBarTitleDisplayMode(.inline)
         .workoutOptions(state: state, send: send)
         // Glass style: no bar material behind it. The rest bar brings its own opaque panel.
-        .pinnedFooter(style: .glass, isPresented: state.rest != nil) { restBar(proxy) }
+        .pinnedFooter(style: .glass, isPresented: state.rest != nil || ready != nil) { restBar(proxy) }
         .modifier(WorkoutEditorSheets(state: state, send: send))
     }
 
@@ -61,16 +68,30 @@ struct WorkoutContent: View {
             RestBar(
                 rest: rest,
                 setLabel: restLabel(rest),
-                onFocus: { focusRestingSet(proxy) },
+                onFocus: { focus(rest.setID, proxy) },
                 onExtend: { send(.restExtendTapped) },
                 onSkip: { send(.restSkipTapped) }
+            )
+        } else if let ready {
+            RestReadyBar(
+                ready: ready,
+                onFocus: { focus(ready.setID, proxy) },
+                onLog: { send(.setLogTapped(ready.setID)) },
+                onDismiss: { send(.restReadyDismissed) }
             )
         }
     }
 
-    /// Scrolls the set the rest follows into the upper part of the page.
-    private func focusRestingSet(_ proxy: ScrollViewProxy) {
-        guard let setID = state.rest?.setID else { return }
+    /// The "rest over" bar, while its set is still planned (not logged, skipped or removed some other way).
+    private var ready: RestReady? {
+        guard let ready = state.ready, case .loaded(let workout) = state.workout, workout.isPlanned(ready.setID)
+        else { return nil }
+        return ready
+    }
+
+    /// Scrolls a set into the upper part of the page.
+    private func focus(_ setID: UUID?, _ proxy: ScrollViewProxy) {
+        guard let setID else { return }
         withAnimation(reduceMotion ? nil : .snappy) { proxy.scrollTo(setID, anchor: Self.focusAnchor) }
     }
 
@@ -84,6 +105,11 @@ struct WorkoutContent: View {
         guard case .loaded(let workout) = state.workout else { return "" }
         return workout.title
     }
+}
+
+/// The rest bar's haptic countdown (a count, not a duration constant elsewhere).
+private enum RestCue {
+    static let countdownTaps = 3
 }
 
 /// The set editor and the note editor sheets; Done saves, it never logs a set.

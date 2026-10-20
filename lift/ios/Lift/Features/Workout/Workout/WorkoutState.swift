@@ -12,6 +12,8 @@ nonisolated struct WorkoutState: Equatable, Sendable {
     var noteEditor: NoteEditor?
     /// The rest countdown after a set was logged.
     var rest: RestTimer?
+    /// The rest ran out: the next set is up. Only while `rest` is nil; logging any set or closing the bar clears it.
+    var ready: RestReady?
     /// The latest message for the toast slot.
     var toast: WorkoutToast?
     /// Exercise stills by catalog id, loaded as their sections appear.
@@ -37,16 +39,6 @@ nonisolated struct WorkoutOverview: Equatable, Sendable {
     /// "Started 9:05": the start, or the first logged set's time; nil before anything was logged.
     var started: String?
     var isFinished = false
-}
-
-extension WorkoutOverview {
-    /// "Back squat · Set 2": the set a rest follows, for the rest bar; nil when the set is gone.
-    func restLabel(for setID: UUID) -> String? {
-        for exercise in exercises {
-            if let set = exercise.sets.first(where: { $0.id == setID }) { return "\(exercise.name) · \(set.title)" }
-        }
-        return nil
-    }
 }
 
 /// One exercise section: name, plain hint lines and its sets.

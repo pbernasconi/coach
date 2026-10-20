@@ -42,6 +42,16 @@ import Testing
         return vm
     }
 
+    /// The "rest over" bar after the first set's rest: the second set, counting up from when the rest ran out.
+    var nextSetReady: RestReady {
+        RestReady(
+            setID: planned.items[0].sets[1].id,
+            title: "Back squat · Set 2",
+            target: "5 @ 100 kg",
+            since: ManualNow.start
+        )
+    }
+
     var restStart: RecordingRestActivityController.Call {
         .start(
             RestActivityAttributes(exerciseName: "Back squat", setLabel: "Set 1"),
@@ -94,6 +104,43 @@ import Testing
 
         #expect(vm.state.rest == nil)
         #expect(activity.calls == [restStart, .end])
+    }
+
+    @Test func runRestTimerTurnsTheBarToTheNextSetAtZero() async {
+        let vm = await resting()
+
+        await vm.runRestTimer()
+
+        #expect(vm.state.ready == nextSetReady)
+    }
+
+    @Test func restSkipTappedTurnsTheBarToTheNextSet() async {
+        let vm = await resting()
+
+        vm.send(.restSkipTapped)
+
+        #expect(vm.state.rest == nil)
+        #expect(vm.state.ready == nextSetReady)
+        #expect(activity.calls == [restStart, .end])
+    }
+
+    @Test func restReadyDismissedClosesTheBar() async {
+        let vm = await resting()
+        await vm.runRestTimer()
+
+        vm.send(.restReadyDismissed)
+
+        #expect(vm.state.ready == nil)
+    }
+
+    @Test func setLogTappedFromTheReadyBarStartsTheNextRest() async {
+        let vm = await resting()
+        await vm.runRestTimer()
+
+        await vm.send(.setLogTapped(nextSetReady.setID))?.value
+
+        #expect(vm.state.ready == nil)
+        #expect(vm.state.rest?.setID == nextSetReady.setID)
     }
 
     @Test func runRestTimerCatchesUpWithTheWallClockAfterTheBackground() async {
@@ -178,5 +225,14 @@ import Testing
     @Test func restLabelNamesTheExerciseAndSet() {
         #expect(overview.restLabel(for: .fixture(21)) == "Romanian deadlift · Set 1")
         #expect(overview.restLabel(for: .fixture(99)) == nil)
+    }
+
+    @Test func restReadyPointsAtTheNextPlannedSet() {
+        let ready = overview.restReady(after: .fixture(12), since: ManualNow.start)
+
+        #expect(ready?.setID == .fixture(22))
+        #expect(ready?.title == "Romanian deadlift · Set 2")
+        #expect(overview.isPlanned(.fixture(22)))
+        #expect(!overview.isPlanned(.fixture(21)))
     }
 }
