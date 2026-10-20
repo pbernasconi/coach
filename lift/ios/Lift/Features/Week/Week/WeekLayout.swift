@@ -1,5 +1,6 @@
 import Foundation
 import LiftCore
+import LiftSync
 
 /// The pure part of the Week screen: which days the strip and the list show, given today, the visible page and the
 /// selected day. Kept apart from the ViewModel so the rules read in one place.
@@ -35,10 +36,9 @@ nonisolated struct WeekLayout: Sendable {
         week(offset: offset).contains(today) ? today : weekStart(offset: offset)
     }
 
-    /// The list for the week `offset`: all seven days, each with its sessions. A day without any is a rest day.
-    func sections(_ summaries: [SessionSummary], offset: Int, selected: LocalDay) -> [WeekDaySection] {
+    /// The list for the week `offset`: all seven days, each with its rows. A day without any is a free day.
+    func sections(_ merge: WeekPlanMerge, offset: Int, selected: LocalDay) -> [WeekDaySection] {
         let week = week(offset: offset)
-        let byDay = Dictionary(grouping: summaries.filter { week.contains($0.day) }, by: \.day)
         return (0..<7).map { index in
             let day = week.lowerBound.adding(days: index)
             return WeekDaySection(
@@ -48,24 +48,64 @@ nonisolated struct WeekLayout: Sendable {
                 dayNumber: days.dayNumber(of: day),
                 isToday: day == today,
                 isSelected: day == selected,
-                sessions: byDay[day] ?? []
+                entries: merge.entries(on: day)
             )
         }
     }
 
-    /// Days with sessions, marked done when every session that day is done.
-    func markedDays(_ summaries: [SessionSummary]) -> [WeekDay] {
-        Dictionary(grouping: summaries, by: \.day)
-            .sorted { $0.key < $1.key }
-            .compactMap { day, onDay in
-                guard let date = days.date(of: day) else { return nil }
-                return WeekDay(date: date, status: onDay.allSatisfy(\.isDone) ? .done : .planned)
-            }
+    /// Days with rows, marked done when every row that day is done.
+    func markedDays(_ merge: WeekPlanMerge) -> [WeekDay] {
+        merge.markedDays.compactMap { marked in
+            days.date(of: marked.day).map { WeekDay(date: $0, status: marked.isDone ? .done : .planned) }
+        }
+    }
+
+    /// The plan line for the week `offset`, or nil when sync is off or the week is not kept.
+    func planHeader(_ snapshot: CoachPlanSnapshot, offset: Int) -> WeekPlanHeader? {
+        guard let book = snapshot.shownBook, let week = book.weeks[weekStart(offset: offset)] else { return nil }
+        let isOffline = snapshot.status == .offline
+        let updated = book.updatedAt.map { date in
+            let time = days.day(of: date) == today ? days.timeTitle(of: date) : days.shortTitle(of: days.day(of: date))
+            return isOffline ? String(localized: "Offline · updated \(time)") : String(localized: "Updated \(time)")
+        }
+        return WeekPlanHeader(
+            title: week.title.flatMap { $0.isEmpty ? nil : $0 },
+            totals: week.totals.text,
+            freshness: updated ?? (isOffline ? String(localized: "Offline") : nil),
+            isOffline: isOffline
+        )
     }
 
     /// "Monday, 2 March", or "Today · Monday, 2 March".
     func title(of day: LocalDay) -> String {
         let long = days.longTitle(of: day)
         return day == today ? String(localized: "Today · \(long)") : long
+    }
+
+    /// The lift sheet's subject; nil for a done session, which cannot be rescheduled.
+    func sessionRef(_ summary: SessionSummary, templates: [WeekTemplateChoice]) -> WeekSessionRef? {
+        guard !summary.isDone else { return nil }
+        return WeekSessionRef(
+            id: summary.id,
+            title: summary.title,
+            dayTitle: days.longTitle(of: summary.day),
+            templateID: summary.templateID,
+            canChangeWorkout: templates.contains { $0.id != summary.templateID }
+        )
+    }
+
+    /// The day picker for a planned session, limited to the days the strip shows.
+    func move(_ summary: SessionSummary, templates: [WeekTemplateChoice]) -> WeekMove? {
+        guard let ref = sessionRef(summary, templates: templates), let current = days.date(of: summary.day),
+            let first = days.date(of: stripRange.lowerBound), let last = days.date(of: stripRange.upperBound)
+        else { return nil }
+        return WeekMove(
+            id: ref.id,
+            title: ref.title,
+            dayTitle: ref.dayTitle,
+            current: current,
+            first: first,
+            last: last
+        )
     }
 }

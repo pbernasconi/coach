@@ -5,7 +5,7 @@ import type { Item, PreviewTarget } from './ItemPreview';
 export const ROW_H = 'h-[9.5rem]';
 export const COLS = 'grid grid-cols-[repeat(7,minmax(0,1fr))_9.5rem]';
 
-export const hm = (min: number) => `${Math.floor(min / 60)}:${String(Math.round(min % 60)).padStart(2, '0')}`;
+export { hm } from '@/lib/plan/week-api.mjs';
 export const monthTitle = (month: string) =>
   new Date(`${month}-01T12:00:00Z`).toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 export const monthShort = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' });

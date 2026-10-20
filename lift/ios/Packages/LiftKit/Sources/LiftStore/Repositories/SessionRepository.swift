@@ -52,6 +52,10 @@ public protocol SessionRepository: Sendable {
     /// stamped, it becomes the first logged set's time.
     func finish(sessionID: UUID) async throws -> SessionRecord
 
+    /// Stamps `startedAt` now on a live session that has neither a start nor a finish. A session already started or
+    /// finished is returned as it is, with no write, so a second Start (or a Start after the first logged set) is safe.
+    func start(sessionID: UUID) async throws -> SessionRecord
+
     /// Moves, pushes or removes a live session. Returns what `undo` needs.
     func reschedule(_ sessionID: UUID, _ action: RescheduleAction) async throws -> RescheduleUndo
 

@@ -89,8 +89,13 @@
             totalSets: 9,
             exercises: [squat, romanian, curl],
             note: "Short on time, skipped the lunges",
-            warmUpNote: "5 min rower"
+            warmUpNote: "5 min rower",
+            started: "Started 9:05",
+            startedAt: startedAt
         )
+
+        /// A fixed start for the fixtures (a Thursday morning in March 2026); previews show it as a start time only.
+        private static let startedAt = Date(timeIntervalSince1970: 1_772_701_500)
 
         static let fixtureDefault = WorkoutState(
             workout: .loaded(overview),
@@ -115,6 +120,23 @@
                 laterSets: 1
             )
         )
+        /// A planned session nobody started: Start workout under the progress.
+        static let fixtureNotStarted = WorkoutState(
+            workout: .loaded(
+                WorkoutOverview(
+                    title: "Upper A",
+                    dayTitle: "Friday, 6 March",
+                    loggedSets: 0,
+                    totalSets: 2,
+                    exercises: [curl]
+                )
+            )
+        )
+        static let fixtureFinished: WorkoutState = {
+            var finished = overview
+            finished.finishedAt = startedAt.addingTimeInterval(52 * 60 + 10)
+            return WorkoutState(workout: .loaded(finished))
+        }()
         static let fixtureLoading = WorkoutState(workout: .loading)
         static let fixtureEmpty = WorkoutState(workout: .empty)
         static let fixtureFailed = WorkoutState(workout: .failed(.unknown))

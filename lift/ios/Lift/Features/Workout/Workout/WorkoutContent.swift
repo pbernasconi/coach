@@ -2,7 +2,7 @@ import KoboComponents
 import KoboTokens
 import SwiftUI
 
-/// Dumb view: the session header, one section per exercise, the rest bar and the set editor (SCR-2).
+/// Dumb view: the session header with its clock, one section per exercise, the rest bar and the set editor (SCR-2).
 struct WorkoutContent: View {
     let state: WorkoutState
     let send: (WorkoutAction) -> Void
@@ -77,6 +77,7 @@ private struct WorkoutBody: View {
                     }
                 }
                 SegmentedProgress(done: workout.loggedSets, goal: workout.totalSets, accessibilityLabel: "Sets logged")
+                WorkoutClockRow(workout: workout, send: send)
                 WorkoutSessionNotes(note: workout.note, warmUpNote: workout.warmUpNote)
             }
             ForEach(workout.exercises) { exercise in

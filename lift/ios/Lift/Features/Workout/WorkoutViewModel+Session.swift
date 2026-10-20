@@ -2,8 +2,8 @@ import Foundation
 import LiftCore
 import LiftStore
 
-/// The session-level actions: add, move and remove exercises, finish, discard, Save as template. Each write goes
-/// through `WorkoutSessionEdits`; the toast it returns (or the failure) is shown here.
+/// The session-level actions: Start, add, move and remove exercises, finish, discard, Save as template. Each
+/// write goes through `WorkoutSessionEdits`; the toast it returns (or the failure) is shown here.
 extension WorkoutViewModel {
     /// One session write; it returns the toast to show, if any.
     typealias SessionWrite = (WorkoutSessionEdits) async throws -> WorkoutToast.Kind?
@@ -36,7 +36,10 @@ extension WorkoutViewModel {
         case .exerciseMoveDownTapped(let id): return { try await $0.move(id, by: 1, in: detail) }
         case .exerciseRemoveTapped(let id): return { try await $0.remove(id) }
         case .exerciseRemoveUndoTapped(let id): return { try await $0.restore(id) }
-        case .finishTapped: return { try await $0.finish() }
+        case .startTapped: return { try await $0.start() }
+        case .finishTapped:
+            send(.restSkipTapped)  // a finished workout has no rest left, here or on the Lock Screen
+            return { try await $0.finish() }
         case .discardTapped:
             hasDiscarded = true  // keeps the page as it was while it closes
             return { try await $0.discard() }
@@ -45,6 +48,16 @@ extension WorkoutViewModel {
             return { try await $0.saveAsTemplate(named: name) }
         default: return nil
         }
+    }
+
+    /// The first logged set starts a workout nobody started with Start, unless the session is on an earlier day (then
+    /// Finish takes the first logged set's time, as before). A failure is left alone: the clock reads the first logged
+    /// set's time until the start is stored, and Finish stores it too.
+    func startIfNeeded() async {
+        guard let session = detail?.session, session.startedAt == nil, session.finishedAt == nil,
+            case .loaded(let workout) = state.workout, !workout.isPastDay
+        else { return }
+        _ = try? await edits.sessions.start(sessionID: session.id)
     }
 
     /// The options sheet to open for `action`, from the current session.

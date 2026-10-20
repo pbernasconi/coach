@@ -236,6 +236,18 @@ test('lww: a newer updatedAt overwrites and gets a fresh seq', async () => {
   assert.equal(body.cursor, '3');
 });
 
+test('push reports only the changes it wrote: not stale ones, not duplicates', async () => {
+  const repo = createMemoryRepository();
+  const rowId = uuid();
+  const first = change({ rowId, updatedAt: '2026-10-15T07:30:00.000Z' });
+  const applied = [];
+  await handlePush(pushReq([first]), repo, { applied });
+  assert.deepEqual(applied.map((c) => c.id), [rowId.toLowerCase()]);
+  const later = [];
+  await handlePush(pushReq([first, change({ rowId, op: 'update', updatedAt: '2026-10-15T07:00:00.000Z' })]), repo, { applied: later });
+  assert.deepEqual(later, [], 'a duplicate and a stale change are not reported');
+});
+
 test('lww: an older or equal updatedAt is accepted but does not overwrite', async () => {
   const repo = createMemoryRepository();
   const rowId = uuid();

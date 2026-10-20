@@ -34,6 +34,7 @@ struct CatalogDetail: View {
         case .feedback: FeedbackDemo(component: component)
         case .status: StatusDemo(component: component)
         case .display: DisplayDemo(component: component)
+        case .charts: ChartsDemo(component: component)
         case .layout: LayoutDemo(component: component)
         case .navigation: NavigationDemo(component: component)
         case .overlays: OverlaysDemo(component: component)

@@ -95,6 +95,10 @@ nonisolated final class FakeSessionRepository: SessionRepository {
         throw AppError(.unknown, detail: "not used")
     }
 
+    func start(sessionID _: UUID) async throws -> SessionRecord {
+        throw AppError(.unknown, detail: "not used")
+    }
+
     func reschedule(_ sessionID: UUID, _ action: RescheduleAction) async throws -> RescheduleUndo {
         reschedules.withLock { $0.append(Reschedule(sessionID: sessionID, action: action)) }
         if let rescheduleError { throw rescheduleError }

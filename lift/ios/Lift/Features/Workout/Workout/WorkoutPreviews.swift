@@ -17,6 +17,8 @@
     #Preview("Dark") { WorkoutPreview(state: .fixtureResting).preferredColorScheme(.dark) }
     #Preview("Resting") { WorkoutPreview(state: .fixtureResting) }
     #Preview("Editing") { WorkoutPreview(state: .fixtureEditing) }
+    #Preview("Not started") { WorkoutPreview(state: .fixtureNotStarted) }
+    #Preview("Finished") { WorkoutPreview(state: .fixtureFinished) }
     #Preview("Loading") { WorkoutPreview(state: .fixtureLoading) }
     #Preview("Empty") { WorkoutPreview(state: .fixtureEmpty) }
     #Preview("Failed") { WorkoutPreview(state: .fixtureFailed) }

@@ -3,6 +3,7 @@ import { loadLiftModel } from '@/lib/lift-dashboard/queries';
 import { sessionSummaries } from '@/lib/lift-dashboard/stats.mjs';
 import { addDays, adaptForFeel, matchWeek, mondayOf, sportOfStrava, undoAdapts } from './week.mjs';
 import { toDay } from '@/lib/db-time.mjs';
+import { followWorkoutInLift } from '@/lib/lift/edit-store';
 
 /** A structured workout (src/lib/workouts/steps.mjs). */
 export type StructuredWorkout = { version: 1; sport: 'ride' | 'run'; name: string; bank?: string; level?: number; notes?: string; steps: unknown[] };
@@ -148,7 +149,7 @@ export async function loadWeek(userId: string, weekStart: string, today: string)
 }
 
 /** Plan id for a week, creating an empty plan when the week has none (so a workout can be added or moved in). */
-async function ensurePlan(userId: string, weekStart: string): Promise<string> {
+export async function ensurePlan(userId: string, weekStart: string): Promise<string> {
   const existing = await planRow(userId, weekStart);
   if (existing) return String(existing.id);
   const [p] = (await sql`
@@ -187,6 +188,8 @@ async function applyChanges(userId: string, id: string, changes: Record<string, 
     await sql.query(`UPDATE training_plan_activities SET ${col} = $1 WHERE id = $2`, [value, id]);
   }
   await sql`UPDATE training_plan_activities SET edited_at = NOW(), updated_at = NOW() WHERE id = ${id}`;
+  // A new day or status moves or removes its Lift session now, not at the next lift-plan.mjs run.
+  if ('date' in changes || 'status' in changes) await followWorkoutInLift(id, { restore: changes.status === 'planned' });
 }
 
 /** A workout's day ('YYYY-MM-DD') when the user owns it, else null. */

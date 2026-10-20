@@ -3,6 +3,7 @@ import { toDay, toIso } from '@/lib/db-time.mjs';
 import { loadLiftModel } from '@/lib/lift-dashboard/queries';
 import { sessionSummaries } from '@/lib/lift-dashboard/stats.mjs';
 import { richSession, type RichSession } from '@/lib/lift/session';
+import { followWorkoutInLift, removeFromLift } from '@/lib/lift/edit-store';
 import type { Workout } from './queries';
 import { complianceOf } from './compliance.mjs';
 import { libraryFrom, monthWeeks, weekSummary } from './calendar.mjs';
@@ -34,6 +35,8 @@ export type CalendarWorkout = Workout & {
   imported: boolean;
   /** Strength: the Lift session planned for it (lift_session_id), else the Lift session that matched it. */
   lift: LiftSessionDetail | null;
+  /** The Lift session planned for it (training_plan_activities.lift_session_id), as stored. */
+  liftSessionId: string | null;
   /** Where its steps are, per device ('garmin' for runs, 'zwift' for indoor rides; src/lib/workouts/sync.mjs). */
   syncs: Record<string, { status: string; error: string | null; syncedAt: string | null }>;
 };
@@ -166,7 +169,7 @@ export async function loadRange(userId: string, fromMonday: string, toMonday: st
     const act = m.match?.source === 'strava' ? byStrava.get(m.match.id) : null;
     const actual = m.match ? { min: act?.min ?? null, tss: act?.tss ?? null } : null;
     const compliance = complianceOf(w, m.status, actual, { rest: sportOf(w) === 'rest' }) as Compliance;
-    return { ...w, state: m.status, match: m.match, actual, compliance, imported: imported.has(w.id), lift: liftDetail, syncs: syncOf.get(w.id) ?? {} };
+    return { ...w, state: m.status, match: m.match, actual, compliance, imported: imported.has(w.id), lift: liftDetail, liftSessionId: linked.get(w.id) ?? null, syncs: syncOf.get(w.id) ?? {} };
   });
 
   const load: LoadRow[] = loadRows.map((r) => ({ date: dayOf(r.date), ctl: Number(r.ctl), atl: Number(r.atl), tsb: Number(r.tsb) }));
@@ -334,6 +337,7 @@ export async function updateWorkout(userId: string, id: string, w: WorkoutInput)
       workout_type = COALESCE(${w.workoutType}, CASE WHEN workout_type ~ '^(run|ride)-(threshold|vo2|tempo|test)' THEN NULL ELSE workout_type END),
       edited_at = NOW(), updated_at = NOW()
     WHERE id = ${id}`;
+  await followWorkoutInLift(id);
   return { from, to: w.date };
 }
 
@@ -380,7 +384,10 @@ export async function removeWorkout(userId: string, id: string): Promise<{ date:
     DELETE FROM training_plan_activities a USING training_plans p
     WHERE a.id = ${id} AND p.id = a.plan_id AND p.user_id = ${userId}
     RETURNING to_jsonb(a.*) AS row, a.scheduled_date`) as Row[];
-  return rows[0] ? { date: dayOf(rows[0].scheduled_date), row: rows[0].row as Record<string, unknown> } : null;
+  if (!rows[0]) return null;
+  const row = rows[0].row as Record<string, unknown>;
+  await removeFromLift(row.lift_session_id as string | null);
+  return { date: dayOf(rows[0].scheduled_date), row };
 }
 
 /** Puts a deleted workout back as it was (the Undo of a delete). Only into a plan the user owns. */
@@ -391,7 +398,9 @@ export async function restoreWorkout(userId: string, row: Record<string, unknown
     WHERE EXISTS (SELECT 1 FROM training_plans p WHERE p.id = r.plan_id AND p.user_id = ${userId})
     ON CONFLICT (id) DO NOTHING
     RETURNING scheduled_date`) as Row[];
-  return rows[0] ? dayOf(rows[0].scheduled_date) : null;
+  if (!rows[0]) return null;
+  await followWorkoutInLift(String(row.id), { restore: true });
+  return dayOf(rows[0].scheduled_date);
 }
 
 /** Where the calendar data starts and where the plan ends ('YYYY-MM-DD' each, or null when there is none). */
