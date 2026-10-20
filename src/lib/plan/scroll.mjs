@@ -144,3 +144,34 @@ export function monthEdges(day) {
     odd: Number(day.slice(5, 7)) % 2 === 1,
   };
 }
+
+/** Weeks to show above the open week: the current week opens as the second row (one past week above it). */
+export const WEEKS_ABOVE = 1;
+
+/**
+ * The week to put at the top of the view so that `focus` shows with WEEKS_ABOVE past weeks above it.
+ * @param {string} focus
+ * @param {string | null} [earliest]
+ * @returns {string}
+ */
+export function topWeekFor(focus, earliest = null) {
+  const top = addDays(focus, -7 * WEEKS_ABOVE);
+  const floor = earliestBound(earliest);
+  return floor && top < floor ? (floor <= focus ? floor : focus) : top;
+}
+
+/**
+ * Rejects when `promise` takes longer than `ms`, so a load that never answers cannot look like loading forever.
+ * @template T
+ * @param {Promise<T>} promise
+ * @param {number} ms
+ * @param {string} [label]
+ * @returns {Promise<T>}
+ */
+export function withTimeout(promise, ms, label = 'load') {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms} ms`)), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
