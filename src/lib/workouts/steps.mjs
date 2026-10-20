@@ -1,6 +1,6 @@
 // Structured workouts: a planned workout as steps (warm-up, work, recovery, repeats) with targets. The steps are
-// the source for the chart in Coach, the planned time and TSS, and the copies on the devices (intervals.icu sends
-// them to Zwift and to the Garmin watch; docs/research/structured-workouts.md).
+// the source for the chart in Coach, the planned time and TSS, and the copies on the devices (runs on the Garmin
+// watch, indoor rides in Zwift; src/lib/workouts/sync.mjs, docs/research/structured-workouts.md).
 //
 // Targets are relative to the athlete's anchors, so a new FTP or LTHR changes the watts and beats without new
 // workouts: rides in % of FTP, runs in % of LTHR (PLAN-STRUCTURE: heart rate for all but Z5). Pure; node --test.

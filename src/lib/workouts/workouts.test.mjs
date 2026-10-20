@@ -2,7 +2,6 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { ANCHORS, flatten, targetText, totals, validate, zoneOf, zoneTarget } from './steps.mjs';
 import { BANK, bankWorkout } from './bank.mjs';
-import { durationText, stepLine, workoutText } from './intervals-text.mjs';
 import { toZwo } from './zwo.mjs';
 
 test('zones match the PLAN-STRUCTURE table at FTP 280 W and LTHR 168', () => {
@@ -62,23 +61,6 @@ test('validate finds bad steps', () => {
   assert.match(validate({ version: 1, sport: 'run', steps: [{ kind: 'work', duration: { type: 'time', s: 0 }, target: { type: 'open' } }] })[0], /bad duration/);
 });
 
-test('intervals.icu text: headings, repeats, % FTP for rides and % LTHR for runs; cues without digits', () => {
-  assert.equal(durationText({ type: 'time', s: 330 }), '5m30s');
-  assert.equal(durationText({ type: 'distance', m: 10000 }), '10km');
-  const ride = workoutText(bankWorkout('threshold-a', 'ride', 0, 90));
-  assert.match(ride, /^Warmup\n- Easy, building to zone two 30m 56-75%$/m);
-  assert.match(ride, /^6x\n- Top of zone four\. Start reasonable, end with a little left 5m 96-104%\n- 2m 45-55%$/m);
-  assert.doesNotMatch(ride, /Z\d/);
-  const run = workoutText(bankWorkout('threshold-a', 'run', 0, 60));
-  assert.match(run, /- .*5m 104-108% LTHR/);
-  assert.equal(stepLine({ kind: 'work', duration: { type: 'time', s: 60 }, target: { type: 'open' }, notes: 'Go 5m hard at Z4' }), '- Go hard at 1m');
-});
-
-test('intervals.icu text writes the outer repeat of VO2 B out: 3 blocks of 6x', () => {
-  const text = workoutText(bankWorkout('vo2-b', 'ride', 0, 60));
-  assert.equal(text.match(/^6x$/gm).length, 3);
-});
-
 test('.zwo: warm-up ramp, IntervalsT for a two-step repeat, VO2 B written out', () => {
   const zwo = toZwo(bankWorkout('threshold-a', 'ride', 0, 90));
   assert.match(zwo, /<Warmup Duration="1800" PowerLow="0.560" PowerHigh="0.750">/);
@@ -89,46 +71,85 @@ test('.zwo: warm-up ramp, IntervalsT for a two-step repeat, VO2 B written out', 
   assert.throws(() => toZwo(bankWorkout('vo2-a', 'run', 0, 60)));
 });
 
-import { eventFor, eventType, hashOf, planSync } from './sync.mjs';
-import { intervalsClient } from './intervals-api.mjs';
+import { deviceOf, hashOf, payloadFor, planSync } from './sync.mjs';
+import { garminStepCount, garminTarget, toGarmin } from './garmin.mjs';
+import { handleGarminWorkoutsGet, handleGarminWorkoutsPost, parseRemote } from './garmin-api.mjs';
 
-const row = (id, extra = {}) => ({ id, day: '2026-10-21', start_time: '07:00', title: '🚴 Threshold A — Zwift', workout_type: 'ride-threshold-a', status: 'planned', description: 'Rain, so Zwift.', steps: bankWorkout('threshold-a', 'ride', 0, 90), ...extra });
+const row = (id, extra = {}) => ({ id, day: '2026-10-21', title: '🚴 Threshold A — Zwift', workout_type: 'ride-threshold-a', status: 'planned', description: 'Rain, so Zwift.', steps: bankWorkout('threshold-a', 'ride', 0, 90), ...extra });
+const run = (id, extra = {}) => row(id, { title: '🏃 VO2 A run', workout_type: 'run-vo2-a', steps: bankWorkout('vo2-a', 'run', 0, 60), ...extra });
 
-test('eventFor: an indoor ride for Zwift with the text, time, load and an external id; the emoji goes', () => {
-  const e = eventFor(row('a'), row('a').steps);
-  assert.equal(e.type, 'VirtualRide');
-  assert.equal(e.name, 'Threshold A — Zwift');
-  assert.equal(e.start_date_local, '2026-10-21T07:00:00');
-  assert.equal(e.moving_time, 5400);
-  assert.equal(e.external_id, 'coach-a');
-  assert.match(e.description, /^Rain, so Zwift\.\n\nWarmup/);
-  assert.equal(eventType({ title: 'Long ride' }, { sport: 'ride' }), null); // outdoor: Coach only
-  assert.equal(eventType({ title: 'Easy run' }, { sport: 'run' }), 'Run');
+test('deviceOf: runs to Garmin, indoor rides to Zwift, outdoor rides and skipped workouts to none', () => {
+  assert.equal(deviceOf(run('r')), 'garmin');
+  assert.equal(deviceOf(row('z')), 'zwift');
+  assert.equal(deviceOf(row('o', { title: '🚴 Long ride', workout_type: 'ride-long' })), null);
+  assert.equal(deviceOf(run('s', { status: 'skipped' })), null);
+  assert.equal(deviceOf(run('t', { steps: null })), null);
 });
 
-test('planSync: create new, update changed, keep same, delete skipped and removed', () => {
-  const same = row('same');
+test('toGarmin: HR in bpm from LTHR, a repeat group, open hard steps, run sport; step count matches Coach', () => {
+  const w = bankWorkout('vo2-a', 'run', 0, 60);
+  const g = toGarmin(w, { name: 'Coach · VO2 A run', description: 'note' });
+  assert.equal(g.sportType.sportTypeKey, 'running');
+  const [warm, rep] = g.workoutSegments[0].workoutSteps;
+  assert.deepEqual([warm.stepType.stepTypeKey, warm.endConditionValue, warm.targetType.workoutTargetTypeId, warm.targetValueOne, warm.targetValueTwo], ['warmup', 900, 4, 101, 121]);
+  assert.equal(rep.type, 'RepeatGroupDTO');
+  assert.equal(rep.numberOfIterations, 4);
+  assert.equal(rep.workoutSteps[0].targetType.workoutTargetTypeKey, 'no.target'); // hard: by effort
+  assert.equal(garminStepCount(g.workoutSegments[0].workoutSteps), 11);
+  // Step orders run through the repeat's children.
+  assert.deepEqual(g.workoutSegments[0].workoutSteps.flatMap((s) => [s.stepOrder, ...(s.workoutSteps ?? []).map((c) => c.stepOrder)]), [1, 2, 3, 4, 5, 6]);
+});
+
+test('garminTarget: pace in m/s with the slower pace as the lower value; distance end', () => {
+  assert.deepEqual(garminTarget({ type: 'pace', low: 240, high: 250 }), { targetType: { workoutTargetTypeId: 6, workoutTargetTypeKey: 'pace.zone' }, targetValueOne: 4, targetValueTwo: 4.167 });
+  const test10k = toGarmin(bankWorkout('test-10k', 'run'), { name: 't' });
+  const tenK = test10k.workoutSegments[0].workoutSteps.find((s) => s.endCondition?.conditionTypeKey === 'distance');
+  assert.equal(tenK.endConditionValue, 10000);
+});
+
+test('toGarmin writes a nested repeat out (VO2 B on the bike): no group inside a group', () => {
+  const g = toGarmin(bankWorkout('vo2-b', 'ride', 0, 60), { name: 't' });
+  const groups = g.workoutSegments[0].workoutSteps.filter((s) => s.type === 'RepeatGroupDTO');
+  assert.equal(groups.length, 3);
+  assert.ok(groups.every((x) => x.workoutSteps.every((c) => c.type === 'ExecutableStepDTO')));
+});
+
+test('payloadFor: a .zwo file named by day for Zwift; nothing for the other device', () => {
+  const p = payloadFor('zwift', row('z'));
+  assert.equal(p.file, 'Coach - 2026-10-21 Threshold A  Zwift.zwo'.replace('  ', ' '));
+  assert.match(p.xml, /<name>10-21 Threshold A — Zwift<\/name>/);
+  assert.equal(payloadFor('garmin', row('z')), null);
+  assert.equal(payloadFor('garmin', run('r')).workout.workoutName, 'Coach · VO2 A run');
+});
+
+test('planSync: create new, update changed, keep same, delete skipped, moved to another device and removed', () => {
+  const same = run('same');
   const synced = [
-    { activity_id: 'same', remote_id: '1', content_hash: hashOf(eventFor(same, same.steps)) },
-    { activity_id: 'moved', remote_id: '2', content_hash: 'old' },
-    { activity_id: 'skipped', remote_id: '3', content_hash: 'x' },
-    { activity_id: 'gone', remote_id: '4', content_hash: 'x' },
+    { activity_id: 'same', remote_id: '{}', content_hash: hashOf(payloadFor('garmin', same)) },
+    { activity_id: 'moved', remote_id: '{}', content_hash: 'old' },
+    { activity_id: 'skipped', remote_id: '{}', content_hash: 'x' },
+    { activity_id: 'now-a-ride', remote_id: '{}', content_hash: 'x' },
+    { activity_id: 'gone', remote_id: '{}', content_hash: 'x' },
   ];
-  const outdoor = row('outdoor', { title: '🚴 Long ride', workout_type: 'ride-long' });
-  const rows = [row('new'), same, row('moved', { day: '2026-10-22' }), row('skipped', { status: 'skipped' }), row('text-only', { steps: null }), outdoor];
-  const ops = planSync(rows, synced, eventFor).map((o) => `${o.op}:${o.row?.id ?? o.prior.activity_id}`);
-  assert.deepEqual(ops, ['create:new', 'keep:same', 'update:moved', 'delete:skipped', 'delete:gone']);
+  const rows = [run('new'), same, run('moved', { day: '2026-10-22' }), run('skipped', { status: 'skipped' }), row('now-a-ride')];
+  const ops = planSync('garmin', rows, synced).map((o) => `${o.op}:${o.activityId}`);
+  assert.deepEqual(ops, ['create:new', 'keep:same', 'update:moved', 'delete:skipped', 'delete:now-a-ride', 'delete:gone']);
 });
 
-test('intervalsClient: Basic auth with API_KEY, and nothing without the env', async () => {
-  assert.equal(intervalsClient({}), null);
-  const calls = [];
-  const c = intervalsClient({ INTERVALS_API_KEY: 'k', INTERVALS_ATHLETE_ID: 'i1' }, async (url, init) => {
-    calls.push([url, init.method, init.headers.authorization]);
-    return { ok: true, status: 200, text: async () => '{"id":42}' };
-  });
-  assert.deepEqual(await c.create({}), { id: 42 });
-  assert.deepEqual(calls[0], ['https://intervals.icu/api/v1/athlete/i1/events', 'POST', `Basic ${Buffer.from('API_KEY:k').toString('base64')}`]);
+test('the Garmin API: bearer only; ops without the unchanged; results stored with the remote ids', async () => {
+  const synced = [{ activity_id: 'same', remote_id: JSON.stringify({ workoutId: 5, scheduleId: 7, date: '2026-10-21' }), content_hash: hashOf(payloadFor('garmin', run('same'))) }];
+  const recorded = [];
+  const repo = { load: async () => ({ rows: [run('same'), run('new')], synced, from: 'a', to: 'b' }), record: async (r) => recorded.push(r) };
+  const tokens = { cron: 's' };
+  assert.equal((await handleGarminWorkoutsGet({ authorization: 'Bearer x', tokens }, repo)).status, 401);
+  const got = await handleGarminWorkoutsGet({ authorization: 'Bearer s', tokens }, repo);
+  assert.deepEqual(got.body.ops.map((o) => [o.op, o.activityId]), [['create', 'new']]);
+  assert.equal(got.body.ops[0].workout.workoutName, 'Coach · VO2 A run');
+  const rawBody = JSON.stringify({ results: [{ activityId: 'new', op: 'create', ok: true, hash: 'h', remote: { workoutId: 9, scheduleId: 3, date: '2026-10-21' } }, { op: 'nope' }] });
+  const post = await handleGarminWorkoutsPost({ authorization: 'Bearer s', tokens, rawBody }, repo);
+  assert.deepEqual(post.body, { stored: 1 });
+  assert.deepEqual(parseRemote(recorded[0].remoteId), { workoutId: 9, scheduleId: 3, date: '2026-10-21' });
+  assert.deepEqual(parseRemote('not json'), {});
 });
 
 import { stepsOf } from '../plan/import.mjs';

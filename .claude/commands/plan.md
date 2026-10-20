@@ -156,15 +156,18 @@ is not a route around it.
 node --env-file=.env.local scripts/plan-import.mjs --plan plans/YYYY-MM-DD.json
 node --env-file=.env.local scripts/add-workouts-to-calendar.mjs --week YYYY-MM-DD
 node --env-file=.env.local scripts/lift-plan.mjs
-node --env-file=.env.local scripts/workout-sync.mjs
+node --env-file=.env.local scripts/zwift-workouts.mjs
+gh workflow run garmin.yml --repo pbernasconi/coach -f workouts_only=true
 ```
 **Structured workouts.** Every run and ride gets `workout`: the bank workout (src/lib/workouts/bank.mjs) that the
 import turns into steps (warm-up, repeats, targets in % of FTP or % of LTHR). `level` is the step of its progression:
 the profile's "Workout rotation" gives the last level and whether it was done (done → next level; not done → same
 or one lower). `easy` takes `reps` (strides or sprints, 0 for none) and `zone` ("Z1" for a recovery spin); `long`
 takes `topMin` (minutes at the top of Z2). The planned time comes from start/end. Write the description as the
-coach's note only: the steps carry the numbers. `workout-sync.mjs` sends runs to the Garmin watch and indoor
-(Zwift) rides to Zwift through intervals.icu; outdoor rides stay in Coach. Report any sync error it prints.
+coach's note only: the steps carry the numbers. The devices get the steps directly: `zwift-workouts.mjs` writes
+the indoor (Zwift) rides as .zwo files into Zwift's workouts folder on this Mac (restart Zwift to see them), and
+the Garmin workflow puts the runs on the Garmin calendar (it also runs hourly). Outdoor rides stay in Coach. The
+workout window shows where each one is ("On your devices"); report any problem it shows.
 `lift-plan.mjs` plans each strength workout as a session in Lift (every set with its target), links it to the
 workout, adds the sets to the description and pushes the calendar again. Report the planned top sets to him.
 The import is idempotent; workouts he moved, skipped or adapted on the web keep their web version. The calendar

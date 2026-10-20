@@ -63,14 +63,11 @@ node --env-file=.env.local scripts/plan-edit.mjs skip <workoutId>
 node --env-file=.env.local scripts/plan-edit.mjs update <workoutId> title="Easy aerobic ride" duration=60 intensity=easy description="Z2 only"
 node --env-file=.env.local scripts/plan-edit.mjs update <workoutId> lift_template="Upper (dumbbells)"
 node --env-file=.env.local scripts/lift-plan.mjs
-node --env-file=.env.local scripts/workout-sync.mjs
+node --env-file=.env.local scripts/zwift-workouts.mjs
+gh workflow run garmin.yml --repo pbernasconi/coach -f workouts_only=true
 ```
-`workout-sync.mjs` brings Zwift and the Garmin watch (through intervals.icu) in line with the changed workouts. A
-move or skip on the web does the same by itself.
-Always run `lift-plan.mjs` last: it moves or re-plans the Lift sessions of strength workouts that changed, and it
-plans the next lifts again from what was logged since (a lift that went well raises the next targets).
-Treat changes he made on the web as his decisions. Past days need no annotation: Coach marks them done from Strava
-and Lift.
+These bring Zwift (the .zwo files on this Mac) and the Garmin calendar in line with the changed workouts. Without
+them, the Mac does it within 30 minutes and the Garmin job within the hour.
 
 ### Step 7 — Report to user
 Brief output:
