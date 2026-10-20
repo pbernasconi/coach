@@ -14,7 +14,7 @@ Both commands are non-interactive defaults plus 2–3 questions per run.
 
 ## What `/plan` actually does
 
-1. Refreshes the athlete profile (Strava 90d, fitness state CTL/ATL/TSB, calendar, weather, Apple Notes).
+1. Refreshes the athlete profile (Strava 90d, fitness state CTL/ATL/TSB, calendar, weather, Lift templates).
 2. Shows a 4-line current-state snapshot.
 3. Asks 3 quick questions (how you feel · this week's focus · anything to lock).
 4. Drafts a 7-day plan honoring your goals, natural rhythm, weather, and calendar.
@@ -38,7 +38,7 @@ Stored in `~/.claude/projects/-Users-paolo-work-personal-coach/memory/`. The com
 - **Goals**: Road cycling races (Berkeley-style) + 10k/half marathon — moderate variety
 - **Strength**: 2 sessions/wk — heavy barbell + dumbbell
 - **Calendar**: personal Gmail, purple events
-- **Templates**: Apple Notes workouts are authoritative for lift programming
+- **Templates**: the Lift app's templates (Heavy barbell, Hotel gym (dumbbells)) are authoritative for lift programming
 
 To update any of these: edit the file in the memory directory, or just tell Claude in conversation ("I changed my goal to X").
 
@@ -48,7 +48,7 @@ To update any of these: edit the file in the memory directory, or just tell Clau
 |---|---|---|
 | Strava | Activities + laps + splits + streams + athlete profile (FTP, zones, weight) | OAuth refresh, `scripts/strava-backfill.mjs` |
 | Google Calendar | Synced events from 3 accounts; pushed workout events to personal | App OAuth (read) + google-calendar skill creds (write) |
-| Apple Notes | Workout templates (via osascript) | `scripts/apple-notes-workouts.mjs` |
+| Lift (iPhone) | Workouts and templates, synced to the database | Lift sync (`lift/SYNC.md`) |
 | Open-Meteo | 7-day weather forecast for SF | Free, no key |
 
 ## File layout
@@ -61,7 +61,6 @@ scripts/
   coach-profile.mjs        # athlete profile aggregator
   add-workouts-to-calendar.mjs  # push events to calendar (idempotent)
   strava-backfill.mjs      # backfill Strava data
-  apple-notes-workouts.mjs # pull Apple Notes workouts
   README.md                # detailed script docs
 plans/
   YYYY-MM-DD.md            # one per Monday — human-readable plan
