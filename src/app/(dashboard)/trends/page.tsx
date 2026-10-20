@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { ownerForSignedInUser } from '@/lib/owner';
@@ -14,6 +15,8 @@ import PeakPerformances from '@/components/performance/PeakPerformances';
 import RampRates from '@/components/performance/RampRates';
 import PerformanceView from '../PerformanceView';
 import LiftSection from '../LiftSection';
+
+export const metadata: Metadata = { title: 'Trends' };
 
 export const dynamic = 'force-dynamic';
 
@@ -56,7 +59,7 @@ export default async function TrendsPage() {
     <div className="space-y-6" data-smoke="trends">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight">Trends</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Trends</h1>
           <p className="text-muted-foreground">The last 12 weeks: Strava, Lift and your plan.</p>
         </div>
         <Link href="/" className="text-sm underline underline-offset-4">← Today</Link>
