@@ -57,7 +57,7 @@ export default async function HealthDayPage({ params }: { params: Promise<{ date
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="space-y-1">
           <Link href="/health" className="text-sm text-muted-foreground underline-offset-4 hover:underline">← Health</Link>
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{date === today ? `Today · ${longDate(date)}` : longDate(date)}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{date === today ? `Today · ${longDate(date)}` : longDate(date)}</h1>
         </div>
         <nav className="flex items-center gap-1" aria-label="Other days">
           <Link href={`/health/day/${prev}`} className="inline-flex items-center rounded-md border px-3 py-2 text-sm sm:px-2 sm:py-1 hover:bg-accent" aria-label={`Previous day, ${longDate(prev)}`}>

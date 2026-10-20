@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import SectionError from '@/components/SectionError';
 import { ownerForSignedInUser } from '@/lib/owner';
@@ -5,6 +6,8 @@ import { load } from '@/lib/safe';
 import { loadLabsIndex } from '@/lib/vitals/labs-pages';
 import LabsBrowser from './LabsBrowser';
 import PrintButton from './PrintButton';
+
+export const metadata: Metadata = { title: 'Lab results' };
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +23,7 @@ export default async function LabsPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="space-y-1">
           <Link href="/health" className="text-sm text-muted-foreground underline-offset-4 hover:underline print:hidden">← Health</Link>
-          <h1 className="text-3xl font-bold tracking-tight">Lab results</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Lab results</h1>
           <p className="text-muted-foreground">
             Blood and urine tests from Function Health
             {index.ok && index.value.latestDraw ? `: ${index.value.drawCount} draws, the latest on ${longDate(index.value.latestDraw)}.` : '.'}

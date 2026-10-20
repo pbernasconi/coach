@@ -84,7 +84,7 @@ function Biomarker({ b }: { b: BiomarkerView }) {
       </div>
 
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{b.name}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{b.name}</h1>
         {b.description && <p className="max-w-3xl text-muted-foreground">{b.description}</p>}
       </div>
 

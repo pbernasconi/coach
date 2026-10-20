@@ -101,6 +101,12 @@
   }
 }
 
+/* Brand: the dot in the logo mark (CoachMark, src/app/icon.svg). Only the logo uses it, so it never reads as a
+   sport or a status colour. */
+:root {
+  --coach-accent: #eb6834;
+}
+
 /* Sport tokens: one per sport, copied from design/sports.json (src/lib/sports.test.mjs checks that they
    match). Use them through src/lib/sports.ts and <SportIcon>, never raw hex. */
 :root {
