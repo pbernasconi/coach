@@ -1,4 +1,7 @@
 @import "tailwindcss";
+/* Kobo web tokens (web-standards/kobo-web). Before the app rules below, so the app's own base styles win. */
+@import "@kobo/web/tokens.css";
+@source "../../web-standards/kobo-web/src";
 
 @layer base {
   :root {
