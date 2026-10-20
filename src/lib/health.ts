@@ -13,6 +13,7 @@ import { loadPeakPerformances } from '@/lib/performance/peaks';
 import { loadEventsWithCountdown } from '@/lib/performance/events';
 import { loadGarminStatus, loadHealth } from '@/lib/vitals/queries';
 import { loadDay, loadGarminSections, loadRecoveryToday, loadTraining } from '@/lib/vitals/garmin-pages';
+import { loadActivity, loadActivityContext } from '@/lib/activity/queries';
 
 export type Check = { name: string; ok: boolean; ms: number; error?: string };
 
@@ -57,6 +58,10 @@ export async function runChecks(now = new Date(), { migrations = true }: { migra
     check('health training', () => loadTraining(userId, today)),
     check('health garmin sections', () => loadGarminSections(userId, today)),
     check('recovery today', () => loadRecoveryToday(userId, today)),
+    check('activity (latest)', async () => {
+      const v = await loadActivity(userId, 'latest');
+      if (v) await loadActivityContext(userId, v, today);
+    }),
     check('lift', async () => {
       const { model, unit } = await loadLiftModel();
       muscleSets(model, monday, addDays(monday, 6));

@@ -427,6 +427,7 @@ export const stravaActivitySplits = pgTable('strava_activity_splits', {
   elevationDifference: real('elevation_difference'),
   paceZone: integer('pace_zone'),
   averageHeartrate: real('average_heartrate'),
+  averageGradeAdjustedSpeed: real('average_grade_adjusted_speed'), // m/s, Strava's GAP for the split (runs)
   createdAt: timestamp('created_at', { mode: 'date' }).defaultNow(),
 });
 
@@ -447,6 +448,44 @@ export const stravaActivityStreams = pgTable('strava_activity_streams', {
   originalSize: integer('original_size'),
   data: jsonb('data').notNull(), // number[]
   createdAt: timestamp('created_at', { mode: 'date' }).defaultNow(),
+});
+
+/**
+ * Strava Activity Details
+ * One row per activity: the parts of Strava's detailed activity that strava_activities does not keep, and the
+ * weather. The activity page (/activities/[id]) fetches them once, on first view, and reads them from here after.
+ */
+export const stravaActivityDetails = pgTable('strava_activity_details', {
+  activityId: text('activity_id')
+    .primaryKey()
+    .references(() => stravaActivities.id, { onDelete: 'cascade' }),
+  polyline: text('polyline'), // Google encoded polyline, full resolution
+  summaryPolyline: text('summary_polyline'),
+  calories: real('calories'), // kcal
+  deviceName: text('device_name'),
+  place: text('place'), // 'Suwa, Japan': OpenStreetMap's name for the start point
+  perceivedExertion: real('perceived_exertion'),
+  bestEfforts: jsonb('best_efforts'), // [{ name, distance, elapsedTime, movingTime, startIndex, endIndex, prRank }]
+  segmentEfforts: jsonb('segment_efforts'), // [{ id, name, distance, elapsedTime, movingTime, averageGrade, startIndex, endIndex, prRank, komRank, hr, watts }]
+  weather: jsonb('weather'), // { source, time, code, tempC, feelsLikeC, humidityPct, windKmh, windDeg, precipMm }
+  detailFetchedAt: timestamp('detail_fetched_at', { mode: 'date' }),
+  streamsFetchedAt: timestamp('streams_fetched_at', { mode: 'date' }),
+  weatherFetchedAt: timestamp('weather_fetched_at', { mode: 'date' }),
+  fetchError: text('fetch_error'), // the last failed fetch, for the page note
+  updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow(),
+});
+
+/**
+ * Strava Gear
+ * Shoes and bikes by Strava gear id, from the detailed activity. distance is the total on Strava when fetched.
+ */
+export const stravaGear = pgTable('strava_gear', {
+  id: text('id').primaryKey(), // Strava gear id ('g21611880', 'b123')
+  userId: text('user_id').notNull(),
+  name: text('name'),
+  distance: real('distance'), // meters
+  retired: boolean('retired'),
+  fetchedAt: timestamp('fetched_at', { mode: 'date' }).notNull().defaultNow(),
 });
 
 /**
@@ -565,6 +604,8 @@ export type StravaActivitySplit = typeof stravaActivitySplits.$inferSelect;
 export type NewStravaActivitySplit = typeof stravaActivitySplits.$inferInsert;
 export type StravaActivityStream = typeof stravaActivityStreams.$inferSelect;
 export type NewStravaActivityStream = typeof stravaActivityStreams.$inferInsert;
+export type StravaActivityDetails = typeof stravaActivityDetails.$inferSelect;
+export type StravaGear = typeof stravaGear.$inferSelect;
 export type StravaAthleteProfile = typeof stravaAthleteProfile.$inferSelect;
 export type NewStravaAthleteProfile = typeof stravaAthleteProfile.$inferInsert;
 export type DailyTrainingLoad = typeof dailyTrainingLoad.$inferSelect;
