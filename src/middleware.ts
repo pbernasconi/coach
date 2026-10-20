@@ -18,7 +18,7 @@ const isPublicRoute = createRouteMatcher([
 // Routes with their own bearer token. They never run Clerk, so they work even when Clerk is down or not
 // configured. Vercel can run middleware for paths the matcher skips, so the code checks them too.
 const isMachineRoute = (path: string) =>
-  /^\/api\/(home|health|lift\/sync|lift\/enroll|cron|webhooks\/strava)(\/|$)/.test(path);
+  /^\/api\/(home|health|lift\/sync|lift\/enroll|vitals\/sync|vitals\/garmin|cron|webhooks\/strava)(\/|$)/.test(path);
 
 // The deploy check renders the real pages as the owner with this header (src/lib/owner.ts reads it). Only GET and
 // HEAD: on any other method the header is removed, so a server action never runs on it.
@@ -63,8 +63,8 @@ export default function middleware(request: NextRequest, event: NextFetchEvent) 
 export const config = {
   matcher: [
     // Skip Next.js internals, machine routes and all static files, unless found in search params
-    '/((?!_next|api/home|api/health|api/lift/sync|api/lift/enroll|api/cron|api/webhooks/strava|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    '/((?!_next|api/home|api/health|api/lift/sync|api/lift/enroll|api/vitals/sync|api/vitals/garmin|api/cron|api/webhooks/strava|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
     // Always run for the other API routes
-    '/(api(?!/home|/health|/lift/sync|/lift/enroll|/cron|/webhooks/strava)|trpc)(.*)',
+    '/(api(?!/home|/health|/lift/sync|/lift/enroll|/vitals/sync|/vitals/garmin|/cron|/webhooks/strava)|trpc)(.*)',
   ],
 };

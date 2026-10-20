@@ -1,5 +1,4 @@
 import Sparkline from '@/components/charts/Sparkline';
-import TrainingLoadChart from '@/components/charts/TrainingLoadChart';
 import { zoneOf } from '@/lib/performance/form';
 import WeeklyHoursChart from '@/components/charts/WeeklyHoursChart';
 import type { Performance, WeekStats } from '@/lib/performance/queries';
@@ -94,7 +93,6 @@ export default function PerformanceView({ perf, today, strengthTarget = 2 }: { p
         currentWeek={currentWeek}
         weeks={weeks.map((w) => ({ week: w.week, sports: w.sports, strength: w.strength, tss: w.tss }))}
       />
-      <TrainingLoadChart days={perf.load} />
 
       <details className="rounded-lg border bg-[var(--viz-surface)]">
         <summary className="cursor-pointer select-none p-3 text-sm font-medium">Table: every week</summary>

@@ -24,6 +24,11 @@ async function seed() {
   const q = (text: string, values: unknown[] = []) => client.query(text, values);
   await q(`INSERT INTO users (id, email) VALUES ('user_owner', 'owner@example.com')`);
   await q(
+    `INSERT INTO garmin_connections (user_id, tokens_ciphertext, status, last_success_at, last_attempt_at, synced_through)
+     VALUES ('user_owner', 'v1.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', 'ok', now() - interval '3 hours', now() - interval '3 hours', $1)`,
+    [addDays(today, -1)]
+  );
+  await q(
     `INSERT INTO strava_connections (id, user_id, athlete_id, access_token, refresh_token, expires_at, scope, last_synced_at)
      VALUES ('conn', 'user_owner', 1, 'a', 'r', 0, 'read', now())`
   );

@@ -5,6 +5,9 @@ import { sql } from '@/db';
 import { ownerForSignedInUser } from '@/lib/owner';
 import { saveCoachingNotes, saveTargets, type Targets } from '@/lib/status';
 import { syncStrava } from '@/lib/strava-sync/sync.mjs';
+import { locationFrom } from '@/lib/plan/calendar.mjs';
+import { geocodeUrl, placesFrom } from '@/lib/plan/places.mjs';
+import { DEFAULT_PLACE, type Place } from '@/lib/plan/weather';
 
 async function owner() {
   const id = await ownerForSignedInUser();
@@ -48,5 +51,45 @@ export async function liftSyncState(): Promise<{ lastChangeAt: string | null; se
 export async function saveCoachingNotesAction(notes: string) {
   const id = await owner();
   await saveCoachingNotes(id, String(notes).slice(0, 20_000));
+  revalidatePath('/settings');
+}
+
+export type PlaceHit = { name: string; lat: number; lon: number; timezone: string | null };
+
+/** Places that match a name (Open-Meteo geocoding, free, no key). Empty on a short query or an error. */
+export async function searchPlacesAction(query: string): Promise<PlaceHit[]> {
+  await owner();
+  const q = String(query ?? '').trim();
+  if (q.length < 2) return [];
+  try {
+    const r = await fetch(geocodeUrl(q), { next: { revalidate: 86_400 }, signal: AbortSignal.timeout(4000) });
+    if (!r.ok) return [];
+    return placesFrom(await r.json()) as PlaceHit[];
+  } catch {
+    return [];
+  }
+}
+
+/** The weather location for /plan (users.settings.location), and whether it is the default. */
+export async function loadLocationAction(): Promise<{ place: Place; isDefault: boolean }> {
+  const id = await owner();
+  const [u] = (await sql`SELECT settings -> 'location' AS location FROM users WHERE id = ${id}`) as { location: unknown }[];
+  const place = locationFrom({ location: u?.location }, null) as Place | null;
+  return place ? { place, isDefault: false } : { place: DEFAULT_PLACE, isDefault: true };
+}
+
+/** Saves users.settings.location ({ name, lat, lon }), or removes it (back to the default) with null. */
+export async function saveLocationAction(place: { name: string; lat: number; lon: number } | null) {
+  const id = await owner();
+  if (place === null) {
+    await sql`UPDATE users SET settings = settings - 'location', updated_at = NOW() WHERE id = ${id}`;
+  } else {
+    const clean = locationFrom({ location: { name: String(place.name ?? '').slice(0, 120), lat: place.lat, lon: place.lon } }, null) as Place | null;
+    if (!clean) throw new Error('Bad location');
+    await sql`
+      UPDATE users SET settings = jsonb_set(settings, '{location}', ${JSON.stringify(clean)}::jsonb), updated_at = NOW()
+      WHERE id = ${id}`;
+  }
+  revalidatePath('/plan');
   revalidatePath('/settings');
 }

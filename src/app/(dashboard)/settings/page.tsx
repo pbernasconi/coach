@@ -4,7 +4,7 @@ import StravaService from '@/modules/strava/strava-service';
 import QRCode from 'qrcode';
 import { sql } from '@/db';
 import { createEnrollmentCode } from '@/lib/lift-sync/enroll.mjs';
-import { CoachingNotesForm, StravaSyncButton, TargetsForm } from './SettingsControls';
+import { CoachingNotesForm, LocationForm, StravaSyncButton, TargetsForm } from './SettingsControls';
 import ConnectLift from './ConnectLift';
 
 export const dynamic = 'force-dynamic';
@@ -107,9 +107,30 @@ export default async function SettingsPage() {
           {notes('calendar')}
         </Section>
 
+        <Section title="Garmin Connect" level={levelOf('garmin')}>
+          <Row label="Login" value={!status.garmin.connected ? 'Not set up' : status.garmin.status === 'auth_failed' ? 'Expired' : 'Stored (encrypted)'} />
+          <Row label="Last success" value={when(status.garmin.lastSuccessAt)} />
+          <Row label="Last run" value={when(status.garmin.lastAttemptAt)} />
+          <Row label="Synced through" value={status.garmin.syncedThrough ?? '-'} />
+          {status.garmin.backfill && (
+            <Row label="Backfill" value={`from ${status.garmin.backfill.from}, through ${status.garmin.backfill.through ?? '(starting)'}`} />
+          )}
+          <Row label="Auto sync" value="Daily at 11:00 and 17:00 UTC (GitHub Actions)" />
+          {notes('garmin')}
+          {(!status.garmin.connected || status.garmin.status === 'auth_failed') && (
+            <p className="text-muted-foreground">
+              To log in again, run <code>scripts/garmin/.venv/bin/python scripts/garmin/login.py</code> on your Mac (see scripts/garmin/README.md).
+            </p>
+          )}
+        </Section>
+
         <Section title="Weekly targets" level="ok">
           <p className="text-muted-foreground">The Today card, Performance and the start page measure the week against these.</p>
           <TargetsForm targets={targets} />
+        </Section>
+        <Section title="Weather location" level="ok">
+          <p className="text-muted-foreground">The /plan week and month views show the forecast for this place.</p>
+          <LocationForm />
         </Section>
       </div>
 

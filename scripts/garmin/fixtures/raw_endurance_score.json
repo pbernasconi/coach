@@ -1,0 +1,38 @@
+{
+ "deviceId": 1000000001,
+ "calendarDate": "2030-01-15",
+ "overallScore": 4816,
+ "classification": 3,
+ "feedbackPhrase": 63,
+ "primaryTrainingDevice": true,
+ "gaugeLowerLimit": 2856,
+ "classificationLowerLimitIntermediate": 4080,
+ "classificationLowerLimitTrained": 4640,
+ "classificationLowerLimitWellTrained": 5280,
+ "classificationLowerLimitExpert": 5840,
+ "classificationLowerLimitSuperior": 6480,
+ "classificationLowerLimitElite": 7040,
+ "gaugeUpperLimit": 8448,
+ "contributors": [
+  {
+   "activityTypeId": null,
+   "group": 0,
+   "contribution": 17.17
+  },
+  {
+   "activityTypeId": 13,
+   "group": null,
+   "contribution": 11.3
+  },
+  {
+   "activityTypeId": null,
+   "group": 1,
+   "contribution": 7.98
+  },
+  {
+   "activityTypeId": null,
+   "group": 8,
+   "contribution": 63.55
+  }
+ ]
+}

@@ -1,0 +1,15 @@
+{
+  "userProfileId": 9876542,
+  "calendarDate": "2030-01-15",
+  "totalKilocalories": null,
+  "activeKilocalories": null,
+  "totalSteps": null,
+  "restingHeartRate": null,
+  "lastSevenDaysAvgRestingHeartRate": 39,
+  "averageStressLevel": -1,
+  "bodyBatteryHighestValue": null,
+  "bodyBatteryLowestValue": null,
+  "averageSpo2": null,
+  "includesWellnessData": false,
+  "privacyProtected": false
+}

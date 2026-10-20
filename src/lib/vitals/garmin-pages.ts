@@ -1,0 +1,160 @@
+import { sql } from '@/db';
+import { toDay } from '@/lib/db-time.mjs';
+import { parseDay } from './garmin-day.mjs';
+import {
+  hrvNights, intensityWeeks, latestWithChange, parseEnduranceScore, parseHillScore, parsePersonalRecords, parseTrainingStatus,
+  series, sleepNights, trainingStatusOf, type SampleRow,
+} from './garmin-training.mjs';
+import { addDays } from './readiness.mjs';
+
+/**
+ * Loaders for the Garmin views: /health/day/[date], /health/training, the Garmin sections of /health, and the
+ * "Recovery today" card on the home page. Owner-scoped. Raw payloads come from garmin_raw; daily values from
+ * health_samples. All parsing is in garmin-day.mjs and garmin-training.mjs.
+ */
+
+type Row = Record<string, unknown>;
+
+async function samples(userId: string, from: string, to: string, metrics: string[] | null): Promise<SampleRow[]> {
+  const rows = (await sql`
+    SELECT date, metric, value FROM health_samples
+    WHERE user_id = ${userId} AND date >= ${from}::date AND date <= ${to}::date
+      AND (${metrics}::text[] IS NULL OR metric = ANY(${metrics}::text[]))
+    ORDER BY date`) as Row[];
+  return rows.flatMap((r) => {
+    const date = toDay(r.date);
+    return date ? [{ date, metric: String(r.metric), value: Number(r.value) }] : [];
+  });
+}
+
+/** The payloads of one day, by kind. */
+async function rawDay(userId: string, date: string): Promise<Record<string, unknown>> {
+  const rows = (await sql`SELECT kind, payload FROM garmin_raw WHERE user_id = ${userId} AND date = ${date}::date`) as Row[];
+  return Object.fromEntries(rows.map((r) => [String(r.kind), r.payload]));
+}
+
+/** The newest payload of each kind, on or before `today`. */
+async function rawLatest(userId: string, kinds: string[], today: string): Promise<Record<string, { date: string | null; payload: unknown }>> {
+  const rows = (await sql`
+    SELECT DISTINCT ON (kind) kind, date, payload FROM garmin_raw
+    WHERE user_id = ${userId} AND kind = ANY(${kinds}::text[]) AND date <= ${today}::date
+    ORDER BY kind, date DESC`) as Row[];
+  return Object.fromEntries(rows.map((r) => [String(r.kind), { date: toDay(r.date), payload: r.payload }]));
+}
+
+// ---- /health/day/[date] ----
+
+export type DayView = ReturnType<typeof parseDay> & {
+  values: Record<string, number>; // health_samples of the day, by metric
+  hasData: boolean;
+};
+
+export async function loadDay(userId: string, date: string): Promise<DayView> {
+  const [raw, rows] = await Promise.all([rawDay(userId, date), samples(userId, date, date, null)]);
+  const parsed = parseDay(raw, date);
+  const values = Object.fromEntries(rows.map((r) => [r.metric, r.value]));
+  const hasData =
+    rows.length > 0 || !!parsed.sleep || !!parsed.hrv || !!parsed.readiness || parsed.stress.length > 0 || (parsed.heartRate?.values.length ?? 0) > 0;
+  return { ...parsed, values, hasData };
+}
+
+// ---- /health/training ----
+
+const TRAINING_METRICS = [
+  'training_load_acute', 'training_load_chronic', 'training_load_ratio', 'load_focus_anaerobic', 'load_focus_high_aerobic',
+  'load_focus_low_aerobic', 'training_status', 'endurance_score', 'hill_score', 'race_pred_5k_s', 'race_pred_10k_s',
+  'race_pred_half_s', 'race_pred_marathon_s', 'lactate_threshold_hr_bpm', 'lactate_threshold_pace_s_per_km', 'cycling_ftp_w',
+  'vo2max', 'vo2max_cycling', 'fitness_age',
+];
+
+export type Pt = { date: string; value: number };
+
+export async function loadTraining(userId: string, today: string) {
+  const from = addDays(today, -364);
+  const [rows, raw] = await Promise.all([
+    samples(userId, from, today, TRAINING_METRICS),
+    rawLatest(userId, ['training_status', 'endurance_score', 'hill_score', 'personal_records', 'personal_record'], today),
+  ]);
+  raw.personal_records ??= raw.personal_record;
+  const s = (m: string): Pt[] => series(rows, m);
+  const status = parseTrainingStatus(raw.training_status?.payload);
+  const statusCode = s('training_status').at(-1) ?? null;
+  return {
+    status,
+    // The status label from health_samples when there is no raw payload.
+    statusFallback: status?.status ?? trainingStatusOf(statusCode?.value ?? null),
+    statusDate: status?.date ?? statusCode?.date ?? null,
+    load: { acute: s('training_load_acute'), chronic: s('training_load_chronic'), ratio: s('training_load_ratio') },
+    focus: { anaerobic: s('load_focus_anaerobic'), high: s('load_focus_high_aerobic'), low: s('load_focus_low_aerobic') },
+    endurance: { series: s('endurance_score'), latest: parseEnduranceScore(raw.endurance_score?.payload) },
+    hill: { series: s('hill_score'), latest: parseHillScore(raw.hill_score?.payload) },
+    races: (
+      [
+        ['5 km', 'race_pred_5k_s'],
+        ['10 km', 'race_pred_10k_s'],
+        ['Half marathon', 'race_pred_half_s'],
+        ['Marathon', 'race_pred_marathon_s'],
+      ] as const
+    ).map(([label, m]) => ({ label, series: s(m), latest: latestWithChange(s(m), 28) })),
+    tiles: {
+      ltHr: s('lactate_threshold_hr_bpm'),
+      ltPace: s('lactate_threshold_pace_s_per_km'),
+      ftp: s('cycling_ftp_w'),
+      vo2max: s('vo2max'),
+      vo2maxCycling: s('vo2max_cycling'),
+      fitnessAge: s('fitness_age'),
+    },
+    records: parsePersonalRecords(raw.personal_records?.payload),
+    recordsDate: raw.personal_records?.date ?? null,
+  };
+}
+export type TrainingView = Awaited<ReturnType<typeof loadTraining>>;
+
+// ---- /health sections ----
+
+const SECTION_METRICS = [
+  'sleep_deep_min', 'sleep_core_min', 'sleep_rem_min', 'sleep_awake_min', 'sleep_total_min', 'sleep_score',
+  'hrv_night_avg_ms', 'hrv_baseline_low_ms', 'hrv_baseline_high_ms', 'hrv_status', 'resting_hr_bpm',
+  'intensity_minutes_moderate', 'intensity_minutes_vigorous',
+];
+
+export async function loadGarminSections(userId: string, today: string) {
+  const rows = await samples(userId, addDays(today, -89), today, SECTION_METRICS);
+  return {
+    today,
+    nights: sleepNights(rows, today, 30),
+    hrv: hrvNights(rows),
+    restingHr: series(rows, 'resting_hr_bpm'),
+    intensity: intensityWeeks(rows, today, 12),
+  };
+}
+export type GarminSections = Awaited<ReturnType<typeof loadGarminSections>>;
+
+// ---- Home: Recovery today ----
+
+const RECOVERY_METRICS = ['training_readiness', 'body_battery_high', 'body_battery_low', 'hrv_status', 'hrv_night_avg_ms', 'sleep_total_min', 'sleep_score', 'training_status', 'vo2max', 'vo2max_cycling'];
+
+export async function loadRecoveryToday(userId: string, today: string) {
+  // 60 days back: VO2max changes only after some activities; everything else must be from today or yesterday.
+  const rows = await samples(userId, addDays(today, -59), today, RECOVERY_METRICS);
+  const recent = (m: string, days = 1) => {
+    const p = series(rows, m).at(-1);
+    return p && p.date >= addDays(today, -days) ? p : null;
+  };
+  const status = recent('training_status', 6);
+  return {
+    today,
+    readiness: recent('training_readiness'),
+    bodyBatteryHigh: recent('body_battery_high'),
+    bodyBatteryLow: recent('body_battery_low'),
+    hrvStatus: recent('hrv_status'),
+    hrv: recent('hrv_night_avg_ms'),
+    sleepMin: recent('sleep_total_min'),
+    sleepScore: recent('sleep_score'),
+    trainingStatus: status ? { date: status.date, ...trainingStatusOf(status.value) } : null,
+    vo2max: recent('vo2max', 59),
+    vo2maxCycling: recent('vo2max_cycling', 59),
+    hasData: rows.some((r) => r.date >= addDays(today, -6)),
+  };
+}
+export type RecoveryToday = Awaited<ReturnType<typeof loadRecoveryToday>>;

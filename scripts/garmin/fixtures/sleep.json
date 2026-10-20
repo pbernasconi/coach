@@ -1,0 +1,53 @@
+{
+  "dailySleepDTO": {
+    "id": 1863065160000,
+    "userProfilePK": 9876542,
+    "calendarDate": "2030-01-14",
+    "sleepTimeSeconds": 20112,
+    "napTimeSeconds": 0,
+    "sleepWindowConfirmed": true,
+    "sleepStartTimestampGMT": 1863065160000,
+    "sleepEndTimestampGMT": 1863090060000,
+    "sleepStartTimestampLocal": 1863039960000,
+    "sleepEndTimestampLocal": 1863064860000,
+    "deepSleepSeconds": 4176,
+    "lightSleepSeconds": 11184,
+    "remSleepSeconds": 4752,
+    "awakeSleepSeconds": 1008,
+    "averageSpO2Value": 91.7,
+    "lowestSpO2Value": 85,
+    "averageRespirationValue": 10.8,
+    "lowestRespirationValue": 7.2,
+    "highestRespirationValue": 15.2,
+    "avgSleepStress": 11.2,
+    "sleepScores": {
+      "totalDuration": {
+        "qualifierKey": "GOOD"
+      },
+      "stress": {
+        "qualifierKey": "EXCELLENT"
+      },
+      "remPercentage": {
+        "value": 19,
+        "qualifierKey": "EXCELLENT"
+      },
+      "lightPercentage": {
+        "value": 45,
+        "qualifierKey": "GOOD"
+      },
+      "deepPercentage": {
+        "value": 17,
+        "qualifierKey": "EXCELLENT"
+      },
+      "overall": {
+        "value": 67,
+        "qualifierKey": "GOOD"
+      }
+    }
+  },
+  "remSleepData": true,
+  "restingHeartRate": 38,
+  "avgOvernightHrv": 46.4,
+  "hrvStatus": "BALANCED",
+  "bodyBatteryChange": 49
+}

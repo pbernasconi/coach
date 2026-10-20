@@ -1,0 +1,20 @@
+[
+  {
+    "userProfilePK": 9876542,
+    "calendarDate": "2030-01-14",
+    "timestamp": "2030-01-14T19:30:00.0",
+    "score": 49,
+    "level": "MODERATE",
+    "inputContext": "UPDATE_REALTIME_VARIABLES"
+  },
+  {
+    "userProfilePK": 9876542,
+    "calendarDate": "2030-01-14",
+    "timestamp": "2030-01-14T13:05:00.0",
+    "score": 62,
+    "level": "HIGH",
+    "sleepScore": 67,
+    "hrvFactorPercent": 74,
+    "inputContext": "AFTER_WAKEUP_RESET"
+  }
+]
