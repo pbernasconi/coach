@@ -156,25 +156,6 @@ export function weatherOf(code) {
   return { label: 'Unknown', icon: 'cloud' };
 }
 
-/** Open-Meteo daily JSON → { 'YYYY-MM-DD': { code, max, min, rain } }, dropping days with no data. */
-export function forecastDays(json) {
-  const d = json?.daily;
-  if (!d || !Array.isArray(d.time)) return {};
-  const out = {};
-  d.time.forEach((date, i) => {
-    const max = d.temperature_2m_max?.[i];
-    const min = d.temperature_2m_min?.[i];
-    if (typeof max !== 'number' || typeof min !== 'number') return;
-    out[date] = {
-      code: Number(d.weathercode?.[i] ?? d.weather_code?.[i] ?? -1),
-      max: Math.round(max),
-      min: Math.round(min),
-      rain: typeof d.precipitation_probability_max?.[i] === 'number' ? d.precipitation_probability_max[i] : null,
-    };
-  });
-  return out;
-}
-
 /** A location from users.settings.location, or `fallback` when it is missing or bad. */
 export function locationFrom(settings, fallback) {
   const l = settings?.location;
