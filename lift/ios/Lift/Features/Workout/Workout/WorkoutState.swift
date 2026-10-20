@@ -38,7 +38,15 @@ nonisolated struct WorkoutOverview: Equatable, Sendable {
     var warmUpNote: String?
     /// "Started 9:05": the start, or the first logged set's time; nil before anything was logged.
     var started: String?
-    var isFinished = false
+    /// When the workout started: the stamped start, or the first logged set's time; nil before either. The header
+    /// clock counts from it, so it stays right after the app was in the background or relaunched.
+    var startedAt: Date?
+    /// When the workout was finished; nil while it is not.
+    var finishedAt: Date?
+    /// The session's day is before today (opened from History): no Start button, and logging does not stamp a start.
+    var isPastDay = false
+
+    var isFinished: Bool { finishedAt != nil }
 }
 
 /// One exercise section: name, plain hint lines and its sets.

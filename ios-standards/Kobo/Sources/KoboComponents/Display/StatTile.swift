@@ -25,22 +25,28 @@ public struct StatDelta {
     }
 }
 
-/// A compact card with a caption, a big value, an optional unit and an optional delta. Reads as one VoiceOver element.
+/// A compact card with a caption, a big value, an optional unit, an optional delta and an optional footer (a
+/// `Sparkline`). Reads as one VoiceOver element.
 ///
 ///     StatTile(label: "Steps", value: "12.4k", unit: "today", delta: StatDelta(verbatim: "+8%", tone: .success))
 ///     StatTile(label: "Tasks", value: Double(done), unit: "/18")
-public struct StatTile<Value: View>: View {
+///     StatTile(label: "Distance", value: "42.1", unit: "km") {
+///         Sparkline(values: weekly, accessibilityLabel: "Distance trend")
+///     }
+public struct StatTile<Value: View, Footer: View>: View {
     private let label: Text
     private let value: Value
     private let unit: Text?
     private let delta: StatDelta?
+    private let footer: Footer
     @Environment(\.koboTheme) private var theme
 
-    private init(label: Text, content: Value, unit: Text?, delta: StatDelta?) {
+    private init(label: Text, content: Value, unit: Text?, delta: StatDelta?, footer: Footer) {
         self.label = label
         self.value = content
         self.unit = unit
         self.delta = delta
+        self.footer = footer
     }
 
     public var body: some View {
@@ -68,6 +74,7 @@ public struct StatTile<Value: View>: View {
                 .font(theme.font(.caption).weight(.semibold))
                 .foregroundStyle(theme.palette.status(delta.tone).ink)
             }
+            footer
         }
         .fixedSize(horizontal: false, vertical: true)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -78,20 +85,46 @@ public struct StatTile<Value: View>: View {
     }
 }
 
-extension StatTile where Value == Text {
+extension StatTile where Value == Text, Footer == EmptyView {
     /// A tile showing a ready-made value string (shown as is) under a localized label.
     public init(label: LocalizedStringKey, value: String, unit: LocalizedStringKey? = nil, delta: StatDelta? = nil) {
-        self.init(label: Text(label), content: Text(verbatim: value), unit: unit.map { Text($0) }, delta: delta)
+        self.init(label: label, value: value, unit: unit, delta: delta) { EmptyView() }
     }
 
     /// A tile whose label, value and unit are all shown as is (user-defined metrics).
     public init(verbatim label: String, value: String, unit: String? = nil, delta: StatDelta? = nil) {
-        let unit = unit.map { Text(verbatim: $0) }
-        self.init(label: Text(verbatim: label), content: Text(verbatim: value), unit: unit, delta: delta)
+        self.init(verbatim: label, value: value, unit: unit, delta: delta) { EmptyView() }
     }
 }
 
-extension StatTile {
+extension StatTile where Value == Text {
+    /// A tile with a footer under its value, such as a `Sparkline` of the recent trend.
+    public init(
+        label: LocalizedStringKey,
+        value: String,
+        unit: LocalizedStringKey? = nil,
+        delta: StatDelta? = nil,
+        @ViewBuilder footer: () -> Footer
+    ) {
+        let unit = unit.map { Text($0) }
+        self.init(label: Text(label), content: Text(verbatim: value), unit: unit, delta: delta, footer: footer())
+    }
+
+    /// A tile with a footer whose label, value and unit are all shown as is.
+    public init(
+        verbatim label: String,
+        value: String,
+        unit: String? = nil,
+        delta: StatDelta? = nil,
+        @ViewBuilder footer: () -> Footer
+    ) {
+        let unit = unit.map { Text(verbatim: $0) }
+        let value = Text(verbatim: value)
+        self.init(label: Text(verbatim: label), content: value, unit: unit, delta: delta, footer: footer())
+    }
+}
+
+extension StatTile where Footer == EmptyView {
     /// A tile whose number rolls to each new value (`AnimatedNumber`).
     public init<Format: FormatStyle>(
         label: LocalizedStringKey,
@@ -101,14 +134,15 @@ extension StatTile {
         delta: StatDelta? = nil
     ) where Value == AnimatedNumber<Format>, Format.FormatInput == Double, Format.FormatOutput == String {
         let number = AnimatedNumber(value, format: format)
-        self.init(label: Text(label), content: number, unit: unit.map { Text($0) }, delta: delta)
+        self.init(label: Text(label), content: number, unit: unit.map { Text($0) }, delta: delta, footer: EmptyView())
     }
 }
 
-extension StatTile where Value == AnimatedNumber<FloatingPointFormatStyle<Double>> {
+extension StatTile where Value == AnimatedNumber<FloatingPointFormatStyle<Double>>, Footer == EmptyView {
     /// A tile whose number rolls to each new value, in the locale's default number format.
     public init(label: LocalizedStringKey, value: Double, unit: LocalizedStringKey? = nil, delta: StatDelta? = nil) {
-        self.init(label: Text(label), content: AnimatedNumber(value), unit: unit.map { Text($0) }, delta: delta)
+        let unit = unit.map { Text($0) }
+        self.init(label: Text(label), content: AnimatedNumber(value), unit: unit, delta: delta, footer: EmptyView())
     }
 }
 

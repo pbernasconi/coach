@@ -103,7 +103,9 @@ Field rules:
 - Fetch after every sync run (launch, scene active, Sync now) and on pull-to-refresh in Week. Keep the last
   successful response on disk and show it when offline; show when it was fetched.
 - A strength item with `liftSessionId` that the phone has: show the local Lift session (its progress, tap to open
-  the workout) on the plan's day. A local Lift session that no item links to: show it on its own day, as today.
+  the workout) on the plan's day. Exception: when the phone moved the session (`dayMovedAt`) after the shown week
+  was downloaded (`generatedAt`), the session shows on its own new day and the item is hidden, until the next
+  download carries the server's answer. A local Lift session that no item links to: show it on its own day, as today.
 - Non-strength items open a read-only detail sheet: subtitle, state, why, notes, key targets, steps.
 - Moving a planned Lift session to another day moves its plan workout too. The phone sets `session.dayMovedAt` to
   now whenever it changes `day` (a move, push to next week, the undo of a move; `SYNC.md`, schema v8). After an

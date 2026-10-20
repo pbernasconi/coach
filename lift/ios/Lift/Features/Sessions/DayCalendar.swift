@@ -57,6 +57,11 @@ nonisolated struct DayCalendar: Sendable {
         String(localized: "Week of \(monthDayTitle(of: start))")
     }
 
+    /// "1:05 PM" in the calendar's locale and time zone: when the Week plan was fetched.
+    func timeTitle(of date: Date) -> String {
+        date.formatted(style.hour().minute())
+    }
+
     private var style: Date.FormatStyle {
         Date.FormatStyle(
             locale: calendar.locale ?? .autoupdatingCurrent,

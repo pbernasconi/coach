@@ -57,6 +57,7 @@ private struct AppShell: View {
                 }
                 .templateLinkFlow(dependencies)
                 .task { await syncCoordinator.watchOutbox() }
+                .task { await dependencies.coachPlan.watchSync() }  // the Week plan refreshes after each sync run
             } else {
                 LoadingState()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -162,7 +163,8 @@ private struct TabRootScreen: View {
                     router: router,
                     now: dependencies.now,
                     calendar: dependencies.calendar,
-                    units: dependencies.units
+                    units: dependencies.units,
+                    coachPlan: dependencies.coachPlan
                 )
             )
         case .history:

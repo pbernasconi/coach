@@ -22,7 +22,8 @@ import Testing
             router: router,
             now: SessionBuilder.now,
             calendar: calendar,
-            units: InMemoryUnitSettings(.kg)
+            units: InMemoryUnitSettings(.kg),
+            coachPlan: DisabledCoachPlan()
         )
     }
 
