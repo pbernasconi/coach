@@ -39,10 +39,21 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - name: Agent login set up?
+        id: ready
+        env:
+          OAUTH: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -n "$OAUTH$KEY" ]; then echo "ok=true" >> "$GITHUB_OUTPUT"; else
+            echo "::warning::Set CLAUDE_CODE_OAUTH_TOKEN (claude setup-token) or ANTHROPIC_API_KEY to plan in the cloud."
+            echo "ok=false" >> "$GITHUB_OUTPUT"; fi
       - name: Install
+        if: steps.ready.outputs.ok == 'true' || inputs.proposal_id != ''
         run: npm ci --no-audit --no-fund
 
       - name: Claim the request
+        if: steps.ready.outputs.ok == 'true' || inputs.proposal_id != ''
         id: claim
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
@@ -50,6 +61,7 @@ jobs:
         run: node scripts/plan-cloud/client.mjs claim "$PROPOSAL_ID" >> "$GITHUB_OUTPUT"
 
       - name: Athlete profile
+        if: steps.claim.outputs.id
         env:
           DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
           WEEK: ${{ steps.claim.outputs.week }}
@@ -59,6 +71,7 @@ jobs:
           if [ "$KIND" = "checkin" ]; then node scripts/plan-edit.mjs show "$WEEK" > plans/current-week.txt; fi
 
       - name: Plan (Claude Code)
+        if: steps.claim.outputs.id
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -71,6 +84,7 @@ jobs:
             --output-format text
 
       - name: Send the plan to Coach
+        if: steps.claim.outputs.id
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           ID: ${{ steps.claim.outputs.id }}
