@@ -94,6 +94,7 @@ export default async function SettingsPage() {
 
         <Section title="Google Calendar" level={levelOf('calendar')}>
           {status.calendars.length === 0 && <p className="text-muted-foreground">No calendar connected.</p>}
+          <Row label="Auto sync" value="Every 30 min (GitHub Actions)" />
           {status.calendars.map((c) => (
             <Row key={c.email} label={c.email} value={c.active ? `synced ${when(c.lastSyncedAt)}` : 'off'} />
           ))}
