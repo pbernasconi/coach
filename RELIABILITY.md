@@ -33,7 +33,9 @@ build that already exists, so a merge is live in seconds:
 
 1. **On the pull request**, "web build" builds the production output (`vercel build --prod`, the PR merged into
    main), uploads it as a staged production deployment with no domain, and checks it on the production data
-   (`/api/health?skip=migrations`). The job summary links it.
+   (`/api/health?skip=migrations`). A pull request with new migrations skips that check: its loaders read tables
+   production does not have yet, so the check runs at the merge, after the migrations. The job summary links
+   the build.
 2. **At the merge**, `deploy.yml` finds the staged build whose tree equals the merge commit's tree (when main moved
    since, it builds one), applies new migrations, checks the build again, and promotes it (an alias swap).
 3. Then it renders every page in `PAGES` on coach.paolobernasconi.com as the owner. On a failure it promotes the
