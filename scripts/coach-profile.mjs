@@ -439,6 +439,10 @@ md.push(`- **Last quality session planned**: ${rotation.lastQuality ?? '_none fo
 md.push(`- **→ This horizon's first quality session should be**: **${rotation.nextQuality}**`);
 md.push('');
 
+md.push(`## Coaching preferences (Coach → Settings; authoritative)`);
+md.push((user.settings?.coachingNotes?.trim() || '_(none set: add them in Coach → Settings)_').replace(/^(#+) /gm, '#$1 '));
+md.push('');
+
 md.push(`## Lift templates (authoritative strength programming)`);
 if (liftTemplates.length === 0) md.push('_(none synced yet)_');
 for (const t of liftTemplates) {
