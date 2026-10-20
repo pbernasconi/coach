@@ -92,6 +92,13 @@
       "when": 1792462591467,
       "tag": "0012_lift_enrollments",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792464149217,
+      "tag": "0013_schema_snapshot",
+      "breakpoints": true
     }
   ]
 }

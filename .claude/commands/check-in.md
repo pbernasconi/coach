@@ -9,7 +9,7 @@ description: Mid-week training check-in. Compares planned vs actual, asks how th
 - 2 strength/wk, ≥1 above-threshold quality/wk
 - Apple Notes templates authoritative for lifts
 - Celsius / km / min/km
-- All scripts via `/opt/homebrew/bin/node --env-file=.env.local`
+- All scripts via `node --env-file=.env.local`
 
 ## Workflow
 
@@ -18,7 +18,7 @@ List `plans/`. Read the most recent `plans/YYYY-MM-DD.md` AND `plans/YYYY-MM-DD.
 
 ### Step 2 — Refresh data
 ```bash
-/opt/homebrew/bin/node --env-file=.env.local scripts/coach-profile.mjs --week-of YYYY-MM-DD
+node --env-file=.env.local scripts/coach-profile.mjs --week-of YYYY-MM-DD
 ```
 Read fresh `profile.md`. This pulls any newly completed Strava activities + fresh weather + fresh calendar.
 
@@ -64,7 +64,7 @@ Edit `plans/YYYY-MM-DD.md` in place:
 
 Before you change the JSON, read what he changed on the web week page (moves, skips, "how I feel" adapts):
 ```bash
-/opt/homebrew/bin/node --env-file=.env.local scripts/plan-import.mjs --show plans/YYYY-MM-DD.json
+node --env-file=.env.local scripts/plan-import.mjs --show plans/YYYY-MM-DD.json
 ```
 Treat those web changes as his decisions. Put them in the JSON too, so the JSON and the web agree.
 
@@ -73,12 +73,12 @@ If any **future** events were modified (time, sport, intensity, removed), update
 ### Step 7 — Sync calendar (only if .json events changed)
 If you modified the events array in the .json:
 ```bash
-/opt/homebrew/bin/node --env-file=.env.local scripts/add-workouts-to-calendar.mjs --plan plans/YYYY-MM-DD.json
+node --env-file=.env.local scripts/add-workouts-to-calendar.mjs --plan plans/YYYY-MM-DD.json
 ```
 This will delete the old tagged events for the week and create the new ones (idempotent).
 Then copy the plan to the database (web changes are kept):
 ```bash
-/opt/homebrew/bin/node --env-file=.env.local scripts/plan-import.mjs --plan plans/YYYY-MM-DD.json
+node --env-file=.env.local scripts/plan-import.mjs --plan plans/YYYY-MM-DD.json
 ```
 
 If only **past** days were annotated (no future event changes), skip the calendar sync — nothing changed in the future.
