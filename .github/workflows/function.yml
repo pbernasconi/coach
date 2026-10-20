@@ -29,3 +29,8 @@ jobs:
           FUNCTION_PASSWORD: ${{ secrets.FUNCTION_PASSWORD }}
           DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
         run: node scripts/function-sync.mjs
+      # The script writes to the database directly, so the app's cached lab pages are cleared here.
+      - name: Clear the labs cache
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" "https://coach.paolobernasconi.com/api/cron/cache?tag=labs"

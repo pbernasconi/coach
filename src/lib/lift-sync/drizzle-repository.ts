@@ -1,5 +1,6 @@
 import { asc, gt, sql } from 'drizzle-orm';
 import { db } from '@/db';
+import { clearCache } from '@/lib/data-cache';
 import { liftRows } from '@/db/lift-schema';
 import type { LiftRepository, PulledRow, ApplyOutcome } from './sync.mjs';
 import type { LiftEntity } from './contract.mjs';
@@ -38,7 +39,9 @@ export const drizzleLiftRepository: LiftRepository = {
     `);
     const row = result.rows[0] as { fresh: number | string; applied: number | string } | undefined;
     if (!row || Number(row.fresh) === 0) return 'duplicate';
-    return Number(row.applied) > 0 ? 'applied' : 'stale';
+    if (Number(row.applied) === 0) return 'stale';
+    clearCache('lift');
+    return 'applied';
   },
 
   async listSince(afterSeq, limit): Promise<PulledRow[]> {
