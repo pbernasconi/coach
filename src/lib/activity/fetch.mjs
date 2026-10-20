@@ -11,7 +11,8 @@
  */
 
 import { createId } from '@paralleldrive/cuid2';
-import { connectionWithToken, rebuildTrainingLoad } from '../strava-sync/sync.mjs';
+import { connectionWithToken } from '../strava-sync/token.mjs';
+import { rebuildTrainingLoad } from '../strava-sync/load.mjs';
 import { toDate, toIso } from '../db-time.mjs';
 import { pickHour, placeName } from './weather.mjs';
 import { zoneTimes } from './streams.mjs';
