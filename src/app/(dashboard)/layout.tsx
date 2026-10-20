@@ -15,12 +15,9 @@ import { useState } from 'react';
 
 const navLinks = [
   { href: '/', label: 'Performance' },
-  { href: '/workouts', label: 'Workouts' },
-  { href: '/lift', label: 'Lift' },
-  { href: '/calendar', label: 'Calendar' },
   { href: '/plan', label: 'Plan' },
-  { href: '/coach', label: 'AI Coach' },
-  { href: '/admin', label: 'Admin' },
+  { href: '/lift', label: 'Lift' },
+  { href: '/settings', label: 'Settings' },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
