@@ -39,7 +39,7 @@ export default function Histogram({ bins, color, title, unit, mark }: { bins: { 
         }}
         onBlur={() => setHover(null)}
         onPointerLeave={() => setHover(null)}
-        className="outline-none focus-visible:ring-2 focus-visible:ring-[var(--viz-ctl)]"
+        className="max-w-full outline-none focus-visible:ring-2 focus-visible:ring-[var(--viz-ctl)]"
       >
         {ticks.map((t) => (
           <g key={t}>

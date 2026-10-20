@@ -51,18 +51,18 @@ export default async function HealthDayPage({ params }: { params: Promise<{ date
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{date === today ? `Today · ${longDate(date)}` : longDate(date)}</h1>
         </div>
         <nav className="flex items-center gap-1" aria-label="Other days">
-          <Link href={`/health/day/${prev}`} className="inline-flex items-center rounded-md border px-2 py-1 text-sm hover:bg-accent" aria-label={`Previous day, ${longDate(prev)}`}>
+          <Link href={`/health/day/${prev}`} className="inline-flex items-center rounded-md border px-3 py-2 text-sm sm:px-2 sm:py-1 hover:bg-accent" aria-label={`Previous day, ${longDate(prev)}`}>
             <ChevronLeft className="h-4 w-4" /> Prev
           </Link>
           {date !== today && (
-            <Link href={`/health/day/${today}`} className="rounded-md border px-2 py-1 text-sm hover:bg-accent">Today</Link>
+            <Link href={`/health/day/${today}`} className="rounded-md border px-3 py-2 text-sm sm:px-2 sm:py-1 hover:bg-accent">Today</Link>
           )}
           {next <= today ? (
-            <Link href={`/health/day/${next}`} className="inline-flex items-center rounded-md border px-2 py-1 text-sm hover:bg-accent" aria-label={`Next day, ${longDate(next)}`}>
+            <Link href={`/health/day/${next}`} className="inline-flex items-center rounded-md border px-3 py-2 text-sm sm:px-2 sm:py-1 hover:bg-accent" aria-label={`Next day, ${longDate(next)}`}>
               Next <ChevronRight className="h-4 w-4" />
             </Link>
           ) : (
-            <span className="inline-flex items-center rounded-md border px-2 py-1 text-sm text-muted-foreground opacity-50" aria-disabled>
+            <span className="inline-flex items-center rounded-md border px-3 py-2 text-sm sm:px-2 sm:py-1 text-muted-foreground opacity-50" aria-disabled>
               Next <ChevronRight className="h-4 w-4" />
             </span>
           )}

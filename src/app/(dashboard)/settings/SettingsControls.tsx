@@ -41,7 +41,7 @@ export function TargetsForm({ targets }: { targets: Targets }) {
         step={step}
         value={t[key]}
         onChange={(e) => setT({ ...t, [key]: Number(e.target.value) })}
-        className="w-24 rounded-md border bg-background px-2 py-1 text-right"
+        className="h-10 w-24 rounded-md border bg-background px-2 text-right text-base md:h-auto md:py-1 md:text-sm"
       />
     </label>
   );
@@ -82,7 +82,7 @@ export function CoachingNotesForm({ notes }: { notes: string }) {
         value={text}
         onChange={(e) => setText(e.target.value)}
         rows={14}
-        className="w-full rounded-md border bg-background p-2 font-mono text-xs"
+        className="w-full rounded-md border bg-background p-2 font-mono text-base md:text-xs"
       />
       <Button size="sm" type="submit" disabled={pending || text === notes}>Save preferences</Button>
     </form>
@@ -143,7 +143,7 @@ export function LocationForm({ current }: { current?: { place: Place; isDefault:
           onChange={(e) => setQuery(e.target.value)}
           placeholder="City or town"
           aria-label="Search for a place"
-          className="h-8 min-w-0 flex-1 rounded-md border bg-background px-2"
+          className="h-10 min-w-0 flex-1 rounded-md border bg-background px-2 text-base md:h-8 md:text-sm"
         />
         <Button size="sm" type="submit" variant="outline" disabled={searching || query.trim().length < 2}>
           {searching ? 'Searching…' : 'Search'}
