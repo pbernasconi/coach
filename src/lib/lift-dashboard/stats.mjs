@@ -8,7 +8,7 @@
 //   written (per hand for dumbbell pairs, per side for plate-loaded bars; added load for bodyweight).
 // - Estimated 1RM uses Epley, w x (1 + reps / 30), for 1-12 reps; a single is its own max (as LiftCore).
 
-import { toDay } from '../db-time.mjs';
+import { toDate, toDay } from '../db-time.mjs';
 
 export const LB_PER_KG = 1 / 0.45359237;
 export const MAX_RELIABLE_REPS = 12;
@@ -78,7 +78,11 @@ export function exerciseKey(sessionExercise) {
 
 /**
  * @typedef {object} FlatSet
+ * @property {string} id
  * @property {string} sessionId
+ * @property {string} sessionExerciseId
+ * @property {number} position order inside its exercise
+ * @property {string | null} note
  * @property {string} day
  * @property {string} exerciseKey
  * @property {string} exerciseName
@@ -104,6 +108,8 @@ export function buildModel(data) {
       day,
       title: str(s.title) ?? '',
       startedAt: str(s.startedAt),
+      finishedAt: str(s.finishedAt),
+      note: str(s.note),
       unit: /** @type {Unit} */ (s.unitsAtLog === 'lb' ? 'lb' : 'kg'),
     });
   }
@@ -119,7 +125,10 @@ export function buildModel(data) {
     if (!id || !sessionId || isDeleted(se) || !sessions.has(sessionId)) continue;
     const key = exerciseKey(se);
     sessionExercises.set(id, {
+      id,
       sessionId,
+      position: num(se.position) ?? 0,
+      note: str(se.note),
       key,
       name: libraryNames.get(key) ?? str(se.displayName) ?? 'Exercise',
       loadMode: str(se.loadMode),
@@ -141,7 +150,11 @@ export function buildModel(data) {
       weight = convert(se.loadAddedValue, /** @type {Unit} */ (se.loadAddedUnit), unit);
     }
     sets.push({
+      id: lowerId(set.id) ?? '',
       sessionId: se.sessionId,
+      sessionExerciseId: seId,
+      position: num(set.position) ?? 0,
+      note: str(set.note),
       day: session.day,
       exerciseKey: se.key,
       exerciseName: se.name,
@@ -160,7 +173,7 @@ export function buildModel(data) {
     if (!id || isDeleted(e)) continue;
     muscles.set(`id-${id}`, { primary: muscleList(e.primaryMuscles), secondary: muscleList(e.secondaryMuscles) });
   }
-  return { sessions, sets, muscles };
+  return { sessions, sessionExercises, sets, muscles };
 }
 
 /** @param {unknown} v */
@@ -383,5 +396,77 @@ export function exerciseDetail(model, key, unit, bestCount = 10) {
     heaviest,
     bestSets,
     e1rmOverTime,
+  };
+}
+
+/**
+ * One session in full, for the session page and the Plan preview: its summary, then each exercise in the
+ * session's order with its sets in order. Weights are in `unit`. `id` is a session id (any case) or 'latest'
+ * for the newest session. Null when there is no such session.
+ * @param {ReturnType<typeof buildModel>} model
+ * @param {string} id
+ * @param {Unit} unit
+ */
+export function sessionDetail(model, id, unit) {
+  // Newest first, with planned sessions too, so a session planned ahead also opens. "latest" is the newest
+  // session with a logged set (else the newest of all).
+  const order = sessionSummaries(model, unit, { planned: true });
+  const latest = Math.max(0, order.findIndex((s) => s.setsLogged > 0));
+  const index = id === 'latest' ? (order.length ? latest : -1) : order.findIndex((s) => s.id === id.toLowerCase());
+  if (index < 0) return null;
+  const summary = order[index];
+  const session = model.sessions.get(summary.id);
+  const started = toDate(session.startedAt);
+  const finished = toDate(session.finishedAt);
+  const minutes = started && finished && finished > started ? Math.round((finished.getTime() - started.getTime()) / 60000) : null;
+
+  /** @type {Map<string, { id: string, key: string, name: string, note: string | null, position: number, volume: number, setsLogged: number, sets: FlatSet[] }>} */
+  const groups = new Map();
+  for (const se of model.sessionExercises.values()) {
+    if (se.sessionId !== summary.id) continue;
+    groups.set(se.id, { id: se.id, key: se.key, name: se.name, note: se.note, position: se.position, volume: 0, setsLogged: 0, sets: [] });
+  }
+  for (const set of model.sets) {
+    if (set.sessionId !== summary.id) continue;
+    const g = groups.get(set.sessionExerciseId);
+    g.sets.push(set);
+    g.volume += setVolume(set, unit);
+    if (set.status === 'done') g.setsLogged += 1;
+  }
+  const exercises = [...groups.values()]
+    .sort((a, b) => a.position - b.position || a.name.localeCompare(b.name))
+    .map(({ sets, ...e }) => {
+      let working = 0;
+      return {
+        ...e,
+        sets: [...sets]
+          .sort((a, b) => a.position - b.position)
+          .map((s) => ({
+            id: s.id,
+            label: s.kind === 'warmUp' ? 'W' : String((working += 1)),
+            kind: s.kind,
+            status: s.status,
+            reps: s.reps,
+            weight: s.weight === null ? null : convert(s.weight, s.unit, unit),
+            note: s.note,
+          })),
+      };
+    });
+
+  return {
+    id: summary.id,
+    day: summary.day,
+    title: summary.title,
+    note: session.note,
+    startedAt: started?.toISOString() ?? null,
+    finishedAt: finished?.toISOString() ?? null,
+    minutes,
+    unit,
+    volume: summary.volume,
+    setsLogged: summary.setsLogged,
+    setsTotal: summary.setsTotal,
+    exercises,
+    newerId: order[index - 1]?.id ?? null,
+    olderId: order[index + 1]?.id ?? null,
   };
 }
