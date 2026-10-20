@@ -37,7 +37,7 @@ These come from `/Users/paolo/.claude/projects/-Users-paolo-work-personal-coach/
 
 ### Step 1 — Refresh profile (always)
 ```bash
-/opt/homebrew/bin/node --env-file=.env.local scripts/coach-profile.mjs [--weeks N] [--week-of YYYY-MM-DD]
+node --env-file=.env.local scripts/coach-profile.mjs [--weeks N] [--week-of YYYY-MM-DD]
 ```
 Read `profile.md`. Take the full picture in. **If planning two weeks, you must pass `--weeks 2`** — otherwise the calendar/weather/travel horizon is only one week and you will plan week 2 blind.
 
@@ -133,7 +133,7 @@ Write **only** `plans/YYYY-MM-DD.json` — the `.md` is generated from it. Never
 
 Then:
 ```bash
-/opt/homebrew/bin/node --env-file=.env.local scripts/render-plan.mjs --plan plans/YYYY-MM-DD.json
+node --env-file=.env.local scripts/render-plan.mjs --plan plans/YYYY-MM-DD.json
 ```
 
 - `YYYY-MM-DD` is the **Monday** of the target week.
@@ -144,13 +144,13 @@ Then:
 No *extra* confirm is needed here — Step 5's "ship it" covers the push. But Step 5
 must have actually happened; this step is not a route around it.
 ```bash
-/opt/homebrew/bin/node --env-file=.env.local scripts/add-workouts-to-calendar.mjs --plan plans/YYYY-MM-DD.json
+node --env-file=.env.local scripts/add-workouts-to-calendar.mjs --plan plans/YYYY-MM-DD.json
 ```
 This is **idempotent** — re-running deletes existing tagged events for that week and creates fresh. Safe to re-invoke.
 
 Then copy the plan to the database, so the web week page (`/plan`) and the Dia start page show it:
 ```bash
-/opt/homebrew/bin/node --env-file=.env.local scripts/plan-import.mjs --plan plans/YYYY-MM-DD.json
+node --env-file=.env.local scripts/plan-import.mjs --plan plans/YYYY-MM-DD.json
 ```
 Also idempotent. Workouts he moved, skipped or adapted on the web keep their web version.
 
@@ -185,7 +185,7 @@ If `$ARGUMENTS` contains `--two-weeks` (or `--weeks 2`):
 ## Notes for you, Claude
 
 - Use the `node --env-file=.env.local` invocation pattern for all scripts (env vars needed for DB + Google + Strava).
-- Always use absolute node path: `/opt/homebrew/bin/node` (the user's shell has an nvm lazy-loader that recurses).
+- Run scripts with `node` (nvm). If a shell has an nvm lazy-loader that recurses, use the path `command -v node` prints.
 - These 5 scripts are allowlisted in `.claude/settings.local.json` — they run without a permission prompt. Adding a new script means adding a new allowlist entry.
 - Be brief in user-facing output. The user doesn't see profile.md — only what you write. Surface only decision-relevant info.
 - If the user already did some sessions for the week (Strava shows them), put those in `completed[]` with actual values, then schedule only the remaining days.
