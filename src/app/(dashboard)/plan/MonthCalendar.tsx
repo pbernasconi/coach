@@ -574,8 +574,6 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
           onClose={() => setModalKey(null)}
           onStep={stepModal}
           canStep={{ prev: modalIndex > 0, next: modalIndex < allItems.length - 1 }}
-          actions={previewActions}
-          disabled={pending}
         />
       )}
     </div>

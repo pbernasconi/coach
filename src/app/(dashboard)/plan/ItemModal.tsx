@@ -7,7 +7,6 @@ import { ArrowUpRight, ChevronLeft, ChevronRight, Dumbbell, ExternalLink, X } fr
 import SportIcon from '@/components/SportIcon';
 import ComplianceMark from '@/components/plan/ComplianceMark';
 import LiftSessionSets from '@/components/plan/LiftSessionSets';
-import RemoveWorkout from '@/components/plan/RemoveWorkout';
 import PeakCurve from '@/components/charts/PeakCurve';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -16,7 +15,6 @@ import { duration, int, km, kmh, pace, paceOfSeconds, signed } from '@/lib/activ
 import { PEAK_DURATIONS, peakCurve } from '@/lib/activity/peaks.mjs';
 import { withTimeout } from '@/lib/plan/scroll.mjs';
 import { weatherLabel } from '@/lib/activity/weather.mjs';
-import { zoneOf } from '@/lib/performance/form';
 import { plainTitle } from '@/lib/plan/calendar.mjs';
 import { dur } from '@/lib/plan/cells.mjs';
 import { LIFT_MARKER } from '@/lib/plan/lift-plan.mjs';
@@ -29,8 +27,9 @@ import PowerCurve from '../activities/[id]/PowerCurve';
 import RouteMap from '../activities/[id]/RouteMap';
 import StreamCharts from '../activities/[id]/StreamCharts';
 import { ZoneBars } from '../activities/[id]/Sections';
+import { BestEfforts, ElevationProfile, LoadTiles, MinAvgMax, PlanVsDone, SplitBars, StatGrid, ZoneStrip } from './ActivityOverview';
 import { activityPreviewAction, liftPreviewAction } from './actions';
-import { liftHref, type Item, type PreviewActions } from './ItemPreview';
+import { liftHref, type Item } from './ItemPreview';
 
 /** Strava's orange, for the active tab and the main button. */
 const ACCENT = '#fc4c02';
@@ -53,8 +52,6 @@ type Props = {
   /** The previous / next item in the calendar, or null at the ends. */
   onStep: (dir: -1 | 1) => void;
   canStep: { prev: boolean; next: boolean };
-  actions: PreviewActions;
-  disabled: boolean;
 };
 
 /**
@@ -62,7 +59,7 @@ type Props = {
  * completed, the load change, zones and peak curves, laps and the stream charts. A done item links to its full
  * page. ← and → step to the previous and next item.
  */
-export default function ItemModal({ item, onClose, onStep, canStep, actions, disabled }: Props) {
+export default function ItemModal({ item, onClose, onStep, canStep }: Props) {
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
@@ -101,7 +98,7 @@ export default function ItemModal({ item, onClose, onStep, canStep, actions, dis
           ) : liftId ? (
             <LiftModal key={`l-${liftId}`} id={liftId} planned={planned} onClose={onClose} />
           ) : planned ? (
-            <PlannedModal key={planned.id} w={planned} onClose={onClose} actions={actions} disabled={disabled} />
+            <PlannedModal key={planned.id} w={planned} onClose={onClose} />
           ) : null}
           </StepContext.Provider>
         </Dialog.Content>
@@ -132,7 +129,8 @@ function useLoad<T>(fn: () => Promise<T>, deps: unknown[]) {
   const [state, setState] = useState<{ status: 'loading' } | { status: 'ok'; value: T } | { status: 'error' }>({ status: 'loading' });
   useEffect(() => {
     let live = true;
-    setState({ status: 'loading' });
+    // A reload keeps the shown data until the new data comes.
+    setState((st) => (st.status === 'ok' ? st : { status: 'loading' }));
     (withTimeout(fn(), 20_000, 'Loading the item') as Promise<T>).then(
       (value) => live && setState({ status: 'ok', value }),
       (error) => {
@@ -182,6 +180,16 @@ function OpenButton({ href, label }: { href: string; label: string }) {
 }
 
 /** Strava's row of big numbers: value over a small label, with thin dividers. */
+/** The plan status as a chip for the header: icon, label, and the share of the plan done. */
+function StatusChip({ level, ratio, basis }: { level: string; ratio: number | null; basis: string | null }) {
+  return (
+    <span className="hidden items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs sm:inline-flex" title={ratio != null ? `${Math.round(ratio * 100)}% of the planned ${basis === 'tss' ? 'TSS' : 'time'}` : undefined}>
+      <ComplianceMark level={level} showLabel />
+      {ratio != null && <span className="tabular-nums text-[var(--viz-muted)]">{Math.round(ratio * 100)}%</span>}
+    </span>
+  );
+}
+
 type HeroStat = { label: string; value: string; unit?: string };
 
 function Hero({ stats }: { stats: (HeroStat | false | null | undefined | 0 | '')[] }) {
@@ -286,9 +294,10 @@ function Failed({ text }: { text: string }) {
 
 function Description({ title, text }: { title: string; text: string }) {
   return (
-    <Panel title={title}>
-      <div className="max-h-72 overflow-y-auto whitespace-pre-wrap rounded-lg bg-muted/50 p-3 text-[13px] leading-relaxed text-[var(--viz-ink)]">{text}</div>
-    </Panel>
+    <section className="min-w-0 rounded-xl border p-4">
+      <h3 className="mb-2 text-sm font-semibold text-[var(--viz-ink)]">{title}</h3>
+      <div className="max-h-72 overflow-y-auto whitespace-pre-wrap text-[13px] leading-relaxed text-[var(--viz-ink)]">{text}</div>
+    </section>
   );
 }
 
@@ -297,24 +306,28 @@ function Description({ title, text }: { title: string; text: string }) {
 
 type ATab = 'overview' | 'hr' | 'power' | 'pace' | 'laps' | 'charts';
 
-function minMax(vals: (number | null)[] | null | undefined) {
-  if (!vals) return null;
-  let lo = Infinity;
-  let hi = -Infinity;
-  let sum = 0;
-  let n = 0;
-  for (const v of vals) {
-    if (v == null || !Number.isFinite(v)) continue;
-    if (v < lo) lo = v;
-    if (v > hi) hi = v;
-    sum += v;
-    n += 1;
-  }
-  return n ? { min: lo, max: hi, avg: sum / n } : null;
-}
-
 function ActivityModal({ id, planned, onClose }: { id: string; planned: CalendarWorkout | null; onClose: () => void }) {
-  const state = useLoad(() => activityPreviewAction(id), [id]);
+  const [rev, setRev] = useState(0);
+  const [fetching, setFetching] = useState(false);
+  const state = useLoad(() => activityPreviewAction(id), [id, rev]);
+  // Like the full page: an activity without its Strava detail (streams, map, weather) fetches it once, then
+  // the modal loads again. The next view reads it from the database.
+  const stravaId = state.status === 'ok' && state.value?.v.fetch.needed ? state.value.v.stravaId : null;
+  useEffect(() => {
+    if (!stravaId || rev > 0) return;
+    let live = true;
+    setFetching(true);
+    fetch(`/api/activities/${encodeURIComponent(stravaId)}/fetch`, { method: 'POST' })
+      .then((r) => r.json().catch(() => ({})))
+      .then((body: { fetched?: string[] }) => {
+        if (live && body.fetched?.length) setRev(1);
+      })
+      .catch((error) => console.error('Strava fetch failed:', error))
+      .finally(() => live && setFetching(false));
+    return () => {
+      live = false;
+    };
+  }, [stravaId, rev]);
   const [tab, setTab] = useState<ATab>('overview');
   if (state.status === 'loading') {
     return (
@@ -332,12 +345,12 @@ function ActivityModal({ id, planned, onClose }: { id: string; planned: Calendar
       </>
     );
   }
-  return <ActivityContent v={state.value.v} c={state.value.context} planned={planned} tab={tab} setTab={setTab} onClose={onClose} />;
+  return <ActivityContent v={state.value.v} c={state.value.context} planned={planned} tab={tab} setTab={setTab} onClose={onClose} fetching={fetching} />;
 }
 
 function ActivityContent({
-  v, c, planned, tab, setTab, onClose,
-}: { v: ActivityView; c: ActivityContext | null; planned: CalendarWorkout | null; tab: ATab; setTab: (t: ATab) => void; onClose: () => void }) {
+  v, c, planned, tab, setTab, onClose, fetching,
+}: { v: ActivityView; c: ActivityContext | null; planned: CalendarWorkout | null; tab: ATab; setTab: (t: ATab) => void; onClose: () => void; fetching: boolean }) {
   const st = v.stats;
   const foot = v.layout === 'run';
   const ride = v.layout === 'ride';
@@ -363,7 +376,6 @@ function ActivityContent({
 
   const time = clock(v.startLocal);
   const load = c?.load ?? null;
-  const ifactor = ride && st.np && v.effort.ftp ? st.np / v.effort.ftp : null;
   const plan = c?.planned ?? null;
 
   return (
@@ -371,9 +383,15 @@ function ActivityContent({
       <Header
         icon={<SportIcon id={v.sport} className="h-5 w-5" />}
         title={v.name}
-        sub={[longDay(v.day), time, v.place, stravaTypeLabel(v.sportType), v.device].filter(Boolean).join(' · ')}
+        sub={[
+          longDay(v.day), time, v.place, stravaTypeLabel(v.sportType), v.device,
+          st.prs ? `${st.prs} PR${st.prs > 1 ? 's' : ''}` : null,
+          st.achievements ? `${st.achievements} achievement${st.achievements > 1 ? 's' : ''}` : null,
+          st.kudos ? `${st.kudos} kudos` : null,
+        ].filter(Boolean).join(' · ')}
         right={
           <>
+            {plan && <StatusChip level={plan.compliance.level} ratio={plan.compliance.ratio} basis={plan.compliance.basis} />}
             {load && <LoadChips load={load} />}
             <a
               href={`https://www.strava.com/activities/${v.stravaId}`}
@@ -407,57 +425,30 @@ function ActivityContent({
         </div>
         <div className="p-4 sm:p-6">
           {tab === 'overview' && (
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-              <div className="space-y-6">
-                {plan && (
-                  <div className="flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2 text-sm">
-                    <span className="text-[var(--viz-muted)]">Planned:</span>
-                    <span className="font-medium text-[var(--viz-ink)]">{plainTitle(plan.title)}</span>
-                    <span className="ml-auto flex items-center gap-1.5 text-xs">
-                      <ComplianceMark level={plan.compliance.level} showLabel />
-                      {plan.compliance.ratio != null && (
-                        <span className="tabular-nums text-[var(--viz-muted)]">
-                          {Math.round(plan.compliance.ratio * 100)}% of the {plan.compliance.basis === 'tss' ? 'TSS' : 'time'}
-                        </span>
-                      )}
-                    </span>
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+              <div className="space-y-4">
+                {plan && <PlanVsDone v={v} plan={plan} />}
+                <StatGrid v={v} />
+                <ZoneStrip v={v} />
+                <SplitBars v={v} />
+                <BestEfforts v={v} />
+              </div>
+              <div className="space-y-4">
+                {v.route.length > 1 && (
+                  <div className="overflow-hidden rounded-xl border">
+                    <RouteMap
+                      route={v.route}
+                      points={series?.lat && series.lng ? series.lat.map((la, i) => (la != null && series.lng![i] != null ? ([series.lng![i]!, la] as [number, number]) : null)) : null}
+                      color={color}
+                      label={`Route map of ${v.name}`}
+                    />
                   </div>
                 )}
-                <Panel title="Summary">
-                  <PlanTable
-                    showPlanned={Boolean(plan)}
-                    rows={[
-                      ['Duration', plan?.duration ? duration(plan.duration * 60) : null, duration(st.moving)],
-                      ['Elapsed time', null, st.elapsed !== st.moving ? duration(st.elapsed) : null],
-                      ['Distance', null, st.distance > 0 ? `${km(st.distance)} km` : null],
-                      [foot ? 'Average pace' : 'Average speed', null, st.avgSpeed && st.distance > 0 ? (foot ? `${pace(st.avgSpeed)} /km` : `${kmh(st.avgSpeed)} km/h`) : null],
-                      ['Grade-adjusted pace', null, foot && st.avgGapSpeed ? `${pace(st.avgGapSpeed)} /km` : null],
-                      ['TSS', plan?.tss ? String(Math.round(plan.tss)) : null, v.effort.tss != null ? `${Math.round(v.effort.tss)}${v.effort.tssMethod ? ` (${v.effort.tssMethod === 'duration_fallback' ? 'time' : v.effort.tssMethod})` : ''}` : null],
-                      ['Normalized power', null, ride && st.np ? `${int(st.np)} W` : null],
-                      ['Intensity factor', null, ifactor ? ifactor.toFixed(2) : null],
-                      ['Work', null, st.kj ? `${int(st.kj)} kJ` : null],
-                      ['Calories', null, st.calories != null ? `${int(st.calories)} kcal` : null],
-                      ['Elevation gain', null, st.elevGain > 0 ? `${int(st.elevGain)} m` : null],
-                      ['Relative Effort', null, v.effort.sufferScore != null ? String(v.effort.sufferScore) : null],
-                      ['TRIMP', null, v.effort.trimp != null ? String(v.effort.trimp) : null],
-                      ['Perceived exertion', null, st.perceivedExertion != null ? `${st.perceivedExertion}/10` : null],
-                    ]}
-                  />
-                </Panel>
+                <ElevationProfile v={v} />
+                {load && <LoadTiles load={load} />}
                 <MinAvgMax v={v} />
-              </div>
-              <div className="space-y-6">
-                {v.route.length > 1 && (
-                  <RouteMap
-                    route={v.route}
-                    points={series?.lat && series.lng ? series.lat.map((la, i) => (la != null && series.lng![i] != null ? ([series.lng![i]!, la] as [number, number]) : null)) : null}
-                    color={color}
-                    label={`Route map of ${v.name}`}
-                  />
-                )}
-                {load && <LoadImpact load={load} tss={v.effort.tss} />}
                 {v.description && <Description title="Description" text={v.description} />}
-                {planned?.description && <Description title="The plan" text={planned.description} />}
+                {planned?.description && <Description title="The plan" text={planned.description.split(LIFT_MARKER)[0].trim()} />}
                 <Conditions v={v} c={c} />
               </div>
             </div>
@@ -540,8 +531,10 @@ function ActivityContent({
             />
           )}
           {v.fetch.needed && (
-            <p className="mt-4 text-xs text-[var(--viz-muted)]">
-              Strava streams are not loaded yet. Open the <Link href={`/activities/${v.stravaId}`} className="underline">full page</Link> to load them.
+            <p role="status" className="mt-4 text-xs text-[var(--viz-muted)]">
+              {fetching
+                ? 'Loading the streams, map and weather from Strava. This happens once per activity.'
+                : <>The Strava streams did not load. Open the <Link href={`/activities/${v.stravaId}`} className="underline">full page</Link> to try again.</>}
             </p>
           )}
         </div>
@@ -569,96 +562,6 @@ function LoadChips({ load }: { load: NonNullable<ActivityContext['load']> }) {
   );
 }
 
-function LoadImpact({ load, tss }: { load: NonNullable<ActivityContext['load']>; tss: number | null }) {
-  const b = load.before;
-  const rows: [string, number | null, number, string][] = [
-    ['Fitness (CTL)', b?.ctl ?? null, load.after.ctl, 'var(--viz-ctl)'],
-    ['Fatigue (ATL)', b?.atl ?? null, load.after.atl, 'var(--viz-atl)'],
-    ['Form (TSB)', b?.tsb ?? null, load.after.tsb, 'var(--viz-tsb)'],
-  ];
-  return (
-    <Panel title="Training load" note={`this day: ${Math.round(load.dayTss)} TSS${tss != null && Math.round(tss) !== Math.round(load.dayTss) ? ` (this activity ${Math.round(tss)})` : ''}`}>
-      <div className="overflow-hidden rounded-lg border">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/50 text-xs text-[var(--viz-muted)]">
-            <tr>
-              <th className="px-3 py-1.5 text-left font-medium"><span className="sr-only">Metric</span></th>
-              <th className={th}>Before</th>
-              <th className={th}>Change</th>
-              <th className={th}>After</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map(([label, before, after, color]) => (
-              <tr key={label} className="border-t">
-                <td className="px-3 py-1.5">
-                  <span className="mr-1.5 inline-block h-2 w-2 rounded-full align-middle" style={{ background: color }} />
-                  <span className="text-[var(--viz-ink-2)]">{label}</span>
-                </td>
-                <td className={cn(td, 'text-[var(--viz-muted)]')}>{before != null ? Math.round(before) : '–'}</td>
-                <td className={td}>{before != null ? signed(after - before, 1) : '–'}</td>
-                <td className={cn(td, 'font-semibold text-[var(--viz-ink)]')}>{Math.round(after)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <p className="border-t px-3 py-2 text-xs text-[var(--viz-ink-2)]">
-          Form after: <b className="text-[var(--viz-ink)]">{zoneOf(load.after.tsb)}</b>
-        </p>
-      </div>
-    </Panel>
-  );
-}
-
-function MinAvgMax({ v }: { v: ActivityView }) {
-  const st = v.stats;
-  const s = v.series;
-  const foot = v.layout === 'run';
-  const hr = minMax(s?.hr);
-  const speed = minMax(s?.speed?.map((x) => (x != null && x > 0.3 ? x : null)));
-  const watts = minMax(s?.watts);
-  const cad = minMax(s?.cad?.map((x) => (x ? x : null)));
-  const alt = minMax(s?.alt);
-  const rows: [string, string, string, string][] = [];
-  if (hr || st.avgHr) rows.push(['Heart rate (bpm)', hr ? int(hr.min) : '–', st.avgHr ? int(st.avgHr) : hr ? int(hr.avg) : '–', st.maxHr ? int(st.maxHr) : hr ? int(hr.max) : '–']);
-  if (v.layout !== 'basic' && (speed || st.avgSpeed)) {
-    rows.push(foot
-      ? ['Pace (/km)', speed ? pace(speed.min) : '–', st.avgSpeed ? pace(st.avgSpeed) : '–', st.maxSpeed ? pace(st.maxSpeed) : speed ? pace(speed.max) : '–']
-      : ['Speed (km/h)', speed ? kmh(speed.min) : '–', st.avgSpeed ? kmh(st.avgSpeed) : '–', st.maxSpeed ? kmh(st.maxSpeed) : speed ? kmh(speed.max) : '–']);
-  }
-  if (watts || st.avgWatts) rows.push(['Power (W)', watts ? int(watts.min) : '–', st.avgWatts ? int(st.avgWatts) : '–', st.maxWatts ? int(st.maxWatts) : watts ? int(watts.max) : '–']);
-  if (cad || st.avgCadence) rows.push([`Cadence (${foot ? 'spm' : 'rpm'})`, cad ? int(cad.min) : '–', st.avgCadence ? int(st.avgCadence) : '–', cad ? int(cad.max) : '–']);
-  if (alt || st.elevHigh != null) rows.push(['Elevation (m)', st.elevLow != null ? int(st.elevLow) : alt ? int(alt.min) : '–', alt ? int(alt.avg) : '–', st.elevHigh != null ? int(st.elevHigh) : alt ? int(alt.max) : '–']);
-  if (st.avgTemp != null) rows.push(['Temperature (°C)', '–', String(Math.round(st.avgTemp)), '–']);
-  if (!rows.length) return null;
-  return (
-    <Panel title="Min, average and max">
-      <div className="overflow-hidden rounded-lg border">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/50 text-xs text-[var(--viz-muted)]">
-            <tr>
-              <th className="px-3 py-1.5 text-left font-medium"><span className="sr-only">Metric</span></th>
-              <th className={th}>Min</th>
-              <th className={th}>Avg</th>
-              <th className={th}>Max</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map(([label, lo, avg, hi]) => (
-              <tr key={label} className="border-t">
-                <td className="px-3 py-1.5 text-[var(--viz-ink-2)]">{label}</td>
-                <td className={cn(td, 'text-[var(--viz-muted)]')}>{lo}</td>
-                <td className={cn(td, 'font-medium text-[var(--viz-ink)]')}>{avg}</td>
-                <td className={td}>{hi}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </Panel>
-  );
-}
-
 function Conditions({ v, c }: { v: ActivityView; c: ActivityContext | null }) {
   const w = v.weather;
   const g = c?.garmin ?? null;
@@ -673,16 +576,20 @@ function Conditions({ v, c }: { v: ActivityView; c: ActivityContext | null }) {
   ].filter(Boolean) as [string, string][];
   if (!items.length) return null;
   return (
-    <Panel title="Conditions" note={g ? <Link href={`/health/day/${v.day}`} className="underline underline-offset-2">Health that day</Link> : undefined}>
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 rounded-lg border p-3 text-sm">
+    <section className="min-w-0 rounded-xl border p-4">
+      <h3 className="mb-3 flex items-baseline justify-between text-sm font-semibold text-[var(--viz-ink)]">
+        Conditions
+        {g && <Link href={`/health/day/${v.day}`} className="text-xs font-normal text-[var(--viz-muted)] underline underline-offset-2">Health that day</Link>}
+      </h3>
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-3">
         {items.map(([label, value]) => (
           <div key={label} className="min-w-0">
-            <dt className="text-xs text-[var(--viz-muted)]">{label}</dt>
-            <dd className="truncate font-medium tabular-nums text-[var(--viz-ink)]">{value}</dd>
+            <dt className="text-[11px] text-[var(--viz-muted)]">{label}</dt>
+            <dd className="truncate text-[15px] font-semibold tabular-nums text-[var(--viz-ink)]">{value}</dd>
           </div>
         ))}
       </dl>
-    </Panel>
+    </section>
   );
 }
 
@@ -872,17 +779,22 @@ function LiftModal({ id, planned, onClose }: { id: string; planned: CalendarWork
 // ---------------------------------------------------------------------------------------------------------------
 // A planned workout that is not done yet
 
-function PlannedModal({ w, onClose, actions, disabled }: { w: CalendarWorkout; onClose: () => void; actions: PreviewActions; disabled: boolean }) {
+function PlannedModal({ w, onClose }: { w: CalendarWorkout; onClose: () => void }) {
   const targets = zonesFor(w) as { zone: string; label: string; target: string }[];
   // With the Lift session shown set by set, the text copy of the sets (scripts/lift-plan.mjs) is left out.
   const text = w.lift && w.description ? w.description.split(LIFT_MARKER)[0].trim() : w.description;
-  const pct = w.compliance.ratio != null ? `${Math.round(w.compliance.ratio * 100)}% of the planned ${w.compliance.basis === 'tss' ? 'TSS' : 'time'}` : null;
   return (
     <>
       <Header
         icon={<SportIcon id={w.sport} className="h-5 w-5" />}
         title={plainTitle(w.title)}
-        sub={[longDay(w.date), w.startTime, sport(w.sport).label, 'Planned'].filter(Boolean).join(' · ')}
+        sub={[longDay(w.date), w.startTime, sport(w.sport).label].filter(Boolean).join(' · ')}
+        right={
+          <>
+            {w.adaptedFrom && <span className="hidden text-xs text-[var(--plan-partial)] sm:inline">Changed for how you feel</span>}
+            <StatusChip level={w.compliance.level} ratio={w.compliance.ratio} basis={w.compliance.basis} />
+          </>
+        }
         onClose={onClose}
       />
       <div className="min-h-0 flex-1 overflow-y-auto">
@@ -909,13 +821,6 @@ function PlannedModal({ w, onClose, actions, disabled }: { w: CalendarWorkout; o
             )}
           </div>
           <div className="space-y-6">
-            <Panel title="Status">
-              <div className="flex items-center gap-2 rounded-lg border px-3 py-2 text-sm">
-                <ComplianceMark level={w.compliance.level} showLabel />
-                {pct && <span className="text-xs text-[var(--viz-muted)]">· {pct}</span>}
-              </div>
-              {w.adaptedFrom && <p className="text-xs text-[var(--plan-partial)]">Changed for how you feel.</p>}
-            </Panel>
             {w.intensity && !w.lift && (
               <Panel title="Intensity">
                 <p className="text-sm text-[var(--viz-ink)]">{w.intensity}</p>
@@ -934,31 +839,6 @@ function PlannedModal({ w, onClose, actions, disabled }: { w: CalendarWorkout; o
                 </ul>
               </Panel>
             )}
-            <Panel title="Change it">
-              <div className="flex flex-wrap items-center gap-2 rounded-lg border p-3 text-sm">
-                <label className="flex items-center gap-2 text-[var(--viz-ink-2)]">
-                  Move to
-                  <input
-                    type="date"
-                    value={w.date}
-                    disabled={disabled}
-                    onChange={(e) => e.target.value && actions.move(w.id, e.target.value)}
-                    className="h-9 rounded-md border bg-background px-2 text-sm"
-                  />
-                </label>
-                <Button variant="outline" size="sm" className="h-9" disabled={disabled} onClick={() => actions.skip(w)}>
-                  {w.status === 'skipped' ? 'Unskip' : 'Skip'}
-                </Button>
-                <RemoveWorkout
-                  workout={{ title: plainTitle(w.title), date: w.date, state: w.state, imported: w.imported }}
-                  onRemove={() => {
-                    onClose();
-                    actions.remove(w.id);
-                  }}
-                  disabled={disabled}
-                />
-              </div>
-            </Panel>
           </div>
         </div>
       </div>
