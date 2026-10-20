@@ -37,6 +37,18 @@
         }
       }
     },
+    "%lld bars, average %@, highest %@ on %@" : {
+      "comment" : "Bar chart summary for VoiceOver (\"8 bars, average 5.2, highest 9 on Mar 4\").",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld bars, average %@, highest %@ on %@"
+          }
+        }
+      }
+    },
     "%lld characters left" : {
       "comment" : "Character counter near a long limit: characters still allowed (\"20 characters left\").",
       "extractionState" : "manual",
@@ -129,6 +141,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "About %@"
+          }
+        }
+      }
+    },
+    "Active on %lld of %lld days, longest streak %lld days" : {
+      "comment" : "Heatmap summary for VoiceOver (\"Active on 12 of 28 days, longest streak 4 days\").",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Active on %lld of %lld days, longest streak %lld days"
           }
         }
       }
@@ -493,6 +517,18 @@
         }
       }
     },
+    "Expand map" : {
+      "comment" : "Accessibility label of the button that opens a larger route map.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expand map"
+          }
+        }
+      }
+    },
     "Expanded" : {
       "comment" : "Collapsible accessibility value when the content is shown.",
       "extractionState" : "manual",
@@ -525,6 +561,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Format: %@"
+          }
+        }
+      }
+    },
+    "From %@ to %@, low %@, high %@" : {
+      "comment" : "Chart summary for VoiceOver: first, last, lowest and highest value (\"From 4 to 7, low 3, high 9\").",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From %@ to %@, low %@, high %@"
           }
         }
       }
@@ -649,6 +697,18 @@
         }
       }
     },
+    "Less" : {
+      "comment" : "Heatmap legend: the lightest shade end.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Less"
+          }
+        }
+      }
+    },
     "Light" : {
       "comment" : "ThemePicker light appearance.",
       "extractionState" : "manual",
@@ -721,6 +781,18 @@
         }
       }
     },
+    "More" : {
+      "comment" : "Heatmap legend: the darkest shade end.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More"
+          }
+        }
+      }
+    },
     "More options" : {
       "comment" : "Accessibility label of the SetupChecklistCard \"…\" menu.",
       "extractionState" : "manual",
@@ -729,6 +801,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "More options"
+          }
+        }
+      }
+    },
+    "Most values from %@ to %@" : {
+      "comment" : "Histogram summary for VoiceOver: the fullest bin (\"Most values from 5 to 10\").",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Most values from %@ to %@"
           }
         }
       }
@@ -753,6 +837,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Next month"
+          }
+        }
+      }
+    },
+    "No data" : {
+      "comment" : "Shown in, and read for, a chart with nothing to plot.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No data"
           }
         }
       }
@@ -1153,6 +1249,18 @@
         }
       }
     },
+    "Total" : {
+      "comment" : "Chart callout row: the sum of a stacked bar's parts.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Total"
+          }
+        }
+      }
+    },
     "Try again" : {
       "comment" : "ErrorState retry button title when the caller gives none.",
       "extractionState" : "manual",
@@ -1189,6 +1297,42 @@
         }
       }
     },
+    "above the target" : {
+      "comment" : "Band bar position for VoiceOver, after the value (\"23, above the target\").",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "above the target"
+          }
+        }
+      }
+    },
+    "average %@" : {
+      "comment" : "Histogram summary suffix: the mean (\"average 7.4\").",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "average %@"
+          }
+        }
+      }
+    },
+    "below the target" : {
+      "comment" : "Band bar position for VoiceOver, after the value (\"4 h, below the target\").",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "below the target"
+          }
+        }
+      }
+    },
     "of %@" : {
       "comment" : "CountdownRing total under the time left (\"of 3:00\").",
       "extractionState" : "manual",
@@ -1197,6 +1341,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "of %@"
+          }
+        }
+      }
+    },
+    "within the target" : {
+      "comment" : "Band bar position for VoiceOver, after the value (\"12, within the target\").",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "within the target"
           }
         }
       }

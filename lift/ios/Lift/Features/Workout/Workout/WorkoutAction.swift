@@ -52,6 +52,9 @@ nonisolated enum WorkoutAction: Equatable, Sendable {
     case exerciseRemoveTapped(UUID)
     /// Undo on the "Exercise removed" toast.
     case exerciseRemoveUndoTapped(UUID)
+    /// "Start workout" on a session nobody started: stamps the start now, and the header clock runs from it. Logging
+    /// the first set starts it too.
+    case startTapped
     /// Marks the session finished (planned sets stay planned) and opens its summary.
     case finishTapped
     /// "View summary" on a finished session.

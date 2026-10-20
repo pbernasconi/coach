@@ -2,10 +2,10 @@ import KoboComponents
 import KoboTokens
 import SwiftUI
 
-/// Dumb view: the session header, one section per exercise, the rest bar and the set editor (SCR-2). Ticking a set
-/// brings that set into view, clear of the rest bar, and tapping the rest bar's clock goes back to it. When the rest
-/// runs out the bar turns to the next set and brings that one into view instead. Haptics: a tap for each of the last
-/// three seconds, then a success.
+/// Dumb view: the session header with its clock, one section per exercise, the rest bar and the set editor (SCR-2).
+/// Ticking a set brings that set into view, clear of the rest bar, and tapping the rest bar's clock goes back to it.
+/// When the rest runs out the bar turns to the next set and brings that one into view instead. Haptics: a tap for each
+/// of the last three seconds, then a success.
 struct WorkoutContent: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let state: WorkoutState
@@ -166,6 +166,7 @@ private struct WorkoutBody: View {
                     }
                 }
                 SegmentedProgress(done: workout.loggedSets, goal: workout.totalSets, accessibilityLabel: "Sets logged")
+                WorkoutClockRow(workout: workout, send: send)
                 WorkoutSessionNotes(note: workout.note, warmUpNote: workout.warmUpNote) { send(.sessionNoteTapped) }
             }
             ForEach(workout.exercises) { exercise in

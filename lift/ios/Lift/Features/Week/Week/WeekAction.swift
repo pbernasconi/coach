@@ -39,4 +39,8 @@ nonisolated enum WeekAction: Equatable, Sendable {
     case planUndoTapped(WeekPlanUndo)
     /// "New template" (no templates yet): makes one and opens its editor.
     case newTemplateTapped
+    /// A coach plan item tapped: opens its read-only detail sheet.
+    case planItemTapped(String)
+    /// The list pulled down: fetches the visible week's plan again.
+    case refreshPulled
 }

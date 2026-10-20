@@ -2,9 +2,9 @@ import Foundation
 import LiftCore
 import LiftStore
 
-/// The Workout screen's session-level writes: exercises added, moved and removed, finish, discard and Save as
-/// template. Each returns the toast to show, if any; the ViewModel shows a failure. Finish, discard and its Undo also
-/// keep Apple Health in step.
+/// The Workout screen's session-level writes: Start, exercises added, moved and removed, finish, discard and Save
+/// as template. Each returns the toast to show, if any; the ViewModel shows a failure. Finish, discard and its Undo
+/// also keep Apple Health in step.
 struct WorkoutSessionEdits {
     let sessionID: UUID
     let sessions: any SessionRepository
@@ -28,6 +28,12 @@ struct WorkoutSessionEdits {
 
     func restore(_ id: UUID) async throws -> WorkoutToast.Kind? {
         try await sessions.restoreExercise(id: id)
+        return nil
+    }
+
+    /// Stamps the start now; a session already started or finished stays as it is.
+    func start() async throws -> WorkoutToast.Kind? {
+        _ = try await sessions.start(sessionID: sessionID)
         return nil
     }
 

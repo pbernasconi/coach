@@ -13,7 +13,7 @@ extension CompositionRoot {
     ) -> any Syncing {
         let baseURL = SyncServer.baseURL(from: Bundle.main.object(forInfoDictionaryKey: SyncServer.infoKey))
         guard isSaved, let baseURL else { return DisabledSync() }
-        let tokens = KeychainTokenStore(service: "app.lift.sync", account: "token")
+        let tokens = syncTokenStore()
         let session = syncSession()
         let transport = URLSessionSyncTransport(session: session, baseURL: baseURL, tokens: tokens)
         let engine = SyncEngine(
@@ -24,6 +24,11 @@ extension CompositionRoot {
             clock: ContinuousClock()
         )
         return LiveSync(engine: engine, tokens: tokens, enrollment: URLSessionEnrollment(session: session, baseURL: baseURL))
+    }
+
+    /// The sync token in the Keychain; the Week plan fetch reads the same one.
+    static func syncTokenStore() -> KeychainTokenStore {
+        KeychainTokenStore(service: "app.lift.sync", account: "token")
     }
 
     /// Sync's own URLSession (never `.shared`): no cache or cookies, and a failed request waits for the next sync
