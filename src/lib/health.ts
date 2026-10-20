@@ -11,7 +11,7 @@ import { loadLibrary, loadMonth } from '@/lib/plan/month';
 import { loadPmc } from '@/lib/performance/projection';
 import { loadPeakPerformances } from '@/lib/performance/peaks';
 import { loadEventsWithCountdown } from '@/lib/performance/events';
-import { loadGarminStatus, loadHealth } from '@/lib/vitals/queries';
+import { loadClinicianNotes, loadGarminStatus, loadHealth } from '@/lib/vitals/queries';
 import { loadDay, loadGarminSections, loadRecoveryToday, loadTraining } from '@/lib/vitals/garmin-pages';
 import { loadActivity, loadActivityContext } from '@/lib/activity/queries';
 
@@ -52,6 +52,7 @@ export async function runChecks(now = new Date(), { migrations = true }: { migra
     check('peak performances', () => loadPeakPerformances(userId, today)),
     check('events', () => loadEventsWithCountdown(userId, today)),
     check('health', () => loadHealth(userId, today)),
+    check('clinician notes', () => loadClinicianNotes(userId)),
     check('garmin', () => loadGarminStatus(userId, now.getTime())),
     check('health day', () => loadDay(userId, today)),
     check('health day (yesterday)', () => loadDay(userId, addDays(today, -1))),
