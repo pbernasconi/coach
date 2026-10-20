@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Lift sync end to end, locally (lift/SYNC.md): a throwaway Postgres with drizzle/0009_lift_sync.sql, the coach
+# Lift sync end to end, locally (lift/SYNC.md): a throwaway Postgres built from drizzle/ migrations, the coach
 # Next.js server on it (DATABASE_DRIVER=pg, a random LIFT_SYNC_TOKEN), the opt-in LiftKit e2e suites against it
 # (the real LiftStore and SyncEngine on Linux or macOS), then teardown. Nothing touches Neon or Vercel.
 #
@@ -82,8 +82,8 @@ say "Postgres on 127.0.0.1:$PG_PORT ($("$PSQL" --version))"
 "${AS_PG[@]}" "$INITDB" -D "$PGDATA" -A trust -U lift --no-sync >/dev/null
 pg_start
 "$PSQL" -q -v ON_ERROR_STOP=1 "postgresql://lift@127.0.0.1:$PG_PORT/postgres" -c "CREATE DATABASE coach"
-# The Lift tables have no dependency on the rest of the schema; this is the same file DEFERRED.md applies to Neon.
-"$PSQL" -q -v ON_ERROR_STOP=1 "$DATABASE_URL" -f "$ROOT/drizzle/0009_lift_sync.sql"
+# The full schema, from the same migrations production applies (DATABASE.md).
+(cd "$ROOT" && DATABASE_URL="$DATABASE_URL" node scripts/db/migrate.mjs --yes)
 
 # --- server ---
 TOKEN="$(openssl rand -hex 32)"  # generated per run, never stored

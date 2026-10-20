@@ -42,7 +42,7 @@ already done around it. The build keeps going around these; nothing here blocks 
   is not provisioned there).
 
 - **Sync is on (done 2026-10-19).** The server runs at https://coach.paolobernasconi.com (also
-  coach-paolo.vercel.app) with `LIFT_SYNC_TOKEN` set and `drizzle/0009_lift_sync.sql` applied. The repository
+  coach-paolo.vercel.app) with `LIFT_SYNC_TOKEN` set and the Lift tables in its schema (DATABASE.md). The repository
   variable `LIFT_SYNC_BASE_URL` puts that origin into every TestFlight build. To connect a phone: open Coach →
   Settings → Lift and tap **Open in Lift** on the iPhone (or scan the QR code with the camera). The
   `lift://sync?code=…` link carries a one-time code (15 minutes, single use), never the token: Lift trades it at

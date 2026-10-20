@@ -29,6 +29,18 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test
+      - name: Migrations match the schema
+        # A schema change without its migration makes drizzle-kit generate write a new file here.
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+        run: |
+          npx drizzle-kit check
+          npx drizzle-kit generate --name drift-check
+          if [ -n "$(git status --porcelain drizzle)" ]; then
+            git status --porcelain drizzle
+            echo "::error::src/db/*schema*.ts changed without a migration. Run npm run db:generate and commit drizzle/."
+            exit 1
+          fi
       - run: npm run build
         env:
           # The build only needs a well-formed URL (neon() checks the format when a route module loads).
@@ -41,7 +53,7 @@ jobs:
     timeout-minutes: 15
     services:
       postgres:
-        image: postgres:16
+        image: postgres:17 # production runs Postgres 17
         env:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: coach
@@ -58,6 +70,6 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Create the schema
-        run: npx drizzle-kit push --force
+      - name: Build the schema from the migrations
+        run: npm run db:migrate
       - run: npm run test:integration

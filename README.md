@@ -30,8 +30,8 @@ The Lift iPhone app (`lift/`) syncs through two routes that follow `lift/SYNC.md
 
 The code: `src/lib/lift-sync/` holds validation, last-writer-wins, cursors, push/pull orchestration, the
 in-memory repository and the Drizzle repository. `src/lib/lift-dashboard/` holds the dashboard queries
-and summaries. The tables are defined in `src/db/lift-schema.ts` and created by
-`drizzle/0009_lift_sync.sql`. The tests are in `scripts/lift-sync.test.mjs` (`npm test`).
+and summaries. The tables are defined in `src/db/lift-schema.ts`; migrations create them
+(DATABASE.md). The tests are in `scripts/lift-sync.test.mjs` (`npm test`).
 
 Environment variables (set them in Vercel and in `.env.local`, and never commit real values):
 
@@ -40,14 +40,7 @@ Environment variables (set them in Vercel and in `.env.local`, and never commit 
 | `DATABASE_URL` | Neon Postgres connection string (already used by the rest of the app) |
 | `LIFT_SYNC_TOKEN` | Long random secret the iPhone sends as `Authorization: Bearer <token>`. If it's unset, every sync request gets `401`. Generate one with `openssl rand -base64 48` |
 
-Create the tables once by applying the migration to Neon:
-
-```bash
-psql "$DATABASE_URL" -f drizzle/0009_lift_sync.sql
-```
-
-`npm run db:migrate` also works if this database's migrations have been tracked by drizzle-kit from the
-start.
+Production builds apply new migrations by themselves; see DATABASE.md for a new database or a Neon branch.
 
 ## Learn More
 
