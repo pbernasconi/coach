@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ChevronLeft, ChevronRight, Dumbbell } from 'lucide-react';
 import SectionError from '@/components/SectionError';
+import LinkHotkeys from '@/components/hotkeys/LinkHotkeys';
 import ExerciseCard from '@/components/lift/ExerciseCard';
 import ExerciseThumb from '@/components/lift/ExerciseThumb';
 import { muscleLabel, num } from '@/components/lift/format';
@@ -83,6 +84,13 @@ export default async function LiftSessionPage({ params }: { params: Promise<{ id
         </div>
       </nav>
 
+      <LinkHotkeys
+        links={[
+          { key: '[', label: 'Older session', href: d.olderId && `/lift/sessions/${d.olderId}` },
+          { key: ']', label: 'Newer session', href: d.newerId && `/lift/sessions/${d.newerId}` },
+          { key: 'b', label: 'Back to Lift', href: '/lift' },
+        ]}
+      />
       <Hero d={d} start={clock(d.startedAt, tz)} />
 
       {d.exercises.length === 0 ? (

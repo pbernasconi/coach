@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
 import SectionError from '@/components/SectionError';
+import LinkHotkeys from '@/components/hotkeys/LinkHotkeys';
 import SportIcon from '@/components/SportIcon';
 import { loadActivity, loadActivityContext } from '@/lib/activity/queries';
 import { toDate } from '@/lib/db-time.mjs';
@@ -85,6 +86,13 @@ export default async function ActivityPage({ params }: { params: Promise<{ id: s
 
         <div className="min-w-0 space-y-8">
           <header className="space-y-3">
+            <LinkHotkeys
+              links={[
+                { key: '[', label: 'Older activity', href: v.prevId && `/activities/${v.prevId}` },
+                { key: ']', label: 'Newer activity', href: v.nextId && `/activities/${v.nextId}` },
+                { key: 'b', label: 'Back to the plan week', href: `/plan?week=${v.day}` },
+              ]}
+            />
             <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
               <Link href={`/plan?week=${v.day}`} className="text-muted-foreground underline-offset-4 hover:underline">← Plan</Link>
               <div className="flex items-center gap-1">
