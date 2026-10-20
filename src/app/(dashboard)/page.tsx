@@ -5,6 +5,7 @@ import { ownerForSignedInUser } from '@/lib/owner';
 import { loadPerformance, type WeekStats } from '@/lib/performance/queries';
 import { loadLiftModel } from '@/lib/lift-dashboard/queries';
 import { muscleSets, topLifts } from '@/lib/lift-dashboard/stats.mjs';
+import { liftOverview } from '@/lib/lift-dashboard/overview.mjs';
 import { loadRange, userSettings } from '@/lib/plan/month';
 import { loadForecast, placeFrom } from '@/lib/plan/weather';
 import { addDays, mondayOf, todayIn } from '@/lib/plan/week.mjs';
@@ -78,11 +79,16 @@ export default async function HomePage() {
       'lift',
       async () => {
         const { model, unit } = await loadLiftModel();
+        const o = liftOverview(model, unit, today);
         return {
           thisWeek: muscleSets(model, monday, addDays(monday, 6)),
           top: topLifts(model, unit, addDays(monday, -77)),
           unit,
           hasData: model.sessions.size > 0,
+          last: o.last ? { id: o.last.id, day: o.last.day, title: o.last.title } : null,
+          daysSince: o.daysSince,
+          next: o.upcoming[0] ? { id: o.upcoming[0].id, day: o.upcoming[0].day, title: o.upcoming[0].title } : null,
+          prs: o.prs.filter((r) => r.day >= addDays(today, -14)).length,
         };
       },
       null

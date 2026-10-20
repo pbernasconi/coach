@@ -1,123 +1,80 @@
 import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { StatCard } from '@/components/stat-card';
-import ResponsiveDay from '@/components/ResponsiveDay';
+import SectionError from '@/components/SectionError';
+import { ownerForSignedInUser } from '@/lib/owner';
 import { loadLiftModel } from '@/lib/lift-dashboard/queries';
-import { exerciseList, sessionSummaries, weeklyVolume } from '@/lib/lift-dashboard/stats.mjs';
-import { formatDay, formatVolume, formatWeight } from '@/lib/lift-dashboard/format';
+import { liftOverview } from '@/lib/lift-dashboard/overview.mjs';
+import { exerciseList } from '@/lib/lift-dashboard/stats.mjs';
+import { cookieTimeZone } from '@/lib/plan/timezone';
+import { todayIn } from '@/lib/plan/week.mjs';
+import { load, safe } from '@/lib/safe';
+import { DEFAULT_TARGETS, loadTargets } from '@/lib/status';
+import { loadBody } from '@/lib/vitals/garmin-pages';
+import WeekHero from './WeekHero';
+import MainLifts from './MainLifts';
+import MuscleBars from './MuscleBars';
+import SessionList from './SessionList';
+import CoachTips from './CoachTips';
+import Consistency from './Consistency';
+import Records from './Records';
+import ExerciseIndex from './ExerciseIndex';
+import type { Overview } from './types';
 
 export const dynamic = 'force-dynamic';
 
-const RECENT_SESSIONS = 20;
-
+/**
+ * Lift overview: this week against the strength target and what is next, then the progress that matters for the
+ * "Lean and strong" goals (main lifts, arms and the other muscles against 10-20 hard sets a week), the sessions,
+ * and plain tips from the numbers. The Today page's "Lean and strong" rail links here.
+ */
 export default async function LiftOverviewPage() {
-  const { model, unit } = await loadLiftModel();
-  const sessions = sessionSummaries(model, unit);
-  const exercises = exerciseList(model, unit);
-  const thisWeek = weeklyVolume(model, unit)[0];
+  const userId = await ownerForSignedInUser();
+  const today = todayIn(await cookieTimeZone());
+  const [targets, body] = await Promise.all([
+    userId ? safe('targets', () => loadTargets(userId), DEFAULT_TARGETS) : DEFAULT_TARGETS,
+    userId ? safe('body', () => loadBody(userId, today), null) : null,
+  ]);
+  const loaded = await load('Lift', async () => {
+    const { model, unit } = await loadLiftModel();
+    const overview = liftOverview(model, unit, today, { strengthTarget: targets.strength, weightKg: body?.weight?.value ?? null }) as Overview;
+    return { overview, exercises: exerciseList(model, unit) };
+  });
 
-  if (sessions.length === 0) {
+  if (!loaded.ok) {
     return (
-      <Card data-smoke="lift">
-        <CardHeader>
-          <CardTitle>No sessions yet</CardTitle>
-          <CardDescription>Sessions appear here after the Lift app syncs.</CardDescription>
-        </CardHeader>
-      </Card>
+      <div data-smoke="lift">
+        <SectionError label="Lift" />
+      </div>
+    );
+  }
+  const { overview: o, exercises } = loaded.value;
+
+  if (o.totals.sessions === 0) {
+    return (
+      <div data-smoke="lift" className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">
+        <p className="font-medium text-foreground">No sessions yet</p>
+        Sessions appear here after the Lift app syncs. Connect Lift from <Link href="/settings" className="underline">Settings → Lift</Link>.
+      </div>
     );
   }
 
   return (
-    <div className="space-y-6" data-smoke="lift">
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-        <StatCard title="Sessions" value={String(sessions.length)} />
-        <StatCard title="Exercises" value={String(exercises.length)} />
-        <StatCard
-          title="Latest week volume"
-          value={thisWeek ? formatVolume(thisWeek.volume, unit) : '-'}
-          subtitle={thisWeek ? `Week of ${formatDay(thisWeek.week)}` : undefined}
-        />
-        <StatCard
-          title="Latest week sets"
-          value={thisWeek ? String(thisWeek.sets) : '-'}
-          subtitle="Logged, warm-ups excluded"
-        />
+    <div className="space-y-5" data-smoke="lift">
+      <WeekHero o={o} />
+      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <div className="min-w-0 space-y-5">
+          {/* On a phone the notes come first; from lg they sit at the top of the right column. */}
+          <div className="lg:hidden"><CoachTips tips={o.tips} /></div>
+          <MainLifts lifts={o.lifts} unit={o.unit} today={o.today} />
+          <MuscleBars rows={o.muscles} />
+          <SessionList sessions={o.sessions} upcoming={o.upcoming} unit={o.unit} today={o.today} />
+          <ExerciseIndex exercises={exercises} unit={o.unit} />
+        </div>
+        <div className="min-w-0 space-y-5">
+          <div className="hidden lg:block"><CoachTips tips={o.tips} /></div>
+          <Consistency o={o} />
+          <Records prs={o.prs} unit={o.unit} />
+        </div>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent sessions</CardTitle>
-          <CardDescription>
-            Volume = reps x logged weight over logged sets, warm-ups excluded, in {unit}.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead className="hidden sm:table-cell">Title</TableHead>
-                <TableHead className="text-right">Sets<span className="hidden sm:inline"> logged</span></TableHead>
-                <TableHead className="text-right">Volume</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sessions.slice(0, RECENT_SESSIONS).map((s) => (
-                <TableRow key={s.id}>
-                  <TableCell>
-                    <Link href={`/lift/sessions/${s.id}`} className="whitespace-nowrap font-medium hover:underline">
-                      <ResponsiveDay day={s.day} />
-                    </Link>
-                    <div className="text-xs text-muted-foreground sm:hidden">{s.title || '-'}</div>
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                    <Link href={`/lift/sessions/${s.id}`} className="hover:underline">{s.title || '-'}</Link>
-                  </TableCell>
-                  <TableCell className="whitespace-nowrap text-right tabular-nums">
-                    {s.setsLogged} / {s.setsTotal}
-                  </TableCell>
-                  <TableCell className="whitespace-nowrap text-right tabular-nums">{formatVolume(s.volume, unit)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Exercises</CardTitle>
-          <CardDescription>Estimated 1RM uses Epley, weight x (1 + reps / 30), for 1 to 12 reps.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Exercise</TableHead>
-                <TableHead className="text-right">Sessions</TableHead>
-                <TableHead className="hidden sm:table-cell">Last done</TableHead>
-                <TableHead className="whitespace-nowrap text-right">Best<span className="hidden sm:inline"> est.</span> 1RM</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {exercises.map((e) => (
-                <TableRow key={e.key}>
-                  <TableCell>
-                    <Link href={`/lift/exercises/${encodeURIComponent(e.key)}`} className="font-medium hover:underline">
-                      {e.name}
-                    </Link>
-                    <div className="text-xs text-muted-foreground sm:hidden"><ResponsiveDay day={e.lastDay} /></div>
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">{e.sessions}</TableCell>
-                  <TableCell className="hidden whitespace-nowrap sm:table-cell">{formatDay(e.lastDay)}</TableCell>
-                  <TableCell className="whitespace-nowrap text-right tabular-nums">{formatWeight(e.bestE1rm, unit)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
     </div>
   );
 }
