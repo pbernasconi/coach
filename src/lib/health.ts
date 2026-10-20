@@ -1,4 +1,5 @@
 import journal from '../../drizzle/meta/_journal.json';
+import { openProposal } from '@/lib/plan/proposals';
 import { GET as homeSummary } from '@/app/api/home/route';
 import { sql } from '@/db';
 import { loadLiftModel } from '@/lib/lift-dashboard/queries';
@@ -49,6 +50,7 @@ export async function runChecks(now = new Date(), { migrations = true }: { migra
     check('week (next)', () => loadWeek(userId, addDays(monday, 7), today)),
     check('month', () => loadMonth(userId, today.slice(0, 7), today)),
     check('workout library', () => loadLibrary(userId)),
+    check('plan proposal', () => openProposal(userId)),
     check('fitness projection', () => loadPmc(userId, today)),
     check('peak performances', () => loadPeakPerformances(userId, today)),
     check('events', () => loadEventsWithCountdown(userId, today)),

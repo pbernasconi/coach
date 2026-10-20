@@ -4,8 +4,10 @@ import { dataBounds, loadLibrary, loadRange, userSettings } from '@/lib/plan/mon
 import { initialRange, startWeek, topWeekFor } from '@/lib/plan/scroll.mjs';
 import { cookieTimeZone } from '@/lib/plan/timezone';
 import { loadForecast, placeFrom } from '@/lib/plan/weather';
-import { mondayOf, todayIn } from '@/lib/plan/week.mjs';
+import { addDays, mondayOf, todayIn } from '@/lib/plan/week.mjs';
 import MonthCalendar from './MonthCalendar';
+import CoachPlanner from './CoachPlanner';
+import { openProposal } from '@/lib/plan/proposals';
 import './plan.css';
 
 export const dynamic = 'force-dynamic';
@@ -33,14 +35,17 @@ export default async function PlanPage({ searchParams }: { searchParams: Promise
   const anchor = weekAnchor ?? startWeek(monthParam, today);
   const bounds = await safe('plan data bounds', () => dataBounds(userId), { earliest: null, planEnd: null });
   const first = initialRange(anchor, bounds.earliest);
-  const [range, weather, library] = await Promise.all([
+  const [range, weather, library, proposal] = await Promise.all([
     loadRange(userId, first.from, first.to, today),
     loadForecast(place, timeZone),
     safe('workout library', () => loadLibrary(userId), []),
+    // The cloud coach bar is optional: without it the calendar still renders.
+    safe('plan proposal', () => openProposal(userId), null),
   ]);
   const openAt = weekAnchor ?? (monthParam && MONTH.test(monthParam) ? anchor : topWeekFor(anchor, bounds.earliest));
   return (
     <div data-smoke="plan">
+      <CoachPlanner initial={proposal} thisWeek={mondayOf(today)} nextWeek={addDays(mondayOf(today), 7)} />
       <MonthCalendar
         anchor={anchor}
         openAt={openAt}

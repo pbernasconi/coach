@@ -233,3 +233,16 @@ The job stores new tokens at once when Garmin refreshes them (before the next da
 - One-time setup: `scripts/garmin/.venv/bin/python scripts/garmin/login.py --new-key`. The next run moves the tokens from `GARMIN_TOKENS` into Coach, so a new Garmin login is not needed.
 - Backfill: `gh workflow run garmin.yml -f since=2025-04-20` (about 550 days and 6,600 calls; about 2.5 hours). If the run stops, the scheduled runs continue it, or you can run the same command again.
 - When the banner says the Garmin login has expired, run `login.py` (without `--new-key`). See `scripts/garmin/README.md`.
+
+## `POST /api/plan/proposals`
+
+`Authorization: Bearer <CRON_SECRET>`. The cloud plan job (`scripts/plan-cloud/client.mjs`) and `plan-apply.yml`.
+The table is `plan_proposals` (`src/db/plan-schema.ts`); the flow is in COACH.md, "In the cloud".
+
+| `action` | Body | Does |
+| --- | --- | --- |
+| `claim` | `{ id? }` | Marks the request running and returns `{ id, request }`. No id (the Sunday run): a new weekly request for next week. |
+| `submit` | `{ id, plan, summary }` | Checks the plan (`src/lib/plan/proposal.mjs`: the week, the days, the bank workouts) and stores it as `proposed`, or fails the request with the reason (422). |
+| `fail` | `{ id, error }` | Marks the request failed; the Plan page shows the error. |
+| `push` | `{ weeks: "YYYY-MM-DD,…" }` | Pushes those plan weeks to Google Calendar (after Lift added the planned sets). |
+
