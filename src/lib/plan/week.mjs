@@ -22,13 +22,16 @@ export function todayIn(timeZone, now = new Date()) {
   return new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
 }
 
-/** run | ride | swim | strength | yoga | rest | other, from a plan workout's type and title. */
+/** A sport id from design/sports.json (run, ride, hike, walk, swim, strength, yoga, rest, other), from a plan
+ * workout's type and title. */
 export function sportOf(w) {
   const t = `${w.workoutType ?? ''} ${w.sport ?? ''} ${w.title ?? ''}`.toLowerCase();
   if (/rest|off day/.test(t) && !/interval/.test(t)) return 'rest';
   if (/strength|lift|barbell|dumbbell|gym|squat/.test(t)) return 'strength';
   if (/swim/.test(t)) return 'swim';
   if (/yoga|mobility|stretch/.test(t)) return 'yoga';
+  if (/hike|hiking/.test(t)) return 'hike';
+  if (/\bwalk/.test(t)) return 'walk';
   if (/\brun|stride|jog/.test(t)) return 'run';
   if (/\bride|bike|cycl|zwift/.test(t)) return 'ride';
   return 'other';
@@ -40,6 +43,8 @@ export function sportOfStrava(sportType) {
   if (t.includes('run')) return 'run';
   if (t.includes('ride') || t.includes('cycl')) return 'ride';
   if (t.includes('swim')) return 'swim';
+  if (t.includes('hike')) return 'hike';
+  if (t.includes('walk')) return 'walk';
   if (/weight|workout|crossfit|strength/.test(t)) return 'strength';
   if (/yoga|pilates/.test(t)) return 'yoga';
   return 'other';

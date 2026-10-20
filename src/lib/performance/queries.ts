@@ -2,6 +2,10 @@ import { sql } from '@/db';
 import { loadLiftModel } from '@/lib/lift-dashboard/queries';
 import { sessionSummaries } from '@/lib/lift-dashboard/stats.mjs';
 import { addDays, mondayOf, sportOfStrava } from '@/lib/plan/week.mjs';
+import { stravaTypeLabel, type SportId } from '@/lib/sports';
+
+/** One sport's week: moving hours, km, and hours for each exact Strava type in it ("Hike", "Virtual ride"). */
+export type SportWeek = { hours: number; km: number; types: Record<string, number> };
 
 export type WeekStats = {
   week: string; // Monday
@@ -14,6 +18,7 @@ export type WeekStats = {
   tss: number;
   planned: number;
   done: number;
+  sports: Partial<Record<SportId, SportWeek>>;
 };
 
 export type LoadPoint = { date: string; ctl: number; atl: number; tsb: number; tss: number };
@@ -49,7 +54,7 @@ export async function loadPerformance(userId: string, today: string, weekCount =
   const weeks = new Map<string, WeekStats>();
   for (let i = 0; i < weekCount; i++) {
     const w = addDays(firstWeek, 7 * i);
-    weeks.set(w, { week: w, hours: 0, runKm: 0, runMin: 0, rideKm: 0, rideHours: 0, strength: 0, tss: 0, planned: 0, done: 0 });
+    weeks.set(w, { week: w, hours: 0, runKm: 0, runMin: 0, rideKm: 0, rideHours: 0, strength: 0, tss: 0, planned: 0, done: 0, sports: {} });
   }
   const strengthDays = new Set<string>();
   const activityDays = new Map<string, Set<string>>();
@@ -65,6 +70,11 @@ export async function loadPerformance(userId: string, today: string, weekCount =
     const sport = sportOfStrava(a.sport_type);
     w.hours += min / 60;
     w.tss += Number(a.tss ?? 0);
+    const sw = (w.sports[sport as SportId] ??= { hours: 0, km: 0, types: {} });
+    const type = stravaTypeLabel(String(a.sport_type ?? 'Workout'));
+    sw.hours += min / 60;
+    sw.km += km;
+    sw.types[type] = (sw.types[type] ?? 0) + min / 60;
     if (sport === 'run') {
       w.runKm += km;
       w.runMin += min;
