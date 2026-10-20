@@ -1,0 +1,41 @@
+{
+  "description": "The flag emoji of a two-letter code (flagEmoji in countries.ts): each letter of an ISO 3166-1 alpha-2 code (or 'EU') becomes its regional indicator symbol (U+1F1E6 + letter - 'A'). Letters match without case. An invalid code (not exactly two ASCII letters) gives no flag.",
+  "cases": [
+    {
+      "code": "US",
+      "flag": "🇺🇸"
+    },
+    {
+      "code": "EU",
+      "flag": "🇪🇺"
+    },
+    {
+      "code": "GB",
+      "flag": "🇬🇧"
+    },
+    {
+      "code": "DE",
+      "flag": "🇩🇪"
+    },
+    {
+      "code": "JP",
+      "flag": "🇯🇵"
+    },
+    {
+      "code": "CN",
+      "flag": "🇨🇳"
+    },
+    {
+      "code": "ch",
+      "flag": "🇨🇭"
+    }
+  ],
+  "invalid": [
+    "",
+    "U",
+    "USA",
+    "1A",
+    "U-",
+    "ÜS"
+  ]
+}
