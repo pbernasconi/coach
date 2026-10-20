@@ -15,7 +15,7 @@ const HotkeysContext = createContext<Registry | null>(null);
 let nextId = 1;
 
 /**
- * Adds a page's shortcuts while the page is on screen. They win over the global keys (1–6, t, ?), so the Plan page's
+ * Adds a page's shortcuts while the page is on screen. They win over the global keys (1–5, t, ?), so the Plan page's
  * `t` scrolls to today instead of opening /plan. Pass a new list when the actions change; the latest is used.
  */
 export function useHotkeys(list: Shortcut[]) {
@@ -37,7 +37,7 @@ function keyLabel(key: string) {
 }
 
 /**
- * Keyboard shortcuts for the dashboard. Global: 1–6 open the nav sections, t opens today's plan, ? shows every key
+ * Keyboard shortcuts for the dashboard. Global: 1–5 open the nav sections, t opens today's plan, ? shows every key
  * of the current page. A page adds its own with useHotkeys. Keys never fire while typing, with Cmd/Ctrl/Alt, or
  * while another dialog is open (src/lib/hotkeys.mjs).
  */
