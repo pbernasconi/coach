@@ -18,7 +18,7 @@ export default async function LiftOverviewPage() {
 
   if (sessions.length === 0) {
     return (
-      <Card>
+      <Card data-smoke="lift">
         <CardHeader>
           <CardTitle>No sessions yet</CardTitle>
           <CardDescription>Sessions appear here after the Lift app syncs.</CardDescription>
