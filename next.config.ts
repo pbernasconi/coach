@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // @kobo/web (web-standards/kobo-web) is a workspace package that ships TypeScript source.
+  transpilePackages: ["@kobo/web"],
   eslint: {
     ignoreDuringBuilds: true,
   },

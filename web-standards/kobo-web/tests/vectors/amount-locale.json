@@ -1,0 +1,89 @@
+{
+  "description": "A pasted amount in the style of a locale (normalizePastedAmount, then CurrencyInput). \"12,50\" in a German region is twelve fifty, never 1,250. locale is a BCP 47 tag.",
+  "parse": [
+    {
+      "name": "a comma decimal in a German region",
+      "text": "12,50",
+      "locale": "de-DE",
+      "cents": 1250
+    },
+    {
+      "name": "German grouping and decimal",
+      "text": "1.234,56",
+      "locale": "de-DE",
+      "cents": 123456
+    },
+    {
+      "name": "US grouping and decimal",
+      "text": "1,234.56",
+      "locale": "en-US",
+      "cents": 123456
+    },
+    {
+      "name": "one comma with one digit after is the decimal point",
+      "text": "12,5",
+      "locale": "en-US",
+      "cents": 1250
+    },
+    {
+      "name": "a dot decimal in a US region",
+      "text": "12.50",
+      "locale": "en-US",
+      "cents": 1250
+    },
+    {
+      "name": "a pasted US amount with a dollar sign",
+      "text": "$1,234.56",
+      "locale": "en-US",
+      "cents": 123456
+    },
+    {
+      "name": "French grouping with a non-breaking space",
+      "text": "1 234,56",
+      "locale": "fr-FR",
+      "cents": 123456
+    },
+    {
+      "name": "French grouping with a narrow non-breaking space",
+      "text": "1 234,56",
+      "locale": "fr-FR",
+      "cents": 123456
+    },
+    {
+      "name": "one comma with three digits after groups",
+      "text": "12,345",
+      "locale": "en-US",
+      "cents": 1234500
+    },
+    {
+      "name": "commas used twice group",
+      "text": "1,234,567",
+      "locale": "en-US",
+      "cents": 123456700
+    },
+    {
+      "name": "a pasted US amount in a German region",
+      "text": "$1,234.56",
+      "locale": "de-DE",
+      "cents": 123456
+    },
+    {
+      "name": "one dot with three digits after groups in a German region",
+      "text": "1.234",
+      "locale": "de-DE",
+      "cents": 123400
+    },
+    {
+      "name": "one comma with one digit after in a German region",
+      "text": "12,5",
+      "locale": "de-DE",
+      "cents": 1250
+    },
+    {
+      "name": "Swiss grouping with an apostrophe",
+      "text": "1’234.50",
+      "locale": "de-CH",
+      "cents": 123450
+    }
+  ]
+}

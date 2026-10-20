@@ -39,6 +39,8 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test
+      - name: Kobo web (type check, conformance, tests)
+        run: npm run check -w @kobo/web
       - name: Migrations match the schema
         # A schema change without its migration makes drizzle-kit generate write a new file here.
         env:

@@ -1,0 +1,40 @@
+{
+  "description": "The footer action a client derives from a paged list's `pageInfo`. `loadMore`: a cursor is present, the client may ask for the next page. `ceiling`: the server stopped the list (`hasMore` with no cursor) and says so with `bounded`; the client shows the ceiling words. `end`: nothing more to load. A null cursor never loads more, whatever `hasMore` says. `bounded` is optional and false when missing. Consumer: tests/loadMoreModel.test.ts (pageFooterAction).",
+  "cases": [
+    {
+      "name": "loadMore",
+      "pageInfo": {
+        "hasMore": true,
+        "nextCursor": "x",
+        "bounded": false
+      },
+      "expected": "loadMore"
+    },
+    {
+      "name": "ceiling",
+      "pageInfo": {
+        "hasMore": true,
+        "nextCursor": null,
+        "bounded": true
+      },
+      "expected": "ceiling"
+    },
+    {
+      "name": "end",
+      "pageInfo": {
+        "hasMore": false,
+        "nextCursor": null
+      },
+      "expected": "end"
+    },
+    {
+      "name": "nullCursorNeverLoadsMore",
+      "pageInfo": {
+        "hasMore": true,
+        "nextCursor": null,
+        "bounded": false
+      },
+      "expected": "end"
+    }
+  ]
+}
