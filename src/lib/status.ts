@@ -1,4 +1,5 @@
 import { sql } from '@/db';
+import { cached } from '@/lib/data-cache';
 import { toDay, toIso } from '@/lib/db-time.mjs';
 import type { GarminStatus } from '@/lib/vitals/garmin.mjs';
 import { loadGarminStatus } from '@/lib/vitals/queries';
@@ -108,7 +109,7 @@ export async function loadStatus(userId: string, now = Date.now()): Promise<Stat
   }
   const personal = calendars.find((c) => c.active);
   if (personal && hoursSince(personal.lastSyncedAt, now) > 3) {
-    warnings.push({ level: 'warn', source: 'calendar', text: `Calendar has not synced for ${ago(hoursSince(personal.lastSyncedAt, now))} (it should sync every 30 min).` });
+    warnings.push({ level: 'warn', source: 'calendar', text: `Calendar has not synced for ${ago(hoursSince(personal.lastSyncedAt, now))} (it should sync every hour).` });
   }
   // Garmin: an expired login is an error, no success for 36 h a warning, "not set up" or a recent error info only.
   if (garmin.warning) warnings.push({ ...garmin.warning, source: 'garmin' });
@@ -121,3 +122,10 @@ export async function loadStatus(userId: string, now = Date.now()): Promise<Stat
   }
   return { strava, lift: liftStatus, calendars, garmin, warnings };
 }
+
+/**
+ * loadStatus for the banner on every page and for /api/home: at most 5 minutes old, so a page view does not run
+ * its eight queries (or wake the database) each time. Settings and /api/health read it fresh. A save in Settings
+ * clears the tag.
+ */
+export const loadStatusCached = cached((userId: string) => loadStatus(userId), 'status-v1', 'status', 300);

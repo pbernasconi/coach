@@ -9,7 +9,7 @@ noticed. These guards exist so a bad value, a bad deploy or a bad migration cann
 | Section isolation | `src/lib/safe.ts`, `SectionError`, `error.tsx` | One failed loader blanking a page |
 | PR checks (required) | `.github/workflows/web.yml` | Type, lint, test, build, schema drift, loader errors on real Postgres |
 | Staged deploys + rollback | `.github/workflows/deploy.yml`, `web.yml` ("web build"), `scripts/smoke.mjs`, `/api/health` | A deploy that breaks a page |
-| Scheduled check | `.github/workflows/deploy-check.yml` | Data that breaks a page; a broken preview |
+| Scheduled check | `.github/workflows/deploy-check.yml` | Data that breaks a page |
 | Migrations on deploy | `scripts/db/migrate.mjs` (DATABASE.md) | Code that ships before its schema |
 
 ## Rules for new code
@@ -20,7 +20,7 @@ noticed. These guards exist so a bad value, a bad deploy or a bad migration cann
   it fails; an optional part (a banner) uses `safe()` with a fallback.
 - **A large read** (more than a few KB, or one that runs on every page): read it through `cached()` from
   `src/lib/data-cache.ts`, with the tag of its data, and clear that tag (`clearCache`) in every writer of the
-  data. Neon's free plan allows 5 GB a month out of the database; see "Data cache" below.
+  data. Neon's plan has monthly quotas (20 GB out of the database, 100 CU-hours of compute); see "Data cache" below.
 - **A new loader**: add it to `runChecks()` in `src/lib/health.ts`. `/api/health`, the CI integration test and the
   deploy check all run that list.
 - **A new page**: add it to `PAGES` in `scripts/smoke.mjs`, and put `data-smoke="<name>"` on the root element of
@@ -60,8 +60,8 @@ and renders each page in `PAGES` as the owner. The `x-coach-health` header grant
 
 - **Staged build, and before a promote**: `/api/health` and `/sign-in` on the deployment URL.
 - **After a promote**: every page on production (`--pages --expect-deployment <id>`).
-- **Preview deploy**: `/api/health` and `/sign-in` on the preview URL (`deploy-check.yml`).
-- **Every 30 minutes**: production, every page. A failure here opens an issue and does not roll back: without a
+- **Preview deploy**: `/api/health` and `/sign-in` on the preview URL (`preview.yml`).
+- **Every hour, after the Sync workflow** (`workflow_run`, while the database is awake): production, every page. A failure here opens an issue and does not roll back: without a
   new deploy, the cause is data, and the old build reads the same data.
 
 Run it yourself: `HEALTH_TOKEN=… npm run smoke -- https://coach.paolobernasconi.com --pages`.
@@ -87,9 +87,18 @@ also does not wake the database, so cached pages are faster.
 | `lift` | `lift_rows` (8 entries, split by id, each below the 2 MB entry limit) | Each applied Lift sync change |
 | `vitals` | `health_samples`, `garmin_raw` | The vitals push, the Garmin raw push |
 | `labs` | `lab_biomarkers`, `lab_categories`, `lab_results`, `lab_planned_draws`, `clinician_notes` | `POST /api/cron/cache?tag=labs` (the Function workflow calls it) |
+| `status` | The banner's connection status (`loadStatusCached`, 5 minutes) | Saves in Settings |
 
 A write that clears no tag (a script on the database) shows within an hour. `/api/health` reads through the same
 cache as the pages: the data it checks is the data the pages show. The cache key holds the loader's code, so a
 deploy that changes a query reads fresh data. Outside Next (the CI integration test, scripts) the cache is off.
 
 Perf runs on demand only: add the label `perf` to a pull request.
+
+## Neon compute
+
+Neon suspends the database after 5 idle minutes, and each wake-up costs at least those 5 minutes at 0.25 CU. Four
+wake-ups an hour (the old schedules) were about 70 of the 100 CU-hours a month. So only one schedule touches the
+database each hour: `sync.yml` at :00. The deploy check and the Garmin workout push start when it ends
+(`workflow_run`), while the database is still awake. The Garmin data sync runs at 11:00 and 17:00 UTC, at the same
+minute. A new scheduled job that reads the database must also start from Sync, not from its own cron.
