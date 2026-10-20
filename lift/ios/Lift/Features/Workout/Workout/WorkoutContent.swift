@@ -31,7 +31,8 @@ struct WorkoutContent: View {
         .navigationTitle(Text(verbatim: title))
         .navigationBarTitleDisplayMode(.inline)
         .workoutOptions(state: state, send: send)
-        .pinnedFooter(isPresented: state.rest != nil) {
+        // Glass style: no bar material behind it. The rest bar brings its own opaque panel.
+        .pinnedFooter(style: .glass, isPresented: state.rest != nil) {
             if let rest = state.rest {
                 RestBar(rest: rest, onExtend: { send(.restExtendTapped) }, onSkip: { send(.restSkipTapped) })
             }

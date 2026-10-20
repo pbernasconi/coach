@@ -54,9 +54,14 @@ nonisolated struct RestTimer: Equatable, Sendable {
     }
 
     /// The time left as "1:30" or "0:05".
-    var clockText: String {
-        let seconds = remaining % 60
-        return "\(remaining / 60):" + (seconds < 10 ? "0\(seconds)" : "\(seconds)")
+    var clockText: String { Self.clock(remaining) }
+
+    /// The whole rest as "2:00", shown as "of 2:00" beside the time left.
+    var totalText: String { Self.clock(total) }
+
+    private static func clock(_ value: Int) -> String {
+        let seconds = value % 60
+        return "\(value / 60):" + (seconds < 10 ? "0\(seconds)" : "\(seconds)")
     }
 
     /// Seconds already rested, for a bar that fills up.
