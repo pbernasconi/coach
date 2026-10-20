@@ -5,7 +5,7 @@ import { CloudRain, Target, Thermometer, Wind } from 'lucide-react';
 import WorkoutChart, { ZONE_COLOR } from '@/components/workouts/WorkoutChart';
 import WorkoutSteps from '@/components/workouts/WorkoutSteps';
 import { cn } from '@/lib/utils';
-import { clock, flatten, stepSeconds, targetText, totals, zoneOf } from '@/lib/workouts/steps.mjs';
+import { clock, flatten, keyTargets, stepSeconds, stepZone, totals } from '@/lib/workouts/steps.mjs';
 import type { StructuredWorkout } from '@/lib/plan/queries';
 import type { DayWeather } from '@/lib/plan/weather';
 
@@ -26,7 +26,7 @@ export function Card({ title, note, children, className }: { title: ReactNode; n
   );
 }
 
-const zoneOfStep = (s: Step, sport: string) => (s.target.type === 'open' ? (s.kind === 'work' ? 'Z5' : 'Z1') : (zoneOf(s.target as never, sport) as string));
+const zoneOfStep = (s: Step, sport: string) => stepZone(s as never, sport) as string;
 
 /** The interval chart with a time axis under it, then the steps. */
 export function Structure({ workout }: { workout: StructuredWorkout }) {
@@ -87,25 +87,9 @@ export function ZoneTime({ workout }: { workout: StructuredWorkout }) {
   );
 }
 
-const len = (s: Step) => (s.duration.type === 'distance' ? (s.duration.m! % 1000 === 0 ? `${s.duration.m! / 1000} km` : `${s.duration.m} m`) : clock(stepSeconds(s as never)));
-const aim = (s: Step) => (s.target.type === 'open' ? (s.kind === 'work' ? 'all out' : 'easy') : targetText(s.target as never));
-
 /** The work of the workout in one line each: "6 × 5:00 at 269–291 W, 2:00 easy". */
 export function KeyTargets({ workout }: { workout: StructuredWorkout }) {
-  const lines: { text: string; zone: string }[] = [];
-  for (const s of workout.steps as Step[]) {
-    if (s.kind === 'repeat') {
-      const work = (s.steps ?? []).filter((x) => x.kind === 'work');
-      const rest = (s.steps ?? []).find((x) => x.kind !== 'work' && x.kind !== 'repeat');
-      if (!work.length) continue;
-      lines.push({
-        text: `${s.count} × ${work.map((w) => `${len(w)} at ${aim(w)}`).join(' + ')}${rest ? `, ${len(rest)} ${rest.kind === 'rest' ? 'rest' : 'easy'}` : ''}`,
-        zone: zoneOfStep(work[0], workout.sport),
-      });
-    } else if (s.kind === 'work') {
-      lines.push({ text: `${len(s)} at ${aim(s)}${s.notes ? ` · ${s.notes}` : ''}`, zone: zoneOfStep(s, workout.sport) });
-    }
-  }
+  const lines = keyTargets(workout as never) as { text: string; zone: string }[];
   if (!lines.length) return null;
   return (
     <Card title={<><Target aria-hidden className="h-4 w-4" /> The work</>}>

@@ -10,10 +10,13 @@
  *        start_time=07:30 description="Z2 only"
  *
  * Every change sets edited_at, so a later plan-import keeps it. Add --no-calendar to skip the calendar update.
+ * A move, skip or unskip of a strength workout also moves or removes its Lift session (when nothing was logged in it),
+ * through the server's Lift sync push (LIFT_SYNC_TOKEN; src/lib/lift/follow-plan.mjs).
  */
 
 import { connect } from '../src/db/neon.mjs';
 import { pushWeek } from '../src/lib/calendar-sync/push.mjs';
+import { followWorkout } from '../src/lib/lift/follow-plan.mjs';
 
 const [cmd, a, b, ...rest] = process.argv.slice(2).filter((x) => x !== '--no-calendar');
 const noCalendar = process.argv.includes('--no-calendar');
@@ -52,6 +55,32 @@ async function push(weeks) {
   }
 }
 
+const LIFT_SERVER = process.env.LIFT_SYNC_BASE_URL ?? 'https://coach.paolobernasconi.com';
+
+/** Pushes Lift changes through the server, as the iPhone does, so they get a seq and the server's cache is cleared. */
+async function pushLift(changes) {
+  if (!process.env.LIFT_SYNC_TOKEN) throw new Error('LIFT_SYNC_TOKEN is not set');
+  const res = await fetch(`${LIFT_SERVER}/api/lift/sync/push`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${process.env.LIFT_SYNC_TOKEN}`, 'content-type': 'application/json' },
+    body: JSON.stringify({ deviceId: 'plan-edit', changes }),
+  });
+  if (!res.ok) throw new Error(`Lift push: ${res.status} ${(await res.text()).slice(0, 200)}`);
+  return res.json();
+}
+
+/** Moves or removes the workout's Lift session. A failure only warns: lift-plan.mjs puts the session right later. */
+async function followLift(id, opts) {
+  try {
+    const r = await followWorkout(sql, pushLift, id, opts);
+    if ('done' in r) console.log(`Lift session: ${r.done === 'removed' ? 'removed' : `moved to ${r.done}`}`);
+    else if (r.skip === 'started') console.log('Lift session: started or logged, not changed');
+    else if (r.skip.startsWith('refused')) console.warn(`Lift session not changed: ${r.skip}`);
+  } catch (error) {
+    console.warn(`Lift session not changed (scripts/lift-plan.mjs will do it): ${error.message}`);
+  }
+}
+
 const COLUMNS = { title: 'title', duration: 'duration', intensity: 'intensity', description: 'description', why: 'why', start_time: 'start_time', end_time: 'end_time', time_zone: 'time_zone', workout_type: 'workout_type', tss: 'tss', lift_template: 'lift_template' };
 
 if (cmd === 'show') {
@@ -72,12 +101,14 @@ if (cmd === 'show') {
   const planId = await planFor(monday(b));
   await sql`UPDATE training_plan_activities SET scheduled_date = ${b}, plan_id = ${planId}, edited_at = NOW(), updated_at = NOW() WHERE id = ${a}`;
   console.log(`moved ${w.title}: ${day(w.scheduled_date)} → ${b}`);
+  await followLift(a);
   await push([day(w.week_start_date), monday(b)]);
 } else if (cmd === 'skip' || cmd === 'unskip') {
   if (!a) fail(`${cmd} <workoutId>`);
   const w = await workout(a);
   await sql`UPDATE training_plan_activities SET status = ${cmd === 'skip' ? 'skipped' : 'planned'}, edited_at = NOW(), updated_at = NOW() WHERE id = ${a}`;
   console.log(`${cmd}ped ${w.title}`);
+  await followLift(a, { restore: cmd === 'unskip' });
   await push([day(w.week_start_date)]);
 } else if (cmd === 'update') {
   if (!a) fail('update <workoutId> key=value ...');
