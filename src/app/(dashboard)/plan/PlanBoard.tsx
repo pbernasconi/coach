@@ -52,11 +52,15 @@ export default function PlanBoard({ week, timeZone }: { week: Week; timeZone: st
     }
   }, [timeZone, router]);
 
-  // A link like /plan#w-<id> (from the start page) opens that workout.
+  // A link like /plan#w-<id> (from the start page) opens that workout. On a phone (one column), the
+  // page otherwise opens at today, because past days are above it.
   useEffect(() => {
     const m = /^#w-(.+)$/.exec(window.location.hash);
     if (m) setOpen(m[1]);
-  }, []);
+    else if (!window.location.hash && window.matchMedia('(max-width: 767px)').matches) {
+      document.getElementById(`day-${week.today}`)?.scrollIntoView({ block: 'start' });
+    }
+  }, [week.today]);
 
   const days = Array.from({ length: 7 }, (_, i) => addDays(week.weekStart, i));
   const prev = addDays(week.weekStart, -7);
@@ -137,12 +141,13 @@ export default function PlanBoard({ week, timeZone }: { week: Week; timeZone: st
 
       {isThisWeek && week.planId && (
         <div className="flex flex-wrap items-center gap-3 rounded-lg border p-3">
-          <span className="text-sm font-medium">How do you feel today?</span>
-          <div className="flex flex-wrap gap-2">
+          <span className="w-full text-sm font-medium md:w-auto">How do you feel today?</span>
+          <div className="grid w-full grid-cols-4 gap-2 md:flex md:w-auto">
             {FEEL_OPTIONS.map((o) => (
               <Button
                 key={o.feel}
                 size="sm"
+                className="h-10 md:h-8"
                 variant={week.feel === o.feel ? 'default' : 'outline'}
                 title={o.hint}
                 disabled={pending}
@@ -248,7 +253,7 @@ function WorkoutCard({
       )}
     >
       <button type="button" onClick={onToggle} className="flex w-full items-start gap-1 text-left">
-        {w.state !== 'done' && <GripVertical className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100" />}
+        {w.state !== 'done' && <GripVertical className="mt-0.5 hidden h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 md:block" />}
         <span className="flex-1">
           <span className="font-medium">{SPORT_ICON[w.sport] ?? '•'} {stripEmoji(w.title)}</span>
           <span className="block text-xs text-muted-foreground">
@@ -263,6 +268,19 @@ function WorkoutCard({
           {w.adaptedFrom && <span className="mt-1 block text-xs text-amber-600">Changed for how you feel</span>}
         </span>
       </button>
+      {w.state !== 'done' && (
+        // Touch screens cannot drag: one tap moves the workout a day. Shown on phones, and on hover.
+        <div className="mt-1 flex justify-end gap-1 md:hidden md:group-hover:flex">
+          <Button size="sm" variant="ghost" className="h-8 w-8 p-0 md:h-6 md:w-6" aria-label="Move a day earlier"
+            disabled={disabled || w.date <= days[0]} onClick={() => onMove(addDays(w.date, -1))}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button size="sm" variant="ghost" className="h-8 w-8 p-0 md:h-6 md:w-6" aria-label="Move a day later"
+            disabled={disabled || w.date >= days[6]} onClick={() => onMove(addDays(w.date, 1))}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
       {open && (
         <div className="mt-2 space-y-2 border-t pt-2 text-xs">
           {w.description && <p className="whitespace-pre-wrap">{w.description}</p>}
