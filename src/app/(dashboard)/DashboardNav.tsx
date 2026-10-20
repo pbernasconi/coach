@@ -14,6 +14,8 @@ import {
 } from '@/components/ui/sheet';
 import { useState } from 'react';
 
+// Every nav link prefetches its page in full (data included) when it is on screen, so a click is instant; the
+// browser keeps it for staleTimes.static (next.config.ts).
 const navLinks = [
   { href: '/', label: 'Performance' },
   { href: '/plan', label: 'Plan' },
@@ -50,6 +52,7 @@ export default function DashboardNav() {
                   <Link
                     key={link.href}
                     href={link.href}
+                    prefetch
                     onClick={() => setOpen(false)}
                     className="text-lg transition-colors hover:text-foreground/80 text-foreground/60"
                   >
@@ -72,6 +75,7 @@ export default function DashboardNav() {
                 <Link
                   key={link.href}
                   href={link.href}
+                  prefetch
                   className="transition-colors hover:text-foreground/80 text-foreground/60"
                 >
                   {link.label}
