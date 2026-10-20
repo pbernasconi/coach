@@ -181,3 +181,24 @@ export async function loadRecoveryToday(userId: string, today: string) {
   };
 }
 export type RecoveryToday = Awaited<ReturnType<typeof loadRecoveryToday>>;
+
+// ---- Home: Lean and strong (weight and body fat) ----
+
+/**
+ * Weight and body fat for the home page: the latest reading, the change over 4 weeks, and the last 12 weeks of
+ * weight. Readings come from the scale through the vitals push (health_samples). Null fields when there are none.
+ */
+export async function loadBody(userId: string, today: string) {
+  const from = addDays(today, -83);
+  const rows = await samples(userId, from, today, ['weight_kg', 'body_fat_pct']);
+  const weight = series(rows, 'weight_kg') as Pt[];
+  const fat = series(rows, 'body_fat_pct') as Pt[];
+  const latest = latestWithChange(weight, 28) as (Pt & { change: number | null }) | null;
+  return {
+    weight: latest ? { date: latest.date, value: latest.value } : null,
+    change4w: latest?.change ?? null,
+    bodyFat: fat.at(-1) ?? null,
+    series: weight,
+  };
+}
+export type Body = Awaited<ReturnType<typeof loadBody>>;

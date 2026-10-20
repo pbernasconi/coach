@@ -2,8 +2,8 @@ import PmcChart from '@/components/charts/PmcChart';
 import type { Pmc } from '@/lib/performance/projection';
 import RampRates from './RampRates';
 
-/** The PMC with the plan's projection, and the ramp-rate tile under it. Data: loadPmc (src/lib/performance/projection.ts). */
-export default function PmcSection({ pmc }: { pmc: Pmc }) {
+/** The PMC with the plan's projection, and the ramp-rate tile under it (`ramp={false}` leaves it out). Data: loadPmc (src/lib/performance/projection.ts). */
+export default function PmcSection({ pmc, ramp = true }: { pmc: Pmc; ramp?: boolean }) {
   const projected = pmc.days.filter((d) => d.projected);
   const end = projected.at(-1);
   return (
@@ -15,7 +15,7 @@ export default function PmcSection({ pmc }: { pmc: Pmc }) {
           {pmc.estimatedWorkouts > 0 && ` ${pmc.estimatedWorkouts} planned ${pmc.estimatedWorkouts === 1 ? 'workout has' : 'workouts have'} no TSS; estimated from duration and intensity.`}
         </p>
       )}
-      <RampRates ramp={pmc.ramp} />
+      {ramp && <RampRates ramp={pmc.ramp} />}
     </div>
   );
 }

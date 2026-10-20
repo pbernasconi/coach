@@ -15,6 +15,7 @@
 
 const PAGES = [
   ['/', 'performance'],
+  ['/trends', 'trends'],
   ['/plan', 'plan'],
   ['/settings', 'settings'],
   ['/lift', 'lift'],
