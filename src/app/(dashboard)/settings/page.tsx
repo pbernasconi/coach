@@ -1,10 +1,10 @@
 import { ownerForSignedInUser } from '@/lib/owner';
-import { loadStatus, loadTargets, type Warning } from '@/lib/status';
+import { loadCoachingNotes, loadStatus, loadTargets, type Warning } from '@/lib/status';
 import StravaService from '@/modules/strava/strava-service';
 import QRCode from 'qrcode';
 import { sql } from '@/db';
 import { createEnrollmentCode } from '@/lib/lift-sync/enroll.mjs';
-import { StravaSyncButton, TargetsForm } from './SettingsControls';
+import { CoachingNotesForm, StravaSyncButton, TargetsForm } from './SettingsControls';
 import ConnectLift from './ConnectLift';
 
 export const dynamic = 'force-dynamic';
@@ -42,7 +42,7 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 export default async function SettingsPage() {
   const userId = await ownerForSignedInUser();
   if (!userId) return <p className="text-sm text-muted-foreground">This account has no Coach data.</p>;
-  const [status, targets] = await Promise.all([loadStatus(userId), loadTargets(userId)]);
+  const [status, targets, coachingNotes] = await Promise.all([loadStatus(userId), loadTargets(userId), loadCoachingNotes(userId)]);
   const levelOf = (source: Warning['source']) =>
     status.warnings.find((w) => w.source === source && w.level === 'error')?.level ??
     status.warnings.find((w) => w.source === source && w.level === 'warn')?.level ??
@@ -112,6 +112,11 @@ export default async function SettingsPage() {
           <TargetsForm targets={targets} />
         </Section>
       </div>
+
+      <Section title="Coaching preferences" level="ok">
+        <p className="text-muted-foreground">Goals, weekly structure and rules in Markdown. /plan and /check-in read them; change them here, not in a chat.</p>
+        <CoachingNotesForm notes={coachingNotes} />
+      </Section>
     </div>
   );
 }

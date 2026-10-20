@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { sql } from '@/db';
 import { ownerForSignedInUser } from '@/lib/owner';
-import { saveTargets, type Targets } from '@/lib/status';
+import { saveCoachingNotes, saveTargets, type Targets } from '@/lib/status';
 import { syncStrava } from '@/lib/strava-sync/sync.mjs';
 
 async function owner() {
@@ -43,4 +43,10 @@ export async function liftSyncState(): Promise<{ lastChangeAt: string | null; se
   const { loadStatus } = await import('@/lib/status');
   const s = await loadStatus(id);
   return { lastChangeAt: s.lift.lastChangeAt, sessions: s.lift.sessions };
+}
+
+export async function saveCoachingNotesAction(notes: string) {
+  const id = await owner();
+  await saveCoachingNotes(id, String(notes).slice(0, 20_000));
+  revalidatePath('/settings');
 }
