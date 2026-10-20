@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { COPIED_RESET_MS, CopyButton } from '../src/components/controls/CopyButton'
@@ -16,11 +16,14 @@ describe('CopyButton', () => {
   })
 
   it('goes back to "Copy" after the reset time', async () => {
-    // No shouldAdvanceTime: real time must not move the clock, or a slow runner passes COPIED_RESET_MS during the click.
+    // Fake timers without shouldAdvanceTime, so real time cannot pass COPIED_RESET_MS on a slow runner. userEvent's
+    // click waits on timers, so the test clicks with fireEvent; setup() still puts in the clipboard stub.
+    userEvent.setup()
     vi.useFakeTimers()
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     render(<CopyButton value="INV-20431" />)
-    await user.click(screen.getByRole('button', { name: 'Copy' }))
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Copy' }))
+    })
     expect(screen.getByRole('button', { name: 'Copied' })).toBeInTheDocument()
     act(() => vi.advanceTimersByTime(COPIED_RESET_MS))
     expect(screen.getByRole('button', { name: 'Copy' })).toBeInTheDocument()
