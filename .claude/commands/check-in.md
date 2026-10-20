@@ -14,7 +14,11 @@ description: Mid-week training check-in. Compares planned vs actual, asks how th
 ## Workflow
 
 ### Step 1 — Find the current plan
-List `plans/`. Read the most recent `plans/YYYY-MM-DD.md` AND `plans/YYYY-MM-DD.json`. If none exists → tell user to run `/plan` first.
+The plan lives in the Coach database. Read this week's (moves, skips and "how I feel" adapts from the web are in it):
+```bash
+node --env-file=.env.local scripts/plan-edit.mjs show YYYY-MM-DD   # any day of the week
+```
+If there is no plan → tell the user to run `/plan` first.
 
 ### Step 2 — Refresh data
 ```bash
@@ -42,7 +46,7 @@ Also surface the **updated fitness state**: new CTL/ATL/TSB and the delta from w
 2. **Reason to change remaining days?** Stay the course / Reduce / Add quality / Reshuffle / Skip ahead
 
 ### Step 5 — Adjust remaining days
-- **Past days**: don't rewrite. Just annotate completion status in the .md table (✅ with actuals; ~~strike~~ for skipped).
+- **Past days**: don't rewrite. Coach already marks them done (Strava and Lift) or missed.
 - **Future days**: freely modify. Apply same coaching principles as /plan.
 
 Common patterns:
@@ -51,43 +55,21 @@ Common patterns:
 - Skipped Tue strength → don't try to "make it up"; continue
 - Weather got worse → outdoor → Zwift swap
 
-### Step 6 — Update the markdown + JSON
-Edit `plans/YYYY-MM-DD.md` in place:
-- Annotate past days
-- Modify upcoming day rows
-- Append a check-in log entry:
-```markdown
-#### {date} check-in
-- {user feel report}
-- {what you changed and why}
-```
-
-Before you change the JSON, read what he changed on the web week page (moves, skips, "how I feel" adapts):
+### Step 6 — Apply the changes (database, then calendar)
+Make each change to a **future** workout in the database. Each command also updates Google Calendar:
 ```bash
-node --env-file=.env.local scripts/plan-import.mjs --show plans/YYYY-MM-DD.json
+node --env-file=.env.local scripts/plan-edit.mjs move <workoutId> YYYY-MM-DD
+node --env-file=.env.local scripts/plan-edit.mjs skip <workoutId>
+node --env-file=.env.local scripts/plan-edit.mjs update <workoutId> title="Easy aerobic ride" duration=60 intensity=easy description="Z2 only"
 ```
-Treat those web changes as his decisions. Put them in the JSON too, so the JSON and the web agree.
+Treat changes he made on the web as his decisions. Past days need no annotation: Coach marks them done from Strava
+and Lift.
 
-If any **future** events were modified (time, sport, intensity, removed), update `plans/YYYY-MM-DD.json` events array to match — keep IDs stable where possible (don't replace events that didn't change).
-
-### Step 7 — Sync calendar (only if .json events changed)
-If you modified the events array in the .json:
-```bash
-node --env-file=.env.local scripts/add-workouts-to-calendar.mjs --plan plans/YYYY-MM-DD.json
-```
-This will delete the old tagged events for the week and create the new ones (idempotent).
-Then copy the plan to the database (web changes are kept):
-```bash
-node --env-file=.env.local scripts/plan-import.mjs --plan plans/YYYY-MM-DD.json
-```
-
-If only **past** days were annotated (no future event changes), skip the calendar sync — nothing changed in the future.
-
-### Step 8 — Report to user
+### Step 7 — Report to user
 Brief output:
 - 1-line summary of what changed (e.g., "Moved Fri tempo to Sat easy. Calendar updated.")
 - Updated fitness snapshot
-- File: `plans/YYYY-MM-DD.md`
+- The week on the web: https://coach.paolobernasconi.com/plan?week=YYYY-MM-DD
 
 ## Notes for you, Claude
 
