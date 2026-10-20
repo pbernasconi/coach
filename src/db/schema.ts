@@ -599,12 +599,14 @@ export type NewCalendarSyncHistory = typeof calendarSyncHistory.$inferInsert;
 export type TrainingPlan = typeof trainingPlans.$inferSelect;
 export type NewTrainingPlan = typeof trainingPlans.$inferInsert;
 /**
- * One structured workout sent to a service (intervals.icu, which passes it on to Zwift and Garmin). One row per
- * plan workout and target; `content_hash` is the hash of what was sent, so a re-run only updates what changed.
+ * One structured workout on a device: a run on the Garmin calendar ('garmin') or an indoor ride as a .zwo file in
+ * Zwift's folder ('zwift'); src/lib/workouts/sync.mjs. One row per plan workout and device; `content_hash` is the
+ * hash of what was sent, so a re-run only changes what changed. `remote_id`: Garmin {workoutId, scheduleId, date}
+ * as JSON, or the .zwo file name.
  */
 export const workoutSyncs = pgTable('workout_syncs', {
   activityId: text('activity_id').notNull(), // training_plan_activities.id (no foreign key: the row can go first)
-  target: text('target').notNull(), // 'intervals'
+  target: text('target').notNull(), // 'garmin' | 'zwift'
   remoteId: text('remote_id').notNull(),
   contentHash: text('content_hash').notNull(),
   status: text('status').notNull(), // 'ok' | 'error'

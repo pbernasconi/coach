@@ -34,8 +34,8 @@ export type CalendarWorkout = Workout & {
   imported: boolean;
   /** Strength: the Lift session planned for it (lift_session_id), else the Lift session that matched it. */
   lift: LiftSessionDetail | null;
-  /** Where its steps were sent (intervals.icu → Zwift, Garmin), or null when never sent. */
-  sync: { status: string; error: string | null; syncedAt: string | null } | null;
+  /** Where its steps are, per device ('garmin' for runs, 'zwift' for indoor rides; src/lib/workouts/sync.mjs). */
+  syncs: Record<string, { status: string; error: string | null; syncedAt: string | null }>;
 };
 
 export type LoadRow = { date: string; ctl: number; atl: number; tsb: number };
@@ -107,8 +107,8 @@ export async function loadRange(userId: string, fromMonday: string, toMonday: st
       SELECT a.id, a.scheduled_date, a.start_time, a.end_time, a.title, a.activity_type, a.workout_type, a.intensity,
              a.duration, a.tss, a.why, a.description, a.status, a.adapted_from, a.sort_order, a.source_key,
              a.lift_session_id, a.steps,
-             (SELECT json_build_object('status', s.status, 'error', s.last_error, 'syncedAt', s.synced_at)
-                FROM workout_syncs s WHERE s.activity_id = a.id AND s.target = 'intervals') AS sync
+             (SELECT json_object_agg(s.target, json_build_object('status', s.status, 'error', s.last_error, 'syncedAt', s.synced_at))
+                FROM workout_syncs s WHERE s.activity_id = a.id) AS syncs
       FROM training_plan_activities a JOIN training_plans p ON p.id = a.plan_id
       WHERE p.user_id = ${userId} AND a.scheduled_date >= ${from} AND a.scheduled_date < ${end}
       ORDER BY a.scheduled_date, a.sort_order, a.start_time NULLS LAST` as Promise<Row[]>,
@@ -151,8 +151,10 @@ export async function loadRange(userId: string, fromMonday: string, toMonday: st
   const linked = new Map(planRows.map((r) => [String(r.id), r.lift_session_id ? String(r.lift_session_id) : null]));
   const syncOf = new Map(
     planRows.map((r) => {
-      const s = r.sync as { status: string; error: string | null; syncedAt: unknown } | null;
-      return [String(r.id), s ? { status: s.status, error: s.error, syncedAt: toIso(s.syncedAt) } : null] as const;
+      const all = (r.syncs ?? {}) as Record<string, { status: string; error: string | null; syncedAt: unknown }>;
+      const out: CalendarWorkout['syncs'] = {};
+      for (const [k, s] of Object.entries(all)) out[k] = { status: s.status, error: s.error, syncedAt: toIso(s.syncedAt) };
+      return [String(r.id), out] as const;
     })
   );
   const liftOf = (id: string | null) => (lift && id ? richSession(lift.model, id, lift.unit) : null);
@@ -162,7 +164,7 @@ export async function loadRange(userId: string, fromMonday: string, toMonday: st
     const act = m.match?.source === 'strava' ? byStrava.get(m.match.id) : null;
     const actual = m.match ? { min: act?.min ?? null, tss: act?.tss ?? null } : null;
     const compliance = complianceOf(w, m.status, actual, { rest: sportOf(w) === 'rest' }) as Compliance;
-    return { ...w, state: m.status, match: m.match, actual, compliance, imported: imported.has(w.id), lift: liftDetail, sync: syncOf.get(w.id) ?? null };
+    return { ...w, state: m.status, match: m.match, actual, compliance, imported: imported.has(w.id), lift: liftDetail, syncs: syncOf.get(w.id) ?? {} };
   });
 
   const load: LoadRow[] = loadRows.map((r) => ({ date: dayOf(r.date), ctl: Number(r.ctl), atl: Number(r.atl), tsb: Number(r.tsb) }));

@@ -2,6 +2,11 @@
 
 Research date: 2026-10-20. Every claim has a source. "Unconfirmed" means that no primary source was found.
 
+> **Decision (2026-10-20):** Paolo chose no service in between. Coach sends runs to Garmin Connect itself, through
+> the existing Garmin job (section 2, "Fallback A"), and writes indoor rides as `.zwo` files on the Mac (section 5,
+> "Fallback B"). intervals.icu is not used. Tested the same day: 6 runs uploaded, scheduled and read back with the
+> same steps; 4 rides written to the Zwift folder.
+
 ## Summary
 
 1. **Recommendation:** Coach stays the source of truth. Coach stores each planned workout as a step list (JSON, section 7). Coach sends the steps to **intervals.icu** with Paolo's personal API key. intervals.icu then pushes the workouts to **Zwift** (an official Zwift integration) and to **Garmin Connect** (its Garmin integration). This gives one bridge, no reverse engineering and no MFA flow.

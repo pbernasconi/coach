@@ -53,6 +53,15 @@ adapted, zones: [{ zone, label, target }] }`. Events leave out cancelled ones, o
 
 Change this file first when a route or a field changes.
 
+## `GET /api/workouts/garmin`, `POST /api/workouts/garmin`
+
+The Garmin job's side of the planned runs (`scripts/garmin/workouts.py`). Bearer `CRON_SECRET`. GET returns
+`{ from, to, ops: [{ op: 'create' | 'update' | 'delete', activityId, hash, date, workout, remote }] }` for the next
+14 days: `workout` is Garmin workout JSON (`src/lib/workouts/garmin.mjs`), `remote` is what Garmin has now
+(`{ workoutId, scheduleId, date }`). POST takes `{ results: [{ activityId, op, ok, error?, hash, remote }] }` (at most
+200) and stores them in `workout_syncs`. Indoor rides go to Zwift from the Mac (`scripts/zwift-workouts.mjs`), not
+through an API.
+
 ## Health
 
 Daily vitals and lab results. They are shown on `/health`, and `scripts/health-profile.mjs` adds them to profile.md.
