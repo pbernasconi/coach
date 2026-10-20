@@ -24,12 +24,14 @@ extension ExerciseHistoryRow {
         )
     }
 
-    /// "5 @ 100 kg", or "8 reps" for a set without load.
-    private static func setText(_ set: SetRecord) -> String {
-        switch (set.actualReps, set.actualWeight) {
-        case (let reps?, nil): String(localized: "\(reps) reps")
-        default: WorkoutText.values(reps: set.actualReps, weight: set.actualWeight) ?? String(localized: "Logged")
-        }
+    /// "5 @ 100 kg", or "8 reps" for a set without load, with its RPE when it has one ("5 @ 100 kg · RPE 8").
+    static func setText(_ set: SetRecord) -> String {
+        let values =
+            switch (set.actualReps, set.actualWeight) {
+            case (let reps?, nil): String(localized: "\(reps) reps")
+            default: WorkoutText.values(reps: set.actualReps, weight: set.actualWeight) ?? String(localized: "Logged")
+            }
+        return [values, set.rpe.map(WorkoutText.rpe)].compactMap(\.self).joined(separator: " · ")
     }
 
     /// A set with its estimate, ranked across units.

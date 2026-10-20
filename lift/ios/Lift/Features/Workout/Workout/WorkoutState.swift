@@ -8,6 +8,8 @@ nonisolated struct WorkoutState: Equatable, Sendable {
     var workout: Loadable<WorkoutOverview> = .loading
     /// The weight and reps editor, while it is open.
     var editor: SetEditor?
+    /// The note editor for the session or one exercise, while it is open.
+    var noteEditor: NoteEditor?
     /// The rest countdown after a set was logged.
     var rest: RestTimer?
     /// The latest message for the toast slot.
@@ -80,9 +82,11 @@ nonisolated struct WorkoutSetItem: Equatable, Sendable, Identifiable {
     var previous: String?
     /// What was written about this set ("paused"); nil when nothing was.
     var note: String?
+    /// The set's effort ("RPE 8.5"); nil when it was not recorded.
+    var rpe: String?
 }
 
-/// The weight and reps editor for one set. Done saves the values only; it never logs the set.
+/// The weight, reps, RPE and note editor for one set. Done saves them; it never logs the set.
 nonisolated struct SetEditor: Equatable, Sendable, Identifiable {
     /// The set being edited.
     var id: UUID
@@ -102,8 +106,35 @@ nonisolated struct SetEditor: Equatable, Sendable, Identifiable {
     var laterSets: Int = 0
     /// Done also saves the weight onto the later planned sets of the same kind, each keeping its own reps.
     var appliesToLater = true
+    /// The chosen RPE on the `RPE` scale; nil when none is chosen.
+    var rpe: Double?
+    /// The set's note as typed.
+    var note = ""
+    /// The RPE and note when the editor opened.
+    var savedRPE: Double?
+    var savedNote = ""
 
-    var hasChanges: Bool { weight != savedWeight || reps != savedReps }
+    var hasValueChanges: Bool { weight != savedWeight || reps != savedReps }
+    var hasDetailChanges: Bool { rpe != savedRPE || note != savedNote }
+    var hasChanges: Bool { hasValueChanges || hasDetailChanges }
+}
+
+/// The note editor for the whole session or one exercise. Done saves the text; an empty text clears the note.
+nonisolated struct NoteEditor: Equatable, Sendable, Identifiable {
+    enum Target: Hashable, Sendable {
+        case session(UUID)
+        case exercise(UUID)
+    }
+
+    var target: Target
+    /// "Workout note" or "Note · Back squat".
+    var title: String
+    var text: String
+    /// The text when the editor opened.
+    var savedText: String
+
+    var id: Target { target }
+    var hasChanges: Bool { text != savedText }
 }
 
 /// A short message for the toast slot. `serial` changes with every message, so the same message can show twice.

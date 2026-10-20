@@ -20,6 +20,7 @@ All scripts use `node --env-file=.env.local` (env vars come from `.env.local`).
 | `strava-backfill.mjs` | Incremental sync by default (uses `last_synced_at`). Pulls list, optionally `--detailed` (description, laps, splits, suffer_score) and `--streams` (HR/watts/etc.). Computes & persists `tss`, `tss_method`, `zone_times` per activity, then rebuilds `daily_training_load` (CTL/ATL/TSB). `--days N` or `--force` for explicit windows. | `coach-profile.mjs` auto, manual |
 | `recompute-tss.mjs` | Recomputes every activity's TSS with the current thresholds (`src/lib/strava-sync/tss.mjs`) and rebuilds `daily_training_load`. `--dry-run` shows the change by sport; `--fetch-streams [--limit N]` first fetches missing streams within Strava's rate limit. | manual, after a TSS rule change |
 | `function-sync.mjs` | Reads Function Health and posts it to `POST /api/vitals/function`. No database access. | `function.yml`, by hand |
+| `plan-cloud/client.mjs` | The cloud plan job's calls to Coach: claim the request, send the plan, record a failure (`POST /api/plan/proposals`). No database access. `plan-cloud/PROMPT.md` is the agent's instructions. | `plan.yml` |
 | `calendar-sync.mjs` | Pull events from all active calendar connections into `calendar_events`. Refreshes OAuth on each run. Marks deleted events as cancelled. `--days-back 7` / `--days-forward 30` configurable. | `coach-profile.mjs` auto, manual |
 
 ## Tests
