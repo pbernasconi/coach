@@ -24,10 +24,9 @@ export type Proposal = {
 };
 
 type Row = Record<string, unknown>;
-const day = (v: unknown): string => toDay(v) ?? '';
 
 function toProposal(r: Row): Proposal {
-  const weekStart = day(r.week_start);
+  const weekStart = (toDay(r.week_start) ?? '');
   const rows = r.plan ? checkPlan(r.plan, weekStart).rows : [];
   return {
     id: String(r.id),
@@ -75,7 +74,7 @@ export async function claimRequest(userId: string, id: string | null): Promise<{
 export async function submitPlan(userId: string, id: string, plan: unknown, summary: string | null): Promise<{ error: string } | { events: number; tss: number }> {
   const [p] = (await sql`SELECT week_start FROM plan_proposals WHERE id = ${id} AND user_id = ${userId} AND status = 'running'`) as Row[];
   if (!p) return { error: 'No running request with that id.' };
-  const { errors, rows } = checkPlan(plan, day(p.week_start));
+  const { errors, rows } = checkPlan(plan, (toDay(p.week_start) ?? ''));
   if (errors.length) {
     await failRequest(userId, id, `The plan did not pass the checks: ${errors.slice(0, 3).join(' ')}`);
     return { error: errors.join(' ') };
@@ -120,7 +119,7 @@ export async function acceptProposal(
 ): Promise<{ error: string } | { weekStart: string; counts: { inserted: number; updated: number; kept: number; deleted: number } }> {
   const [r] = (await sql`SELECT * FROM plan_proposals WHERE id = ${id} AND user_id = ${userId} AND status = 'proposed'`) as Row[];
   if (!r) return { error: 'This plan is no longer waiting for you.' };
-  const weekStart = day(r.week_start);
+  const weekStart = (toDay(r.week_start) ?? '');
   const counts = await importPlan(sql, userId, r.plan as object, (r.summary as string) ?? undefined);
   await sql`UPDATE plan_proposals SET status = 'accepted', decided_at = NOW(), updated_at = NOW() WHERE id = ${id}`;
   // Older open requests are now out of date.
