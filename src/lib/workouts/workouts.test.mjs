@@ -161,3 +161,33 @@ test('stepsOf: a bank reference becomes steps for the sport of the workout type;
   assert.equal(stepsOf({ title: 'Easy' }, 45), null);
   assert.throws(() => stepsOf({ title: 'Bad', steps: { version: 1, sport: 'ride', steps: [] } }, 45), /no steps/);
 });
+
+import { intervalsEvent } from './sync.mjs';
+import { connectionProblems, intervalsClient } from './intervals.mjs';
+
+test('intervalsEvent: a VirtualRide with our .zwo, a stable uid and a dated unique name', () => {
+  const e = intervalsEvent({ ...row('a1'), start_time: '07:00' });
+  assert.equal(e.type, 'VirtualRide');
+  assert.equal(e.uid, 'coach:a1');
+  assert.equal(e.name, '10-21 Threshold A — Zwift');
+  assert.equal(e.start_date_local, '2026-10-21T07:00:00');
+  assert.equal(e.filename, '10-21 Threshold A  Zwift.zwo');
+  assert.match(e.file_contents, /<IntervalsT Repeat="6"/);
+  assert.equal(payloadFor('intervals', run('r')), null); // runs go to Garmin
+  assert.equal(payloadFor('intervals', row('z')).event.uid, 'coach:z');
+});
+
+test('connectionProblems and the client: Zwift link checks; create and update by id', async () => {
+  assert.equal(connectionProblems({ zwift_user_id: 1 }).length, 0);
+  assert.match(connectionProblems({})[0], /not connected/);
+  assert.match(connectionProblems({ zwift_user_id: 1, zwift_upload_workouts: false })[0], /does not upload/);
+  const calls = [];
+  const c = intervalsClient({ INTERVALS_API_KEY: 'k', INTERVALS_ATHLETE_ID: 'i1' }, async (url, init) => {
+    calls.push([url, init.method]);
+    return { ok: true, status: 200, text: async () => '{"id":7}' };
+  });
+  assert.deepEqual(await c.create({}), { id: 7 });
+  await c.update('7', {});
+  assert.deepEqual(calls, [['https://intervals.icu/api/v1/athlete/i1/events', 'POST'], ['https://intervals.icu/api/v1/athlete/i1/events/7', 'PUT']]);
+  assert.equal(intervalsClient({}), null);
+});

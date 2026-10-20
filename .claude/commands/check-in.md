@@ -63,11 +63,11 @@ node --env-file=.env.local scripts/plan-edit.mjs skip <workoutId>
 node --env-file=.env.local scripts/plan-edit.mjs update <workoutId> title="Easy aerobic ride" duration=60 intensity=easy description="Z2 only"
 node --env-file=.env.local scripts/plan-edit.mjs update <workoutId> lift_template="Upper (dumbbells)"
 node --env-file=.env.local scripts/lift-plan.mjs
-node --env-file=.env.local scripts/zwift-workouts.mjs
+node --env-file=.env.local scripts/zwift-intervals.mjs
 gh workflow run garmin.yml --repo pbernasconi/coach -f workouts_only=true
 ```
-These bring Zwift (the .zwo files on this Mac) and the Garmin calendar in line with the changed workouts. Without
-them, the Mac does it within 30 minutes and the Garmin job within the hour.
+These bring Zwift (through intervals.icu) and the Garmin calendar in line with the changed workouts. Without them,
+the cloud does it within 30 minutes (Zwift) and within the hour (Garmin).
 
 ### Step 7 — Report to user
 Brief output:
