@@ -26,5 +26,9 @@ export default async function PlanPage({ searchParams }: { searchParams: Promise
   const { week: weekParam } = await searchParams;
   const weekStart = mondayOf(/^\d{4}-\d{2}-\d{2}$/.test(weekParam ?? '') ? weekParam! : today);
   const week = await loadWeek(userId, weekStart, today);
-  return <PlanBoard week={week} timeZone={timeZone} />;
+  return (
+    <div data-smoke="plan">
+      <PlanBoard week={week} timeZone={timeZone} />
+    </div>
+  );
 }

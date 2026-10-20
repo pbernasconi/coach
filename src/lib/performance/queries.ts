@@ -1,6 +1,7 @@
 import { sql } from '@/db';
 import { loadLiftModel } from '@/lib/lift-dashboard/queries';
 import { sessionSummaries } from '@/lib/lift-dashboard/stats.mjs';
+import { toDay, toIso } from '@/lib/db-time.mjs';
 import { addDays, mondayOf, sportOfStrava } from '@/lib/plan/week.mjs';
 import { stravaTypeLabel, type SportId } from '@/lib/sports';
 
@@ -31,7 +32,6 @@ export type Performance = {
 };
 
 type Row = Record<string, unknown>;
-const day = (v: unknown) => (v instanceof Date ? v.toISOString().slice(0, 10) : String(v).slice(0, 10));
 
 export async function loadPerformance(userId: string, today: string, weekCount = 12): Promise<Performance> {
   const firstWeek = addDays(mondayOf(today), -7 * (weekCount - 1));
@@ -61,9 +61,9 @@ export async function loadPerformance(userId: string, today: string, weekCount =
   let latest = '';
 
   for (const a of acts) {
-    const d = day(a.start_date_local);
-    const w = weeks.get(mondayOf(d));
-    if (!w) continue;
+    const d = toDay(a.start_date_local);
+    const w = d ? weeks.get(mondayOf(d)) : undefined;
+    if (!d || !w) continue;
     if (d > latest) latest = d;
     const min = Number(a.moving_time ?? 0) / 60;
     const km = Number(a.distance ?? 0) / 1000;
@@ -98,9 +98,9 @@ export async function loadPerformance(userId: string, today: string, weekCount =
   // Plan compliance: a past planned workout counts as done when an activity of the same sport is on that day.
   for (const p of plans) {
     if (p.activity_type === 'rest' || p.status === 'skipped') continue;
-    const d = day(p.scheduled_date);
-    const w = weeks.get(mondayOf(d));
-    if (!w) continue;
+    const d = toDay(p.scheduled_date);
+    const w = d ? weeks.get(mondayOf(d)) : undefined;
+    if (!d || !w) continue;
     w.planned += 1;
     const sport = String(p.activity_type);
     if (sport === 'strength' ? strengthDays.has(d) : activityDays.get(d)?.has(sport)) w.done += 1;
@@ -108,8 +108,11 @@ export async function loadPerformance(userId: string, today: string, weekCount =
 
   return {
     weeks: [...weeks.values()],
-    load: load.map((r) => ({ date: day(r.date), ctl: Number(r.ctl), atl: Number(r.atl), tsb: Number(r.tsb), tss: Number(r.tss ?? 0) })),
+    load: load.flatMap((r) => {
+      const date = toDay(r.date);
+      return date ? [{ date, ctl: Number(r.ctl), atl: Number(r.atl), tsb: Number(r.tsb), tss: Number(r.tss ?? 0) }] : [];
+    }),
     latestActivity: latest || null,
-    lastSync: conn[0]?.last_synced_at ? String(conn[0].last_synced_at) : null,
+    lastSync: toIso(conn[0]?.last_synced_at),
   };
 }

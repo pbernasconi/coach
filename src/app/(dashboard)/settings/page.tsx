@@ -68,7 +68,7 @@ export default async function SettingsPage() {
     : null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-smoke="settings">
       <div className="space-y-1">
         <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
         <p className="text-muted-foreground">Connections, sync status and weekly targets.</p>

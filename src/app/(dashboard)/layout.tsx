@@ -1,13 +1,17 @@
 import Link from 'next/link';
 import { ownerForSignedInUser } from '@/lib/owner';
-import { loadStatus } from '@/lib/status';
+import { safe } from '@/lib/safe';
+import { loadStatus, type Warning } from '@/lib/status';
 import DashboardNav from './DashboardNav';
 
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const owner = await ownerForSignedInUser();
-  const warnings = owner ? (await loadStatus(owner)).warnings.filter((w) => w.level !== 'info') : [];
+  // The banner is optional: if its status query fails, every page still renders (the 2026-10-19 outage).
+  const warnings = owner
+    ? await safe('status banner', async () => (await loadStatus(owner)).warnings.filter((w) => w.level !== 'info'), [] as Warning[])
+    : [];
   return (
     <div className="min-h-screen bg-background">
       <DashboardNav />
