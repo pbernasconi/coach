@@ -13,6 +13,7 @@ import { loadPeakPerformances } from '@/lib/performance/peaks';
 import { loadEventsWithCountdown } from '@/lib/performance/events';
 import { loadClinicianNotes, loadGarminStatus, loadHealth } from '@/lib/vitals/queries';
 import { loadDay, loadGarminSections, loadRecoveryToday, loadTraining } from '@/lib/vitals/garmin-pages';
+import { loadBiomarker, loadLabsIndex } from '@/lib/vitals/labs-pages';
 import { loadActivity, loadActivityContext } from '@/lib/activity/queries';
 
 export type Check = { name: string; ok: boolean; ms: number; error?: string };
@@ -57,6 +58,13 @@ export async function runChecks(now = new Date(), { migrations = true }: { migra
     check('health day', () => loadDay(userId, today)),
     check('health day (yesterday)', () => loadDay(userId, addDays(today, -1))),
     check('health training', () => loadTraining(userId, today)),
+    check('lab results', () => loadLabsIndex(userId)),
+    // Every biomarker page, so one odd catalog row fails here and not only on its page.
+    check('lab biomarkers', async () => {
+      const index = await loadLabsIndex(userId);
+      const slugs = [...new Set(index.sections.flatMap((s) => s.items.map((i) => i.slug)))];
+      for (const slug of slugs) if (!(await loadBiomarker(userId, slug))) throw new Error(`no page for ${slug}`);
+    }),
     check('health garmin sections', () => loadGarminSections(userId, today)),
     check('recovery today', () => loadRecoveryToday(userId, today)),
     check('activity (latest)', async () => {

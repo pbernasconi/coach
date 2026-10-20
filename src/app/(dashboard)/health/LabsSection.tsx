@@ -1,4 +1,6 @@
+import Link from 'next/link';
 import type { Biomarker, LabCategory, LabReading } from '@/lib/vitals/queries';
+import { slug } from '@/lib/vitals/function-catalog.mjs';
 
 const fmtDate = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 const num = (v: number) => (Math.abs(v) >= 100 ? String(Math.round(v)) : String(+v.toPrecision(3)));
@@ -60,7 +62,9 @@ function BiomarkerRow({ b }: { b: Biomarker }) {
   return (
     <li className="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1 py-2.5 sm:grid-cols-[minmax(9rem,1.2fr)_minmax(6rem,auto)_minmax(8rem,1.4fr)]">
       <div className="min-w-0">
-        <div className="truncate text-sm font-medium text-[var(--viz-ink)]">{b.biomarker}</div>
+        <Link href={`/health/labs/${slug(b.biomarker)}`} className="block truncate text-sm font-medium text-[var(--viz-ink)] underline-offset-2 hover:underline">
+          {b.biomarker}
+        </Link>
         <div className="text-xs text-[var(--viz-muted)]">
           {[ref && `Range ${ref}`, opt && `optimal ${opt}`].filter(Boolean).join(' · ') || 'No reference range'}
         </div>
@@ -99,7 +103,10 @@ export default function LabsSection({ categories, draws }: { categories: LabCate
   return (
     <section className="space-y-3">
       <div>
-        <h2 className="text-xl font-semibold tracking-tight">Labs</h2>
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-xl font-semibold tracking-tight">Labs</h2>
+          {total > 0 && <Link href="/health/labs" className="text-sm underline underline-offset-4">See all results →</Link>}
+        </div>
         <p className="text-sm text-muted-foreground">
           {total
             ? `${total} biomarkers from ${draws.length} ${draws.length === 1 ? 'draw' : 'draws'}; latest ${fmtDate(draws[draws.length - 1])}. ${out} out of range.`

@@ -22,6 +22,8 @@ const PAGES = [
   ['/plan?view=month', 'plan'],
   ['/health', 'health'],
   ['/health/training', 'health-training'],
+  ['/health/labs', 'health-labs'],
+  ['/health/labs/glucose', 'health-lab'],
   ['/health/day/today', 'health-day'],
   [`/health/day/${new Date(Date.now() - 864e5).toISOString().slice(0, 10)}`, 'health-day'],
   ['/goals', 'goals'],
