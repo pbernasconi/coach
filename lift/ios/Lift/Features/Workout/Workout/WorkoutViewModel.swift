@@ -21,6 +21,7 @@ final class WorkoutViewModel {
     /// The gym's bars and plates, for plates per side, warm-ups and the weight step; read each time the session shows.
     private let gym: any GymPreference
     private let days: DayCalendar
+    private let now: @Sendable () -> Date  // when a rest ran out
     /// The latest session from the store; the source for the editor, Add set and rest times.
     @ObservationIgnored private(set) var detail: SessionDetail?
     /// Add, move and remove exercises, finish, discard and Save as template (`WorkoutViewModel+Session`).
@@ -65,6 +66,7 @@ final class WorkoutViewModel {
         self.previousSets = PreviousSetsLoader(history: history)
         self.gym = gym
         self.days = DayCalendar(calendar: calendar)
+        self.now = now
     }
 
     /// Observes the session; started by the Screen's `.task` (SCR-4). The first time the session loads, it also reads
@@ -105,7 +107,7 @@ final class WorkoutViewModel {
             }
             guard let current = state.rest, current.run == rest.run else { return }
             state.rest = restActivity.tick(current)
-            if state.rest == nil { endRest() }
+            if state.rest == nil { finishRest(after: current.setID) }
         }
     }
 
@@ -135,7 +137,8 @@ final class WorkoutViewModel {
             defer { state.noteEditor = nil }
             return state.noteEditor.flatMap(saveNote)
         case .restExtendTapped: extendRest()
-        case .restSkipTapped: endRest()
+        case .restSkipTapped: finishRest(after: state.rest?.setID)
+        case .restReadyDismissed: state.ready = nil
         case .howToTapped(let exerciseID): router.open(.exercise(exerciseID))
         case .thumbnailNeeded(let catalogID): return loadThumbnail(catalogID)
         case .workoutOptionsTapped, .exerciseOptionsTapped, .optionsDismissed: state.options = options(for: action)
@@ -156,7 +159,7 @@ final class WorkoutViewModel {
             do {
                 if isPlanned {
                     _ = try await sets.log(setID: id)
-                    startRest(seconds: restSeconds, activity: activity)
+                    startRest(seconds: restSeconds, activity: activity, setID: id)
                 } else {
                     _ = try await sets.unlog(setID: id)
                 }
@@ -213,28 +216,6 @@ final class WorkoutViewModel {
         state.noteEditor = editor
     }
 
-    /// Starts the countdown in the app and on the Lock Screen and Dynamic Island; leaving the workout ends both.
-    private func startRest(seconds: Int, activity: RestActivityStart?) {
-        guard seconds > 0 else {
-            endRest()
-            return
-        }
-        state.rest = RestTimer(run: (state.rest?.run ?? 0) + 1, seconds: seconds)
-        restActivity.start(seconds: seconds, activity: activity)
-    }
-
-    /// +30s, on top of any time added on the Lock Screen meanwhile.
-    private func extendRest() {
-        guard let rest = state.rest, let next = restActivity.extend(by: RestTimer.extensionSeconds) else { return }
-        state.rest = rest.extended(by: next.totalSeconds - rest.total)
-    }
-
-    /// Skip or zero: the countdown goes away in the app and on the Live Activity.
-    private func endRest() {
-        state.rest = nil
-        restActivity.end()
-    }
-
     private func loadThumbnail(_ catalogID: String) -> Task<Void, Never>? {
         guard state.thumbnails[catalogID] == nil else { return nil }
         state.thumbnails[catalogID] = .loading
@@ -245,5 +226,25 @@ final class WorkoutViewModel {
     func showToast(_ kind: WorkoutToast.Kind) {
         serial += 1
         state.toast = WorkoutToast(serial: serial, kind: kind)
+    }
+}
+
+extension WorkoutViewModel {
+    /// A new rest from full for the set just ticked, even while another is running; also on the Lock Screen.
+    private func startRest(seconds: Int, activity: RestActivityStart?, setID: UUID) {
+        state.beginRest(seconds: seconds, setID: setID)
+        if state.rest == nil { restActivity.end() } else { restActivity.start(seconds: seconds, activity: activity) }
+    }
+
+    /// +30s, on top of any time added on the Lock Screen meanwhile.
+    private func extendRest() {
+        guard let rest = state.rest, let next = restActivity.extend(by: RestTimer.extensionSeconds) else { return }
+        state.rest = rest.extended(by: next.totalSeconds - rest.total)
+    }
+
+    /// Zero, or Skip here or on the Lock Screen: the countdown ends everywhere and the bar turns to the next set.
+    private func finishRest(after setID: UUID?) {
+        state.readyNext(after: setID, at: now())
+        restActivity.end()
     }
 }

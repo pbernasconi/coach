@@ -53,7 +53,19 @@ import Testing
 
         #expect(second == nil)
         #expect(sets.calls == [.log(firstSetID(planned))])
-        #expect(vm.state.rest == RestTimer(run: 1, seconds: RestTimer.defaultSeconds))
+        #expect(vm.state.rest == RestTimer(run: 1, seconds: RestTimer.defaultSeconds, setID: firstSetID(planned)))
+    }
+
+    @Test func setLogTappedDuringARestRestartsItFromFullForTheNewSet() async {
+        let vm = makeViewModel(planned, sets: recorder(planned))
+        await vm.run()
+        await vm.send(.setLogTapped(firstSetID(planned)))?.value
+        vm.send(.restExtendTapped)
+        let second = planned.items[0].sets[1].id
+
+        await vm.send(.setLogTapped(second))?.value
+
+        #expect(vm.state.rest == RestTimer(run: 2, seconds: RestTimer.defaultSeconds, setID: second))
     }
 
     @Test func setLogTappedOnALoggedSetUnlogsIt() async {
@@ -214,7 +226,7 @@ import Testing
 
         vm.send(.restExtendTapped)
 
-        #expect(vm.state.rest == RestTimer(run: 1, seconds: 90).extended(by: 30))
+        #expect(vm.state.rest == RestTimer(run: 1, seconds: 90, setID: firstSetID(planned)).extended(by: 30))
         #expect(vm.state.rest?.remaining == 120)
     }
 

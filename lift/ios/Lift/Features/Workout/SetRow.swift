@@ -14,6 +14,11 @@ nonisolated enum SetGridWidth {
     static let inset = Space.cardInset
 }
 
+/// The resting set's highlight strength (a maths constant, not a colour).
+nonisolated enum RestingRow {
+    static let washOpacity: Double = 0.5
+}
+
 /// One set in the grid: its badge, the same set last time, weight and reps pills that open the editor (which never
 /// logs), and a check that logs it in one tap (or un-logs it). Skip and Remove sit in the context menu. At accessibility
 /// sizes the row stacks, so nothing is cut off.
@@ -25,6 +30,8 @@ struct SetRow: View {
     @ScaledMetric(relativeTo: .body) private var repsWidth = SetGridWidth.reps
     let item: WorkoutSetItem
     let unit: WeightUnit
+    /// The rest running now follows this set: the row gets a soft amber wash so the eye finds it.
+    let isResting: Bool
     let onLog: () -> Void
     let onEdit: () -> Void
     let onSkip: () -> Void
@@ -41,6 +48,8 @@ struct SetRow: View {
         .padding(.horizontal, SetGridWidth.inset)
         .padding(.vertical, Space.xxs)
         .frame(maxWidth: .infinity, minHeight: Size.minTouch, alignment: .leading)
+        .background(isResting ? theme.palette.accentSoft.opacity(RestingRow.washOpacity) : .clear)
+        .koboAnimation(.state, value: isResting)
         .overlay(alignment: .top) { Separator(leadingInset: SetGridWidth.inset) }
         .contextMenu {
             if item.status == .planned {
