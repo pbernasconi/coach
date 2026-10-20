@@ -247,7 +247,7 @@ export default function PlanBoard({
                 </div>
                 {d >= week.today && d <= weatherUntil && weather[d] && (
                   <div className="mt-0.5">
-                    <WeatherBadge w={weather[d]} compact />
+                    <WeatherBadge w={weather[d]} date={d} compact />
                   </div>
                 )}
               </div>
