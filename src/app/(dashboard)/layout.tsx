@@ -3,6 +3,7 @@ import { Suspense } from 'react';
 import { ownerForSignedInUser } from '@/lib/owner';
 import { safe } from '@/lib/safe';
 import { loadStatus, type Warning } from '@/lib/status';
+import HotkeysProvider from '@/components/hotkeys/HotkeysProvider';
 import DashboardNav from './DashboardNav';
 import MainContainer from './MainContainer';
 
@@ -30,12 +31,14 @@ async function StatusBanner() {
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-background">
-      <DashboardNav />
-      <Suspense fallback={null}>
-        <StatusBanner />
-      </Suspense>
-      <MainContainer>{children}</MainContainer>
-    </div>
+    <HotkeysProvider>
+      <div className="min-h-screen bg-background">
+        <DashboardNav />
+        <Suspense fallback={null}>
+          <StatusBanner />
+        </Suspense>
+        <MainContainer>{children}</MainContainer>
+      </div>
+    </HotkeysProvider>
   );
 }

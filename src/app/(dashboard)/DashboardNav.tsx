@@ -13,6 +13,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { useState } from 'react';
+import { NAV_KEYS } from '@/lib/hotkeys.mjs';
 
 // Every nav link (and the Coach logo: a partial prefetch of / would take the cache slot first) prefetches its page in full (data included) when it is on screen, so a click is instant; the
 // browser keeps it for staleTimes.static (next.config.ts).
@@ -24,6 +25,9 @@ const navLinks = [
   { href: '/health', label: 'Health' },
   { href: '/settings', label: 'Settings' },
 ];
+
+/** The hotkey of a nav section (src/components/hotkeys/HotkeysProvider.tsx; ? shows them all). */
+const keyOf = (href: string) => NAV_KEYS.find((n) => n.href === href)?.key;
 
 export default function DashboardNav() {
   const pathname = usePathname();
@@ -85,6 +89,8 @@ export default function DashboardNav() {
                   href={link.href}
                   prefetch
                   aria-current={isActive(link.href) ? 'page' : undefined}
+                  title={`${link.label} · press ${keyOf(link.href)}`}
+                  aria-keyshortcuts={keyOf(link.href)}
                   className={`transition-colors hover:text-foreground/80 ${isActive(link.href) ? 'text-foreground' : 'text-foreground/60'}`}
                 >
                   {link.label}
