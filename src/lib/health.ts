@@ -3,6 +3,7 @@ import { GET as homeSummary } from '@/app/api/home/route';
 import { sql } from '@/db';
 import { loadLiftModel } from '@/lib/lift-dashboard/queries';
 import { exerciseDetail, exerciseList, muscleSets, sessionDetail, sessionSummaries, topLifts, weeklyVolume } from '@/lib/lift-dashboard/stats.mjs';
+import { liftOverview } from '@/lib/lift-dashboard/overview.mjs';
 import { loadPerformance } from '@/lib/performance/queries';
 import { loadWeek, ownerId } from '@/lib/plan/queries';
 import { addDays, mondayOf, todayIn } from '@/lib/plan/week.mjs';
@@ -80,6 +81,7 @@ export async function runChecks(now = new Date(), { migrations = true }: { migra
       // Every session page, so one odd row fails here and not only on its page.
       for (const s of sessionSummaries(model, unit)) sessionDetail(model, s.id, unit);
       weeklyVolume(model, unit);
+      liftOverview(model, unit, today);
       for (const e of exerciseList(model, unit)) exerciseDetail(model, e.key, unit);
     }),
   ]);

@@ -154,7 +154,15 @@ export function buildModel(data) {
     if (!se) continue;
     const session = sessions.get(se.sessionId);
     const unit = /** @type {Unit} */ (set.unit === 'lb' ? 'lb' : 'kg');
+    const status = str(set.status) ?? 'planned';
+    let reps = num(set.actualReps);
     let weight = num(set.actualWeight);
+    // A done set without values counts its target, as Lift's own `log` and the importer do (LiveSetRepository):
+    // older synced sets kept only the target, and showed 0 volume.
+    if (status === 'done') {
+      reps = reps ?? num(set.targetReps) ?? num(set.targetRepMin);
+      weight = weight ?? num(set.targetWeight);
+    }
     if (weight === null && se.loadMode === 'bodyweight' && se.loadAddedValue !== null) {
       weight = convert(se.loadAddedValue, /** @type {Unit} */ (se.loadAddedUnit), unit);
     }
@@ -168,8 +176,8 @@ export function buildModel(data) {
       exerciseKey: se.key,
       exerciseName: se.name,
       kind: str(set.kind) ?? 'working',
-      status: str(set.status) ?? 'planned',
-      reps: num(set.actualReps),
+      status,
+      reps,
       weight,
       unit,
       targetReps: num(set.targetReps),
@@ -316,19 +324,23 @@ export function sessionSummaries(model, unit, { planned = false } = {}) {
 
 /**
  * Volume and counted sets per ISO week (Monday start), newest first, including empty weeks between the
- * first and last logged week.
+ * first and last logged week. Sessions with nothing logged (planned ahead) are left out.
  * @param {ReturnType<typeof buildModel>} model
  * @param {Unit} unit
  */
 export function weeklyVolume(model, unit) {
+  // Only sessions with a logged set: a session planned ahead (next week's, say) is not a week of training.
+  const logged = new Set(model.sets.filter((set) => set.status === 'done').map((set) => set.sessionId));
   const weeks = new Map();
   for (const s of model.sessions.values()) {
+    if (!logged.has(s.id)) continue;
     const w = weekStart(s.day);
     if (!weeks.has(w)) weeks.set(w, { week: w, sessions: 0, sets: 0, volume: 0 });
     weeks.get(w).sessions += 1;
   }
   for (const set of model.sets) {
     const w = weeks.get(weekStart(set.day));
+    if (!w || !logged.has(set.sessionId)) continue;
     if (isCountedSet(set)) w.sets += 1;
     w.volume += setVolume(set, unit);
   }
