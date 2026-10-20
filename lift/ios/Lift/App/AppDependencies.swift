@@ -100,7 +100,7 @@ final class AppDependencies {
             inbox: AppGroupNoteInbox(bundle: .main),
             importFlow: importFlow,
             templateLinks: templateLinks,
-            syncLinks: SyncTokenLink(sync: sync)
+            syncLinks: SyncEnrollmentLink(sync: sync)
         )
     }
 

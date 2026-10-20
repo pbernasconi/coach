@@ -2,6 +2,8 @@ import { ownerForSignedInUser } from '@/lib/owner';
 import { loadStatus, loadTargets, type Warning } from '@/lib/status';
 import StravaService from '@/modules/strava/strava-service';
 import QRCode from 'qrcode';
+import { sql } from '@/db';
+import { createEnrollmentCode } from '@/lib/lift-sync/enroll.mjs';
 import { StravaSyncButton, TargetsForm } from './SettingsControls';
 import ConnectLift from './ConnectLift';
 
@@ -51,8 +53,11 @@ export default async function SettingsPage() {
     status.warnings.filter((w) => w.source === source && !(source === 'lift' && w.level === 'info')).map((w) => (
       <p key={w.text} className="flex items-start gap-2 rounded bg-muted/50 p-2"><Dot level={w.level} /> {w.text}</p>
     ));
-  // lift://sync carries the token: the iPhone opens it (tap or camera) and Lift stores it and syncs.
-  const liftLink = process.env.LIFT_SYNC_TOKEN ? `lift://sync?token=${encodeURIComponent(process.env.LIFT_SYNC_TOKEN)}` : null;
+  // lift://sync carries a one-time code, never the token: Lift trades it for the token over HTTPS
+  // (/api/lift/enroll). A new code each time the page renders, valid 15 minutes.
+  const liftLink = process.env.LIFT_SYNC_TOKEN
+    ? `lift://sync?code=${(await createEnrollmentCode(sql)).code}`
+    : null;
   const liftQr = liftLink ? await QRCode.toString(liftLink, { type: 'svg', margin: 0, errorCorrectionLevel: 'M' }) : '';
   const connectUrl = status.strava.canConnect
     ? new StravaService({

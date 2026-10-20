@@ -85,6 +85,13 @@
       "when": 1792455622295,
       "tag": "0011_user_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792462591467,
+      "tag": "0012_lift_enrollments",
+      "breakpoints": true
     }
   ]
 }

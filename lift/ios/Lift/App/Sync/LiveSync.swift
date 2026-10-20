@@ -6,10 +6,12 @@ final class LiveSync: Syncing {
     let isConfigured = true
     private let engine: SyncEngine
     private let tokens: any TokenStoring
+    private let enrollment: any Enrolling
 
-    init(engine: SyncEngine, tokens: any TokenStoring) {
+    init(engine: SyncEngine, tokens: any TokenStoring, enrollment: any Enrolling) {
         self.engine = engine
         self.tokens = tokens
+        self.enrollment = enrollment
     }
 
     @discardableResult
@@ -32,6 +34,10 @@ final class LiveSync: Syncing {
         } else {
             try tokens.save(trimmed)
         }
+    }
+
+    func redeem(enrollmentCode: String) async throws {
+        try await setToken(try await enrollment.token(for: enrollmentCode))
     }
 
     func hasToken() async -> Bool {

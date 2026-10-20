@@ -23,4 +23,8 @@ protocol Syncing: AnyObject {
 
     /// Whether a token is stored.
     func hasToken() async -> Bool
+
+    /// Trades a one-time enrollment code (from a `lift://sync?code=…` link) for the token at the server's
+    /// `/api/lift/enroll`, and stores it. Throws when the code is invalid, used or expired, or the server is away.
+    func redeem(enrollmentCode: String) async throws
 }

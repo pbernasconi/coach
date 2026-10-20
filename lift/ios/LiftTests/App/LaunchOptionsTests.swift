@@ -107,8 +107,8 @@ import Testing
     }
 
     @Test func openURLKeepsALiftLinkAsWritten() throws {
-        let options = LaunchOptions(arguments: ["Lift", "-open-url", "lift://sync?token=AbC123"])
-        #expect(options.openURL == URL(string: "lift://sync?token=AbC123"))
+        let options = LaunchOptions(arguments: ["Lift", "-open-url", "lift://sync?code=AbC123"])
+        #expect(options.openURL == URL(string: "lift://sync?code=AbC123"))
         #expect(LaunchOptions(arguments: ["Lift", "-open-url", "https://example.com"]).openURL == nil)
         #expect(LaunchOptions(arguments: ["Lift", "-open-url"]).openURL == nil)
     }

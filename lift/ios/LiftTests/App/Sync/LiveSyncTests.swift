@@ -12,6 +12,7 @@ import Testing
 @Suite struct LiveSyncTests {
     let store: TestStore
     let tokens: InMemoryTokenStore
+    let enrollment = FakeEnrollment()
     let transport: TokenCheckingTransport
     let live: LiveSync
 
@@ -29,7 +30,7 @@ import Testing
         self.store = store
         self.tokens = tokens
         self.transport = transport
-        live = LiveSync(engine: engine, tokens: tokens)
+        live = LiveSync(engine: engine, tokens: tokens, enrollment: enrollment)
     }
 
     @Test func isConfigured() {
@@ -64,6 +65,23 @@ import Testing
 
         #expect(tokens.stored == nil)
         #expect(await live.hasToken() == false)
+    }
+
+    @Test func anEnrollmentCodeIsTradedForTheToken() async throws {
+        await enrollment.set(tokens: ["one-time-code": "made-up-token"])
+
+        try await live.redeem(enrollmentCode: "one-time-code")
+
+        #expect(tokens.stored == "made-up-token")
+        #expect(await enrollment.codes == ["one-time-code"])
+    }
+
+    @Test func aRefusedCodeKeepsTheOldToken() async throws {
+        try await live.setToken("old-token")
+
+        await #expect(throws: (any Error).self) { try await live.redeem(enrollmentCode: "used-code") }
+
+        #expect(tokens.stored == "old-token")
     }
 
     @Test func statusUpdatesStartWithTheCurrentStatus() async {

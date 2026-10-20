@@ -42,4 +42,14 @@ final class FakeSyncing: Syncing {
     func hasToken() async -> Bool {
         token != nil
     }
+
+    /// Codes passed to `redeem(enrollmentCode:)`; a code in `enrollmentTokens` stores that token, others throw.
+    var enrollmentTokens: [String: String] = [:]
+    private(set) var redeemedCodes: [String] = []
+
+    func redeem(enrollmentCode: String) async throws {
+        redeemedCodes.append(enrollmentCode)
+        guard let token = enrollmentTokens[enrollmentCode] else { throw URLError(.userAuthenticationRequired) }
+        try await setToken(token)
+    }
 }
