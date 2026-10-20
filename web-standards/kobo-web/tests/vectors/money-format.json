@@ -1,0 +1,109 @@
+{
+  "description": "Money display vectors from integer cents, locale en-US. formatMoney, formatMoneyLabel and formatMoneyHidden (src/lib/format/money.ts) pass every case. Kobo (SwiftUI) can test against this same file.",
+  "hiddenLabel": "Amount hidden",
+  "cases": [
+    {
+      "cents": 0,
+      "currency": "USD",
+      "text": "$0.00",
+      "accessibilityLabel": "0 dollars and 00 cents",
+      "hiddenText": "$••••"
+    },
+    {
+      "cents": 5,
+      "currency": "USD",
+      "text": "$0.05",
+      "accessibilityLabel": "0 dollars and 05 cents",
+      "hiddenText": "$••••"
+    },
+    {
+      "cents": -100,
+      "currency": "USD",
+      "text": "−$1.00",
+      "accessibilityLabel": "negative 1 dollars and 00 cents",
+      "hiddenText": "$••••"
+    },
+    {
+      "cents": 129900,
+      "currency": "USD",
+      "text": "$1,299.00",
+      "accessibilityLabel": "1,299 dollars and 00 cents",
+      "hiddenText": "$••••"
+    },
+    {
+      "cents": -4599,
+      "currency": "USD",
+      "text": "−$45.99",
+      "accessibilityLabel": "negative 45 dollars and 99 cents",
+      "hiddenText": "$••••"
+    },
+    {
+      "cents": 123456789,
+      "currency": "USD",
+      "text": "$1,234,567.89",
+      "accessibilityLabel": "1,234,567 dollars and 89 cents",
+      "hiddenText": "$••••"
+    },
+    {
+      "cents": 100,
+      "currency": "EUR",
+      "text": "€1.00",
+      "accessibilityLabel": "€1.00",
+      "hiddenText": "€••••"
+    },
+    {
+      "cents": -250,
+      "currency": "GBP",
+      "text": "−£2.50",
+      "accessibilityLabel": "negative £2.50",
+      "hiddenText": "£••••"
+    }
+  ],
+  "defensiveCases": {
+    "description": "Inputs that are not integer cents. A fraction rounds half away from zero. A non-finite value (the strings NaN, Infinity, -Infinity) prints a dash and speaks 'Amount unavailable'.",
+    "cases": [
+      {
+        "cents": 8.5,
+        "currency": "USD",
+        "text": "$0.09",
+        "accessibilityLabel": "0 dollars and 09 cents"
+      },
+      {
+        "cents": -8.5,
+        "currency": "USD",
+        "text": "−$0.09",
+        "accessibilityLabel": "negative 0 dollars and 09 cents"
+      },
+      {
+        "cents": 1234.567,
+        "currency": "USD",
+        "text": "$12.35",
+        "accessibilityLabel": "12 dollars and 35 cents"
+      },
+      {
+        "cents": -0.4,
+        "currency": "USD",
+        "text": "$0.00",
+        "accessibilityLabel": "0 dollars and 00 cents"
+      },
+      {
+        "cents": "NaN",
+        "currency": "USD",
+        "text": "—",
+        "accessibilityLabel": "Amount unavailable"
+      },
+      {
+        "cents": "Infinity",
+        "currency": "USD",
+        "text": "—",
+        "accessibilityLabel": "Amount unavailable"
+      },
+      {
+        "cents": "-Infinity",
+        "currency": "EUR",
+        "text": "—",
+        "accessibilityLabel": "Amount unavailable"
+      }
+    ]
+  }
+}

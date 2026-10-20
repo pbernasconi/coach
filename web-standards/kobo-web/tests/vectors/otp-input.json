@@ -1,0 +1,45 @@
+{
+  "description": "OtpInput vectors: sanitizeOtp keeps the digits of the text, then caps them at length.",
+  "sanitize": [
+    {
+      "text": "123456",
+      "length": 6,
+      "code": "123456"
+    },
+    {
+      "text": "123 456",
+      "length": 6,
+      "code": "123456"
+    },
+    {
+      "text": "123-456",
+      "length": 6,
+      "code": "123456"
+    },
+    {
+      "text": "a1b2c3",
+      "length": 6,
+      "code": "123"
+    },
+    {
+      "text": "12345678",
+      "length": 6,
+      "code": "123456"
+    },
+    {
+      "text": "1 2 3 4 5 6 7",
+      "length": 6,
+      "code": "123456"
+    },
+    {
+      "text": "abc",
+      "length": 6,
+      "code": ""
+    },
+    {
+      "text": "12 34 56",
+      "length": 4,
+      "code": "1234"
+    }
+  ]
+}

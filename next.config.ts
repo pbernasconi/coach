@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // @kobo/web (web-standards/kobo-web) is a workspace package that ships TypeScript source.
+  transpilePackages: ["@kobo/web"],
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -14,6 +16,10 @@ const nextConfig: NextConfig = {
     // link (prefetched in full, DashboardNav), shows it without a server round trip. A server action that saves
     // (revalidatePath) clears this cache, so an edit shows at once; other data is at most this old on a click.
     staleTimes: { dynamic: 30, static: 60 },
+  },
+  // Events moved from /goals into Settings (2026-10-20); old links and bookmarks land there.
+  async redirects() {
+    return [{ source: "/goals", destination: "/settings#events", permanent: true }];
   },
 };
 
