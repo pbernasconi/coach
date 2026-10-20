@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import type { Targets } from '@/lib/status';
-import { revealLiftToken, saveTargetsAction, syncStravaNow } from './actions';
+import { saveTargetsAction, syncStravaNow } from './actions';
 
 export function StravaSyncButton() {
   const [pending, start] = useTransition();
@@ -21,33 +21,6 @@ export function StravaSyncButton() {
     >
       {pending ? 'Syncing…' : 'Sync now'}
     </Button>
-  );
-}
-
-export function LiftTokenButton() {
-  const [token, setToken] = useState<string | null>(null);
-  const [pending, start] = useTransition();
-  if (!token) {
-    return (
-      <Button size="sm" variant="outline" disabled={pending} onClick={() => start(async () => setToken(await revealLiftToken()))}>
-        Show sync token
-      </Button>
-    );
-  }
-  return (
-    <div className="flex items-center gap-2">
-      <code className="min-w-0 flex-1 truncate rounded bg-muted px-2 py-1 text-xs">{token}</code>
-      <Button
-        size="sm"
-        variant="outline"
-        onClick={async () => {
-          await navigator.clipboard.writeText(token);
-          toast.success('Token copied');
-        }}
-      >
-        Copy
-      </Button>
-    </div>
   );
 }
 

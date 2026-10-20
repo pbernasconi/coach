@@ -1,7 +1,9 @@
 import { ownerForSignedInUser } from '@/lib/owner';
 import { loadStatus, loadTargets, type Warning } from '@/lib/status';
 import StravaService from '@/modules/strava/strava-service';
-import { LiftTokenButton, StravaSyncButton, TargetsForm } from './SettingsControls';
+import QRCode from 'qrcode';
+import { StravaSyncButton, TargetsForm } from './SettingsControls';
+import ConnectLift from './ConnectLift';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,10 +46,14 @@ export default async function SettingsPage() {
     status.warnings.find((w) => w.source === source && w.level === 'warn')?.level ??
     status.warnings.find((w) => w.source === source)?.level ??
     'ok';
+  // The Connect Lift card shows Lift's own state, so Lift's info note is left out here.
   const notes = (source: Warning['source']) =>
-    status.warnings.filter((w) => w.source === source).map((w) => (
+    status.warnings.filter((w) => w.source === source && !(source === 'lift' && w.level === 'info')).map((w) => (
       <p key={w.text} className="flex items-start gap-2 rounded bg-muted/50 p-2"><Dot level={w.level} /> {w.text}</p>
     ));
+  // lift://sync carries the token: the iPhone opens it (tap or camera) and Lift stores it and syncs.
+  const liftLink = process.env.LIFT_SYNC_TOKEN ? `lift://sync?token=${encodeURIComponent(process.env.LIFT_SYNC_TOKEN)}` : null;
+  const liftQr = liftLink ? await QRCode.toString(liftLink, { type: 'svg', margin: 0, errorCorrectionLevel: 'M' }) : '';
   const connectUrl = status.strava.canConnect
     ? new StravaService({
         clientId: process.env.STRAVA_CLIENT_ID!,
@@ -84,12 +90,7 @@ export default async function SettingsPage() {
           <Row label="Last change synced" value={when(status.lift.lastChangeAt)} />
           <Row label="Sessions on the server" value={status.lift.sessions} />
           {notes('lift')}
-          {status.lift.tokenSet && (
-            <div className="pt-1">
-              <LiftTokenButton />
-              <p className="mt-2 text-xs text-muted-foreground">Paste it in Lift → Settings → Sync → Sync token, then tap Save and sync.</p>
-            </div>
-          )}
+          {liftLink && <ConnectLift link={liftLink} qrSvg={liftQr} lastChangeAt={status.lift.lastChangeAt} sessions={status.lift.sessions} />}
         </Section>
 
         <Section title="Google Calendar" level={levelOf('calendar')}>
