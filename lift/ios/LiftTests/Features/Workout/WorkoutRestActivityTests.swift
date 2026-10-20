@@ -153,13 +153,21 @@ import Testing
         #expect(activity.calls == [restStart, .end])
     }
 
-    @Test func leavingTheWorkoutEndsTheActivity() async {
+    @Test func runShowsTheWorkoutOnTheLockScreen() async {
+        let vm = makeViewModel(planned)
+
+        await vm.run()
+
+        #expect(activity.shownWorkouts == [planned.id])
+    }
+
+    @Test func leavingTheWorkoutKeepsTheRestOnTheLockScreen() async {
         var vm: WorkoutViewModel? = await resting()
         #expect(vm?.state.rest != nil)
 
         vm = nil
 
-        #expect(activity.calls == [restStart, .end])
+        #expect(activity.calls == [restStart])
     }
 
     @Test func leavingWithoutARestLeavesTheActivityAlone() async {

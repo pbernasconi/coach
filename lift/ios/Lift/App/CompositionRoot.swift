@@ -1,4 +1,3 @@
-import ActivityKit
 import Foundation
 import LiftCore
 import LiftStore
@@ -44,16 +43,24 @@ enum CompositionRoot {
         let sessions = LiveSessionRepository(database: database, now: now, makeID: makeID)
         let mediaLoader = makeMediaLoader()
         let gym = gym(source: source)
+        let sets = LiveSetRepository(database: database, now: now, makeID: makeID)
         return AppDependencies(
             sessions: sessions,
             exercises: LiveExerciseRepository(database: database, now: now, makeID: makeID),
-            sets: LiveSetRepository(database: database, now: now, makeID: makeID),
+            sets: sets,
             templates: LiveTemplateRepository(database: database, now: now, makeID: makeID),
             plans: LiveWorkoutPlanRepository(database: database, now: now, makeID: makeID, gym: { gym.setup }),
             history: sessions,
             now: now,
             clock: ContinuousClock(),
-            restActivity: restActivity(),
+            workoutActivity: WorkoutActivityCenter(
+                sessions: sessions,
+                sets: sets,
+                presenter: LiveWorkoutActivityPresenter(),
+                gym: gym,
+                calendar: appCalendar,
+                now: now
+            ),
             mediaLoader: mediaLoader,
             catalog: LiveExerciseCatalog(loader: mediaLoader),
             calendar: appCalendar,
@@ -80,13 +87,6 @@ enum CompositionRoot {
             transport: URLSessionMediaTransport(session: URLSession(configuration: configuration)),
             cache: cache
         )
-    }
-
-    /// The live ActivityKit rest countdown, or one that does nothing when Live Activities are off for Lift.
-    private static func restActivity() -> any RestActivityController {
-        ActivityAuthorizationInfo().areActivitiesEnabled
-            ? LiveRestActivityController(store: AppGroupRestSnapshotStore(bundle: .main))
-            : DisabledRestActivityController()
     }
 
     /// Apple Health for data kept on this iPhone; demo and `-fresh` data never touch it.

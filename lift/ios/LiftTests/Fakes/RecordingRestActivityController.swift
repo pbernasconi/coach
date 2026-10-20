@@ -13,7 +13,15 @@ final class RecordingRestActivityController: RestActivityController {
     }
 
     private(set) var calls: [Call] = []
+    /// Every workout the screen showed, in order (kept apart from the rest calls).
+    private(set) var shownWorkouts: [UUID] = []
     private var rest: RestSnapshot?
+
+    func showWorkout(_ sessionID: UUID) {
+        shownWorkouts.append(sessionID)
+    }
+
+    func resume() {}
 
     func start(_ attributes: RestActivityAttributes, state: RestActivityAttributes.ContentState) {
         calls.append(.start(attributes, state))

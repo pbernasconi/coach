@@ -16,9 +16,10 @@ final class RestActivitySession {
         self.now = now
     }
 
-    /// The owner went away (the workout was left): its rest ends outside the app too.
-    isolated deinit {
-        end()
+    /// The Workout screen shows `sessionID`; the Lock Screen follows that workout from its first logged set. Leaving the
+    /// screen keeps it there, with its rest, until the workout is finished.
+    func showWorkout(_ sessionID: UUID) {
+        controller.showWorkout(sessionID)
     }
 
     /// A rest of `seconds` from now. Shows the Live Activity when the logged set is known.

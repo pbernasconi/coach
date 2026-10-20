@@ -72,6 +72,7 @@ final class WorkoutViewModel {
     /// Observes the session; started by the Screen's `.task` (SCR-4). The first time the session loads, it also reads
     /// each exercise's sets last time, once.
     func run() async {
+        restActivity.showWorkout(sessionID)
         var hasReadPrevious = false
         for await detail in sessions.observeSession(id: sessionID) {
             self.detail = detail

@@ -26,8 +26,8 @@ settings:
     # The coach web app's origin for sync (https://…), copied into Info.plist as LiftSyncBaseURL. Empty keeps sync
     # off; the TestFlight job can pass it (xcodebuild LIFT_SYNC_BASE_URL=https://…). Demo data never syncs.
     LIFT_SYNC_BASE_URL: ""
-    # The App Group the app shares with LiftWidgets (the rest Live Activity's +30s and Skip) and LiftShare (the shared
-    # note inbox). Each target's entitlements and Info.plist (LiftAppGroup) take it from here.
+    # The App Group the app shares with LiftShare (the shared note inbox) and, unused for now, LiftWidgets. Each
+    # target's entitlements and Info.plist (LiftAppGroup) take it from here.
     LIFT_APP_GROUP: group.$(LIFT_BUNDLE_ID)
 targets:
   Lift:
@@ -46,7 +46,7 @@ targets:
         products: [LiftCore, LiftStore, LiftSync]
       - package: Kobo
         products: [KoboTokens, KoboComponents, KoboPatterns]
-      - target: LiftWidgets                           # embedded in PlugIns/; draws the rest Live Activity
+      - target: LiftWidgets                           # embedded in PlugIns/; draws the workout Live Activity
       - target: LiftShare                             # embedded in PlugIns/; Share a note from Apple Notes
     entitlements:
       path: Lift/Lift.entitlements
@@ -85,13 +85,11 @@ targets:
     platform: iOS
     sources:
       - LiftWidgets
-      # Compiled by both the app and the extension: the Live Activity's attributes, and the +30s and Skip intents with
-      # the shared rest they change.
-      - Lift/Features/Workout/LiveActivity/RestActivityAttributes.swift
+      # Compiled by both the app and the extension: the workout Live Activity's attributes and rest, and its buttons'
+      # intents (Done, Next, +30s, Skip), which run in the app's process.
+      - Lift/Features/Workout/LiveActivity/WorkoutActivityAttributes.swift
       - Lift/Features/Workout/LiveActivity/RestSnapshot.swift
-      - Lift/Features/Workout/LiveActivity/RestSnapshotStore.swift
-      - Lift/App/RestActivityIntents.swift
-      - Lift/App/AppGroup.swift
+      - Lift/App/WorkoutActivityIntents.swift
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(LIFT_BUNDLE_ID).widgets   # must start with the app's bundle id
