@@ -7,8 +7,19 @@
  */
 
 import { createId } from '@paralleldrive/cuid2';
+import { toDay } from '../db-time.mjs';
 
 const STREAM_TYPES = ['heartrate', 'watts', 'velocity_smooth', 'cadence', 'altitude', 'temp', 'time', 'distance'];
+
+/**
+ * Start times for the timestamp (no zone) columns, as text. Strava sends start_date in UTC and start_date_local as
+ * local wall time (both ending in Z). A Date would be written in the machine's time zone by the Neon driver, so a
+ * sync on a laptop in US Pacific stored every start 7 h early. Text goes in as written.
+ */
+export function activityTimes(a) {
+  const plain = (v) => (typeof v === 'string' ? v.replace(/Z$/, '') : null);
+  return { startDate: plain(a.start_date), startLocal: plain(a.start_date_local) };
+}
 
 // ===== TSS + zone-time helpers =====
 function computeTss(a, athlete) {
@@ -206,8 +217,7 @@ export async function syncStrava(sql, opts = {}) {
   // ===== 5. Upsert each =====
   let upsertCount = 0, detailedCount = 0, streamCount = 0;
   for (const a of activities) {
-    const startDate = new Date(a.start_date);
-    const startLocal = new Date(a.start_date_local);
+    const { startDate, startLocal } = activityTimes(a);
 
     // Upsert the activity row
     const [existing] = await sql`
@@ -418,7 +428,8 @@ export async function rebuildTrainingLoad(sql, userId, log = console.log) {
   const tssByDate = new Map();
   for (const row of allActs) {
     if (!row.start_date_local || row.tss == null) continue;
-    const key = new Date(row.start_date_local).toISOString().slice(0, 10);
+    const key = toDay(row.start_date_local); // the local day as written; new Date() would shift it by the machine's zone
+    if (!key) continue;
     tssByDate.set(key, (tssByDate.get(key) ?? 0) + row.tss);
   }
 
