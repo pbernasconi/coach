@@ -1,0 +1,50 @@
+[
+ {
+  "sport": "CYCLING",
+  "functionalThresholdPower": 191.2,
+  "zone1Floor": 0.0,
+  "zone2Floor": 104.0,
+  "zone3Floor": 144.0,
+  "zone4Floor": 172.0,
+  "zone5Floor": 200.0,
+  "zone6Floor": 228.8,
+  "zone7Floor": 287.2,
+  "userLocalTime": null
+ },
+ {
+  "sport": "CROSS_COUNTRY_SKIING",
+  "functionalThresholdPower": 108.0,
+  "zone1Floor": 0.0,
+  "zone2Floor": 59.2,
+  "zone3Floor": 80.8,
+  "zone4Floor": 97.6,
+  "zone5Floor": 113.6,
+  "zone6Floor": 129.6,
+  "zone7Floor": 162.4,
+  "userLocalTime": null
+ },
+ {
+  "sport": "RUNNING",
+  "functionalThresholdPower": 316.8,
+  "zone1Floor": 206.4,
+  "zone2Floor": 252.8,
+  "zone3Floor": 284.0,
+  "zone4Floor": 316.8,
+  "zone5Floor": 364.8,
+  "zone6Floor": 0.0,
+  "zone7Floor": 0.0,
+  "userLocalTime": null
+ },
+ {
+  "sport": "ROWING",
+  "functionalThresholdPower": 128.0,
+  "zone1Floor": 0.0,
+  "zone2Floor": 70.4,
+  "zone3Floor": 96.0,
+  "zone4Floor": 115.2,
+  "zone5Floor": 134.4,
+  "zone6Floor": 153.6,
+  "zone7Floor": 192.0,
+  "userLocalTime": null
+ }
+]

@@ -1,0 +1,13 @@
+{
+  "dailySleepDTO": {
+    "id": null,
+    "userProfilePK": 9876542,
+    "calendarDate": "2030-01-15",
+    "sleepTimeSeconds": null,
+    "deepSleepSeconds": null,
+    "lightSleepSeconds": null,
+    "remSleepSeconds": null,
+    "awakeSleepSeconds": null,
+    "sleepScores": null
+  }
+}

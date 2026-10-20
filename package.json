@@ -7,7 +7,7 @@
     "build": "node scripts/db/migrate.mjs && next build --turbopack",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test scripts/*.test.mjs src/lib/*.test.mjs src/lib/plan/*.test.mjs src/lib/lift-dashboard/*.test.mjs src/lib/lift-sync/*.test.mjs src/lib/calendar-sync/*.test.mjs",
+    "test": "node --test scripts/*.test.mjs src/lib/*.test.mjs src/lib/plan/*.test.mjs src/lib/lift-dashboard/*.test.mjs src/lib/lift-sync/*.test.mjs src/lib/calendar-sync/*.test.mjs src/lib/performance/*.test.mjs src/lib/vitals/*.test.mjs",
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
     "db:migrate": "node scripts/db/migrate.mjs --yes",

@@ -17,6 +17,12 @@ const PAGES = [
   ['/settings', 'settings'],
   ['/lift', 'lift'],
   ['/lift/weekly', 'lift-weekly'],
+  ['/plan?view=month', 'plan'],
+  ['/health', 'health'],
+  ['/health/training', 'health-training'],
+  ['/health/day/today', 'health-day'],
+  [`/health/day/${new Date(Date.now() - 864e5).toISOString().slice(0, 10)}`, 'health-day'],
+  ['/goals', 'goals'],
 ];
 const ATTEMPTS = 3; // a cold start or a deploy that is still being aliased gets two more tries
 const WAIT_MS = 10_000;

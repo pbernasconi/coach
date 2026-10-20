@@ -10,6 +10,7 @@
 import { after } from 'next/server';
 import { sql } from '@/db';
 import { deleteStravaActivity, syncStrava } from '@/lib/strava-sync/sync.mjs';
+import { syncActivityPeaks } from '@/lib/performance/peaks-sync.mjs';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -51,6 +52,7 @@ export async function POST(request: Request) {
         await deleteStravaActivity(sql, event.object_id);
       } else if (event.object_type === 'activity') {
         await syncStrava(sql, { detailed: true, waitOnRateLimit: false });
+        await syncActivityPeaks(sql, { limit: 5 }).catch((e: unknown) => console.error('Peak scan failed:', e));
       }
     } catch (error) {
       console.error('Strava webhook sync failed:', error);

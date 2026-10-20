@@ -1,0 +1,16 @@
+/* Plan compliance status colours (TrainingPeaks style). Always shown with an icon and a label, never colour
+   alone. Green and red are the chart tokens; amber and orange sit between them. */
+:root {
+  --plan-good: var(--viz-good);
+  --plan-partial: #b98000;
+  --plan-off: #e2620f;
+  --plan-missed: var(--viz-down);
+  --plan-idle: var(--viz-muted);
+}
+.dark {
+  --plan-good: var(--viz-good);
+  --plan-partial: #e0a400;
+  --plan-off: #f07a2a;
+  --plan-missed: var(--viz-down);
+  --plan-idle: var(--viz-muted);
+}

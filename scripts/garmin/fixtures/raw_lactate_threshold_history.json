@@ -1,0 +1,71 @@
+{
+ "speed": [
+  {
+   "from": "2029-12-03",
+   "until": "2029-12-03",
+   "series": "running",
+   "value": 0.27333,
+   "updatedDate": "2029-12-03"
+  },
+  {
+   "from": "2029-12-15",
+   "until": "2029-12-15",
+   "series": "running",
+   "value": 0.27333,
+   "updatedDate": "2029-12-15"
+  },
+  {
+   "from": "2029-12-19",
+   "until": "2029-12-19",
+   "series": "running",
+   "value": 0.27333,
+   "updatedDate": "2029-12-19"
+  },
+  {
+   "from": "2030-01-10",
+   "until": "2030-01-10",
+   "series": "running",
+   "value": 0.27778,
+   "updatedDate": "2030-01-10"
+  }
+ ],
+ "heart_rate": [
+  {
+   "from": "2029-12-03",
+   "until": "2029-12-03",
+   "series": "running",
+   "value": 136.8,
+   "updatedDate": "2029-12-03"
+  },
+  {
+   "from": "2029-12-15",
+   "until": "2029-12-15",
+   "series": "running",
+   "value": 136.0,
+   "updatedDate": "2029-12-15"
+  },
+  {
+   "from": "2029-12-19",
+   "until": "2029-12-19",
+   "series": "running",
+   "value": 135.2,
+   "updatedDate": "2029-12-19"
+  },
+  {
+   "from": "2030-01-10",
+   "until": "2030-01-10",
+   "series": "running",
+   "value": 133.6,
+   "updatedDate": "2030-01-10"
+  }
+ ],
+ "power": [
+  {
+   "from": "2030-01-10",
+   "until": "2030-01-10",
+   "series": "running",
+   "value": 316.8,
+   "updatedDate": "2030-01-10"
+  }
+ ]
+}

@@ -1,0 +1,12 @@
+{
+ "deviceId": 1000000001,
+ "calendarDate": "2030-01-15",
+ "strengthScore": 21,
+ "enduranceScore": 17,
+ "hillScoreClassificationId": 2,
+ "overallScore": 30,
+ "hillScoreFeedbackPhraseId": 42,
+ "vo2Max": 40.0,
+ "vo2MaxPreciseValue": 40.32,
+ "primaryTrainingDevice": true
+}
