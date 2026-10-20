@@ -1,0 +1,14 @@
+{
+  "$comment": "One source for each sport's label, color and icon, on the web (src/lib/sports.ts) and iOS (lift/ios/Lift/Design/SportStyle.swift, checked by SportStyleTests). The array order is the stack order in charts, bottom first. Colors are the dataviz categorical slots, chosen so that neighbours in this order pass the color-blind checks in light and dark mode (validate_palette.js). Rest and other are neutral, not categorical hues.",
+  "sports": [
+    { "id": "ride", "label": "Ride", "light": "#2a78d6", "dark": "#3987e5", "lucide": "Bike", "sfSymbol": "figure.outdoor.cycle" },
+    { "id": "run", "label": "Run", "light": "#eb6834", "dark": "#d95926", "lucide": "Footprints", "sfSymbol": "figure.run" },
+    { "id": "hike", "label": "Hike", "light": "#1baf7a", "dark": "#199e70", "lucide": "Mountain", "sfSymbol": "figure.hiking" },
+    { "id": "walk", "label": "Walk", "light": "#eda100", "dark": "#c98500", "lucide": "PersonStanding", "sfSymbol": "figure.walk" },
+    { "id": "strength", "label": "Strength", "light": "#6250d6", "dark": "#9085e9", "lucide": "Dumbbell", "sfSymbol": "dumbbell.fill" },
+    { "id": "swim", "label": "Swim", "light": "#008300", "dark": "#008300", "lucide": "Waves", "sfSymbol": "figure.pool.swim" },
+    { "id": "yoga", "label": "Yoga", "light": "#e87ba4", "dark": "#d55181", "lucide": "Flower2", "sfSymbol": "figure.yoga" },
+    { "id": "other", "label": "Other", "light": "#a8a79f", "dark": "#6b6a65", "lucide": "Activity", "sfSymbol": "figure.mixed.cardio" },
+    { "id": "rest", "label": "Rest", "light": "#a8a79f", "dark": "#6b6a65", "lucide": "Moon", "sfSymbol": "moon.zzz.fill" }
+  ]
+}

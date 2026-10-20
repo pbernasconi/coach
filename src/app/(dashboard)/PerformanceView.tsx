@@ -92,16 +92,7 @@ export default function PerformanceView({ perf, today, strengthTarget = 2 }: { p
 
       <WeeklyHoursChart
         currentWeek={currentWeek}
-        weeks={weeks.map((w) => ({
-          week: w.week,
-          rideHours: w.rideHours,
-          runHours: w.runMin / 60,
-          otherHours: Math.max(0, w.hours - w.rideHours - w.runMin / 60),
-          rideKm: w.rideKm,
-          runKm: w.runKm,
-          strength: w.strength,
-          tss: w.tss,
-        }))}
+        weeks={weeks.map((w) => ({ week: w.week, sports: w.sports, strength: w.strength, tss: w.tss }))}
       />
       <TrainingLoadChart days={perf.load} />
 
