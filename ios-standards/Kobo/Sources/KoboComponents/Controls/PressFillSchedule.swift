@@ -1,8 +1,8 @@
 import Foundation
 
 /// When the press veil of a highlighted row or tile shows. A quick tap lifts the finger before the veil has faded in,
-/// so the fade out waits for the fade in: every tap shows the whole veil once, and nothing flickers. Ported from
-/// Trellis's `PressFillSchedule`; pure, so it is tested without rendering.
+/// so the fade out waits for the fade in: every tap shows the whole veil once, and nothing flickers. It
+/// is pure, so it is tested without rendering.
 nonisolated struct PressFillSchedule: Equatable, Sendable {
     /// The veil is up, or on its way up.
     private(set) var isShown = false

@@ -1,6 +1,6 @@
 import Foundation
 
-/// The search of a `SelectSheet`, apart from SwiftUI. Ported from Trellis's `SelectSearch` ranking, with Kobo's
+/// The search of a `SelectSheet`, apart from SwiftUI. It ranks the options, with Kobo's
 /// `SearchMatch` for the title so matching ignores case and diacritics and works word by word. An exact keyword beats
 /// a title prefix, which beats a keyword prefix, which beats any other title or subtitle match, so "CH" finds
 /// Switzerland (keyword "CH") before Chad. Equal ranks keep the option order. A blank query keeps every option.

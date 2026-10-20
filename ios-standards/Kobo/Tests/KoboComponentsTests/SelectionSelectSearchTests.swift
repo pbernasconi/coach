@@ -2,7 +2,7 @@ import Testing
 
 @testable import KoboComponents
 
-/// Ported from Trellis's `SelectSearchVectorsTests` (contracts/ui-vectors/select-search.json), plus Kobo's
+/// The select search vectors, plus Kobo's
 /// word-by-word, diacritic-insensitive title matching.
 @Suite struct SelectionSelectSearchTests {
     private static let countries: [(String, SelectSearch.Candidate)] = [
@@ -34,7 +34,7 @@ import Testing
         ("zech", ["CZ"]),
         ("zz", []),
     ])
-    func countryRankingMatchesTheTrellisVectors(query: String, expected: [String]) {
+    func countryRankingMatchesTheVectors(query: String, expected: [String]) {
         #expect(Self.values(Self.countries, query) == expected)
     }
 

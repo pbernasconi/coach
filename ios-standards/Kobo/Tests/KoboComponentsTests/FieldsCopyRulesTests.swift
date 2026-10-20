@@ -2,7 +2,7 @@ import Testing
 
 @testable import KoboComponents
 
-/// Copy feedback and masked values, ported from Trellis `TapToCopyTests`, `CopyConfirmationTests` and `CopyableValue`.
+/// Copy feedback and masked values.
 @Suite struct FieldsCopyRulesTests {
     @Test func theValueDimsButStaysLegibleAndTheCheckHoldsBriefly() {
         #expect(CopyRules.dimmedOpacity > 0 && CopyRules.dimmedOpacity < 1)

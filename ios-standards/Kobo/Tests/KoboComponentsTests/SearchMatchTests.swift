@@ -2,7 +2,7 @@ import Testing
 
 @testable import KoboComponents
 
-/// Token matching, ranges and ranking (extends Trellis `SearchMatchTests` with diacritics, tokens and scores).
+/// Token matching, ranges and ranking, with diacritics, tokens and scores.
 @Suite struct SearchMatchTests {
     private func matched(_ text: String, _ query: String) -> [String] {
         guard let match = SearchMatch(text, query: query) else { return [] }

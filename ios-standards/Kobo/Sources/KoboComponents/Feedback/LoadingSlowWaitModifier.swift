@@ -21,7 +21,7 @@ extension View {
 
 /// The `task(id:)` of `.slowWait`, inside a modifier on purpose: a public extension that returns `task(id:)` directly
 /// lets another module's Release build link against an iOS 26 `task` overload descriptor the SDK does not export
-/// (seen in Trellis).
+/// (seen in a shipped app).
 private struct SlowWaitModifier: ViewModifier {
     let isWaiting: Bool
     let stage: Binding<SlowWait>

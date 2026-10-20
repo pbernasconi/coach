@@ -2,7 +2,7 @@ import Testing
 
 @testable import KoboComponents
 
-/// The search pill and search-mode rules, ported from Trellis `SearchFieldLogicTests` and `SearchModeLogicTests`.
+/// The search pill and search-mode rules.
 @Suite struct SearchLogicTests {
     @Test func clearShowsWhileEditingWithText() {
         #expect(SearchFieldLogic.showsClear(query: "acme", isFocused: true, hasCancel: true))

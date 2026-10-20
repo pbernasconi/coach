@@ -4,12 +4,12 @@ The standard for every native iOS app we build: Lift first, then anything after 
 teams (often one person) whose code is mostly written by coding agents, so the rules favour things a
 compiler, a linter or a script can check over things a reviewer has to remember.
 
-It distils two of our own codebases:
+It distils two of our own shipped apps:
 
-- **Trellis** (`mobile-ios/`): a large team app with very strict architecture rules. We keep its screen
+- **A large team app** with very strict architecture rules. We keep its screen
   pattern, concurrency settings, dependency injection and test style. We drop its scale (34 packages, multi-brand
   builds, a custom SwiftSyntax linter).
-- **Holdings** (`bank-analysis/ios/`): a small single-target app with zero dependencies that shipped to
+- **A small single-target app** with zero dependencies that shipped to
   TestFlight and unlisted App Store. We keep its size, its demo mode, its client resilience and its release
   pipeline.
 
