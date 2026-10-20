@@ -27,3 +27,12 @@ test('applyChange moves or removes one workout', () => {
   assert.deepEqual(applyChange(list, { id: 'a', remove: true }), [{ id: 'b', date: '2026-10-21' }]);
   assert.equal(applyChange(list, { id: 'x', remove: true }).length, 2);
 });
+
+test('a skip changes the status and state at once; an unskip shows as planned', async () => {
+  const { applyChange } = await import('./remove.mjs');
+  const list = [{ id: 'a', date: '2026-10-21', status: 'planned', state: 'planned' }];
+  const skipped = applyChange(list, { id: 'a', status: 'skipped' });
+  assert.deepEqual([skipped[0].status, skipped[0].state], ['skipped', 'skipped']);
+  const back = applyChange(skipped, { id: 'a', status: 'planned' });
+  assert.deepEqual([back[0].status, back[0].state], ['planned', 'planned']);
+});

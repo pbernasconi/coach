@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { Copy } from 'lucide-react';
+import { useState } from 'react';
+import { Copy, Pencil } from 'lucide-react';
 import SportIcon from '@/components/SportIcon';
 import { totals } from '@/lib/workouts/steps.mjs';
 import { sport } from '@/lib/sports';
@@ -16,6 +17,7 @@ import LiftView, { liftStats } from './LiftView';
 import { liftHref } from './ItemPreview';
 import DevicesPanel from './DevicesPanel';
 import { Description, Header, Hero, StatusChip, longDay, type HeroStat } from './ModalParts';
+import { EditWorkout } from './CreateWorkout';
 
 // ---------------------------------------------------------------------------------------------------------------
 // A planned workout that is not done yet
@@ -30,7 +32,8 @@ function liftHero(lift: NonNullable<CalendarWorkout['lift']>): HeroStat[] {
   ].filter(Boolean) as HeroStat[];
 }
 
-export default function PlannedModal({ w, onClose, onCopy, wx, onLiftChanged }: { w: CalendarWorkout; onClose: () => void; onCopy?: (w: CalendarWorkout) => void; wx?: DayWeather; onLiftChanged?: (date: string) => Promise<void> | void }) {
+export default function PlannedModal({ w, onClose, onCopy, wx, onLiftChanged, onEdited }: { w: CalendarWorkout; onClose: () => void; onCopy?: (w: CalendarWorkout) => void; wx?: DayWeather; onLiftChanged?: (date: string) => Promise<void> | void; onEdited?: (days: { from: string; to: string }) => void }) {
+  const [editing, setEditing] = useState(false);
   const targets = zonesFor(w) as { zone: string; label: string; target: string }[];
   // With the Lift session shown set by set, the text copy of the sets (scripts/lift-plan.mjs) is left out.
   const text = w.lift && w.description ? w.description.split(LIFT_MARKER)[0].trim() : w.description;
@@ -45,6 +48,15 @@ export default function PlannedModal({ w, onClose, onCopy, wx, onLiftChanged }: 
           <>
             {w.adaptedFrom && <span className="hidden text-xs text-[var(--plan-partial)] sm:inline">Changed for how you feel</span>}
             <StatusChip level={w.compliance.level} ratio={w.compliance.ratio} basis={w.compliance.basis} />
+            {onEdited && (
+              <button
+                type="button"
+                onClick={() => setEditing(true)}
+                className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs font-medium hover:bg-accent"
+              >
+                <Pencil aria-hidden className="h-3.5 w-3.5" /> Edit
+              </button>
+            )}
             {onCopy && (
               <button
                 type="button"
@@ -58,6 +70,16 @@ export default function PlannedModal({ w, onClose, onCopy, wx, onLiftChanged }: 
         }
         onClose={onClose}
       />
+      {editing && onEdited && (
+        <EditWorkout
+          w={w}
+          onClose={() => setEditing(false)}
+          onSaved={(days) => {
+            setEditing(false);
+            onEdited(days);
+          }}
+        />
+      )}
       <div className="min-h-0 flex-1 overflow-y-auto">
         <Hero
           stats={[

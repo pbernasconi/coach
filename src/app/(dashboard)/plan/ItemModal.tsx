@@ -22,6 +22,8 @@ type Props = {
   weather?: Record<string, DayWeather>;
   /** After an edit of a Lift session: loads the day again, so the modal shows the change. */
   onLiftChanged?: (date: string) => Promise<void> | void;
+  /** After an edit of a planned workout: loads its old and new week again. */
+  onEdited?: (days: { from: string; to: string }) => void;
 };
 
 /**
@@ -29,7 +31,7 @@ type Props = {
  * completed, the load change, zones and peak curves, laps and the stream charts. A done item links to its full
  * page. ← and → step to the previous and next item.
  */
-export default function ItemModal({ item, onClose, onStep, canStep, onCopy, weather, onLiftChanged }: Props) {
+export default function ItemModal({ item, onClose, onStep, canStep, onCopy, weather, onLiftChanged, onEdited }: Props) {
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
@@ -68,7 +70,7 @@ export default function ItemModal({ item, onClose, onStep, canStep, onCopy, weat
           ) : liftId ? (
             <LiftModal key={`l-${liftId}`} id={liftId} planned={planned} onClose={onClose} />
           ) : planned ? (
-            <PlannedModal key={planned.id} w={planned} onClose={onClose} onCopy={onCopy} wx={weather?.[planned.date]} onLiftChanged={onLiftChanged} />
+            <PlannedModal key={planned.id} w={planned} onClose={onClose} onCopy={onCopy} wx={weather?.[planned.date]} onLiftChanged={onLiftChanged} onEdited={onEdited} />
           ) : null}
           </StepContext.Provider>
         </Dialog.Content>
