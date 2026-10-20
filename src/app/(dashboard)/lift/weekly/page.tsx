@@ -12,7 +12,7 @@ export default async function LiftWeeklyPage() {
   const max = Math.max(1, ...weeks.map((w) => w.volume));
 
   return (
-    <Card>
+    <Card data-smoke="lift-weekly">
       <CardHeader>
         <CardTitle>Weekly volume</CardTitle>
         <CardDescription>
