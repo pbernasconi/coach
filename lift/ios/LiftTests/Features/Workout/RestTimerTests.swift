@@ -52,4 +52,10 @@ import Testing
     func clockText(seconds: Int, expected: String) {
         #expect(RestTimer(run: 1, seconds: seconds).clockText == expected)
     }
+
+    @Test func totalTextIncludesAddedTime() {
+        let timer = RestTimer(run: 1, seconds: 90).ticked()?.extended(by: 30)
+        #expect(timer?.totalText == "2:00")
+        #expect(timer?.clockText == "1:59")
+    }
 }
