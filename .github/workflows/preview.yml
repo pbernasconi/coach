@@ -1,0 +1,61 @@
+# A preview deployment on demand: add the label "preview" to a pull request. It uses the Preview environment (the
+# Neon development branch, Clerk's development sign-in), is checked with scripts/smoke.mjs, and the link is posted
+# on the pull request. Each later push to a labelled pull request redeploys it. Vercel builds nothing from Git
+# (vercel.json), because the Hobby plan allows 100 deployments a day.
+name: Preview
+
+on:
+  pull_request:
+    types: [labeled, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    if: contains(github.event.pull_request.labels.*.name, 'preview') && (github.event.action != 'labeled' || github.event.label.name == 'preview')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      VERCEL_ORG_ID: team_Hwpc5IVS3EI80M3wxEu8wK2E
+      VERCEL_PROJECT_ID: prj_w56et7EBbNWCBLgA0g3AFys4A6MD
+      VERCEL_CLI: vercel@64.7.0
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      HEALTH_TOKEN: ${{ secrets.HEALTH_TOKEN }}
+      VERCEL_BYPASS_SECRET: ${{ secrets.VERCEL_BYPASS_SECRET }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
+        with:
+          node-version: 22
+      - id: deps
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: node_modules
+          key: node-modules-Web-node22-v1-${{ hashFiles('package-lock.json') }}
+      - if: steps.deps.outputs.cache-hit != 'true'
+        run: npm ci
+      - name: Build and deploy the preview
+        id: deploy
+        env:
+          DATABASE_URL: postgresql://build:build@localhost:5432/build # build time only; runtime has the real one
+          SKIP_BUILD_TYPECHECK: "1"
+        run: |
+          npx -y "$VERCEL_CLI" pull --yes --environment=preview --token "$VERCEL_TOKEN" >/dev/null
+          npx -y "$VERCEL_CLI" build --token "$VERCEL_TOKEN"
+          out=$(npx -y "$VERCEL_CLI" deploy --prebuilt --token "$VERCEL_TOKEN" --meta previewPr="${{ github.event.pull_request.number }}" 2>&1) || { echo "$out"; exit 1; }
+          url=$(grep -oE 'https://[a-z0-9-]+\.vercel\.app' <<<"$out" | head -1)
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          node scripts/smoke.mjs "$url"
+      - name: Post the link
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          gh pr comment "$PR" --body "Preview of ${GITHUB_SHA:0:7}: $URL (development data; sign in with Clerk's development instance)."
