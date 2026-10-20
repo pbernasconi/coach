@@ -7,7 +7,7 @@ description: Mid-week training check-in. Compares planned vs actual, asks how th
 ## Durable preferences (same as /plan)
 - Personal Gmail calendar, purple events
 - 2 strength/wk, ≥1 above-threshold quality/wk
-- The Lift templates (in the profile) are authoritative for lifts
+- The Lift templates (in the profile) are authoritative for lifts; "Lift sessions" in the profile shows each set logged
 - Celsius / km / min/km
 - All scripts via `node --env-file=.env.local`
 
@@ -61,7 +61,11 @@ Make each change to a **future** workout in the database. Each command also upda
 node --env-file=.env.local scripts/plan-edit.mjs move <workoutId> YYYY-MM-DD
 node --env-file=.env.local scripts/plan-edit.mjs skip <workoutId>
 node --env-file=.env.local scripts/plan-edit.mjs update <workoutId> title="Easy aerobic ride" duration=60 intensity=easy description="Z2 only"
+node --env-file=.env.local scripts/plan-edit.mjs update <workoutId> lift_template="Upper (dumbbells)"
+node --env-file=.env.local scripts/lift-plan.mjs
 ```
+Always run `lift-plan.mjs` last: it moves or re-plans the Lift sessions of strength workouts that changed, and it
+plans the next lifts again from what was logged since (a lift that went well raises the next targets).
 Treat changes he made on the web as his decisions. Past days need no annotation: Coach marks them done from Strava
 and Lift.
 

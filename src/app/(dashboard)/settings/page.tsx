@@ -5,6 +5,8 @@ import QRCode from 'qrcode';
 import { sql } from '@/db';
 import { createEnrollmentCode } from '@/lib/lift-sync/enroll.mjs';
 import { CoachingNotesForm, LocationForm, StravaSyncButton, TargetsForm } from './SettingsControls';
+import GoalsForm from './GoalsForm';
+import { loadGoals } from '@/lib/goals/goals.mjs';
 import ConnectLift from './ConnectLift';
 
 export const dynamic = 'force-dynamic';
@@ -42,7 +44,9 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 export default async function SettingsPage() {
   const userId = await ownerForSignedInUser();
   if (!userId) return <p className="text-sm text-muted-foreground">This account has no Coach data.</p>;
-  const [status, targets, coachingNotes] = await Promise.all([loadStatus(userId), loadTargets(userId), loadCoachingNotes(userId)]);
+  const [status, targets, coachingNotes, goals] = await Promise.all([
+    loadStatus(userId), loadTargets(userId), loadCoachingNotes(userId), loadGoals(sql, userId),
+  ]);
   const levelOf = (source: Warning['source']) =>
     status.warnings.find((w) => w.source === source && w.level === 'error')?.level ??
     status.warnings.find((w) => w.source === source && w.level === 'warn')?.level ??
@@ -134,8 +138,13 @@ export default async function SettingsPage() {
         </Section>
       </div>
 
+      <Section title="Goals" level="ok">
+        <p className="text-muted-foreground">Milestones with a target and a deadline. Performance shows the progress from Strava and Garmin; /plan trains toward the next deadline.</p>
+        <GoalsForm goals={goals} />
+      </Section>
+
       <Section title="Coaching preferences" level="ok">
-        <p className="text-muted-foreground">Goals, weekly structure and rules in Markdown. /plan and /check-in read them; change them here, not in a chat.</p>
+        <p className="text-muted-foreground">Weekly structure and rules in Markdown. /plan and /check-in read them; change them here, not in a chat.</p>
         <CoachingNotesForm notes={coachingNotes} />
       </Section>
     </div>

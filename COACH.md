@@ -37,10 +37,11 @@ Both commands are non-interactive defaults plus 2–3 questions per run.
 Stored in `~/.claude/projects/-Users-paolo-work-personal-coach/memory/`. The commands honor these automatically — no need to re-state every week:
 
 - **Units**: Celsius, km, min/km
-- **Goals**: Road cycling races (Berkeley-style) + 10k/half marathon — moderate variety
+- **Goals**: milestones with a target and a deadline, in Coach → Settings → Goals (10k at 4:00/km, 3 × 4000 m ski peaks, VO2 max 52, 6,000 km of riding in 2027). Performance shows the progress.
 - **Strength**: 2 sessions/wk — heavy barbell + dumbbell
 - **Calendar**: personal Gmail, purple events
-- **Templates**: the Lift app's templates (Heavy barbell, Hotel gym (dumbbells)) are authoritative for lift programming
+- **Templates**: the Lift app's templates (Heavy barbell, Upper (dumbbells), Hotel gym (dumbbells)) are authoritative for
+  lift programming. `scripts/lift-plan.mjs` plans each strength workout as a Lift session, so every rep and load is logged
 
 To update any of these: edit the file in the memory directory, or just tell Claude in conversation ("I changed my goal to X").
 
@@ -62,6 +63,7 @@ To update any of these: edit the file in the memory directory, or just tell Clau
 scripts/
   coach-profile.mjs        # athlete profile aggregator
   add-workouts-to-calendar.mjs  # push events to calendar (idempotent)
+  lift-plan.mjs                 # strength workouts → planned Lift sessions (sets, targets), linked by id
   strava-backfill.mjs      # backfill Strava data
   README.md                # detailed script docs
 plans/
@@ -77,4 +79,4 @@ src/modules/
 
 - **Garmin Connect**: see `src/modules/garmin/README.md`. Adds HRV / Body Battery / sleep score. ~2 wk dev API approval.
 - **Streams analysis**: data is in the DB but no analyzer yet (cardiac drift, time-in-zone, interval execution).
-- **Goal-driven peaking**: when a race date is set in `user_goals`, /plan should auto-build periodized blocks (base → build → peak → taper).
+- **Goal-driven blocks**: /plan could build periodized blocks (base → build → test) toward each milestone deadline.

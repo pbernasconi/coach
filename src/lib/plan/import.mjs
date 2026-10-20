@@ -3,9 +3,11 @@
 //
 // The JSON stays the source for workouts nobody changed on the web. A workout moved, adapted or skipped on
 // the web (edited_at or adapted_from set) keeps its web version. A workout removed from the JSON is
-// deleted unless it was changed on the web.
+// deleted unless it was changed on the web. `liftTemplate` names the Lift template of a strength workout;
+// scripts/lift-plan.mjs then plans the Lift session (run it after the import).
 
 import { createId } from '@paralleldrive/cuid2';
+import { LIFT_MARKER } from './lift-plan.mjs';
 import { sportOf } from './week.mjs';
 
 function minutesBetween(start, end) {
@@ -25,6 +27,7 @@ export function rowsFromPlan(plan) {
     title: e.title,
     activityType: sportOf(e),
     workoutType: e.workoutType ?? null,
+    liftTemplate: e.liftTemplate ?? null,
     intensity: e.intensity ?? null,
     duration: e.end ? minutesBetween(e.start, e.end) : null,
     tss: typeof e.tss === 'number' ? e.tss : null,
@@ -42,6 +45,7 @@ export function rowsFromPlan(plan) {
       title: 'Rest day',
       activityType: 'rest',
       workoutType: 'rest',
+      liftTemplate: null,
       intensity: 'rest',
       duration: 0,
       tss: 0,
@@ -80,7 +84,8 @@ export async function importPlan(sql, userId, plan, markdown) {
   const planId = planRow.id;
 
   const existing = await sql`
-    SELECT id, source_key, edited_at, adapted_from FROM training_plan_activities WHERE plan_id = ${planId}`;
+    SELECT id, source_key, edited_at, adapted_from, description, intensity, lift_session_id
+    FROM training_plan_activities WHERE plan_id = ${planId}`;
   const bySource = new Map(existing.filter((r) => r.source_key).map((r) => [r.source_key, r]));
   const touched = (r) => r.edited_at != null || r.adapted_from != null;
 
@@ -93,23 +98,30 @@ export async function importPlan(sql, userId, plan, markdown) {
       continue;
     }
     if (old) {
+      // A workout planned in Lift keeps its generated sets and summary until scripts/lift-plan.mjs writes new ones.
+      const linked = old.lift_session_id && r.liftTemplate;
+      const block = linked && String(old.description ?? '').includes(LIFT_MARKER)
+        ? `${LIFT_MARKER}${String(old.description).split(LIFT_MARKER)[1]}`
+        : null;
+      const description = block ? [r.description, block].filter(Boolean).join('\n\n') : r.description;
+      const intensity = linked && r.intensity == null ? old.intensity : r.intensity;
       await sql`
         UPDATE training_plan_activities SET
           scheduled_date = ${r.date}, start_time = ${r.startTime}, end_time = ${r.endTime}, time_zone = ${r.timeZone},
           title = ${r.title}, activity_type = ${r.activityType}, workout_type = ${r.workoutType},
-          intensity = ${r.intensity}, duration = ${r.duration}, tss = ${r.tss}, why = ${r.why},
-          description = ${r.description}, sort_order = ${r.sortOrder}, updated_at = NOW()
+          lift_template = ${r.liftTemplate}, intensity = ${intensity}, duration = ${r.duration}, tss = ${r.tss},
+          why = ${r.why}, description = ${description}, sort_order = ${r.sortOrder}, updated_at = NOW()
         WHERE id = ${old.id}`;
       counts.updated++;
     } else {
       await sql`
         INSERT INTO training_plan_activities (
           id, plan_id, source_key, scheduled_date, start_time, end_time, time_zone, title, activity_type,
-          workout_type, intensity, duration, tss, why, description, sort_order)
+          workout_type, lift_template, intensity, duration, tss, why, description, sort_order)
         VALUES (
           ${createId()}, ${planId}, ${r.sourceKey}, ${r.date}, ${r.startTime}, ${r.endTime}, ${r.timeZone}, ${r.title},
-          ${r.activityType}, ${r.workoutType}, ${r.intensity}, ${r.duration}, ${r.tss}, ${r.why}, ${r.description},
-          ${r.sortOrder})`;
+          ${r.activityType}, ${r.workoutType}, ${r.liftTemplate}, ${r.intensity}, ${r.duration}, ${r.tss}, ${r.why},
+          ${r.description}, ${r.sortOrder})`;
       counts.inserted++;
     }
   }

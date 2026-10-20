@@ -7,7 +7,7 @@
  *   node --env-file=.env.local scripts/calendar-sync.mjs [--days-back 7] [--days-forward 30]
  */
 
-import { neon } from '@neondatabase/serverless';
+import { connect } from '../src/db/neon.mjs';
 import { syncCalendars } from '../src/lib/calendar-sync/sync.mjs';
 
 const args = process.argv.slice(2);
@@ -16,7 +16,7 @@ const flag = (name, fallback) => {
   return i >= 0 ? args[i + 1] : fallback;
 };
 
-await syncCalendars(neon(process.env.DATABASE_URL), {
+await syncCalendars(connect(), {
   daysBack: parseInt(flag('--days-back', '7'), 10),
   daysForward: parseInt(flag('--days-forward', '30'), 10),
 });

@@ -8,6 +8,7 @@ import { syncStrava } from '@/lib/strava-sync/sync.mjs';
 import { locationFrom } from '@/lib/plan/calendar.mjs';
 import { geocodeUrl, placesFrom } from '@/lib/plan/places.mjs';
 import { DEFAULT_PLACE, type Place } from '@/lib/plan/weather';
+import { saveGoals } from '@/lib/goals/goals.mjs';
 
 async function owner() {
   const id = await ownerForSignedInUser();
@@ -92,4 +93,11 @@ export async function saveLocationAction(place: { name: string; lat: number; lon
   }
   revalidatePath('/plan');
   revalidatePath('/settings');
+}
+
+/** Saves the milestone goals. saveGoals drops any goal that is not valid. */
+export async function saveGoalsAction(goals: unknown[]) {
+  const id = await owner();
+  await saveGoals(sql, id, goals.slice(0, 20));
+  revalidatePath('/', 'layout');
 }

@@ -10,7 +10,7 @@
 
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { neon } from '@neondatabase/serverless';
+import { connect } from '../src/db/neon.mjs';
 import { importPlan } from '../src/lib/plan/import.mjs';
 
 const args = process.argv.slice(2);
@@ -27,7 +27,7 @@ if (showIdx >= 0) {
     console.error('Usage: plan-import.mjs --show plans/YYYY-MM-DD.json');
     process.exit(1);
   }
-  const sql = neon(process.env.DATABASE_URL);
+  const sql = connect();
   const [plan] = await sql`SELECT id, feel_log FROM training_plans WHERE week_start_date = ${weekStart} LIMIT 1`;
   if (!plan) {
     console.log(`No plan for ${weekStart} in the database.`);
@@ -49,7 +49,7 @@ if (!files.length || files.some((f) => !f)) {
   process.exit(1);
 }
 
-const sql = neon(process.env.DATABASE_URL);
+const sql = connect();
 const [user] = await sql`SELECT id FROM users ORDER BY created_at LIMIT 1`;
 if (!user) {
   console.error('No user in the database');

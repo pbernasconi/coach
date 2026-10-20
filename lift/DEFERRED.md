@@ -65,7 +65,9 @@ already done around it. The build keeps going around these; nothing here blocks 
   rep target or range, an optional load and rest. Templates live on the Exercises tab (next to All exercises); Week
   plans a day from one, changes a planned day to another, or copies this week's template days to next week. A
   session planned from a template starts at the last session's load, plus one increment once every set hit the
-  top of the range. No multi-week program (periodisation) yet.
+  top of the range; after 14 days or more without the exercise, about 90% of the last load (`SlotPlanner.breakDays`).
+  No multi-week program (periodisation) yet. Coach plans its strength workouts as Lift sessions through
+  `tools/LiftSeed` (`scripts/lift-plan.mjs`).
 
 ## Smaller gaps (no input needed; noted so nothing is lost)
 

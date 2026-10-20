@@ -1,93 +1,82 @@
 #!/usr/bin/env node --test
 /**
- * Tests for rotation.mjs — the bike VO2 <-> run intervals alternation.
- *
- * Pure: plans are passed in as data (the database loader is a thin query around rotationFromPlans).
+ * Tests for rotation.mjs: the PDF's workout order (Threshold A → VO2 A → VO2 B → Threshold B → Threshold A → VO2 A),
+ * the last result of each bank workout, and when a 10k test is due.
  *
  * Run: npm test
  */
 
-import { test, beforeEach } from 'node:test';
+import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { rotationFromPlans } from './rotation.mjs';
+import { nextIndex, ORDER, parseType, rotationFromPlans } from './rotation.mjs';
 
-let plans;
-beforeEach(() => { plans = []; });
+const ev = (workoutType, start, extra = {}) => ({ workoutType, start, ...extra });
 
-const plan = (key, events) => plans.push({ weekStart: key, events });
-const rotationState = (_ignored, key) => rotationFromPlans(plans, key);
-const dir = null;
-const q = (type, start) => ({ title: type, start, end: start, workoutType: type });
-
-test('last quality was bike => next is run', () => {
-  plan('2026-07-06', [q('ride-vo2', '2026-07-10T08:00:00')]);
-  const r = rotationState(dir, '2026-07-13');
-  assert.deepEqual(r, { lastQuality: 'ride-vo2', lastQualityWeek: '2026-07-06', nextQuality: 'run-intervals' });
+test('no history starts at Threshold A', () => {
+  const r = rotationFromPlans([], '2026-10-26');
+  assert.deepEqual(r.next, ['threshold-a', 'vo2-a', 'vo2-b']);
+  assert.equal(r.test10kDue, true);
+  assert.equal(r.lastTest10k, null);
 });
 
-test('last quality was run => next is bike', () => {
-  plan('2026-07-06', [q('run-intervals', '2026-07-08T08:00:00')]);
-  assert.equal(rotationState(dir, '2026-07-13').nextQuality, 'ride-vo2');
+test('the order goes on across weeks and sports', () => {
+  const plans = [
+    { weekStart: '2026-10-12', events: [ev('ride-threshold-a', '2026-10-12T07:00'), ev('run-vo2-a', '2026-10-14T07:00')] },
+    { weekStart: '2026-10-19', events: [ev('ride-vo2-b', '2026-10-21T07:00'), ev('run-easy', '2026-10-22T07:00')] },
+  ];
+  assert.deepEqual(rotationFromPlans(plans, '2026-10-26').next, ['threshold-b', 'threshold-a', 'vo2-a']);
 });
 
-test('ride-sst also counts as bike quality', () => {
-  plan('2026-07-06', [q('ride-sst', '2026-07-08T08:00:00')]);
-  assert.equal(rotationState(dir, '2026-07-13').nextQuality, 'run-intervals');
+test('repeated names are told apart by the longer history', () => {
+  // TA VA VB TB TA VA → the cycle ends, next is TA (place 0).
+  assert.equal(nextIndex(ORDER), 0);
+  // TA VA → place 2 (VB), not place 0.
+  assert.equal(nextIndex(['threshold-a', 'vo2-a']), 2);
+  // TB TA VA → the second TA VA of the cycle, so next is TA again.
+  assert.equal(nextIndex(['threshold-b', 'threshold-a', 'vo2-a']), 0);
+  // TB TA → next is VO2 A (place 5).
+  assert.equal(nextIndex(['threshold-b', 'threshold-a']), 5);
 });
 
-test('run-tempo counts as run quality', () => {
-  plan('2026-07-06', [q('run-tempo', '2026-07-08T08:00:00')]);
-  assert.equal(rotationState(dir, '2026-07-13').nextQuality, 'ride-vo2');
+test('old types, tempo and tests are outside the order', () => {
+  const plans = [{ weekStart: '2026-10-12', events: [
+    ev('ride-threshold-a', '2026-10-12T07:00'),
+    ev('ride-vo2', '2026-10-13T07:00'),
+    ev('run-tempo', '2026-10-14T07:00'),
+    ev('run-test-10k', '2026-10-17T07:00'),
+  ] }];
+  const r = rotationFromPlans(plans, '2026-10-19');
+  assert.equal(r.next[0], 'vo2-a');
+  assert.equal(r.lastTest10k, '2026-10-17');
+  assert.equal(r.weeksSinceTest10k, 0);
+  assert.equal(r.test10kDue, false);
+  assert.ok(r.last.tempo);
 });
 
-test('ignores the week being planned, so re-running /plan does not flip rotation', () => {
-  // THE ACTUAL BUG THIS GUARDS: if rotation read the target week's own output, a
-  // second /plan run for the same week would see its own ride-vo2 and flip to
-  // run-intervals, quietly rewriting the plan on every re-run.
-  plan('2026-07-06', [q('ride-vo2', '2026-07-10T08:00:00')]);
-  plan('2026-07-13', [q('ride-vo2', '2026-07-17T08:00:00')]); // the week we're planning
-  const r = rotationState(dir, '2026-07-13');
-  assert.equal(r.lastQualityWeek, '2026-07-06', 'must not read its own week');
-  assert.equal(r.nextQuality, 'run-intervals');
+test('the last of each bank workout keeps its prescription and whether it was done', () => {
+  const plans = [
+    { weekStart: '2026-10-05', events: [ev('ride-threshold-a', '2026-10-05T07:00', { intensity: '6×5 min Z4 top', done: true })] },
+    { weekStart: '2026-10-12', events: [ev('run-threshold-a', '2026-10-16T07:00', { intensity: '7×5 min Z4 top', done: false })] },
+  ];
+  assert.deepEqual(rotationFromPlans(plans, '2026-10-19').last['threshold-a'], {
+    date: '2026-10-16', sport: 'run', intensity: '7×5 min Z4 top', done: false,
+  });
 });
 
-test('walks backwards past weeks with no quality session', () => {
-  plan('2026-06-22', [q('run-intervals', '2026-06-24T08:00:00')]);
-  plan('2026-06-29', [{ title: 'easy', start: '2026-07-01T08:00:00', workoutType: 'run-easy' }]);
-  plan('2026-07-06', [{ title: 'rest', start: '2026-07-08T08:00:00', workoutType: 'recovery' }]);
-  const r = rotationState(dir, '2026-07-13');
-  assert.equal(r.lastQualityWeek, '2026-06-22');
-  assert.equal(r.nextQuality, 'ride-vo2');
+test('plans on or after the target week are ignored', () => {
+  const plans = [{ weekStart: '2026-10-19', events: [ev('ride-threshold-a', '2026-10-19T07:00')] }];
+  assert.equal(rotationFromPlans(plans, '2026-10-19').next[0], 'threshold-a');
 });
 
-test('picks the LAST quality session within a week, by start time', () => {
-  plan('2026-07-06', [
-    q('ride-vo2', '2026-07-07T08:00:00'),
-    q('run-intervals', '2026-07-10T08:00:00'), // later => this one wins
-  ]);
-  const r = rotationState(dir, '2026-07-13');
-  assert.equal(r.lastQuality, 'run-intervals');
-  assert.equal(r.nextQuality, 'ride-vo2');
+test('a 10k test is due after 6 weeks', () => {
+  const plans = [{ weekStart: '2026-09-07', events: [ev('run-test-10k', '2026-09-12T07:00')] }];
+  assert.equal(rotationFromPlans(plans, '2026-10-19').weeksSinceTest10k, 5);
+  assert.equal(rotationFromPlans(plans, '2026-10-19').test10kDue, false);
+  assert.equal(rotationFromPlans(plans, '2026-10-26').test10kDue, true);
 });
 
-test('no prior plans => defaults to ride-vo2', () => {
-  assert.deepEqual(rotationState(dir, '2026-07-13'), { lastQuality: null, lastQualityWeek: null, nextQuality: 'ride-vo2' });
-});
-
-test('a plan with broken events is skipped, not fatal', () => {
-  plan('2026-06-29', [q('run-intervals', '2026-07-01T08:00:00')]);
-  plans.push({ weekStart: '2026-07-06', events: [null, { start: 3 }] });
-  const r = rotationState(dir, '2026-07-13');
-  assert.equal(r.lastQualityWeek, '2026-06-29', 'skipped the broken plan and kept looking');
-});
-
-test('plan with no events key is skipped safely', () => {
-  plans.push({ weekStart: '2026-07-06' });
-  assert.equal(rotationState(dir, '2026-07-13').nextQuality, 'ride-vo2');
-});
-
-test('entries without a week are ignored', () => {
-  plan('2026-07-06', [q('ride-vo2', '2026-07-10T08:00:00')]);
-  plans.push({ events: [q('run-intervals', '2026-07-11T08:00:00')] });
-  assert.equal(rotationState(dir, '2026-07-13').lastQualityWeek, '2026-07-06');
+test('parseType', () => {
+  assert.deepEqual(parseType('run-vo2-b'), { sport: 'run', bank: 'vo2-b' });
+  assert.equal(parseType('ride-vo2'), null);
+  assert.equal(parseType(null), null);
 });

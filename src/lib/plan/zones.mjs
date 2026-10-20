@@ -25,6 +25,7 @@ export function zonesFor(w) {
     return { zone: zone.replace('top', ''), label, target: ride ? `${z.power} · ${z.hr}` : z.hr };
   };
   if (w.sport === 'strength' || w.sport === 'rest' || /strength|lift|rest/.test(t)) return [];
+  if (/test-10k|10k test/.test(t)) return [chip('Z4', '10k at goal pace')];
   if (/vo2/.test(t)) return [chip('Z5', 'Intervals'), chip('Z2top', 'Finish: 10–20 min')];
   if (/threshold/.test(t)) return [chip('Z4top', 'Intervals'), chip('Z2top', 'Finish: 10–20 min')];
   if (/tempo|sweet.?spot|z3/.test(t)) return [chip('Z3', 'Main set')];
