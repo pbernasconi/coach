@@ -11,14 +11,17 @@
  *
  * Every change sets edited_at, so a later plan-import keeps it. Add --no-calendar to skip the calendar update.
  * A move, skip or unskip of a strength workout also moves or removes its Lift session (when nothing was logged in it),
- * through the server's Lift sync push (LIFT_SYNC_TOKEN; src/lib/lift/follow-plan.mjs).
+ * through the server's Lift sync push (LIFT_SYNC_TOKEN; src/lib/lift/follow-plan.mjs). The push goes to
+ * LIFT_SYNC_BASE_URL (default production) and only when that server reads the same database: production's when
+ * DATABASE_URL is production's, else pass --push-lift to push anyway.
  */
 
+import { createHash } from 'node:crypto';
 import { connect } from '../src/db/neon.mjs';
 import { pushWeek } from '../src/lib/calendar-sync/push.mjs';
 import { followWorkout } from '../src/lib/lift/follow-plan.mjs';
 
-const [cmd, a, b, ...rest] = process.argv.slice(2).filter((x) => x !== '--no-calendar');
+const [cmd, a, b, ...rest] = process.argv.slice(2).filter((x) => x !== '--no-calendar' && x !== '--push-lift');
 const noCalendar = process.argv.includes('--no-calendar');
 const sql = connect();
 const [user] = await sql`SELECT id FROM users ORDER BY created_at LIMIT 1`;
@@ -55,7 +58,21 @@ async function push(weeks) {
   }
 }
 
-const LIFT_SERVER = process.env.LIFT_SYNC_BASE_URL ?? 'https://coach.paolobernasconi.com';
+const PROD_SERVER = 'https://coach.paolobernasconi.com';
+// SHA-256 of the production database's Neon endpoint host (without "-pooler"). The repository is public, so it holds
+// only the hash, not the host.
+const PROD_DB_HOST_SHA256 = '4cdd4dc086014eec0575d90103f2c8538e8c1ea3e6972f06705a84c9d7a6b79d';
+const LIFT_SERVER = process.env.LIFT_SYNC_BASE_URL ?? PROD_SERVER;
+const dbHost = (() => {
+  try {
+    return new URL(process.env.DATABASE_URL ?? '').hostname.replace('-pooler', '');
+  } catch {
+    return '';
+  }
+})();
+// The session rows come from DATABASE_URL and the push goes to LIFT_SERVER: push only when both are production, or
+// when --push-lift says the two match.
+const liftPushOk = process.argv.includes('--push-lift') || (LIFT_SERVER === PROD_SERVER && createHash('sha256').update(dbHost).digest('hex') === PROD_DB_HOST_SHA256);
 
 /** Pushes Lift changes through the server, as the iPhone does, so they get a seq and the server's cache is cleared. */
 async function pushLift(changes) {
@@ -71,9 +88,13 @@ async function pushLift(changes) {
 
 /** Moves or removes the workout's Lift session. A failure only warns: lift-plan.mjs puts the session right later. */
 async function followLift(id, opts) {
+  if (!liftPushOk) {
+    console.warn(`Lift session not changed: ${LIFT_SERVER} may not read this database (${dbHost || 'no DATABASE_URL'}). Pass --push-lift to push anyway.`);
+    return;
+  }
   try {
     const r = await followWorkout(sql, pushLift, id, opts);
-    if ('done' in r) console.log(`Lift session: ${r.done === 'removed' ? 'removed' : `moved to ${r.done}`}`);
+    if ('done' in r) console.log(`Lift session (${LIFT_SERVER}): ${r.done === 'removed' ? 'removed' : `moved to ${r.done}`}`);
     else if (r.skip === 'started') console.log('Lift session: started or logged, not changed');
     else if (r.skip.startsWith('refused')) console.warn(`Lift session not changed: ${r.skip}`);
   } catch (error) {

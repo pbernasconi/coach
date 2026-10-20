@@ -50,6 +50,11 @@ server as `LIFT_SYNC_TOKEN` and stored on the iPhone in the Keychain. Wrong or m
 - `set.rpe` (schema v7): the set's effort on the RPE scale, 6 to 10 in half steps, as a JSON number (`8` or `8.5`), or
   `null` when it was not recorded. Payloads from builds before v7 omit the key, which reads as `null`. The server
   stores it like any other column and validates nothing about it.
+- `session.dayMovedAt` (schema v8): when Lift last changed the session's `day` on this device (a move, "push to next
+  week", or the undo of a move), as ISO 8601 with `Z`, or `null`. Other edits keep the stored value. The server moves
+  the linked plan workout to the session's `day` only when this stamp is newer than the workout's last change on the
+  server (`WEEK-API.md`, "Phone behaviour"); the server's own session pushes (web moves, `lift-plan.mjs`) keep the
+  stored value. Payloads from builds before v8 omit the key, which reads as `null`: those phones never move the plan.
 - Notes: `session.note`, `sessionExercise.note` and `set.note` (text or `null`) are written by the Notes import and
   typed in the Workout screen. They are plain columns; an edit is a normal `update` of the row.
 - At most 500 changes per request.
