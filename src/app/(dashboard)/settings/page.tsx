@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import QRCode from 'qrcode';
 import { sql } from '@/db';
@@ -18,6 +19,8 @@ import ConnectLift from './ConnectLift';
 import EventsEditor from './EventsEditor';
 import GoalsForm from './GoalsForm';
 import SettingsNav from './SettingsNav';
+
+export const metadata: Metadata = { title: 'Settings' };
 
 export const dynamic = 'force-dynamic';
 
@@ -200,7 +203,7 @@ export default async function SettingsPage() {
       <div className="min-w-0 space-y-8">
         <div className="flex flex-wrap items-end justify-between gap-2">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
             <p className="text-sm text-muted-foreground">Connections, events, goals and how Coach plans your week.</p>
           </div>
           <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs ${attention ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground'}`}>
