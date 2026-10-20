@@ -58,6 +58,35 @@ jobs:
           printf '%s\n' "$ASC_KEY_P8" > "$key"
           chmod 600 "$key"
           echo "ASC_KEY_PATH=$key" >> "$GITHUB_ENV"
+      - name: Revoke the certificates of earlier runs
+        # Leftovers from runs without the stored certificate; Apple stops the archive when the account is full.
+        if: steps.config.outputs.ready == 'true'
+        env:
+          LIFT_CERT_ID: ${{ vars.LIFT_CERT_ID }}
+        run: python3 lift/ios/scripts/asc-revoke-ci-certs.py
+      - name: Import the signing certificate
+        # One stored Apple Development certificate (lift/DEFERRED.md), so automatic signing does not make a new one
+        # on each runner. Without the secret, automatic signing makes one, as before.
+        if: steps.config.outputs.ready == 'true'
+        env:
+          LIFT_CERT_P12: ${{ secrets.LIFT_CERT_P12 }}
+          LIFT_CERT_PASSWORD: ${{ secrets.LIFT_CERT_PASSWORD }}
+        run: |
+          if [ -z "$LIFT_CERT_P12" ]; then
+            echo "::warning::LIFT_CERT_P12 is not set; automatic signing makes a new certificate on this runner."
+            exit 0
+          fi
+          keychain="$RUNNER_TEMP/lift-signing.keychain-db"
+          keychain_password="$(openssl rand -hex 16)"
+          printf '%s' "$LIFT_CERT_P12" | base64 --decode > "$RUNNER_TEMP/lift.p12"
+          security create-keychain -p "$keychain_password" "$keychain"
+          security set-keychain-settings -lut 3600 "$keychain"
+          security unlock-keychain -p "$keychain_password" "$keychain"
+          security import "$RUNNER_TEMP/lift.p12" -k "$keychain" -P "$LIFT_CERT_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -k "$keychain_password" "$keychain" >/dev/null
+          security list-keychains -d user -s "$keychain" $(security list-keychains -d user | tr -d '"')
+          rm -f "$RUNNER_TEMP/lift.p12"
+          security find-identity -v -p codesigning "$keychain"
       - name: Generate the Xcode project
         if: steps.config.outputs.ready == 'true'
         working-directory: lift/ios
@@ -110,4 +139,6 @@ jobs:
             -authenticationKeyIssuerID "$ASC_ISSUER_ID"
       - name: Remove the key
         if: always()
-        run: rm -f "$RUNNER_TEMP"/AuthKey_*.p8
+        run: |
+          rm -f "$RUNNER_TEMP"/AuthKey_*.p8 "$RUNNER_TEMP/lift.p12"
+          security delete-keychain "$RUNNER_TEMP/lift-signing.keychain-db" 2>/dev/null || true

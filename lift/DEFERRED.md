@@ -27,6 +27,10 @@ already done around it. The build keeps going around these; nothing here blocks 
   - Secrets: `ASC_KEY_ID`, `ASC_ISSUER_ID` and `ASC_KEY_P8` (the contents of the `.p8`), from App Store Connect →
     Users and Access → Integrations → App Store Connect API, role App Manager.
   - Create the app record in App Store Connect with that bundle ID.
+  - Signing certificate (done 2026-10-20): environment secrets `LIFT_CERT_P12` (base64 `.p12`) and
+    `LIFT_CERT_PASSWORD`, and the variable `LIFT_CERT_ID` (`4LULT6RP3J`, an Apple Development certificate made through
+    the API, valid until 2027-10-20). CI imports it so that automatic signing does not make a new certificate on each
+    runner. Before it expires, make a new one and replace the three values.
   Every push to `main` that touches the app then archives with automatic signing and uploads a build numbered by
   the CI run. Optional variable `LIFT_SYNC_BASE_URL` (https origin of the coach web app) turns sync on in
   those builds.
