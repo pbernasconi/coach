@@ -1,0 +1,40 @@
+# Page speed (scripts/perf.mjs): production, and on a pull request also its staged build side by side (both read
+# the production data). Run it by hand for production alone (Actions → Perf → Run workflow).
+name: Perf
+
+on:
+  pull_request:
+    paths: ["scripts/perf.mjs", ".github/workflows/perf.yml", "vercel.json", "src/**", "next.config.ts"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  perf:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      HEALTH_TOKEN: ${{ secrets.HEALTH_TOKEN }}
+      VERCEL_BYPASS_SECRET: ${{ secrets.VERCEL_BYPASS_SECRET }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: team_Hwpc5IVS3EI80M3wxEu8wK2E
+      VERCEL_PROJECT_ID: prj_w56et7EBbNWCBLgA0g3AFys4A6MD
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+      - name: Find this pull request's staged build
+        id: staged
+        if: github.event_name == 'pull_request'
+        run: |
+          tree=$(git rev-parse 'HEAD^{tree}')
+          for i in $(seq 1 60); do
+            url=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" \
+              "https://api.vercel.com/v6/deployments?projectId=$VERCEL_PROJECT_ID&teamId=$VERCEL_ORG_ID&target=production&state=READY&limit=50" \
+              | jq -r --arg t "$tree" '[.deployments[] | select(.meta.stagedTree == $t)][0].url // empty')
+            [ -n "$url" ] && break
+            sleep 10
+          done
+          echo "url=${url:+https://$url}" >> "$GITHUB_OUTPUT"
+          echo "staged: ${url:-none}"
+      - name: Measure
+        run: node scripts/perf.mjs https://coach.paolobernasconi.com ${{ steps.staged.outputs.url }} | tee -a "$GITHUB_STEP_SUMMARY"
