@@ -41,39 +41,13 @@ already done around it. The build keeps going around these; nothing here blocks 
   to Lift can only be confirmed on your iPhone (CI builds them for the simulator without signing, so the App Group
   is not provisioned there).
 
-- **Turn on sync (server).** The sync API and dashboard are built and tested, and the whole path (iPhone store and
-  sync engine → this app's routes → Postgres → a second device) passes end to end against a local Postgres
-  (`lift/scripts/sync-e2e.sh`, see `SYNC.md`). Not deployed: that needs your Vercel and Neon. ✓ marks what the local
-  run proves; the rest only you can do.
-  1. Make a token: `openssl rand -hex 32` (hex, so it pastes into the phone cleanly). ✓ any non-empty string works
-     as `LIFT_SYNC_TOKEN`; a wrong or missing bearer gets `401`.
-  2. Vercel → the coach project → Settings → Environment Variables → add `LIFT_SYNC_TOKEN` = that token, environment
-     **Production** (add Preview too only if the phone should talk to preview builds). `DATABASE_URL` is already
-     there (Neon). Do **not** add `DATABASE_DRIVER`: unset keeps Neon's HTTP driver; `pg` is for the local run only.
-  3. Create the two tables and the sequence once, in the Neon database production uses:
-     `psql "<Neon connection string>" -v ON_ERROR_STOP=1 -f drizzle/0009_lift_sync.sql` (the connection string is in
-     Neon → the project → Connection details, or `vercel env pull` writes `DATABASE_URL` to `.env.local`). Use this
-     file, not `npm run db:migrate`: the older migrations do not replay on a fresh database (0003 alters an identity
-     column) and 0009 depends on none of them. An "already exists" error means it was done before. ✓ the file applies
-     cleanly to an empty Postgres 16 and the server runs on exactly that schema.
-  4. Redeploy so the new variable is live: Vercel → Deployments → the latest Production deployment → ⋯ → Redeploy
-     (or push to the production branch).
-  5. Smoke test, from any terminal (✓ both answers are what the local server gives):
-     `curl -s -H "Authorization: Bearer $LIFT_SYNC_TOKEN" https://<your-vercel-domain>/api/lift/sync/pull`
-     prints `{"changes":[],"cursor":"0","hasMore":false}` on a new database (a non-empty `changes` list once the
-     phone has synced), and the same with a wrong token prints `{"error":"unauthorized"}` (HTTP 401). An HTML page
-     or a Vercel login instead means Deployment Protection covers that domain: use the production domain, or turn
-     protection off for it (Settings → Deployment Protection).
-  6. Point the app at the server: GitHub → this repository → Settings → Secrets and variables → Actions → Variables
-     → New repository variable `LIFT_SYNC_BASE_URL` = `https://<your-vercel-domain>` (https only, no path). The
-     TestFlight job passes it to `xcodebuild` (`LIFT_SYNC_BASE_URL=…`), which copies it into Info.plist as
-     `LiftSyncBaseURL`; for a local Xcode build, set the same build setting in `ios/project.yml` (empty keeps sync off).
-  7. On the phone: Settings → Sync → Sync token: paste the token and tap Save and sync. The status row reads "Synced
-     just now". Demo mode (`-demo`) never syncs. ✓ the same push and pull, with a real token, a wrong one (status
-     "unauthorized", nothing lost) and the server down (status offline, the outbox kept and sent later).
-  8. Open the coach web app's Lift page (`/lift`, signed in with Clerk) to see the synced sessions. ✓ locally, after
-     the e2e run, `/lift`, `/lift/weekly` and an exercise page render the synced rows (sessions, sets logged, volume,
-     estimated 1RM), and a signed-out request is turned away.
+- **Sync is on (done 2026-10-19).** The server runs at https://coach.paolobernasconi.com (also
+  coach-paolo.vercel.app) with `LIFT_SYNC_TOKEN` set and `drizzle/0009_lift_sync.sql` applied. The repository
+  variable `LIFT_SYNC_BASE_URL` puts that origin into every TestFlight build. To connect a phone: open Coach →
+  Settings → Lift and tap **Open in Lift** on the iPhone (or scan the QR code with the camera). The
+  `lift://sync?code=…` link carries a one-time code (15 minutes, single use), never the token: Lift trades it at
+  `/api/lift/enroll` for the token, syncs, and opens Settings, where the Sync row says "Synced just now". Pasting the token by hand (Lift → Settings → Sync → Sync token) still works.
+  Verified end to end on a simulator against production: push, pull and the link, then the test rows removed.
 
 - **Gym visual licence (only if Lift ever goes public).** The exercise animations come from
   [hasaneyldrm/exercises-dataset](https://github.com/hasaneyldrm/exercises-dataset); the media is © Gym visual and

@@ -5,6 +5,7 @@ import Foundation
 ///     lift://import             Import from Notes with the note the Share extension left in the inbox
 ///     lift://import?text=…      Import from Notes with this text (for Shortcuts and short notes)
 ///     lift://templates?d=…      Review and add the templates in `d` (base64url JSON; lift/TEMPLATE-LINKS.md)
+///     lift://sync?code=…        Trade this one-time code for the sync token, then sync (Coach Settings → Lift)
 ///
 /// Compiled into the app, which routes them (`IncomingNoteRouter`), and LiftShare, which builds them.
 nonisolated enum AppLink: Equatable, Sendable {
@@ -13,6 +14,9 @@ nonisolated enum AppLink: Equatable, Sendable {
     /// Open the template link review with the link's `d` value as written (empty when it has none; the review says
     /// the link cannot be read).
     case templates(payload: String)
+    /// Trade the one-time enrollment `code` for the sync token, then sync. The link never carries the token itself:
+    /// any app can claim a custom URL scheme. A link with no code names nothing.
+    case syncCode(String)
 
     static let scheme = "lift"
 
@@ -34,6 +38,10 @@ nonisolated enum AppLink: Equatable, Sendable {
             self = .importNote(text: text?.isEmpty == false ? text : nil)
         case "templates":
             self = .templates(payload: items.first { $0.name == "d" }?.value ?? "")
+        case "sync":
+            let code = items.first { $0.name == "code" }?.value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            guard !code.isEmpty else { return nil }
+            self = .syncCode(code)
         default:
             return nil
         }
@@ -54,6 +62,10 @@ nonisolated enum AppLink: Equatable, Sendable {
             components.host = "templates"
             let value = payload.addingPercentEncoding(withAllowedCharacters: Self.valueCharacters)
             components.percentEncodedQueryItems = [URLQueryItem(name: "d", value: value)]
+        case .syncCode(let code):
+            components.host = "sync"
+            let value = code.addingPercentEncoding(withAllowedCharacters: Self.valueCharacters)
+            components.percentEncodedQueryItems = [URLQueryItem(name: "code", value: value)]
         }
         return components.url
     }
