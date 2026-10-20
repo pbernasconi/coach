@@ -13,6 +13,7 @@ import { sessionSummaries, weeklyVolume } from '@/lib/lift-dashboard/stats.mjs';
 import { loadWeek, ownerId } from '@/lib/plan/queries';
 import { addDays, mondayOf, todayIn } from '@/lib/plan/week.mjs';
 import { loadStatus, loadTargets } from '@/lib/status';
+import { zonesFor } from '@/lib/plan/zones.mjs';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -85,6 +86,7 @@ export async function GET(request: Request) {
       state: w.state,
       match: w.match,
       adapted: Boolean(w.adaptedFrom),
+      zones: zonesFor(w),
     }));
     const upcoming = workouts.filter((w) => w.date >= today && w.date <= addDays(today, 6) && w.state !== 'skipped');
 
