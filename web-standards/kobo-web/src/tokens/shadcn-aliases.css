@@ -1,0 +1,24 @@
+/*
+ * Optional: maps the shadcn/ui colour names onto Kobo roles, so an app can keep its shadcn components while it
+ * moves to Kobo. Import it after tokens.css. New code uses the Kobo names (bg-surface, text-ink-muted).
+ */
+@theme inline {
+  --color-background: var(--k-canvas);
+  --color-foreground: var(--k-ink);
+  --color-card: var(--k-surface);
+  --color-card-foreground: var(--k-ink);
+  --color-popover: var(--k-surface);
+  --color-popover-foreground: var(--k-ink);
+  --color-primary: var(--k-brand);
+  --color-primary-foreground: var(--k-on-brand);
+  --color-secondary: var(--k-surface-raised);
+  --color-secondary-foreground: var(--k-ink);
+  --color-muted: var(--k-surface-raised);
+  --color-muted-foreground: var(--k-ink-muted);
+  --color-accent: var(--k-surface-raised);
+  --color-accent-foreground: var(--k-ink);
+  --color-destructive: var(--k-danger-ink);
+  --color-destructive-foreground: var(--k-on-brand);
+  --color-border: var(--k-line);
+  --color-input: var(--k-line-strong);
+}
