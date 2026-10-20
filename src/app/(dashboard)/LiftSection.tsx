@@ -39,7 +39,7 @@ export default function LiftSection({
     return (
       <div className="rounded-lg border p-4 text-sm text-muted-foreground">
         <h2 className="mb-1 font-semibold text-foreground">Strength (Lift)</h2>
-        No Lift sessions on the server yet. Paste the sync token from <Link href="/settings" className="underline">Settings</Link> into Lift on the iPhone.
+        No Lift sessions on the server yet. Connect Lift on the iPhone from <Link href="/settings" className="underline">Settings → Lift</Link> (one tap, or scan the code).
       </div>
     );
   }
