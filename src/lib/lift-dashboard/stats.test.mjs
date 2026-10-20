@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildModel, muscleSets, sessionSummaries, topLifts, weeklyVolume } from './stats.mjs';
+import { buildModel, muscleSets, sessionDetail, sessionSummaries, topLifts, weeklyVolume } from './stats.mjs';
 
 const SQUAT = 'AAAAAAAA-0000-0000-0000-000000000001';
 const ROW = 'AAAAAAAA-0000-0000-0000-000000000002';
@@ -76,4 +76,15 @@ test('sessionSummaries leaves out a planned session with nothing logged', () => 
   const m = buildModel(d);
   assert.deepEqual(sessionSummaries(m, 'kg').map((s) => s.id), ['s2', 's1']);
   assert.deepEqual(sessionSummaries(m, 'kg', { planned: true }).map((s) => s.id), ['s3', 's2', 's1']);
+});
+
+test('sessionDetail gives each set its target, so a planned session shows what to lift', () => {
+  const d = data();
+  d.sessions.push({ id: 'S3', day: '2026-10-27', title: 'Heavy', deletedAt: null });
+  d.sessionExercises.push({ id: 'e5', sessionID: 'S3', exerciseID: SQUAT, displayName: 'Back squat', loadMode: 'total', position: 0, deletedAt: null });
+  d.sets.push({ id: 'q', sessionExerciseID: 'e5', position: 0, actualReps: null, actualWeight: null, targetReps: 8, targetRepMin: null, targetRepMax: null, targetWeight: 100, unit: 'kg', kind: 'working', status: 'planned', deletedAt: null });
+  const s = sessionDetail(buildModel(d), 's3', 'kg');
+  assert.equal(s.exercises[0].loadMode, 'total');
+  assert.deepEqual(s.exercises[0].sets[0].target, { reps: 8, repMin: null, repMax: null, weight: 100 });
+  assert.equal(s.exercises[0].sets[0].status, 'planned');
 });
