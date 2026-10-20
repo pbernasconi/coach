@@ -81,6 +81,7 @@ import Testing
         await vm.send(.finishTapped)?.value
 
         #expect(vm.state.rest == nil)
+        #expect(vm.state.ready == nil)
         #expect(restActivity.calls.last == .end)
         #expect(sessions.calls.last == .finish(planned.id))
     }
@@ -162,6 +163,7 @@ import Testing
         await vm.send(.setLogTapped(last.items[0].sets[1].id))?.value
 
         #expect(vm.state.rest == nil)
+        #expect(vm.state.ready == nil)
         #expect(!restActivity.calls.contains { if case .start = $0 { true } else { false } })
     }
 }

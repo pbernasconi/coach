@@ -12,6 +12,8 @@ nonisolated struct WorkoutState: Equatable, Sendable {
     var noteEditor: NoteEditor?
     /// The rest countdown after a set was logged.
     var rest: RestTimer?
+    /// The rest ran out: the next set is up. Only while `rest` is nil; logging any set or closing the bar clears it.
+    var ready: RestReady?
     /// The latest message for the toast slot.
     var toast: WorkoutToast?
     /// Exercise stills by catalog id, loaded as their sections appear.

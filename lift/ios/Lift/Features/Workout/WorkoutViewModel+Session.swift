@@ -38,7 +38,8 @@ extension WorkoutViewModel {
         case .exerciseRemoveUndoTapped(let id): return { try await $0.restore(id) }
         case .startTapped: return { try await $0.start() }
         case .finishTapped:
-            send(.restSkipTapped)  // a finished workout has no rest left, here or on the Lock Screen
+            send(.restSkipTapped)  // a finished workout has no rest left, here or on the Lock Screen,
+            send(.restReadyDismissed)  // and no "rest over" bar for a next set
             return { try await $0.finish() }
         case .discardTapped:
             hasDiscarded = true  // keeps the page as it was while it closes

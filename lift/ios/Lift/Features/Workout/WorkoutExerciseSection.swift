@@ -14,6 +14,8 @@ struct WorkoutExerciseSection: View {
     let exercise: WorkoutExercise
     /// The catalog still; nil when the exercise has no catalog entry.
     let thumbnail: MediaImage?
+    /// The set the running rest follows; its row is highlighted.
+    let restingSetID: UUID?
     let send: (WorkoutAction) -> Void
 
     var body: some View {
@@ -27,11 +29,13 @@ struct WorkoutExerciseSection: View {
                     SetRow(
                         item: item,
                         unit: exercise.unit,
+                        isResting: item.id == restingSetID,
                         onLog: { send(.setLogTapped(item.id)) },
                         onEdit: { send(.setValuesTapped(item.id)) },
                         onSkip: { send(.setSkipTapped(item.id)) },
                         onRemove: { send(.setRemoveTapped(item.id)) }
                     )
+                    .id(item.id)
                 }
                 AddSetRow { send(.addSetTapped(exerciseID: exercise.id)) }
             } header: {
