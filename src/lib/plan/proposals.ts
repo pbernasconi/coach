@@ -1,0 +1,161 @@
+/**
+ * The cloud plan: requests from the Plan page, the job's claims and results, and Paolo's accept or reject.
+ * The table is plan_proposals (src/db/plan-schema.ts); the checks are in proposal.mjs; the job is
+ * .github/workflows/plan.yml, and an accept starts plan-apply.yml (Lift sessions, Garmin).
+ */
+
+import { createId } from '@paralleldrive/cuid2';
+import { sql } from '@/db';
+import { toDay, toIso } from '@/lib/db-time.mjs';
+import { HOME_TZ, pushWeek } from '@/lib/calendar-sync/push.mjs';
+import { importPlan } from '@/lib/plan/import.mjs';
+import { checkPlan } from '@/lib/plan/proposal.mjs';
+import { addDays, mondayOf, todayIn } from '@/lib/plan/week.mjs';
+
+export type PlanRequest = { kind: 'weekly' | 'checkin'; weekStart: string; feel: string | null; focus: string | null; lock: string | null };
+export type ProposalStatus = 'requested' | 'running' | 'proposed' | 'accepted' | 'rejected' | 'failed';
+export type ProposalRow = {
+  id: string; title: string; date: string; startTime: string | null; duration: number | null; tss: number | null;
+  activityType: string; why: string | null; intensity: string | null;
+};
+export type Proposal = {
+  id: string; status: ProposalStatus; request: PlanRequest; weekStart: string; summary: string | null; error: string | null;
+  createdAt: string | null; updatedAt: string | null; rows: ProposalRow[];
+};
+
+type Row = Record<string, unknown>;
+const day = (v: unknown): string => toDay(v) ?? '';
+
+function toProposal(r: Row): Proposal {
+  const weekStart = day(r.week_start);
+  const rows = r.plan ? checkPlan(r.plan, weekStart).rows : [];
+  return {
+    id: String(r.id),
+    status: r.status as ProposalStatus,
+    request: r.request as PlanRequest,
+    weekStart,
+    summary: (r.summary as string) ?? null,
+    error: (r.error as string) ?? null,
+    createdAt: toIso(r.created_at),
+    updatedAt: toIso(r.updated_at),
+    rows: rows.map((x: Record<string, unknown>) => ({
+      id: String(x.sourceKey), title: String(x.title), date: String(x.date), startTime: (x.startTime as string) ?? null,
+      duration: (x.duration as number) ?? null, tss: (x.tss as number) ?? null, activityType: String(x.activityType),
+      why: (x.why as string) ?? null, intensity: (x.intensity as string) ?? null,
+    })),
+  };
+}
+
+/** A request from the Plan page. Returns its id. */
+export async function createRequest(userId: string, req: PlanRequest): Promise<string> {
+  const id = createId();
+  await sql`
+    INSERT INTO plan_proposals (id, user_id, kind, week_start, status, request)
+    VALUES (${id}, ${userId}, ${req.kind}, ${req.weekStart}, 'requested', ${JSON.stringify(req)}::jsonb)`;
+  return id;
+}
+
+/**
+ * The job takes a request: the one with `id`, or (the Sunday run, no id) a new weekly request for next week with no
+ * answers. Marks it running.
+ */
+export async function claimRequest(userId: string, id: string | null): Promise<{ id: string; request: PlanRequest } | null> {
+  if (!id) {
+    const weekStart = addDays(mondayOf(todayIn(HOME_TZ)), 7);
+    id = await createRequest(userId, { kind: 'weekly', weekStart, feel: null, focus: null, lock: null });
+  }
+  const [r] = (await sql`
+    UPDATE plan_proposals SET status = 'running', updated_at = NOW()
+    WHERE id = ${id} AND user_id = ${userId} AND status IN ('requested', 'running')
+    RETURNING id, request`) as Row[];
+  return r ? { id: String(r.id), request: r.request as PlanRequest } : null;
+}
+
+/** The agent's plan. A plan that fails the checks marks the request failed, with the reason. */
+export async function submitPlan(userId: string, id: string, plan: unknown, summary: string | null): Promise<{ error: string } | { events: number; tss: number }> {
+  const [p] = (await sql`SELECT week_start FROM plan_proposals WHERE id = ${id} AND user_id = ${userId} AND status = 'running'`) as Row[];
+  if (!p) return { error: 'No running request with that id.' };
+  const { errors, rows } = checkPlan(plan, day(p.week_start));
+  if (errors.length) {
+    await failRequest(userId, id, `The plan did not pass the checks: ${errors.slice(0, 3).join(' ')}`);
+    return { error: errors.join(' ') };
+  }
+  await sql`
+    UPDATE plan_proposals SET status = 'proposed', plan = ${JSON.stringify(plan)}::jsonb, summary = ${summary}, error = NULL, updated_at = NOW()
+    WHERE id = ${id}`;
+  return { events: rows.length, tss: Math.round(rows.reduce((n: number, r: { tss?: number | null }) => n + (r.tss ?? 0), 0)) };
+}
+
+export async function failRequest(userId: string, id: string, error: string) {
+  await sql`
+    UPDATE plan_proposals SET status = 'failed', error = ${error.slice(0, 500)}, updated_at = NOW()
+    WHERE id = ${id} AND user_id = ${userId} AND status IN ('requested', 'running')`;
+}
+
+/**
+ * The request of the last 14 days that most needs Paolo, or null: a plan ready for review first, then one in
+ * progress, then a failure (the newest of each). A failed rerun never hides a plan that is ready.
+ */
+export async function openProposal(userId: string): Promise<Proposal | null> {
+  const [r] = (await sql`
+    SELECT * FROM plan_proposals
+    WHERE user_id = ${userId} AND status IN ('requested', 'running', 'proposed', 'failed') AND created_at > NOW() - INTERVAL '14 days'
+    ORDER BY CASE status WHEN 'proposed' THEN 0 WHEN 'running' THEN 1 WHEN 'requested' THEN 1 ELSE 2 END, created_at DESC
+    LIMIT 1`) as Row[];
+  return r ? toProposal(r) : null;
+}
+
+export async function proposalById(userId: string, id: string): Promise<Proposal | null> {
+  const [r] = (await sql`SELECT * FROM plan_proposals WHERE id = ${id} AND user_id = ${userId}`) as Row[];
+  return r ? toProposal(r) : null;
+}
+
+/**
+ * Accept: the plan goes into Coach (the same import as /plan, which keeps workouts changed on the web), then onto
+ * Google Calendar; plan-apply.yml then plans the Lift sessions and the Garmin runs.
+ */
+export async function acceptProposal(
+  userId: string,
+  id: string,
+): Promise<{ error: string } | { weekStart: string; counts: { inserted: number; updated: number; kept: number; deleted: number } }> {
+  const [r] = (await sql`SELECT * FROM plan_proposals WHERE id = ${id} AND user_id = ${userId} AND status = 'proposed'`) as Row[];
+  if (!r) return { error: 'This plan is no longer waiting for you.' };
+  const weekStart = day(r.week_start);
+  const counts = await importPlan(sql, userId, r.plan as object, (r.summary as string) ?? undefined);
+  await sql`UPDATE plan_proposals SET status = 'accepted', decided_at = NOW(), updated_at = NOW() WHERE id = ${id}`;
+  // Older open requests are now out of date.
+  await sql`
+    UPDATE plan_proposals SET status = 'rejected', decided_at = NOW(), updated_at = NOW(), error = 'Replaced by a newer plan.'
+    WHERE user_id = ${userId} AND id <> ${id} AND status IN ('proposed', 'failed') AND week_start = ${weekStart}`;
+  return { weekStart, counts };
+}
+
+export async function rejectProposal(userId: string, id: string) {
+  await sql`
+    UPDATE plan_proposals SET status = 'rejected', decided_at = NOW(), updated_at = NOW()
+    WHERE id = ${id} AND user_id = ${userId} AND status IN ('proposed', 'failed', 'requested')`;
+}
+
+/** Pushes plan weeks to Google Calendar (the plan apply job, after Lift added the planned sets to the descriptions). */
+export async function pushWeeks(userId: string, weeks: string[]) {
+  const out = [];
+  for (const w of weeks) out.push({ week: w, ...(await pushWeek(sql, userId, mondayOf(w))) });
+  return out;
+}
+
+/**
+ * Starts a workflow (plan.yml, plan-apply.yml) through the GitHub API. Needs GITHUB_DISPATCH_TOKEN in Vercel: a
+ * fine-grained token for this repository with Actions: read and write.
+ */
+export async function dispatchWorkflow(file: string, inputs: Record<string, string> = {}): Promise<{ ok: true } | { error: string }> {
+  const token = process.env.GITHUB_DISPATCH_TOKEN;
+  if (!token) return { error: 'GITHUB_DISPATCH_TOKEN is not set in Vercel, so Coach cannot start the job.' };
+  const repo = process.env.GITHUB_REPO ?? 'pbernasconi/coach';
+  const res = await fetch(`https://api.github.com/repos/${repo}/actions/workflows/${file}/dispatches`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${token}`, accept: 'application/vnd.github+json', 'x-github-api-version': '2022-11-28' },
+    body: JSON.stringify({ ref: 'main', inputs }),
+    signal: AbortSignal.timeout(15_000),
+  });
+  return res.ok ? { ok: true } : { error: `GitHub refused to start ${file} (HTTP ${res.status}).` };
+}
