@@ -52,6 +52,12 @@ export default function PlanBoard({ week, timeZone }: { week: Week; timeZone: st
     }
   }, [timeZone, router]);
 
+  // A link like /plan#w-<id> (from the start page) opens that workout.
+  useEffect(() => {
+    const m = /^#w-(.+)$/.exec(window.location.hash);
+    if (m) setOpen(m[1]);
+  }, []);
+
   const days = Array.from({ length: 7 }, (_, i) => addDays(week.weekStart, i));
   const prev = addDays(week.weekStart, -7);
   const next = addDays(week.weekStart, 7);
@@ -173,11 +179,12 @@ export default function PlanBoard({ week, timeZone }: { week: Week; timeZone: st
           return (
             <div
               key={d}
+              id={`day-${d}`}
               onDragOver={(e) => { e.preventDefault(); setDragOver(d); }}
               onDragLeave={() => setDragOver((x) => (x === d ? null : x))}
               onDrop={(e) => { e.preventDefault(); setDragOver(null); move(e.dataTransfer.getData('text/plain'), d); }}
               className={cn(
-                'min-h-32 rounded-lg border p-2 transition-colors',
+                'min-h-32 scroll-mt-24 rounded-lg border p-2 transition-colors target:ring-2 target:ring-primary',
                 d === week.today && 'border-primary',
                 d < week.today && 'bg-muted/40',
                 dragOver === d && 'bg-accent'
@@ -228,10 +235,11 @@ function WorkoutCard({
   const hard = /hard|threshold|vo2|tempo|race/i.test(`${w.intensity} ${w.workoutType} ${w.title}`);
   return (
     <div
+      id={`w-${w.id}`}
       draggable={w.state !== 'done'}
       onDragStart={(e) => e.dataTransfer.setData('text/plain', w.id)}
       className={cn(
-        'group rounded-md border bg-card p-2 text-sm shadow-sm',
+        'group scroll-mt-24 rounded-md border bg-card p-2 text-sm shadow-sm target:ring-2 target:ring-primary',
         w.state !== 'done' && 'cursor-grab active:cursor-grabbing',
         w.state === 'done' && 'border-green-600/40 bg-green-600/5',
         w.state === 'missed' && 'opacity-60',
