@@ -90,7 +90,7 @@ function LoadChart({ load }: { load: LoadPoint[] }) {
   );
 }
 
-export default function PerformanceView({ perf, today }: { perf: Performance; today: string }) {
+export default function PerformanceView({ perf, today, strengthTarget = 2 }: { perf: Performance; today: string; strengthTarget?: number }) {
   const weeks = perf.weeks;
   const last4 = weeks.slice(-4);
   const prev4 = weeks.slice(-8, -4);
@@ -106,7 +106,7 @@ export default function PerformanceView({ perf, today }: { perf: Performance; to
         <StatCard title="Hours, last 4 weeks" value={sum(last4, 'hours').toFixed(1)} subtitle={change(sum(last4, 'hours'), sum(prev4, 'hours'))} />
         <StatCard title="Run km, last 4 weeks" value={sum(last4, 'runKm').toFixed(0)} subtitle={`Pace ${pace(sum(last4, 'runMin'), sum(last4, 'runKm'))}`} />
         <StatCard title="Ride hours, last 4 weeks" value={sum(last4, 'rideHours').toFixed(1)} subtitle={change(sum(last4, 'rideHours'), sum(prev4, 'rideHours'))} />
-        <StatCard title="Strength, last 4 weeks" value={String(sum(last4, 'strength'))} subtitle="Target: 8 (2 a week)" />
+        <StatCard title="Strength, last 4 weeks" value={String(sum(last4, 'strength'))} subtitle={`Target: ${strengthTarget * 4} (${strengthTarget} a week)`} />
       </div>
       <WeeklyBars weeks={weeks} />
       <LoadChart load={perf.load} />
