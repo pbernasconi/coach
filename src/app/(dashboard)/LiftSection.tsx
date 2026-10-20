@@ -16,7 +16,7 @@ function Sparkline({ points }: { points: { e1rm: number }[] }) {
     .map((v, i) => `${i ? 'L' : 'M'}${((i / (vals.length - 1)) * W).toFixed(1)},${(H - ((v - lo) / (hi - lo || 1)) * (H - 4) - 2).toFixed(1)}`)
     .join('');
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="h-7 w-28" aria-hidden>
+    <svg viewBox={`0 0 ${W} ${H}`} className="h-7 w-16 shrink-0 sm:w-28" aria-hidden>
       <path d={d} fill="none" className="stroke-primary" strokeWidth="1.5" />
     </svg>
   );
@@ -49,20 +49,20 @@ export default function LiftSection({
     .sort((a, b) => b.avg - a.avg || b.week - a.week)
     .slice(0, 10);
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <MuscleSetsChart rows={muscles} />
       <div className="rounded-lg border bg-[var(--viz-surface)] p-4">
-        <div className="mb-3 flex items-baseline justify-between">
+        <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-2">
           <h2 className="font-semibold">Main lifts</h2>
           <span className="text-xs text-muted-foreground">estimated 1RM, last 12 weeks</span>
         </div>
         <div className="divide-y">
           {top.map((l) => (
-            <Link key={l.key} href={`/lift/exercises/${encodeURIComponent(l.key)}`} className="flex items-center justify-between gap-3 py-2 text-sm hover:bg-muted/40">
-              <span className="min-w-0 flex-1 truncate">{l.name}</span>
+            <Link key={l.key} href={`/lift/exercises/${encodeURIComponent(l.key)}`} className="flex min-h-10 items-center justify-between gap-2 py-2 text-sm hover:bg-muted/40 sm:gap-3">
+              <span className="line-clamp-2 min-w-0 flex-1 sm:line-clamp-none sm:truncate">{l.name}</span>
               <Sparkline points={l.points} />
-              <span className="w-20 text-right">{l.latest ? `${Math.round(l.latest)} ${unit}` : '-'}</span>
-              <span className={`w-14 text-right text-xs ${l.change == null ? 'text-muted-foreground' : l.change >= 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
+              <span className="w-16 shrink-0 text-right tabular-nums sm:w-20">{l.latest ? `${Math.round(l.latest)} ${unit}` : '-'}</span>
+              <span className={`w-10 shrink-0 text-right text-xs tabular-nums sm:w-14 ${l.change == null ? 'text-muted-foreground' : l.change >= 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
                 {l.change == null ? '' : `${l.change >= 0 ? '+' : ''}${Math.round(l.change * 100)}%`}
               </span>
             </Link>

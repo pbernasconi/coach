@@ -33,7 +33,7 @@ function Section({ title, level, children }: { title: string; level: 'ok' | Warn
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex justify-between gap-4">
-      <span className="text-muted-foreground">{label}</span>
+      <span className="min-w-0 text-muted-foreground [overflow-wrap:anywhere]">{label}</span>
       <span className="text-right">{value}</span>
     </div>
   );
@@ -84,7 +84,7 @@ export default async function SettingsPage() {
           <div className="flex flex-wrap gap-2 pt-1">
             {status.strava.canSync && <StravaSyncButton />}
             {connectUrl && (
-              <a className="rounded-md border px-3 py-1.5 text-sm hover:bg-accent" href={connectUrl}>
+              <a className="inline-flex h-10 items-center rounded-md border px-3 text-sm hover:bg-accent md:h-auto md:py-1.5" href={connectUrl}>
                 {status.strava.connected ? 'Reconnect Strava' : 'Connect Strava'}
               </a>
             )}

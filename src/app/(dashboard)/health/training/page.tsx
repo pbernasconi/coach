@@ -162,9 +162,9 @@ function TrainingBody({ t, today }: { t: TrainingView; today: string }) {
         {t.records.length === 0 ? (
           <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">No personal records from Garmin yet.</p>
         ) : (
-          <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="grid grid-cols-2 gap-2 lg:grid-cols-3">
             {t.records.map((p) => (
-              <li key={p.key} className="rounded-lg border bg-[var(--viz-surface)] px-4 py-3">
+              <li key={p.key} className="min-w-0 rounded-lg border bg-[var(--viz-surface)] px-3 py-3 sm:px-4">
                 <div className="text-xs text-[var(--viz-muted)]">{p.label}</div>
                 <div className="text-lg font-semibold tabular-nums text-[var(--viz-ink)]">{p.value}</div>
                 <div className="truncate text-[11px] text-[var(--viz-ink-2)]">{[p.date, p.activity].filter(Boolean).join(' · ') || ' '}</div>

@@ -39,7 +39,7 @@ export default function PmcChart({ days, today, events = [] }: { days: PmcChartD
   const tsbHi = Math.max(20, ...days.map((d) => d.tsb));
   const top2 = M.top + H1 + GAPP;
   const y2 = (v: number) => top2 + H2 - ((v - tsbLo) / (tsbHi - tsbLo)) * H2;
-  const t2 = [-30, -10, 0, 20].filter((t) => t >= tsbLo && t <= tsbHi);
+  const t2 = (narrow ? [-30, 0, 20] : [-30, -10, 0, 20]).filter((t) => t >= tsbLo && t <= tsbHi);
   const zeroY = y2(0);
 
   // The last actual day; the projection starts there so both segments join.
@@ -117,7 +117,7 @@ export default function PmcChart({ days, today, events = [] }: { days: PmcChartD
           onBlur={() => setHover(null)}
           onPointerMove={onMove}
           onPointerLeave={() => setHover(null)}
-          className="outline-none focus-visible:ring-2 focus-visible:ring-[var(--viz-ctl)]"
+          className="max-w-full outline-none focus-visible:ring-2 focus-visible:ring-[var(--viz-ctl)]"
         >
           {/* The future: a shaded background behind both panels */}
           {futureX !== null && (

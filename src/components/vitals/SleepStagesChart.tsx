@@ -44,7 +44,7 @@ export default function SleepStagesChart({ nights }: { nights: Night[] }) {
         {nights.length === 0 ? (
           <div className="flex h-[190px] items-center justify-center rounded-md bg-[var(--viz-band)] text-xs text-[var(--viz-muted)]">No sleep stages in the last 30 nights.</div>
         ) : (
-          <svg width={width} height={H} role="img" aria-label={`Sleep stages for ${nights.length} nights. Average ${avg === null ? '-' : hm(avg)} hours.`}>
+          <svg className="max-w-full" width={width} height={H} role="img" aria-label={`Sleep stages for ${nights.length} nights. Average ${avg === null ? '-' : hm(avg)} hours.`}>
             {Array.from({ length: maxH / 2 + 1 }, (_, i) => i * 2).map((hh) => (
               <g key={hh}>
                 <line x1={M.left} x2={M.left + plotW} y1={y(hh * 60)} y2={y(hh * 60)} stroke={hh === 0 ? 'var(--viz-axis)' : 'var(--viz-grid)'} />
@@ -67,7 +67,12 @@ export default function SleepStagesChart({ nights }: { nights: Night[] }) {
                       return <rect key={s} x={cx - barW / 2} y={top} width={barW} height={Math.max(0, bottom - top - 0.5)} fill={STAGE_STYLE[s].color} />;
                     })}
                     {(i % 7 === nights.length % 7 || i === nights.length - 1) && (
-                      <text x={cx} y={H - 6} textAnchor="middle" className="fill-[var(--viz-muted)] text-[10px]">
+                      <text
+                        x={i === nights.length - 1 ? M.left + plotW : cx}
+                        y={H - 6}
+                        textAnchor={i === nights.length - 1 ? 'end' : 'middle'}
+                        className="fill-[var(--viz-muted)] text-[10px]"
+                      >
                         {new Date(`${night.date}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })}
                       </text>
                     )}

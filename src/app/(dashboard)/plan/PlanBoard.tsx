@@ -211,7 +211,7 @@ export default function PlanBoard({
         </div>
       )}
 
-      <div className="grid gap-3 md:grid-cols-7">
+      <div className="grid gap-3 md:grid-cols-4 lg:grid-cols-7">
         {days.map((d) => {
           const label = dayLabel(d);
           const dayWorkouts = workouts.filter((w) => w.date === d).sort((a, b) => (a.startTime ?? '99').localeCompare(b.startTime ?? '99'));
@@ -234,7 +234,7 @@ export default function PlanBoard({
                 else move(e.dataTransfer.getData(WORKOUT_MIME) || e.dataTransfer.getData('text/plain'), d);
               }}
               className={cn(
-                'min-h-32 scroll-mt-24 rounded-lg border p-2 transition-colors target:ring-2 target:ring-primary',
+                'scroll-mt-24 rounded-lg border p-2 md:min-h-32 transition-colors target:ring-2 target:ring-primary',
                 d === week.today && 'border-primary',
                 d < week.today && 'bg-muted/40',
                 dragOver === d && 'bg-accent'
@@ -335,11 +335,11 @@ function WorkoutCard({
       {w.state !== 'done' && (
         // Touch screens cannot drag: one tap moves the workout a day. Shown on phones, and on hover.
         <div className="mt-1 flex justify-end gap-1 md:hidden md:group-hover:flex">
-          <Button size="sm" variant="ghost" className="h-8 w-8 p-0 md:h-6 md:w-6" aria-label="Move a day earlier"
+          <Button size="sm" variant="ghost" className="h-10 w-10 p-0 md:h-6 md:w-6" aria-label="Move a day earlier"
             disabled={disabled || w.date <= days[0]} onClick={() => onMove(addDays(w.date, -1))}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <Button size="sm" variant="ghost" className="h-8 w-8 p-0 md:h-6 md:w-6" aria-label="Move a day later"
+          <Button size="sm" variant="ghost" className="h-10 w-10 p-0 md:h-6 md:w-6" aria-label="Move a day later"
             disabled={disabled || w.date >= days[6]} onClick={() => onMove(addDays(w.date, 1))}>
             <ChevronRight className="h-4 w-4" />
           </Button>
@@ -354,7 +354,7 @@ function WorkoutCard({
               <label className="flex items-center gap-1">
                 Move to
                 <select
-                  className="rounded border bg-background px-1 py-0.5"
+                  className="h-9 rounded border bg-background px-1 text-base sm:h-auto sm:py-0.5 sm:text-xs"
                   value={w.date}
                   disabled={disabled}
                   onChange={(e) => onMove(e.target.value)}
@@ -364,7 +364,7 @@ function WorkoutCard({
                   ))}
                 </select>
               </label>
-              <Button size="sm" variant="outline" className="h-6 px-2 text-xs" disabled={disabled} onClick={onSkip}>
+              <Button size="sm" variant="outline" className="h-9 px-3 text-xs md:h-6 md:px-2" disabled={disabled} onClick={onSkip}>
                 {w.status === 'skipped' ? 'Unskip' : 'Skip'}
               </Button>
             </div>
