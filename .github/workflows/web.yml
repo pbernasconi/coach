@@ -1,5 +1,6 @@
-# Web app checks on every pull request and on main. Branch protection requires "web checks" and
-# "web integration" before a merge (the iOS jobs in ios.yml do not check the web app).
+# Web app checks on every pull request and on main. Branch protection requires "web checks", "web build"
+# and "web integration" before a merge (the iOS jobs in ios.yml do not check the web app). The three jobs run
+# in parallel; each restores node_modules from a cache keyed by package-lock.json and runs npm ci only on a miss.
 name: Web
 
 on:
@@ -14,6 +15,9 @@ concurrency:
   group: web-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  NODE_MODULES_KEY: node-modules-${{ github.workflow }}-node22-v1
+
 jobs:
   checks:
     name: web checks
@@ -24,8 +28,13 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
         with:
           node-version: 22
-          cache: npm
-      - run: npm ci
+      - id: deps
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: node_modules
+          key: ${{ env.NODE_MODULES_KEY }}-${{ hashFiles('package-lock.json') }}
+      - if: steps.deps.outputs.cache-hit != 'true'
+        run: npm ci
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test
@@ -41,10 +50,29 @@ jobs:
             echo "::error::src/db/*schema*.ts changed without a migration. Run npm run db:generate and commit drizzle/."
             exit 1
           fi
+
+  build:
+    name: web build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
+        with:
+          node-version: 22
+      - id: deps
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: node_modules
+          key: ${{ env.NODE_MODULES_KEY }}-${{ hashFiles('package-lock.json') }}
+      - if: steps.deps.outputs.cache-hit != 'true'
+        run: npm ci
       - run: npm run build
         env:
           # The build only needs a well-formed URL (neon() checks the format when a route module loads).
           DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+          # "web checks" runs tsc at the same time (next.config.ts).
+          SKIP_BUILD_TYPECHECK: "1"
 
   integration:
     # Every page loader on a real Postgres, with times as Date objects and as text (src/lib/health.ts).
@@ -68,8 +96,13 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
         with:
           node-version: 22
-          cache: npm
-      - run: npm ci
+      - id: deps
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: node_modules
+          key: ${{ env.NODE_MODULES_KEY }}-${{ hashFiles('package-lock.json') }}
+      - if: steps.deps.outputs.cache-hit != 'true'
+        run: npm ci
       - name: Build the schema from the migrations
         run: npm run db:migrate
       - run: npm run test:integration
