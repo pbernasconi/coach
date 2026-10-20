@@ -14,6 +14,7 @@ import { loadWeek, ownerId } from '@/lib/plan/queries';
 import { addDays, mondayOf, todayIn } from '@/lib/plan/week.mjs';
 import { loadStatus, loadTargets } from '@/lib/status';
 import { zonesFor } from '@/lib/plan/zones.mjs';
+import { homeEvents } from '@/lib/calendar-sync/events';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -39,6 +40,17 @@ function zone(tz: string | null) {
 }
 
 type Row = Record<string, unknown>;
+
+/** How far `timeZone` is ahead of UTC at `at`, in ms (Tokyo: +9 h). */
+function tzOffsetMs(timeZone: string, at: Date) {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat('en-US', { timeZone, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      .formatToParts(at)
+      .map((p) => [p.type, p.value])
+  );
+  const asUTC = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute, +parts.second);
+  return asUTC - at.getTime();
+}
 const iso = (v: unknown) => (v instanceof Date ? v.toISOString().slice(0, 19) : String(v ?? ''));
 
 export async function GET(request: Request) {
@@ -54,7 +66,9 @@ export async function GET(request: Request) {
     const weekStart = mondayOf(today);
     const base = process.env.BASE_URL ?? 'https://coach-paolo.vercel.app';
 
-    const [week, nextWeek, acts, load, conn, liftChange, lift, status, targets] = await Promise.all([
+    // The calendar from the start of today (in the viewer's zone) for 7 days.
+    const startOfToday = new Date(new Date(`${today}T00:00:00Z`).getTime() - tzOffsetMs(timeZone, new Date(`${today}T12:00:00Z`)));
+    const [week, nextWeek, acts, load, conn, liftChange, lift, status, targets, events] = await Promise.all([
       loadWeek(userId, weekStart, today),
       loadWeek(userId, addDays(weekStart, 7), today),
       sql`
@@ -69,6 +83,7 @@ export async function GET(request: Request) {
       loadLiftModel(),
       loadStatus(userId),
       loadTargets(userId),
+      homeEvents(userId, startOfToday, 7),
     ]);
 
     const workouts = [...week.workouts, ...nextWeek.workouts].map((w) => ({
@@ -149,6 +164,8 @@ export async function GET(request: Request) {
           ? { date: String(load[0].date).slice(0, 10), ctl: Number(load[0].ctl), atl: Number(load[0].atl), tsb: Number(load[0].tsb) }
           : null,
         targets,
+        events,
+        calendarSyncedAt: status.calendars.find((c) => c.active)?.lastSyncedAt ?? null,
         warnings: status.warnings.filter((w) => w.level !== 'info'),
         sync: {
           stravaLastSyncedAt: conn[0]?.last_synced_at ?? null,
