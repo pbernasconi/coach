@@ -1,0 +1,134 @@
+{
+  "description": "CurrencyInput text vectors (parseCurrencyText, formatCentsText). A null cents means the field has no number yet.",
+  "parse": [
+    {
+      "text": "",
+      "cents": null,
+      "sanitizedText": ""
+    },
+    {
+      "text": "1",
+      "cents": 100,
+      "sanitizedText": "1"
+    },
+    {
+      "text": "1.5",
+      "cents": 150,
+      "sanitizedText": "1.5"
+    },
+    {
+      "text": "1.50",
+      "cents": 150,
+      "sanitizedText": "1.50"
+    },
+    {
+      "text": "1,234.56",
+      "cents": 123456,
+      "sanitizedText": "1,234.56"
+    },
+    {
+      "text": "1.239",
+      "cents": 123,
+      "sanitizedText": "1.23"
+    },
+    {
+      "text": "1.234",
+      "cents": 123,
+      "sanitizedText": "1.23"
+    },
+    {
+      "text": "$1a2b3c",
+      "cents": 12300,
+      "sanitizedText": "123"
+    },
+    {
+      "text": "12 34",
+      "cents": 123400,
+      "sanitizedText": "1,234"
+    },
+    {
+      "text": "-5",
+      "cents": 500,
+      "sanitizedText": "5"
+    },
+    {
+      "text": ".5",
+      "cents": 50,
+      "sanitizedText": ".5"
+    },
+    {
+      "text": ".",
+      "cents": null,
+      "sanitizedText": "."
+    },
+    {
+      "text": "1.2.3",
+      "cents": 123,
+      "sanitizedText": "1.23"
+    },
+    {
+      "text": "123456789.99",
+      "cents": 12345678999,
+      "sanitizedText": "123,456,789.99"
+    },
+    {
+      "text": "0",
+      "cents": 0,
+      "sanitizedText": "0"
+    },
+    {
+      "text": "0.00",
+      "cents": 0,
+      "sanitizedText": "0.00"
+    },
+    {
+      "text": "007",
+      "cents": 700,
+      "sanitizedText": "7"
+    },
+    {
+      "text": "00.50",
+      "cents": 50,
+      "sanitizedText": "0.50"
+    },
+    {
+      "text": "0001234",
+      "cents": 123400,
+      "sanitizedText": "1,234"
+    }
+  ],
+  "formatCents": [
+    {
+      "cents": null,
+      "text": ""
+    },
+    {
+      "cents": 0,
+      "text": "0.00"
+    },
+    {
+      "cents": 5,
+      "text": "0.05"
+    },
+    {
+      "cents": 100,
+      "text": "1.00"
+    },
+    {
+      "cents": 129900,
+      "text": "1,299.00"
+    },
+    {
+      "cents": 123456789,
+      "text": "1,234,567.89"
+    },
+    {
+      "cents": -4599,
+      "text": "-45.99"
+    },
+    {
+      "cents": 12345678999,
+      "text": "123,456,789.99"
+    }
+  ]
+}

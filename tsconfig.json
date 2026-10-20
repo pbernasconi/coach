@@ -25,6 +25,7 @@
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": [
     "node_modules",
+    "web-standards",
     "src/modules/**/calendar-routes.ts",
     "src/modules/**/calendar-controller.ts",
     "src/modules/**/strava-routes.ts",

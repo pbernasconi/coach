@@ -1,0 +1,32 @@
+{
+  "description": "Picker search rank vectors. Rank: an exact keyword (4) > a label prefix (3) > a keyword prefix (2) > a label or description substring (1); rank 0 hides the option. Matching ignores case after the query is trimmed. Equal ranks keep the option order. An empty query keeps every option in order.",
+  "optionSets": {
+    "countries": [
+      { "value": "KH", "label": "Cambodia", "keywords": ["KH"] },
+      { "value": "TD", "label": "Chad", "keywords": ["TD"] },
+      { "value": "CL", "label": "Chile", "keywords": ["CL"] },
+      { "value": "CN", "label": "China", "keywords": ["CN"] },
+      { "value": "CZ", "label": "Czechia", "keywords": ["CZ"] },
+      { "value": "CH", "label": "Switzerland", "keywords": ["CH"] }
+    ],
+    "notes": [
+      { "value": "trip", "label": "Trip to Lisbon", "description": "Shared with Ada Park" },
+      { "value": "garden", "label": "Garden plan", "description": "Shared with Ben Ortiz" },
+      { "value": "recipe", "label": "Recipe box" }
+    ]
+  },
+  "cases": [
+    { "optionSet": "countries", "query": "", "values": ["KH", "TD", "CL", "CN", "CZ", "CH"] },
+    { "optionSet": "countries", "query": "   ", "values": ["KH", "TD", "CL", "CN", "CZ", "CH"] },
+    { "optionSet": "countries", "query": "ch", "values": ["CH", "TD", "CL", "CN", "CZ"] },
+    { "optionSet": "countries", "query": " CH ", "values": ["CH", "TD", "CL", "CN", "CZ"] },
+    { "optionSet": "countries", "query": "c", "values": ["KH", "TD", "CL", "CN", "CZ", "CH"] },
+    { "optionSet": "countries", "query": "zech", "values": ["CZ"] },
+    { "optionSet": "countries", "query": "zz", "values": [] },
+    { "optionSet": "notes", "query": "recipe", "values": ["recipe"] },
+    { "optionSet": "notes", "query": "GARDEN", "values": ["garden"] },
+    { "optionSet": "notes", "query": "ortiz", "values": ["garden"] },
+    { "optionSet": "notes", "query": "box", "values": ["recipe"] },
+    { "optionSet": "notes", "query": "shared", "values": ["trip", "garden"] }
+  ]
+}

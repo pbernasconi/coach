@@ -19,6 +19,7 @@ const eslintConfig = [
       "build/**",
       "next-env.d.ts",
       "ios-standards/**",
+      "web-standards/**",
       "lift/ios/**",
       "lift/tools/*/.build/**",
     ],

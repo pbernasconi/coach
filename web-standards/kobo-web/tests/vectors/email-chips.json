@@ -1,0 +1,321 @@
+{
+  "description": "Email chip rule. Pasted text is split on commas, semicolons and white space. Each part is checked in order: INVALID (compared lowercased, at most 254 characters, one @, a dot-atom local part of at most 64 characters with no leading, trailing or double dot, 2+ domain labels of letters, digits and hyphens with no leading or trailing hyphen, and a 2+ letter top-level label), DUPLICATE (same address without case, also inside one paste), TOO_MANY (the list already has maxCount). A chip keeps the typed text.",
+  "cases": [
+    {
+      "current": [],
+      "raw": "ap@harbor.example",
+      "maxCount": 5,
+      "next": [
+        "ap@harbor.example"
+      ],
+      "rejected": []
+    },
+    {
+      "current": [],
+      "raw": "a@x.io, b@x.io;c@x.io  d@x.io",
+      "maxCount": 5,
+      "next": [
+        "a@x.io",
+        "b@x.io",
+        "c@x.io",
+        "d@x.io"
+      ],
+      "rejected": []
+    },
+    {
+      "current": [
+        "AP@x.io"
+      ],
+      "raw": "ap@x.io",
+      "maxCount": 5,
+      "next": [
+        "AP@x.io"
+      ],
+      "rejected": [
+        {
+          "value": "ap@x.io",
+          "reason": "DUPLICATE"
+        }
+      ]
+    },
+    {
+      "current": [],
+      "raw": "a@x.io A@X.IO",
+      "maxCount": 5,
+      "next": [
+        "a@x.io"
+      ],
+      "rejected": [
+        {
+          "value": "A@X.IO",
+          "reason": "DUPLICATE"
+        }
+      ]
+    },
+    {
+      "current": [
+        "a@x.io"
+      ],
+      "raw": "b@x.io c@x.io d@x.io",
+      "maxCount": 2,
+      "next": [
+        "a@x.io",
+        "b@x.io"
+      ],
+      "rejected": [
+        {
+          "value": "c@x.io",
+          "reason": "TOO_MANY"
+        },
+        {
+          "value": "d@x.io",
+          "reason": "TOO_MANY"
+        }
+      ]
+    },
+    {
+      "current": [],
+      "raw": "bad1 a@x.io bad2",
+      "maxCount": 5,
+      "next": [
+        "a@x.io"
+      ],
+      "rejected": [
+        {
+          "value": "bad1",
+          "reason": "INVALID"
+        },
+        {
+          "value": "bad2",
+          "reason": "INVALID"
+        }
+      ]
+    },
+    {
+      "current": [],
+      "raw": "ap@",
+      "maxCount": 5,
+      "next": [],
+      "rejected": [
+        {
+          "value": "ap@",
+          "reason": "INVALID"
+        }
+      ]
+    },
+    {
+      "current": [],
+      "raw": "ap@harbor",
+      "maxCount": 5,
+      "next": [],
+      "rejected": [
+        {
+          "value": "ap@harbor",
+          "reason": "INVALID"
+        }
+      ]
+    },
+    {
+      "current": [],
+      "raw": "ap@@harbor.example",
+      "maxCount": 5,
+      "next": [],
+      "rejected": [
+        {
+          "value": "ap@@harbor.example",
+          "reason": "INVALID"
+        }
+      ]
+    },
+    {
+      "current": [],
+      "raw": "ap@harbor..example",
+      "maxCount": 5,
+      "next": [],
+      "rejected": [
+        {
+          "value": "ap@harbor..example",
+          "reason": "INVALID"
+        }
+      ]
+    },
+    {
+      "current": [],
+      "raw": "   ",
+      "maxCount": 5,
+      "next": [],
+      "rejected": []
+    },
+    {
+      "current": [],
+      "raw": "a@x.c",
+      "maxCount": 5,
+      "next": [],
+      "rejected": [
+        {
+          "value": "a@x.c",
+          "reason": "INVALID"
+        }
+      ]
+    },
+    {
+      "current": [],
+      "raw": "ana@x.123",
+      "maxCount": 5,
+      "next": [],
+      "rejected": [
+        {
+          "value": "ana@x.123",
+          "reason": "INVALID"
+        }
+      ]
+    },
+    {
+      "current": [],
+      "raw": "a..b@x.io",
+      "maxCount": 5,
+      "next": [],
+      "rejected": [
+        {
+          "value": "a..b@x.io",
+          "reason": "INVALID"
+        }
+      ]
+    },
+    {
+      "current": [],
+      "raw": "ana@exa_mple.com",
+      "maxCount": 5,
+      "next": [],
+      "rejected": [
+        {
+          "value": "ana@exa_mple.com",
+          "reason": "INVALID"
+        }
+      ]
+    },
+    {
+      "current": [],
+      "raw": "ñ@x.io",
+      "maxCount": 5,
+      "next": [],
+      "rejected": [
+        {
+          "value": "ñ@x.io",
+          "reason": "INVALID"
+        }
+      ]
+    },
+    {
+      "current": [],
+      "raw": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@x.io",
+      "maxCount": 5,
+      "next": [],
+      "rejected": [
+        {
+          "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@x.io",
+          "reason": "INVALID"
+        }
+      ]
+    },
+    {
+      "current": [],
+      "raw": ".a@x.io",
+      "maxCount": 5,
+      "next": [],
+      "rejected": [
+        {
+          "value": ".a@x.io",
+          "reason": "INVALID"
+        }
+      ]
+    },
+    {
+      "current": [],
+      "raw": "a.@x.io",
+      "maxCount": 5,
+      "next": [],
+      "rejected": [
+        {
+          "value": "a.@x.io",
+          "reason": "INVALID"
+        }
+      ]
+    },
+    {
+      "current": [],
+      "raw": "a@-x.io",
+      "maxCount": 5,
+      "next": [],
+      "rejected": [
+        {
+          "value": "a@-x.io",
+          "reason": "INVALID"
+        }
+      ]
+    },
+    {
+      "current": [],
+      "raw": "a@x-.io",
+      "maxCount": 5,
+      "next": [],
+      "rejected": [
+        {
+          "value": "a@x-.io",
+          "reason": "INVALID"
+        }
+      ]
+    },
+    {
+      "current": [],
+      "raw": "a@x",
+      "maxCount": 5,
+      "next": [],
+      "rejected": [
+        {
+          "value": "a@x",
+          "reason": "INVALID"
+        }
+      ]
+    },
+    {
+      "current": [],
+      "raw": "a@@x.io",
+      "maxCount": 5,
+      "next": [],
+      "rejected": [
+        {
+          "value": "a@@x.io",
+          "reason": "INVALID"
+        }
+      ]
+    },
+    {
+      "current": [],
+      "raw": "o'brien+notes@sub.harbor.co",
+      "maxCount": 5,
+      "next": [
+        "o'brien+notes@sub.harbor.co"
+      ],
+      "rejected": []
+    },
+    {
+      "current": [],
+      "raw": "Team.Notes@Harbor.Example",
+      "maxCount": 5,
+      "next": [
+        "Team.Notes@Harbor.Example"
+      ],
+      "rejected": []
+    },
+    {
+      "current": [],
+      "raw": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@x.io",
+      "maxCount": 5,
+      "next": [
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@x.io"
+      ],
+      "rejected": []
+    }
+  ]
+}
