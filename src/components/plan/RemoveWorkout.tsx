@@ -46,7 +46,7 @@ export default function RemoveWorkout({ workout, onRemove, disabled, variant = '
         <Trash2 aria-hidden className="h-3 w-3" />
       </button>
     ) : (
-      <Button size="sm" variant="outline" className={cn('h-6 px-2 text-xs', className)} disabled={disabled} onClick={() => setAsking(true)}>
+      <Button size="sm" variant="outline" className={cn('h-9 px-3 text-xs md:h-6 md:px-2', className)} disabled={disabled} onClick={() => setAsking(true)}>
         <Trash2 aria-hidden className="mr-1 h-3 w-3" /> Remove
       </Button>
     );
@@ -73,13 +73,13 @@ export default function RemoveWorkout({ workout, onRemove, disabled, variant = '
           ref={confirmRef}
           size="sm"
           variant="destructive"
-          className="h-8 px-3 text-xs"
+          className="h-9 px-3 text-xs md:h-8"
           disabled={disabled}
           onClick={() => { setAsking(false); onRemove(); }}
         >
           Remove
         </Button>
-        <Button size="sm" variant="ghost" className="h-8 px-3 text-xs" onClick={() => setAsking(false)}>Cancel</Button>
+        <Button size="sm" variant="ghost" className="h-9 px-3 text-xs md:h-8" onClick={() => setAsking(false)}>Cancel</Button>
       </div>
     </div>
   );

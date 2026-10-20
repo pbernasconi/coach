@@ -9,7 +9,8 @@ import { deleteEventAction, saveEventAction, type EventInput } from './actions';
 
 const EMPTY: EventInput = { name: '', date: '', priority: 'B', sport: '', notes: '', target: '' };
 const fmtDate = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
-const input = 'w-full rounded-md border bg-background px-2 py-1.5 text-sm';
+// 16 px text on a phone: iOS zooms the page into a smaller input on focus.
+const input = 'w-full rounded-md border bg-background px-2 py-2 text-base md:py-1.5 md:text-sm';
 
 function EventForm({ initial, id, onDone }: { initial: EventInput; id?: string; onDone: () => void }) {
   const [e, setE] = useState(initial);
@@ -17,7 +18,7 @@ function EventForm({ initial, id, onDone }: { initial: EventInput; id?: string; 
   const set = (k: keyof EventInput) => (ev: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setE({ ...e, [k]: ev.target.value });
   return (
     <form
-      className="grid gap-3 sm:grid-cols-6"
+      className="grid grid-cols-2 gap-3 sm:grid-cols-6"
       onSubmit={(ev) => {
         ev.preventDefault();
         start(async () => {
@@ -31,11 +32,11 @@ function EventForm({ initial, id, onDone }: { initial: EventInput; id?: string; 
         });
       }}
     >
-      <label className="space-y-1 sm:col-span-3">
+      <label className="col-span-2 space-y-1 sm:col-span-3">
         <span className="text-xs text-muted-foreground">Name</span>
         <input required maxLength={120} value={e.name} onChange={set('name')} className={input} placeholder="Berkeley Hills Road Race" />
       </label>
-      <label className="space-y-1 sm:col-span-2">
+      <label className="col-span-2 space-y-1 sm:col-span-2">
         <span className="text-xs text-muted-foreground">Date</span>
         <input required type="date" value={e.date} onChange={set('date')} className={input} />
       </label>
@@ -52,15 +53,15 @@ function EventForm({ initial, id, onDone }: { initial: EventInput; id?: string; 
           {EVENT_SPORTS.map((s: string) => <option key={s} value={s}>{s[0].toUpperCase() + s.slice(1)}</option>)}
         </select>
       </label>
-      <label className="space-y-1 sm:col-span-4">
+      <label className="col-span-2 space-y-1 sm:col-span-4">
         <span className="text-xs text-muted-foreground">Target</span>
         <input maxLength={200} value={e.target} onChange={set('target')} className={input} placeholder="Top 10, sub 1:35…" />
       </label>
-      <label className="space-y-1 sm:col-span-6">
+      <label className="col-span-2 space-y-1 sm:col-span-6">
         <span className="text-xs text-muted-foreground">Notes</span>
         <textarea maxLength={2000} rows={2} value={e.notes} onChange={set('notes')} className={input} />
       </label>
-      <div className="flex gap-2 sm:col-span-6">
+      <div className="col-span-2 flex gap-2 sm:col-span-6">
         <Button size="sm" type="submit" disabled={pending}>{pending ? 'Saving…' : id ? 'Save' : 'Add event'}</Button>
         {id && <Button size="sm" type="button" variant="ghost" onClick={onDone}>Cancel</Button>}
       </div>

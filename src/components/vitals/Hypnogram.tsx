@@ -24,8 +24,11 @@ export default function Hypnogram({ stages, from, to }: { stages: StageSpan[]; f
   const span = Math.max(1, to - from);
   const x = (t: number) => M.left + ((Math.min(to, Math.max(from, t)) - from) / span) * plotW;
   const rowY = (s: Stage) => M.top + ROWS.indexOf(s) * rowH;
+  // A label needs about 36 px: on a phone, every second or third hour.
+  const perHour = plotW / Math.max(1, span / 3600_000);
+  const step = [1, 2, 3, 4, 6].find((s) => s * perHour >= 36) ?? 6;
   const hourTicks: number[] = [];
-  for (let t = Math.ceil(from / 3600_000) * 3600_000; t <= to; t += 3600_000) hourTicks.push(t);
+  for (let t = Math.ceil(from / 3600_000) * 3600_000; t <= to; t += 3600_000) if (new Date(t).getUTCHours() % step === 0) hourTicks.push(t);
   const h = hover === null ? null : stages[hover];
 
   if (!stages.length) {
@@ -50,7 +53,7 @@ export default function Hypnogram({ stages, from, to }: { stages: StageSpan[]; f
             e.preventDefault();
             setHover((i) => Math.min(stages.length - 1, Math.max(0, (i ?? -1) + (e.key === 'ArrowLeft' ? -1 : 1))));
           }}
-          className="outline-none focus-visible:ring-2 focus-visible:ring-[var(--viz-ctl)]"
+          className="max-w-full outline-none focus-visible:ring-2 focus-visible:ring-[var(--viz-ctl)]"
         >
           {ROWS.map((s) => (
             <g key={s}>
@@ -59,7 +62,7 @@ export default function Hypnogram({ stages, from, to }: { stages: StageSpan[]; f
             </g>
           ))}
           {hourTicks.map((t) => (
-            <text key={t} x={x(t)} y={H - 6} textAnchor="middle" className="fill-[var(--viz-muted)] text-[10px]">
+            <text key={t} x={x(t)} y={H - 6} textAnchor={x(t) > M.left + plotW - 14 ? 'end' : 'middle'} className="fill-[var(--viz-muted)] text-[10px]">
               {new Date(t).toLocaleTimeString('en-US', { hour: 'numeric', timeZone: 'UTC' })}
             </text>
           ))}

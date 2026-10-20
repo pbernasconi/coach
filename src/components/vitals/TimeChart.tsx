@@ -60,7 +60,8 @@ export default function TimeChart({
   }
   const path = (s: TimePoint[]) => s.map((p, i) => `${i ? 'L' : 'M'}${x(p.t).toFixed(1)},${y(p.v).toFixed(1)}`).join('');
   const hours = Math.max(1, Math.round(span / 3600_000));
-  const step = hours > 12 ? 6 : hours > 6 ? 2 : 1;
+  // A label needs about 40 px ("12 AM"): a phone gets fewer labels than the hours alone would give.
+  const step = [1, 2, 3, 4, 6, 12].find((s) => s >= (hours > 12 ? 6 : hours > 6 ? 2 : 1) && (s * plotW) / hours >= 40) ?? 12;
   const firstHour = Math.ceil(from / 3600_000) * 3600_000;
   const hourTicks: number[] = [];
   for (let t = firstHour; t <= to; t += 3600_000) if (new Date(t).getUTCHours() % step === 0) hourTicks.push(t);
@@ -117,7 +118,7 @@ export default function TimeChart({
             onPointerLeave={() => setHover(null)}
             onKeyDown={onKey}
             onBlur={() => setHover(null)}
-            className="outline-none focus-visible:ring-2 focus-visible:ring-[var(--viz-ctl)]"
+            className="max-w-full outline-none focus-visible:ring-2 focus-visible:ring-[var(--viz-ctl)]"
           >
             {band && <rect x={M.left} y={y(Math.min(t1, band.high))} width={plotW} height={Math.max(0, y(Math.max(t0, band.low)) - y(Math.min(t1, band.high)))} fill="var(--viz-band)" />}
             {ticks.map((v) => (
@@ -127,7 +128,7 @@ export default function TimeChart({
               </g>
             ))}
             {hourTicks.map((t) => (
-              <text key={t} x={x(t)} y={M.top + plotH + 14} textAnchor="middle" className="fill-[var(--viz-muted)] text-[10px]">{hourLabel(t)}</text>
+              <text key={t} x={x(t)} y={M.top + plotH + 14} textAnchor={x(t) > M.left + plotW - 16 ? 'end' : x(t) < M.left + 16 ? 'start' : 'middle'} className="fill-[var(--viz-muted)] text-[10px]">{hourLabel(t)}</text>
             ))}
             {kind === 'bars'
               ? pts.map((p) => <rect key={p.t} x={x(p.t) - barW / 2} y={y(p.v)} width={barW} height={Math.max(0, y(t0) - y(p.v))} fill={color} opacity={0.75} />)

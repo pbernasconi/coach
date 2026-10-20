@@ -250,7 +250,7 @@ export default function StreamCharts({
           onBlur={() => setHover(null)}
           onPointerMove={onMove}
           onPointerLeave={() => setHover(null)}
-          className="touch-pan-y outline-none focus-visible:ring-2 focus-visible:ring-[var(--viz-ctl)]"
+          className="max-w-full touch-pan-y outline-none focus-visible:ring-2 focus-visible:ring-[var(--viz-ctl)]"
         >
           {shown.map((p, k) => {
             const top = M.top + k * (HEAD + PH + GAP) + HEAD;

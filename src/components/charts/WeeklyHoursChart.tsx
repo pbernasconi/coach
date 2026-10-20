@@ -42,7 +42,8 @@ function detail(id: SportId, sw: SportWeek) {
 export default function WeeklyHoursChart({ weeks, currentWeek }: { weeks: HoursWeek[]; currentWeek: string }) {
   const [ref, width] = useMeasure<HTMLDivElement>();
   const [hover, setHover] = useState<number | null>(null);
-  const M = { top: 22, right: 64, bottom: 54, left: 40 };
+  const narrow = width < 480; // a phone: a smaller right margin, and a week label on every second or third bar
+  const M = { top: 22, right: narrow ? 52 : 64, bottom: 54, left: narrow ? 34 : 40 };
   const H = 300;
   const plotW = width - M.left - M.right;
   const plotH = H - M.top - M.bottom;
@@ -59,6 +60,9 @@ export default function WeeklyHoursChart({ weeks, currentWeek }: { weeks: HoursW
   const maxIdx = weeks.reduce((best, w, i) => (total(w) > total(weeks[best]) ? i : best), 0);
   const lastComplete = weeks.findLastIndex((w) => w.week !== currentWeek);
   const labelled = new Set([maxIdx, lastComplete]);
+  // Week labels need about 44 px each. Count back from the current week, so it always has its label.
+  const every = Math.max(1, Math.ceil(44 / band));
+  const dated = (i: number) => (weeks.length - 1 - i) % every === 0;
   const GAP = 2;
 
   const h = hover === null ? null : weeks[hover];
@@ -75,7 +79,7 @@ export default function WeeklyHoursChart({ weeks, currentWeek }: { weeks: HoursW
         </div>
       </div>
       <div ref={ref} className="relative" onPointerLeave={() => setHover(null)}>
-        <svg width={width} height={H} role="img" aria-label="Training hours per week, by sport">
+        <svg className="max-w-full" width={width} height={H} role="img" aria-label="Training hours per week, by sport">
           {ticks.map((t) => (
             <g key={t}>
               <line x1={M.left} x2={width - M.right} y1={y(t)} y2={y(t)} stroke={t === 0 ? 'var(--viz-axis)' : 'var(--viz-grid)'} strokeWidth={1} />
@@ -122,11 +126,13 @@ export default function WeeklyHoursChart({ weeks, currentWeek }: { weeks: HoursW
                 {labelled.has(i) && total(w) > 0 && (
                   <text x={cx(i)} y={y(total(w)) - 6} textAnchor="middle" className="fill-[var(--viz-ink)] text-[11px] font-medium tabular-nums">{hm(total(w))}</text>
                 )}
-                <text x={cx(i)} y={M.top + plotH + 16} textAnchor="middle" className="fill-[var(--viz-muted)] text-[11px]">
-                  {current ? 'This wk' : fmtWeek(w.week)}
-                </text>
+                {dated(i) && (
+                  <text x={cx(i)} y={M.top + plotH + 16} textAnchor="middle" className="fill-[var(--viz-muted)] text-[11px]">
+                    {current ? 'This wk' : fmtWeek(w.week)}
+                  </text>
+                )}
                 {Array.from({ length: Math.min(w.strength, 4) }, (_, d) => (
-                  <circle key={d} cx={cx(i) + (d - (Math.min(w.strength, 4) - 1) / 2) * 10} cy={M.top + plotH + 36} r={3.5} fill="var(--viz-surface)" stroke="var(--sport-strength)" strokeWidth={2} />
+                  <circle key={d} cx={cx(i) + (d - (Math.min(w.strength, 4) - 1) / 2) * Math.min(10, band / 3.5)} cy={M.top + plotH + 36} r={narrow ? 2.5 : 3.5} fill="var(--viz-surface)" stroke="var(--sport-strength)" strokeWidth={2} />
                 ))}
               </g>
             );

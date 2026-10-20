@@ -46,7 +46,7 @@ export default function IntensityWeeksChart({ weeks, goal = 150 }: { weeks: Inte
         {!hasData ? (
           <div className="flex h-[180px] items-center justify-center rounded-md bg-[var(--viz-band)] text-xs text-[var(--viz-muted)]">No intensity minutes from Garmin yet.</div>
         ) : (
-          <svg width={width} height={H} role="img" aria-label={`Intensity minutes for ${weeks.length} weeks. Goal met ${met} times.`}>
+          <svg className="max-w-full" width={width} height={H} role="img" aria-label={`Intensity minutes for ${weeks.length} weeks. Goal met ${met} times.`}>
             {ticks.map((v) => (
               <g key={v}>
                 <line x1={M.left} x2={M.left + plotW} y1={y(v)} y2={y(v)} stroke={v === 0 ? 'var(--viz-axis)' : 'var(--viz-grid)'} />

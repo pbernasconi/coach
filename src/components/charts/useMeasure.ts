@@ -2,17 +2,21 @@
 
 import { useLayoutEffect, useRef, useState } from 'react';
 
-/** The element's content width, kept current with a ResizeObserver. Charts draw in real pixels. */
-export function useMeasure<T extends HTMLElement>(initial = 640) {
+/**
+ * The element's content width, kept current with a ResizeObserver. Charts draw in real pixels. `min` keeps a
+ * hidden element (width 0) from giving negative plot sizes; a sparkline in a phone's two-column grid is narrower
+ * than the default, so it passes a smaller one.
+ */
+export function useMeasure<T extends HTMLElement>(initial = 640, min = 240) {
   const ref = useRef<T>(null);
   const [width, setWidth] = useState(initial);
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const ro = new ResizeObserver(([e]) => setWidth(Math.max(240, Math.round(e.contentRect.width))));
+    const ro = new ResizeObserver(([e]) => setWidth(Math.max(min, Math.round(e.contentRect.width))));
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+  }, [min]);
   return [ref, width] as const;
 }
 

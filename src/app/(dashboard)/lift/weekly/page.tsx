@@ -2,7 +2,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { loadLiftModel } from '@/lib/lift-dashboard/queries';
 import { weeklyVolume } from '@/lib/lift-dashboard/stats.mjs';
-import { formatDay, formatVolume } from '@/lib/lift-dashboard/format';
+import { formatVolume } from '@/lib/lift-dashboard/format';
+import ResponsiveDay from '@/components/ResponsiveDay';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,7 +28,7 @@ export default async function LiftWeeklyPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Week of</TableHead>
-                <TableHead className="text-right">Sessions</TableHead>
+                <TableHead className="text-right"><span className="sm:hidden">Sess.</span><span className="hidden sm:inline">Sessions</span></TableHead>
                 <TableHead className="text-right">Sets</TableHead>
                 <TableHead className="text-right">Volume</TableHead>
                 <TableHead className="w-1/3 hidden sm:table-cell">
@@ -38,10 +39,10 @@ export default async function LiftWeeklyPage() {
             <TableBody>
               {weeks.map((w) => (
                 <TableRow key={w.week}>
-                  <TableCell className="whitespace-nowrap">{formatDay(w.week)}</TableCell>
+                  <TableCell className="whitespace-nowrap"><ResponsiveDay day={w.week} /></TableCell>
                   <TableCell className="text-right tabular-nums">{w.sessions}</TableCell>
                   <TableCell className="text-right tabular-nums">{w.sets}</TableCell>
-                  <TableCell className="text-right tabular-nums">{formatVolume(w.volume, unit)}</TableCell>
+                  <TableCell className="whitespace-nowrap text-right tabular-nums">{formatVolume(w.volume, unit)}</TableCell>
                   <TableCell className="hidden sm:table-cell" aria-hidden="true">
                     <div
                       className="h-2 rounded-r bg-foreground/70"

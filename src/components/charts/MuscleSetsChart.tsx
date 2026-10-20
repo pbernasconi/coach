@@ -42,7 +42,7 @@ export default function MuscleSetsChart({ rows }: { rows: MuscleBar[] }) {
               onFocus={() => setHover(r.muscle)}
               onBlur={() => setHover(null)}
               aria-label={`${label(r.muscle)}: ${fmt(r.week)} sets this week, ${fmt(r.avg)} on average, ${status}`}
-              className={`grid grid-cols-[7.5rem_1fr_7rem] items-center gap-3 rounded px-1 py-0.5 text-xs outline-none ${on ? 'bg-[var(--viz-band)]' : ''}`}
+              className={`grid grid-cols-[5.5rem_1fr_5.5rem] sm:grid-cols-[7.5rem_1fr_7rem] items-center gap-3 rounded px-1 py-0.5 text-xs outline-none ${on ? 'bg-[var(--viz-band)]' : ''}`}
             >
               <span className="truncate text-[var(--viz-ink)]">{label(r.muscle)}</span>
               <div className="relative h-3">
@@ -50,15 +50,16 @@ export default function MuscleSetsChart({ rows }: { rows: MuscleBar[] }) {
                 <div className="absolute inset-y-0.5 left-0 rounded-r-[4px] bg-[var(--viz-ride)]" style={{ width: pct(r.week) }} />
                 <div className="absolute -inset-y-0.5 w-0.5 rounded-full bg-[var(--viz-ink-2)]" style={{ left: pct(r.avg) }} />
               </div>
-              <span className="text-right tabular-nums text-[var(--viz-ink-2)]">
+              <span className="whitespace-nowrap text-right tabular-nums text-[var(--viz-ink-2)]">
                 <b className="font-semibold text-[var(--viz-ink)]">{fmt(r.week)}</b>
-                {on ? ` · avg ${fmt(r.avg)} · ${status}` : ` · avg ${fmt(r.avg)}`}
+                {` · avg ${fmt(r.avg)}`}
+                {on && <span className="hidden sm:inline">{` · ${status}`}</span>}
               </span>
             </div>
           );
         })}
       </div>
-      <div className="mt-1 grid grid-cols-[7.5rem_1fr_7rem] gap-3 px-1 text-[10px] text-[var(--viz-muted)]">
+      <div className="mt-1 grid grid-cols-[5.5rem_1fr_5.5rem] sm:grid-cols-[7.5rem_1fr_7rem] gap-3 px-1 text-[10px] text-[var(--viz-muted)]">
         <span />
         <div className="relative h-3">
           {[0, 10, 20].map((t) => (

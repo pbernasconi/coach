@@ -131,7 +131,7 @@ export default function HealthTrendChart({
             onClick={() => linkDays && hover !== null && router.push(`/health/day/${points[hover].date}`)}
             onKeyDown={onKey}
             onBlur={() => setHover(null)}
-            className={`outline-none focus-visible:ring-2 focus-visible:ring-[var(--viz-ctl)] ${linkDays ? 'cursor-pointer' : ''}`}
+            className={`max-w-full outline-none focus-visible:ring-2 focus-visible:ring-[var(--viz-ctl)] ${linkDays ? 'cursor-pointer' : ''}`}
           >
             {band && (
               <rect x={M.left} y={y(Math.min(yMax, band.high))} width={plotW} height={Math.max(0, y(Math.max(yMin, band.low)) - y(Math.min(yMax, band.high)))} fill="var(--viz-band)" />
