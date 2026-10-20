@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { ArrowUpRight, ChevronLeft, ChevronRight, Dumbbell, ExternalLink, X } from 'lucide-react';
 import SportIcon from '@/components/SportIcon';
@@ -209,27 +209,37 @@ function Hero({ stats }: { stats: (HeroStat | false | null | undefined | 0 | '')
   );
 }
 
-function Tabs<T extends string>({ tabs, value, onChange }: { tabs: { id: T; label: string }[]; value: T; onChange: (t: T) => void }) {
-  if (tabs.length < 2) return null;
+/** The section bar: a click scrolls to the section; the section in view is marked as you scroll. */
+function SectionNav<T extends string>({ items, active, onPick }: { items: { id: T; label: string }[]; active: T; onPick: (t: T) => void }) {
+  if (items.length < 2) return null;
   return (
-    <div role="tablist" aria-label="Sections" className="flex shrink-0 gap-1 overflow-x-auto border-b px-2 sm:px-4">
-      {tabs.map((t) => (
+    <nav aria-label="Sections" className="flex shrink-0 gap-1 overflow-x-auto border-b px-2 sm:px-4">
+      {items.map((t) => (
         <button
           key={t.id}
           type="button"
-          role="tab"
-          aria-selected={value === t.id}
-          onClick={() => onChange(t.id)}
+          aria-current={active === t.id ? 'true' : undefined}
+          onClick={() => onPick(t.id)}
           className={cn(
             '-mb-px whitespace-nowrap border-b-2 px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
-            value === t.id ? 'text-[var(--viz-ink)]' : 'border-transparent text-[var(--viz-muted)] hover:text-[var(--viz-ink)]'
+            active === t.id ? 'text-[var(--viz-ink)]' : 'border-transparent text-[var(--viz-muted)] hover:text-[var(--viz-ink)]'
           )}
-          style={value === t.id ? { borderBottomColor: ACCENT } : undefined}
+          style={active === t.id ? { borderBottomColor: ACCENT } : undefined}
         >
           {t.label}
         </button>
       ))}
-    </div>
+    </nav>
+  );
+}
+
+/** One section of the scrolling activity view, with its heading. */
+function Section({ id, title, children }: { id: string; title?: string; children: ReactNode }) {
+  return (
+    <section data-section={id} className="space-y-4 border-b px-4 py-6 last:border-b-0 sm:px-6">
+      {title && <h2 className="text-base font-semibold tracking-tight text-[var(--viz-ink)]">{title}</h2>}
+      {children}
+    </section>
   );
 }
 
@@ -328,7 +338,6 @@ function ActivityModal({ id, planned, onClose }: { id: string; planned: Calendar
       live = false;
     };
   }, [stravaId, rev]);
-  const [tab, setTab] = useState<ATab>('overview');
   if (state.status === 'loading') {
     return (
       <>
@@ -345,12 +354,39 @@ function ActivityModal({ id, planned, onClose }: { id: string; planned: Calendar
       </>
     );
   }
-  return <ActivityContent v={state.value.v} c={state.value.context} planned={planned} tab={tab} setTab={setTab} onClose={onClose} fetching={fetching} />;
+  return <ActivityContent v={state.value.v} c={state.value.context} planned={planned} onClose={onClose} fetching={fetching} />;
 }
 
 function ActivityContent({
-  v, c, planned, tab, setTab, onClose, fetching,
-}: { v: ActivityView; c: ActivityContext | null; planned: CalendarWorkout | null; tab: ATab; setTab: (t: ATab) => void; onClose: () => void; fetching: boolean }) {
+  v, c, planned, onClose, fetching,
+}: { v: ActivityView; c: ActivityContext | null; planned: CalendarWorkout | null; onClose: () => void; fetching: boolean }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const navRef = useRef<HTMLDivElement>(null);
+  const [active, setActive] = useState<ATab>('overview');
+  const jumping = useRef(0);
+
+  /** The section in view: the last one whose top is above the section bar's bottom edge. */
+  const onScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el || Date.now() < jumping.current) return;
+    const line = el.getBoundingClientRect().top + (navRef.current?.offsetHeight ?? 0) + 24;
+    const secs = [...el.querySelectorAll<HTMLElement>('[data-section]')];
+    let current = secs[0]?.dataset.section as ATab | undefined;
+    for (const sec of secs) if (sec.getBoundingClientRect().top <= line) current = sec.dataset.section as ATab;
+    // At the bottom the last section counts, even when it is short.
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 4) current = secs.at(-1)?.dataset.section as ATab | undefined;
+    if (current) setActive(current);
+  }, []);
+
+  function pick(id: ATab) {
+    const el = scrollRef.current;
+    const sec = el?.querySelector<HTMLElement>(`[data-section="${id}"]`);
+    if (!el || !sec) return;
+    setActive(id);
+    jumping.current = Date.now() + 700; // the smooth scroll does not move the mark back and forth
+    const top = sec.getBoundingClientRect().top - el.getBoundingClientRect().top + el.scrollTop - (navRef.current?.offsetHeight ?? 0);
+    el.scrollTo({ top: id === 'overview' ? 0 : top, behavior: 'smooth' });
+  }
   const st = v.stats;
   const foot = v.layout === 'run';
   const ride = v.layout === 'ride';
@@ -406,7 +442,7 @@ function ActivityContent({
         }
         onClose={onClose}
       />
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div ref={scrollRef} onScroll={onScroll} className="min-h-0 flex-1 overflow-y-auto">
         <Hero
           stats={[
             st.distance > 0 && { label: 'Distance', value: km(st.distance), unit: 'km' },
@@ -420,11 +456,11 @@ function ActivityContent({
             st.calories != null && { label: 'Calories', value: int(st.calories) },
           ]}
         />
-        <div className="sticky top-0 z-10 bg-background">
-          <Tabs tabs={tabs} value={tabs.some((t) => t.id === tab) ? tab : 'overview'} onChange={setTab} />
+        <div ref={navRef} className="sticky top-0 z-10 bg-background/95 backdrop-blur">
+          <SectionNav items={tabs} active={active} onPick={pick} />
         </div>
-        <div className="p-4 sm:p-6">
-          {tab === 'overview' && (
+        <div>
+          <Section id="overview">
             <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
               <div className="space-y-4">
                 {plan && <PlanVsDone v={v} plan={plan} />}
@@ -452,9 +488,10 @@ function ActivityContent({
                 <Conditions v={v} c={c} />
               </div>
             </div>
-          )}
+          </Section>
 
-          {tab === 'hr' && (
+          {hasHr && (
+            <Section id="hr" title="Heart rate">
             <div className="grid gap-6 lg:grid-cols-2">
               {v.hrZones.some((z) => z.seconds > 0) && (
                 <Panel title="Heart rate by zones" note={st.avgHr ? `avg ${Math.round(st.avgHr)} · max ${st.maxHr ?? '–'} bpm` : undefined}>
@@ -470,9 +507,11 @@ function ActivityContent({
                 </Panel>
               )}
             </div>
+            </Section>
           )}
 
-          {tab === 'power' && (
+          {hasPower && (
+            <Section id="power" title="Power">
             <div className="grid gap-6 lg:grid-cols-2">
               {v.powerZones.some((z) => z.seconds > 0) && (
                 <Panel title="Power by zones" note={v.effort.ftp ? `FTP ${v.effort.ftp} W` : undefined}>
@@ -488,9 +527,11 @@ function ActivityContent({
                 </Panel>
               )}
             </div>
+            </Section>
           )}
 
-          {tab === 'pace' && (
+          {hasPace && (
+            <Section id="pace" title={foot ? 'Pace' : 'Speed'}>
             <div className="grid gap-6 lg:grid-cols-2">
               {foot && v.paceBins.length > 0 && (
                 <Panel title="Time by pace" note="moving time per 15 s of pace">
@@ -515,11 +556,17 @@ function ActivityContent({
                 </Panel>
               )}
             </div>
+            </Section>
           )}
 
-          {tab === 'laps' && <LapTable v={v} />}
+          {(v.laps.length > 1 || v.splits.length > 0) && (
+            <Section id="laps" title={v.laps.length > 1 ? 'Laps' : 'Splits'}>
+              <LapTable v={v} />
+            </Section>
+          )}
 
-          {tab === 'charts' && series && (
+          {series && (
+            <Section id="charts" title="Charts">
             <StreamCharts
               series={series}
               layout={v.layout}
@@ -529,9 +576,10 @@ function ActivityContent({
                 watts: st.avgWatts && (ride || st.deviceWatts) ? st.avgWatts : null, temp: st.avgTemp,
               }}
             />
+            </Section>
           )}
           {v.fetch.needed && (
-            <p role="status" className="mt-4 text-xs text-[var(--viz-muted)]">
+            <p role="status" className="px-4 pb-6 text-xs sm:px-6 text-[var(--viz-muted)]">
               {fetching
                 ? 'Loading the streams, map and weather from Strava. This happens once per activity.'
                 : <>The Strava streams did not load. Open the <Link href={`/activities/${v.stravaId}`} className="underline">full page</Link> to try again.</>}
