@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { ChartTooltip, LegendItem } from '@/components/charts/ChartTooltip';
 import { useMeasure } from '@/components/charts/useMeasure';
-import { STAGE_STYLE, type Stage } from './Hypnogram';
+import { STAGE_STYLE, type Stage } from './stages';
 
 export type Night = { date: string; deep: number | null; light: number | null; rem: number | null; awake: number | null; total: number | null; score: number | null };
 
