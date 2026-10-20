@@ -1,5 +1,6 @@
 import { sql } from '@/db';
 import { toDay } from '@/lib/db-time.mjs';
+import { cached } from '@/lib/data-cache';
 import { bandsFor, slug as slugOf, tabsFor } from './function-catalog.mjs';
 import { buildIndex, drawStatus, neighbours, valueText } from './labs-view.mjs';
 
@@ -25,20 +26,29 @@ export type LabItem = {
   draws: Draw[]; // oldest first
 };
 
-async function biomarkerRows(userId: string) {
+// The lab data changes only when the Function sync (or a labs import) runs, so every read here is cached under
+// the 'labs' tag (src/lib/data-cache.ts). The Function workflow clears it after each sync.
+const biomarkerRows = cached(async (userId: string) => {
   return (await sql`
     SELECT key, name, slug, result_names, categories, description, units, status, out_of_range_type, kind, range_text,
            range_min::float8 AS range_min, range_max::float8 AS range_max, range_min_op, range_max_op, optimal_range,
            optimal_low::float8 AS optimal_low, optimal_high::float8 AS optimal_high, current_display, current_on
     FROM lab_biomarkers WHERE user_id = ${userId} AND source = 'function'`) as Row[];
-}
+}, 'lab-biomarkers', 'labs');
+
+const resultRows = cached(
+  async (userId: string, names: string[] | null) =>
+    (await sql`
+      SELECT biomarker, collected_on, value::float8 AS value, value_text, unit, status FROM lab_results
+      WHERE user_id = ${userId} AND source = 'function' AND (${names}::text[] IS NULL OR biomarker = ANY(${names}::text[]))
+      ORDER BY collected_on`) as Row[],
+  'lab-results',
+  'labs'
+);
 
 /** Every draw of every biomarker name, oldest first. */
 async function results(userId: string, names: string[] | null) {
-  const rows = (await sql`
-    SELECT biomarker, collected_on, value::float8 AS value, value_text, unit, status FROM lab_results
-    WHERE user_id = ${userId} AND source = 'function' AND (${names}::text[] IS NULL OR biomarker = ANY(${names}::text[]))
-    ORDER BY collected_on`) as Row[];
+  const rows = await resultRows(userId, names);
   const by = new Map<string, Row[]>();
   for (const r of rows) by.set(String(r.biomarker), [...(by.get(String(r.biomarker)) ?? []), r]);
   return by;
@@ -69,10 +79,17 @@ function item(b: Row, by: Map<string, Row[]>): LabItem {
   return { key: String(b.key), name: String(b.name), slug: String(b.slug), status: b.status as LabStatus, units: s(b.units), latest, draws };
 }
 
+const categoryQuery = cached(
+  async (userId: string) =>
+    (await sql`
+      SELECT key, name, description, position, biomarker_keys FROM lab_categories
+      WHERE user_id = ${userId} AND source = 'function' ORDER BY position`) as Row[],
+  'lab-categories',
+  'labs'
+);
+
 async function categoryRows(userId: string) {
-  const rows = (await sql`
-    SELECT key, name, description, position, biomarker_keys FROM lab_categories
-    WHERE user_id = ${userId} AND source = 'function' ORDER BY position`) as Row[];
+  const rows = await categoryQuery(userId);
   return rows.map((c) => ({ key: String(c.key), name: String(c.name), description: s(c.description), position: Number(c.position), biomarkerKeys: (c.biomarker_keys as string[]) ?? [] }));
 }
 
@@ -87,22 +104,44 @@ export type LabsIndex = Awaited<ReturnType<typeof loadLabsIndex>>;
 
 export type LabNote = { notedOn: string; category: string; body: string };
 
+/** Function's page text of one biomarker (about 50 KB each, 6.5 MB for all of them in 2026-10). */
+const contentRows = cached(
+  async (userId: string, key: string) =>
+    (await sql`SELECT content FROM lab_biomarkers WHERE user_id = ${userId} AND source = 'function' AND key = ${key}`) as Row[],
+  'lab-content',
+  'labs'
+);
+
+const plannedRows = cached(
+  async (userId: string) =>
+    (await sql`
+      SELECT recommended_on, window_start, window_end, visit_on, scheduled FROM lab_planned_draws
+      WHERE user_id = ${userId} AND source = 'function' ORDER BY COALESCE(visit_on, window_end) LIMIT 1`) as Row[],
+  'lab-planned',
+  'labs'
+);
+
+const noteRows = cached(
+  async (userId: string, categories: string[]) =>
+    (await sql`
+      SELECT noted_on, category, body FROM clinician_notes
+      WHERE user_id = ${userId} AND category = ANY(${categories}::text[])
+      ORDER BY noted_on DESC, position`) as Row[],
+  'lab-notes',
+  'labs'
+);
+
 export async function loadBiomarker(userId: string, slug: string) {
   const [bms, cats] = await Promise.all([biomarkerRows(userId), categoryRows(userId)]);
   // The page slug, or the slug of a lab_results name (the Labs section on /health links by those).
   const b = bms.find((x) => x.slug === slug) ?? bms.find((x) => ((x.result_names as string[]) ?? []).some((nm) => slugOf(nm) === slug));
   if (!b) return null;
   const canonical = String(b.slug);
-  const [by, contentRows, planned, notes] = await Promise.all([
+  const [by, content, planned, notes] = await Promise.all([
     results(userId, (b.result_names as string[]) ?? []),
-    sql`SELECT content FROM lab_biomarkers WHERE user_id = ${userId} AND source = 'function' AND key = ${String(b.key)}` as Promise<Row[]>,
-    sql`
-      SELECT recommended_on, window_start, window_end, visit_on, scheduled FROM lab_planned_draws
-      WHERE user_id = ${userId} AND source = 'function' ORDER BY COALESCE(visit_on, window_end) LIMIT 1` as Promise<Row[]>,
-    sql`
-      SELECT noted_on, category, body FROM clinician_notes
-      WHERE user_id = ${userId} AND category = ANY(${(b.categories as string[]) ?? []}::text[])
-      ORDER BY noted_on DESC, position` as Promise<Row[]>,
+    contentRows(userId, String(b.key)),
+    plannedRows(userId),
+    noteRows(userId, (b.categories as string[]) ?? []),
   ]);
   const it = item(b, by);
   const order = buildIndex(cats, bms.map((x) => ({ key: String(x.key), name: String(x.name), slug: String(x.slug), status: x.status as LabStatus }))).order;
@@ -117,7 +156,7 @@ export async function loadBiomarker(userId: string, slug: string) {
     optimalRange: n(b.optimal_low) !== null || n(b.optimal_high) !== null ? { low: n(b.optimal_low), high: n(b.optimal_high) } : null,
     bands: bandsFor(range),
     kind: s(b.kind),
-    tabs: tabsFor(contentRows[0]?.content ?? null, it.status, s(b.out_of_range_type)),
+    tabs: tabsFor(content[0]?.content ?? null, it.status, s(b.out_of_range_type)),
     nextDraw: p
       ? { visitOn: toDay(p.visit_on), windowStart: toDay(p.window_start), windowEnd: toDay(p.window_end), recommendedOn: toDay(p.recommended_on), scheduled: p.scheduled === true }
       : null,
