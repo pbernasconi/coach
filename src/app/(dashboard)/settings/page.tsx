@@ -1,67 +1,171 @@
-import { ownerForSignedInUser } from '@/lib/owner';
-import { loadCoachingNotes, loadStatus, loadTargets, type Warning } from '@/lib/status';
-import StravaService from '@/modules/strava/strava-service';
+import { cookies } from 'next/headers';
 import QRCode from 'qrcode';
 import { sql } from '@/db';
-import { createEnrollmentCode } from '@/lib/lift-sync/enroll.mjs';
-import { CoachingNotesForm, LocationForm, StravaSyncButton, TargetsForm } from './SettingsControls';
-import GoalsForm from './GoalsForm';
+import { ownerForSignedInUser } from '@/lib/owner';
+import { load } from '@/lib/safe';
+import { loadCoachingNotes, loadStatus, loadTargets, type Warning } from '@/lib/status';
+import { loadEventsWithCountdown } from '@/lib/performance/events';
+import { todayIn } from '@/lib/plan/week.mjs';
 import { loadGoals } from '@/lib/goals/goals.mjs';
+import { createEnrollmentCode } from '@/lib/lift-sync/enroll.mjs';
+import StravaService from '@/modules/strava/strava-service';
+import SectionError from '@/components/SectionError';
+import { CoachingNotesForm, LocationForm, StravaSyncButton, TargetsForm } from './SettingsControls';
+import { GarminLogo, GoogleCalendarLogo, LiftLogo, StravaLogo } from './BrandLogos';
 import ConnectLift from './ConnectLift';
+import EventsEditor from './EventsEditor';
+import GoalsForm from './GoalsForm';
+import SettingsNav from './SettingsNav';
 
 export const dynamic = 'force-dynamic';
+
+type Level = 'ok' | Warning['level'];
 
 function when(at: string | null) {
   if (!at) return 'never';
   return new Date(at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 }
 
-function Dot({ level }: { level: 'ok' | Warning['level'] }) {
-  const color = { ok: 'bg-emerald-500', info: 'bg-sky-500', warn: 'bg-amber-500', error: 'bg-rose-500' }[level];
-  return <span className={`inline-block h-2 w-2 shrink-0 rounded-full ${color}`} aria-hidden />;
+function zone(tz: string | undefined) {
+  try {
+    if (tz) {
+      new Intl.DateTimeFormat('en-US', { timeZone: tz });
+      return tz;
+    }
+  } catch {}
+  return 'America/Los_Angeles';
 }
 
-function Section({ title, level, children }: { title: string; level: 'ok' | Warning['level']; children: React.ReactNode }) {
+const DOT: Record<Level, string> = { ok: 'bg-emerald-500', info: 'bg-sky-500', warn: 'bg-amber-500', error: 'bg-rose-500' };
+
+/** The state of a connection, as a small pill next to its name. */
+function StatePill({ connected, level }: { connected: boolean; level: Level }) {
+  const [text, tone] = !connected
+    ? ['Not connected', level === 'error' ? 'bg-rose-500/10 text-rose-700 dark:text-rose-400' : 'bg-muted text-muted-foreground']
+    : level === 'error'
+      ? ['Error', 'bg-rose-500/10 text-rose-700 dark:text-rose-400']
+      : level === 'warn'
+        ? ['Needs attention', 'bg-amber-500/10 text-amber-700 dark:text-amber-400']
+        : ['Connected', 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'];
   return (
-    <section className="rounded-lg border p-4">
-      <h2 className="mb-3 flex items-center gap-2 font-semibold">
-        <Dot level={level} /> {title}
-      </h2>
-      <div className="space-y-2 text-sm">{children}</div>
+    <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${tone}`}>
+      <span className={`h-1.5 w-1.5 rounded-full ${connected ? DOT[level] : 'bg-current opacity-60'}`} aria-hidden />
+      {text}
+    </span>
+  );
+}
+
+/** One connection: logo, name and state, a one-line summary, actions on the right, and the details folded away. */
+function Connection({
+  logo, name, connected, level, summary, actions, notes, details, children,
+}: {
+  logo: React.ReactNode;
+  name: string;
+  connected: boolean;
+  level: Level;
+  summary: React.ReactNode;
+  actions?: React.ReactNode;
+  notes: Warning[];
+  details: [string, React.ReactNode][];
+  children?: React.ReactNode;
+}) {
+  return (
+    <li className="p-4">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        {logo}
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="font-medium leading-none">{name}</h3>
+            <StatePill connected={connected} level={level} />
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground sm:truncate">{summary}</p>
+        </div>
+        {actions && <div className="flex shrink-0 flex-wrap gap-2">{actions}</div>}
+      </div>
+      <div className="mt-2 space-y-2 pl-12 text-sm">
+        {notes.map((w) => (
+          <p key={w.text} className="flex items-start gap-2 text-muted-foreground">
+            <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${DOT[w.level]}`} aria-hidden /> {w.text}
+          </p>
+        ))}
+        <details className="group">
+          <summary className="cursor-pointer select-none text-xs text-muted-foreground hover:text-foreground">Details</summary>
+          <dl className="mt-2 grid grid-cols-[minmax(0,auto)_1fr] gap-x-6 gap-y-1">
+            {details.map(([k, v]) => (
+              <div key={k} className="contents">
+                <dt className="text-muted-foreground [overflow-wrap:anywhere]">{k}</dt>
+                <dd className="text-right sm:text-left">{v}</dd>
+              </div>
+            ))}
+          </dl>
+        </details>
+        {children}
+      </div>
+    </li>
+  );
+}
+
+/** A titled group of settings (Connections, Training, Coach). */
+function Group({ id, title, description, children }: { id: string; title: string; description: string; children: React.ReactNode }) {
+  return (
+    <section id={id} className="scroll-mt-24 space-y-3">
+      <div>
+        <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
+        <p className="text-sm text-muted-foreground">{description}</p>
+      </div>
+      {children}
     </section>
   );
 }
 
-function Row({ label, value }: { label: string; value: React.ReactNode }) {
+/** A card inside a group: a header with a title, a short help line and an optional action, then the body. */
+function Panel({ id, title, help, action, children }: { id: string; title: string; help: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="flex justify-between gap-4">
-      <span className="min-w-0 text-muted-foreground [overflow-wrap:anywhere]">{label}</span>
-      <span className="text-right">{value}</span>
-    </div>
+    <section id={id} className="scroll-mt-24 rounded-lg border bg-card">
+      <header className="flex items-start justify-between gap-4 border-b px-4 py-3">
+        <div className="min-w-0">
+          <h3 className="text-sm font-semibold">{title}</h3>
+          <p className="text-xs text-muted-foreground">{help}</p>
+        </div>
+        {action}
+      </header>
+      <div className="p-4 text-sm">{children}</div>
+    </section>
   );
 }
 
+const SECTIONS = [
+  { id: 'connections', label: 'Connections' },
+  { id: 'events', label: 'Events' },
+  { id: 'goals', label: 'Goals' },
+  { id: 'targets', label: 'Weekly targets' },
+  { id: 'preferences', label: 'Coaching preferences' },
+  { id: 'location', label: 'Weather location' },
+];
+
 export default async function SettingsPage() {
   const userId = await ownerForSignedInUser();
-  if (!userId) return <p className="text-sm text-muted-foreground">This account has no Coach data.</p>;
-  const [status, targets, coachingNotes, goals] = await Promise.all([
-    loadStatus(userId), loadTargets(userId), loadCoachingNotes(userId), loadGoals(sql, userId),
+  if (!userId) return <p data-smoke="settings" className="text-sm text-muted-foreground">This account has no Coach data.</p>;
+  const today = todayIn(zone((await cookies()).get('tz')?.value));
+  const [status, targets, coachingNotes, goals, events] = await Promise.all([
+    loadStatus(userId),
+    loadTargets(userId),
+    loadCoachingNotes(userId),
+    load('Goals', () => loadGoals(sql, userId)),
+    load('Events', () => loadEventsWithCountdown(userId, today)),
   ]);
-  const levelOf = (source: Warning['source']) =>
+
+  const levelOf = (source: Warning['source']): Level =>
     status.warnings.find((w) => w.source === source && w.level === 'error')?.level ??
     status.warnings.find((w) => w.source === source && w.level === 'warn')?.level ??
     status.warnings.find((w) => w.source === source)?.level ??
     'ok';
-  // The Connect Lift card shows Lift's own state, so Lift's info note is left out here.
-  const notes = (source: Warning['source']) =>
-    status.warnings.filter((w) => w.source === source && !(source === 'lift' && w.level === 'info')).map((w) => (
-      <p key={w.text} className="flex items-start gap-2 rounded bg-muted/50 p-2"><Dot level={w.level} /> {w.text}</p>
-    ));
+  // The Lift row shows Lift's own state, so Lift's info note is left out.
+  const notes = (source: Warning['source']) => status.warnings.filter((w) => w.source === source && !(source === 'lift' && w.level === 'info'));
+
   // lift://sync carries a one-time code, never the token: Lift trades it for the token over HTTPS
   // (/api/lift/enroll). A new code each time the page renders, valid 15 minutes.
-  const liftLink = process.env.LIFT_SYNC_TOKEN
-    ? `lift://sync?code=${(await createEnrollmentCode(sql)).code}`
-    : null;
+  const liftLink = process.env.LIFT_SYNC_TOKEN ? `lift://sync?code=${(await createEnrollmentCode(sql)).code}` : null;
   const liftQr = liftLink ? await QRCode.toString(liftLink, { type: 'svg', margin: 0, errorCorrectionLevel: 'M' }) : '';
   const connectUrl = status.strava.canConnect
     ? new StravaService({
@@ -71,82 +175,126 @@ export default async function SettingsPage() {
       }).getAuthorizationUrl()
     : null;
 
+  const garmin = status.garmin;
+  const garminOk = garmin.connected && garmin.status !== 'auth_failed';
+  const liftConnected = Boolean(status.lift.lastChangeAt);
+  const newestCalendarSync = status.calendars.map((c) => c.lastSyncedAt).filter(Boolean).sort().at(-1) ?? null;
+  const connected = { strava: status.strava.connected, lift: liftConnected, calendar: status.calendars.length > 0, garmin: garminOk };
+  const attention = (['strava', 'lift', 'calendar', 'garmin'] as const).filter((s) => !connected[s] || ['warn', 'error'].includes(levelOf(s))).length;
+  const button = 'inline-flex h-10 items-center rounded-md border px-3 text-xs font-medium shadow-sm hover:bg-accent md:h-8';
+
   return (
-    <div className="space-y-6" data-smoke="settings">
-      <div className="space-y-1">
-        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground">Connections, sync status and weekly targets.</p>
-      </div>
+    <div data-smoke="settings" className="lg:grid lg:grid-cols-[11rem_minmax(0,1fr)] lg:gap-10">
+      <SettingsNav sections={SECTIONS} />
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Section title="Strava" level={levelOf('strava')}>
-          <Row label="Connection" value={status.strava.connected ? `Athlete ${status.strava.athleteId}` : 'Not connected'} />
-          <Row label="Last sync" value={when(status.strava.lastSyncedAt)} />
-          <Row label="Newest activity" value={status.strava.newestActivity ?? '-'} />
-          <Row label="Auto sync" value={status.strava.canSync ? 'Webhook and daily at 13:00 UTC' : 'Off (Strava app secret not set)'} />
-          {notes('strava')}
-          <div className="flex flex-wrap gap-2 pt-1">
-            {status.strava.canSync && <StravaSyncButton />}
-            {connectUrl && (
-              <a className="inline-flex h-10 items-center rounded-md border px-3 text-sm hover:bg-accent md:h-auto md:py-1.5" href={connectUrl}>
-                {status.strava.connected ? 'Reconnect Strava' : 'Connect Strava'}
-              </a>
-            )}
+      <div className="min-w-0 space-y-8">
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
+            <p className="text-sm text-muted-foreground">Connections, events, goals and how Coach plans your week.</p>
           </div>
-        </Section>
+          <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs ${attention ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground'}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${attention ? 'bg-amber-500' : 'bg-emerald-500'}`} aria-hidden />
+            {attention ? `${attention} of 4 connections need attention` : 'All 4 connections are healthy'}
+          </span>
+        </div>
 
-        <Section title="Lift (iPhone)" level={levelOf('lift')}>
-          <Row label="Last change synced" value={when(status.lift.lastChangeAt)} />
-          <Row label="Sessions on the server" value={status.lift.sessions} />
-          {notes('lift')}
-          {liftLink && <ConnectLift link={liftLink} qrSvg={liftQr} lastChangeAt={status.lift.lastChangeAt} sessions={status.lift.sessions} />}
-        </Section>
+        <Group id="connections" title="Connections" description="Where Coach gets your activities, workouts, sleep and calendar.">
+          <ul className="divide-y rounded-lg border bg-card">
+            <Connection
+              logo={<StravaLogo />}
+              name="Strava"
+              connected={connected.strava}
+              level={levelOf('strava')}
+              summary={status.strava.connected ? `Synced ${when(status.strava.lastSyncedAt)} · newest: ${status.strava.newestActivity ?? '-'}` : 'Connect Strava to bring in your activities.'}
+              actions={
+                <>
+                  {status.strava.canSync && <StravaSyncButton />}
+                  {connectUrl && <a className={button} href={connectUrl}>{status.strava.connected ? 'Reconnect' : 'Connect Strava'}</a>}
+                </>
+              }
+              notes={notes('strava')}
+              details={[
+                ['Athlete', status.strava.athleteId ?? '-'],
+                ['Newest activity', status.strava.newestActivity ?? '-'],
+                ['Auto sync', status.strava.canSync ? 'Webhook and daily at 13:00 UTC' : 'Off (Strava app secret not set)'],
+              ]}
+            />
 
-        <Section title="Google Calendar" level={levelOf('calendar')}>
-          {status.calendars.length === 0 && <p className="text-muted-foreground">No calendar connected.</p>}
-          <Row label="Auto sync" value="Every 30 min (GitHub Actions)" />
-          {status.calendars.map((c) => (
-            <Row key={c.email} label={c.email} value={c.active ? `synced ${when(c.lastSyncedAt)}` : 'off'} />
-          ))}
-          {notes('calendar')}
-        </Section>
+            <Connection
+              logo={<GarminLogo />}
+              name="Garmin Connect"
+              connected={garminOk}
+              level={levelOf('garmin')}
+              summary={garmin.connected ? `Synced ${when(garmin.lastSuccessAt)} · data through ${garmin.syncedThrough ?? '-'}` : 'Not set up. Sleep, HRV and readiness come from Garmin.'}
+              notes={notes('garmin')}
+              details={[
+                ['Login', !garmin.connected ? 'Not set up' : garmin.status === 'auth_failed' ? 'Expired' : 'Stored (encrypted)'],
+                ['Last success', when(garmin.lastSuccessAt)],
+                ['Last run', when(garmin.lastAttemptAt)],
+                ['Synced through', garmin.syncedThrough ?? '-'],
+                ...(garmin.backfill ? [['Backfill', `from ${garmin.backfill.from}, through ${garmin.backfill.through ?? '(starting)'}`] as [string, string]] : []),
+                ['Auto sync', 'Daily at 11:00 and 17:00 UTC (GitHub Actions)'],
+              ]}
+            >
+              {!garminOk && (
+                <p className="rounded-md bg-muted/60 p-2 text-xs text-muted-foreground">
+                  To log in again, run <code className="text-foreground">scripts/garmin/.venv/bin/python scripts/garmin/login.py</code> on your Mac (see scripts/garmin/README.md).
+                </p>
+              )}
+            </Connection>
 
-        <Section title="Garmin Connect" level={levelOf('garmin')}>
-          <Row label="Login" value={!status.garmin.connected ? 'Not set up' : status.garmin.status === 'auth_failed' ? 'Expired' : 'Stored (encrypted)'} />
-          <Row label="Last success" value={when(status.garmin.lastSuccessAt)} />
-          <Row label="Last run" value={when(status.garmin.lastAttemptAt)} />
-          <Row label="Synced through" value={status.garmin.syncedThrough ?? '-'} />
-          {status.garmin.backfill && (
-            <Row label="Backfill" value={`from ${status.garmin.backfill.from}, through ${status.garmin.backfill.through ?? '(starting)'}`} />
-          )}
-          <Row label="Auto sync" value="Daily at 11:00 and 17:00 UTC (GitHub Actions)" />
-          {notes('garmin')}
-          {(!status.garmin.connected || status.garmin.status === 'auth_failed') && (
-            <p className="text-muted-foreground">
-              To log in again, run <code>scripts/garmin/.venv/bin/python scripts/garmin/login.py</code> on your Mac (see scripts/garmin/README.md).
-            </p>
-          )}
-        </Section>
+            <Connection
+              logo={<GoogleCalendarLogo />}
+              name="Google Calendar"
+              connected={connected.calendar}
+              level={levelOf('calendar')}
+              summary={connected.calendar ? `${status.calendars.length} ${status.calendars.length === 1 ? 'calendar' : 'calendars'} · synced ${when(newestCalendarSync)}` : 'No calendar connected.'}
+              notes={notes('calendar')}
+              details={[
+                ...status.calendars.map((c) => [c.email, c.active ? `synced ${when(c.lastSyncedAt)}` : 'off'] as [string, string]),
+                ['Auto sync', 'Every 30 min (GitHub Actions)'],
+              ]}
+            />
 
-        <Section title="Weekly targets" level="ok">
-          <p className="text-muted-foreground">The Today card, Performance and the start page measure the week against these.</p>
-          <TargetsForm targets={targets} />
-        </Section>
-        <Section title="Weather location" level="ok">
-          <p className="text-muted-foreground">The /plan week and month views show the forecast for this place.</p>
-          <LocationForm />
-        </Section>
+            <Connection
+              logo={<LiftLogo />}
+              name="Lift"
+              connected={liftConnected}
+              level={levelOf('lift')}
+              summary={liftConnected ? `Last change ${when(status.lift.lastChangeAt)} · ${status.lift.sessions} sessions` : 'The iPhone app for strength sessions.'}
+              notes={notes('lift')}
+              details={[
+                ['Last change synced', when(status.lift.lastChangeAt)],
+                ['Sessions on the server', status.lift.sessions],
+              ]}
+            >
+              {liftLink && <ConnectLift link={liftLink} qrSvg={liftQr} connected={liftConnected} />}
+            </Connection>
+          </ul>
+        </Group>
+
+        <Group id="training" title="Training" description="What you train for. Today shows the progress; /plan builds each week toward it.">
+          <Panel id="events" title="Events" help="Races and target days. A is the main event of the season; B and C are build-up events.">
+            {events.ok ? <EventsEditor upcoming={events.value.upcoming} past={events.value.past} /> : <SectionError label="Events" />}
+          </Panel>
+          <Panel id="goals" title="Goals" help="Milestones with a target and a deadline, measured from Strava and Garmin.">
+            {goals.ok ? <GoalsForm goals={goals.value} /> : <SectionError label="Goals" />}
+          </Panel>
+          <Panel id="targets" title="Weekly targets" help="Today measures each week against these.">
+            <TargetsForm targets={targets} />
+          </Panel>
+        </Group>
+
+        <Group id="coach" title="Coach" description="How Coach writes your plan.">
+          <Panel id="preferences" title="Coaching preferences" help="Weekly structure and rules in Markdown. /plan and /check-in read them; change them here, not in a chat.">
+            <CoachingNotesForm notes={coachingNotes} />
+          </Panel>
+          <Panel id="location" title="Weather location" help="The /plan week and month views show the forecast for this place.">
+            <LocationForm />
+          </Panel>
+        </Group>
       </div>
-
-      <Section title="Goals" level="ok">
-        <p className="text-muted-foreground">Milestones with a target and a deadline. Performance shows the progress from Strava and Garmin; /plan trains toward the next deadline.</p>
-        <GoalsForm goals={goals} />
-      </Section>
-
-      <Section title="Coaching preferences" level="ok">
-        <p className="text-muted-foreground">Weekly structure and rules in Markdown. /plan and /check-in read them; change them here, not in a chat.</p>
-        <CoachingNotesForm notes={coachingNotes} />
-      </Section>
     </div>
   );
 }
