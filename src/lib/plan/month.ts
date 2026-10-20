@@ -1,7 +1,8 @@
 import { sql } from '@/db';
 import { toDay } from '@/lib/db-time.mjs';
 import { loadLiftModel } from '@/lib/lift-dashboard/queries';
-import { sessionDetail, sessionSummaries } from '@/lib/lift-dashboard/stats.mjs';
+import { sessionSummaries } from '@/lib/lift-dashboard/stats.mjs';
+import { richSession, type RichSession } from '@/lib/lift/session';
 import type { Workout } from './queries';
 import { complianceOf } from './compliance.mjs';
 import { libraryFrom, monthWeeks, weekSummary } from './calendar.mjs';
@@ -24,8 +25,8 @@ export type CalendarActivity = {
 export type CalendarLift = { id: string; date: string; name: string; setsLogged: number };
 
 /** imported: the row came from plans/<week>.json (a re-import adds it again after a remove). */
-/** A Lift session in full: each exercise with its sets, their targets and what was logged. */
-export type LiftSessionDetail = NonNullable<ReturnType<typeof sessionDetail>>;
+/** A Lift session in full: each exercise with its picture, its sets, their targets and what was logged. */
+export type LiftSessionDetail = RichSession;
 
 export type CalendarWorkout = Workout & {
   compliance: Compliance;
@@ -143,7 +144,7 @@ export async function loadRange(userId: string, fromMonday: string, toMonday: st
   const matched = matchWeek(base, activities, lifts, today) as Map<string, { status: Workout['state']; match: Workout['match'] }>;
   const byStrava = new Map(activities.map((a) => [a.id, a]));
   const linked = new Map(planRows.map((r) => [String(r.id), r.lift_session_id ? String(r.lift_session_id) : null]));
-  const liftOf = (id: string | null) => (lift && id ? ((sessionDetail(lift.model, id, lift.unit) as LiftSessionDetail | null) ?? null) : null);
+  const liftOf = (id: string | null) => (lift && id ? richSession(lift.model, id, lift.unit) : null);
   const workouts: CalendarWorkout[] = base.map((w) => {
     const m = matched.get(w.id)!;
     const liftDetail = liftOf(linked.get(w.id) ?? (m.match?.source === 'lift' ? m.match.id : null));

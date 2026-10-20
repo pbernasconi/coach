@@ -118,9 +118,12 @@ export function buildModel(data) {
     });
   }
   const libraryNames = new Map();
+  /** Library facts per exercise key: the bundled catalog id (images, instructions) and the equipment. */
+  const library = new Map();
   for (const e of data.exercises) {
     const id = lowerId(e.id);
     if (id && !isDeleted(e) && str(e.name)) libraryNames.set(`id-${id}`, str(e.name));
+    if (id && !isDeleted(e)) library.set(`id-${id}`, { catalogId: str(e.catalogID), equipment: str(e.equipment) });
   }
   const sessionExercises = new Map();
   for (const se of data.sessionExercises) {
@@ -133,6 +136,7 @@ export function buildModel(data) {
       sessionId,
       position: num(se.position) ?? 0,
       note: str(se.note),
+      restSeconds: num(se.restSeconds),
       key,
       name: libraryNames.get(key) ?? str(se.displayName) ?? 'Exercise',
       loadMode: str(se.loadMode),
@@ -181,7 +185,7 @@ export function buildModel(data) {
     if (!id || isDeleted(e)) continue;
     muscles.set(`id-${id}`, { primary: muscleList(e.primaryMuscles), secondary: muscleList(e.secondaryMuscles) });
   }
-  return { sessions, sessionExercises, sets, muscles };
+  return { sessions, sessionExercises, sets, muscles, library };
 }
 
 /** @param {unknown} v */
@@ -408,6 +412,44 @@ export function exerciseDetail(model, key, unit, bestCount = 10) {
 }
 
 /**
+ * What came before a session for one exercise: the last session that logged it (its working sets), the best
+ * estimated 1RM, and the best estimate of each of the last `points` sessions (oldest first), all before `day`
+ * and leaving out `sessionId`. Weights in `unit`.
+ * @param {ReturnType<typeof buildModel>} model
+ * @param {string} key
+ * @param {Unit} unit
+ * @param {string} day
+ * @param {string} sessionId
+ * @param {number} [points]
+ */
+export function exerciseHistory(model, key, unit, day, sessionId, points = 10) {
+  /** @type {Map<string, { sessionId: string, day: string, sets: { reps: number | null, weight: number | null }[], e1rm: number | null }>} */
+  const bySession = new Map();
+  for (const s of model.sets) {
+    if (s.exerciseKey !== key || s.sessionId === sessionId || s.day > day || !isCountedSet(s)) continue;
+    let e = bySession.get(s.sessionId);
+    if (!e) {
+      e = { sessionId: s.sessionId, day: s.day, sets: [], e1rm: null };
+      bySession.set(s.sessionId, e);
+    }
+    const weight = s.weight === null ? null : convert(s.weight, s.unit, unit);
+    e.sets.push({ reps: s.reps, weight, position: s.position });
+    const est = s.reps !== null && weight !== null ? epley(s.reps, weight) : null;
+    if (est !== null && (e.e1rm === null || est > e.e1rm)) e.e1rm = est;
+  }
+  const sessions = [...bySession.values()].sort((a, b) => a.day.localeCompare(b.day) || a.sessionId.localeCompare(b.sessionId));
+  for (const e of sessions) e.sets.sort((a, b) => a.position - b.position);
+  const last = sessions.at(-1) ?? null;
+  const best = sessions.reduce((m, e) => (e.e1rm !== null && (m === null || e.e1rm > m.e1rm) ? { day: e.day, e1rm: e.e1rm } : m), /** @type {{ day: string, e1rm: number } | null} */ (null));
+  return {
+    last: last ? { day: last.day, sessionId: last.sessionId, sets: last.sets.map(({ reps, weight }) => ({ reps, weight })) } : null,
+    best,
+    trend: sessions.filter((e) => e.e1rm !== null).slice(-points).map((e) => ({ day: e.day, e1rm: /** @type {number} */ (e.e1rm) })),
+    sessions: sessions.length,
+  };
+}
+
+/**
  * One session in full, for the session page and the Plan preview: its summary, then each exercise in the
  * session's order with its sets in order. Weights are in `unit`. `id` is a session id (any case) or 'latest'
  * for the newest session. Null when there is no such session.
@@ -428,11 +470,19 @@ export function sessionDetail(model, id, unit) {
   const finished = toDate(session.finishedAt);
   const minutes = started && finished && finished > started ? Math.round((finished.getTime() - started.getTime()) / 60000) : null;
 
-  /** @type {Map<string, { id: string, key: string, name: string, note: string | null, loadMode: string | null, position: number, volume: number, setsLogged: number, sets: FlatSet[] }>} */
+  /** @type {Map<string, { id: string, key: string, name: string, note: string | null, loadMode: string | null, restSeconds: number | null, catalogId: string | null, equipment: string | null, primary: string[], secondary: string[], position: number, volume: number, setsLogged: number, sets: FlatSet[], history: ReturnType<typeof exerciseHistory> }>} */
   const groups = new Map();
   for (const se of model.sessionExercises.values()) {
     if (se.sessionId !== summary.id) continue;
-    groups.set(se.id, { id: se.id, key: se.key, name: se.name, note: se.note, loadMode: se.loadMode, position: se.position, volume: 0, setsLogged: 0, sets: [] });
+    const lib = model.library.get(se.key);
+    const m = model.muscles.get(se.key);
+    groups.set(se.id, {
+      id: se.id, key: se.key, name: se.name, note: se.note, loadMode: se.loadMode, restSeconds: se.restSeconds,
+      catalogId: lib?.catalogId ?? null, equipment: lib?.equipment ?? null,
+      primary: m?.primary ?? [], secondary: m?.secondary ?? [],
+      position: se.position, volume: 0, setsLogged: 0, sets: [],
+      history: exerciseHistory(model, se.key, unit, summary.day, summary.id),
+    });
   }
   for (const set of model.sets) {
     if (set.sessionId !== summary.id) continue;

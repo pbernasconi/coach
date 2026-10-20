@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildModel, muscleSets, sessionDetail, sessionSummaries, topLifts, weeklyVolume } from './stats.mjs';
+import { buildModel, exerciseHistory, muscleSets, sessionDetail, sessionSummaries, topLifts, weeklyVolume } from './stats.mjs';
 
 const SQUAT = 'AAAAAAAA-0000-0000-0000-000000000001';
 const ROW = 'AAAAAAAA-0000-0000-0000-000000000002';
@@ -87,4 +87,16 @@ test('sessionDetail gives each set its target, so a planned session shows what t
   assert.equal(s.exercises[0].loadMode, 'total');
   assert.deepEqual(s.exercises[0].sets[0].target, { reps: 8, repMin: null, repMax: null, weight: 100 });
   assert.equal(s.exercises[0].sets[0].status, 'planned');
+});
+
+test('exerciseHistory: the last session before a day, the best e1RM and the trend, without the session itself', () => {
+  const m = buildModel(data());
+  const h = exerciseHistory(m, `id-${SQUAT.toLowerCase()}`, 'kg', '2026-10-20', 's2');
+  assert.equal(h.last.day, '2026-10-13');
+  assert.deepEqual(h.last.sets, [{ reps: 5, weight: 100 }, { reps: 5, weight: 100 }]);
+  assert.equal(h.sessions, 1);
+  assert.equal(Math.round(h.best.e1rm), 117);
+  assert.equal(h.trend.length, 1);
+  // Nothing before the first session.
+  assert.equal(exerciseHistory(m, `id-${SQUAT.toLowerCase()}`, 'kg', '2026-10-13', 's1').last, null);
 });
