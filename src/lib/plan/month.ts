@@ -1,7 +1,7 @@
 import { sql } from '@/db';
 import { toDay } from '@/lib/db-time.mjs';
 import { loadLiftModel } from '@/lib/lift-dashboard/queries';
-import { sessionSummaries } from '@/lib/lift-dashboard/stats.mjs';
+import { sessionDetail, sessionSummaries } from '@/lib/lift-dashboard/stats.mjs';
 import type { Workout } from './queries';
 import { complianceOf } from './compliance.mjs';
 import { libraryFrom, monthWeeks, weekSummary } from './calendar.mjs';
@@ -24,7 +24,16 @@ export type CalendarActivity = {
 export type CalendarLift = { id: string; date: string; name: string; setsLogged: number };
 
 /** imported: the row came from plans/<week>.json (a re-import adds it again after a remove). */
-export type CalendarWorkout = Workout & { compliance: Compliance; actual: { min: number | null; tss: number | null } | null; imported: boolean };
+/** A Lift session in full: each exercise with its sets, their targets and what was logged. */
+export type LiftSessionDetail = NonNullable<ReturnType<typeof sessionDetail>>;
+
+export type CalendarWorkout = Workout & {
+  compliance: Compliance;
+  actual: { min: number | null; tss: number | null } | null;
+  imported: boolean;
+  /** Strength: the Lift session planned for it (lift_session_id), else the Lift session that matched it. */
+  lift: LiftSessionDetail | null;
+};
 
 export type LoadRow = { date: string; ctl: number; atl: number; tsb: number };
 
@@ -92,7 +101,8 @@ export async function loadRange(userId: string, fromMonday: string, toMonday: st
   const [planRows, actRows, loadRows, lift] = await Promise.all([
     sql`
       SELECT a.id, a.scheduled_date, a.start_time, a.end_time, a.title, a.activity_type, a.workout_type, a.intensity,
-             a.duration, a.tss, a.why, a.description, a.status, a.adapted_from, a.sort_order, a.source_key
+             a.duration, a.tss, a.why, a.description, a.status, a.adapted_from, a.sort_order, a.source_key,
+             a.lift_session_id
       FROM training_plan_activities a JOIN training_plans p ON p.id = a.plan_id
       WHERE p.user_id = ${userId} AND a.scheduled_date >= ${from} AND a.scheduled_date < ${end}
       ORDER BY a.scheduled_date, a.sort_order, a.start_time NULLS LAST` as Promise<Row[]>,
@@ -132,12 +142,15 @@ export async function loadRange(userId: string, fromMonday: string, toMonday: st
   const imported = new Set(planRows.filter((r) => r.source_key).map((r) => String(r.id)));
   const matched = matchWeek(base, activities, lifts, today) as Map<string, { status: Workout['state']; match: Workout['match'] }>;
   const byStrava = new Map(activities.map((a) => [a.id, a]));
+  const linked = new Map(planRows.map((r) => [String(r.id), r.lift_session_id ? String(r.lift_session_id) : null]));
+  const liftOf = (id: string | null) => (lift && id ? ((sessionDetail(lift.model, id, lift.unit) as LiftSessionDetail | null) ?? null) : null);
   const workouts: CalendarWorkout[] = base.map((w) => {
     const m = matched.get(w.id)!;
+    const liftDetail = liftOf(linked.get(w.id) ?? (m.match?.source === 'lift' ? m.match.id : null));
     const act = m.match?.source === 'strava' ? byStrava.get(m.match.id) : null;
     const actual = m.match ? { min: act?.min ?? null, tss: act?.tss ?? null } : null;
     const compliance = complianceOf(w, m.status, actual, { rest: sportOf(w) === 'rest' }) as Compliance;
-    return { ...w, state: m.status, match: m.match, actual, compliance, imported: imported.has(w.id) };
+    return { ...w, state: m.status, match: m.match, actual, compliance, imported: imported.has(w.id), lift: liftDetail };
   });
 
   const load: LoadRow[] = loadRows.map((r) => ({ date: dayOf(r.date), ctl: Number(r.ctl), atl: Number(r.atl), tsb: Number(r.tsb) }));

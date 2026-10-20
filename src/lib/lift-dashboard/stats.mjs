@@ -91,6 +91,10 @@ export function exerciseKey(sessionExercise) {
  * @property {number | null} reps
  * @property {number | null} weight logged weight in `unit` (bodyweight: added load)
  * @property {Unit} unit
+ * @property {number | null} targetReps planned reps (a single target)
+ * @property {number | null} targetRepMin planned rep range, low end
+ * @property {number | null} targetRepMax planned rep range, high end
+ * @property {number | null} targetWeight planned weight in `unit` (bodyweight: added load)
  */
 
 /**
@@ -163,6 +167,10 @@ export function buildModel(data) {
       reps: num(set.actualReps),
       weight,
       unit,
+      targetReps: num(set.targetReps),
+      targetRepMin: num(set.targetRepMin),
+      targetRepMax: num(set.targetRepMax),
+      targetWeight: num(set.targetWeight),
     });
   }
   // Muscles per library exercise (primaryMuscles / secondaryMuscles: a JSON array, or its text).
@@ -420,11 +428,11 @@ export function sessionDetail(model, id, unit) {
   const finished = toDate(session.finishedAt);
   const minutes = started && finished && finished > started ? Math.round((finished.getTime() - started.getTime()) / 60000) : null;
 
-  /** @type {Map<string, { id: string, key: string, name: string, note: string | null, position: number, volume: number, setsLogged: number, sets: FlatSet[] }>} */
+  /** @type {Map<string, { id: string, key: string, name: string, note: string | null, loadMode: string | null, position: number, volume: number, setsLogged: number, sets: FlatSet[] }>} */
   const groups = new Map();
   for (const se of model.sessionExercises.values()) {
     if (se.sessionId !== summary.id) continue;
-    groups.set(se.id, { id: se.id, key: se.key, name: se.name, note: se.note, position: se.position, volume: 0, setsLogged: 0, sets: [] });
+    groups.set(se.id, { id: se.id, key: se.key, name: se.name, note: se.note, loadMode: se.loadMode, position: se.position, volume: 0, setsLogged: 0, sets: [] });
   }
   for (const set of model.sets) {
     if (set.sessionId !== summary.id) continue;
@@ -449,6 +457,13 @@ export function sessionDetail(model, id, unit) {
             reps: s.reps,
             weight: s.weight === null ? null : convert(s.weight, s.unit, unit),
             note: s.note,
+            // What Lift planned for the set (scripts/lift-plan.mjs or the app), in `unit`.
+            target: {
+              reps: s.targetReps,
+              repMin: s.targetRepMin,
+              repMax: s.targetRepMax,
+              weight: s.targetWeight === null ? null : convert(s.targetWeight, s.unit, unit),
+            },
           })),
       };
     });
