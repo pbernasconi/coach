@@ -39,8 +39,12 @@ final class FakeSyncing: Syncing {
         self.token = token
     }
 
+    /// Answers for `hasToken()` in order (then `token != nil`), for a token that changes behind a screen.
+    var hasTokenAnswers: [Bool] = []
+
     func hasToken() async -> Bool {
-        token != nil
+        if !hasTokenAnswers.isEmpty { return hasTokenAnswers.removeFirst() }
+        return token != nil
     }
 
     /// Codes passed to `redeem(enrollmentCode:)`; a code in `enrollmentTokens` stores that token, others throw.
