@@ -45,7 +45,8 @@ final class SettingsViewModel {
         refresh(hasToken: hasToken)
         for await status in sync.statusUpdates() {
             latest = status
-            refresh()
+            // The token can change behind this screen (a lift://sync link stores one), so read it again.
+            refresh(hasToken: await sync.hasToken())
         }
     }
 
