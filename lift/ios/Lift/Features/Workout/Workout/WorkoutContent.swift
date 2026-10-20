@@ -2,12 +2,26 @@ import KoboComponents
 import KoboTokens
 import SwiftUI
 
-/// Dumb view: the session header, one section per exercise, the rest bar and the set editor (SCR-2).
+/// Dumb view: the session header, one section per exercise, the rest bar and the set editor (SCR-2). Ticking a set
+/// brings that set into view, clear of the rest bar, and tapping the rest bar's clock goes back to it.
 struct WorkoutContent: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let state: WorkoutState
     let send: (WorkoutAction) -> Void
 
+    /// Where a focused set lands: the upper part of the screen, so the rest bar never covers it.
+    private static let focusAnchor = UnitPoint(x: 0.5, y: 0.35)
+
     var body: some View {
+        ScrollViewReader { proxy in
+            page(proxy)
+                .onChange(of: state.rest?.run) { _, run in
+                    if run != nil { focusRestingSet(proxy) }
+                }
+        }
+    }
+
+    private func page(_ proxy: ScrollViewProxy) -> some View {
         ScrollView {
             switch state.workout {
             case .loading:
@@ -24,7 +38,12 @@ struct WorkoutContent: View {
                 ErrorState(title: "Workout could not be loaded")
                     .pageGutter()
             case .loaded(let workout):
-                WorkoutBody(workout: workout, thumbnails: state.thumbnails, send: send)
+                WorkoutBody(
+                    workout: workout,
+                    thumbnails: state.thumbnails,
+                    restingSetID: state.rest?.setID,
+                    send: send
+                )
             }
         }
         .screenCanvas()
@@ -32,31 +51,32 @@ struct WorkoutContent: View {
         .navigationBarTitleDisplayMode(.inline)
         .workoutOptions(state: state, send: send)
         // Glass style: no bar material behind it. The rest bar brings its own opaque panel.
-        .pinnedFooter(style: .glass, isPresented: state.rest != nil) {
-            if let rest = state.rest {
-                RestBar(rest: rest, onExtend: { send(.restExtendTapped) }, onSkip: { send(.restSkipTapped) })
-            }
+        .pinnedFooter(style: .glass, isPresented: state.rest != nil) { restBar(proxy) }
+        .modifier(WorkoutEditorSheets(state: state, send: send))
+    }
+
+    @ViewBuilder
+    private func restBar(_ proxy: ScrollViewProxy) -> some View {
+        if let rest = state.rest {
+            RestBar(
+                rest: rest,
+                setLabel: restLabel(rest),
+                onFocus: { focusRestingSet(proxy) },
+                onExtend: { send(.restExtendTapped) },
+                onSkip: { send(.restSkipTapped) }
+            )
         }
-        .koboSheet(
-            item: Binding<SetEditor?>.action(state.editor) { if $0 == nil { send(.editorDismissed) } },
-            title: \.title,
-            hasChanges: state.editor?.hasChanges ?? false
-        ) { editor in
-            SetEditorFields(editor: editor, send: send)
-        } footer: { _ in
-            Button("Done") { send(.editorDoneTapped) }
-                .buttonStyle(.kobo(.primary, width: .full))
-        }
-        .koboSheet(
-            item: Binding<NoteEditor?>.action(state.noteEditor) { if $0 == nil { send(.noteDismissed) } },
-            title: \.title,
-            hasChanges: state.noteEditor?.hasChanges ?? false
-        ) { editor in
-            NoteEditorField(editor: editor, send: send)
-        } footer: { _ in
-            Button("Done") { send(.noteDoneTapped) }
-                .buttonStyle(.kobo(.primary, width: .full))
-        }
+    }
+
+    /// Scrolls the set the rest follows into the upper part of the page.
+    private func focusRestingSet(_ proxy: ScrollViewProxy) {
+        guard let setID = state.rest?.setID else { return }
+        withAnimation(reduceMotion ? nil : .snappy) { proxy.scrollTo(setID, anchor: Self.focusAnchor) }
+    }
+
+    private func restLabel(_ rest: RestTimer) -> String? {
+        guard case .loaded(let workout) = state.workout, let setID = rest.setID else { return nil }
+        return workout.restLabel(for: setID)
     }
 
     /// The session title in the inline navigation bar, which keeps the page compact.
@@ -66,11 +86,43 @@ struct WorkoutContent: View {
     }
 }
 
+/// The set editor and the note editor sheets; Done saves, it never logs a set.
+private struct WorkoutEditorSheets: ViewModifier {
+    let state: WorkoutState
+    let send: (WorkoutAction) -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .koboSheet(
+                item: Binding<SetEditor?>.action(state.editor) { if $0 == nil { send(.editorDismissed) } },
+                title: \.title,
+                hasChanges: state.editor?.hasChanges ?? false
+            ) { editor in
+                SetEditorFields(editor: editor, send: send)
+            } footer: { _ in
+                Button("Done") { send(.editorDoneTapped) }
+                    .buttonStyle(.kobo(.primary, width: .full))
+            }
+            .koboSheet(
+                item: Binding<NoteEditor?>.action(state.noteEditor) { if $0 == nil { send(.noteDismissed) } },
+                title: \.title,
+                hasChanges: state.noteEditor?.hasChanges ?? false
+            ) { editor in
+                NoteEditorField(editor: editor, send: send)
+            } footer: { _ in
+                Button("Done") { send(.noteDoneTapped) }
+                    .buttonStyle(.kobo(.primary, width: .full))
+            }
+    }
+}
+
 /// The loaded session: the day and progress on one compact line, then the exercises in order.
 private struct WorkoutBody: View {
     @Environment(\.koboTheme) private var theme
     let workout: WorkoutOverview
     let thumbnails: [String: MediaImage]
+    /// The set the running rest follows, highlighted in its section.
+    let restingSetID: UUID?
     let send: (WorkoutAction) -> Void
 
     var body: some View {
@@ -94,6 +146,7 @@ private struct WorkoutBody: View {
                 WorkoutExerciseSection(
                     exercise: exercise,
                     thumbnail: exercise.catalogID.map { thumbnails[$0] ?? .loading },
+                    restingSetID: restingSetID,
                     send: send
                 )
             }

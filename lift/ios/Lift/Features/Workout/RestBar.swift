@@ -2,8 +2,8 @@ import KoboComponents
 import KoboTokens
 import SwiftUI
 
-/// The rest countdown pinned under the Workout screen after a set is logged: time left, a bar, +30s and Skip.
-/// It only draws; the ViewModel owns the clock.
+/// The rest countdown pinned under the Workout screen after a set is logged: the set it follows, time left, a bar,
+/// +30s and Skip. It only draws; the ViewModel owns the clock. Tapping the set's name scrolls back to that set.
 ///
 /// It floats on its own opaque panel, like a mini player above the tab bar, so the sets scrolling under it never show
 /// through: the screen's footer is glass-style (no panel of its own), and the sets behind are busy.
@@ -11,6 +11,9 @@ struct RestBar: View {
     @Environment(\.koboTheme) private var theme
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let rest: RestTimer
+    /// "Back squat · Set 2"; nil when the set is not on the page.
+    let setLabel: String?
+    let onFocus: () -> Void
     let onExtend: () -> Void
     let onSkip: () -> Void
 
@@ -20,8 +23,10 @@ struct RestBar: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Space.md) {
             layout {
-                clock
+                Button(action: onFocus) { clock }
+                    .buttonStyle(.plain)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityHint(Text("Scrolls to the set"))
                 HStack(spacing: Space.sm) {
                     Button("+30s", action: onExtend)
                         .buttonStyle(.kobo(.secondary, size: .compact))
@@ -38,24 +43,42 @@ struct RestBar: View {
         .background { RestBarPanel() }
     }
 
-    /// "Rest 1:30 of 2:00": the time left large, its label and the whole rest quieter beside it.
+    /// The set the rest follows ("Back squat · Set 2") over "Rest 1:30 of 2:00": the time left large, the whole rest
+    /// quieter beside it. The whole block is one tap target that scrolls back to the set.
     private var clock: some View {
-        HStack(alignment: .firstTextBaseline, spacing: Space.sm) {
-            Text("Rest")
-                .font(theme.font(.subheadline).weight(.semibold))
-                .foregroundStyle(theme.palette.textSecondary)
-            Text(verbatim: rest.clockText)
-                .font(theme.font(.title).weight(.semibold).monospacedDigit())
-                .foregroundStyle(isFinalStretch ? theme.palette.accentText : theme.palette.textPrimary)
-                .contentTransition(.numericText(countsDown: true))
-                .koboAnimation(.state, value: rest.remaining)
-                .accessibilityLabel(Text("\(rest.remaining) seconds left"))
-            Text("of \(rest.totalText)")
-                .font(theme.font(.subheadline).monospacedDigit())
-                .foregroundStyle(theme.palette.textSecondary)
-                .accessibilityHidden(true)
+        VStack(alignment: .leading, spacing: Space.xxs) {
+            if let setLabel {
+                Text(verbatim: setLabel)
+                    .font(theme.font(.footnote).weight(.semibold))
+                    .foregroundStyle(theme.palette.accentText)
+                    .lineLimit(1)
+            }
+            HStack(alignment: .firstTextBaseline, spacing: Space.sm) {
+                Text("Rest")
+                    .font(theme.font(.subheadline).weight(.semibold))
+                    .foregroundStyle(theme.palette.textSecondary)
+                Text(verbatim: rest.clockText)
+                    .font(theme.font(.title).weight(.semibold).monospacedDigit())
+                    .foregroundStyle(isFinalStretch ? theme.palette.accentText : theme.palette.textPrimary)
+                    .contentTransition(.numericText(value: Double(rest.remaining)))
+                    .koboAnimation(.state, value: rest.remaining)
+                Text("of \(rest.totalText)")
+                    .font(theme.font(.subheadline).monospacedDigit())
+                    .foregroundStyle(theme.palette.textSecondary)
+            }
+            .lineLimit(1)
         }
-        .lineLimit(1)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(verbatim: spokenClock))
+        .accessibilityAddTraits(.updatesFrequently)
+    }
+
+    /// "Back squat, Set 2. 75 seconds of rest left."
+    private var spokenClock: String {
+        let left = String(localized: "\(rest.remaining) seconds of rest left")
+        guard let setLabel else { return left }
+        return "\(setLabel.replacingOccurrences(of: " · ", with: ", ")). \(left)"
     }
 
     private var isFinalStretch: Bool { rest.remaining <= Self.finalSeconds }
@@ -98,7 +121,9 @@ private struct RestBarPanel: View {
                 .pageGutter()
             }
             .background(Theme.lift.palette.canvas)
-            .pinnedFooter(style: .glass) { RestBar(rest: rest, onExtend: {}, onSkip: {}) }
+            .pinnedFooter(style: .glass) {
+                RestBar(rest: rest, setLabel: "Back squat · Set 2", onFocus: {}, onExtend: {}, onSkip: {})
+            }
             .koboTheme(.lift)
         }
     }

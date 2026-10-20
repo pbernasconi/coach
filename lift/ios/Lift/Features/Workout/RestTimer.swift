@@ -10,13 +10,16 @@ nonisolated struct RestTimer: Equatable, Sendable {
 
     /// Which start this is. A new start gets a new number, so the screen restarts its ticking task.
     let run: Int
+    /// The set whose tick started this rest; the screen keeps it in view and names it in the rest bar.
+    let setID: UUID?
     /// The whole rest, including any time added.
     private(set) var total: Int
     /// Seconds left; never below zero.
     private(set) var remaining: Int
 
-    init(run: Int, seconds: Int) {
+    init(run: Int, seconds: Int, setID: UUID? = nil) {
         self.run = run
+        self.setID = setID
         total = max(0, seconds)
         remaining = max(0, seconds)
     }

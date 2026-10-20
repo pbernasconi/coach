@@ -39,6 +39,16 @@ nonisolated struct WorkoutOverview: Equatable, Sendable {
     var isFinished = false
 }
 
+extension WorkoutOverview {
+    /// "Back squat · Set 2": the set a rest follows, for the rest bar; nil when the set is gone.
+    func restLabel(for setID: UUID) -> String? {
+        for exercise in exercises {
+            if let set = exercise.sets.first(where: { $0.id == setID }) { return "\(exercise.name) · \(set.title)" }
+        }
+        return nil
+    }
+}
+
 /// One exercise section: name, plain hint lines and its sets.
 nonisolated struct WorkoutExercise: Equatable, Sendable, Identifiable {
     var id: UUID

@@ -156,7 +156,7 @@ final class WorkoutViewModel {
             do {
                 if isPlanned {
                     _ = try await sets.log(setID: id)
-                    startRest(seconds: restSeconds, activity: activity)
+                    startRest(seconds: restSeconds, activity: activity, setID: id)
                 } else {
                     _ = try await sets.unlog(setID: id)
                 }
@@ -213,13 +213,14 @@ final class WorkoutViewModel {
         state.noteEditor = editor
     }
 
-    /// Starts the countdown in the app and on the Lock Screen and Dynamic Island; leaving the workout ends both.
-    private func startRest(seconds: Int, activity: RestActivityStart?) {
+    /// Starts the countdown in the app and on the Lock Screen and Dynamic Island; leaving the workout ends both. Each
+    /// tick starts a new rest from full, for the set just ticked, even while another rest is still running.
+    private func startRest(seconds: Int, activity: RestActivityStart?, setID: UUID) {
         guard seconds > 0 else {
             endRest()
             return
         }
-        state.rest = RestTimer(run: (state.rest?.run ?? 0) + 1, seconds: seconds)
+        state.rest = RestTimer(run: (state.rest?.run ?? 0) + 1, seconds: seconds, setID: setID)
         restActivity.start(seconds: seconds, activity: activity)
     }
 

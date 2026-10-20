@@ -174,4 +174,9 @@ import Testing
         #expect(done.restActivity(afterLogging: .fixture(22))?.nextSetLabel == nil)
         #expect(done.restActivity(afterLogging: .fixture(99)) == nil)
     }
+
+    @Test func restLabelNamesTheExerciseAndSet() {
+        #expect(overview.restLabel(for: .fixture(21)) == "Romanian deadlift · Set 1")
+        #expect(overview.restLabel(for: .fixture(99)) == nil)
+    }
 }
