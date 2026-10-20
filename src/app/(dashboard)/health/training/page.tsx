@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import SectionError from '@/components/SectionError';
@@ -10,6 +11,8 @@ import { addDays } from '@/lib/vitals/readiness.mjs';
 import { fmtPace, fmtTime } from '@/lib/vitals/garmin-training.mjs';
 import { loadTraining, type Pt, type TrainingView } from '@/lib/vitals/garmin-pages';
 import HealthTrendChart from '../HealthTrendChart';
+
+export const metadata: Metadata = { title: 'Training' };
 
 export const dynamic = 'force-dynamic';
 
@@ -62,7 +65,7 @@ export default async function TrainingPage() {
     <div className="space-y-6" data-smoke="health-training">
       <div className="space-y-1">
         <Link href="/health" className="text-sm text-muted-foreground underline-offset-4 hover:underline">← Health</Link>
-        <h1 className="text-3xl font-bold tracking-tight">Training</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Training</h1>
         <p className="text-muted-foreground">Garmin&apos;s performance view: status, load, scores, race predictions, thresholds and records.</p>
       </div>
       {training.ok ? <TrainingBody t={training.value} today={today} /> : <SectionError label="Training" />}

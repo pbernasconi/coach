@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { ownerForSignedInUser } from '@/lib/owner';
@@ -19,6 +20,8 @@ import { loadGoals, measureGoals } from '@/lib/goals/goals.mjs';
 import GoalsCard from './GoalsCard';
 import HomeWeek from './HomeWeek';
 import LeanStrong from './LeanStrong';
+
+export const metadata: Metadata = { title: 'Today' };
 
 export const dynamic = 'force-dynamic';
 
@@ -104,7 +107,7 @@ export default async function HomePage() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs font-medium uppercase tracking-wide text-[var(--viz-muted)]">{dateLabel}</p>
-          <h1 className="text-3xl font-bold tracking-tight">Today</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Today</h1>
         </div>
         <Link href={`/health/day/${today}`} className="flex flex-wrap gap-2" aria-label="Recovery today. Open today's health details.">
           {r?.readiness && <Chip label="Readiness" value={`${Math.round(r.readiness.value)} · ${band(r.readiness.value)}`} tone={r.readiness.value < 25 ? 'bad' : r.readiness.value < 50 ? 'warn' : 'good'} />}

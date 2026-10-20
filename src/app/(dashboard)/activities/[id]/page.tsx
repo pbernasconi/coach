@@ -110,7 +110,7 @@ export default async function ActivityPage({ params }: { params: Promise<{ id: s
             <div className="flex items-start gap-3">
               <span className="mt-1 grid h-10 w-10 shrink-0 place-items-center rounded-full bg-muted"><SportIcon id={v.sport} className="h-5 w-5" /></span>
               <div className="min-w-0">
-                <h1 id="overview" className="scroll-mt-32 text-2xl font-bold tracking-tight sm:text-3xl">{v.name}</h1>
+                <h1 id="overview" className="scroll-mt-32 text-2xl font-semibold tracking-tight">{v.name}</h1>
                 <p className="text-sm text-muted-foreground">
                   {when(v.startLocal)}
                   {v.place ? ` · ${v.place}` : ''} · {stravaTypeLabel(v.sportType)}
