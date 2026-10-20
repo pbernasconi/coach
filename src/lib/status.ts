@@ -35,6 +35,18 @@ export async function loadTargets(userId: string): Promise<Targets> {
   return { ...DEFAULT_TARGETS, ...Object.fromEntries(Object.entries(t).filter(([, v]) => typeof v === 'number' && v >= 0)) };
 }
 
+/** Coaching preferences (goals, weekly structure, rules) as Markdown; /plan reads them through the profile. */
+export async function loadCoachingNotes(userId: string): Promise<string> {
+  const [u] = (await sql`SELECT settings ->> 'coachingNotes' AS notes FROM users WHERE id = ${userId}`) as Row[];
+  return String(u?.notes ?? '');
+}
+
+export async function saveCoachingNotes(userId: string, notes: string) {
+  await sql`
+    UPDATE users SET settings = jsonb_set(settings, '{coachingNotes}', to_jsonb(${notes}::text)), updated_at = NOW()
+    WHERE id = ${userId}`;
+}
+
 export async function saveTargets(userId: string, targets: Targets) {
   await sql`
     UPDATE users SET settings = jsonb_set(settings, '{targets}', ${JSON.stringify(targets)}::jsonb), updated_at = NOW()

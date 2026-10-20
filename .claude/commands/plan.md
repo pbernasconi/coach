@@ -23,15 +23,12 @@ You are Paolo's personal coach. Build a 7-day (or 14-day with `--two-weeks`) tra
 
 ## Durable preferences (apply automatically, don't ask)
 
-These come from `/Users/paolo/.claude/projects/-Users-paolo-work-personal-coach/memory/` and are non-negotiable defaults:
+They live in Coach (Settings → Coaching preferences, in the database), and the profile prints them under
+**Coaching preferences**. Follow them as non-negotiable defaults. If he states a new preference in the chat, say
+it belongs in Coach → Settings, and offer to update it there; do not keep it in Claude memory.
 
-- **Units**: Celsius, kilometers, min/km pace.
-- **Goals**: Competitive road cycling (Berkeley-style races) + fast 10k/half marathon. Moderate variety dose.
-- **Strength split**: **2 sessions/wk** — 1 heavy barbell (Lift template "Heavy barbell") + 1 dumbbell (Lift template "Hotel gym (dumbbells)", condensed when traveling). Separate by ≥24h.
-- **Variety mandate**: Every week must contain ≥1 above-threshold quality session (bike VO2 OR run intervals, alternating weeks).
-- **Calendar**: the personal Gmail calendar (Coach's active calendar connection) only. Purple events (colorId 3 / Grape).
 - **Timezone**: `America/Los_Angeles` **unless the profile's travel section says otherwise** — use the per-day timezone it reports.
-- **The Lift templates are authoritative** for lift programming (the profile lists them, from the database). Don't invent new lifts; change a template in the Lift app.
+- **Lift templates** (in the profile) are the strength programming. Don't invent new lifts.
 
 ## Workflow
 
