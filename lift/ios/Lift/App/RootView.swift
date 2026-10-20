@@ -74,6 +74,9 @@ private struct AppShell: View {
             } else {
                 dependencies.incomingNotes.checkInbox()
             }
+            if let url = options.openURL, !options.isDemo {
+                open(url)
+            }
             isReady = true
             await syncCoordinator.launched()  // after the tabs show: logging never waits for the network
         }
@@ -82,7 +85,13 @@ private struct AppShell: View {
             dependencies.incomingNotes.checkInbox()
             Task { await syncCoordinator.sceneBecameActive() }
         }
-        .onOpenURL { url in _ = dependencies.incomingNotes.open(url) }
+        .onOpenURL { url in open(url) }
+    }
+
+    /// Routes a `lift://` link. After a sync link, Settings shows, where the Sync row says how the first sync went.
+    private func open(_ url: URL) {
+        guard dependencies.incomingNotes.open(url), case .syncCode? = AppLink(url: url) else { return }
+        tab = .settings
     }
 
     /// Import from Notes, shown over the tabs while the presenter holds a request.

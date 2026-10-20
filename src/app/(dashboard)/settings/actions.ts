@@ -36,3 +36,11 @@ export async function saveTargetsAction(t: Targets) {
   await saveTargets(id, { runKm: clean(t.runKm, 300), rideHours: clean(t.rideHours, 40), strength: clean(t.strength, 7) });
   revalidatePath('/', 'layout');
 }
+
+/** Lift's sync state, for the Connect Lift card to watch while the iPhone connects. */
+export async function liftSyncState(): Promise<{ lastChangeAt: string | null; sessions: number }> {
+  const id = await owner();
+  const { loadStatus } = await import('@/lib/status');
+  const s = await loadStatus(id);
+  return { lastChangeAt: s.lift.lastChangeAt, sessions: s.lift.sessions };
+}

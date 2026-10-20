@@ -29,4 +29,8 @@ final class DisabledSync: Syncing {
     func hasToken() async -> Bool {
         false
     }
+
+    func redeem(enrollmentCode _: String) async throws {
+        throw AppError(.invalidInput, detail: "sync is off in this build")
+    }
 }

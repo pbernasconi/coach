@@ -88,6 +88,27 @@ import Testing
 
         #expect(flow.openings.isEmpty)
     }
+
+    @Test func aSyncLinkPassesItsCodeOn() throws {
+        let syncLinks = RecordingSyncEnrollmentLink()
+        let router = IncomingNoteRouter(inbox: InMemoryNoteInbox(), importFlow: flow, templateLinks: links, syncLinks: syncLinks)
+        let link = try #require(AppLink.syncCode("a1b2+c3/=").url)
+
+        #expect(router.open(link))
+
+        #expect(syncLinks.codes == ["a1b2+c3/="])  // the round trip keeps every character
+        #expect(flow.openings.isEmpty)
+    }
+
+    @Test func aSyncLinkWithoutACodeIsNotALiftLink() throws {
+        let syncLinks = RecordingSyncEnrollmentLink()
+        let router = IncomingNoteRouter(inbox: InMemoryNoteInbox(), importFlow: flow, templateLinks: links, syncLinks: syncLinks)
+
+        #expect(!router.open(try url("lift://sync")))
+        #expect(!router.open(try url("lift://sync?code=%20")))
+        #expect(!router.open(try url("lift://sync?token=a-long-reusable-token")))  // tokens never ride in links
+        #expect(syncLinks.codes.isEmpty)
+    }
 }
 
 /// Parsing and building `lift://` links, and the App Group inbox the Share extension writes.

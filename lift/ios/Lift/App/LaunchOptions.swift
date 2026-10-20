@@ -21,6 +21,9 @@ import LiftCore
 ///     -open plates                            with -demo: pushes Plates and bars on Settings
 ///     -open template-link                     with -demo: opens the template link review over Exercises with the
 ///                                             made-up `TemplateLinkSample`
+///     -open-url lift://…                      opens that Lift link once the data is ready, through the same router
+///                                             as a tapped link (a simulator cannot answer the system's "Open in
+///                                             Lift?" prompt that `simctl openurl` raises); not for -demo
 nonisolated struct LaunchOptions: Equatable, Sendable {
     enum Appearance: String, Equatable, Sendable {
         case dark
@@ -61,6 +64,8 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
     var opening: Opening?
     /// `-fresh`: an empty in-memory database that never syncs or touches Apple Health, for the empty states.
     var isFresh = false
+    /// A `lift://` link to open at launch (`-open-url`), case kept: an enrollment code is case-sensitive.
+    var openURL: URL?
 
     init(
         isDemo: Bool = false,
@@ -92,6 +97,11 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
         }
         appearance = Self.value(after: "-appearance", in: arguments).flatMap(Appearance.init(rawValue:))
         opening = Self.value(after: "-open", in: arguments).flatMap(Opening.init(rawValue:))
+        if let index = arguments.firstIndex(of: "-open-url"), arguments.indices.contains(index + 1),
+            let url = URL(string: arguments[index + 1]), url.scheme?.lowercased() == AppLink.scheme
+        {
+            openURL = url
+        }
     }
 
     /// The route `opening.tab` starts on in demo mode: the given session for `-open workout`, the Back squat detail
