@@ -3,7 +3,7 @@ import { countdown, sortEvents } from './events.mjs';
 
 export type Priority = 'A' | 'B' | 'C';
 
-/** An event or goal day from the /goals page. */
+/** An event or goal day from Settings → Events. */
 export type CoachEvent = {
   id: string;
   name: string;

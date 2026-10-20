@@ -30,36 +30,44 @@ export function StravaSyncButton() {
 }
 
 export function TargetsForm({ targets }: { targets: Targets }) {
+  const [saved, setSaved] = useState(targets);
   const [t, setT] = useState(targets);
   const [pending, start] = useTransition();
-  const field = (key: keyof Targets, label: string, step: number) => (
-    <label className="flex items-center justify-between gap-4">
-      <span className="text-muted-foreground">{label}</span>
-      <input
-        type="number"
-        min={0}
-        step={step}
-        value={t[key]}
-        onChange={(e) => setT({ ...t, [key]: Number(e.target.value) })}
-        className="h-10 w-24 rounded-md border bg-background px-2 text-right text-base md:h-auto md:py-1 md:text-sm"
-      />
+  const changed = (Object.keys(t) as (keyof Targets)[]).some((k) => t[k] !== saved[k]);
+  const field = (key: keyof Targets, label: string, unit: string, step: number) => (
+    <label className="space-y-1">
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="flex items-center rounded-md border bg-background focus-within:ring-1 focus-within:ring-ring">
+        <input
+          type="number"
+          min={0}
+          step={step}
+          value={t[key]}
+          onChange={(e) => setT({ ...t, [key]: Number(e.target.value) })}
+          className="h-10 w-full min-w-0 bg-transparent px-2 text-base tabular-nums outline-none md:h-8 md:text-sm"
+        />
+        <span className="shrink-0 pr-2 text-xs text-muted-foreground">{unit}</span>
+      </span>
     </label>
   );
   return (
     <form
-      className="space-y-2"
+      className="flex flex-col gap-3 sm:flex-row sm:items-end"
       onSubmit={(e) => {
         e.preventDefault();
         start(async () => {
           await saveTargetsAction(t);
+          setSaved(t);
           toast.success('Targets saved');
         });
       }}
     >
-      {field('runKm', 'Run km per week', 1)}
-      {field('rideHours', 'Ride hours per week', 0.5)}
-      {field('strength', 'Strength sessions per week', 1)}
-      <Button size="sm" type="submit" disabled={pending}>Save targets</Button>
+      <div className="grid grid-cols-3 gap-3 sm:w-full sm:max-w-md">
+        {field('runKm', 'Run', 'km', 1)}
+        {field('rideHours', 'Ride', 'h', 0.5)}
+        {field('strength', 'Strength', 'x', 1)}
+      </div>
+      <Button size="sm" className="self-start sm:self-auto" type="submit" disabled={pending || !changed}>{pending ? 'Saving…' : 'Save targets'}</Button>
     </form>
   );
 }
@@ -81,10 +89,14 @@ export function CoachingNotesForm({ notes }: { notes: string }) {
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
-        rows={14}
-        className="w-full rounded-md border bg-background p-2 font-mono text-base md:text-xs"
+        rows={10}
+        aria-label="Coaching preferences"
+        className="w-full resize-y rounded-md border bg-background p-3 font-mono text-base leading-relaxed md:text-xs"
       />
-      <Button size="sm" type="submit" disabled={pending || text === notes}>Save preferences</Button>
+      <div className="flex items-center gap-2">
+        <Button size="sm" type="submit" disabled={pending || text === notes}>{pending ? 'Saving…' : 'Save preferences'}</Button>
+        {text !== notes && !pending && <span className="text-xs text-muted-foreground">Unsaved changes</span>}
+      </div>
     </form>
   );
 }
@@ -125,13 +137,16 @@ export function LocationForm({ current }: { current?: { place: Place; isDefault:
 
   return (
     <div className="space-y-2">
-      <p className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <MapPin aria-hidden className="h-4 w-4 text-muted-foreground" />
-        <span>{saved ? saved.place.name : 'Loading…'}</span>
-        {saved?.isDefault && <span className="text-muted-foreground">(default)</span>}
-      </p>
+        <span className="font-medium">{saved ? saved.place.name : 'Loading…'}</span>
+        {saved?.isDefault && <span className="text-xs text-muted-foreground">(default)</span>}
+        {saved && !saved.isDefault && (
+          <Button size="sm" variant="ghost" className="ml-auto" disabled={saving} onClick={() => save(null)}>Use the default</Button>
+        )}
+      </div>
       <form
-        className="flex gap-2"
+        className="flex gap-2 sm:max-w-md"
         onSubmit={(e) => {
           e.preventDefault();
           search();
@@ -151,7 +166,7 @@ export function LocationForm({ current }: { current?: { place: Place; isDefault:
       </form>
       {hits && hits.length === 0 && <p className="text-muted-foreground">No places found.</p>}
       {hits && hits.length > 0 && (
-        <ul className="divide-y rounded-md border" aria-label="Places found">
+        <ul className="divide-y rounded-md border sm:max-w-md" aria-label="Places found">
           {hits.map((h) => (
             <li key={`${h.lat},${h.lon}`}>
               <button
@@ -166,9 +181,6 @@ export function LocationForm({ current }: { current?: { place: Place; isDefault:
             </li>
           ))}
         </ul>
-      )}
-      {saved && !saved.isDefault && (
-        <Button size="sm" variant="ghost" disabled={saving} onClick={() => save(null)}>Use the default</Button>
       )}
     </div>
   );

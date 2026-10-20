@@ -27,5 +27,5 @@ test('findShortcut: the newest page registration wins, then the globals; letters
 });
 
 test('NAV_KEYS follow the nav order', () => {
-  assert.deepEqual(NAV_KEYS.map((n) => n.key), ['1', '2', '3', '4', '5', '6']);
+  assert.deepEqual(NAV_KEYS.map((n) => n.key), ['1', '2', '3', '4', '5']);
 });

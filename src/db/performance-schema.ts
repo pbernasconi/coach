@@ -3,7 +3,7 @@ import { check, date, index, integer, pgTable, primaryKey, real, text, timestamp
 import { createId } from '@paralleldrive/cuid2';
 
 /**
- * Events and goals: races and target days, from the /goals page. Priority A is the season's main event.
+ * Events and goals: races and target days, from Settings → Events. Priority A is the season's main event.
  * The PMC chart marks them and the projection runs up to the next one.
  */
 export const events = pgTable(
