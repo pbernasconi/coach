@@ -64,7 +64,7 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
     var opening: Opening?
     /// `-fresh`: an empty in-memory database that never syncs or touches Apple Health, for the empty states.
     var isFresh = false
-    /// A `lift://` link to open at launch (`-open-url`), case kept: a sync token is case-sensitive.
+    /// A `lift://` link to open at launch (`-open-url`), case kept: an enrollment code is case-sensitive.
     var openURL: URL?
 
     init(

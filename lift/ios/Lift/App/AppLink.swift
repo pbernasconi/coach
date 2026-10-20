@@ -5,7 +5,7 @@ import Foundation
 ///     lift://import             Import from Notes with the note the Share extension left in the inbox
 ///     lift://import?text=…      Import from Notes with this text (for Shortcuts and short notes)
 ///     lift://templates?d=…      Review and add the templates in `d` (base64url JSON; lift/TEMPLATE-LINKS.md)
-///     lift://sync?token=…       Store this sync token and sync now (the coach web app's Settings makes the link)
+///     lift://sync?code=…        Trade this one-time code for the sync token, then sync (Coach Settings → Lift)
 ///
 /// Compiled into the app, which routes them (`IncomingNoteRouter`), and LiftShare, which builds them.
 nonisolated enum AppLink: Equatable, Sendable {
@@ -14,8 +14,9 @@ nonisolated enum AppLink: Equatable, Sendable {
     /// Open the template link review with the link's `d` value as written (empty when it has none; the review says
     /// the link cannot be read).
     case templates(payload: String)
-    /// Store `token` as the sync token and sync now. A link with no token names nothing.
-    case syncToken(String)
+    /// Trade the one-time enrollment `code` for the sync token, then sync. The link never carries the token itself:
+    /// any app can claim a custom URL scheme. A link with no code names nothing.
+    case syncCode(String)
 
     static let scheme = "lift"
 
@@ -38,9 +39,9 @@ nonisolated enum AppLink: Equatable, Sendable {
         case "templates":
             self = .templates(payload: items.first { $0.name == "d" }?.value ?? "")
         case "sync":
-            let token = items.first { $0.name == "token" }?.value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            guard !token.isEmpty else { return nil }
-            self = .syncToken(token)
+            let code = items.first { $0.name == "code" }?.value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            guard !code.isEmpty else { return nil }
+            self = .syncCode(code)
         default:
             return nil
         }
@@ -61,10 +62,10 @@ nonisolated enum AppLink: Equatable, Sendable {
             components.host = "templates"
             let value = payload.addingPercentEncoding(withAllowedCharacters: Self.valueCharacters)
             components.percentEncodedQueryItems = [URLQueryItem(name: "d", value: value)]
-        case .syncToken(let token):
+        case .syncCode(let code):
             components.host = "sync"
-            let value = token.addingPercentEncoding(withAllowedCharacters: Self.valueCharacters)
-            components.percentEncodedQueryItems = [URLQueryItem(name: "token", value: value)]
+            let value = code.addingPercentEncoding(withAllowedCharacters: Self.valueCharacters)
+            components.percentEncodedQueryItems = [URLQueryItem(name: "code", value: value)]
         }
         return components.url
     }

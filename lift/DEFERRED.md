@@ -45,8 +45,8 @@ already done around it. The build keeps going around these; nothing here blocks 
   coach-paolo.vercel.app) with `LIFT_SYNC_TOKEN` set and `drizzle/0009_lift_sync.sql` applied. The repository
   variable `LIFT_SYNC_BASE_URL` puts that origin into every TestFlight build. To connect a phone: open Coach →
   Settings → Lift and tap **Open in Lift** on the iPhone (or scan the QR code with the camera). The
-  `lift://sync?token=…` link stores the token, syncs, and opens Lift's Settings, where the Sync row says
-  "Synced just now". Pasting the token by hand (Lift → Settings → Sync → Sync token) still works.
+  `lift://sync?code=…` link carries a one-time code (15 minutes, single use), never the token: Lift trades it at
+  `/api/lift/enroll` for the token, syncs, and opens Settings, where the Sync row says "Synced just now". Pasting the token by hand (Lift → Settings → Sync → Sync token) still works.
   Verified end to end on a simulator against production: push, pull and the link, then the test rows removed.
 
 - **Gym visual licence (only if Lift ever goes public).** The exercise animations come from

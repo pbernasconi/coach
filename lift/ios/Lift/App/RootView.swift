@@ -90,7 +90,7 @@ private struct AppShell: View {
 
     /// Routes a `lift://` link. After a sync link, Settings shows, where the Sync row says how the first sync went.
     private func open(_ url: URL) {
-        guard dependencies.incomingNotes.open(url), case .syncToken? = AppLink(url: url) else { return }
+        guard dependencies.incomingNotes.open(url), case .syncCode? = AppLink(url: url) else { return }
         tab = .settings
     }
 
