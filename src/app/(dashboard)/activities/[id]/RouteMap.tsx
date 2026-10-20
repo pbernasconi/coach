@@ -38,7 +38,7 @@ export default function RouteMap({ route, points, color, label }: { route: [numb
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const dark = useDark();
-  const { index } = useActivityHover();
+  const { index, range, pinned } = useActivityHover();
 
   useEffect(() => {
     const el = box.current;
@@ -74,6 +74,11 @@ export default function RouteMap({ route, points, color, label }: { route: [numb
           instance.addSource('route', { type: 'geojson', data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: route.map(([la, ln]) => [ln, la]) } } });
           instance.addLayer({ id: 'route-casing', type: 'line', source: 'route', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': '#ffffff', 'line-width': 6, 'line-opacity': 0.8 } });
           instance.addLayer({ id: 'route', type: 'line', source: 'route', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': line, 'line-width': 3.5 } });
+          // The highlighted lap, split or segment: drawn over the route, thicker, with an ink outline.
+          const ink = tokenColor(el, 'var(--viz-ink)', '#0b0b0b');
+          instance.addSource('range', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+          instance.addLayer({ id: 'range-casing', type: 'line', source: 'range', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': ink, 'line-width': 10 } });
+          instance.addLayer({ id: 'range', type: 'line', source: 'range', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': line, 'line-width': 6 } });
           const ends = {
             type: 'FeatureCollection' as const,
             features: [
@@ -113,6 +118,34 @@ export default function RouteMap({ route, points, color, label }: { route: [numb
     const p = index != null ? points?.[index] : null;
     src.setData({ type: 'FeatureCollection', features: p ? [{ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: p } }] : [] });
   }, [index, points, ready]);
+
+  // The highlighted range: its points on the route, and the rest of the route dimmed.
+  useEffect(() => {
+    const m = ready ? map.current : null;
+    const src = m?.getSource('range') as GeoJSONSource | undefined;
+    if (!m || !src) return;
+    const coords = range && points ? points.slice(range.from, range.to + 1).filter((p): p is [number, number] => p !== null) : [];
+    src.setData(
+      coords.length > 1
+        ? { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: coords } }
+        : { type: 'FeatureCollection', features: [] },
+    );
+    m.setPaintProperty('route', 'line-opacity', coords.length > 1 ? 0.45 : 1);
+    m.setPaintProperty('route-casing', 'line-opacity', coords.length > 1 ? 0.3 : 0.8);
+  }, [range, points, ready]);
+
+  // A pinned range zooms the map to it; unpinning shows the whole route again. A preview does not move the map.
+  useEffect(() => {
+    const m = ready ? map.current : null;
+    if (!m) return;
+    const coords = pinned && range?.key === pinned && points ? points.slice(range.from, range.to + 1).filter((p): p is [number, number] => p !== null) : [];
+    const all = coords.length > 1 ? coords : route.map(([la, ln]) => [ln, la] as [number, number]);
+    const lngs = all.map((p) => p[0]);
+    const lats = all.map((p) => p[1]);
+    m.fitBounds([[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]], { padding: 48, maxZoom: 15, duration: 400 });
+    // Only the pin moves the map: `range` changes on every row the pointer crosses.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pinned, ready]);
 
   if (route.length < 2) return null;
   return (

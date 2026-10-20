@@ -74,7 +74,7 @@ export default function StreamCharts({
   avgs: { speed: number | null; gap: number | null; hr: number | null; cad: number | null; watts: number | null; temp: number | null };
 }) {
   const [ref, width] = useMeasure<HTMLDivElement>();
-  const { index: hover, setIndex: setHover } = useActivityHover();
+  const { index: hover, setIndex: setHover, range, pinned, togglePin } = useActivityHover();
   const hasDistance = Boolean(series.d?.some((v) => typeof v === 'number' && v > 0));
   const [xMode, setXMode] = useState<'distance' | 'time'>(hasDistance ? 'distance' : 'time');
   const [smoothS, setSmoothS] = useState(30);
@@ -116,6 +116,7 @@ export default function StreamCharts({
   const xMax = Math.max(1e-6, xs[xs.length - 1] ?? 1);
 
   const narrow = width < 520;
+
   const M = { left: narrow ? 40 : 48, right: 12, top: 8 };
   const PH = narrow ? 72 : 88;
   const HEAD = 20;
@@ -124,6 +125,8 @@ export default function StreamCharts({
   const plotW = width - M.left - M.right;
   const x = (i: number) => M.left + (xs[i] / xMax) * plotW;
   const H = M.top + shown.length * (HEAD + PH + GAP) + XAX;
+  // The highlighted lap, split or segment (from a table row), as x positions.
+  const band = range && range.from < n ? { x0: x(range.from), x1: x(Math.min(n - 1, range.to)) } : null;
 
   const xTicks =
     xMode === 'distance'
@@ -225,6 +228,17 @@ export default function StreamCharts({
         </div>
       </div>
 
+      {range && (
+        <p className="mb-2 flex flex-wrap items-center gap-2 text-xs text-[var(--viz-ink-2)]" role="status">
+          <span className="inline-block h-2.5 w-4 rounded-[2px] border border-[var(--viz-ink-2)] bg-[var(--viz-band)]" aria-hidden />
+          {range.label}
+          {pinned === range.key && (
+            <button type="button" onClick={() => togglePin(range)} className="rounded border px-1.5 py-0.5 text-[var(--viz-ink)] hover:bg-accent">
+              Unpin
+            </button>
+          )}
+        </p>
+      )}
       <div ref={ref} className="relative">
         <svg
           width={width}
@@ -252,6 +266,13 @@ export default function StreamCharts({
             const overlayOn = p.overlay && !off.has(p.overlay.key);
             return (
               <g key={p.key}>
+                {band && (
+                  <g pointerEvents="none">
+                    <rect x={band.x0} y={top} width={Math.max(2, band.x1 - band.x0)} height={PH} fill="var(--viz-ink)" opacity={0.08} />
+                    <line x1={band.x0} x2={band.x0} y1={top} y2={top + PH} stroke="var(--viz-ink-2)" strokeWidth={1} opacity={0.7} />
+                    <line x1={band.x1} x2={band.x1} y1={top} y2={top + PH} stroke="var(--viz-ink-2)" strokeWidth={1} opacity={0.7} />
+                  </g>
+                )}
                 <text x={M.left} y={top - 6} className="fill-[var(--viz-ink)] text-[12px] font-medium">
                   {p.label}
                   <tspan className="fill-[var(--viz-ink-2)] font-normal" dx={8}>
