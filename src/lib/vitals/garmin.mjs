@@ -189,6 +189,13 @@ export function garminStatusFrom(row, now) {
   }
   const success = row.lastSuccessAt ? Date.parse(row.lastSuccessAt) : NaN;
   const hours = Number.isFinite(success) ? (now - success) / 3_600_000 : Infinity;
+  // A long backfill reports success only at its end: while it runs (an attempt in the last 6 h, no error), say so.
+  const attempt = row.lastAttemptAt ? Date.parse(row.lastAttemptAt) : NaN;
+  const running = row.backfillFrom && row.status !== 'error' && Number.isFinite(attempt) && now - attempt < 6 * 3_600_000;
+  if (hours > STALE_HOURS && running) {
+    const through = row.backfillThrough ? `through ${shortDay(row.backfillThrough)}` : 'starting';
+    return { ...base, warning: { level: 'info', text: `Garmin backfill in progress (from ${shortDay(row.backfillFrom)}): ${through}.` } };
+  }
   if (hours > STALE_HOURS) {
     const since = Number.isFinite(hours) ? `for ${ago(hours)}` : 'yet';
     const why = row.status === 'error' && row.lastError ? ` Last error: ${row.lastError}` : ' Check the Garmin workflow in GitHub Actions.';
