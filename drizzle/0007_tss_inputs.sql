@@ -1,0 +1,1 @@
+ALTER TABLE "strava_activities" ADD COLUMN "tss_inputs" jsonb;

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { tssMethodLabel } from '@/lib/strava-sync/tss.mjs';
 import type { ReactNode } from 'react';
 import SectionError from '@/components/SectionError';
 import ComplianceMark from '@/components/plan/ComplianceMark';
@@ -235,7 +236,7 @@ function CoachView({ v, c, failed }: { v: ActivityView; c: ActivityContext | nul
         <div className="text-xs font-medium text-[var(--viz-muted)]">Load</div>
         <p className="mt-1">
           <b className="text-lg tabular-nums">{v.effort.tss != null ? Math.round(v.effort.tss) : '–'}</b> TSS
-          <span className="text-xs text-[var(--viz-muted)]">{v.effort.tssMethod ? ` · ${v.effort.tssMethod === 'power' ? 'from power' : v.effort.tssMethod === 'hr' ? 'from heart rate' : 'estimated from time'}` : ''}</span>
+          <span className="text-xs text-[var(--viz-muted)]">{v.effort.tssMethod ? ` · ${tssMethodLabel(v.effort.tssMethod)}` : ''}</span>
         </p>
         {d ? (
           <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs tabular-nums">
@@ -388,10 +389,10 @@ export function ActivityBody({ v, context, contextFailed, color }: { v: Activity
         <div className="grid grid-cols-2 gap-4 rounded-lg border bg-[var(--viz-surface)] p-4 sm:grid-cols-4">
           <Stat label="Relative Effort (Strava)" value={v.effort.sufferScore != null ? String(v.effort.sufferScore) : '–'} big />
           <Stat label="TRIMP (from HR)" value={v.effort.trimp != null ? String(v.effort.trimp) : '–'} big />
-          <Stat label={`Coach TSS${v.effort.tssMethod ? ` (${v.effort.tssMethod === 'duration_fallback' ? 'time' : v.effort.tssMethod})` : ''}`} value={v.effort.tss != null ? String(Math.round(v.effort.tss)) : '–'} big />
+          <Stat label="Coach TSS" value={v.effort.tss != null ? String(Math.round(v.effort.tss)) : '–'} big />
           <Stat label="TSS per hour" value={v.effort.tss != null && st.moving ? String(Math.round(v.effort.tss / (st.moving / 3600))) : '–'} big />
         </div>
-        {v.effort.tssMethod === 'power' && v.layout === 'run' && v.effort.ftp && (
+        {(v.effort.tssMethod === 'power' || v.effort.tssMethod === 'power_stream') && v.layout === 'run' && v.effort.ftp && (
           <p className="text-xs text-[var(--viz-muted)]">
             This TSS uses running power against the cycling FTP ({v.effort.ftp} W), so it reads high for a run. TRIMP and Relative Effort come from heart rate.
           </p>
