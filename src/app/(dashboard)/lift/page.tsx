@@ -66,10 +66,14 @@ export default async function LiftOverviewPage() {
               {sessions.slice(0, RECENT_SESSIONS).map((s) => (
                 <TableRow key={s.id}>
                   <TableCell>
-                    <div className="whitespace-nowrap"><ResponsiveDay day={s.day} /></div>
+                    <Link href={`/lift/sessions/${s.id}`} className="whitespace-nowrap font-medium hover:underline">
+                      <ResponsiveDay day={s.day} />
+                    </Link>
                     <div className="text-xs text-muted-foreground sm:hidden">{s.title || '-'}</div>
                   </TableCell>
-                  <TableCell className="hidden sm:table-cell">{s.title || '-'}</TableCell>
+                  <TableCell className="hidden sm:table-cell">
+                    <Link href={`/lift/sessions/${s.id}`} className="hover:underline">{s.title || '-'}</Link>
+                  </TableCell>
                   <TableCell className="whitespace-nowrap text-right tabular-nums">
                     {s.setsLogged} / {s.setsTotal}
                   </TableCell>
