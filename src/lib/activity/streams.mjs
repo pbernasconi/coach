@@ -263,32 +263,44 @@ export const BEST_EFFORT_DISTANCES = [
 ];
 
 /**
+ * The fastest stretch of `meters` in a run: its elapsed seconds (the start interpolated between samples) and the
+ * indexes of the samples around it. Null when the run is shorter, or when no stretch is under 7 m/s (GPS noise).
+ * The activity page's best efforts and the peak scan (src/lib/performance/peaks.mjs) both use it.
+ * @param {number[]} distance  meters from the start, rising
+ * @param {number[]} time  seconds from the start, rising
+ * @returns {{ seconds: number, startIndex: number, endIndex: number } | null}
+ */
+export function fastestStretch(distance, time, meters) {
+  const n = Math.min(distance?.length ?? 0, time?.length ?? 0);
+  if (n < 2 || distance[n - 1] - distance[0] < meters) return null;
+  let best = Infinity;
+  let at = null;
+  let i = 0;
+  for (let j = 1; j < n; j++) {
+    const target = distance[j] - meters;
+    if (target < distance[0]) continue;
+    while (i + 1 < j && distance[i + 1] <= target) i++;
+    const d0 = distance[i];
+    const d1 = distance[i + 1];
+    const frac = d1 > d0 ? Math.min(1, Math.max(0, (target - d0) / (d1 - d0))) : 0;
+    const secs = time[j] - (time[i] + frac * (time[i + 1] - time[i]));
+    if (secs > 0 && secs < best && meters / secs <= 7) {
+      best = secs;
+      at = [i, j];
+    }
+  }
+  return at ? { seconds: best, startIndex: at[0], endIndex: at[1] } : null;
+}
+
+/**
  * The fastest time over each distance, from the distance and time streams, with the indexes of the stretch.
  * @returns {{ label: string, distance: number, seconds: number, startIndex: number, endIndex: number }[]}
  */
 export function bestEffortsFromStreams(distance, time, distances = BEST_EFFORT_DISTANCES) {
-  const n = Math.min(distance?.length ?? 0, time?.length ?? 0);
   const out = [];
-  if (n < 2) return out;
   for (const { meters, label } of distances) {
-    if (distance[n - 1] - distance[0] < meters) continue;
-    let best = Infinity;
-    let at = null;
-    let i = 0;
-    for (let j = 1; j < n; j++) {
-      const target = distance[j] - meters;
-      if (target < distance[0]) continue;
-      while (i + 1 < j && distance[i + 1] <= target) i++;
-      const d0 = distance[i];
-      const d1 = distance[i + 1];
-      const frac = d1 > d0 ? Math.min(1, Math.max(0, (target - d0) / (d1 - d0))) : 0;
-      const secs = time[j] - (time[i] + frac * (time[i + 1] - time[i]));
-      if (secs > 0 && secs < best && meters / secs <= 7) {
-        best = secs;
-        at = [i, j];
-      }
-    }
-    if (at) out.push({ label, distance: meters, seconds: Math.round(best), startIndex: at[0], endIndex: at[1] });
+    const f = fastestStretch(distance, time, meters);
+    if (f) out.push({ label, distance: meters, seconds: Math.round(f.seconds), startIndex: f.startIndex, endIndex: f.endIndex });
   }
   return out;
 }

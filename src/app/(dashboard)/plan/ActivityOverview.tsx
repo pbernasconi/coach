@@ -1,5 +1,6 @@
 'use client';
 
+import { tssMethodLabel } from '@/lib/strava-sync/tss.mjs';
 import type { ReactNode } from 'react';
 import { ArrowDownRight, ArrowUpRight, Award, Minus } from 'lucide-react';
 import ComplianceMark from '@/components/plan/ComplianceMark';
@@ -94,7 +95,7 @@ export function StatGrid({ v }: { v: ActivityView }) {
     st.avgTemp != null && ['Temperature', `${Math.round(st.avgTemp)} °C`],
   ].filter(Boolean) as [string, string][];
   return (
-    <Card title="Stats" note={v.effort.tssMethod ? `TSS from ${v.effort.tssMethod === 'duration_fallback' ? 'time' : v.effort.tssMethod === 'hr' ? 'heart rate' : v.effort.tssMethod}` : undefined}>
+    <Card title="Stats" note={v.effort.tssMethod ? `TSS ${tssMethodLabel(v.effort.tssMethod)}` : undefined}>
       <dl className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
         {items.map(([label, value]) => (
           <div key={label} className="min-w-0">

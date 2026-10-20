@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// The closed set of motion presets. Ported from Trellis's `BankMotion` (Material 3 timings and
-/// critically damped springs), plus the presets an early prototype needed (pulse, pop, countdown).
+/// The closed set of motion presets. Material 3 timings and critically damped
+/// springs, plus the presets an early prototype needed (pulse, pop, countdown).
 ///
 /// Rules: animate only direct touch, things entering or leaving, ongoing activity and control state.
 /// Exits are faster than entrances. Overshoot only on indicators and glyphs, never on content.

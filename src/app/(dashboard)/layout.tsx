@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { ownerForSignedInUser } from '@/lib/owner';
 import { safe } from '@/lib/safe';
-import { loadStatus, type Warning } from '@/lib/status';
+import { loadStatusCached, type Warning } from '@/lib/status';
 import HotkeysProvider from '@/components/hotkeys/HotkeysProvider';
 import DashboardNav from './DashboardNav';
 import MainContainer from './MainContainer';
@@ -14,7 +14,7 @@ async function StatusBanner() {
   const owner = await ownerForSignedInUser();
   // The banner is optional: if its status query fails, every page still renders (the 2026-10-19 outage).
   const warnings = owner
-    ? await safe('status banner', async () => (await loadStatus(owner)).warnings.filter((w) => w.level !== 'info'), [] as Warning[])
+    ? await safe('status banner', async () => (await loadStatusCached(owner)).warnings.filter((w) => w.level !== 'info'), [] as Warning[])
     : [];
   if (warnings.length === 0) return null;
   return (

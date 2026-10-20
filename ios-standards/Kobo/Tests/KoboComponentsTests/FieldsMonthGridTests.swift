@@ -3,7 +3,7 @@ import Testing
 
 @testable import KoboComponents
 
-/// The month grid and quick picks, ported from Trellis `CalendarLogicTests` and the quick-chip vectors, with the first
+/// The month grid and quick picks, with the first
 /// weekday taken from the calendar.
 @Suite struct FieldsMonthGridTests {
     private static func calendar(firstWeekday: Int) -> Calendar {

@@ -1,7 +1,7 @@
 import Foundation
 import KoboTokens
 
-/// The width rule of a toast: pure maths, tested without rendering. Ported from Trellis's `ToastMetrics`.
+/// The width rule of a toast: pure maths, tested without rendering.
 ///
 /// The toast hugs its one-line message up to a cap that leaves a navigation bar's circular buttons uncovered on both
 /// sides, so only a message wider than the cap wraps (between words, to at most two lines at default text sizes).

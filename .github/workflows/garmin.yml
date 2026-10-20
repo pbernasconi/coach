@@ -1,5 +1,5 @@
 # Also puts Coach's planned runs on the Garmin calendar as structured workouts (workouts.py): after each data sync,
-# and hourly on its own. Pulls Garmin Connect data (HRV, sleep, Body Battery, readiness, training status, race predictions ...)
+# and after each hourly Sync run (sync.yml), while the database is awake. Pulls Garmin Connect data (HRV, sleep, Body Battery, readiness, training status, race predictions ...)
 # with the unofficial Garmin Connect API. It posts daily metrics to /api/vitals/sync and every raw response to /api/vitals/garmin/raw.
 # The Garmin tokens live in Coach, encrypted with GARMIN_TOKEN_KEY (only GitHub and Paolo's Mac have it).
 # Each run catches up from the last synced day, so missed runs fill in. A backfill (input `since`) is resumable:
@@ -10,7 +10,10 @@ on:
   schedule:
     - cron: "0 11 * * *" # 04:00 PDT / 03:00 PST: last night's sleep and HRV are in Garmin Connect
     - cron: "0 17 * * *" # 10:00 PDT: the morning, in case the watch synced late
-    - cron: "30 * * * *" # hourly: only Coach's planned runs onto the Garmin calendar (workouts.py)
+  # Hourly, after Sync: only Coach's planned runs onto the Garmin calendar (workouts.py).
+  workflow_run:
+    workflows: [Sync]
+    types: [completed]
   workflow_dispatch:
     inputs:
       since:
@@ -64,11 +67,10 @@ jobs:
           DAYS: ${{ inputs.days }}
           SINCE: ${{ inputs.since }}
           EVENT: ${{ github.event_name }}
-          SCHEDULE: ${{ github.event.schedule }}
           WORKOUTS_ONLY: ${{ inputs.workouts_only }}
         run: |
           args=()
-          if [ "$SCHEDULE" = "30 * * * *" ] || [ "$WORKOUTS_ONLY" = "true" ]; then
+          if [ "$EVENT" = "workflow_run" ] || [ "$WORKOUTS_ONLY" = "true" ]; then
             python sync.py --workouts-only
             exit $?
           fi

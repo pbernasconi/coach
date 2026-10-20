@@ -4,7 +4,7 @@ import Testing
 
 @testable import KoboComponents
 
-/// Ported from Trellis's `ToastTimerTests`, `ToastMetricsTests` and `LiveToastCenter` rules: a finger on the toast
+/// The toast timing rules: a finger on the toast
 /// stops its timer, VoiceOver keeps an action reachable, and the toast hugs its message up to a cap.
 @Suite struct FeedbackToastTimingTests {
     // MARK: ToastTimer
