@@ -24,14 +24,20 @@ export function weeksAfterRemove(date) {
 }
 
 /**
- * The optimistic list change for the week and month views: a move changes the date, a remove drops the workout.
+ * The optimistic list change for the week and month views: a move changes the date, a remove drops the workout, a
+ * skip or unskip changes the status (an unskipped workout shows as planned until the reload).
  *
  * @template {{ id: string, date: string }} W
  * @param {W[]} list
- * @param {{ id: string, date?: string, remove?: boolean }} change
+ * @param {{ id: string, date?: string, remove?: boolean, status?: 'planned' | 'skipped' }} change
  * @returns {W[]}
  */
 export function applyChange(list, change) {
   if (change.remove) return list.filter((w) => w.id !== change.id);
-  return list.map((w) => (w.id === change.id && change.date ? { ...w, date: change.date } : w));
+  return list.map((w) => {
+    if (w.id !== change.id) return w;
+    if (change.date) return { ...w, date: change.date };
+    if (change.status) return { ...w, status: change.status, state: change.status === 'skipped' ? 'skipped' : w.state === 'skipped' ? 'planned' : w.state };
+    return w;
+  });
 }

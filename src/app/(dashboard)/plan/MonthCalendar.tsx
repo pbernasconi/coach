@@ -15,7 +15,7 @@ import { chunkBefore, firstWeekOfMonth, mergeRange, monthOfWeek, topWeekFor } fr
 import { addDays, mondayOf } from '@/lib/plan/week.mjs';
 import type { CalendarRange, CalendarWorkout, DataBounds, LibraryItem } from '@/lib/plan/month';
 import type { DayWeather } from '@/lib/plan/weather';
-import { addFromLibraryAction, duplicateWorkoutAction, moveWorkoutAction, removeWorkoutAction, skipWorkoutAction } from './actions';
+import { addFromLibraryAction, duplicateWorkoutAction, moveWorkoutAction, removeWorkoutAction, restoreWorkoutAction, skipWorkoutAction } from './actions';
 import CreateWorkout from './CreateWorkout';
 import ItemModal from './ItemModal';
 import ItemPreview, { type PreviewActions, type PreviewTarget } from './ItemPreview';
@@ -30,7 +30,7 @@ const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 /** Planned workouts copied for Paste: their ids and a label for the menu. */
 type Clip = { ids: string[]; label: string };
-type Change = { id: string; date?: string; remove?: boolean };
+type Change = { id: string; date?: string; remove?: boolean; status?: 'planned' | 'skipped' };
 
 type Props = {
   anchor: string; // the Monday the first weeks are loaded around (this week, or the first week of ?month)
@@ -111,13 +111,26 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
     });
   }
 
+  /** Undo of a delete: the workouts come back with their ids (and so their calendar events and Lift links). */
+  function undoRemove(rows: Record<string, unknown>[], days: string[]) {
+    startTransition(async () => {
+      try {
+        for (const row of rows) await restoreWorkoutAction(row);
+        toast.success(rows.length === 1 ? 'Workout restored' : 'Workouts restored');
+      } catch {
+        toast.error('Could not restore the workout');
+      }
+      await reload([...new Set(days.map(mondayOf))]);
+    });
+  }
+
   function remove(id: string) {
     const w = dataRef.current.workouts.find((x) => x.id === id);
     changeLocal({ id, remove: true });
     startTransition(async () => {
       try {
-        await removeWorkoutAction(id);
-        toast.success('Workout removed');
+        const row = await removeWorkoutAction(id);
+        toast.success('Workout removed', { action: { label: 'Undo', onClick: () => undoRemove([row], w ? [w.date] : []) } });
       } catch {
         toast.error('Could not remove the workout');
       }
@@ -126,6 +139,8 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
   }
 
   function skip(w: CalendarWorkout) {
+    // At once on the calendar; the reload then brings the server's state.
+    changeLocal({ id: w.id, status: w.status === 'skipped' ? 'planned' : 'skipped' });
     startTransition(async () => {
       try {
         await skipWorkoutAction(w.id, w.status !== 'skipped');
@@ -182,10 +197,16 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
         onClick: () => {
           ws.forEach((w) => changeLocal({ id: w.id, remove: true }));
           startTransition(async () => {
+            const rows: Record<string, unknown>[] = [];
             try {
-              for (const w of ws) await removeWorkoutAction(w.id);
+              for (const w of ws) rows.push(await removeWorkoutAction(w.id));
+              toast.success(`Deleted ${rows.length === 1 ? 'the workout' : `${rows.length} workouts`}`, {
+                action: { label: 'Undo', onClick: () => undoRemove(rows, [date]) },
+              });
             } catch {
               toast.error('Could not delete the workouts');
+              // The ones already deleted can still come back.
+              if (rows.length) toast('Some workouts were deleted', { action: { label: 'Undo', onClick: () => undoRemove(rows, [date]) } });
             }
             await reload([mondayOf(date)]);
           });
@@ -396,6 +417,7 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
           onCopy={(w) => copy([w])}
           weather={weather}
           onLiftChanged={(date) => reload([mondayOf(date)])}
+          onEdited={({ from, to }) => void reload([...new Set([mondayOf(from), mondayOf(to)])])}
         />
       )}
       {createOn && (
