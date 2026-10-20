@@ -4,16 +4,8 @@ import { useState } from 'react';
 import { ChartTooltip, LegendItem } from '@/components/charts/ChartTooltip';
 import { useMeasure } from '@/components/charts/useMeasure';
 
-export type Stage = 'deep' | 'light' | 'rem' | 'awake';
-export type StageSpan = { start: number; end: number; stage: Stage };
+import { STAGE_STYLE, type Stage, type StageSpan } from './stages';
 
-/** Stage colours and labels. Rows also carry the label, so the stage never depends on colour alone. */
-export const STAGE_STYLE: Record<Stage, { label: string; color: string }> = {
-  awake: { label: 'Awake', color: 'var(--color-amber-500)' },
-  rem: { label: 'REM', color: 'var(--viz-atl)' },
-  light: { label: 'Light', color: 'color-mix(in oklab, var(--viz-ctl) 50%, var(--viz-surface))' },
-  deep: { label: 'Deep', color: 'var(--viz-ctl)' },
-};
 const ROWS: Stage[] = ['awake', 'rem', 'light', 'deep'];
 const clock = (t: number) => new Date(t).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'UTC' });
 const mins = (ms: number) => {

@@ -1,4 +1,5 @@
-import Hypnogram, { STAGE_STYLE } from '@/components/vitals/Hypnogram';
+import Hypnogram from '@/components/vitals/Hypnogram';
+import { STAGE_STYLE } from '@/components/vitals/stages';
 import TimeChart from '@/components/vitals/TimeChart';
 import { stageMinutes, words } from '@/lib/vitals/garmin-day.mjs';
 import { hrvStatusLabel } from '@/lib/vitals/garmin-training.mjs';
