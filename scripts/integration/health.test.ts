@@ -13,6 +13,7 @@ import { addDays, mondayOf, todayIn } from '@/lib/plan/week.mjs';
 const url = process.env.DATABASE_URL;
 if (!url || process.env.DATABASE_DRIVER !== 'pg') throw new Error('Set DATABASE_URL and DATABASE_DRIVER=pg');
 process.env.HOME_TOKEN ??= 'integration-home-token';
+process.env.LIFT_SYNC_TOKEN ??= 'integration-lift-token';
 
 const TIME_TYPES = [1082, 1114, 1184]; // date, timestamp, timestamptz
 const client = new pg.Client({ connectionString: url });
@@ -97,6 +98,7 @@ async function assertAllPass(label: string) {
   const failed = checks.filter((c) => !c.ok);
   assert.deepEqual(failed, [], `${label}: ${failed.map((c) => `${c.name}: ${c.error}`).join('; ')}`);
   assert.ok(checks.some((c) => c.name === '/api/home'), 'the /api/home check ran');
+  assert.ok(checks.some((c) => c.name === '/api/lift/week'), 'the /api/lift/week check ran');
 }
 
 test('every page loader works when Postgres times arrive as Date objects', () => assertAllPass('Date objects'));
