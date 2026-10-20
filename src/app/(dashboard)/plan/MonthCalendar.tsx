@@ -640,6 +640,7 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
           canStep={{ prev: modalIndex > 0, next: modalIndex < allItems.length - 1 }}
           onCopy={(w) => copy([w])}
           weather={weather}
+          onLiftChanged={(date) => reload([mondayOf(date)])}
         />
       )}
       {createOn && (

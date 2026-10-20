@@ -59,6 +59,8 @@ type Props = {
   onCopy?: (w: CalendarWorkout) => void;
   /** The forecast by day, for a planned workout in the next two weeks. */
   weather?: Record<string, DayWeather>;
+  /** After an edit of a Lift session: loads the day again, so the modal shows the change. */
+  onLiftChanged?: (date: string) => Promise<void> | void;
 };
 
 /**
@@ -66,7 +68,7 @@ type Props = {
  * completed, the load change, zones and peak curves, laps and the stream charts. A done item links to its full
  * page. ← and → step to the previous and next item.
  */
-export default function ItemModal({ item, onClose, onStep, canStep, onCopy, weather }: Props) {
+export default function ItemModal({ item, onClose, onStep, canStep, onCopy, weather, onLiftChanged }: Props) {
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
@@ -105,7 +107,7 @@ export default function ItemModal({ item, onClose, onStep, canStep, onCopy, weat
           ) : liftId ? (
             <LiftModal key={`l-${liftId}`} id={liftId} planned={planned} onClose={onClose} />
           ) : planned ? (
-            <PlannedModal key={planned.id} w={planned} onClose={onClose} onCopy={onCopy} wx={weather?.[planned.date]} />
+            <PlannedModal key={planned.id} w={planned} onClose={onClose} onCopy={onCopy} wx={weather?.[planned.date]} onLiftChanged={onLiftChanged} />
           ) : null}
           </StepContext.Provider>
         </Dialog.Content>
@@ -827,7 +829,7 @@ function liftHero(lift: NonNullable<CalendarWorkout['lift']>): HeroStat[] {
   ].filter(Boolean) as HeroStat[];
 }
 
-function PlannedModal({ w, onClose, onCopy, wx }: { w: CalendarWorkout; onClose: () => void; onCopy?: (w: CalendarWorkout) => void; wx?: DayWeather }) {
+function PlannedModal({ w, onClose, onCopy, wx, onLiftChanged }: { w: CalendarWorkout; onClose: () => void; onCopy?: (w: CalendarWorkout) => void; wx?: DayWeather; onLiftChanged?: (date: string) => Promise<void> | void }) {
   const targets = zonesFor(w) as { zone: string; label: string; target: string }[];
   // With the Lift session shown set by set, the text copy of the sets (scripts/lift-plan.mjs) is left out.
   const text = w.lift && w.description ? w.description.split(LIFT_MARKER)[0].trim() : w.description;
@@ -867,6 +869,7 @@ function PlannedModal({ w, onClose, onCopy, wx }: { w: CalendarWorkout; onClose:
         {w.lift ? (
           <LiftView
             lift={w.lift}
+            onChanged={onLiftChanged ? () => onLiftChanged(w.date) : undefined}
             extra={
               <>
                 {w.why && (
