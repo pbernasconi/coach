@@ -18,7 +18,13 @@ jobs:
     steps:
       - name: Calendar
         if: github.event.schedule != '10 */3 * * *'
-        run: curl -fsS --max-time 90 -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" https://coach-paolo.vercel.app/api/cron/calendar
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -fsS --max-time 90 -H "Authorization: Bearer $CRON_SECRET" https://coach-paolo.vercel.app/api/cron/calendar
       - name: Strava
         if: github.event.schedule == '10 */3 * * *' || github.event_name == 'workflow_dispatch'
-        run: curl -fsS --max-time 300 -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" https://coach-paolo.vercel.app/api/cron/strava
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -fsS --max-time 300 -H "Authorization: Bearer $CRON_SECRET" https://coach-paolo.vercel.app/api/cron/strava
