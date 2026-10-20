@@ -17,7 +17,7 @@ export async function GET(request: Request) {
     return Response.json({ error: 'unauthorized' }, { status: 401 });
   }
   try {
-    const result = await syncStrava(sql, { detailed: true, waitOnRateLimit: false });
+    const result = await syncStrava(sql, { detailed: true, streams: 'new', waitOnRateLimit: false });
     // Peak performances: a failure here must not fail the Strava sync.
     const peaks = await syncActivityPeaks(sql, { limit: 30 }).catch((e: unknown) => ({ error: String(e) }));
     return Response.json({ ...result, peaks });

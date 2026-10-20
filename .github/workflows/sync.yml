@@ -1,12 +1,15 @@
 # Calls Coach's sync routes on a schedule. Vercel Hobby crons run only once a day, and GitHub's scheduled
 # workflows are free for this public repository. GitHub may start a scheduled run some minutes late.
 # GitHub turns off schedules after 60 days without commits; re-enable in Actions if that happens.
+#
+# Neon compute: each wake-up of the database costs at least 5 minutes of compute (it suspends after 5 idle
+# minutes). So this is the only hourly schedule that touches the database. The deploy check (deploy-check.yml) and
+# the Garmin workout push (garmin.yml) start when this run ends, while the database is still awake.
 name: Sync
 
 on:
   schedule:
-    - cron: "*/30 * * * *" # calendar and the Zwift rides (through intervals.icu), every 30 minutes
-    - cron: "10 */3 * * *" # Strava, every 3 hours (the webhook is the main path)
+    - cron: "0 * * * *" # calendar and the Zwift rides (through intervals.icu) every hour; Strava every 3 hours
   workflow_dispatch:
 
 permissions: {}
@@ -17,20 +20,22 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Calendar
-        if: github.event.schedule != '10 */3 * * *'
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          curl -fsS --max-time 90 -H "Authorization: Bearer $CRON_SECRET" https://coach-paolo.vercel.app/api/cron/calendar
+          curl -fsS --max-time 90 -H "Authorization: Bearer $CRON_SECRET" https://coach.paolobernasconi.com/api/cron/calendar
       - name: Zwift rides (intervals.icu)
-        if: github.event.schedule != '10 */3 * * *'
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          curl -fsS --max-time 90 -H "Authorization: Bearer $CRON_SECRET" https://coach-paolo.vercel.app/api/cron/workouts
+          curl -fsS --max-time 90 -H "Authorization: Bearer $CRON_SECRET" https://coach.paolobernasconi.com/api/cron/workouts
       - name: Strava
-        if: github.event.schedule == '10 */3 * * *' || github.event_name == 'workflow_dispatch'
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          EVENT: ${{ github.event_name }}
         run: |
-          curl -fsS --max-time 300 -H "Authorization: Bearer $CRON_SECRET" https://coach-paolo.vercel.app/api/cron/strava
+          if [ "$EVENT" != "workflow_dispatch" ] && [ $(( 10#$(date -u +%H) % 3 )) -ne 0 ]; then
+            echo "Strava runs every 3 hours; not this hour."
+            exit 0
+          fi
+          curl -fsS --max-time 300 -H "Authorization: Bearer $CRON_SECRET" https://coach.paolobernasconi.com/api/cron/strava

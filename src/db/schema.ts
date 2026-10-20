@@ -375,7 +375,9 @@ export const stravaActivities = pgTable('strava_activities', {
 
   // Computed / cached metrics — populated at backfill time so reads are O(1)
   tss: real('tss'), // hrTSS (HR-based) or pTSS (power-based) — power preferred when device_watts && NP && FTP
-  tssMethod: text('tss_method'), // 'power' | 'hr' | 'duration_fallback'
+  tssMethod: text('tss_method'), // src/lib/strava-sync/tss.mjs: power_stream | power | pace | hr_stream | hr | duration_fallback
+  // What TSS needs from the streams, with no threshold in it (src/lib/strava-sync/tss.mjs tssInputs): { np, ngs, hr }.
+  tssInputs: jsonb('tss_inputs'),
   zoneTimes: jsonb('zone_times'), // { z1, z2, z3, z4, z5 } in seconds — based on athlete HR zones, computed from streams when present
 
   // Social

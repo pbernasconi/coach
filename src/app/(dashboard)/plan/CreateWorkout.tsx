@@ -13,9 +13,9 @@ import { sport } from '@/lib/sports';
 import { EFFORTS, SPORT_IDS, estimateTss } from '@/lib/plan/create.mjs';
 import { BANK, bankWorkout } from '@/lib/workouts/bank.mjs';
 import { clock, totals } from '@/lib/workouts/steps.mjs';
-import type { LibraryItem } from '@/lib/plan/month';
+import type { CalendarWorkout, LibraryItem } from '@/lib/plan/month';
 import type { StructuredWorkout } from '@/lib/plan/queries';
-import { createWorkoutAction } from './actions';
+import { createWorkoutAction, updateWorkoutAction } from './actions';
 
 /** Strava's orange, as in the item modal. */
 const ACCENT = '#fc4c02';
@@ -64,6 +64,26 @@ export default function CreateWorkout({ date, library, onClose, onCreated, onAdd
           ) : (
             <Picker date={date} library={library} onPick={setPicked} onClose={onClose} onAddFromLibrary={onAddFromLibrary} />
           )}
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+}
+
+/**
+ * Edits a planned workout (the modal's Edit): the same form as a new workout, filled in. A run or ride from the
+ * coach's bank keeps its workout and step; changing either rebuilds the steps.
+ */
+export function EditWorkout({ w, onClose, onSaved }: { w: CalendarWorkout; onClose: () => void; onSaved: (days: { from: string; to: string }) => void }) {
+  return (
+    <Dialog.Root open onOpenChange={(o) => !o && onClose()}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-[2px] data-[state=open]:animate-in data-[state=open]:fade-in-0" />
+        <Dialog.Content
+          aria-describedby={undefined}
+          className="fixed inset-0 z-[60] flex flex-col overflow-hidden bg-background shadow-2xl outline-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-[0.98] sm:inset-auto sm:left-1/2 sm:top-1/2 sm:max-h-[calc(100dvh-3rem)] sm:w-[min(52rem,calc(100vw-3rem))] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:border"
+        >
+          <Form date={w.date} sportId={SPORT_IDS.includes(w.sport) ? w.sport : 'other'} existing={w} onClose={onClose} onSaved={onSaved} />
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
@@ -187,31 +207,57 @@ function Field({ label, hint, children, className }: { label: string; hint?: str
 
 const input = 'h-9 w-full rounded-md border bg-background px-2.5 text-sm tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
-function Form({ date: day, sportId, onBack, onClose, onCreated }: { date: string; sportId: string; onBack: () => void; onClose: () => void; onCreated: (d: string) => void }) {
+type FormProps = {
+  date: string;
+  sportId: string;
+  onClose: () => void;
+  onBack?: () => void;
+  onCreated?: (d: string) => void;
+  /** Edit mode: the workout to change, and what to do after a save. */
+  existing?: CalendarWorkout;
+  onSaved?: (days: { from: string; to: string }) => void;
+};
+
+/** The effort level whose label matches a stored intensity ("Easy"), or easy. */
+const effortOf = (intensity: string | null | undefined) =>
+  ((Object.keys(EFFORTS) as (keyof typeof EFFORTS)[]).find((k) => EFFORTS[k].label === intensity) ?? 'easy');
+
+function Form({ date: day, sportId, onBack, onClose, onCreated, existing, onSaved }: FormProps) {
   const s = sport(sportId);
   const structured = sportId === 'run' || sportId === 'ride';
   const rest = sportId === 'rest';
-  const [title, setTitle] = useState('');
+  const old = existing?.steps as (StructuredWorkout & { bank?: string; level?: number }) | null | undefined;
+  const oldBank = old?.bank && old.bank in BANK ? (old.bank as BankKey) : '';
+  const [title, setTitle] = useState(existing?.title ?? '');
   const [date, setDate] = useState(day);
-  const [time, setTime] = useState('');
-  const [durationText, setDurationText] = useState('');
+  const [time, setTime] = useState(existing?.startTime?.slice(0, 5) ?? '');
+  const [durationText, setDurationText] = useState(existing?.duration ? toClock(existing.duration) : '');
   const [distanceText, setDistanceText] = useState('');
-  const [tssText, setTssText] = useState('');
-  const [effort, setEffort] = useState<keyof typeof EFFORTS>('easy');
-  const [description, setDescription] = useState('');
-  const [bank, setBank] = useState<BankKey | ''>('');
-  const [level, setLevel] = useState(0);
+  // A stored TSS that the steps give anyway stays automatic.
+  const [tssText, setTssText] = useState(() => {
+    if (existing?.tss == null) return '';
+    const auto = old ? (totals(old as never) as { tss: number }).tss : null;
+    return auto != null && Math.round(auto) === Math.round(existing.tss) ? '' : String(Math.round(existing.tss));
+  });
+  const [effort, setEffort] = useState<keyof typeof EFFORTS>(effortOf(existing?.intensity));
+  const [description, setDescription] = useState(existing?.description ?? '');
+  const [bank, setBank] = useState<BankKey | ''>(oldBank);
+  const [level, setLevel] = useState(old?.level ?? 0);
+  // Steps that are not from the bank (none today, but an import could make them) stay as they are until a bank
+  // workout is picked.
+  const [keepOldSteps, setKeepOldSteps] = useState(Boolean(old && !oldBank));
   const [saving, setSaving] = useState(false);
 
   const minutes = parseMinutes(durationText);
   const steps = useMemo(() => {
+    if (keepOldSteps && old) return old;
     if (!structured || !bank) return null;
     try {
       return bankWorkout(bank, sportId as 'ride' | 'run', level, minutes ?? (sportId === 'ride' ? 90 : 60)) as StructuredWorkout;
     } catch {
       return null;
     }
-  }, [structured, bank, sportId, level, minutes]);
+  }, [keepOldSteps, old, structured, bank, sportId, level, minutes]);
   const fromSteps = steps ? (totals(steps as never) as { minutes: number; tss: number; if: number }) : null;
   const plannedMin = minutes ?? fromSteps?.minutes ?? null;
   const autoTss = fromSteps?.tss ?? (plannedMin ? estimateTss(plannedMin, EFFORTS[effort].if) : null);
@@ -223,7 +269,7 @@ function Form({ date: day, sportId, onBack, onClose, onCreated }: { date: string
     setSaving(true);
     try {
       const km = distanceText.trim() ? Number(distanceText.replace(',', '.')) : null;
-      const r = await createWorkoutAction({
+      const input = {
         sport: sportId,
         date,
         startTime: time || null,
@@ -234,16 +280,28 @@ function Form({ date: day, sportId, onBack, onClose, onCreated }: { date: string
         intensity: !rest && !steps ? EFFORTS[effort].label : null,
         description,
         steps,
-      });
+      };
+      if (existing) {
+        const r = await updateWorkoutAction(existing.id, input);
+        if ('error' in r) {
+          toast.error(r.error);
+          return;
+        }
+        toast.success('Workout saved');
+        onSaved?.(r);
+        onClose();
+        return;
+      }
+      const r = await createWorkoutAction(input);
       if ('error' in r) {
         toast.error(r.error);
         return;
       }
       toast.success(`Added ${title.trim() || steps?.name || (rest ? 'a day off' : s.label)} on ${longDay(date)}`);
-      onCreated(date);
+      onCreated?.(date);
       onClose();
     } catch {
-      toast.error('Could not add the workout');
+      toast.error(existing ? 'Could not save the workout' : 'Could not add the workout');
     } finally {
       setSaving(false);
     }
@@ -251,7 +309,7 @@ function Form({ date: day, sportId, onBack, onClose, onCreated }: { date: string
 
   return (
     <>
-      <Top title={rest ? 'Day off' : `New ${s.label.toLowerCase()}`} sub={longDay(date)} onBack={onBack} onClose={onClose} />
+      <Top title={existing ? `Edit ${s.label.toLowerCase()}` : rest ? 'Day off' : `New ${s.label.toLowerCase()}`} sub={longDay(date)} onBack={onBack} onClose={onClose} />
       <form
         className="flex min-h-0 flex-1 flex-col"
         onSubmit={(e) => {
@@ -339,6 +397,7 @@ function Form({ date: day, sportId, onBack, onClose, onCreated }: { date: string
                     onChange={(e) => {
                       setBank(e.target.value as BankKey | '');
                       setLevel(0);
+                      setKeepOldSteps(false);
                     }}
                     className={input}
                   >
@@ -350,7 +409,7 @@ function Form({ date: day, sportId, onBack, onClose, onCreated }: { date: string
                 </Field>
                 {levels > 1 && (
                   <Field label="Step of the progression">
-                    <select value={level} onChange={(e) => setLevel(Number(e.target.value))} className={input}>
+                    <select value={level} onChange={(e) => { setLevel(Number(e.target.value)); setKeepOldSteps(false); }} className={input}>
                       {Array.from({ length: levels }, (_, l) => (
                         <option key={l} value={l}>{l + 1}{describe ? ` · ${describe(l)}` : ''}</option>
                       ))}
@@ -392,7 +451,7 @@ function Form({ date: day, sportId, onBack, onClose, onCreated }: { date: string
           <div className="flex gap-2">
             <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
             <Button type="submit" disabled={saving} className="text-white hover:opacity-90" style={{ background: ACCENT }}>
-              {saving ? 'Adding…' : 'Add workout'}
+              {saving ? (existing ? 'Saving…' : 'Adding…') : existing ? 'Save' : 'Add workout'}
             </Button>
           </div>
         </footer>

@@ -2,6 +2,8 @@
 // time over fixed distances (runs). Also Strava rate-limit reading and the all-time / 90-day / 28-day
 // bests. No framework or database imports, so node --test can run it (peaks.test.mjs).
 
+import { fastestStretch } from '../activity/streams.mjs';
+
 /** Bump when the extraction changes: the backfill then recomputes every activity. */
 export const PEAKS_VERSION = 1;
 
@@ -20,7 +22,6 @@ export const RUN_DISTANCES = [
 const MAX_HOLD_S = 5;
 // Values past these are sensor or GPS errors.
 const MAX_WATTS = 2500;
-const MAX_RUN_MPS = 7; // 2:23 per km
 
 /** 'ride' or 'run' for a Strava sport_type that has peaks, else null. E-bikes have no rider power. */
 export function peakSportOf(sportType) {
@@ -84,26 +85,10 @@ export function bestPower(watts, time, durations = POWER_DURATIONS) {
  * @returns {{ distanceM: number, seconds: number }[]}
  */
 export function bestEfforts(distance, time, distances = RUN_DISTANCES) {
-  const n = Math.min(distance?.length ?? 0, time?.length ?? 0);
   const out = [];
-  if (n < 2) return out;
   for (const { span, meters } of distances) {
-    if (distance[n - 1] - distance[0] < meters) continue;
-    let best = Infinity;
-    let i = 0;
-    for (let j = 1; j < n; j++) {
-      const target = distance[j] - meters;
-      if (target < distance[0]) continue;
-      while (i + 1 < j && distance[i + 1] <= target) i++;
-      // The start lies between sample i and i + 1.
-      const d0 = distance[i];
-      const d1 = distance[i + 1];
-      const frac = d1 > d0 ? Math.min(1, Math.max(0, (target - d0) / (d1 - d0))) : 0;
-      const start = time[i] + frac * (time[i + 1] - time[i]);
-      const secs = time[j] - start;
-      if (secs > 0 && secs < best && meters / secs <= MAX_RUN_MPS) best = secs;
-    }
-    if (Number.isFinite(best)) out.push({ distanceM: span, seconds: Math.round(best * 10) / 10 });
+    const f = fastestStretch(distance, time, meters);
+    if (f) out.push({ distanceM: span, seconds: Math.round(f.seconds * 10) / 10 });
   }
   return out;
 }

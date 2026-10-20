@@ -52,7 +52,9 @@ To update any of these: edit the file in the memory directory, or just tell Clau
 | Strava | Activities + laps + splits + streams + athlete profile (FTP, zones, weight) | OAuth refresh, `scripts/strava-backfill.mjs` |
 | Google Calendar | Synced events from 3 accounts; pushed workout events to personal | App OAuth (read) + google-calendar skill creds (write) |
 | Lift (iPhone) | Workouts and templates, synced to the database | Lift sync (`lift/SYNC.md`) |
-| Open-Meteo | 7-day weather forecast for SF | Free, no key |
+| Garmin Connect | HRV, sleep, resting HR, Body Battery, readiness, lactate threshold | `garmin.yml` (GitHub Actions) |
+| Function Health | Lab results and the clinician's notes | `function.yml`, by hand |
+| Weather | NWS for US places, Open-Meteo elsewhere | Free, no key |
 
 ## File layout
 
@@ -69,14 +71,13 @@ scripts/
 plans/
   YYYY-MM-DD.md            # one per Monday — human-readable plan
   YYYY-MM-DD.json          # one per Monday — structured events
-src/modules/
-  weather/                 # Open-Meteo client (used by app + scripts)
-  fitness/                 # CTL/ATL/TSB compute (used by app)
-  garmin/README.md         # design doc (blocked on Garmin API approval)
+src/lib/
+  plan/weather.ts, plan/forecast.mjs   # NWS and Open-Meteo forecasts (app + scripts)
+  strava-sync/tss.mjs, load.mjs        # TSS and CTL/ATL/TSB
 ```
 
 ## Future extensions
 
-- **Garmin Connect**: see `src/modules/garmin/README.md`. Adds HRV / Body Battery / sleep score. ~2 wk dev API approval.
-- **Streams analysis**: data is in the DB but no analyzer yet (cardiac drift, time-in-zone, interval execution).
+- **Streams analysis**: TSS uses the streams (`src/lib/strava-sync/tss.mjs`), but there is no analyser yet for
+  cardiac drift, decoupling or interval execution.
 - **Goal-driven blocks**: /plan could build periodized blocks (base → build → test) toward each milestone deadline.

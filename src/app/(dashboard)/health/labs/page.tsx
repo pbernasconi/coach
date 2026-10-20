@@ -34,7 +34,7 @@ export default async function LabsPage() {
         <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
           <p className="font-medium text-foreground">No lab results yet.</p>
           <p className="mt-1">
-            The weekly Function sync (scripts/function-sync.mjs) copies every result, its range and Function&apos;s explanations into Coach.
+            The Function sync (scripts/function-sync.mjs, run by hand after new results) copies every result, its range and Function&apos;s explanations into Coach.
             Results appear here after its next run.
           </p>
         </div>
