@@ -50,3 +50,7 @@ next-env.d.ts
 # Python bytecode
 __pycache__/
 plans/.db-backup/
+
+# Weekly plans live in the database (training_plans); local drafts and exports stay out of this public repo.
+/plans/20*.json
+/plans/20*.md
