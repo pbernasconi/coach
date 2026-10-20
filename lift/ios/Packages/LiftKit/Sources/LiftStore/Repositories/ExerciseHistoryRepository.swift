@@ -8,13 +8,17 @@ public struct ExerciseHistoryEntry: Hashable, Sendable, Identifiable {
     public var loadMode: LoadMode
     /// The logged (done) sets, in order. A session that lists the exercise twice contributes both.
     public var sets: [SetRecord]
+    /// What was written about the exercise in that session ("felt heavy"), trimmed; nil when nothing was. A session
+    /// that lists the exercise twice joins both notes, one per line.
+    public var note: String?
 
     public var id: UUID { session.id }
 
-    public init(session: SessionRecord, loadMode: LoadMode, sets: [SetRecord]) {
+    public init(session: SessionRecord, loadMode: LoadMode, sets: [SetRecord], note: String? = nil) {
         self.session = session
         self.loadMode = loadMode
         self.sets = sets
+        self.note = note
     }
 }
 

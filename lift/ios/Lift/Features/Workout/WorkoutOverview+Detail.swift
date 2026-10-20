@@ -53,8 +53,15 @@ extension WorkoutExercise {
             libraryID: exercise.exerciseID,
             catalogID: item.catalogID,
             unit: item.sets.first?.unit ?? unit,
-            note: WorkoutText.exerciseNote(exercise.note, hasHint: exercise.nextTimeHint != nil)
+            note: WorkoutText.exerciseNote(exercise.note, hasHint: exercise.nextTimeHint != nil),
+            lastNote: Self.lastNote(previous?.note, current: exercise.note)
         )
+    }
+
+    /// Last time's note, unless it says the same as this session's (a template cue both started with).
+    static func lastNote(_ last: String?, current: String?) -> String? {
+        guard let last = NoteText.normalized(last) else { return nil }
+        return last == NoteText.normalized(current) ? nil : last
     }
 
     /// Once every working set is logged or skipped, the next target from `Progression`; otherwise a weight the user

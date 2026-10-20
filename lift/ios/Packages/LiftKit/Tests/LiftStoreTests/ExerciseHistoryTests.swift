@@ -50,6 +50,19 @@ import Testing
         #expect(entries.first?.loadMode == .total)
     }
 
+    @Test func historyCarriesTheExerciseNoteOfEachSession() async throws {
+        let store = try TestStore.make()
+        let (older, olderSets) = try await session(store, on: Fixtures.monday, statuses: [.done])
+        let (newer, _) = try await session(store, on: Fixtures.monday.adding(days: 3), statuses: [.done])
+        _ = try await store.sessions.saveExerciseNote(id: olderSets[0].sessionExerciseID, note: "  Felt heavy  ")
+
+        var stream = store.sessions.observeHistory(exerciseID: Fixtures.squat.id, limit: 5).makeAsyncIterator()
+        let entries = try #require(await stream.next())
+
+        #expect(entries.map(\.id) == [newer.id, older.id])
+        #expect(entries.map(\.note) == [nil, "Felt heavy"])
+    }
+
     @Test func historyKeepsOnlyTheLatestSessionsUpToTheLimit() async throws {
         let store = try TestStore.make()
         var ids: [UUID] = []
