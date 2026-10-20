@@ -8,14 +8,16 @@
  */
 
 import { createId } from '@paralleldrive/cuid2';
-import { toDay } from '../db-time.mjs';
-import { zoneTimes } from '../activity/streams.mjs';
+import { STREAM_KEYS, storeDetail, storeStreams } from '../activity/fetch.mjs';
+import { connectionWithToken } from './token.mjs';
+import { rebuildTrainingLoad } from './load.mjs';
+
+export { connectionWithToken } from './token.mjs';
+export { loadSeries, rebuildTrainingLoad } from './load.mjs';
 import { tssFromInputs, tssInputs, thresholdValues } from './tss.mjs';
 import { loadThresholds } from './thresholds.mjs';
 
 
-// The same keys as the activity page's fetch (src/lib/activity/fetch.mjs STREAM_KEYS).
-const STREAM_TYPES = ['time', 'distance', 'latlng', 'altitude', 'velocity_smooth', 'heartrate', 'cadence', 'watts', 'temp', 'moving', 'grade_smooth'];
 
 /**
  * Start times for the timestamp (no zone) columns, as text. Strava sends start_date in UTC and start_date_local as
@@ -25,41 +27,6 @@ const STREAM_TYPES = ['time', 'distance', 'latlng', 'altitude', 'velocity_smooth
 export function activityTimes(a) {
   const plain = (v) => (typeof v === 'string' ? v.replace(/Z$/, '') : null);
   return { startDate: plain(a.start_date), startLocal: plain(a.start_date_local) };
-}
-
-/** The single Strava connection and a valid access token. It refreshes and saves the token when it expires in 5 min. */
-export async function connectionWithToken(sql, env = process.env, log = console.log) {
-  const [conn] = await sql`SELECT id, athlete_id, refresh_token, access_token, expires_at, user_id, last_synced_at FROM strava_connections LIMIT 1`;
-  if (!conn) throw new Error('No Strava connection in DB');
-
-  let accessToken = conn.access_token;
-  const now = Math.floor(Date.now() / 1000);
-  if (conn.expires_at <= now + 300) {
-    if (!env.STRAVA_CLIENT_ID || !env.STRAVA_CLIENT_SECRET) throw new Error('STRAVA_CLIENT_ID / STRAVA_CLIENT_SECRET are not set');
-    log('Refreshing access token…');
-    const res = await fetch('https://www.strava.com/oauth/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        client_id: env.STRAVA_CLIENT_ID,
-        client_secret: env.STRAVA_CLIENT_SECRET,
-        refresh_token: conn.refresh_token,
-        grant_type: 'refresh_token',
-      }),
-    });
-    if (!res.ok) throw new Error(`Strava token refresh failed: ${res.status} ${await res.text()}`);
-    const tok = await res.json();
-    accessToken = tok.access_token;
-    await sql`
-      UPDATE strava_connections
-         SET access_token = ${tok.access_token},
-             refresh_token = ${tok.refresh_token},
-             expires_at = ${tok.expires_at},
-             updated_at = NOW()
-       WHERE id = ${conn.id}`;
-    log(`Token refreshed; expires ${new Date(tok.expires_at * 1000).toISOString()}`);
-  }
-  return { conn, accessToken };
 }
 
 /**
@@ -267,55 +234,11 @@ export async function syncStrava(sql, opts = {}) {
     }
     upsertCount++;
 
-    // Optional: detailed pull
+    // Detail: description, laps, splits (with grade-adjusted pace), best efforts, gear (the activity page's writer).
+    const row = { id: activityRowId, user_id: conn.user_id };
     if (detailed) {
       try {
-        const detail = await stravaFetch(`https://www.strava.com/api/v3/activities/${a.id}?include_all_efforts=false`);
-        await sql`
-          UPDATE strava_activities
-          SET description = ${detail.description ?? null},
-              suffer_score = ${detail.suffer_score ?? null},
-              updated_at = NOW()
-          WHERE id = ${activityRowId}`;
-
-        // Laps
-        if (detail.laps && detail.laps.length > 0) {
-          await sql`DELETE FROM strava_activity_laps WHERE activity_id = ${activityRowId}`;
-          for (let i = 0; i < detail.laps.length; i++) {
-            const l = detail.laps[i];
-            await sql`
-              INSERT INTO strava_activity_laps (
-                id, activity_id, lap_index, name, distance, moving_time, elapsed_time,
-                total_elevation_gain, average_speed, max_speed, average_cadence, average_watts,
-                average_heartrate, max_heartrate, start_index, end_index, lap_split
-              ) VALUES (
-                ${createId()}, ${activityRowId}, ${i + 1}, ${l.name ?? null},
-                ${l.distance ?? null}, ${l.moving_time ?? null}, ${l.elapsed_time ?? null},
-                ${l.total_elevation_gain ?? null}, ${l.average_speed ?? null}, ${l.max_speed ?? null},
-                ${l.average_cadence ?? null}, ${l.average_watts ?? null},
-                ${l.average_heartrate ?? null}, ${l.max_heartrate ?? null},
-                ${l.start_index ?? null}, ${l.end_index ?? null}, ${l.split ?? null}
-              )`;
-          }
-        }
-
-        // Splits (metric)
-        if (detail.splits_metric && detail.splits_metric.length > 0) {
-          await sql`DELETE FROM strava_activity_splits WHERE activity_id = ${activityRowId}`;
-          for (let i = 0; i < detail.splits_metric.length; i++) {
-            const s = detail.splits_metric[i];
-            await sql`
-              INSERT INTO strava_activity_splits (
-                id, activity_id, split_index, distance, moving_time, elapsed_time,
-                average_speed, elevation_difference, pace_zone, average_heartrate
-              ) VALUES (
-                ${createId()}, ${activityRowId}, ${i + 1},
-                ${s.distance ?? null}, ${s.moving_time ?? null}, ${s.elapsed_time ?? null},
-                ${s.average_speed ?? null}, ${s.elevation_difference ?? null},
-                ${s.pace_zone ?? null}, ${s.average_heartrate ?? null}
-              )`;
-          }
-        }
+        await storeDetail(sql, row, await stravaFetch(`https://www.strava.com/api/v3/activities/${a.id}?include_all_efforts=true`));
         detailedCount++;
       } catch (e) {
         warn(`Detail fetch failed for ${a.id}:`, e.message);
@@ -328,38 +251,25 @@ export async function syncStrava(sql, opts = {}) {
     const wantStreams = streams === true || (streams === 'new' && !existing && (a.moving_time ?? 0) >= 300);
     if (wantStreams) {
       try {
-        const streamsUrl = `https://www.strava.com/api/v3/activities/${a.id}/streams?keys=${STREAM_TYPES.join(',')}&key_by_type=true`;
-        const streams = await stravaFetch(streamsUrl);
-        await sql`DELETE FROM strava_activity_streams WHERE activity_id = ${activityRowId}`;
-        for (const key of Object.keys(streams)) {
-          const s = streams[key];
-          if (!s?.data) continue;
-          stored[key] = s.data;
-          await sql`
-            INSERT INTO strava_activity_streams (id, activity_id, stream_type, resolution, original_size, data)
-            VALUES (${createId()}, ${activityRowId}, ${key}, ${s.resolution ?? null}, ${s.original_size ?? null}, ${JSON.stringify(s.data)})`;
-        }
-        await sql`
-          INSERT INTO strava_activity_details (activity_id, streams_fetched_at) VALUES (${activityRowId}, NOW())
-          ON CONFLICT (activity_id) DO UPDATE SET streams_fetched_at = NOW(), updated_at = NOW()`;
+        const body = await stravaFetch(`https://www.strava.com/api/v3/activities/${a.id}/streams?keys=${STREAM_KEYS.join(',')}&key_by_type=true`);
+        await storeStreams(sql, row, body, hrZones, { rebuild: false });
+        for (const [key, s] of Object.entries(body ?? {})) if (Array.isArray(s?.data)) stored[key] = s.data;
         streamCount++;
       } catch (e) {
         warn(`Streams fetch failed for ${a.id}:`, e.message);
       }
     } else {
       // Streams from an earlier pull (the activity page, the backfill) still count: their summary is stored.
-      const [row] = await sql`SELECT tss_inputs FROM strava_activities WHERE id = ${activityRowId}`;
-      inputs = row?.tss_inputs ?? null;
+      const [prev] = await sql`SELECT tss_inputs FROM strava_activities WHERE id = ${activityRowId}`;
+      inputs = prev?.tss_inputs ?? null;
     }
 
-    // ===== Compute TSS + zone_times and persist =====
+    // ===== TSS (storeStreams wrote the zone times) =====
     if (Object.keys(stored).length) inputs = tssInputs(stored);
     const { tss, method } = tssFromInputs(a, th, inputs);
-    const zt = stored.heartrate ? zoneTimes(stored.heartrate, stored.time, hrZones) : null;
     await sql`
       UPDATE strava_activities
-      SET tss = ${tss}, tss_method = ${method}, tss_inputs = ${inputs ? JSON.stringify(inputs) : null},
-          zone_times = COALESCE(${zt ? JSON.stringify(zt) : null}::jsonb, zone_times), updated_at = NOW()
+      SET tss = ${tss}, tss_method = ${method}, tss_inputs = ${inputs ? JSON.stringify(inputs) : null}, updated_at = NOW()
       WHERE id = ${activityRowId}`;
 
     if (upsertCount % 10 === 0) log(`  upserted ${upsertCount}/${activities.length}…`);
@@ -372,67 +282,6 @@ export async function syncStrava(sql, opts = {}) {
 
   await sql`UPDATE strava_connections SET last_synced_at = NOW() WHERE id = ${conn.id}`;
   return { upserted: upsertCount, detailed: detailedCount, streams: streamCount, apiCalls: apiCallsInWindow };
-}
-
-const HOME_TIME_ZONE = 'America/Los_Angeles';
-
-/**
- * Rebuilds daily_training_load (CTL/ATL/TSB) from the first activity to today, from strava_activities.tss. The whole
- * history: a TSS change on an old activity changes every day after it. One write for all days.
- */
-export async function rebuildTrainingLoad(sql, userId, log = console.log) {
-  const acts = await sql`
-    SELECT start_date_local, tss
-    FROM strava_activities
-    WHERE user_id = ${userId} AND COALESCE(commute, false) = false AND tss IS NOT NULL
-    ORDER BY start_date_local ASC`;
-  const tssByDate = new Map();
-  for (const row of acts) {
-    const key = toDay(row.start_date_local); // the local day as written; new Date() would shift it by the machine's zone
-    if (!key) continue;
-    tssByDate.set(key, (tssByDate.get(key) ?? 0) + Number(row.tss));
-  }
-  if (tssByDate.size === 0) return;
-
-  // The last day is today on the athlete's wall clock (home, or the newest activity's day when traveling ahead of
-  // home), not today in UTC: at 18:00 in San Francisco UTC is already tomorrow, and that empty day lowered TSB.
-  const homeToday = new Intl.DateTimeFormat('en-CA', { timeZone: HOME_TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
-  const rows = loadSeries(tssByDate, homeToday);
-  const lastKey = rows.at(-1).date;
-
-  // Drop days after the last one (an earlier run in UTC could have written tomorrow) and before the first.
-  await sql`DELETE FROM daily_training_load WHERE user_id = ${userId} AND (date > ${lastKey} OR date < ${rows[0].date})`;
-  await sql`
-    INSERT INTO daily_training_load (id, user_id, date, tss, ctl, atl, tsb, computed_at)
-    SELECT md5(${userId} || d::text), ${userId}, d, t, c, a, b, NOW()
-    FROM unnest(${rows.map((r) => r.date)}::date[], ${rows.map((r) => r.tss)}::real[], ${rows.map((r) => r.ctl)}::real[],
-                ${rows.map((r) => r.atl)}::real[], ${rows.map((r) => r.tsb)}::real[]) AS x(d, t, c, a, b)
-    ON CONFLICT (user_id, date) DO UPDATE SET
-      tss = EXCLUDED.tss, ctl = EXCLUDED.ctl, atl = EXCLUDED.atl, tsb = EXCLUDED.tsb, computed_at = NOW()`;
-  const last = rows.at(-1);
-  log(`Rebuilt daily_training_load: ${rows.length} day rows. Latest: ${last.date} CTL=${last.ctl} ATL=${last.atl} TSB=${last.tsb}`);
-}
-
-/**
- * CTL (42-day) and ATL (7-day) for each day from the first day with TSS to `today` (or the last TSS day, if later).
- * @param {Map<string, number>} tssByDate  YYYY-MM-DD → the day's TSS
- */
-export function loadSeries(tssByDate, today) {
-  const days = [...tssByDate.keys()].sort();
-  const lastKey = [today, days.at(-1)].sort().at(-1);
-  const end = new Date(`${lastKey}T00:00:00Z`);
-  let ctl = 0;
-  let atl = 0;
-  const rows = [];
-  for (let d = new Date(`${days[0]}T00:00:00Z`); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
-    const k = d.toISOString().slice(0, 10);
-    const t = tssByDate.get(k) ?? 0;
-    ctl += (t - ctl) / 42;
-    atl += (t - atl) / 7;
-    const r1 = (x) => Math.round(x * 10) / 10;
-    rows.push({ date: k, tss: r1(t), ctl: r1(ctl), atl: r1(atl), tsb: r1(ctl - atl) });
-  }
-  return rows;
 }
 
 /** Removes one activity that was deleted on Strava. Laps, splits and streams cascade. */
