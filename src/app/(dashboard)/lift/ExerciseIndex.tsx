@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { fmtDay } from './types';
+import { exerciseIndexText } from '@/lib/lift-dashboard/text.mjs';
 
 type Exercise = { key: string; name: string; sessions: number; lastDay: string; bestE1rm: number | null };
 
@@ -17,7 +17,7 @@ export default function ExerciseIndex({ exercises, unit }: { exercises: Exercise
             <Link href={`/lift/exercises/${encodeURIComponent(e.key)}`} className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-[var(--viz-band)]">
               <span className="min-w-0 flex-1">
                 <span className="block truncate">{e.name}</span>
-                <span className="block text-[11px] text-[var(--viz-muted)]">{e.sessions} sessions · last {fmtDay(e.lastDay)}</span>
+                <span className="block text-[11px] text-[var(--viz-muted)]">{exerciseIndexText(e)}</span>
               </span>
               <span className="shrink-0 text-right text-xs tabular-nums text-[var(--viz-ink-2)]">{e.bestE1rm ? `${Math.round(e.bestE1rm)} ${unit}` : '–'}</span>
             </Link>

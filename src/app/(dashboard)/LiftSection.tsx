@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import MuscleSetsChart from '@/components/charts/MuscleSetsChart';
+import { e1rmText, liftChangeText, muscleRows } from '@/lib/performance/display.mjs';
 
 type MuscleRow = { muscle: string; sets: number; status: string };
 type TopLift = { key: string; name: string; sessions: number; points: { day: string; e1rm: number }[]; latest: number | null; change: number | null };
@@ -43,11 +44,7 @@ export default function LiftSection({
       </div>
     );
   }
-  const avg = new Map(last4.map((m) => [m.muscle, m.sets / 4]));
-  const muscles = [...new Set([...thisWeek.map((m) => m.muscle), ...last4.map((m) => m.muscle)])]
-    .map((muscle) => ({ muscle, week: thisWeek.find((m) => m.muscle === muscle)?.sets ?? 0, avg: avg.get(muscle) ?? 0 }))
-    .sort((a, b) => b.avg - a.avg || b.week - a.week)
-    .slice(0, 10);
+  const muscles = muscleRows(thisWeek, last4);
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <MuscleSetsChart rows={muscles} />
@@ -61,9 +58,9 @@ export default function LiftSection({
             <Link key={l.key} href={`/lift/exercises/${encodeURIComponent(l.key)}`} className="flex min-h-10 items-center justify-between gap-2 py-2 text-sm hover:bg-muted/40 sm:gap-3">
               <span className="line-clamp-2 min-w-0 flex-1 sm:line-clamp-none sm:truncate">{l.name}</span>
               <Sparkline points={l.points} />
-              <span className="w-16 shrink-0 text-right tabular-nums sm:w-20">{l.latest ? `${Math.round(l.latest)} ${unit}` : '-'}</span>
+              <span className="w-16 shrink-0 text-right tabular-nums sm:w-20">{e1rmText(l.latest, unit, '-')}</span>
               <span className={`w-10 shrink-0 text-right text-xs tabular-nums sm:w-14 ${l.change == null ? 'text-muted-foreground' : l.change >= 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
-                {l.change == null ? '' : `${l.change >= 0 ? '+' : ''}${Math.round(l.change * 100)}%`}
+                {liftChangeText(l.change)}
               </span>
             </Link>
           ))}

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { ChartTooltip } from '@/components/charts/ChartTooltip';
 import { niceTicks, useMeasure } from '@/components/charts/useMeasure';
-import { duration } from '@/lib/activity/format.mjs';
+import { duration, percents } from '@/lib/activity/format.mjs';
 
 /**
  * Time per bin as vertical bars (the pace distribution). `bins` are in reading order; `label` is the x-axis text.
@@ -13,7 +13,7 @@ export default function Histogram({ bins, color, title, unit, mark }: { bins: { 
   const [ref, width] = useMeasure<HTMLDivElement>();
   const [hover, setHover] = useState<number | null>(null);
   if (!bins.length) return null;
-  const total = bins.reduce((n, b) => n + b.seconds, 0) || 1;
+  const pct = percents(bins.map((b) => b.seconds));
   const M = { left: 40, right: 8, top: 10, bottom: 24 };
   const PH = 150;
   const plotW = width - M.left - M.right;
@@ -73,7 +73,7 @@ export default function Histogram({ bins, color, title, unit, mark }: { bins: { 
       </svg>
       {h && hover != null && (
         <ChartTooltip x={M.left + (hover + 0.5) * bw} y={M.top} width={width} title={`${h.label} ${unit}`}
-          rows={[{ key: 't', label: 'time', value: duration(h.seconds), color, strong: true }, { key: 'p', label: 'of the moving time', value: `${Math.round((h.seconds / total) * 100)}%` }]} />
+          rows={[{ key: 't', label: 'time', value: duration(h.seconds), color, strong: true }, { key: 'p', label: 'of the moving time', value: `${pct[hover]}%` }]} />
       )}
     </div>
   );

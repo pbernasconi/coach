@@ -1,12 +1,14 @@
 import Link from 'next/link';
+import { heatLevel } from '@/lib/lift-dashboard/text.mjs';
 import { fmtDay, type Overview } from './types';
 
 const ROWS = ['Mon', '', 'Wed', '', 'Fri', '', 'Sun'];
 
+const MIX = [0, 40, 60, 80, 100];
+
 function shade(sets: number) {
-  if (!sets) return undefined;
-  const mix = sets >= 20 ? 100 : sets >= 14 ? 80 : sets >= 8 ? 60 : 40;
-  return `color-mix(in oklab, var(--sport-strength) ${mix}%, transparent)`;
+  const level = heatLevel(sets);
+  return level ? `color-mix(in oklab, var(--sport-strength) ${MIX[level]}%, transparent)` : undefined;
 }
 
 /** The last 16 weeks as a day grid (a lifted day is coloured by its sets) and sessions per week against the target. */
