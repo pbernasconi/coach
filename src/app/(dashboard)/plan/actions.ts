@@ -12,6 +12,11 @@ import { MAX_SPAN_WEEKS, spanWeeks } from '@/lib/plan/scroll.mjs';
 import { cookieTimeZone } from '@/lib/plan/timezone';
 import { todayIn } from '@/lib/plan/week.mjs';
 import { weeksAfterRemove } from '@/lib/plan/remove.mjs';
+import { loadActivity, loadActivityContext, type ActivityContext, type ActivityView } from '@/lib/activity/queries';
+import { loadLiftModel } from '@/lib/lift-dashboard/queries';
+import { sessionDetail } from '@/lib/lift-dashboard/stats.mjs';
+
+export type LiftDetail = NonNullable<ReturnType<typeof sessionDetail>>;
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -84,4 +89,24 @@ export async function loadWeeksAction(fromMonday: string, toMonday: string): Pro
   const to = mondayOf(date(toMonday));
   if (to < from || spanWeeks(from, to) > MAX_SPAN_WEEKS) throw new Error('Bad week range');
   return loadRange(userId, from, to, todayIn(await cookieTimeZone()));
+}
+
+/** One activity for the Plan modal: the same data as /activities/<id>, and Coach's view (null when it fails). */
+export async function activityPreviewAction(id: string): Promise<{ v: ActivityView; context: ActivityContext | null } | null> {
+  const userId = await user();
+  const v = await loadActivity(userId, String(id).slice(0, 40));
+  if (!v) return null;
+  const context = await loadActivityContext(userId, v, todayIn(await cookieTimeZone())).catch((error) => {
+    console.error("Coach's view failed:", error);
+    return null;
+  });
+  return { v, context };
+}
+
+/** One Lift session for the Plan modal: the same data as /lift/sessions/<id>. */
+export async function liftPreviewAction(id: string): Promise<{ detail: LiftDetail; unit: string } | null> {
+  await user();
+  const { model, unit } = await loadLiftModel();
+  const detail = sessionDetail(model, String(id).slice(0, 64), unit) as LiftDetail | null;
+  return detail ? { detail, unit } : null;
 }
