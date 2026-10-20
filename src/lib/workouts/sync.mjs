@@ -29,8 +29,8 @@ const noteOf = (row) => String(row.description ?? '').split('\n')[0].slice(0, 30
 const DEVICE_OF_TARGET = { garmin: 'garmin', zwift: 'zwift', intervals: 'zwift' };
 
 /**
- * The intervals.icu event for an indoor ride: our .zwo, with a stable uid so a re-send updates it. The name starts
- * with the date: Zwift's partner sync wants unique names (docs/research/zwift-sync.md §3b, §6).
+ * The intervals.icu event for an indoor ride: our .zwo. The name starts with the date: Zwift's partner sync wants
+ * unique names (docs/research/zwift-sync.md §3b, §6). The uid is a label only: intervals.icu sets its own.
  */
 export function intervalsEvent(row) {
   const name = `${row.day.slice(5)} ${plainName(row.title)}`.slice(0, 80);

@@ -28,7 +28,7 @@ export function intervalsClient(env = process.env, fetchFn = fetch) {
   }
   return {
     athlete: () => call('GET', ''),
-    upsert: (event) => call('POST', '/events?upsertOnUid=true', event),
+    create: (event) => call('POST', '/events', event),
     update: (id, event) => call('PUT', `/events/${encodeURIComponent(id)}`, event),
     remove: (id) => call('DELETE', `/events/${encodeURIComponent(id)}`),
     get: (id) => call('GET', `/events/${encodeURIComponent(id)}`),
@@ -69,10 +69,15 @@ export async function syncIntervals(sql, userId, client, { from, to, dryRun = fa
         done.deleted++;
         continue;
       }
-      const saved = await client.upsert(o.payload.event);
+      // intervals.icu gives each event its own uid (ours is ignored with a personal key; tested 2026-10-20), so an
+      // update goes to the stored event id. A missing event (deleted in intervals.icu) is made again.
+      let saved = null;
+      if (o.op === 'update' && o.prior?.remote_id) {
+        saved = await client.update(o.prior.remote_id, o.payload.event).catch((e) => (/: 404 /.test(e.message) ? null : Promise.reject(e)));
+      }
+      saved ??= await client.create(o.payload.event);
       const id = String(saved?.id ?? '');
       if (!id) throw new Error('intervals.icu returned no event id');
-      if (o.prior?.remote_id && o.prior.remote_id !== id) await client.remove(o.prior.remote_id).catch(() => null);
       const back = await client.get(id).catch(() => saved);
       const pushErrors = (back?.push_errors ?? []).filter((e) => /zwift/i.test(String(e.service ?? ''))).map((e) => e.message);
       const error = pushErrors.length ? `Zwift upload: ${pushErrors.join('; ')}` : null;

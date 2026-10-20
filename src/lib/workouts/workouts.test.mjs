@@ -177,7 +177,7 @@ test('intervalsEvent: a VirtualRide with our .zwo, a stable uid and a dated uniq
   assert.equal(payloadFor('intervals', row('z')).event.uid, 'coach:z');
 });
 
-test('connectionProblems and the client: Zwift link checks; upsert by uid', async () => {
+test('connectionProblems and the client: Zwift link checks; create and update by id', async () => {
   assert.equal(connectionProblems({ zwift_user_id: 1 }).length, 0);
   assert.match(connectionProblems({})[0], /not connected/);
   assert.match(connectionProblems({ zwift_user_id: 1, zwift_upload_workouts: false })[0], /does not upload/);
@@ -186,7 +186,8 @@ test('connectionProblems and the client: Zwift link checks; upsert by uid', asyn
     calls.push([url, init.method]);
     return { ok: true, status: 200, text: async () => '{"id":7}' };
   });
-  assert.deepEqual(await c.upsert({}), { id: 7 });
-  assert.deepEqual(calls[0], ['https://intervals.icu/api/v1/athlete/i1/events?upsertOnUid=true', 'POST']);
+  assert.deepEqual(await c.create({}), { id: 7 });
+  await c.update('7', {});
+  assert.deepEqual(calls, [['https://intervals.icu/api/v1/athlete/i1/events', 'POST'], ['https://intervals.icu/api/v1/athlete/i1/events/7', 'PUT']]);
   assert.equal(intervalsClient({}), null);
 });
