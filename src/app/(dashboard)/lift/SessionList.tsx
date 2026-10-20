@@ -1,11 +1,12 @@
 import Link from 'next/link';
 import { ChevronRight, Trophy } from 'lucide-react';
+import { sessionMeta } from '@/lib/lift-dashboard/text.mjs';
 import { compact, fmtDay, muscleName, type SessionRow, type Upcoming } from './types';
 
 const SHOWN = 8;
 
 function Row({ s, unit, max }: { s: SessionRow; unit: string; max: number }) {
-  const meta = [`${s.exercises} exercises`, `${s.sets} sets`, s.minutes ? `${s.minutes} min` : null].filter(Boolean).join(' · ');
+  const meta = sessionMeta(s);
   return (
     <li>
       <Link href={`/lift/sessions/${s.id}`} className="group grid grid-cols-[3rem_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 transition-colors hover:bg-[var(--viz-band)]">

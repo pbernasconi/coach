@@ -6,6 +6,7 @@ import { StatCard } from '@/components/stat-card';
 import { loadLiftModel } from '@/lib/lift-dashboard/queries';
 import { exerciseDetail } from '@/lib/lift-dashboard/stats.mjs';
 import { formatWeight } from '@/lib/lift-dashboard/format';
+import { bestSetText } from '@/lib/lift-dashboard/app-api.mjs';
 import ResponsiveDay from '@/components/ResponsiveDay';
 import E1rmChart, { type Point } from './E1rmChart';
 
@@ -59,7 +60,7 @@ export default async function LiftExercisePage({ params }: { params: Promise<{ k
                     <TableRow key={`${p.day}-${i}`}>
                       <TableCell className="whitespace-nowrap"><ResponsiveDay day={p.day} /></TableCell>
                       <TableCell className="whitespace-nowrap text-right tabular-nums">
-                        {formatWeight(p.weight, unit)} x {p.reps ?? '-'}
+                        {bestSetText(p.weight, p.reps, unit)}
                       </TableCell>
                       <TableCell className="whitespace-nowrap text-right tabular-nums">{formatWeight(p.e1rm, unit)}</TableCell>
                     </TableRow>

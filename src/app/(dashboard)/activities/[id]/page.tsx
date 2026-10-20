@@ -5,7 +5,7 @@ import SectionError from '@/components/SectionError';
 import LinkHotkeys from '@/components/hotkeys/LinkHotkeys';
 import SportIcon from '@/components/SportIcon';
 import { loadActivity, loadActivityContext } from '@/lib/activity/queries';
-import { toDate } from '@/lib/db-time.mjs';
+import { whenText } from '@/lib/activity/view.mjs';
 import { ownerForSignedInUser } from '@/lib/owner';
 import { todayIn } from '@/lib/plan/week.mjs';
 import { load } from '@/lib/safe';
@@ -24,15 +24,6 @@ function zone(tz: string | undefined) {
     }
   } catch {}
   return 'America/Los_Angeles';
-}
-
-/** 'Tuesday, October 14, 2026 at 6:34 AM' from the activity's own clock time. */
-function when(local: string) {
-  const d = toDate(local); // a clock time with no zone: read as UTC, and shown in UTC
-  if (!d) return local;
-  const date = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
-  const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'UTC' });
-  return `${date} at ${time}`;
 }
 
 /**
@@ -112,7 +103,7 @@ export default async function ActivityPage({ params }: { params: Promise<{ id: s
               <div className="min-w-0">
                 <h1 id="overview" className="scroll-mt-32 text-2xl font-semibold tracking-tight">{v.name}</h1>
                 <p className="text-sm text-muted-foreground">
-                  {when(v.startLocal)}
+                  {whenText(v.startLocal)}
                   {v.place ? ` · ${v.place}` : ''} · {stravaTypeLabel(v.sportType)}
                   {v.trainer ? ' · indoor' : ''}
                   {v.commute ? ' · commute' : ''}

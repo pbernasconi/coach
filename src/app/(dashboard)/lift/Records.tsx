@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Trophy } from 'lucide-react';
-import { fmtDay, weight, type Record } from './types';
+import { recordGain, recordText } from '@/lib/lift-dashboard/text.mjs';
+import type { Record } from './types';
 
 /** The latest personal records: a session's best estimated 1RM above every session before it. */
 export default function Records({ prs, unit }: { prs: Record[]; unit: string }) {
@@ -21,12 +22,12 @@ export default function Records({ prs, unit }: { prs: Record[]; unit: string }) 
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium text-[var(--viz-ink)]">{r.name}</span>
                   <span className="block text-[11px] text-[var(--viz-ink-2)]">
-                    {weight(r.weight, unit)} × {r.reps} · {fmtDay(r.day)}
+                    {recordText(r, unit)}
                   </span>
                 </span>
                 <span className="text-right tabular-nums">
                   <span className="block text-sm font-semibold text-[var(--viz-ink)]">{Math.round(r.e1rm)}</span>
-                  <span className="block text-[10px] text-[var(--viz-up)]">+{Math.max(1, Math.round(r.e1rm - r.previous))} {unit}</span>
+                  <span className="block text-[10px] text-[var(--viz-up)]">{recordGain(r, unit)}</span>
                 </span>
               </Link>
             </li>

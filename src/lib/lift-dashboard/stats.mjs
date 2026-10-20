@@ -96,6 +96,7 @@ export function exerciseKey(sessionExercise) {
  * @property {number | null} targetRepMin planned rep range, low end
  * @property {number | null} targetRepMax planned rep range, high end
  * @property {number | null} targetWeight planned weight in `unit` (bodyweight: added load)
+ * @property {number | null} rpe effort, RPE 6–10 (schema v7; null when not recorded)
  */
 
 /**
@@ -184,6 +185,7 @@ export function buildModel(data) {
       targetRepMin: num(set.targetRepMin),
       targetRepMax: num(set.targetRepMax),
       targetWeight: num(set.targetWeight),
+      rpe: num(set.rpe),
     });
   }
   // Muscles per library exercise (primaryMuscles / secondaryMuscles: a JSON array, or its text).
@@ -409,7 +411,7 @@ export function exerciseDetail(model, key, unit, bestCount = 10) {
   for (const r of rows) {
     if (r.e1rm === null) continue;
     const prev = perSession.get(r.sessionId);
-    if (!prev || r.e1rm > prev.e1rm) perSession.set(r.sessionId, { day: r.day, e1rm: r.e1rm, reps: r.reps, weight: r.weight });
+    if (!prev || r.e1rm > prev.e1rm) perSession.set(r.sessionId, { day: r.day, sessionId: r.sessionId, e1rm: r.e1rm, reps: r.reps, weight: r.weight });
   }
   const e1rmOverTime = [...perSession.values()].sort((a, b) => a.day.localeCompare(b.day));
   const heaviest = rows.reduce((max, r) => (r.weight !== null && (max === null || r.weight > max) ? r.weight : max), /** @type {number | null} */ (null));
@@ -522,6 +524,7 @@ export function sessionDetail(model, id, unit) {
             reps: s.reps,
             weight: s.weight === null ? null : convert(s.weight, s.unit, unit),
             note: s.note,
+            rpe: s.rpe,
             // What Lift planned for the set (scripts/lift-plan.mjs or the app), in `unit`.
             target: {
               reps: s.targetReps,
