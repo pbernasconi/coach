@@ -3,12 +3,10 @@
 import Link from 'next/link';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { ArrowUpRight, ChevronLeft, ChevronRight, Dumbbell, ExternalLink, X } from 'lucide-react';
+import { ArrowUpRight, ChevronLeft, ChevronRight, Copy, Dumbbell, ExternalLink, X } from 'lucide-react';
 import SportIcon from '@/components/SportIcon';
 import ComplianceMark from '@/components/plan/ComplianceMark';
 import LiftSessionSets from '@/components/plan/LiftSessionSets';
-import WorkoutChart from '@/components/workouts/WorkoutChart';
-import WorkoutSteps from '@/components/workouts/WorkoutSteps';
 import { totals } from '@/lib/workouts/steps.mjs';
 import PeakCurve from '@/components/charts/PeakCurve';
 import { Button } from '@/components/ui/button';
@@ -24,12 +22,14 @@ import { LIFT_MARKER } from '@/lib/plan/lift-plan.mjs';
 import { zonesFor } from '@/lib/plan/zones.mjs';
 import type { ActivityContext, ActivityView } from '@/lib/activity/queries';
 import type { CalendarWorkout } from '@/lib/plan/month';
+import type { DayWeather } from '@/lib/plan/weather';
 import { ActivityHoverProvider } from '../activities/[id]/ActivityHover';
 import Histogram from '../activities/[id]/Histogram';
 import PowerCurve from '../activities/[id]/PowerCurve';
 import RouteMap from '../activities/[id]/RouteMap';
 import StreamCharts from '../activities/[id]/StreamCharts';
 import { ZoneBars } from '../activities/[id]/Sections';
+import { Card as PCard, Forecast, KeyTargets, Structure, ZoneTime } from './PlannedDetails';
 import { BestEfforts, ElevationProfile, LoadTiles, MinAvgMax, PlanVsDone, SplitBars, StatGrid, ZoneStrip } from './ActivityOverview';
 import { activityPreviewAction, liftPreviewAction } from './actions';
 import { liftHref, type Item } from './ItemPreview';
@@ -55,6 +55,10 @@ type Props = {
   /** The previous / next item in the calendar, or null at the ends. */
   onStep: (dir: -1 | 1) => void;
   canStep: { prev: boolean; next: boolean };
+  /** Copies a planned workout, for Paste in a day's menu. */
+  onCopy?: (w: CalendarWorkout) => void;
+  /** The forecast by day, for a planned workout in the next two weeks. */
+  weather?: Record<string, DayWeather>;
 };
 
 /**
@@ -62,7 +66,7 @@ type Props = {
  * completed, the load change, zones and peak curves, laps and the stream charts. A done item links to its full
  * page. ← and → step to the previous and next item.
  */
-export default function ItemModal({ item, onClose, onStep, canStep }: Props) {
+export default function ItemModal({ item, onClose, onStep, canStep, onCopy, weather }: Props) {
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
@@ -101,7 +105,7 @@ export default function ItemModal({ item, onClose, onStep, canStep }: Props) {
           ) : liftId ? (
             <LiftModal key={`l-${liftId}`} id={liftId} planned={planned} onClose={onClose} />
           ) : planned ? (
-            <PlannedModal key={planned.id} w={planned} onClose={onClose} />
+            <PlannedModal key={planned.id} w={planned} onClose={onClose} onCopy={onCopy} wx={weather?.[planned.date]} />
           ) : null}
           </StepContext.Provider>
         </Dialog.Content>
@@ -861,7 +865,7 @@ function DevicesPanel({ w }: { w: CalendarWorkout }) {
   );
 }
 
-function PlannedModal({ w, onClose }: { w: CalendarWorkout; onClose: () => void }) {
+function PlannedModal({ w, onClose, onCopy, wx }: { w: CalendarWorkout; onClose: () => void; onCopy?: (w: CalendarWorkout) => void; wx?: DayWeather }) {
   const targets = zonesFor(w) as { zone: string; label: string; target: string }[];
   // With the Lift session shown set by set, the text copy of the sets (scripts/lift-plan.mjs) is left out.
   const text = w.lift && w.description ? w.description.split(LIFT_MARKER)[0].trim() : w.description;
@@ -876,6 +880,15 @@ function PlannedModal({ w, onClose }: { w: CalendarWorkout; onClose: () => void 
           <>
             {w.adaptedFrom && <span className="hidden text-xs text-[var(--plan-partial)] sm:inline">Changed for how you feel</span>}
             <StatusChip level={w.compliance.level} ratio={w.compliance.ratio} basis={w.compliance.basis} />
+            {onCopy && (
+              <button
+                type="button"
+                onClick={() => onCopy(w)}
+                className="hidden items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs font-medium hover:bg-accent sm:inline-flex"
+              >
+                <Copy aria-hidden className="h-3.5 w-3.5" /> Copy
+              </button>
+            )}
           </>
         }
         onClose={onClose}
@@ -888,50 +901,44 @@ function PlannedModal({ w, onClose }: { w: CalendarWorkout; onClose: () => void 
             plan && plan.if > 0 && { label: 'Planned IF', value: plan.if.toFixed(2) },
           ]}
         />
-        <div className="grid gap-6 p-4 sm:p-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
-          <div className="space-y-6">
-            {w.steps && (
-              <Panel title="Structure" note={w.steps.name}>
-                <div className="space-y-3 rounded-lg border p-3">
-                  <WorkoutChart workout={w.steps} />
-                  <WorkoutSteps workout={w.steps} />
-                </div>
-              </Panel>
+        <div className="grid gap-4 p-4 sm:p-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
+          <div className="space-y-4">
+            {w.steps && <Structure workout={w.steps} />}
+            {w.lift && (
+              <PCard title="Lift session" note={<Link href={liftHref(w.lift.id)} className="underline underline-offset-2">Open in full</Link>}>
+                <LiftSessionSets lift={w.lift} />
+              </PCard>
             )}
             {text ? <Description title={w.steps ? 'Notes' : 'The workout'} text={text} /> : !w.lift && !w.steps && <p className="text-sm text-muted-foreground">No description.</p>}
-            {w.lift && (
-              <Panel title="Lift session" note={<Link href={liftHref(w.lift.id)} className="underline underline-offset-2">Open in full</Link>}>
-                <div className="rounded-lg border p-3">
-                  <LiftSessionSets lift={w.lift} />
-                </div>
-              </Panel>
-            )}
-            {w.why && (
-              <Panel title="Why">
-                <p className="text-sm text-[var(--viz-ink-2)]">{w.why}</p>
-              </Panel>
-            )}
           </div>
-          <div className="space-y-6">
-            {w.steps && <DevicesPanel w={w} />}
-            {w.intensity && !w.lift && !w.steps && (
-              <Panel title="Intensity">
+          <div className="space-y-4">
+            {w.steps && <KeyTargets workout={w.steps} />}
+            {w.steps && <ZoneTime workout={w.steps} />}
+            {!w.steps && w.intensity && !w.lift && (
+              <PCard title="Intensity">
                 <p className="text-sm text-[var(--viz-ink)]">{w.intensity}</p>
-              </Panel>
+              </PCard>
             )}
             {targets.length > 0 && !w.steps && (
-              <Panel title="Zone targets">
-                <ul className="divide-y rounded-lg border text-sm">
+              <PCard title="Zone targets">
+                <ul className="divide-y text-sm">
                   {targets.map((t) => (
-                    <li key={`${t.zone}-${t.label}`} className="flex items-center gap-3 px-3 py-2">
+                    <li key={`${t.zone}-${t.label}`} className="flex items-center gap-3 py-2 first:pt-0 last:pb-0">
                       <b className="w-8 tabular-nums">{t.zone}</b>
                       <span className="flex-1 text-[var(--viz-ink-2)]">{t.label}</span>
                       <span className="tabular-nums text-[var(--viz-ink)]">{t.target}</span>
                     </li>
                   ))}
                 </ul>
-              </Panel>
+              </PCard>
             )}
+            {w.why && (
+              <PCard title="Why">
+                <p className="text-sm leading-relaxed text-[var(--viz-ink-2)]">{w.why}</p>
+              </PCard>
+            )}
+            {wx && <Forecast w={wx} sport={w.sport} />}
+            {w.steps && <DevicesPanel w={w} />}
           </div>
         </div>
       </div>

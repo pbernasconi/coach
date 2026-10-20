@@ -288,6 +288,43 @@ export async function addFromLibrary(userId: string, itemId: string, date: strin
   return id;
 }
 
+/** Stores a new workout from the calendar ("+" on a day). `w` comes from cleanNewWorkout (src/lib/plan/create.mjs). */
+export async function createWorkout(
+  userId: string,
+  w: { sport: string; date: string; startTime: string | null; title: string; duration: number | null; distance: number | null; tss: number | null; intensity: string | null; description: string | null; steps: Record<string, unknown> | null }
+): Promise<string> {
+  const planId = await ensurePlan(userId, mondayOf(w.date));
+  const id = crypto.randomUUID();
+  await sql`
+    INSERT INTO training_plan_activities
+      (id, plan_id, activity_type, title, description, scheduled_date, start_time, duration, distance, intensity, tss, steps, status, sort_order, edited_at)
+    VALUES (${id}, ${planId}, ${w.sport}, ${w.title}, ${w.description}, ${w.date}, ${w.startTime}, ${w.duration}, ${w.distance},
+            ${w.intensity}, ${w.tss}, ${w.steps ? JSON.stringify(w.steps) : null}::jsonb, 'planned',
+            (SELECT COALESCE(MAX(sort_order), -1) + 1 FROM training_plan_activities WHERE plan_id = ${planId} AND scheduled_date = ${w.date}),
+            NOW())`;
+  return id;
+}
+
+/** Copies one planned workout the user owns to another day (the calendar's Copy and Paste). Returns the new id. */
+export async function duplicateWorkout(userId: string, id: string, date: string): Promise<string | null> {
+  const [r] = (await sql`
+    SELECT a.* FROM training_plan_activities a JOIN training_plans p ON p.id = a.plan_id
+    WHERE a.id = ${id} AND p.user_id = ${userId}`) as Row[];
+  if (!r) return null;
+  const planId = await ensurePlan(userId, mondayOf(date));
+  const copy = crypto.randomUUID();
+  await sql`
+    INSERT INTO training_plan_activities
+      (id, plan_id, activity_type, title, description, scheduled_date, start_time, end_time, duration, distance, intensity,
+       workout_type, tss, why, steps, status, sort_order, edited_at)
+    VALUES (${copy}, ${planId}, ${r.activity_type}, ${r.title}, ${r.description}, ${date}, ${r.start_time}, ${r.end_time},
+            ${r.duration}, ${r.distance}, ${r.intensity}, ${r.workout_type}, ${r.tss}, ${r.why},
+            ${r.steps ? JSON.stringify(r.steps) : null}::jsonb, 'planned',
+            (SELECT COALESCE(MAX(sort_order), -1) + 1 FROM training_plan_activities WHERE plan_id = ${planId} AND scheduled_date = ${date}),
+            NOW())`;
+  return copy;
+}
+
 /** users.settings, for the weather location. */
 export async function userSettings(userId: string): Promise<Record<string, unknown>> {
   const [u] = (await sql`SELECT settings FROM users WHERE id = ${userId}`) as Row[];
