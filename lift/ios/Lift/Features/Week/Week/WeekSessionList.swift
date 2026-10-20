@@ -3,8 +3,8 @@ import KoboTokens
 import LiftCore
 import SwiftUI
 
-/// The visible week as seven rows, one per day, Monday first; a day without sessions is a rest day. Picking a day
-/// brings its row into view; or, on a first launch, where to start.
+/// The visible week as seven rows, one per day, Monday first, under the coach plan's line when sync is on; a day
+/// without rows is a rest day. Picking a day brings its row into view; or, on a first launch, where to start.
 struct WeekSessionList: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let state: WeekState
@@ -37,12 +37,15 @@ struct WeekSessionList: View {
         case .failed:
             ErrorState(title: "Workouts could not be loaded")
         case .loaded(let days):
-            if state.templates.isEmpty && days.allSatisfy(\.sessions.isEmpty) {
+            if state.templates.isEmpty && days.allSatisfy(\.entries.isEmpty) {
                 WeekFirstRunState(send: send)
             } else {
+                if let plan = state.plan {
+                    WeekPlanSummary(plan: plan)
+                }
                 ListSection {
                     ForEach(days) { day in
-                        WeekDayRows(day: day, send: send)
+                        WeekDayRows(day: day, showsSports: state.plan != nil, send: send)
                             .id(day.id)
                     }
                 }

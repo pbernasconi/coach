@@ -15,7 +15,7 @@ accessible, motion-aware, tested building blocks.
 KoboTokens      Space, Radius, Size, Palette, Tone, Typography, Theme, Motion   (no default isolation)
    ↑
 KoboComponents  Controls · Selection · Fields · Search · Feedback · Status        (MainActor)
-                Display · Layout · Navigation · Overlays · QuickActions · Utilities
+                Display · Charts · Layout · Navigation · Overlays · QuickActions · Utilities
    ↑
 KoboPatterns    Loadable + LoadableView, ScreenScaffold, koboConfirm, StateGallery · Lists · Flows
    ↑
@@ -62,6 +62,7 @@ A brand is one value: `Palette.make(accent:onAccent:accentText:)` builds a full 
 | Feedback | `Toast` + `ToastCenter` + `.toastHost(_:)`, `Skeleton`, `.shimmering()`, `.skeletonBreath()`, `LoadingState`, `EmptyState`, `EmptyStateArt`, `ErrorState`, `NoticeBanner`, `StatusPill`, `.pulse(active:)` |
 | Status | `BannerStack` + `.bannerStack`, `NudgeBanner`, `SystemNotice`, `OfflineBanner`, `InlineNotice`, `IconNotice`, `InlineProgress`, `SectionState`, `SlowWaitNote` |
 | Display | `ProgressRing`, `CountdownRing`, `AnimatedNumber`, `StatTile`, `Avatar`, `Monogram`, `Thumbnail`, `ThumbnailBadge` |
+| Charts | `Sparkline` (also in a `StatTile` footer), `KoboLineChart` (+ `.logarithmicX()`), `KoboLinePanels`, `KoboStackedBarChart`, `KoboHistogram`, `VariableWidthBarChart`, `BandBar`, `ZoneBars`, `KoboHeatmap`, `KoboDataTable`, `KoboRouteMap` |
 | Layout | `.koboCard()`, `CardSection`, `ListRow`, `ListSection`, `KeyValueRow`, `KeyValueList`, `SectionHeader`, `Separator`, `Collapsible`, `.pinnedFooter`, `SheetHeader`, `DayStrip`, `SegmentedProgress`, `MiniPlayerBar` |
 | Navigation | `AppHeader` + `.tabRootHeader`, `HeaderButton`, `HeaderProfileButton`, `CountBadge` + `.countBadge`, `TabShell`, `TextLink` |
 | Overlays | `KoboSheet` + `.koboSheet`, `.koboActionSheet`, `ModalPage` + `.koboModalPage`, `InputModal`, `InfoButton`, `InfoSheet`, `.itemSheet` |

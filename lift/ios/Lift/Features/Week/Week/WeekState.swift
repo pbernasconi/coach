@@ -11,7 +11,7 @@ nonisolated struct WeekState: Equatable, Sendable {
     var strip: WeekStrip?
     /// The visible strip page.
     var weekOffset = 0
-    /// The visible week's seven days, Monday first, each with its sessions (none on a rest day).
+    /// The visible week's seven days, Monday first, each with its plan items and sessions (none on a free day).
     var sessions: Loadable<[WeekDaySection]> = .loading
     /// The open lift sheet or day picker, if any.
     var destination: Destination?
@@ -21,6 +21,8 @@ nonisolated struct WeekState: Equatable, Sendable {
     var templates: [WeekTemplateChoice] = []
     /// Whether the visible week has template days to copy to the next week.
     var canPlanNextWeek = false
+    /// The visible week's coach plan line; nil when sync is off or the week's plan is not kept.
+    var plan: WeekPlanHeader?
 
     enum Destination: Equatable, Sendable {
         /// The lift sheet for a planned session.
@@ -31,6 +33,14 @@ nonisolated struct WeekState: Equatable, Sendable {
         case add(WeekAddDay)
         /// The template picker for changing a planned session's workout.
         case change(WeekSessionRef)
+        /// The read-only detail sheet of a coach plan item.
+        case planItem(WeekPlanItem)
+    }
+
+    /// The plan item the detail sheet is open for.
+    var planItemTarget: WeekPlanItem? {
+        guard case .planItem(let item) = destination else { return nil }
+        return item
     }
 
     /// The session the lift sheet is open for.
@@ -79,7 +89,7 @@ nonisolated struct WeekDay: Equatable, Sendable {
     var status: Status
 }
 
-/// One day of the visible week in the list. A day with no sessions is a rest day.
+/// One day of the visible week in the list: its plan items and Lift sessions. A day with no rows is a free day.
 nonisolated struct WeekDaySection: Equatable, Sendable, Identifiable {
     let id: LocalDay
     /// "Monday, 2 March", or "Today · Monday, 2 March": what VoiceOver reads for the date badge.
@@ -90,7 +100,11 @@ nonisolated struct WeekDaySection: Equatable, Sendable, Identifiable {
     let dayNumber: String
     let isToday: Bool
     let isSelected: Bool
-    let sessions: [SessionSummary]
+    /// Plan items and sessions in the order they show.
+    let entries: [WeekEntry]
+
+    /// The day's Lift sessions, wherever they show among the items.
+    var sessions: [SessionSummary] { entries.compactMap(\.session) }
 }
 
 /// A planned session named in the lift sheet.

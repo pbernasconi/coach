@@ -40,11 +40,12 @@ nonisolated struct WorkoutExerciseOptions: Equatable, Sendable, Identifiable {
 }
 
 extension WorkoutOverview {
-    /// The header's first line: "Thursday, 5 March", then "Started 9:05" or "Finished" when they apply.
+    /// The header's first line: "Thursday, 5 March", then "Finished" and the time it took once it is finished (the
+    /// start shows beside the running clock).
     var dayLine: String {
         var parts = [dayTitle]
-        if let started, !isFinished { parts.append(started) }
         if isFinished { parts.append(String(localized: "Finished")) }
+        if let durationText { parts.append(durationText) }
         return parts.joined(separator: " · ")
     }
 }

@@ -84,17 +84,20 @@ public struct LiveSessionRepository: SessionRepository {
     public func reschedule(_ sessionID: UUID, _ action: RescheduleAction) async throws -> RescheduleUndo {
         let op: OutboxOp = action == .remove ? .delete : .update
         let change = try await store.change(SessionRecord.self, id: sessionID, op: op) { session, stamp in
+            let day = session.day
             switch action {
             case .move(let day): session.day = day
             case .pushToNextWeek: session.day = session.day.adding(days: 7)
             case .remove: session.deletedAt = stamp
             }
+            if session.day != day { session.dayMovedAt = stamp }  // the server moves the plan workout after it
         }
         return RescheduleUndo(sessionID: sessionID, previousDay: change.before.day)
     }
 
     public func undo(_ change: RescheduleUndo) async throws {
-        _ = try await store.change(SessionRecord.self, id: change.sessionID, includeDeleted: true) { session, _ in
+        _ = try await store.change(SessionRecord.self, id: change.sessionID, includeDeleted: true) { session, stamp in
+            if session.day != change.previousDay { session.dayMovedAt = stamp }  // the undo of a move moves it back
             session.day = change.previousDay
             session.deletedAt = nil
         }

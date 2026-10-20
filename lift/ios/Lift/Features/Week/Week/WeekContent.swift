@@ -3,7 +3,7 @@ import KoboTokens
 import SwiftUI
 
 /// Dumb view: the header with Plan next week and Add workout, the week strip pinned under it, the visible week's days
-/// below, the lift sheet and the day picker (SCR-2).
+/// below, the lift sheet, the day picker and the plan item sheet (SCR-2).
 struct WeekContent: View {
     let state: WeekState
     let send: (WeekAction) -> Void
@@ -19,6 +19,7 @@ struct WeekContent: View {
             .tabRootHeader { header }
             .weekSessionOptions(target: state.optionsTarget, send: send)
             .weekTemplatePickers(state: state, send: send)
+            .weekPlanItemSheet(item: state.planItemTarget, send: send)
             .koboSheet(
                 item: .action(state.moveTarget) { if $0 == nil { send(.destinationDismissed) } },
                 title: { String(localized: "Move \($0.title)") },

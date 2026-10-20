@@ -17,6 +17,8 @@ nonisolated struct SessionSummary: Equatable, Sendable, Identifiable {
     let note: String?
     /// The template the session was planned from, if any.
     let templateID: UUID?
+    /// When this phone last moved the session to another day (schema v8), or nil.
+    let dayMovedAt: Date?
 
     init(
         id: UUID,
@@ -27,7 +29,8 @@ nonisolated struct SessionSummary: Equatable, Sendable, Identifiable {
         totalSets: Int,
         isDone: Bool,
         note: String? = nil,
-        templateID: UUID? = nil
+        templateID: UUID? = nil,
+        dayMovedAt: Date? = nil
     ) {
         self.id = id
         self.day = day
@@ -38,6 +41,7 @@ nonisolated struct SessionSummary: Equatable, Sendable, Identifiable {
         self.isDone = isDone
         self.note = note
         self.templateID = templateID
+        self.dayMovedAt = dayMovedAt
     }
 
     init(detail: SessionDetail) {
@@ -52,7 +56,8 @@ nonisolated struct SessionSummary: Equatable, Sendable, Identifiable {
             totalSets: sets.count,
             isDone: detail.session.finishedAt != nil || allHandled,
             note: SessionText.notePreview(detail.session.note),
-            templateID: detail.session.templateID
+            templateID: detail.session.templateID,
+            dayMovedAt: detail.session.dayMovedAt
         )
     }
 

@@ -5,8 +5,16 @@ import LiftStore
 extension WorkoutOverview {
     /// The screen's view of a stored session, with hints worked out by the LiftCore rules on the gym's plates and
     /// each set's values last time from `previous` (by library exercise id).
-    init(detail: SessionDetail, days: DayCalendar, previous: [UUID: PreviousSets], gym: GymSetup) {
+    /// `today` marks a session on an earlier day (opened from History): it gets no Start button.
+    init(
+        detail: SessionDetail,
+        days: DayCalendar,
+        previous: [UUID: PreviousSets],
+        gym: GymSetup,
+        today: LocalDay? = nil
+    ) {
         let sets = detail.items.flatMap(\.sets)
+        let startedAt = detail.session.startedAt ?? sets.filter { $0.status == .done }.compactMap(\.completedAt).min()
         self.init(
             title: detail.session.title,
             dayTitle: days.longTitle(of: detail.session.day),
@@ -18,9 +26,10 @@ extension WorkoutOverview {
             },
             note: detail.session.note,
             warmUpNote: detail.session.warmUpNote,
-            started: (detail.session.startedAt ?? sets.filter { $0.status == .done }.compactMap(\.completedAt).min())
-                .map(days.started(at:)),
-            isFinished: detail.session.finishedAt != nil
+            started: startedAt.map(days.started(at:)),
+            startedAt: startedAt,
+            finishedAt: detail.session.finishedAt,
+            isPastDay: today.map { detail.session.day < $0 } ?? false
         )
     }
 }
@@ -96,6 +105,14 @@ extension WorkoutExercise {
 }
 
 extension SessionDetail {
+    /// The rest after logging `setID`: its exercise's rest (or the default), or 0 when no other planned set is left in
+    /// the session, since the workout is done.
+    func restSeconds(afterLogging setID: UUID) -> Int {
+        let isLast = !items.contains { item in item.sets.contains { $0.status == .planned && $0.id != setID } }
+        guard !isLast, case (let item, _)? = find(setID: setID) else { return 0 }
+        return item.exercise.restSeconds ?? RestTimer.defaultSeconds
+    }
+
     /// The set with `setID` and the exercise it belongs to, or nil when the session has no such set.
     func find(setID: UUID) -> (Item, SetRecord)? {
         for item in items {

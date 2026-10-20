@@ -44,6 +44,7 @@ enum CompositionRoot {
         let sessions = LiveSessionRepository(database: database, now: now, makeID: makeID)
         let mediaLoader = makeMediaLoader()
         let gym = gym(source: source)
+        let sync = makeSync(database: database, isSaved: source.isSaved, now: now, makeID: makeID)
         return AppDependencies(
             sessions: sessions,
             exercises: LiveExerciseRepository(database: database, now: now, makeID: makeID),
@@ -62,8 +63,9 @@ enum CompositionRoot {
             gym: gym,
             pasteboard: SystemPasteboard(),
             outbox: LiveOutboxRepository(database: database),
-            sync: makeSync(database: database, isSaved: source.isSaved, now: now, makeID: makeID),
-            health: makeHealth(sessions: sessions, isSaved: source.isSaved)
+            sync: sync,
+            health: makeHealth(sessions: sessions, isSaved: source.isSaved),
+            coachPlan: makeCoachPlan(source: source, sessions: sessions, sync: sync, now: now, calendar: appCalendar)
         )
     }
 

@@ -48,7 +48,8 @@ import Testing
             router: router,
             now: SessionBuilder.now,
             calendar: calendar,
-            units: units
+            units: units,
+            coachPlan: DisabledCoachPlan()
         )
         await vm.run()
         return vm
@@ -102,7 +103,8 @@ import Testing
             router: router,
             now: SessionBuilder.now,
             calendar: calendar,
-            units: InMemoryUnitSettings(.kg)
+            units: InMemoryUnitSettings(.kg),
+            coachPlan: DisabledCoachPlan()
         )
         await vm.run()
 
@@ -203,7 +205,8 @@ import Testing
             router: router,
             now: SessionBuilder.now,
             calendar: calendar,
-            units: InMemoryUnitSettings(.kg)
+            units: InMemoryUnitSettings(.kg),
+            coachPlan: DisabledCoachPlan()
         )
         await vm.run()
         guard case .loaded(let days) = vm.state.sessions else {
