@@ -2,7 +2,7 @@ import { ownerForSignedInUser } from '@/lib/owner';
 import { safe } from '@/lib/safe';
 import { loadWeek } from '@/lib/plan/queries';
 import { dataBounds, importedIds, loadLibrary, loadRange, userSettings } from '@/lib/plan/month';
-import { initialRange, monthOfWeek, startWeek } from '@/lib/plan/scroll.mjs';
+import { initialRange, monthOfWeek, startWeek, topWeekFor } from '@/lib/plan/scroll.mjs';
 import { cookieTimeZone } from '@/lib/plan/timezone';
 import { loadForecast, placeFrom } from '@/lib/plan/weather';
 import { mondayOf, todayIn } from '@/lib/plan/week.mjs';
@@ -41,6 +41,7 @@ export default async function PlanPage({ searchParams }: { searchParams: Promise
         <MonthCalendar
           toolbar={<ViewToggle view="month" weekHref={`/plan?week=${anchor}`} monthHref={`/plan?view=month&month=${month}`} />}
           anchor={anchor}
+          openAt={monthParam && /^\d{4}-(0[1-9]|1[0-2])$/.test(monthParam) ? anchor : topWeekFor(anchor, bounds.earliest)}
           range={range}
           bounds={bounds}
           weather={weather}

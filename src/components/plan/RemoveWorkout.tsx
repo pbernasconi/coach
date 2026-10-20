@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -15,13 +16,15 @@ type Props = {
   className?: string;
   /** Classes for the small trash button only (variant "icon"). */
   iconClassName?: string;
+  /** Show the confirm step as a panel at the bottom of the window (for small, clipped cells such as the month grid). */
+  floating?: boolean;
 };
 
 /**
  * A Remove button with a confirm step inside the page: the first tap shows the question and what happens,
  * the second tap removes. Escape or Cancel closes it.
  */
-export default function RemoveWorkout({ workout, onRemove, disabled, variant = 'text', className, iconClassName }: Props) {
+export default function RemoveWorkout({ workout, onRemove, disabled, variant = 'text', className, iconClassName, floating = false }: Props) {
   const [asking, setAsking] = useState(false);
   const confirmRef = useRef<HTMLButtonElement>(null);
   const notice = removeNotice(workout);
@@ -49,13 +52,17 @@ export default function RemoveWorkout({ workout, onRemove, disabled, variant = '
     );
   }
 
-  return (
+  const panel = (
     <div
       role="alertdialog"
       aria-label={notice.question}
       onKeyDown={(e) => { if (e.key === 'Escape') setAsking(false); }}
       onClick={(e) => e.stopPropagation()}
-      className={cn('w-full space-y-1.5 rounded-md border border-[var(--plan-missed)] bg-background p-2 text-xs', className)}
+      className={cn(
+        'space-y-1.5 rounded-md border border-[var(--plan-missed)] bg-background p-2 text-xs',
+        floating ? 'fixed inset-x-0 bottom-4 z-50 mx-auto w-[min(24rem,calc(100%-2rem))] p-3 shadow-xl' : 'w-full',
+        !floating && className
+      )}
     >
       <p className="font-medium">{notice.question}</p>
       <ul className="space-y-0.5 text-muted-foreground">
@@ -76,4 +83,5 @@ export default function RemoveWorkout({ workout, onRemove, disabled, variant = '
       </div>
     </div>
   );
+  return floating && typeof document !== 'undefined' ? createPortal(panel, document.body) : panel;
 }

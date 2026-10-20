@@ -68,8 +68,10 @@ export default function WorkoutLibrary({
                 onDragStart={(e) => {
                   e.dataTransfer.setData(LIBRARY_MIME, item.id);
                   e.dataTransfer.effectAllowed = 'copy';
+                  e.currentTarget.classList.add('opacity-50');
                 }}
-                className="cursor-grab rounded-md border bg-card text-xs shadow-sm active:cursor-grabbing"
+                onDragEnd={(e) => e.currentTarget.classList.remove('opacity-50')}
+                className="cursor-grab rounded-md border bg-card text-xs shadow-sm transition-[box-shadow,opacity] hover:shadow-md active:cursor-grabbing"
               >
                 <button
                   type="button"
