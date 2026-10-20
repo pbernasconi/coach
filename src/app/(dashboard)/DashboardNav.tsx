@@ -17,6 +17,7 @@ const navLinks = [
   { href: '/', label: 'Performance' },
   { href: '/plan', label: 'Plan' },
   { href: '/lift', label: 'Lift' },
+  { href: '/gym', label: 'Gym' },
   { href: '/settings', label: 'Settings' },
 ];
 

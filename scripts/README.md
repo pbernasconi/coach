@@ -15,6 +15,7 @@ All scripts use `/opt/homebrew/bin/node --env-file=.env.local` (env vars come fr
 | `apple-notes-workouts.mjs` | Pull workout-shaped notes from Apple Notes via osascript. JSON to stdout. | `coach-profile.mjs` |
 | `strava-backfill.mjs` | Incremental sync by default (uses `last_synced_at`). Pulls list, optionally `--detailed` (description, laps, splits, suffer_score) and `--streams` (HR/watts/etc.). Computes & persists `tss`, `tss_method`, `zone_times` per activity, then rebuilds `daily_training_load` (CTL/ATL/TSB). `--days N` or `--force` for explicit windows. | `coach-profile.mjs` auto, manual |
 | `calendar-sync.mjs` | Pull events from all active calendar connections into `calendar_events`. Refreshes OAuth on each run. Marks deleted events as cancelled. `--days-back 7` / `--days-forward 30` configurable. | `coach-profile.mjs` auto, manual |
+| `mx3.mjs` | Book MX3 Fitness private stations: `status`, `slots`, `book` (`--dry-run`), `cancel --confirm`. Logic lives in `src/lib/mx3/` (shared with the `/gym` web page). Needs `MX3_USERNAME` / `MX3_PASSWORD`. | `/gym` |
 
 ## One-off (kept for reference, not in the workflow)
 
@@ -61,6 +62,11 @@ LLM that then writes files and pushes events to his real calendar. So:
 - `/plan` Step 5's human confirm is **not optional** — it's the last gate between a
   hostile event title and attacker-shaped calendar events. `--yes` skips the
   questions, not the human.
+
+**MX3's grid toggles.** On mx3fitness.com, clicking your own slot *cancels* it. So `src/lib/mx3`
+only ever sends a reserve request copied from a slot the page titles "Click to reserve", refuses when you
+already hold that slot, and cancels only by reservation id from your own list. Don't add a code path that
+posts a slot's request without that check.
 
 **`sameCity()` is an exact token match, not substring.** `includes` treated
 "San Francisco del Rincon" (Guanajuato, MX) as home — which would silently apply SF

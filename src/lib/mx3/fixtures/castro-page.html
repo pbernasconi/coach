@@ -1,0 +1,21 @@
+<html><body>
+<p>Hi Paolo, you have <b id='credit_count'>4</b> Gym Credits remaining.</p>
+<div id="my_reservations">
+  <div>Castro 3: Tuesday 10/20 at 2:00pm <a href='reserve-castro-station?unreserve=128242'>cancel reservation</a></div>
+  <div>Castro 1: Friday 01/08 at 6:00am <a href='reserve-castro-station?unreserve=128300'>cancel reservation</a></div>
+</div>
+<span class='day-box' title='2026-10-20'>Tue</span><span class='day-box' title='2026-10-21'>Wed</span>
+<div id='buttons_for_2026-10-20'>
+<div><a class="button-link orange small" onclick="refreshButtons('buttons_for_2026-10-20','locID=51551&amp;refreshDate=2026-10-20&amp;reservableType=station&amp;forMember=3934');">Private Station</a> <a class="button-link  small" onclick="refreshButtons('buttons_for_2026-10-20','locID=51551&amp;refreshDate=2026-10-20&amp;reservableType=cardio&amp;forMember=3934');">Cardio</a></div>
+<div class='time-list castro-1'><span class='station-name'>Castro 1</span></br>
+<div style='position:relative;'><p id='res_time_200_2026-10-20_1:00pm'><a  onclick="loadRequest('res_time_200_2026-10-20_1:00pm','v2=true&reserve=200&res_date=2026-10-20&res_time=1:00pm&loadAjax=true&layout=blank'); return false;" href='reserve-castro-station?v2=true&reserve=200&res_date=2026-10-20&res_time=1:00pm' title='Click to reserve' class='button-link  '>1:00pm </a></p></div>
+<div style='position:relative;'><p id='res_time_200_2026-10-20_2:00pm'><a    title='Reserved by Reserved' class='button-link  reserved gray '>2:00pm <span class='res-name'>Reserved</span></a></p></div>
+</div>
+<div class='time-list castro-3'><span class='station-name'>Castro 3</span></br>
+<div style='position:relative;'><p id='res_time_202_2026-10-20_2:00pm'><a  onclick="loadRequest('res_time_202_2026-10-20_2:00pm','v2=true&unreserve=128242&resourceID=202&loadAjax=true&layout=blank'); return false;" title='Reserved by Paolo' class='button-link  reserved green '>2:00pm <span class='res-name'>Paolo</span></a></p></div>
+<div style='position:relative;'><p id='res_time_202_2026-10-20_3:00pm'><a  onclick="loadRequest('res_time_202_2026-10-20_3:00pm','v2=true&reserve=202&res_date=2026-10-20&res_time=3:00pm&loadAjax=true&layout=blank'); return false;" title='Click to reserve' class='button-link  '>3:00pm </a></p></div>
+<div style='position:relative;'><p id='res_time_202_2026-10-20_6:00am'><a    title='Reservation window closed' class='button-link  gray '>6:00am </a></p></div>
+<div style='position:relative;'><p id='res_time_202_2026-10-20_7:00am'><a    title='Reserved for recurring appointment.' class='button-link  reserved gray '>7:00am <span class='res-name'>Reserved</span></a></p></div>
+</div>
+</div>
+</body></html>
