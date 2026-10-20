@@ -497,7 +497,7 @@ md.push(`## Workout rotation (plans/PLAN-STRUCTURE.md order)`);
 md.push(`- **Next workouts, in order**: ${rotation.nextLabels.join(' → ')}`);
 md.push(`- **Last time** (progress it when done; repeat or step back when not):`);
 for (const [bank, l] of Object.entries(rotation.last)) {
-  md.push(`  - ${label(bank)}: ${l.date}, ${l.sport}, ${l.intensity ?? 'no prescription saved'}, ${l.done ? 'done' : 'NOT done'}`);
+  md.push(`  - ${label(bank)}: ${l.date}, ${l.sport}, ${l.level != null ? `level ${l.level} (next: ${l.done ? l.level + 1 : l.level})` : 'no level saved (start at level 0, or match the prescription)'}, ${l.intensity ?? 'no prescription saved'}, ${l.done ? 'done' : 'NOT done'}`);
 }
 if (Object.keys(rotation.last).length === 0) md.push('  - _No bank workout planned yet: start each one at its first step._');
 md.push(`- **10k test**: ${rotation.lastTest10k ? `last ${rotation.lastTest10k} (${rotation.weeksSinceTest10k} weeks ago)` : 'none yet'}${rotation.test10kDue ? ' → due: put one in this horizon in place of a workout' : ''}`);

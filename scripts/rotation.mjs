@@ -58,14 +58,14 @@ export function rotationFromPlans(plans, targetKey) {
 
   const bankEvents = events.flatMap((e) => {
     const t = parseType(e.workoutType);
-    return t ? [{ ...t, date: e.start.slice(0, 10), intensity: e.intensity ?? null, done: Boolean(e.done) }] : [];
+    return t ? [{ ...t, date: e.start.slice(0, 10), intensity: e.intensity ?? null, level: e.level ?? null, done: Boolean(e.done) }] : [];
   });
   const i = nextIndex(bankEvents.map((e) => e.bank));
   const next = [0, 1, 2].map((k) => ORDER[(i + k) % ORDER.length]);
 
   /** The newest of each bank workout: what it was, and whether it was done (then progress it; else repeat). */
   const last = {};
-  for (const e of bankEvents) last[e.bank] = { date: e.date, sport: e.sport, intensity: e.intensity, done: e.done };
+  for (const e of bankEvents) last[e.bank] = { date: e.date, sport: e.sport, intensity: e.intensity, ...(e.level != null ? { level: e.level } : {}), done: e.done };
 
   const tests = events.filter((e) => e.workoutType === TEST_10K);
   const lastTest = tests.at(-1)?.start.slice(0, 10) ?? null;
@@ -88,7 +88,7 @@ export async function loadRotation(sql, userId, targetKey) {
   try {
     const rows = await sql`
       SELECT to_char(p.week_start_date, 'YYYY-MM-DD') AS week, to_char(a.scheduled_date, 'YYYY-MM-DD') AS day,
-        a.workout_type, a.start_time, a.intensity,
+        a.workout_type, a.start_time, a.intensity, (a.steps->>'level')::int AS level,
         EXISTS (
           SELECT 1 FROM strava_activities s
           WHERE s.user_id = p.user_id AND s.start_date_local::date = a.scheduled_date::date
@@ -100,7 +100,7 @@ export async function loadRotation(sql, userId, targetKey) {
     for (const r of rows) {
       if (!byWeek.has(r.week)) byWeek.set(r.week, { weekStart: r.week, events: [] });
       byWeek.get(r.week).events.push({
-        workoutType: r.workout_type, start: `${r.day}T${r.start_time ?? '00:00'}`, intensity: r.intensity, done: Boolean(r.done),
+        workoutType: r.workout_type, start: `${r.day}T${r.start_time ?? '00:00'}`, intensity: r.intensity, level: r.level, done: Boolean(r.done),
       });
     }
     return rotationFromPlans([...byWeek.values()], targetKey);

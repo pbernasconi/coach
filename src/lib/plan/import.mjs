@@ -9,16 +9,36 @@
 import { createId } from '@paralleldrive/cuid2';
 import { LIFT_MARKER } from './lift-plan.mjs';
 import { sportOf } from './week.mjs';
+import { bankWorkout } from '../workouts/bank.mjs';
+import { totals, validate } from '../workouts/steps.mjs';
 
 function minutesBetween(start, end) {
   const ms = Date.parse(end) - Date.parse(start);
   return Number.isFinite(ms) && ms > 0 ? Math.round(ms / 60_000) : null;
 }
 
+/**
+ * The steps of a plan event: its own `steps` (a structured workout), or `workout: { bank, level }` built from the
+ * coach's bank for the event's sport (from workoutType: ride-… or run-…) and planned time. Null for neither.
+ */
+export function stepsOf(e, duration) {
+  if (e.steps) {
+    const errors = validate(e.steps);
+    if (errors.length) throw new Error(`${e.title}: ${errors.join('; ')}`);
+    return e.steps;
+  }
+  if (!e.workout?.bank) return null;
+  const sport = e.workout.sport ?? (/^run-/.test(e.workoutType ?? '') ? 'run' : 'ride');
+  return bankWorkout(e.workout.bank, sport, e.workout.level ?? 0, e.workout.minutes ?? duration ?? 60, { reps: e.workout.reps, topMin: e.workout.topMin, zone: e.workout.zone });
+}
+
 /** The rows a plan JSON describes, without database ids. */
 export function rowsFromPlan(plan) {
   const weekStart = plan.weekStart;
-  const rows = (plan.events ?? []).map((e, i) => ({
+  const rows = (plan.events ?? []).map((e, i) => {
+    const duration = e.end ? minutesBetween(e.start, e.end) : null;
+    const steps = stepsOf(e, duration);
+    return {
     sourceKey: `${weekStart}#${i}`,
     date: String(e.start).slice(0, 10),
     startTime: String(e.start).length > 10 ? String(e.start).slice(11, 16) : null,
@@ -29,12 +49,15 @@ export function rowsFromPlan(plan) {
     workoutType: e.workoutType ?? null,
     liftTemplate: e.liftTemplate ?? null,
     intensity: e.intensity ?? null,
-    duration: e.end ? minutesBetween(e.start, e.end) : null,
-    tss: typeof e.tss === 'number' ? e.tss : null,
+    duration,
+    // With steps, the planned TSS comes from them unless the plan gives one.
+    tss: typeof e.tss === 'number' ? e.tss : steps ? totals(steps).tss : null,
+    steps,
     why: e.why ?? null,
     description: e.description ?? null,
     sortOrder: i,
-  }));
+  };
+  });
   for (const r of plan.rest ?? []) {
     rows.push({
       sourceKey: `${weekStart}#rest-${r.day}`,
@@ -46,6 +69,7 @@ export function rowsFromPlan(plan) {
       activityType: 'rest',
       workoutType: 'rest',
       liftTemplate: null,
+      steps: null,
       intensity: 'rest',
       duration: 0,
       tss: 0,
@@ -109,7 +133,8 @@ export async function importPlan(sql, userId, plan, markdown) {
         UPDATE training_plan_activities SET
           scheduled_date = ${r.date}, start_time = ${r.startTime}, end_time = ${r.endTime}, time_zone = ${r.timeZone},
           title = ${r.title}, activity_type = ${r.activityType}, workout_type = ${r.workoutType},
-          lift_template = ${r.liftTemplate}, intensity = ${intensity}, duration = ${r.duration}, tss = ${r.tss},
+          lift_template = ${r.liftTemplate}, steps = ${r.steps ? JSON.stringify(r.steps) : null}::jsonb,
+          intensity = ${intensity}, duration = ${r.duration}, tss = ${r.tss},
           why = ${r.why}, description = ${description}, sort_order = ${r.sortOrder}, updated_at = NOW()
         WHERE id = ${old.id}`;
       counts.updated++;
@@ -117,10 +142,11 @@ export async function importPlan(sql, userId, plan, markdown) {
       await sql`
         INSERT INTO training_plan_activities (
           id, plan_id, source_key, scheduled_date, start_time, end_time, time_zone, title, activity_type,
-          workout_type, lift_template, intensity, duration, tss, why, description, sort_order)
+          workout_type, lift_template, steps, intensity, duration, tss, why, description, sort_order)
         VALUES (
           ${createId()}, ${planId}, ${r.sourceKey}, ${r.date}, ${r.startTime}, ${r.endTime}, ${r.timeZone}, ${r.title},
-          ${r.activityType}, ${r.workoutType}, ${r.liftTemplate}, ${r.intensity}, ${r.duration}, ${r.tss}, ${r.why},
+          ${r.activityType}, ${r.workoutType}, ${r.liftTemplate}, ${r.steps ? JSON.stringify(r.steps) : null}::jsonb,
+          ${r.intensity}, ${r.duration}, ${r.tss}, ${r.why},
           ${r.description}, ${r.sortOrder})`;
       counts.inserted++;
     }
