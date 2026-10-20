@@ -4,6 +4,9 @@ import { sessionSummaries } from '@/lib/lift-dashboard/stats.mjs';
 import { addDays, adaptForFeel, matchWeek, mondayOf, sportOfStrava, undoAdapts } from './week.mjs';
 import { toDay } from '@/lib/db-time.mjs';
 
+/** A structured workout (src/lib/workouts/steps.mjs). */
+export type StructuredWorkout = { version: 1; sport: 'ride' | 'run'; name: string; bank?: string; level?: number; notes?: string; steps: unknown[] };
+
 export type Feel = 'wrecked' | 'tired' | 'ok' | 'fresh';
 export const FEELS: Feel[] = ['wrecked', 'tired', 'ok', 'fresh'];
 
@@ -23,6 +26,8 @@ export type Workout = {
   status: 'planned' | 'skipped';
   adaptedFrom: Record<string, unknown> | null;
   sortOrder: number;
+  /** The workout as steps (src/lib/workouts/steps.mjs), or null for a text-only workout. */
+  steps?: StructuredWorkout | null;
   // Derived for display
   state: 'done' | 'skipped' | 'missed' | 'today' | 'planned';
   match: { source: 'strava' | 'lift'; id: string; name: string } | null;

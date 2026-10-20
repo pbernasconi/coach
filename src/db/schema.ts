@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, jsonb, integer, boolean, real, uniqueIndex } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, jsonb, integer, boolean, real, uniqueIndex, primaryKey } from 'drizzle-orm/pg-core';
 import { createId } from '@paralleldrive/cuid2';
 
 /**
@@ -230,6 +230,10 @@ export const trainingPlanActivities = pgTable('training_plan_activities', {
   // Strength: the Lift template the workout uses, and the Lift session planned from it (scripts/lift-plan.mjs)
   liftTemplate: text('lift_template'),
   liftSessionId: text('lift_session_id'), // lower-case UUID of the lift_rows 'session' row
+
+  // Cardio: the workout as steps (src/lib/workouts/steps.mjs). The source for the chart, planned time and TSS, and
+  // the copies on Zwift and the Garmin watch (scripts/workout-sync.mjs).
+  steps: jsonb('steps').$type<Record<string, unknown> | null>(),
 
   // Metadata
   createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
@@ -594,6 +598,20 @@ export type CalendarSyncHistory = typeof calendarSyncHistory.$inferSelect;
 export type NewCalendarSyncHistory = typeof calendarSyncHistory.$inferInsert;
 export type TrainingPlan = typeof trainingPlans.$inferSelect;
 export type NewTrainingPlan = typeof trainingPlans.$inferInsert;
+/**
+ * One structured workout sent to a service (intervals.icu, which passes it on to Zwift and Garmin). One row per
+ * plan workout and target; `content_hash` is the hash of what was sent, so a re-run only updates what changed.
+ */
+export const workoutSyncs = pgTable('workout_syncs', {
+  activityId: text('activity_id').notNull(), // training_plan_activities.id (no foreign key: the row can go first)
+  target: text('target').notNull(), // 'intervals'
+  remoteId: text('remote_id').notNull(),
+  contentHash: text('content_hash').notNull(),
+  status: text('status').notNull(), // 'ok' | 'error'
+  lastError: text('last_error'),
+  syncedAt: timestamp('synced_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+}, (table) => [primaryKey({ columns: [table.activityId, table.target] })]);
+
 export type TrainingPlanActivity = typeof trainingPlanActivities.$inferSelect;
 export type NewTrainingPlanActivity = typeof trainingPlanActivities.$inferInsert;
 export type UserGoals = typeof userGoals.$inferSelect;

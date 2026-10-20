@@ -7,6 +7,9 @@ import { ArrowUpRight, ChevronLeft, ChevronRight, Dumbbell, ExternalLink, X } fr
 import SportIcon from '@/components/SportIcon';
 import ComplianceMark from '@/components/plan/ComplianceMark';
 import LiftSessionSets from '@/components/plan/LiftSessionSets';
+import WorkoutChart from '@/components/workouts/WorkoutChart';
+import WorkoutSteps from '@/components/workouts/WorkoutSteps';
+import { totals } from '@/lib/workouts/steps.mjs';
 import PeakCurve from '@/components/charts/PeakCurve';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -779,10 +782,42 @@ function LiftModal({ id, planned, onClose }: { id: string; planned: CalendarWork
 // ---------------------------------------------------------------------------------------------------------------
 // A planned workout that is not done yet
 
+/** Where the steps go: intervals.icu passes runs to the Garmin watch and indoor rides to Zwift. */
+function DevicesPanel({ w }: { w: CalendarWorkout }) {
+  const ride = w.steps?.sport === 'ride';
+  const indoor = ride && /zwift|indoor|virtual|trainer/i.test(`${w.title} ${w.workoutType ?? ''}`);
+  const device = !ride ? 'Garmin watch' : indoor ? 'Zwift' : 'Garmin (outdoor ride)';
+  const s = w.sync;
+  return (
+    <Panel title="On your devices">
+      <div className="space-y-2 rounded-lg border p-3 text-sm">
+        <p className="text-[var(--viz-ink)]">
+          {device} <span className="text-[var(--viz-muted)]">through intervals.icu</span>
+        </p>
+        {s ? (
+          <p className={cn('text-xs', s.status === 'ok' ? 'text-[var(--viz-up)]' : 'text-[var(--viz-down)]')}>
+            {s.status === 'ok' ? 'Sent' : 'Problem'}
+            {s.syncedAt ? ` · ${new Date(s.syncedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}` : ''}
+            {s.error ? ` · ${s.error}` : ''}
+          </p>
+        ) : (
+          <p className="text-xs text-[var(--viz-muted)]">Not sent yet. It goes out with the next sync; devices get the coming week.</p>
+        )}
+        {ride && (
+          <a href={`/api/plan/workouts/${encodeURIComponent(w.id)}/zwo`} className="inline-block text-xs underline underline-offset-2">
+            Download .zwo for Zwift
+          </a>
+        )}
+      </div>
+    </Panel>
+  );
+}
+
 function PlannedModal({ w, onClose }: { w: CalendarWorkout; onClose: () => void }) {
   const targets = zonesFor(w) as { zone: string; label: string; target: string }[];
   // With the Lift session shown set by set, the text copy of the sets (scripts/lift-plan.mjs) is left out.
   const text = w.lift && w.description ? w.description.split(LIFT_MARKER)[0].trim() : w.description;
+  const plan = w.steps ? totals(w.steps as never) : null;
   return (
     <>
       <Header
@@ -802,11 +837,20 @@ function PlannedModal({ w, onClose }: { w: CalendarWorkout; onClose: () => void 
           stats={[
             { label: 'Planned time', value: w.duration ? dur(w.duration) : '–' },
             w.tss != null && { label: 'Planned TSS', value: String(Math.round(w.tss)) },
+            plan && plan.if > 0 && { label: 'Planned IF', value: plan.if.toFixed(2) },
           ]}
         />
         <div className="grid gap-6 p-4 sm:p-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
           <div className="space-y-6">
-            {text ? <Description title="The workout" text={text} /> : !w.lift && <p className="text-sm text-muted-foreground">No description.</p>}
+            {w.steps && (
+              <Panel title="Structure" note={w.steps.name}>
+                <div className="space-y-3 rounded-lg border p-3">
+                  <WorkoutChart workout={w.steps} />
+                  <WorkoutSteps workout={w.steps} />
+                </div>
+              </Panel>
+            )}
+            {text ? <Description title={w.steps ? 'Notes' : 'The workout'} text={text} /> : !w.lift && !w.steps && <p className="text-sm text-muted-foreground">No description.</p>}
             {w.lift && (
               <Panel title="Lift session" note={<Link href={liftHref(w.lift.id)} className="underline underline-offset-2">Open in full</Link>}>
                 <div className="rounded-lg border p-3">
@@ -821,12 +865,13 @@ function PlannedModal({ w, onClose }: { w: CalendarWorkout; onClose: () => void 
             )}
           </div>
           <div className="space-y-6">
-            {w.intensity && !w.lift && (
+            {w.steps && <DevicesPanel w={w} />}
+            {w.intensity && !w.lift && !w.steps && (
               <Panel title="Intensity">
                 <p className="text-sm text-[var(--viz-ink)]">{w.intensity}</p>
               </Panel>
             )}
-            {targets.length > 0 && (
+            {targets.length > 0 && !w.steps && (
               <Panel title="Zone targets">
                 <ul className="divide-y rounded-lg border text-sm">
                   {targets.map((t) => (

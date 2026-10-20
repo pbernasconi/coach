@@ -132,6 +132,7 @@ Write the draft `plans/YYYY-MM-DD.json` (local and gitignored: an input, not a r
       "tss": 0,
       "intensity": "VO2 A: 5×3 min Z5 @ 300–320 W",
       "liftTemplate": "Heavy barbell | Upper (dumbbells) | Hotel gym (dumbbells) — strength workouts only, the exact Lift template name",
+      "workout": { "bank": "threshold-a|threshold-b|vo2-a|vo2-b|tempo|easy|long|test-10k", "level": 0, "reps": 6, "topMin": 45, "zone": "Z1" },
       "why": "1-line rationale (shows in the table)",
       "description": "Full session detail — this is what lands in the calendar event body. Strength: only the coach's note (effort, what to cut when short on time); the planned sets are added from Lift."
     }
@@ -155,7 +156,15 @@ is not a route around it.
 node --env-file=.env.local scripts/plan-import.mjs --plan plans/YYYY-MM-DD.json
 node --env-file=.env.local scripts/add-workouts-to-calendar.mjs --week YYYY-MM-DD
 node --env-file=.env.local scripts/lift-plan.mjs
+node --env-file=.env.local scripts/workout-sync.mjs
 ```
+**Structured workouts.** Every run and ride gets `workout`: the bank workout (src/lib/workouts/bank.mjs) that the
+import turns into steps (warm-up, repeats, targets in % of FTP or % of LTHR). `level` is the step of its progression:
+the profile's "Workout rotation" gives the last level and whether it was done (done → next level; not done → same
+or one lower). `easy` takes `reps` (strides or sprints, 0 for none) and `zone` ("Z1" for a recovery spin); `long`
+takes `topMin` (minutes at the top of Z2). The planned time comes from start/end. Write the description as the
+coach's note only: the steps carry the numbers. `workout-sync.mjs` sends runs to the Garmin watch and indoor
+(Zwift) rides to Zwift through intervals.icu; outdoor rides stay in Coach. Report any sync error it prints.
 `lift-plan.mjs` plans each strength workout as a session in Lift (every set with its target), links it to the
 workout, adds the sets to the description and pushes the calendar again. Report the planned top sets to him.
 The import is idempotent; workouts he moved, skipped or adapted on the web keep their web version. The calendar
