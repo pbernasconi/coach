@@ -80,7 +80,8 @@ Field rules:
 - `sport`: an id from `design/sports.json` (the phone's `SportStyle.swift`). Unknown ids: the phone uses `other`.
 - `title`: without the leading emoji (`plainTitle`).
 - `state`: `planned | today | done | missed | skipped` (from `matchWeek`). `stateLabel`: display text for it, the
-  web's status chip (`complianceOf().label`): "Today", "Planned", "Missed", "Skipped", "Rest" for a rest day, and for
+  web's status chip (`complianceOf().label`): "Today", "Planned", "Missed", "Skipped", "Rest" for every rest day that
+  is not skipped (planned, today or past), and for
   a done item "On target", "Partly on target", "Far off target" or "Done".
 - `compliance`: `good | partial | off | null` (from `complianceOf`), only for done items.
 - `startTime`, `endTime`, `durationMinutes`, `tss`, `intensity`, `why`, `notes`, `workoutType`, `liftSessionId`,
@@ -104,3 +105,14 @@ Field rules:
 - A strength item with `liftSessionId` that the phone has: show the local Lift session (its progress, tap to open
   the workout) on the plan's day. A local Lift session that no item links to: show it on its own day, as today.
 - Non-strength items open a read-only detail sheet: subtitle, state, why, notes, key targets, steps.
+- Moving a planned Lift session to another day moves its plan workout too. The phone sets `session.dayMovedAt` to
+  now whenever it changes `day` (a move, push to next week, the undo of a move; `SYNC.md`, schema v8). After an
+  applied (not stale) `session` change whose `day` differs from the linked workout's date, the server moves the
+  workout to that day only when `dayMovedAt` is present and newer than the workout's last change on the server
+  (`edited_at`/`updated_at`). It moves it into that week's plan and marks it edited, so a plan re-import keeps it
+  (`src/lib/lift/plan-follow.ts`). A skipped workout stays. Without `dayMovedAt` (builds before v8, or any other
+  session edit) the plan does not move: an offline edit that still carries the old day cannot undo a web move. The
+  web's own Lift pushes keep the stored `dayMovedAt` and never come back to the plan.
+- Removing a linked session on the phone (soft delete) leaves its plan workout as it is: not skipped, not removed.
+  The plan stays the coach's; skip or move the workout in the plan (web or /check-in). The next `lift-plan.mjs` run
+  plans a new session for a workout that still has a Lift template.

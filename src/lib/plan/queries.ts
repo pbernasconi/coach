@@ -149,7 +149,7 @@ export async function loadWeek(userId: string, weekStart: string, today: string)
 }
 
 /** Plan id for a week, creating an empty plan when the week has none (so a workout can be added or moved in). */
-async function ensurePlan(userId: string, weekStart: string): Promise<string> {
+export async function ensurePlan(userId: string, weekStart: string): Promise<string> {
   const existing = await planRow(userId, weekStart);
   if (existing) return String(existing.id);
   const [p] = (await sql`
