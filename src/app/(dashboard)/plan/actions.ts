@@ -19,6 +19,8 @@ import { sessionDetail } from '@/lib/lift-dashboard/stats.mjs';
 import { richSession, type RichSession } from '@/lib/lift/session';
 import { applyLiftEdit, liftLibrary } from '@/lib/lift/edit-store';
 import type { LiftEdit } from '@/lib/lift/edit.mjs';
+import { loadDay } from '@/lib/vitals/garmin-pages';
+import { dayGlance, type DayGlance } from '@/lib/vitals/day-glance';
 
 export type LiftDetail = NonNullable<ReturnType<typeof sessionDetail>>;
 
@@ -151,4 +153,10 @@ export async function editLiftAction(sessionId: string, edits: LiftEdit[]): Prom
 export async function liftLibraryAction() {
   await user();
   return liftLibrary();
+}
+
+/** The Garmin summary of one day, for the heart's hover card on the calendar. */
+export async function loadHealthGlance(date: string): Promise<DayGlance | null> {
+  if (!DATE.test(date)) return null;
+  return dayGlance(await loadDay(await user(), date));
 }
