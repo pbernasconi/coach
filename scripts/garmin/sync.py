@@ -570,11 +570,43 @@ class Run:
             log.error("%s", e)
             return EXIT_FAILED
 
+        if getattr(self.args, "workouts_only", False):
+            return self.workouts(api, keeper)
         today = self.today(api)
         if self.args.since:
             state = self.start_backfill(state, self.args.since, today)
         n = window_days(today, parse_day(state.get("synced_through")), self.args.days or DEFAULT_DAYS)
-        return self.sync(api, keeper, date_window(today, n), state)
+        code = self.sync(api, keeper, date_window(today, n), state)
+        if code != EXIT_AUTH:
+            self.workouts(api, keeper)  # its own trouble never fails the data sync
+        return code
+
+    def workouts(self, api: Any, keeper: TokenKeeper) -> int:
+        """Puts Coach's planned runs on the Garmin calendar (workouts.py). Exit code for --workouts-only."""
+        import workouts
+
+        try:
+            done, errors = workouts.push(
+                api,
+                self.coach,
+                after_call=keeper.after_call,
+                is_missing=lambda e: http_status(e) == 404,
+                dry_run=self.args.dry_run,
+            )
+        except AuthFailed as e:
+            return self.fail_auth(str(e))
+        except CoachError as e:
+            log.error("workouts: %s", e)
+            return EXIT_FAILED
+        except Exception as e:  # noqa: BLE001 - the data sync must not depend on this
+            log.error("workouts: %s: %s", type(e).__name__, str(e)[:200])
+            return EXIT_FAILED
+        with contextlib.suppress(CoachError):
+            keeper.save_if_changed()
+        for err in errors:
+            log.warning("workout: %s", err)
+        log.info("workouts: %d done, %d with problems", done, len(errors))
+        return EXIT_OK if not errors else EXIT_FAILED
 
     def start_backfill(self, state: dict[str, Any], since: date, today: date) -> dict[str, Any]:
         """Record the backfill in Coach. The same --since again resumes; a new one starts over."""
@@ -761,6 +793,7 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     p.add_argument("--since", type=parse_since, default=None, help="backfill from this day (YYYY-MM-DD); resumable")
     p.add_argument("--max-minutes", type=float, default=DEFAULT_MAX_MINUTES, help="stop starting backfill chunks after this")
     p.add_argument("--dry-run", action="store_true", help="fetch and map; print counts and sizes; post nothing")
+    p.add_argument("--workouts-only", action="store_true", help="only put Coach's planned runs on the Garmin calendar")
     p.add_argument("--delay", type=float, default=DEFAULT_DELAY_S, help="seconds between Garmin calls")
     p.add_argument("--key-file", default=None, help="key file if GARMIN_TOKEN_KEY is unset (default ~/.garminconnect/token_key)")
     p.add_argument(

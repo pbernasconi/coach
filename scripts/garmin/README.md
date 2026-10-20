@@ -67,6 +67,20 @@ The redaction (`mapping.redact`) removes keys such as `userProfilePK`, `userId`,
 
 Only one run goes at a time: the workflow has `concurrency: garmin`, so a new run waits for the old one. A run on your Mac is not part of that group. If a Mac run and a workflow run both refresh the tokens, the second can fail auth. Before it reports `auth_failed`, a run reads Coach again and tries newer tokens if another run stored them.
 
+## Planned runs on the watch
+
+`workouts.py` puts Coach's planned runs on the Garmin Connect calendar as structured workouts (steps with heart
+rate targets), so the watch shows them with step alerts after its next sync. Coach builds Garmin's workout JSON
+(`src/lib/workouts/garmin.mjs`) and says what to do for the next two weeks (`GET /api/workouts/garmin`: create,
+update or delete). The job does it with `upload_workout`, `update_workout`, `schedule_workout`,
+`unschedule_workout` and `delete_workout`, reads each workout back with `get_workout_by_id` and compares the steps
+(the library once stored heart rate as power without an error), then reports (`POST /api/workouts/garmin`, table
+`workout_syncs`). A workout made in Garmin Connect by hand is never touched; Coach's are named `Coach · …`.
+
+It runs after each data sync, and alone every hour (`sync.py --workouts-only`, the `30 * * * *` schedule). `/plan`
+and `/check-in` start it at once: `gh workflow run garmin.yml --repo pbernasconi/coach -f workouts_only=true`. A
+local run: `COACH_URL=… CRON_SECRET=… .venv/bin/python sync.py --workouts-only [--dry-run]`.
+
 ## Metrics
 
 | Coach metric | Garmin source | Notes |
