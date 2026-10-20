@@ -2,14 +2,20 @@
  * Strava sync, shared by scripts/strava-backfill.mjs (CLI) and the server (webhook + daily cron).
  *
  * Incremental by default: it fetches activities since last_synced_at minus 24 h.
- * It stores tss, tss_method and zone_times per activity, then rebuilds daily_training_load (CTL/ATL/TSB).
+ * It stores tss, tss_method and zone_times per activity (tss.mjs), then rebuilds daily_training_load (CTL/ATL/TSB).
+ * A new activity also gets its streams (1 call), so its TSS comes from the samples, not the averages.
  * Rate limits: 100 req / 15 min, 1000 / day. Throttled.
  */
 
 import { createId } from '@paralleldrive/cuid2';
 import { toDay } from '../db-time.mjs';
+import { zoneTimes } from '../activity/streams.mjs';
+import { tssFromInputs, tssInputs, thresholdValues } from './tss.mjs';
+import { loadThresholds } from './thresholds.mjs';
 
-const STREAM_TYPES = ['heartrate', 'watts', 'velocity_smooth', 'cadence', 'altitude', 'temp', 'time', 'distance'];
+
+// The same keys as the activity page's fetch (src/lib/activity/fetch.mjs STREAM_KEYS).
+const STREAM_TYPES = ['time', 'distance', 'latlng', 'altitude', 'velocity_smooth', 'heartrate', 'cadence', 'watts', 'temp', 'moving', 'grade_smooth'];
 
 /**
  * Start times for the timestamp (no zone) columns, as text. Strava sends start_date in UTC and start_date_local as
@@ -20,59 +26,6 @@ export function activityTimes(a) {
   const plain = (v) => (typeof v === 'string' ? v.replace(/Z$/, '') : null);
   return { startDate: plain(a.start_date), startLocal: plain(a.start_date_local) };
 }
-
-// ===== TSS + zone-time helpers =====
-const RIDE_TYPES = new Set(['Ride', 'VirtualRide', 'GravelRide', 'MountainBikeRide', 'EBikeRide', 'EMountainBikeRide', 'Velomobile', 'Handcycle']);
-
-/**
- * TSS for one activity. Power TSS needs the cycling FTP, so it applies to rides only: running power (a Garmin
- * or Stryd estimate) against the cycling FTP made runs count far too much. Other sports use heart rate.
- */
-export function computeTss(a, athlete) {
-  const hrs = (a.moving_time ?? a.elapsed_time ?? 0) / 3600;
-  if (hrs <= 0) return { tss: 0, method: 'duration_fallback' };
-  const ftp = athlete?.ftp;
-  const thr = athlete?.thresholdHr ?? 168;
-  const ride = RIDE_TYPES.has(a.sport_type ?? a.type);
-  // Power-based (preferred for rides) — requires NP, real power meter, and FTP
-  if (ride && a.weighted_average_watts && a.device_watts && ftp) {
-    const IF = a.weighted_average_watts / ftp;
-    return { tss: Math.round(IF * IF * hrs * 100 * 10) / 10, method: 'power' };
-  }
-  // HR-based
-  if (a.average_heartrate) {
-    const r = a.average_heartrate / thr;
-    return { tss: Math.round(r * r * hrs * 100 * 10) / 10, method: 'hr' };
-  }
-  // Duration fallback
-  const IF = a.type === 'Run' ? 0.75 : a.type === 'Ride' ? 0.65 : 0.5;
-  return { tss: Math.round(hrs * IF * IF * 100 * 10) / 10, method: 'duration_fallback' };
-}
-
-function computeZoneTimes(hrStream, timeStream, hrZones) {
-  if (!hrStream?.length || !hrZones?.length) return null;
-  const bucket = { z1: 0, z2: 0, z3: 0, z4: 0, z5: 0 };
-  for (let i = 0; i < hrStream.length; i++) {
-    const hr = hrStream[i];
-    if (typeof hr !== 'number' || hr <= 0) continue;
-    // Per-sample dt: interval to the next sample (or last interval / 1s fallback at the tail)
-    let dt = 1;
-    if (timeStream) {
-      if (i + 1 < timeStream.length) dt = timeStream[i + 1] - timeStream[i];
-      else if (i > 0) dt = timeStream[i] - timeStream[i - 1];
-    }
-    if (!Number.isFinite(dt) || dt <= 0) dt = 1;
-    // hrZones format: [{ min, max }] where max=-1 means open-ended
-    let zone = 1;
-    for (let z = 0; z < hrZones.length; z++) {
-      const { min, max } = hrZones[z];
-      if (hr >= min && (max === -1 || hr <= max)) { zone = z + 1; break; }
-    }
-    bucket[`z${zone}`] += dt;
-  }
-  return bucket;
-}
-
 
 /** The single Strava connection and a valid access token. It refreshes and saves the token when it expires in 5 min. */
 export async function connectionWithToken(sql, env = process.env, log = console.log) {
@@ -111,13 +64,14 @@ export async function connectionWithToken(sql, env = process.env, log = console.
 
 /**
  * @param {import('@neondatabase/serverless').NeonQueryFunction<false, false>} sql
- * @param {{ days?: number | null, detailed?: boolean, streams?: boolean, force?: boolean, waitOnRateLimit?: boolean,
+ * streams: true fetches the streams of every listed activity; 'new' (the server's default) only of new ones.
+ * @param {{ days?: number | null, detailed?: boolean, streams?: boolean | 'new', force?: boolean, waitOnRateLimit?: boolean,
  *          env?: Record<string, string | undefined>, log?: (...a: unknown[]) => void, warn?: (...a: unknown[]) => void }} [opts]
  */
 export async function syncStrava(sql, opts = {}) {
   const days = opts.days ?? null; // null = incremental
-  const streams = Boolean(opts.streams);
-  const detailed = Boolean(opts.detailed) || streams;
+  const streams = opts.streams === 'new' ? 'new' : Boolean(opts.streams);
+  const detailed = Boolean(opts.detailed) || streams === true;
   const force = Boolean(opts.force);
   const env = opts.env ?? process.env;
   const log = opts.log ?? console.log;
@@ -181,11 +135,8 @@ export async function syncStrava(sql, opts = {}) {
 
   // Athlete context for TSS + zone-time compute
   const hrZones = zones?.heart_rate?.zones ?? [];
-  const athleteCtx = {
-    ftp: athlete.ftp ?? null,
-    thresholdHr: hrZones[2]?.max ?? 168, // top of Z3 = threshold
-    hrZones,
-  };
+  // Read after the profile upsert above, so a new Strava FTP counts at once.
+  const th = thresholdValues(await loadThresholds(sql, conn.user_id));
 
   // ===== 4. Compute sync window =====
   // Incremental by default — use last_synced_at minus a small overlap buffer.
@@ -371,9 +322,11 @@ export async function syncStrava(sql, opts = {}) {
       }
     }
 
-    // Optional: streams pull (also captures HR for zone-time compute)
-    let hrStream = null, timeStream = null;
-    if (streams) {
+    // Streams: every activity (streams: true), or only a new one with some duration (streams: 'new').
+    const stored = {};
+    let inputs = null;
+    const wantStreams = streams === true || (streams === 'new' && !existing && (a.moving_time ?? 0) >= 300);
+    if (wantStreams) {
       try {
         const streamsUrl = `https://www.strava.com/api/v3/activities/${a.id}/streams?keys=${STREAM_TYPES.join(',')}&key_by_type=true`;
         const streams = await stravaFetch(streamsUrl);
@@ -381,31 +334,32 @@ export async function syncStrava(sql, opts = {}) {
         for (const key of Object.keys(streams)) {
           const s = streams[key];
           if (!s?.data) continue;
-          if (key === 'heartrate') hrStream = s.data;
-          if (key === 'time') timeStream = s.data;
+          stored[key] = s.data;
           await sql`
             INSERT INTO strava_activity_streams (id, activity_id, stream_type, resolution, original_size, data)
             VALUES (${createId()}, ${activityRowId}, ${key}, ${s.resolution ?? null}, ${s.original_size ?? null}, ${JSON.stringify(s.data)})`;
         }
+        await sql`
+          INSERT INTO strava_activity_details (activity_id, streams_fetched_at) VALUES (${activityRowId}, NOW())
+          ON CONFLICT (activity_id) DO UPDATE SET streams_fetched_at = NOW(), updated_at = NOW()`;
         streamCount++;
       } catch (e) {
         warn(`Streams fetch failed for ${a.id}:`, e.message);
       }
     } else {
-      // If streams already exist from a prior pull, reuse them for zone-time compute.
-      const stored = await sql`SELECT stream_type, data FROM strava_activity_streams WHERE activity_id = ${activityRowId} AND stream_type IN ('heartrate', 'time')`;
-      for (const row of stored) {
-        if (row.stream_type === 'heartrate') hrStream = row.data;
-        if (row.stream_type === 'time') timeStream = row.data;
-      }
+      // Streams from an earlier pull (the activity page, the backfill) still count: their summary is stored.
+      const [row] = await sql`SELECT tss_inputs FROM strava_activities WHERE id = ${activityRowId}`;
+      inputs = row?.tss_inputs ?? null;
     }
 
     // ===== Compute TSS + zone_times and persist =====
-    const { tss, method } = computeTss(a, athleteCtx);
-    const zoneTimes = computeZoneTimes(hrStream, timeStream, athleteCtx.hrZones);
+    if (Object.keys(stored).length) inputs = tssInputs(stored);
+    const { tss, method } = tssFromInputs(a, th, inputs);
+    const zt = stored.heartrate ? zoneTimes(stored.heartrate, stored.time, hrZones) : null;
     await sql`
       UPDATE strava_activities
-      SET tss = ${tss}, tss_method = ${method}, zone_times = ${zoneTimes ? JSON.stringify(zoneTimes) : null}, updated_at = NOW()
+      SET tss = ${tss}, tss_method = ${method}, tss_inputs = ${inputs ? JSON.stringify(inputs) : null},
+          zone_times = COALESCE(${zt ? JSON.stringify(zt) : null}::jsonb, zone_times), updated_at = NOW()
       WHERE id = ${activityRowId}`;
 
     if (upsertCount % 10 === 0) log(`  upserted ${upsertCount}/${activities.length}…`);
@@ -422,73 +376,63 @@ export async function syncStrava(sql, opts = {}) {
 
 const HOME_TIME_ZONE = 'America/Los_Angeles';
 
-/** Rebuilds daily_training_load (CTL/ATL/TSB) for the last 180 days from strava_activities.tss. */
+/**
+ * Rebuilds daily_training_load (CTL/ATL/TSB) from the first activity to today, from strava_activities.tss. The whole
+ * history: a TSS change on an old activity changes every day after it. One write for all days.
+ */
 export async function rebuildTrainingLoad(sql, userId, log = console.log) {
-  // ===== Rebuild daily_training_load (CTL/ATL/TSB) =====
-  // Uses persisted tss column — single source of truth.
-  const allActs = await sql`
+  const acts = await sql`
     SELECT start_date_local, tss
     FROM strava_activities
-    WHERE user_id = ${userId}
-      AND COALESCE(commute, false) = false
-      AND start_date_local >= NOW() - INTERVAL '180 days'
+    WHERE user_id = ${userId} AND COALESCE(commute, false) = false AND tss IS NOT NULL
     ORDER BY start_date_local ASC`;
-
   const tssByDate = new Map();
-  for (const row of allActs) {
-    if (!row.start_date_local || row.tss == null) continue;
+  for (const row of acts) {
     const key = toDay(row.start_date_local); // the local day as written; new Date() would shift it by the machine's zone
     if (!key) continue;
-    tssByDate.set(key, (tssByDate.get(key) ?? 0) + row.tss);
+    tssByDate.set(key, (tssByDate.get(key) ?? 0) + Number(row.tss));
   }
+  if (tssByDate.size === 0) return;
 
-  if (tssByDate.size > 0) {
-    const sortedDates = [...tssByDate.keys()].sort();
-    const start = new Date(sortedDates[0]);
-    // The last day is today on the athlete's wall clock (home, or the newest activity's day when traveling ahead of
-    // home), not today in UTC: at 18:00 in San Francisco UTC is already tomorrow, and that empty day lowered TSB.
-    const homeToday = new Intl.DateTimeFormat('en-CA', { timeZone: HOME_TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
-    const lastKey = [homeToday, sortedDates.at(-1)].sort().at(-1);
-    const todayUTC = new Date(`${lastKey}T00:00:00Z`);
+  // The last day is today on the athlete's wall clock (home, or the newest activity's day when traveling ahead of
+  // home), not today in UTC: at 18:00 in San Francisco UTC is already tomorrow, and that empty day lowered TSB.
+  const homeToday = new Intl.DateTimeFormat('en-CA', { timeZone: HOME_TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+  const rows = loadSeries(tssByDate, homeToday);
+  const lastKey = rows.at(-1).date;
 
-    // Get prior CTL/ATL starting point — use the row before our first date, if it exists.
-    const [priorRow] = await sql`
-      SELECT ctl, atl FROM daily_training_load
-      WHERE user_id = ${userId} AND date < ${sortedDates[0]}
-      ORDER BY date DESC LIMIT 1`;
-    let ctl = priorRow?.ctl ?? 0;
-    let atl = priorRow?.atl ?? 0;
+  // Drop days after the last one (an earlier run in UTC could have written tomorrow) and before the first.
+  await sql`DELETE FROM daily_training_load WHERE user_id = ${userId} AND (date > ${lastKey} OR date < ${rows[0].date})`;
+  await sql`
+    INSERT INTO daily_training_load (id, user_id, date, tss, ctl, atl, tsb, computed_at)
+    SELECT md5(${userId} || d::text), ${userId}, d, t, c, a, b, NOW()
+    FROM unnest(${rows.map((r) => r.date)}::date[], ${rows.map((r) => r.tss)}::real[], ${rows.map((r) => r.ctl)}::real[],
+                ${rows.map((r) => r.atl)}::real[], ${rows.map((r) => r.tsb)}::real[]) AS x(d, t, c, a, b)
+    ON CONFLICT (user_id, date) DO UPDATE SET
+      tss = EXCLUDED.tss, ctl = EXCLUDED.ctl, atl = EXCLUDED.atl, tsb = EXCLUDED.tsb, computed_at = NOW()`;
+  const last = rows.at(-1);
+  log(`Rebuilt daily_training_load: ${rows.length} day rows. Latest: ${last.date} CTL=${last.ctl} ATL=${last.atl} TSB=${last.tsb}`);
+}
 
-    const rows = [];
-    for (let d = new Date(start); d <= todayUTC; d.setUTCDate(d.getUTCDate() + 1)) {
-      const k = d.toISOString().slice(0, 10);
-      const tssDay = tssByDate.get(k) ?? 0;
-      ctl += (tssDay - ctl) / 42;
-      atl += (tssDay - atl) / 7;
-      rows.push({
-        date: k,
-        tss: Math.round(tssDay * 10) / 10,
-        ctl: Math.round(ctl * 10) / 10,
-        atl: Math.round(atl * 10) / 10,
-        tsb: Math.round((ctl - atl) * 10) / 10,
-      });
-    }
-
-    // Drop days after the last one: an earlier run in UTC could have written tomorrow.
-    await sql`DELETE FROM daily_training_load WHERE user_id = ${userId} AND date > ${lastKey}`;
-
-    // Upsert all rows
-    for (const r of rows) {
-      await sql`
-        INSERT INTO daily_training_load (id, user_id, date, tss, ctl, atl, tsb, computed_at)
-        VALUES (${createId()}, ${userId}, ${r.date}, ${r.tss}, ${r.ctl}, ${r.atl}, ${r.tsb}, NOW())
-        ON CONFLICT (user_id, date) DO UPDATE SET
-          tss = EXCLUDED.tss, ctl = EXCLUDED.ctl, atl = EXCLUDED.atl, tsb = EXCLUDED.tsb,
-          computed_at = NOW()`;
-    }
-    log(`Rebuilt daily_training_load: ${rows.length} day rows. Latest: ${rows.at(-1)?.date} CTL=${rows.at(-1)?.ctl} ATL=${rows.at(-1)?.atl} TSB=${rows.at(-1)?.tsb}`);
+/**
+ * CTL (42-day) and ATL (7-day) for each day from the first day with TSS to `today` (or the last TSS day, if later).
+ * @param {Map<string, number>} tssByDate  YYYY-MM-DD → the day's TSS
+ */
+export function loadSeries(tssByDate, today) {
+  const days = [...tssByDate.keys()].sort();
+  const lastKey = [today, days.at(-1)].sort().at(-1);
+  const end = new Date(`${lastKey}T00:00:00Z`);
+  let ctl = 0;
+  let atl = 0;
+  const rows = [];
+  for (let d = new Date(`${days[0]}T00:00:00Z`); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
+    const k = d.toISOString().slice(0, 10);
+    const t = tssByDate.get(k) ?? 0;
+    ctl += (t - ctl) / 42;
+    atl += (t - atl) / 7;
+    const r1 = (x) => Math.round(x * 10) / 10;
+    rows.push({ date: k, tss: r1(t), ctl: r1(ctl), atl: r1(atl), tsb: r1(ctl - atl) });
   }
-
+  return rows;
 }
 
 /** Removes one activity that was deleted on Strava. Laps, splits and streams cascade. */
@@ -499,6 +443,8 @@ export async function deleteStravaActivity(sql, stravaActivityId, env = process.
     headers: { Authorization: `Bearer ${accessToken}` },
   });
   if (res.status !== 404) return false;
-  await sql`DELETE FROM strava_activities WHERE strava_activity_id = ${String(stravaActivityId)}`;
+  const gone = await sql`DELETE FROM strava_activities WHERE strava_activity_id = ${String(stravaActivityId)} RETURNING user_id`;
+  // CTL and ATL must lose the deleted activity's TSS now, not at the next sync.
+  for (const userId of new Set(gone.map((r) => r.user_id))) await rebuildTrainingLoad(sql, userId, () => {});
   return true;
 }

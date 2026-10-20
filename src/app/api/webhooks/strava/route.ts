@@ -51,7 +51,7 @@ export async function POST(request: Request) {
       } else if (event.object_type === 'activity' && event.aspect_type === 'delete' && event.object_id) {
         await deleteStravaActivity(sql, event.object_id);
       } else if (event.object_type === 'activity') {
-        await syncStrava(sql, { detailed: true, waitOnRateLimit: false });
+        await syncStrava(sql, { detailed: true, streams: 'new', waitOnRateLimit: false });
         await syncActivityPeaks(sql, { limit: 5 }).catch((e: unknown) => console.error('Peak scan failed:', e));
       }
     } catch (error) {

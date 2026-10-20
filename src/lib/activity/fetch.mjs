@@ -11,10 +11,12 @@
  */
 
 import { createId } from '@paralleldrive/cuid2';
-import { connectionWithToken } from '../strava-sync/sync.mjs';
+import { connectionWithToken, rebuildTrainingLoad } from '../strava-sync/sync.mjs';
 import { toDate, toIso } from '../db-time.mjs';
 import { pickHour, placeName } from './weather.mjs';
 import { zoneTimes } from './streams.mjs';
+import { thresholdValues } from '../strava-sync/tss.mjs';
+import { loadThresholds, storeActivityTss } from '../strava-sync/thresholds.mjs';
 
 export const STREAM_KEYS = ['time', 'distance', 'latlng', 'altitude', 'velocity_smooth', 'heartrate', 'cadence', 'watts', 'temp', 'moving', 'grade_smooth'];
 
@@ -122,8 +124,8 @@ export async function storeDetail(sql, row, d) {
   }
 }
 
-/** Stores the streams (key_by_type response) and the HR zone times they give. */
-export async function storeStreams(sql, row, body, hrZones) {
+/** Stores the streams (key_by_type response), the HR zone times they give, and the TSS from the samples. */
+export async function storeStreams(sql, row, body, hrZones, { rebuild = true } = {}) {
   await ensureRow(sql, row.id);
   const keys = Object.keys(body ?? {}).filter((k) => Array.isArray(body[k]?.data));
   if (keys.length) {
@@ -136,6 +138,12 @@ export async function storeStreams(sql, row, body, hrZones) {
     }
     const zt = hrZones?.length && body.heartrate?.data ? zoneTimes(body.heartrate.data, body.time?.data, hrZones) : null;
     if (zt) await sql`UPDATE strava_activities SET zone_times = ${JSON.stringify(zt)} WHERE id = ${row.id}`;
+    // The samples give a better TSS than the averages; CTL and ATL follow it.
+    const userId = row.user_id ?? (await sql`SELECT user_id FROM strava_activities WHERE id = ${row.id}`)[0]?.user_id;
+    if (userId && rebuild) {
+      await storeActivityTss(sql, row.id, thresholdValues(await loadThresholds(sql, userId)));
+      await rebuildTrainingLoad(sql, userId, () => {});
+    }
   }
   await sql`UPDATE strava_activity_details SET streams_fetched_at = NOW(), updated_at = NOW() WHERE activity_id = ${row.id}`;
 }

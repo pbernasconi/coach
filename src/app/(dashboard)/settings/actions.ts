@@ -21,7 +21,7 @@ async function owner() {
 export async function syncStravaNow(): Promise<string> {
   await owner();
   try {
-    const r = await syncStrava(sql, { detailed: true, waitOnRateLimit: false, log: () => {}, warn: () => {} });
+    const r = await syncStrava(sql, { detailed: true, streams: 'new', waitOnRateLimit: false, log: () => {}, warn: () => {} });
     clearCache('status');
   revalidatePath('/', 'layout');
     return `Synced ${r.upserted} ${r.upserted === 1 ? 'activity' : 'activities'}.`;
@@ -105,3 +105,32 @@ export async function saveGoalsAction(goals: unknown[]) {
   clearCache('status');
   revalidatePath('/', 'layout');
 }
+
+export type ThresholdInput = { ftp: number | null; runLthr: number | null; rideLthr: number | null; restingHr: number | null; runPaceS: number | null };
+
+/**
+ * Saves the TSS thresholds (an empty field is automatic: Garmin, Strava or an estimate), then recomputes every
+ * activity's TSS and the training load (CTL, ATL, TSB) with them.
+ */
+export async function saveThresholdsAction(t: ThresholdInput): Promise<string> {
+  const id = await owner();
+  const clean = (v: unknown, min: number, max: number) => {
+    const n = Number(v);
+    return v == null || v === '' || !Number.isFinite(n) || n <= 0 ? null : Math.min(max, Math.max(min, Math.round(n)));
+  };
+  const value = {
+    ftp: clean(t.ftp, 50, 600), runLthr: clean(t.runLthr, 100, 220), rideLthr: clean(t.rideLthr, 100, 220),
+    restingHr: clean(t.restingHr, 25, 100), runPaceS: clean(t.runPaceS, 150, 600),
+  };
+  const own = Object.fromEntries(Object.entries(value).filter(([, v]) => v != null));
+  await sql`
+    UPDATE users SET settings = jsonb_set(settings, '{thresholds}', ${JSON.stringify(own)}::jsonb), updated_at = NOW()
+    WHERE id = ${id}`;
+  const { recomputeAllTss } = await import('@/lib/strava-sync/thresholds.mjs');
+  const { rebuildTrainingLoad } = await import('@/lib/strava-sync/sync.mjs');
+  const r = await recomputeAllTss(sql, id);
+  if (r.changed) await rebuildTrainingLoad(sql, id, () => {});
+  revalidatePath('/', 'layout');
+  return `Thresholds saved. ${r.changed} of ${r.total} activities have a new TSS.`;
+}
+
