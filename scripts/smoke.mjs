@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 // Smoke check of a deployed Coach: the loaders on the real data (/api/health), the sign-in page, and with --pages
-// the dashboard pages rendered as the owner. Exit code 1 when anything fails. The deploy check runs it after each
-// deploy and on a schedule (.github/workflows/deploy-check.yml); it rolls production back on a failure.
+// the dashboard pages rendered as the owner. Exit code 1 when anything fails. The Deploy workflow runs it on each
+// staged build and after each promote (it rolls back on a failure); the deploy check runs it on previews and on a
+// schedule.
 //
-//   HEALTH_TOKEN=… node scripts/smoke.mjs https://coach.paolobernasconi.com --pages [--expect-commit <sha>]
+//   HEALTH_TOKEN=… node scripts/smoke.mjs https://coach.paolobernasconi.com --pages [--expect-deployment <id>]
+//   HEALTH_TOKEN=… node scripts/smoke.mjs <staged-url> --staged
 //
-// --expect-commit first waits (up to 6 minutes) until /api/health reports that commit, so the check tests the new
-// deploy and not the one before it. If production never serves it (a rollback pins production), the exit code is
-// 3. In GitHub Actions it writes the step outputs served_before=<sha> and pinned=true.
+// --expect-deployment first waits (up to 2 minutes) until /api/health reports that Vercel deployment, so the check
+// tests the promoted build and not the one before it (exit code 3 if it never does). --staged leaves out the
+// migrations check: a staged build is checked before the merge runs its migrations.
 // Env: HEALTH_TOKEN (required); VERCEL_BYPASS_SECRET for protected deployment URLs (*.vercel.app).
 // A page passes when it answers 200, has its data-smoke marker, and has no data-section-error or data-page-error.
 
@@ -28,9 +30,10 @@ const ATTEMPTS = 3; // a cold start or a deploy that is still being aliased gets
 const WAIT_MS = 10_000;
 
 const args = process.argv.slice(2);
-const base = args.find((a, i) => !a.startsWith('--') && args[i - 1] !== '--expect-commit')?.replace(/\/$/, '');
+const base = args.find((a, i) => !a.startsWith('--') && args[i - 1] !== '--expect-deployment')?.replace(/\/$/, '');
 const withPages = args.includes('--pages');
-const expectCommit = args.includes('--expect-commit') ? args[args.indexOf('--expect-commit') + 1] : null;
+const expectDeployment = args.includes('--expect-deployment') ? args[args.indexOf('--expect-deployment') + 1] : null;
+const healthPath = args.includes('--staged') ? '/api/health?skip=migrations' : '/api/health';
 const token = process.env.HEALTH_TOKEN;
 if (!base || !token) {
   console.error('usage: HEALTH_TOKEN=… node scripts/smoke.mjs <base-url> [--pages]');
@@ -48,7 +51,7 @@ const checks = [
   [
     '/api/health',
     async () => {
-      const { status, body } = await get('/api/health', { authorization: `Bearer ${token}` });
+      const { status, body } = await get(healthPath, { authorization: `Bearer ${token}` });
       let json = null;
       try {
         json = JSON.parse(body);
@@ -88,35 +91,25 @@ async function runOnce() {
   return failures;
 }
 
-async function servedCommit() {
+async function servedDeployment() {
   try {
-    const { body } = await get('/api/health', { authorization: `Bearer ${token}` });
-    return JSON.parse(body).commit ?? null;
+    const { body } = await get(healthPath, { authorization: `Bearer ${token}` });
+    return JSON.parse(body).deployment ?? null;
   } catch {
     return null;
   }
 }
 
-/** Writes a step output when running in GitHub Actions. */
-async function output(key, value) {
-  if (!process.env.GITHUB_OUTPUT) return;
-  const { appendFile } = await import('node:fs/promises');
-  await appendFile(process.env.GITHUB_OUTPUT, `${key}=${value}\n`);
-}
-
-if (expectCommit) {
-  const deadline = Date.now() + 6 * 60_000;
-  let served = await servedCommit();
-  // The commit production served before this deploy: the rollback target if this deploy fails.
-  if (served && served !== expectCommit) await output('served_before', served);
-  while (served !== expectCommit && Date.now() < deadline) {
-    console.log(`Waiting for ${base} to serve ${expectCommit.slice(0, 7)} (now ${served?.slice(0, 7) ?? 'unknown'})…`);
-    await new Promise((r) => setTimeout(r, 15_000));
-    served = await servedCommit();
+if (expectDeployment) {
+  const deadline = Date.now() + 2 * 60_000;
+  let served = await servedDeployment();
+  while (served !== expectDeployment && Date.now() < deadline) {
+    console.log(`Waiting for ${base} to serve ${expectDeployment} (now ${served ?? 'unknown'})…`);
+    await new Promise((r) => setTimeout(r, 5_000));
+    served = await servedDeployment();
   }
-  if (served !== expectCommit) {
-    await output('pinned', 'true');
-    console.error(`${base} still serves ${served ?? 'an unknown commit'}, not ${expectCommit}. Is production pinned by a rollback?`);
+  if (served !== expectDeployment) {
+    console.error(`${base} still serves ${served ?? 'an unknown deployment'}, not ${expectDeployment}.`);
     process.exit(3);
   }
 }
