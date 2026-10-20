@@ -33,4 +33,5 @@ jobs:
       - name: Clear the labs cache
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
-        run: curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" "https://coach.paolobernasconi.com/api/cron/cache?tag=labs"
+        run: |
+          curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" "https://coach.paolobernasconi.com/api/cron/cache?tag=labs"
