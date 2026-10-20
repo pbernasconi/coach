@@ -20,6 +20,30 @@ permissions:
 
 # Actions are pinned by commit SHA (TOOL-3).
 jobs:
+  changes:
+    # Decides whether the macOS jobs run. A pull request that changes no app code (only Markdown, the Lift
+    # server scripts or the iOS standards' docs and scripts) gets the Linux lint only. Pushes and manual runs
+    # always build.
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: read  # paths-filter lists a pull request's files through the API
+    outputs:
+      app: ${{ github.event_name != 'pull_request' || steps.filter.outputs.app == 'true' || steps.filter.outputs.workflow == 'true' }}
+    steps:
+      - name: Did app code change?
+        id: filter
+        if: github.event_name == 'pull_request'
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d  # v4.0.3
+        with:
+          predicate-quantifier: every
+          filters: |
+            app:
+              - "{lift/ios,ios-standards/Kobo}/**"
+              - "!**/*.md"
+            workflow:
+              - ".github/workflows/ios.yml"
+
   lint:
     # The full static suite on Linux: guard, conformance, swift-format, SwiftLint, Linux logic tests and the
     # non-Swift linters. Fast signal before the macOS build.
@@ -52,6 +76,8 @@ jobs:
         run: ios-standards/scripts/lint-all.sh
 
   build:
+    needs: changes
+    if: needs.changes.outputs.app == 'true'
     # Builds the app and its unit tests once (build-for-testing) and hands the products to the simulator jobs.
     # No simulator boots here, so the cache restore and the build get the whole machine. Xcode's compilation
     # cache (build/cas) comes from the last run and is saved after the upload, even when a later job fails.
@@ -149,6 +175,8 @@ jobs:
           lift/ios/scripts/ci-package-tests.sh wait lift/ios/Packages/LiftKit || status=1
           exit "$status"
   test:
+    needs: changes
+    if: needs.changes.outputs.app == 'true'
     # The app's unit tests on a simulator, from the build job's products. It starts with the build job rather
     # than after it, so the simulator has booted when the products arrive. The simulator boots from a cached
     # snapshot of one that booted before (keyed by runner image, runtime and device); when there is none, the
@@ -198,6 +226,12 @@ jobs:
           key: ${{ env.SIM_CACHE_KEY }}
 
   screenshots:
+    needs: changes
+    # Pull requests and manual runs. A push to main carries the code its pull request already shot, and
+    # skipping it leaves macOS runners free for open pull requests (the account runs 5 macOS jobs at a time).
+    # main keeps build and test: they seed the compilation cache and the simulator snapshot that pull requests
+    # restore.
+    if: needs.changes.outputs.app == 'true' && github.event_name != 'push'
     # Demo screenshots, one job per variant (light, dark, AX3), from the build job's app. Like the test job it
     # starts with the build job and boots its simulator while it waits, and saves a simulator snapshot when
     # there was none for its runner image (images rotate, so any simulator job may be the first).
