@@ -150,7 +150,86 @@ export function buildModel(data) {
       unit,
     });
   }
-  return { sessions, sets };
+  // Muscles per library exercise (primaryMuscles / secondaryMuscles: a JSON array, or its text).
+  /** @type {Map<string, { primary: string[], secondary: string[] }>} */
+  const muscles = new Map();
+  for (const e of data.exercises) {
+    const id = lowerId(e.id);
+    if (!id || isDeleted(e)) continue;
+    muscles.set(`id-${id}`, { primary: muscleList(e.primaryMuscles), secondary: muscleList(e.secondaryMuscles) });
+  }
+  return { sessions, sets, muscles };
+}
+
+/** @param {unknown} v */
+function muscleList(v) {
+  let list = v;
+  if (typeof v === 'string') {
+    try {
+      list = JSON.parse(v);
+    } catch {
+      return [];
+    }
+  }
+  return Array.isArray(list) ? list.filter((m) => typeof m === 'string') : [];
+}
+
+/** The target band of weekly hard sets per muscle, as in LiftCore's WeeklyVolume. */
+export const MUSCLE_TARGET = { min: 10, max: 20 };
+
+/**
+ * Hard sets per muscle between two days (inclusive), as LiftCore's WeeklyVolume counts them: a done
+ * non-warm-up set gives 1 to each primary muscle and 0.5 to each secondary muscle. Exercises not in the
+ * library have no muscles and do not count. Most sets first.
+ * @param {ReturnType<typeof buildModel>} model
+ * @param {string} from 'YYYY-MM-DD'
+ * @param {string} to 'YYYY-MM-DD'
+ */
+export function muscleSets(model, from, to) {
+  const totals = new Map();
+  for (const set of model.sets) {
+    if (!isCountedSet(set) || set.day < from || set.day > to) continue;
+    const m = model.muscles.get(set.exerciseKey);
+    if (!m) continue;
+    for (const muscle of m.primary) totals.set(muscle, (totals.get(muscle) ?? 0) + 1);
+    for (const muscle of m.secondary) totals.set(muscle, (totals.get(muscle) ?? 0) + 0.5);
+  }
+  return [...totals.entries()]
+    .map(([muscle, sets]) => ({
+      muscle,
+      sets,
+      status: sets < MUSCLE_TARGET.min ? 'below' : sets > MUSCLE_TARGET.max ? 'above' : 'inRange',
+    }))
+    .sort((a, b) => b.sets - a.sets || a.muscle.localeCompare(b.muscle));
+}
+
+/**
+ * The exercises done in the most sessions since `since`, each with its best estimated 1RM per session
+ * since then, and the change from the first to the last of those.
+ * @param {ReturnType<typeof buildModel>} model
+ * @param {Unit} unit
+ * @param {string} since 'YYYY-MM-DD'
+ * @param {number} [count]
+ */
+export function topLifts(model, unit, since, count = 4) {
+  return exerciseList(model, unit)
+    .map((e) => {
+      const detail = exerciseDetail(model, e.key, unit);
+      const points = (detail?.e1rmOverTime ?? []).filter((p) => p.day >= since);
+      const first = points[0]?.e1rm ?? null;
+      const last = points.at(-1)?.e1rm ?? null;
+      return {
+        key: e.key,
+        name: e.name,
+        sessions: points.length,
+        points,
+        latest: last,
+        change: first && last && points.length > 1 ? (last - first) / first : null,
+      };
+    })
+    .filter((e) => e.sessions > 0)
+    .sort((a, b) => b.sessions - a.sessions || a.name.localeCompare(b.name))
+    .slice(0, count);
 }
 
 /** @param {FlatSet} set */
