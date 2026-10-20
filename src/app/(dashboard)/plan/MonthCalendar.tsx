@@ -1,16 +1,16 @@
 'use client';
 
-import Link from 'next/link';
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-import { ChevronDown, ChevronUp, ClipboardPaste, Copy, Dumbbell, HeartPulse, Library, MoreHorizontal, Plus, Trash2, TriangleAlert } from 'lucide-react';
+import { ChevronDown, ChevronUp, ClipboardPaste, Copy, Dumbbell, Library, MoreHorizontal, Plus, Trash2, TriangleAlert } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import SportIcon from '@/components/SportIcon';
 import ComplianceMark, { levelStyle } from '@/components/plan/ComplianceMark';
 import LegendPopover from '@/components/plan/LegendPopover';
 import { useHotkeys } from '@/components/hotkeys/HotkeysProvider';
 import WeatherBadge from '@/components/plan/WeatherBadge';
+import HealthBadge from '@/components/plan/HealthBadge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { sport } from '@/lib/sports';
@@ -832,13 +832,11 @@ function DayHead({ d, past, isToday, wx, menu, roomy = false }: { d: string; pas
       </span>
       {isToday && <span className="text-[10px] font-semibold uppercase tracking-wide text-primary">Today</span>}
       {past && !roomy && (
-        <Link
-          href={`/health/day/${d}`}
-          aria-label={`Health on ${longDate(d)}`}
+        <HealthBadge
+          date={d}
+          label={`Health on ${longDate(d)}`}
           className="rounded text-[var(--viz-muted)] opacity-0 transition-opacity hover:text-foreground focus-visible:opacity-100 group-hover/day:opacity-100"
-        >
-          <HeartPulse aria-hidden className="h-3 w-3" />
-        </Link>
+        />
       )}
       <span className="flex-1" />
       {wx && <WeatherBadge w={wx} date={d} compact={!roomy} />}
