@@ -12,6 +12,14 @@ import { addDays, mondayOf, todayIn } from '@/lib/plan/week.mjs';
 import SectionError from '@/components/SectionError';
 import { load, safe } from '@/lib/safe';
 import { DEFAULT_TARGETS, loadTargets } from '@/lib/status';
+import { loadPmc } from '@/lib/performance/projection';
+import { loadPeakPerformances } from '@/lib/performance/peaks';
+import { loadUpcomingEvents } from '@/lib/performance/events';
+import { loadRecoveryToday } from '@/lib/vitals/garmin-pages';
+import PmcSection from '@/components/performance/PmcSection';
+import PeakPerformances from '@/components/performance/PeakPerformances';
+import UpcomingEvents from '@/components/performance/UpcomingEvents';
+import RecoveryToday from '@/components/vitals/RecoveryToday';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,7 +39,7 @@ export default async function PerformancePage() {
   const today = todayIn(zone((await cookies()).get('tz')?.value));
   const monday = mondayOf(today);
   // Each section loads on its own: a failure shows SectionError for that section and leaves the others.
-  const [perf, week, targets, lift] = await Promise.all([
+  const [perf, week, targets, lift, pmc, peaks, events, recovery] = await Promise.all([
     load('Performance', () => loadPerformance(userId, today)),
     load("This week's plan", () => loadWeek(userId, monday, today)),
     safe('targets', () => loadTargets(userId), DEFAULT_TARGETS),
@@ -45,6 +53,10 @@ export default async function PerformancePage() {
         hasData: model.sessions.size > 0,
       };
     }),
+    load('Fitness and form', () => loadPmc(userId, today)),
+    load('Peak performances', () => loadPeakPerformances(userId, today)),
+    safe('events', () => loadUpcomingEvents(userId, today, 365), []),
+    safe('recovery today', () => loadRecoveryToday(userId, today), null),
   ]);
   return (
     <div className="space-y-6" data-smoke="performance">
@@ -55,8 +67,12 @@ export default async function PerformancePage() {
         </div>
         <Link href="/plan" className="text-sm underline underline-offset-4">This week&apos;s plan →</Link>
       </div>
+      {events.length > 0 && <UpcomingEvents events={events} />}
+      {recovery?.hasData && <RecoveryToday r={recovery} />}
       {week.ok ? <TodayCard week={week.value} thisWeek={perf.ok ? perf.value.weeks.at(-1) : undefined} targets={targets} /> : <SectionError label="Today" />}
       {perf.ok ? <PerformanceView perf={perf.value} today={today} strengthTarget={targets.strength} /> : <SectionError label="Performance" />}
+      {pmc.ok ? <PmcSection pmc={pmc.value} /> : <SectionError label="Fitness and form" />}
+      {peaks.ok ? <PeakPerformances peaks={peaks.value} /> : <SectionError label="Peak performances" />}
       {lift.ok ? <LiftSection {...lift.value} /> : <SectionError label="Lift" />}
     </div>
   );

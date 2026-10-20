@@ -8,9 +8,15 @@ import { Check, ChevronLeft, ChevronRight, GripVertical, Undo2 } from 'lucide-re
 import SportIcon from '@/components/SportIcon';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import RemoveWorkout from '@/components/plan/RemoveWorkout';
+import WeatherBadge from '@/components/plan/WeatherBadge';
 import type { Feel, Week, Workout } from '@/lib/plan/queries';
+import type { LibraryItem } from '@/lib/plan/month';
+import type { DayWeather } from '@/lib/plan/weather';
+import { applyChange } from '@/lib/plan/remove.mjs';
 import { addDays } from '@/lib/plan/week.mjs';
-import { feelAction, moveWorkoutAction, skipWorkoutAction, undoAction } from './actions';
+import { addFromLibraryAction, feelAction, moveWorkoutAction, removeWorkoutAction, skipWorkoutAction, undoAction } from './actions';
+import WorkoutLibrary, { LIBRARY_MIME, WORKOUT_MIME } from './WorkoutLibrary';
 
 const FEEL_OPTIONS: { feel: Feel; label: string; hint: string }[] = [
   { feel: 'wrecked', label: 'Wrecked', hint: 'Today becomes rest, tomorrow gets easier' },
@@ -32,14 +38,23 @@ function stripEmoji(title: string) {
   return title.replace(/^[\p{Extended_Pictographic}️‍\s]+/u, '');
 }
 
-export default function PlanBoard({ week, timeZone }: { week: Week; timeZone: string }) {
+export default function PlanBoard({
+  week, timeZone, weather = {}, library = [], importedIds = [],
+}: {
+  week: Week;
+  timeZone: string;
+  importedIds?: string[];
+  weather?: Record<string, DayWeather>;
+  library?: LibraryItem[];
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [open, setOpen] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState<string | null>(null);
-  const [workouts, moveLocal] = useOptimistic(week.workouts, (state: Workout[], m: { id: string; date: string }) =>
-    state.map((w) => (w.id === m.id ? { ...w, date: m.date } : w))
+  const [workouts, changeLocal] = useOptimistic(week.workouts, (state: Workout[], c: { id: string; date?: string; remove?: boolean }) =>
+    applyChange(state, c)
   );
+  const imported = new Set(importedIds);
 
   // The server picks "today" from the tz cookie. Set it from this browser so travel days line up.
   useEffect(() => {
@@ -69,7 +84,7 @@ export default function PlanBoard({ week, timeZone }: { week: Week; timeZone: st
     const w = workouts.find((x) => x.id === id);
     if (!w || w.date === date) return;
     startTransition(async () => {
-      moveLocal({ id, date });
+      changeLocal({ id, date });
       try {
         await moveWorkoutAction(id, date);
       } catch {
@@ -77,6 +92,20 @@ export default function PlanBoard({ week, timeZone }: { week: Week; timeZone: st
       }
     });
   }
+
+  function addFromLibrary(itemId: string, date: string) {
+    const item = library.find((x) => x.id === itemId);
+    startTransition(async () => {
+      try {
+        await addFromLibraryAction(itemId, date);
+        toast.success(`Added ${item?.title ?? 'workout'}`);
+      } catch {
+        toast.error('Could not add the workout');
+      }
+    });
+  }
+
+  const weatherUntil = addDays(week.today, 14);
 
   function feel(f: Feel) {
     startTransition(async () => {
@@ -96,6 +125,18 @@ export default function PlanBoard({ week, timeZone }: { week: Week; timeZone: st
     startTransition(async () => {
       const changed = await undoAction(week.weekStart, week.today);
       toast.success(changed ? `Restored ${changed} workout${changed === 1 ? '' : 's'}` : 'Nothing to undo');
+    });
+  }
+
+  function remove(w: Workout) {
+    startTransition(async () => {
+      changeLocal({ id: w.id, remove: true });
+      try {
+        await removeWorkoutAction(w.id);
+        toast.success('Workout removed');
+      } catch {
+        toast.error('Could not remove the workout');
+      }
     });
   }
 
@@ -185,7 +226,13 @@ export default function PlanBoard({ week, timeZone }: { week: Week; timeZone: st
               id={`day-${d}`}
               onDragOver={(e) => { e.preventDefault(); setDragOver(d); }}
               onDragLeave={() => setDragOver((x) => (x === d ? null : x))}
-              onDrop={(e) => { e.preventDefault(); setDragOver(null); move(e.dataTransfer.getData('text/plain'), d); }}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragOver(null);
+                const lib = e.dataTransfer.getData(LIBRARY_MIME);
+                if (lib) addFromLibrary(lib, d);
+                else move(e.dataTransfer.getData(WORKOUT_MIME) || e.dataTransfer.getData('text/plain'), d);
+              }}
               className={cn(
                 'min-h-32 scroll-mt-24 rounded-lg border p-2 transition-colors target:ring-2 target:ring-primary',
                 d === week.today && 'border-primary',
@@ -193,9 +240,16 @@ export default function PlanBoard({ week, timeZone }: { week: Week; timeZone: st
                 dragOver === d && 'bg-accent'
               )}
             >
-              <div className="mb-2 flex items-baseline justify-between px-1">
-                <span className={cn('text-sm font-semibold', d === week.today && 'text-primary')}>{label.weekday}</span>
-                <span className="text-xs text-muted-foreground">{d === week.today ? 'Today' : label.date}</span>
+              <div className="mb-2 px-1">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className={cn('text-sm font-semibold', d === week.today && 'text-primary')}>{label.weekday}</span>
+                  <span className="whitespace-nowrap text-xs text-muted-foreground">{d === week.today ? 'Today' : label.date}</span>
+                </div>
+                {d >= week.today && d <= weatherUntil && weather[d] && (
+                  <div className="mt-0.5">
+                    <WeatherBadge w={weather[d]} compact />
+                  </div>
+                )}
               </div>
               <div className="space-y-2">
                 {dayWorkouts.map((w) => (
@@ -207,6 +261,8 @@ export default function PlanBoard({ week, timeZone }: { week: Week; timeZone: st
                     onToggle={() => setOpen(open === w.id ? null : w.id)}
                     onMove={(to) => move(w.id, to)}
                     onSkip={() => skip(w)}
+                    onRemove={() => remove(w)}
+                    imported={imported.has(w.id)}
                     disabled={pending}
                   />
                 ))}
@@ -221,12 +277,16 @@ export default function PlanBoard({ week, timeZone }: { week: Week; timeZone: st
           );
         })}
       </div>
+
+      {library.length > 0 && (
+        <WorkoutLibrary items={library} today={week.today} onAdd={addFromLibrary} disabled={pending} defaultCollapsed className="lg:static lg:w-full" />
+      )}
     </div>
   );
 }
 
 function WorkoutCard({
-  w, days, open, onToggle, onMove, onSkip, disabled,
+  w, days, open, onToggle, onMove, onSkip, onRemove, imported, disabled,
 }: {
   w: Workout;
   days: string[];
@@ -234,6 +294,8 @@ function WorkoutCard({
   onToggle: () => void;
   onMove: (to: string) => void;
   onSkip: () => void;
+  onRemove: () => void;
+  imported: boolean;
   disabled: boolean;
 }) {
   const hard = /hard|threshold|vo2|tempo|race/i.test(`${w.intensity} ${w.workoutType} ${w.title}`);
@@ -241,7 +303,10 @@ function WorkoutCard({
     <div
       id={`w-${w.id}`}
       draggable={w.state !== 'done'}
-      onDragStart={(e) => e.dataTransfer.setData('text/plain', w.id)}
+      onDragStart={(e) => {
+        e.dataTransfer.setData(WORKOUT_MIME, w.id);
+        e.dataTransfer.setData('text/plain', w.id);
+      }}
       className={cn(
         'group scroll-mt-24 rounded-md border bg-card p-2 text-sm shadow-sm target:ring-2 target:ring-primary',
         w.state !== 'done' && 'cursor-grab active:cursor-grabbing',
@@ -304,6 +369,7 @@ function WorkoutCard({
               </Button>
             </div>
           )}
+          <RemoveWorkout workout={{ title: stripEmoji(w.title), date: w.date, state: w.state, imported }} onRemove={onRemove} disabled={disabled} />
         </div>
       )}
     </div>

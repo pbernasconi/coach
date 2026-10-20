@@ -25,6 +25,7 @@ import { resolve } from 'node:path';
 import { resolveTravel, dateKeysBetween, HOME_TZ } from './travel.mjs';
 import { loadRotation } from './rotation.mjs';
 import { untrusted } from './untrusted.mjs';
+import { healthProfileMarkdown } from './health-profile.mjs';
 
 const sql = neon(process.env.DATABASE_URL);
 const args = process.argv.slice(2);
@@ -330,6 +331,7 @@ md.push(`- **ATL (fatigue, 7d)**: ${last.atl}`);
 md.push(`- **TSB (form)**: ${last.tsb} ${last.tsb > 5 ? '🟢 fresh' : last.tsb < -10 ? '🔴 deeply fatigued' : last.tsb < 0 ? '🟡 fatigued' : '⚪ neutral'}`);
 md.push(`- **7d trend**: ${trend} (ramp ${ramp7d >= 0 ? '+' : ''}${ramp7d}/wk)`);
 md.push(`- **Weekly TSS (last 7d)**: ${weeklyTss}\n`);
+md.push(await healthProfileMarkdown({ sql, userId: USER_ID, today: new Date().toLocaleDateString('en-CA', { timeZone: HOME_TZ }) }));
 
 md.push(`## Training Profile (last 90 days, commutes excluded)`);
 for (const s of [runStats, rideStats, vrideStats, liftStats, hikeStats].filter(Boolean)) {

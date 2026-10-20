@@ -2,6 +2,7 @@
 
 import { UserButton, useUser } from '@clerk/nextjs';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,10 +18,13 @@ const navLinks = [
   { href: '/', label: 'Performance' },
   { href: '/plan', label: 'Plan' },
   { href: '/lift', label: 'Lift' },
+  { href: '/goals', label: 'Goals' },
+  { href: '/health', label: 'Health' },
   { href: '/settings', label: 'Settings' },
 ];
 
 export default function DashboardNav() {
+  const wide = usePathname().startsWith('/plan'); // match MainContainer's width
   const { isLoaded } = useUser();
   const [open, setOpen] = useState(false);
 
@@ -30,7 +34,7 @@ export default function DashboardNav() {
     <>
       {/* Navigation */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex h-16 items-center">
+        <div className={`mx-auto flex h-16 items-center px-4 sm:px-6 ${wide ? 'max-w-[1920px] lg:px-6' : 'container max-w-7xl lg:px-8'}`}>
           {/* Mobile menu button */}
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>

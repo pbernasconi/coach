@@ -1,0 +1,43 @@
+{
+  "startDate": "2030-01-12",
+  "endDate": "2030-01-14",
+  "dateWeightList": [
+    {
+      "samplePk": 1,
+      "date": 1862928000000,
+      "calendarDate": "2030-01-12",
+      "weight": 57920.0,
+      "bmi": 17.92,
+      "bodyFat": 11.84,
+      "bodyWater": 48.08,
+      "sourceType": "INDEX_SCALE",
+      "timestampGMT": 1862902800000
+    },
+    {
+      "samplePk": 2,
+      "date": 1863018000000,
+      "calendarDate": "2030-01-13",
+      "weight": 57680.0,
+      "bmi": 17.84,
+      "bodyFat": null,
+      "sourceType": "MANUAL",
+      "timestampGMT": 1862992800000
+    },
+    {
+      "samplePk": 3,
+      "date": 1863046800000,
+      "calendarDate": "2030-01-13",
+      "weight": 58120.0,
+      "bmi": 18.0,
+      "bodyFat": 12.08,
+      "sourceType": "INDEX_SCALE",
+      "timestampGMT": 1863021600000
+    }
+  ],
+  "totalAverage": {
+    "from": 1862870400000,
+    "until": 1863129600000,
+    "weight": 57906.64,
+    "bodyFat": 11.96
+  }
+}

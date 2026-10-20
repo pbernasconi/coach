@@ -1,10 +1,12 @@
 import { sql } from '@/db';
 import { toDay, toIso } from '@/lib/db-time.mjs';
+import type { GarminStatus } from '@/lib/vitals/garmin.mjs';
+import { loadGarminStatus } from '@/lib/vitals/queries';
 
 export type Targets = { runKm: number; rideHours: number; strength: number };
 export const DEFAULT_TARGETS: Targets = { runKm: 35, rideHours: 4, strength: 2 };
 
-export type Warning = { level: 'error' | 'warn' | 'info'; source: 'strava' | 'lift' | 'calendar'; text: string };
+export type Warning = { level: 'error' | 'warn' | 'info'; source: 'strava' | 'lift' | 'calendar' | 'garmin'; text: string };
 
 export type Status = {
   strava: {
@@ -17,6 +19,7 @@ export type Status = {
   };
   lift: { tokenSet: boolean; lastChangeAt: string | null; sessions: number };
   calendars: { email: string; active: boolean; lastSyncedAt: string | null }[];
+  garmin: GarminStatus;
   warnings: Warning[];
 };
 
@@ -58,11 +61,19 @@ export async function saveTargets(userId: string, targets: Targets) {
  * error and warn show as a banner on every page and on the start page; info shows on Settings only.
  */
 export async function loadStatus(userId: string, now = Date.now()): Promise<Status> {
-  const [conn, newest, lift, cals] = await Promise.all([
+  const [conn, newest, lift, cals, garmin] = await Promise.all([
     sql`SELECT athlete_id, is_active, last_synced_at FROM strava_connections WHERE user_id = ${userId} LIMIT 1` as Promise<Row[]>,
     sql`SELECT max(start_date_local) AS at FROM strava_activities WHERE user_id = ${userId}` as Promise<Row[]>,
     sql`SELECT max(updated_at) AS at, count(*) FILTER (WHERE entity = 'session' AND deleted_at IS NULL) AS sessions FROM lift_rows` as Promise<Row[]>,
     sql`SELECT google_email, is_active, last_synced_at FROM calendar_connections WHERE user_id = ${userId} ORDER BY is_active DESC, google_email` as Promise<Row[]>,
+    // Garmin must not take down the banner or /api/home (a missing table, a bad row). runChecks() checks it alone.
+    loadGarminStatus(userId, now).catch((error: unknown): GarminStatus => {
+      console.error('Garmin status failed:', error instanceof Error ? error.name : 'unknown error');
+      return {
+        connected: false, status: null, lastSuccessAt: null, lastAttemptAt: null, syncedThrough: null, lastError: null, backfill: null,
+        warning: { level: 'info', text: 'Garmin status could not be read.' },
+      };
+    }),
   ]);
   const env = process.env;
   const strava: Status['strava'] = {
@@ -99,5 +110,7 @@ export async function loadStatus(userId: string, now = Date.now()): Promise<Stat
   if (personal && hoursSince(personal.lastSyncedAt, now) > 3) {
     warnings.push({ level: 'warn', source: 'calendar', text: `Calendar has not synced for ${ago(hoursSince(personal.lastSyncedAt, now))} (it should sync every 30 min).` });
   }
-  return { strava, lift: liftStatus, calendars, warnings };
+  // Garmin: an expired login is an error, no success for 36 h a warning, "not set up" or a recent error info only.
+  if (garmin.warning) warnings.push({ ...garmin.warning, source: 'garmin' });
+  return { strava, lift: liftStatus, calendars, garmin, warnings };
 }

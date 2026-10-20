@@ -1,0 +1,14 @@
+# Pinned for the Garmin sync job. garminconnect 0.3.x has its own auth client
+# (it no longer uses garth). Upgrade with care: Garmin's unofficial API breaks often.
+garminconnect==0.3.19
+curl_cffi==0.16.3
+ua-generator==2.1.7
+# AES-256-GCM for the tokens stored in Coach (tokencrypt.py).
+cryptography==50.0.2
+requests==2.34.2
+urllib3==2.8.0
+certifi==2026.10.19
+charset-normalizer==3.5.2
+idna==3.20
+cffi==2.1.1
+pycparser==3.11

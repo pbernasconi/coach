@@ -7,6 +7,12 @@ import { loadPerformance } from '@/lib/performance/queries';
 import { loadWeek, ownerId } from '@/lib/plan/queries';
 import { addDays, mondayOf, todayIn } from '@/lib/plan/week.mjs';
 import { loadCoachingNotes, loadStatus, loadTargets } from '@/lib/status';
+import { loadLibrary, loadMonth } from '@/lib/plan/month';
+import { loadPmc } from '@/lib/performance/projection';
+import { loadPeakPerformances } from '@/lib/performance/peaks';
+import { loadEventsWithCountdown } from '@/lib/performance/events';
+import { loadGarminStatus, loadHealth } from '@/lib/vitals/queries';
+import { loadDay, loadGarminSections, loadRecoveryToday, loadTraining } from '@/lib/vitals/garmin-pages';
 
 export type Check = { name: string; ok: boolean; ms: number; error?: string };
 
@@ -39,6 +45,18 @@ export async function runChecks(now = new Date()): Promise<Check[]> {
     check('performance', () => loadPerformance(userId, today)),
     check('week (this)', () => loadWeek(userId, monday, today)),
     check('week (next)', () => loadWeek(userId, addDays(monday, 7), today)),
+    check('month', () => loadMonth(userId, today.slice(0, 7), today)),
+    check('workout library', () => loadLibrary(userId)),
+    check('fitness projection', () => loadPmc(userId, today)),
+    check('peak performances', () => loadPeakPerformances(userId, today)),
+    check('events', () => loadEventsWithCountdown(userId, today)),
+    check('health', () => loadHealth(userId, today)),
+    check('garmin', () => loadGarminStatus(userId, now.getTime())),
+    check('health day', () => loadDay(userId, today)),
+    check('health day (yesterday)', () => loadDay(userId, addDays(today, -1))),
+    check('health training', () => loadTraining(userId, today)),
+    check('health garmin sections', () => loadGarminSections(userId, today)),
+    check('recovery today', () => loadRecoveryToday(userId, today)),
     check('lift', async () => {
       const { model, unit } = await loadLiftModel();
       muscleSets(model, monday, addDays(monday, 6));

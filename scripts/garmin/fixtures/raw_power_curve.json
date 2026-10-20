@@ -1,0 +1,96 @@
+{
+ "startDate": "2029-10-17",
+ "endDate": "2030-01-15",
+ "entries": [
+  {
+   "duration": 1,
+   "power": 306,
+   "activityId": 9000000024,
+   "activityDate": "2030-01-15"
+  },
+  {
+   "duration": 2,
+   "power": 302,
+   "activityId": 9000000025,
+   "activityDate": "2029-11-06"
+  },
+  {
+   "duration": 5,
+   "power": 301,
+   "activityId": 9000000025,
+   "activityDate": "2029-11-06"
+  },
+  {
+   "duration": 10,
+   "power": 300,
+   "activityId": 9000000025,
+   "activityDate": "2029-11-06"
+  },
+  {
+   "duration": 20,
+   "power": 300,
+   "activityId": 9000000025,
+   "activityDate": "2029-11-06"
+  },
+  {
+   "duration": 30,
+   "power": 300,
+   "activityId": 9000000025,
+   "activityDate": "2029-11-06"
+  },
+  {
+   "duration": 60,
+   "power": 288,
+   "activityId": 9000000025,
+   "activityDate": "2029-11-06"
+  },
+  {
+   "duration": 120,
+   "power": 272,
+   "activityId": 9000000025,
+   "activityDate": "2029-11-06"
+  },
+  {
+   "duration": 300,
+   "power": 218,
+   "activityId": 9000000025,
+   "activityDate": "2029-11-06"
+  },
+  {
+   "duration": 600,
+   "power": 187,
+   "activityId": 9000000026,
+   "activityDate": "2029-11-01"
+  },
+  {
+   "duration": 1200,
+   "power": 182,
+   "activityId": 9000000026,
+   "activityDate": "2029-11-01"
+  },
+  {
+   "duration": 1800,
+   "power": 179,
+   "activityId": 9000000026,
+   "activityDate": "2029-11-01"
+  },
+  {
+   "duration": 3600,
+   "power": 145,
+   "activityId": 9000000027,
+   "activityDate": "2029-11-14"
+  },
+  {
+   "duration": 7200,
+   "power": null,
+   "activityId": null,
+   "activityDate": null
+  },
+  {
+   "duration": 18000,
+   "power": null,
+   "activityId": null,
+   "activityDate": null
+  }
+ ]
+}

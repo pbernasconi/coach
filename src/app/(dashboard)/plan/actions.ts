@@ -7,6 +7,11 @@ import { sql } from '@/db';
 import { pushWeek } from '@/lib/calendar-sync/push.mjs';
 import { mondayOf } from '@/lib/plan/week.mjs';
 import { FEELS, moveWorkout, setFeel, setSkipped, undoWeek, workoutDate, type Feel } from '@/lib/plan/queries';
+import { addFromLibrary, loadRange, removeWorkout, type CalendarRange } from '@/lib/plan/month';
+import { MAX_SPAN_WEEKS, spanWeeks } from '@/lib/plan/scroll.mjs';
+import { cookieTimeZone } from '@/lib/plan/timezone';
+import { todayIn } from '@/lib/plan/week.mjs';
+import { weeksAfterRemove } from '@/lib/plan/remove.mjs';
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -65,4 +70,36 @@ export async function undoAction(weekStart: string, today: string) {
   revalidatePath('/plan');
   if (changed) pushCalendar(userId, [date(weekStart)]);
   return changed;
+}
+
+/** Adds a planned workout on a day from the workout library ('plan:<id>' or 'lift:<template id>'). */
+export async function addFromLibraryAction(itemId: string, onDate: string) {
+  const userId = await user();
+  const item = String(itemId);
+  if (!/^(plan|lift):[\w-]{1,80}$/.test(item)) throw new Error('Bad library item');
+  const id = await addFromLibrary(userId, item, date(onDate));
+  revalidatePath('/plan');
+  pushCalendar(userId, [mondayOf(onDate)]);
+  return id;
+}
+
+/** Deletes a planned workout, then removes its Google Calendar event (pushWeek deletes events with no workout). */
+export async function removeWorkoutAction(id: string) {
+  const userId = await user();
+  const onDate = await removeWorkout(userId, String(id));
+  if (!onDate) throw new Error('Workout not found');
+  revalidatePath('/plan');
+  pushCalendar(userId, weeksAfterRemove(onDate));
+}
+
+/**
+ * Weeks for the continuous calendar, as it scrolls: the Mondays `fromMonday` to `toMonday`, at most MAX_SPAN_WEEKS
+ * weeks. One query set (loadRange), like the first render.
+ */
+export async function loadWeeksAction(fromMonday: string, toMonday: string): Promise<CalendarRange> {
+  const userId = await user();
+  const from = mondayOf(date(fromMonday));
+  const to = mondayOf(date(toMonday));
+  if (to < from || spanWeeks(from, to) > MAX_SPAN_WEEKS) throw new Error('Bad week range');
+  return loadRange(userId, from, to, todayIn(await cookieTimeZone()));
 }

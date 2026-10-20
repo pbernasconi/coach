@@ -1,0 +1,54 @@
+import { Check, Circle, CircleDashed, Minus, TriangleAlert, X, type LucideIcon } from 'lucide-react';
+import { LEVEL_LABEL } from '@/lib/plan/compliance.mjs';
+
+/** The colour token and icon for each compliance level (src/lib/plan/compliance.mjs). */
+export const LEVEL_STYLE: Record<string, { color: string; Icon: LucideIcon }> = {
+  good: { color: 'var(--plan-good)', Icon: Check },
+  done: { color: 'var(--plan-good)', Icon: Check },
+  partial: { color: 'var(--plan-partial)', Icon: Minus },
+  off: { color: 'var(--plan-off)', Icon: TriangleAlert },
+  missed: { color: 'var(--plan-missed)', Icon: X },
+  skipped: { color: 'var(--plan-idle)', Icon: Minus },
+  rest: { color: 'var(--plan-idle)', Icon: Circle },
+  today: { color: 'var(--plan-idle)', Icon: CircleDashed },
+  planned: { color: 'var(--plan-idle)', Icon: CircleDashed },
+};
+
+export const levelStyle = (level: string) => LEVEL_STYLE[level] ?? LEVEL_STYLE.planned;
+
+/** A status icon in the level colour. The label goes to screen readers and the tooltip; `showLabel` prints it. */
+export default function ComplianceMark({ level, title, showLabel = false }: { level: string; title?: string; showLabel?: boolean }) {
+  const { color, Icon } = levelStyle(level);
+  const label = (LEVEL_LABEL as Record<string, string>)[level] ?? level;
+  return (
+    <span className="inline-flex items-center gap-1" title={title ?? label}>
+      <Icon aria-hidden className="h-3 w-3 shrink-0" style={{ color }} strokeWidth={2.75} />
+      {showLabel ? <span className="text-[var(--viz-ink-2)]">{label}</span> : <span className="sr-only">{label}</span>}
+    </span>
+  );
+}
+
+/** The legend for the compliance colours. */
+export function ComplianceLegend() {
+  const items: [string, string][] = [
+    ['good', 'On target (80–120 %)'],
+    ['partial', 'Partly (50–80 %, 120–150 %)'],
+    ['off', 'Far off (under 50 %, over 150 %)'],
+    ['missed', 'Missed'],
+    ['planned', 'Planned'],
+  ];
+  return (
+    <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-[var(--viz-ink-2)]">
+      {items.map(([level, label]) => {
+        const { color, Icon } = levelStyle(level);
+        return (
+          <span key={level} className="inline-flex items-center gap-1">
+            <span className="h-3 w-1 rounded-full" style={{ background: color }} />
+            <Icon aria-hidden className="h-3 w-3" style={{ color }} strokeWidth={2.75} />
+            {label}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
