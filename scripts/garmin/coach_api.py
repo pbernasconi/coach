@@ -94,6 +94,15 @@ class Coach:
         data = self._request("GET", "/api/vitals/garmin", "read Garmin state")
         return data if isinstance(data, dict) else {}
 
+    def get_workout_ops(self) -> dict[str, Any]:
+        """GET /api/workouts/garmin: the planned runs to create, update or delete on Garmin Connect."""
+        data = self._request("GET", "/api/workouts/garmin", "read workout ops")
+        return data if isinstance(data, dict) else {}
+
+    def post_workout_results(self, results: list[dict[str, Any]]) -> None:
+        """POST /api/workouts/garmin: what the workout push did."""
+        self._request("POST", "/api/workouts/garmin", "store workout results", {"results": results})
+
     def put_state(self, **fields: Any) -> None:
         """PUT /api/vitals/garmin. Only the given fields change."""
         self._request("PUT", "/api/vitals/garmin", "store Garmin state", fields)

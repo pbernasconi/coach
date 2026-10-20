@@ -4,10 +4,7 @@ import { ownerForSignedInUser } from '@/lib/owner';
 import { revalidatePath } from 'next/cache';
 import { after } from 'next/server';
 import { sql } from '@/db';
-import { HOME_TZ, pushWeek } from '@/lib/calendar-sync/push.mjs';
-import { intervalsClient } from '@/lib/workouts/intervals-api.mjs';
-import { syncWorkouts } from '@/lib/workouts/sync.mjs';
-import { addDays } from '@/lib/plan/week.mjs';
+import { pushWeek } from '@/lib/calendar-sync/push.mjs';
 import { mondayOf } from '@/lib/plan/week.mjs';
 import { moveWorkout, setSkipped, workoutDate } from '@/lib/plan/queries';
 import { addFromLibrary, createWorkout, duplicateWorkout, loadRange, removeWorkout, type CalendarRange } from '@/lib/plan/month';
@@ -39,19 +36,6 @@ function pushCalendar(userId: string, weeks: string[]) {
       } catch (error) {
         console.error('Calendar push failed:', error);
       }
-    }
-    // The structured workouts on Zwift and the Garmin watch (through intervals.icu) follow the same change.
-    const client = intervalsClient();
-    if (!client) return;
-    const sorted = [...new Set(weeks)].sort();
-    try {
-      // Past workouts stay as they were sent.
-      const today = todayIn(HOME_TZ);
-      const from = sorted[0] > today ? sorted[0] : today;
-      const r = await syncWorkouts(sql, userId, client, { from, to: addDays(sorted.at(-1)!, 6) });
-      if ('errors' in r && r.errors?.length) console.error('Workout sync:', r.errors.join(' | '));
-    } catch (error) {
-      console.error('Workout sync failed:', error);
     }
   });
 }
