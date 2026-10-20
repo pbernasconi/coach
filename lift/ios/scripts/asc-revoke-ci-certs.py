@@ -8,7 +8,9 @@ certificates per account, so the archive then fails after some runs. This script
 each archive, and keeps the stored certificate.
 
 Certificates made in Xcode on a Mac carry the Mac's name, not "Created via API", so this script leaves them alone.
-Inputs come from the environment: ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 (the .p8 contents) and LIFT_CERT_ID.
+Inputs come from the environment: ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 (the .p8 contents) and LIFT_CERT_ID: the
+certificate ids to keep, separated by commas (the CI certificate first, then any Mac that installs Lift by cable;
+a Mac certificate made with the API key is also named "Created via API", and revoking it stops that install).
 """
 
 import importlib.util
@@ -27,9 +29,9 @@ CI_NAME = "Created via API"
 def main() -> int:
     client = asc.Client(asc.token(os.environ["ASC_KEY_ID"], os.environ["ASC_ISSUER_ID"], os.environ["ASC_KEY_P8"]))
     certificates = client.call("GET", "/certificates?limit=200&filter[certificateType]=DEVELOPMENT").get("data", [])
-    keep = os.environ.get("LIFT_CERT_ID", "")
+    keep = {cert_id.strip() for cert_id in os.environ.get("LIFT_CERT_ID", "").split(",") if cert_id.strip()}
     stale = [
-        item for item in certificates if item["attributes"].get("displayName") == CI_NAME and item["id"] != keep
+        item for item in certificates if item["attributes"].get("displayName") == CI_NAME and item["id"] not in keep
     ]
     for item in stale:
         client.call("DELETE", f"/certificates/{item['id']}")
