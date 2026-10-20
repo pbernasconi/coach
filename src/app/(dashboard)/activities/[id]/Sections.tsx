@@ -65,7 +65,7 @@ function indexRange(v: ActivityView, key: string, label: string, item: { startIn
 const th = 'px-2 py-1.5 text-right font-medium whitespace-nowrap';
 const td = 'px-2 py-1.5 text-right tabular-nums whitespace-nowrap';
 
-function ZoneBars({ zones, unit, kind }: { zones: Zone[]; unit: string; kind: 'hr' | 'power' }) {
+export function ZoneBars({ zones, unit, kind }: { zones: Zone[]; unit: string; kind: 'hr' | 'power' }) {
   const total = zones.reduce((n, z) => n + z.seconds, 0) || 1;
   const max = Math.max(...zones.map((z) => z.seconds), 1);
   return (
