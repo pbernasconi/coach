@@ -1,3 +1,13 @@
 {
-  "crons": [{ "path": "/api/cron/strava", "schedule": "0 13 * * *" }]
+  "crons": [
+    {
+      "path": "/api/cron/strava",
+      "schedule": "0 13 * * *"
+    }
+  ],
+  "git": {
+    "deploymentEnabled": {
+      "main": false
+    }
+  }
 }

@@ -1,0 +1,146 @@
+# Production deploys (RELIABILITY.md). Vercel does not build main (vercel.json); this workflow puts each merge live:
+#   1. find the staged build of this exact tree ("web build" staged it on the pull request), or build it now;
+#   2. apply new migrations (additive only, DATABASE.md), so the old build keeps working;
+#   3. check the build on the real data, then promote it (an alias swap: production serves it in seconds);
+#   4. render every page on coach.paolobernasconi.com; on a failure, promote the build before it again and open
+#      an "outage" issue.
+# Secrets: VERCEL_TOKEN, HEALTH_TOKEN, VERCEL_BYPASS_SECRET, PROD_DATABASE_URL.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # redeploys main (builds it when no staged build matches)
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+env:
+  PRODUCTION_URL: https://coach.paolobernasconi.com
+  VERCEL_ORG_ID: team_Hwpc5IVS3EI80M3wxEu8wK2E
+  VERCEL_PROJECT_ID: prj_w56et7EBbNWCBLgA0g3AFys4A6MD
+  VERCEL_API: https://api.vercel.com
+  VERCEL_CLI: vercel@64.7.0
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      HEALTH_TOKEN: ${{ secrets.HEALTH_TOKEN }}
+      VERCEL_BYPASS_SECRET: ${{ secrets.VERCEL_BYPASS_SECRET }}
+      DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+
+      - name: Find the staged build and the live one
+        id: find
+        run: |
+          auth=(-H "Authorization: Bearer $VERCEL_TOKEN")
+          q="teamId=$VERCEL_ORG_ID"
+          tree=$(git rev-parse 'HEAD^{tree}')
+          staged=$(curl -fsS "${auth[@]}" "$VERCEL_API/v6/deployments?projectId=$VERCEL_PROJECT_ID&$q&target=production&state=READY&limit=100" \
+            | jq -r --arg t "$tree" '[.deployments[] | select(.meta.stagedTree == $t)][0].uid // empty')
+          live=$(curl -fsS "${auth[@]}" "$VERCEL_API/v9/projects/$VERCEL_PROJECT_ID?$q" | jq -r '.targets.production.id')
+          echo "staged=$staged" >> "$GITHUB_OUTPUT"
+          echo "live=$live" >> "$GITHUB_OUTPUT"
+          echo "tree ${tree:0:12}: staged build ${staged:-none}; live now $live"
+
+      - name: Pending migrations?
+        id: migrations
+        run: |
+          applied=$(psql "$DATABASE_URL" -Atc 'SELECT count(*) FROM drizzle.__drizzle_migrations')
+          want=$(jq '.entries | length' drizzle/meta/_journal.json)
+          echo "$applied applied, $want in this commit"
+          echo "pending=$([ "$applied" -lt "$want" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
+        if: steps.migrations.outputs.pending == 'true' || steps.find.outputs.staged == ''
+        with:
+          node-version: 22
+      - id: deps
+        if: steps.migrations.outputs.pending == 'true' || steps.find.outputs.staged == ''
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: node_modules
+          key: node-modules-Web-node22-v1-${{ hashFiles('package-lock.json') }}
+      - if: (steps.migrations.outputs.pending == 'true' || steps.find.outputs.staged == '') && steps.deps.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: Apply migrations
+        if: steps.migrations.outputs.pending == 'true'
+        run: node scripts/db/migrate.mjs --yes
+
+      - name: Build now (no staged build for this tree)
+        id: build
+        if: steps.find.outputs.staged == ''
+        env:
+          SKIP_BUILD_TYPECHECK: "1" # the pull request's "web checks" type-checked this code
+          SKIP_DB_MIGRATE: "1" # migrated above
+        run: |
+          npx -y "$VERCEL_CLI" pull --yes --environment=production --token "$VERCEL_TOKEN" >/dev/null
+          DATABASE_URL=postgresql://build:build@localhost:5432/build npx -y "$VERCEL_CLI" build --prod --token "$VERCEL_TOKEN"
+          out=$(npx -y "$VERCEL_CLI" deploy --prebuilt --prod --skip-domain --token "$VERCEL_TOKEN" \
+            --meta stagedTree="$(git rev-parse 'HEAD^{tree}')" --meta stagedSha="$GITHUB_SHA")
+          url=$(grep -oE 'https://[a-z0-9-]+\.vercel\.app' <<<"$out" | head -1)
+          id=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" "$VERCEL_API/v13/deployments/${url#https://}?teamId=$VERCEL_ORG_ID" | jq -r .id)
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+
+      - name: Check the build before it goes live
+        id: target
+        run: |
+          id="${{ steps.find.outputs.staged }}"
+          id="${id:-${{ steps.build.outputs.id }}}"
+          url=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" "$VERCEL_API/v13/deployments/$id?teamId=$VERCEL_ORG_ID" | jq -r .url)
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+          node scripts/smoke.mjs "https://$url"
+
+      - name: Promote
+        id: promote
+        run: |
+          status=$(curl -sS -o /tmp/promote.json -w '%{http_code}' -X POST -H "Authorization: Bearer $VERCEL_TOKEN" \
+            "$VERCEL_API/v10/projects/$VERCEL_PROJECT_ID/promote/${{ steps.target.outputs.id }}?teamId=$VERCEL_ORG_ID")
+          echo "promote: HTTP $status"
+          case "$status" in 2*) ;; *) cat /tmp/promote.json; exit 1 ;; esac
+          echo "Promoted ${{ steps.target.outputs.id }} (was ${{ steps.find.outputs.live }})" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Check production
+        id: production
+        run: node scripts/smoke.mjs "$PRODUCTION_URL" --pages --expect-deployment "${{ steps.target.outputs.id }}"
+
+      - name: Roll back
+        id: rollback
+        if: failure() && steps.promote.outcome == 'success'
+        run: |
+          live="${{ steps.find.outputs.live }}"
+          curl -fsS -o /dev/null -X POST -H "Authorization: Bearer $VERCEL_TOKEN" \
+            "$VERCEL_API/v10/projects/$VERCEL_PROJECT_ID/promote/$live?teamId=$VERCEL_ORG_ID"
+          echo "Promoted $live again"
+          echo "to=$live" >> "$GITHUB_OUTPUT"
+
+      - name: Open or update the outage issue
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ROLLED_BACK_TO: ${{ steps.rollback.outputs.to }}
+        run: |
+          run_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          if [ -n "$ROLLED_BACK_TO" ]; then
+            note="Deploy of ${GITHUB_SHA:0:7} failed its check on production; production is back on $ROLLED_BACK_TO. Fix on main: the next merge deploys as usual."
+          else
+            note="Deploy of ${GITHUB_SHA:0:7} stopped before it went live; production did not change. Fix on main, or rerun this workflow."
+          fi
+          body="$(printf 'Coach deploy failed.\n\n%s\n\nRun: %s' "$note" "$run_url")"
+          gh label create outage --color B60205 --description "Coach smoke check failed" 2>/dev/null || true
+          existing=$(gh issue list --label outage --state open --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "$body"
+          else
+            gh issue create --title "Coach deploy failed" --label outage --body "$body" --assignee "$GITHUB_REPOSITORY_OWNER"
+          fi

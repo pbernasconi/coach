@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 // Applies the migrations in drizzle/ to DATABASE_URL (DATABASE_URL_UNPOOLED when set).
 //
-// Runs by itself only in a Vercel production build (VERCEL_ENV=production; `npm run build` calls it), so
-// production gets each migration before the new code goes live. If a migration fails, the build fails and the
-// old deploy keeps serving. Preview and CI builds skip it. To run it yourself: node scripts/db/migrate.mjs --yes
+// The Deploy workflow (.github/workflows/deploy.yml) runs it at each merge, before it promotes the new build, so
+// production gets each migration before the new code goes live; if a migration fails, nothing is promoted. A
+// Vercel production build also runs it (VERCEL_ENV=production; `npm run build` calls it) unless SKIP_DB_MIGRATE=1.
+// Preview and CI builds skip it. To run it yourself: node scripts/db/migrate.mjs --yes
 //
 // Migrations must keep the old code working (add tables and columns; drop or rename only in a later deploy),
 // because the old deploy serves until the new one is live. See DATABASE.md.
@@ -11,9 +12,12 @@ import pg from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 
-const run = process.env.VERCEL_ENV === 'production' || process.argv.includes('--yes');
+// SKIP_DB_MIGRATE=1: a staged production build (web.yml) builds before the merge; the Deploy workflow migrates at
+// the merge, before it promotes the build.
+const skipped = process.env.SKIP_DB_MIGRATE === '1';
+const run = (process.env.VERCEL_ENV === 'production' && !skipped) || process.argv.includes('--yes');
 if (!run) {
-  console.log('db migrate: skipped (not a Vercel production build; pass --yes to run it on DATABASE_URL)');
+  console.log(`db migrate: skipped (${skipped ? 'SKIP_DB_MIGRATE=1' : 'not a Vercel production build; pass --yes to run it on DATABASE_URL'})`);
   process.exit(0);
 }
 const url = process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL;
