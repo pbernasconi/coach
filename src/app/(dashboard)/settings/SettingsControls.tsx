@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import type { Targets } from '@/lib/status';
-import { saveTargetsAction, syncStravaNow } from './actions';
+import { saveCoachingNotesAction, saveTargetsAction, syncStravaNow } from './actions';
 
 export function StravaSyncButton() {
   const [pending, start] = useTransition();
@@ -55,6 +55,31 @@ export function TargetsForm({ targets }: { targets: Targets }) {
       {field('rideHours', 'Ride hours per week', 0.5)}
       {field('strength', 'Strength sessions per week', 1)}
       <Button size="sm" type="submit" disabled={pending}>Save targets</Button>
+    </form>
+  );
+}
+
+export function CoachingNotesForm({ notes }: { notes: string }) {
+  const [text, setText] = useState(notes);
+  const [pending, start] = useTransition();
+  return (
+    <form
+      className="space-y-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        start(async () => {
+          await saveCoachingNotesAction(text);
+          toast.success('Preferences saved');
+        });
+      }}
+    >
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        rows={14}
+        className="w-full rounded-md border bg-background p-2 font-mono text-xs"
+      />
+      <Button size="sm" type="submit" disabled={pending || text === notes}>Save preferences</Button>
     </form>
   );
 }
