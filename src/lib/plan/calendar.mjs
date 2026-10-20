@@ -1,4 +1,4 @@
-// Month calendar logic for /plan?view=month: the week grid, the weekly summary column, the workout library and
+// Month calendar logic for /plan: the week grid, the weekly summary column, the workout library and
 // weather codes. No framework or database imports, so node --test can run it (calendar.test.mjs).
 
 import { addDays, mondayOf, sportOf } from './week.mjs';

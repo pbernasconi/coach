@@ -6,7 +6,7 @@ import { after } from 'next/server';
 import { sql } from '@/db';
 import { pushWeek } from '@/lib/calendar-sync/push.mjs';
 import { mondayOf } from '@/lib/plan/week.mjs';
-import { FEELS, moveWorkout, setFeel, setSkipped, undoWeek, workoutDate, type Feel } from '@/lib/plan/queries';
+import { moveWorkout, setSkipped, workoutDate } from '@/lib/plan/queries';
 import { addFromLibrary, loadRange, removeWorkout, type CalendarRange } from '@/lib/plan/month';
 import { MAX_SPAN_WEEKS, spanWeeks } from '@/lib/plan/scroll.mjs';
 import { cookieTimeZone } from '@/lib/plan/timezone';
@@ -55,24 +55,6 @@ export async function skipWorkoutAction(id: string, skipped: boolean) {
   if (onDate) pushCalendar(userId, [mondayOf(onDate)]);
 }
 
-export async function feelAction(weekStart: string, today: string, feel: Feel) {
-  if (!FEELS.includes(feel)) throw new Error('Bad feel');
-  const userId = await user();
-  const changed = await setFeel(userId, date(weekStart), date(today), feel);
-  revalidatePath('/plan');
-  if (changed) pushCalendar(userId, [date(weekStart)]);
-  return changed;
-}
-
-export async function undoAction(weekStart: string, today: string) {
-  const userId = await user();
-  const changed = await undoWeek(userId, date(weekStart), date(today));
-  revalidatePath('/plan');
-  if (changed) pushCalendar(userId, [date(weekStart)]);
-  return changed;
-}
-
-/** Adds a planned workout on a day from the workout library ('plan:<id>' or 'lift:<template id>'). */
 export async function addFromLibraryAction(itemId: string, onDate: string) {
   const userId = await user();
   const item = String(itemId);

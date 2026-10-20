@@ -56,7 +56,7 @@ export default function RemoveWorkout({ workout, onRemove, disabled, variant = '
     <div
       role="alertdialog"
       aria-label={notice.question}
-      onKeyDown={(e) => { if (e.key === 'Escape') setAsking(false); }}
+      onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); setAsking(false); } }}
       onClick={(e) => e.stopPropagation()}
       className={cn(
         'space-y-1.5 rounded-md border border-[var(--plan-missed)] bg-background p-2 text-xs',

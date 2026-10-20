@@ -13,7 +13,7 @@ export function validTimeZone(tz: string | undefined) {
   }
 }
 
-/** The browser's time zone from the tz cookie (PlanBoard sets it), else the home zone. */
+/** The browser's time zone from the tz cookie (the Plan calendar sets it), else the home zone. */
 export async function cookieTimeZone() {
   return validTimeZone((await cookies()).get('tz')?.value);
 }
