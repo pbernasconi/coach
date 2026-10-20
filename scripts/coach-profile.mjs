@@ -3,7 +3,7 @@
  * Build the unified athlete profile + recent context.
  * Aggregates: athlete profile, training log, fitness state (CTL/ATL/TSB),
  * sport-specific averages, calendar rhythm (preferred days/times),
- * upcoming calendar events, weather, and Apple Notes workouts.
+ * upcoming calendar events, weather, and the Lift templates (from the database).
  *
  * Outputs both:
  *   - profile.md (human-readable, comprehensive)
@@ -287,13 +287,24 @@ try {
   weather.sort((a, b) => a.date.localeCompare(b.date));
 } catch (e) { console.error('weather fail:', e.message); }
 
-// ===== 8. Apple Notes workouts (recent) =====
-let appleNotes = [];
+// ===== 8. Lift templates (the strength programming; synced from the Lift app) =====
+const liftTemplates = [];
 try {
-  const out = execFileSync(process.execPath, [resolve(import.meta.dirname, 'apple-notes-workouts.mjs'), '--since', new Date(Date.now() - 90 * 86400_000).toISOString().slice(0, 10)], { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
-  const jsonEnd = out.lastIndexOf(']');
-  if (jsonEnd > 0) appleNotes = JSON.parse(out.slice(0, jsonEnd + 1));
-} catch (e) { console.error('apple notes fail:', e.message); }
+  const rows = await sql`SELECT entity, id, payload FROM lift_rows WHERE deleted_at IS NULL AND entity IN ('template', 'templateExercise', 'exercise')`;
+  const names = new Map(rows.filter((r) => r.entity === 'exercise').map((r) => [String(r.id), r.payload.name]));
+  for (const t of rows.filter((r) => r.entity === 'template').sort((a, b) => (a.payload.position ?? 0) - (b.payload.position ?? 0))) {
+    const slots = rows
+      .filter((r) => r.entity === 'templateExercise' && String(r.payload.templateID).toLowerCase() === String(t.id))
+      .sort((a, b) => (a.payload.position ?? 0) - (b.payload.position ?? 0))
+      .map((r) => {
+        const p = r.payload;
+        const reps = p.repMin === p.repMax ? `${p.repMin}` : `${p.repMin}–${p.repMax}`;
+        const w = p.weightValue ? ` @ ${p.weightValue} ${p.weightUnit ?? ''}`.trimEnd() : '';
+        return `${p.setCount} × ${reps}${w} ${names.get(String(p.exerciseID).toLowerCase()) ?? 'exercise'}${p.note ? ` (${p.note})` : ''}`;
+      });
+    liftTemplates.push({ name: t.payload.name, slots });
+  }
+} catch (e) { console.error('lift templates fail:', e.message); }
 
 // ===== 8b. Quality rotation state (from prior plans in the database, not vibes) =====
 const rotation = await loadRotation(sql, user.id, weekStart.toISOString().slice(0, 10));
@@ -428,10 +439,11 @@ md.push(`- **Last quality session planned**: ${rotation.lastQuality ?? '_none fo
 md.push(`- **→ This horizon's first quality session should be**: **${rotation.nextQuality}**`);
 md.push('');
 
-md.push(`### Pending workouts from Apple Notes`);
-if (appleNotes.length === 0) md.push('_(none)_');
-for (const n of appleNotes.slice(0, 5)) {
-  md.push(`- **${n.title}** (${(n.modified || '').slice(0, 10)}) — ${n.body.slice(0, 200).replace(/\n/g, ' ')}…`);
+md.push(`## Lift templates (authoritative strength programming)`);
+if (liftTemplates.length === 0) md.push('_(none synced yet)_');
+for (const t of liftTemplates) {
+  md.push(`### ${t.name}`);
+  for (const s of t.slots) md.push(`- ${s}`);
 }
 md.push('');
 
@@ -503,7 +515,7 @@ const profileJson = {
   },
   rotation,
   weather,
-  appleNotes: appleNotes.slice(0, 5),
+  liftTemplates,
   goals: goals ?? null,
   inferredGoals: goalInferences,
 };

@@ -7,7 +7,7 @@ description: Mid-week training check-in. Compares planned vs actual, asks how th
 ## Durable preferences (same as /plan)
 - Personal Gmail calendar, purple events
 - 2 strength/wk, ≥1 above-threshold quality/wk
-- Apple Notes templates authoritative for lifts
+- The Lift templates (in the profile) are authoritative for lifts
 - Celsius / km / min/km
 - All scripts via `node --env-file=.env.local`
 
