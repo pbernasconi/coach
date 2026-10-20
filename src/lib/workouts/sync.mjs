@@ -25,9 +25,31 @@ export const plainName = (title) => String(title).replace(/^\p{Extended_Pictogra
 /** The first line of the coach's note, for the device. */
 const noteOf = (row) => String(row.description ?? '').split('\n')[0].slice(0, 300);
 
+/** The device each sync target serves: 'intervals' sends the Zwift rides through intervals.icu (the cloud path). */
+const DEVICE_OF_TARGET = { garmin: 'garmin', zwift: 'zwift', intervals: 'zwift' };
+
+/**
+ * The intervals.icu event for an indoor ride: our .zwo, with a stable uid so a re-send updates it. The name starts
+ * with the date: Zwift's partner sync wants unique names (docs/research/zwift-sync.md §3b, §6).
+ */
+export function intervalsEvent(row) {
+  const name = `${row.day.slice(5)} ${plainName(row.title)}`.slice(0, 80);
+  return {
+    category: 'WORKOUT',
+    type: 'VirtualRide',
+    start_date_local: `${row.day}T${row.start_time ?? '07:00'}:00`,
+    name,
+    description: noteOf(row),
+    uid: `coach:${row.id}`,
+    filename: `${name.replace(/[^\p{L}\p{N} _-]+/gu, '').trim()}.zwo`,
+    file_contents: toZwo({ ...row.steps, name }, { description: noteOf(row) }),
+  };
+}
+
 /** What the device gets for a plan workout, or null when it goes to another device (or none). */
 export function payloadFor(target, row) {
-  if (deviceOf(row) !== target) return null;
+  if (deviceOf(row) !== DEVICE_OF_TARGET[target]) return null;
+  if (target === 'intervals') return { date: row.day, event: intervalsEvent(row) };
   if (target === 'garmin') {
     return { date: row.day, workout: toGarmin(row.steps, { name: `Coach · ${plainName(row.title)}`, description: noteOf(row) }) };
   }
@@ -44,7 +66,7 @@ export const hashOf = (payload) => createHash('sha1').update(JSON.stringify(payl
 
 /**
  * What to do for one device: create, update, keep or delete, per plan workout.
- * @param {'garmin' | 'zwift'} target
+ * @param {'garmin' | 'zwift' | 'intervals'} target
  * @param {object[]} rows plan workouts in the window (id, day, title, workout_type, status, description, steps)
  * @param {{ activity_id: string, remote_id: string, content_hash: string }[]} synced this device's workout_syncs rows
  */
@@ -76,7 +98,7 @@ export function planSync(target, rows, synced) {
  */
 export async function loadSyncRows(sql, userId, target, from, to) {
   const rows = await sql`
-    SELECT a.id, to_char(a.scheduled_date, 'YYYY-MM-DD') AS day, a.title, a.workout_type, a.status, a.description, a.steps
+    SELECT a.id, to_char(a.scheduled_date, 'YYYY-MM-DD') AS day, a.start_time, a.title, a.workout_type, a.status, a.description, a.steps
     FROM training_plan_activities a JOIN training_plans p ON p.id = a.plan_id
     WHERE p.user_id = ${userId} AND a.scheduled_date >= ${from} AND a.scheduled_date < ${to}::date + 1
     ORDER BY a.scheduled_date, a.sort_order`;
