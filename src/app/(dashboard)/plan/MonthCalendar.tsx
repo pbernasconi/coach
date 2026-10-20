@@ -22,6 +22,7 @@ import { addDays, mondayOf } from '@/lib/plan/week.mjs';
 import type { CalendarActivity, CalendarLift, CalendarRange, CalendarWorkout, DataBounds, LibraryItem, WeekSummary } from '@/lib/plan/month';
 import type { DayWeather } from '@/lib/plan/weather';
 import { addFromLibraryAction, loadWeeksAction, moveWorkoutAction, removeWorkoutAction, skipWorkoutAction } from './actions';
+import ItemModal from './ItemModal';
 import ItemPreview, { type Item, type PreviewActions, type PreviewTarget } from './ItemPreview';
 import WorkoutLibrary, { LIBRARY_MIME, WORKOUT_MIME } from './WorkoutLibrary';
 
@@ -88,7 +89,8 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
   const [month, setMonth] = useState(() => monthOfWeek(openAt));
   const [failed, setFailed] = useState<{ before: number | null; after: number | null }>({ before: null, after: null });
   const [height, setHeight] = useState<number | null>(null);
-  const [preview, setPreview] = useState<{ target: PreviewTarget; anchor: HTMLElement } | null>(null);
+  const [preview, setPreview] = useState<{ date: string; anchor: HTMLElement } | null>(null);
+  const [modalKey, setModalKey] = useState<string | null>(null);
   const [libraryOpen, setLibraryOpen] = useState(false);
 
   const scrollerRef = useRef<HTMLDivElement>(null);
@@ -389,6 +391,13 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
     });
   }
 
+  function openTarget(target: PreviewTarget, anchor: HTMLElement) {
+    if (target.kind === 'item') {
+      setPreview(null);
+      setModalKey(target.key);
+    } else setPreview({ date: target.date, anchor });
+  }
+
   // The rows get one stable handler object; it calls the latest move / add / remove through this ref.
   const impl = useRef({ move, add, remove, skip });
   impl.current = { move, add, remove, skip };
@@ -403,7 +412,7 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
     },
     over: (date) => setDragOver(date),
     leave: (date) => setDragOver((x) => (x === date ? null : x)),
-    open: (target, anchor) => setPreview({ target, anchor }),
+    open: (target, anchor) => openTarget(target, anchor),
   }), []);
   const closePreview = useCallback(() => setPreview(null), []);
   const previewActions = useMemo<PreviewActions>(() => ({
@@ -413,20 +422,23 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
       setPreview(null);
       impl.current.remove(id);
     },
-    open: (target, anchor) => setPreview({ target, anchor }),
+    open: (target, anchor) => openTarget(target, anchor),
   }), []);
-  // The preview reads its item from the latest data, so a move or a skip shows at once.
-  const previewItems = useMemo((): { items: Item[]; title?: string } | null => {
+  // The modal and the day list read their items from the latest data, so a move or a skip shows at once.
+  const allItems = useMemo(() => weeks.flatMap((w) => w.days.flatMap((d) => d.items)), [weeks]);
+  const modalIndex = modalKey ? allItems.findIndex((i) => i.key === modalKey) : -1;
+  const modalItem = modalIndex >= 0 ? allItems[modalIndex] : null;
+  const stepModal = useCallback(
+    (dir: -1 | 1) => {
+      const next = allItems[modalIndex + dir];
+      if (next) setModalKey(next.key);
+    },
+    [allItems, modalIndex]
+  );
+  const dayItems = useMemo(() => {
     if (!preview) return null;
-    const days = weeks.flatMap((w) => w.days);
-    if (preview.target.kind === 'day') {
-      const date = preview.target.date;
-      const day = days.find((d) => d.date === date);
-      return day && day.items.length ? { items: day.items, title: longDate(date) } : null;
-    }
-    const key = preview.target.key;
-    const item = days.flatMap((d) => d.items).find((i) => i.key === key);
-    return item ? { items: [item] } : null;
+    const day = weeks.flatMap((w) => w.days).find((d) => d.date === preview.date);
+    return day && day.items.length ? day.items : null;
   }, [preview, weeks]);
 
   const overIn = (monday: string) => (dragOver && dragOver >= monday && dragOver <= addDays(monday, 6) ? dragOver : null);
@@ -546,15 +558,24 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
           />
         )}
       </div>
-      {preview && previewItems && (
+      {preview && dayItems && (
         <ItemPreview
           anchor={preview.anchor}
-          items={previewItems.items}
-          title={previewItems.title}
+          items={dayItems}
+          title={longDate(preview.date)}
           onClose={closePreview}
           actions={previewActions}
-          disabled={pending}
           scroller={scrollerRef.current}
+        />
+      )}
+      {modalItem && (
+        <ItemModal
+          item={modalItem}
+          onClose={() => setModalKey(null)}
+          onStep={stepModal}
+          canStep={{ prev: modalIndex > 0, next: modalIndex < allItems.length - 1 }}
+          actions={previewActions}
+          disabled={pending}
         />
       )}
     </div>
