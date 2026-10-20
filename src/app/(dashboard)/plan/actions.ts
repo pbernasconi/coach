@@ -10,11 +10,12 @@ import { syncWorkouts } from '@/lib/workouts/sync.mjs';
 import { addDays } from '@/lib/plan/week.mjs';
 import { mondayOf } from '@/lib/plan/week.mjs';
 import { moveWorkout, setSkipped, workoutDate } from '@/lib/plan/queries';
-import { addFromLibrary, loadRange, removeWorkout, type CalendarRange } from '@/lib/plan/month';
+import { addFromLibrary, createWorkout, duplicateWorkout, loadRange, removeWorkout, type CalendarRange } from '@/lib/plan/month';
 import { MAX_SPAN_WEEKS, spanWeeks } from '@/lib/plan/scroll.mjs';
 import { cookieTimeZone } from '@/lib/plan/timezone';
 import { todayIn } from '@/lib/plan/week.mjs';
 import { weeksAfterRemove } from '@/lib/plan/remove.mjs';
+import { cleanNewWorkout } from '@/lib/plan/create.mjs';
 import { loadActivity, loadActivityContext, type ActivityContext, type ActivityView } from '@/lib/activity/queries';
 import { loadLiftModel } from '@/lib/lift-dashboard/queries';
 import { sessionDetail } from '@/lib/lift-dashboard/stats.mjs';
@@ -125,4 +126,25 @@ export async function liftPreviewAction(id: string): Promise<{ detail: LiftDetai
   const { model, unit } = await loadLiftModel();
   const detail = sessionDetail(model, String(id).slice(0, 64), unit) as LiftDetail | null;
   return detail ? { detail, unit } : null;
+}
+
+/** Adds a new workout from the calendar ("+" on a day). Returns its id, or the problem with the input. */
+export async function createWorkoutAction(input: Record<string, unknown>): Promise<{ id: string } | { error: string }> {
+  const userId = await user();
+  const clean = cleanNewWorkout(input) as { value?: Parameters<typeof createWorkout>[1]; error?: string };
+  if (!clean.value) return { error: clean.error ?? 'The workout is not valid.' };
+  const id = await createWorkout(userId, clean.value);
+  revalidatePath('/plan');
+  pushCalendar(userId, [mondayOf(clean.value.date)]);
+  return { id };
+}
+
+/** Pastes a copied planned workout on another day. */
+export async function duplicateWorkoutAction(id: string, toDate: string) {
+  const userId = await user();
+  const copy = await duplicateWorkout(userId, String(id), date(toDate));
+  if (!copy) throw new Error('workout not found');
+  revalidatePath('/plan');
+  pushCalendar(userId, [mondayOf(toDate)]);
+  return copy;
 }
