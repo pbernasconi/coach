@@ -17,7 +17,7 @@ nonisolated public enum ToggleRowInteraction: Sendable, Equatable, CaseIterable 
 
 /// A tap whose save has not answered yet. While the row saves, the switch draws the tapped value, so the knob moves
 /// at the tap. The first change of the bound value ends the tap (the optimistic write, or a failed save that put the
-/// old value back), so the stored value always wins. Ported from an earlier app's `ToggleRowLook.PendingTap`.
+/// old value back), so the stored value always wins.
 nonisolated struct ToggleRowPendingTap: Equatable, Sendable {
     /// A tap is waiting for its save.
     private(set) var isPending = false

@@ -2,7 +2,7 @@
 
 Kobo (工房) is Japanese for a workshop or atelier: the place where well-made things are built.
 
-A reusable SwiftUI component library for iOS 26 and macOS 26. It started from the parts of an earlier app, a small app
+A reusable SwiftUI component library for iOS 26 and macOS 26. It started from the parts of two shipped apps
 and an early prototype that kept being rebuilt: a calm token set, Liquid Glass controls, a countdown ring, a
 week strip, toasts with undo, skeletons and loadable screens.
 

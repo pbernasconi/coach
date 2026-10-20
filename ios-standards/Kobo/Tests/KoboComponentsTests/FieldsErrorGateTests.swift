@@ -2,7 +2,7 @@ import Testing
 
 @testable import KoboComponents
 
-/// Errors show on blur or on submit, never while the user types (ported from an earlier app `FieldErrorGateTests`).
+/// Errors show on blur or on submit, never while the user types.
 @Suite struct FieldsErrorGateTests {
     private func reading(_ value: String?, error: Bool, focused: Bool) -> FieldErrorGate.Reading {
         FieldErrorGate.Reading(value: value, hasError: error, focused: focused)
