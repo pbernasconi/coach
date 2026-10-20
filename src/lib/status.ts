@@ -7,7 +7,10 @@ import { loadGarminStatus } from '@/lib/vitals/queries';
 export type Targets = { runKm: number; rideHours: number; strength: number };
 export const DEFAULT_TARGETS: Targets = { runKm: 35, rideHours: 4, strength: 2 };
 
-export type Warning = { level: 'error' | 'warn' | 'info'; source: 'strava' | 'lift' | 'calendar' | 'garmin'; text: string };
+export type Warning = { level: 'error' | 'warn' | 'info'; source: 'strava' | 'lift' | 'calendar' | 'garmin' | 'function'; text: string };
+
+/** The last Function Health sync (users.settings.functionSync, written by POST /api/vitals/function). */
+export type FunctionSync = { lastSuccessAt: string | null; lastAttemptAt: string | null; status: 'ok' | 'partial' | 'failed' | null; error: string | null };
 
 export type Status = {
   strava: {
@@ -21,6 +24,7 @@ export type Status = {
   lift: { tokenSet: boolean; lastChangeAt: string | null; sessions: number };
   calendars: { email: string; active: boolean; lastSyncedAt: string | null }[];
   garmin: GarminStatus;
+  functionSync: FunctionSync;
   warnings: Warning[];
 };
 
@@ -62,7 +66,7 @@ export async function saveTargets(userId: string, targets: Targets) {
  * error and warn show as a banner on every page and on the start page; info shows on Settings only.
  */
 export async function loadStatus(userId: string, now = Date.now()): Promise<Status> {
-  const [conn, newest, lift, cals, garmin] = await Promise.all([
+  const [conn, newest, lift, cals, garmin, fn] = await Promise.all([
     sql`SELECT athlete_id, is_active, last_synced_at FROM strava_connections WHERE user_id = ${userId} LIMIT 1` as Promise<Row[]>,
     sql`SELECT max(start_date_local) AS at FROM strava_activities WHERE user_id = ${userId}` as Promise<Row[]>,
     sql`SELECT max(updated_at) AS at, count(*) FILTER (WHERE entity = 'session' AND deleted_at IS NULL) AS sessions FROM lift_rows` as Promise<Row[]>,
@@ -75,7 +79,15 @@ export async function loadStatus(userId: string, now = Date.now()): Promise<Stat
         warning: { level: 'info', text: 'Garmin status could not be read.' },
       };
     }),
+    sql`SELECT settings -> 'functionSync' AS s FROM users WHERE id = ${userId}` as Promise<Row[]>,
   ]);
+  const f = (fn[0]?.s ?? {}) as Record<string, unknown>;
+  const functionSync: FunctionSync = {
+    lastSuccessAt: typeof f.lastSuccessAt === 'string' ? f.lastSuccessAt : null,
+    lastAttemptAt: typeof f.lastAttemptAt === 'string' ? f.lastAttemptAt : null,
+    status: f.status === 'ok' || f.status === 'partial' || f.status === 'failed' ? f.status : null,
+    error: typeof f.error === 'string' ? f.error : null,
+  };
   const env = process.env;
   const strava: Status['strava'] = {
     connected: Boolean(conn[0]?.is_active),
@@ -113,14 +125,20 @@ export async function loadStatus(userId: string, now = Date.now()): Promise<Stat
   }
   // Garmin: an expired login is an error, no success for 36 h a warning, "not set up" or a recent error info only.
   if (garmin.warning) warnings.push({ ...garmin.warning, source: 'garmin' });
+  // Function runs by hand, so an old sync is normal; only a failed or partial last run is worth a note.
+  if (functionSync.status === 'failed') {
+    warnings.push({ level: 'warn', source: 'function', text: `The last Function Health sync failed: ${functionSync.error ?? 'unknown error'}.` });
+  } else if (functionSync.status === 'partial') {
+    warnings.push({ level: 'info', source: 'function', text: 'The last Function Health sync looked partial, so no biomarkers were removed.' });
+  }
   // A Vercel preview reads a copy of the data and must not sync (a Strava refresh there would rotate production's
   // token), so its missing secrets are expected: show them on Settings only, not as a banner.
   if (env.VERCEL_ENV === 'preview') {
     const quiet = warnings.map((w) => ({ ...w, level: 'info' as const }));
     quiet.unshift({ level: 'info', source: 'strava', text: 'Preview deployment: it reads the development database, and syncs are off.' });
-    return { strava, lift: liftStatus, calendars, garmin, warnings: quiet };
+    return { strava, lift: liftStatus, calendars, garmin, functionSync, warnings: quiet };
   }
-  return { strava, lift: liftStatus, calendars, garmin, warnings };
+  return { strava, lift: liftStatus, calendars, garmin, functionSync, warnings };
 }
 
 /**

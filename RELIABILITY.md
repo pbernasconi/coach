@@ -86,7 +86,7 @@ also does not wake the database, so cached pages are faster.
 | --- | --- | --- |
 | `lift` | `lift_rows` (8 entries, split by id, each below the 2 MB entry limit) | Each applied Lift sync change |
 | `vitals` | `health_samples`, `garmin_raw` | The vitals push, the Garmin raw push |
-| `labs` | `lab_biomarkers`, `lab_categories`, `lab_results`, `lab_planned_draws`, `clinician_notes` | `POST /api/cron/cache?tag=labs` (the Function workflow calls it) |
+| `labs` | `lab_biomarkers`, `lab_categories`, `lab_results`, `lab_planned_draws`, `clinician_notes` | `POST /api/vitals/function` (the Function sync) and `POST /api/cron/cache?tag=labs` |
 | `status` | The banner's connection status (`loadStatusCached`, 5 minutes) | Saves in Settings |
 
 A write that clears no tag (a script on the database) shows within an hour. `/api/health` reads through the same
