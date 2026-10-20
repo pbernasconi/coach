@@ -88,7 +88,8 @@ extension WorkoutExercise {
                 weight: WorkoutText.pill(set.actualWeight ?? set.target.weight, unit: set.unit),
                 reps: WorkoutText.pill(reps: set.actualReps, target: set.target),
                 previous: last.flatMap { WorkoutText.previous($0, unit: set.unit) },
-                note: set.note
+                note: set.note,
+                rpe: set.rpe.map(WorkoutText.rpe)
             )
         }
     }
@@ -117,8 +118,8 @@ extension SessionDetail.Item {
 }
 
 extension SetEditor {
-    /// An editor over `set`, starting from its saved values or, when there are none, its target. The weight moves in
-    /// `step`s.
+    /// An editor over `set`, starting from its saved values or, when there are none, its target, and its RPE and note.
+    /// The weight moves in `step`s.
     init(set: SetRecord, title: String, lastTime: String?, laterSets: Int, step: Double) {
         let weight = (set.actualWeight ?? set.target.weight)?.converted(to: set.unit).value ?? 0
         let reps = set.actualReps ?? set.target.reps ?? set.target.repRange?.lowerBound ?? 0
@@ -132,7 +133,11 @@ extension SetEditor {
             savedWeight: weight,
             savedReps: reps,
             lastTime: lastTime,
-            laterSets: laterSets
+            laterSets: laterSets,
+            rpe: set.rpe,
+            note: set.note ?? "",
+            savedRPE: set.rpe,
+            savedNote: set.note ?? ""
         )
     }
 

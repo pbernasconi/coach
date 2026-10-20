@@ -68,6 +68,15 @@ public struct LiveSetRepository: SetRepository {
         .after
     }
 
+    public func saveDetails(setID: UUID, rpe: Double?, note: String?) async throws -> SetRecord {
+        if let rpe, !RPE.isValid(rpe) { throw AppError(.invalidInput, detail: "rpe \(rpe)") }
+        return try await store.change(SetRecord.self, id: setID) { set, _ in
+            set.rpe = rpe
+            set.note = NoteText.normalized(note)
+        }
+        .after
+    }
+
     public func log(setID: UUID) async throws -> SetRecord {
         try await store.change(SetRecord.self, id: setID) { set, stamp in
             set.actualReps = set.actualReps ?? set.target.reps ?? set.target.repRange?.lowerBound
