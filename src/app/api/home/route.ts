@@ -15,9 +15,32 @@ import { addDays, mondayOf, todayIn } from '@/lib/plan/week.mjs';
 import { loadStatus, loadTargets } from '@/lib/status';
 import { zonesFor } from '@/lib/plan/zones.mjs';
 import { homeEvents } from '@/lib/calendar-sync/events';
+import { syncCalendars } from '@/lib/calendar-sync/sync.mjs';
+import { after } from 'next/server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+// Room for the calendar sync that `after()` can start.
+export const maxDuration = 60;
+
+// GitHub's 30-minute schedule (.github/workflows/sync.yml) often runs hours late. So when the calendar is
+// older than 30 min, this request also starts a sync after it answers. One sync at a time per instance.
+const STALE_MS = 30 * 60 * 1000;
+let syncing = false;
+function syncCalendarIfStale(lastSyncedAt: string | null) {
+  if (syncing || process.env.VERCEL_ENV === 'preview') return;
+  if (lastSyncedAt && Date.now() - new Date(lastSyncedAt).getTime() < STALE_MS) return;
+  syncing = true;
+  after(async () => {
+    try {
+      await syncCalendars(sql, { daysBack: 7, daysForward: 30 });
+    } catch (error) {
+      console.error('Home calendar sync failed:', error);
+    } finally {
+      syncing = false;
+    }
+  });
+}
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -85,6 +108,9 @@ export async function GET(request: Request) {
       loadTargets(userId),
       homeEvents(userId, startOfToday, 7),
     ]);
+
+    const calendarSyncedAt = status.calendars.find((c) => c.active)?.lastSyncedAt ?? null;
+    if (status.calendars.some((c) => c.active)) syncCalendarIfStale(calendarSyncedAt);
 
     const workouts = [...week.workouts, ...nextWeek.workouts].map((w) => ({
       id: w.id,
@@ -165,7 +191,7 @@ export async function GET(request: Request) {
           : null,
         targets,
         events,
-        calendarSyncedAt: status.calendars.find((c) => c.active)?.lastSyncedAt ?? null,
+        calendarSyncedAt,
         warnings: status.warnings.filter((w) => w.level !== 'info'),
         sync: {
           stravaLastSyncedAt: conn[0]?.last_synced_at ?? null,
