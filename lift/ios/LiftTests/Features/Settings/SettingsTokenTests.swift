@@ -26,6 +26,20 @@ import Testing
         return vm
     }
 
+    @Test func aTokenStoredBehindTheScreenShowsOnTheNextStatus() async {
+        // A lift://sync link stores the token after Settings first read it; the next status update shows it.
+        sync.hasTokenAnswers = [false, true]
+        sync.statuses = [SyncStatus(phase: .idle, lastSyncedAt: nil)]
+
+        let vm = await makeViewModel()
+
+        guard case .available(let summary) = vm.state.sync else {
+            Issue.record("sync section not available")
+            return
+        }
+        #expect(summary.hasToken)
+    }
+
     @Test func tokenRowTappedOpensAnEmptySheet() async {
         let vm = await makeViewModel()
 
