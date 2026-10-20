@@ -28,8 +28,9 @@ noticed. These guards exist so a bad value, a bad deploy or a bad migration cann
 
 ## Deploys
 
-Vercel builds previews only (`vercel.json` turns off Git deploys of main). A production deploy is a promote of a
-build that already exists, so a merge is live in seconds:
+Vercel builds nothing from Git (`vercel.json`): the Hobby plan allows 100 deployments a day, so each pull request
+push makes one (its staged build) and a merge makes none. A production deploy is a promote of a build that already
+exists, so a merge is live in seconds:
 
 1. **On the pull request**, "web build" builds the production output (`vercel build --prod`, the PR merged into
    main), uploads it as a staged production deployment with no domain, and checks it on the production data
@@ -43,6 +44,11 @@ build that already exists, so a merge is live in seconds:
    nothing stays pinned.
 
 To redeploy main by hand, run the Deploy workflow (Actions → Deploy → Run workflow).
+
+**Previews are on demand:** add the label `preview` to a pull request. `preview.yml` deploys it with the Preview
+environment (the Neon development branch, Clerk's development sign-in), checks it, and comments the link; each
+later push to that pull request redeploys it. At the daily limit, staging is skipped with a warning and the merge
+builds instead.
 
 ## The checks
 

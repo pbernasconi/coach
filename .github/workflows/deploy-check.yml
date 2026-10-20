@@ -1,6 +1,5 @@
-# Checks previews and production on the real data (scripts/smoke.mjs, /api/health). Production deploys are checked
-# by the Deploy workflow (deploy.yml), which rolls back a failed one.
-# - Preview deploy: /api/health and /sign-in on the preview URL. The result shows on the pull request's commit.
+# Checks production on the real data (scripts/smoke.mjs, /api/health). Production deploys are checked by the Deploy
+# workflow (deploy.yml), which rolls back a failed one; previews by preview.yml.
 # - Every 30 minutes, and by hand: production, every page. Data alone can break a page (the 2026-10-19 outage),
 #   so this catches a failure that no deploy caused. It opens an issue; it does not roll back (the old build reads
 #   the same data).
@@ -8,7 +7,6 @@
 name: Deploy check
 
 on:
-  deployment_status:
   schedule:
     - cron: "7,37 * * * *"
   workflow_dispatch:
