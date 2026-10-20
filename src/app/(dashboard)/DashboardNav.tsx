@@ -28,6 +28,8 @@ const navLinks = [
 export default function DashboardNav() {
   const pathname = usePathname();
   const wide = pathname.startsWith('/plan'); // match MainContainer's width
+  // The current section: / only on its own, others also for their sub-pages (/health/day/… is Health).
+  const isActive = (href: string) => (href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`));
   const { isLoaded } = useUser();
   const [open, setOpen] = useState(false);
 
@@ -48,14 +50,17 @@ export default function DashboardNav() {
               <SheetHeader>
                 <SheetTitle>Coach</SheetTitle>
               </SheetHeader>
-              <nav className="flex flex-col space-y-4 mt-4">
+              <nav className="mt-4 flex flex-col">
                 {navLinks.map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
                     prefetch
                     onClick={() => setOpen(false)}
-                    className="text-lg transition-colors hover:text-foreground/80 text-foreground/60"
+                    aria-current={isActive(link.href) ? 'page' : undefined}
+                    className={`flex min-h-11 items-center rounded-md px-2 text-lg transition-colors hover:text-foreground/80 ${
+                      isActive(link.href) ? 'bg-muted font-medium text-foreground' : 'text-foreground/60'
+                    }`}
                   >
                     {link.label}
                   </Link>
@@ -79,7 +84,8 @@ export default function DashboardNav() {
                   key={link.href}
                   href={link.href}
                   prefetch
-                  className="transition-colors hover:text-foreground/80 text-foreground/60"
+                  aria-current={isActive(link.href) ? 'page' : undefined}
+                  className={`transition-colors hover:text-foreground/80 ${isActive(link.href) ? 'text-foreground' : 'text-foreground/60'}`}
                 >
                   {link.label}
                 </Link>
@@ -95,7 +101,7 @@ export default function DashboardNav() {
           {/* Right side */}
           <div className="flex items-center ml-auto space-x-2">
             {/* The links render at once; only the account button waits for Clerk's script. */}
-            {isLoaded ? <UserButton afterSignOutUrl="/sign-in" /> : <div className="h-7 w-7 rounded-full bg-muted" />}
+            {isLoaded ? <UserButton afterSignOutUrl="/sign-in" /> : <div className="h-8 w-8 rounded-full bg-muted" />}
           </div>
         </div>
       </header>
