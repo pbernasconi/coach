@@ -74,9 +74,9 @@ struct RestBar: View {
         .accessibilityAddTraits(.updatesFrequently)
     }
 
-    /// "Back squat, Set 2. 75 seconds of rest left."
+    /// "Back squat, Set 2. 75 of 120 seconds of rest left."
     private var spokenClock: String {
-        let left = String(localized: "\(rest.remaining) seconds of rest left")
+        let left = String(localized: "\(rest.remaining) of \(rest.total) seconds of rest left")
         guard let setLabel else { return left }
         return "\(setLabel.replacingOccurrences(of: " · ", with: ", ")). \(left)"
     }
