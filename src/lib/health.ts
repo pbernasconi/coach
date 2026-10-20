@@ -33,7 +33,7 @@ async function check(name: string, run: () => Promise<unknown>): Promise<Check> 
  * that would break a page fails a check here. The deploy check and the scheduled check call this through
  * /api/health, and the CI integration test calls it on a seeded database.
  */
-export async function runChecks(now = new Date()): Promise<Check[]> {
+export async function runChecks(now = new Date(), { migrations = true }: { migrations?: boolean } = {}): Promise<Check[]> {
   const userId = await ownerId();
   if (!userId) return [{ name: 'owner', ok: false, ms: 0, error: 'no user row' }];
   const today = todayIn('America/Los_Angeles', now);
@@ -66,9 +66,9 @@ export async function runChecks(now = new Date()): Promise<Check[]> {
       for (const e of exerciseList(model, unit)) exerciseDetail(model, e.key, unit);
     }),
   ]);
-  // Every migration in this deploy is applied (production builds run them). Preview builds do not migrate, so a
-  // preview with a new migration would fail here; previews skip this check.
-  if (process.env.VERCEL_ENV !== 'preview') {
+  // Every migration in this deploy is applied (the Deploy workflow runs them before it promotes). Previews and the
+  // check of a staged build before its merge (?skip=migrations) skip this check.
+  if (migrations && process.env.VERCEL_ENV !== 'preview') {
     checks.push(
       await check('migrations', async () => {
         const rows = (await sql`SELECT hash FROM drizzle.__drizzle_migrations`) as { hash: string }[];
