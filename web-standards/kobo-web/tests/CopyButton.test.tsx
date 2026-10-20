@@ -16,7 +16,8 @@ describe('CopyButton', () => {
   })
 
   it('goes back to "Copy" after the reset time', async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true })
+    // No shouldAdvanceTime: real time must not move the clock, or a slow runner passes COPIED_RESET_MS during the click.
+    vi.useFakeTimers()
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     render(<CopyButton value="INV-20431" />)
     await user.click(screen.getByRole('button', { name: 'Copy' }))
