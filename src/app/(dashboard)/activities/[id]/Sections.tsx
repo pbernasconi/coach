@@ -6,6 +6,8 @@ import { duration, int, km, kmh, pace, paceOfSeconds, signed, zoneRange } from '
 import type { ActivityContext, ActivityView, Zone } from '@/lib/activity/queries';
 import { compass, weatherLabel } from '@/lib/activity/weather.mjs';
 import { zoneOf } from '@/lib/performance/form';
+import { rangeOfIndexes, splitRanges } from '@/lib/activity/ranges.mjs';
+import { RangeRow, type HighlightRange } from './ActivityHover';
 import Histogram from './Histogram';
 import PaceBars from './PaceBars';
 import PowerCurve from './PowerCurve';
@@ -52,6 +54,12 @@ function Stat({ label, value, unit, big = false }: { label: string; value: strin
       <div className="text-xs text-[var(--viz-muted)]">{label}</div>
     </div>
   );
+}
+
+/** A row's range on the chart series, or null when the activity has no streams or the row no indexes. */
+function indexRange(v: ActivityView, key: string, label: string, item: { startIndex: number | null; endIndex: number | null }): HighlightRange | null {
+  const r = v.series ? rangeOfIndexes(item, v.series) : null;
+  return r ? { key, label, from: r.from, to: r.to } : null;
 }
 
 const th = 'px-2 py-1.5 text-right font-medium whitespace-nowrap';
@@ -118,6 +126,7 @@ function Overview({ v, color }: { v: ActivityView; color: string }) {
     st.perceivedExertion != null && { label: 'Perceived Exertion', value: `${st.perceivedExertion}/10` },
   ].filter(Boolean) as { label: string; value: string; unit?: string }[];
   const w = v.weather;
+  const splitR = v.series ? splitRanges(v.splits, v.series) : v.splits.map(() => null);
   const points = v.series?.lat && v.series.lng ? v.series.lat.map((la, i) => (la != null && v.series!.lng![i] != null ? ([v.series!.lng![i]!, la] as [number, number]) : null)) : null;
 
   return (
@@ -169,14 +178,14 @@ function Overview({ v, color }: { v: ActivityView; color: string }) {
                   <tr><th className="px-3 py-1.5 text-left font-medium">Km</th><th className={th}>Pace</th><th className={th}>GAP</th><th className={th}>Elev</th><th className={`${th} pr-3`}>HR</th></tr>
                 </thead>
                 <tbody>
-                  {v.splits.map((s) => (
-                    <tr key={s.index} className="border-t">
+                  {v.splits.map((s, i) => (
+                    <RangeRow key={s.index} className="border-t" range={splitR[i] ? { key: `split-${s.index}`, label: `Km ${s.index}`, from: splitR[i]!.from, to: splitR[i]!.to } : null}>
                       <td className="px-3 py-1.5 tabular-nums">{s.distance < 950 ? (s.distance / 1000).toFixed(1) : s.index}</td>
                       <td className={td}>{pace(s.speed ?? (s.moving ? s.distance / s.moving : 0))}</td>
                       <td className={td}>{s.gapSpeed ? pace(s.gapSpeed) : '–'}</td>
                       <td className={td}>{s.elevDiff != null ? signed(s.elevDiff) : '–'}</td>
                       <td className={`${td} pr-3`}>{s.hr ? Math.round(s.hr) : '–'}</td>
-                    </tr>
+                    </RangeRow>
                   ))}
                 </tbody>
               </table>
@@ -299,7 +308,7 @@ function SegmentTable({ v, rows, bare = false }: { v: ActivityView; rows: Activi
         </thead>
         <tbody>
           {rows.map((sg, i) => (
-            <tr key={`${sg.id}-${i}`} className="border-t">
+            <RangeRow key={`${sg.id}-${i}`} className="border-t" range={indexRange(v, `seg-${v.segments.indexOf(sg)}`, sg.name, sg)}>
               <td className="max-w-[16rem] truncate px-3 py-1.5"><a href={`https://www.strava.com/segments/${sg.id}`} target="_blank" rel="noreferrer" className="hover:underline">{sg.name}</a></td>
               <td className={td}>{km(sg.distance)} km</td>
               <td className={td}>{sg.grade != null ? `${sg.grade.toFixed(1)}%` : '–'}</td>
@@ -307,7 +316,7 @@ function SegmentTable({ v, rows, bare = false }: { v: ActivityView; rows: Activi
               <td className={td}>{foot ? `${pace(sg.distance / sg.seconds)} /km` : `${kmh(sg.distance / sg.seconds)} km/h`}</td>
               <td className={td}>{sg.hr ? Math.round(sg.hr) : '–'}</td>
               <td className={`${td} pr-3`}>{sg.komRank ? `KOM #${sg.komRank}` : sg.prRank === 1 ? 'PR' : sg.prRank ? `#${sg.prRank}` : ''}</td>
-            </tr>
+            </RangeRow>
           ))}
         </tbody>
       </table>
@@ -404,7 +413,7 @@ export function ActivityBody({ v, context, contextFailed, color }: { v: Activity
       )}
 
       {v.laps.length > 1 && (
-        <Card id="laps" title="Laps">
+        <Card id="laps" title="Laps" note={v.series ? "Point at a row to show it on the charts and the map. Click to pin it." : undefined}>
           <div className="overflow-x-auto rounded-lg border bg-[var(--viz-surface)]">
             <table className="w-full min-w-[480px] text-sm">
               <thead className="text-xs text-[var(--viz-muted)]">
@@ -416,7 +425,7 @@ export function ActivityBody({ v, context, contextFailed, color }: { v: Activity
               </thead>
               <tbody>
                 {v.laps.map((l) => (
-                  <tr key={l.index} className="border-t">
+                  <RangeRow key={l.index} className="border-t" range={indexRange(v, `lap-${l.index}`, `Lap ${l.index}`, l)}>
                     <td className="px-3 py-1.5 tabular-nums">{l.index}</td>
                     <td className={td}>{km(l.distance)} km</td>
                     <td className={td}>{duration(l.moving || l.elapsed)}</td>
@@ -425,7 +434,7 @@ export function ActivityBody({ v, context, contextFailed, color }: { v: Activity
                     <td className={td}>{l.elevGain != null ? `${int(l.elevGain)} m` : '–'}</td>
                     <td className={td}>{l.hr ? `${Math.round(l.hr)} bpm` : '–'}</td>
                     {v.laps.some((x) => x.watts) && <td className={`${td} pr-3`}>{l.watts ? `${Math.round(l.watts)} W` : '–'}</td>}
-                  </tr>
+                  </RangeRow>
                 ))}
               </tbody>
             </table>
@@ -440,12 +449,12 @@ export function ActivityBody({ v, context, contextFailed, color }: { v: Activity
               <thead className="text-xs text-[var(--viz-muted)]"><tr><th className="px-3 py-1.5 text-left font-medium">Distance</th><th className={th}>Time</th><th className={th}>Pace</th><th className={`${th} pr-3`}>Rank</th></tr></thead>
               <tbody>
                 {v.bestEfforts.map((e) => (
-                  <tr key={e.label} className="border-t">
+                  <RangeRow key={e.label} className="border-t" range={indexRange(v, `best-${e.label}`, `Best ${e.label}`, e)}>
                     <td className="px-3 py-1.5">{e.label}</td>
                     <td className={td}>{duration(e.seconds)}</td>
                     <td className={td}>{pace(e.distance / e.seconds)} /km</td>
                     <td className={`${td} pr-3`}>{e.prRank === 1 ? 'PR' : e.prRank ? `${e.prRank === 2 ? '2nd' : '3rd'} best` : ''}</td>
-                  </tr>
+                  </RangeRow>
                 ))}
               </tbody>
             </table>
