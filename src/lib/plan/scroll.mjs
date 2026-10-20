@@ -1,4 +1,4 @@
-// Continuous-scroll calendar (/plan?view=month): which weeks to load, where the data starts, and which month a
+// Continuous-scroll calendar (/plan): which weeks to load, where the data starts, and which month a
 // week belongs to. No framework or database imports, so node --test can run it (scroll.test.mjs).
 
 import { addDays, mondayOf } from './week.mjs';

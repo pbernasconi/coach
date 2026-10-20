@@ -3,11 +3,11 @@
 import Link from 'next/link';
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { toast } from 'sonner';
-import { ChevronDown, ChevronUp, Dumbbell, ExternalLink, HeartPulse, TriangleAlert } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ChevronDown, ChevronUp, Dumbbell, HeartPulse, Library, TriangleAlert } from 'lucide-react';
 import SportIcon from '@/components/SportIcon';
 import ComplianceMark, { levelStyle } from '@/components/plan/ComplianceMark';
 import LegendPopover from '@/components/plan/LegendPopover';
-import RemoveWorkout from '@/components/plan/RemoveWorkout';
 import WeatherBadge from '@/components/plan/WeatherBadge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -16,12 +16,13 @@ import { addMonths, plainTitle } from '@/lib/plan/calendar.mjs';
 import { dur, visibleChips, weekColumnMode, weekRows } from '@/lib/plan/cells.mjs';
 import { applyChange } from '@/lib/plan/remove.mjs';
 import {
-  chunkAfter, chunkBefore, chunkToReach, earliestBound, firstWeekOfMonth, mergeRange, monthEdges, monthOfWeek, topWeekFor, withTimeout,
+  chunkAfter, chunkBefore, chunkToReach, earliestBound, firstWeekOfMonth, mergeRange, monthOfWeek, topWeekFor, withTimeout,
 } from '@/lib/plan/scroll.mjs';
 import { addDays, mondayOf } from '@/lib/plan/week.mjs';
 import type { CalendarActivity, CalendarLift, CalendarRange, CalendarWorkout, DataBounds, LibraryItem, WeekSummary } from '@/lib/plan/month';
 import type { DayWeather } from '@/lib/plan/weather';
-import { addFromLibraryAction, loadWeeksAction, moveWorkoutAction, removeWorkoutAction } from './actions';
+import { addFromLibraryAction, loadWeeksAction, moveWorkoutAction, removeWorkoutAction, skipWorkoutAction } from './actions';
+import ItemPreview, { type Item, type PreviewActions, type PreviewTarget } from './ItemPreview';
 import WorkoutLibrary, { LIBRARY_MIME, WORKOUT_MIME } from './WorkoutLibrary';
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -46,12 +47,7 @@ const shortDate = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('
 const longDate = (d: string) =>
   new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
 const weekday = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' });
-const weekHref = (d: string) => `/plan?week=${mondayOf(d)}#day-${d}`;
 
-type Item =
-  | { kind: 'planned'; key: string; w: CalendarWorkout; actual: CalendarActivity | null }
-  | { kind: 'activity'; key: string; a: CalendarActivity }
-  | { kind: 'lift'; key: string; l: CalendarLift };
 type Day = { date: string; items: Item[] };
 type WeekRow = { monday: string; days: Day[]; summary: WeekSummary | null };
 /** Stable callbacks for the memoized rows (they read the latest state through refs). */
@@ -59,7 +55,8 @@ type Handlers = {
   drop: (e: React.DragEvent, date: string) => void;
   over: (date: string) => void;
   leave: (date: string) => void;
-  remove: (id: string) => void;
+  /** Opens the preview card for an item or a day, next to the clicked element. */
+  open: (target: PreviewTarget, anchor: HTMLElement) => void;
 };
 type Change = { id: string; date?: string; remove?: boolean };
 
@@ -71,8 +68,8 @@ type Props = {
   bounds: DataBounds;
   weather: Record<string, DayWeather>;
   placeName: string;
-  toolbar?: React.ReactNode; // the Week/Month toggle, shown left of the title
   library: LibraryItem[];
+  timeZone: string; // the zone the server used for "today" (the tz cookie)
 };
 
 /**
@@ -82,7 +79,8 @@ type Props = {
  *
  * Week rows have a fixed height and are memoized: a scroll, a load or an edit re-renders only the weeks it changed.
  */
-export default function MonthCalendar({ openAt, range, bounds, weather, placeName, library, toolbar }: Props) {
+export default function MonthCalendar({ openAt, range, bounds, weather, placeName, library, timeZone }: Props) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [data, setData] = useState<CalendarRange>(range);
   const [dragOver, setDragOver] = useState<string | null>(null);
@@ -90,6 +88,8 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
   const [month, setMonth] = useState(() => monthOfWeek(openAt));
   const [failed, setFailed] = useState<{ before: number | null; after: number | null }>({ before: null, after: null });
   const [height, setHeight] = useState<number | null>(null);
+  const [preview, setPreview] = useState<{ target: PreviewTarget; anchor: HTMLElement } | null>(null);
+  const [libraryOpen, setLibraryOpen] = useState(false);
 
   const scrollerRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -112,9 +112,17 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
 
   const today = data.today;
   const first = data.weeks[0];
-  const last = data.weeks.at(-1)!;
   const atEarliest = !chunkBefore(first, bounds.earliest);
   const weeks = useMemo(() => weekRows(data, rowCache.current) as WeekRow[], [data]);
+
+  // The server picks "today" from the tz cookie. Set it from this browser so travel days line up.
+  useEffect(() => {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (tz && tz !== timeZone) {
+      document.cookie = `tz=${encodeURIComponent(tz)}; path=/; max-age=31536000; samesite=lax`;
+      router.refresh();
+    }
+  }, [timeZone, router]);
 
   // A server refresh (revalidatePath after an action) sends fresh first weeks: merge them in.
   useEffect(() => {
@@ -279,7 +287,7 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
     if (m && m !== monthRef.current) {
       monthRef.current = m;
       setMonth(m);
-      window.history.replaceState(window.history.state, '', `/plan?view=month&month=${m}`);
+      window.history.replaceState(window.history.state, '', `/plan?month=${m}`);
     }
   }, [rows]);
 
@@ -357,6 +365,17 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
     });
   }
 
+  function skip(w: CalendarWorkout) {
+    startTransition(async () => {
+      try {
+        await skipWorkoutAction(w.id, w.status !== 'skipped');
+      } catch {
+        toast.error('Could not change the workout');
+      }
+      await reload([mondayOf(w.date)]);
+    });
+  }
+
   function add(itemId: string, date: string) {
     const item = library.find((x) => x.id === itemId);
     startTransition(async () => {
@@ -371,8 +390,8 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
   }
 
   // The rows get one stable handler object; it calls the latest move / add / remove through this ref.
-  const impl = useRef({ move, add, remove });
-  impl.current = { move, add, remove };
+  const impl = useRef({ move, add, remove, skip });
+  impl.current = { move, add, remove, skip };
   const handlers = useMemo<Handlers>(() => ({
     drop: (e, date) => {
       e.preventDefault();
@@ -384,11 +403,32 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
     },
     over: (date) => setDragOver(date),
     leave: (date) => setDragOver((x) => (x === date ? null : x)),
-    remove: (id) => impl.current.remove(id),
+    open: (target, anchor) => setPreview({ target, anchor }),
   }), []);
+  const closePreview = useCallback(() => setPreview(null), []);
+  const previewActions = useMemo<PreviewActions>(() => ({
+    move: (id, date) => impl.current.move(id, date),
+    skip: (w) => impl.current.skip(w),
+    remove: (id) => {
+      setPreview(null);
+      impl.current.remove(id);
+    },
+    open: (target, anchor) => setPreview({ target, anchor }),
+  }), []);
+  // The preview reads its item from the latest data, so a move or a skip shows at once.
+  const previewItems = useMemo((): { items: Item[]; title?: string } | null => {
+    if (!preview) return null;
+    const days = weeks.flatMap((w) => w.days);
+    if (preview.target.kind === 'day') {
+      const date = preview.target.date;
+      const day = days.find((d) => d.date === date);
+      return day && day.items.length ? { items: day.items, title: longDate(date) } : null;
+    }
+    const key = preview.target.key;
+    const item = days.flatMap((d) => d.items).find((i) => i.key === key);
+    return item ? { items: [item] } : null;
+  }, [preview, weeks]);
 
-  const planEndWeek = bounds.planEnd ? mondayOf(bounds.planEnd) : null;
-  const planEndAfter = (monday: string) => (monday === planEndWeek && monday !== last ? bounds.planEnd : null);
   const overIn = (monday: string) => (dragOver && dragOver >= monday && dragOver <= addDays(monday, 6) ? dragOver : null);
   const thisWeek = mondayOf(today);
   const months = useMemo(() => {
@@ -404,8 +444,7 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        {toolbar}
-        <h1 className="min-w-[10.5rem] text-xl font-semibold tracking-tight text-[var(--viz-ink)]" aria-live="polite">{monthTitle(month)}</h1>
+        <h1 className="min-w-[10.5rem] text-2xl font-semibold tracking-tight text-[var(--viz-ink)]" aria-live="polite">{monthTitle(month)}</h1>
         <span className="hidden items-center gap-3 text-xs text-[var(--viz-muted)] xl:flex">
           <span className="inline-flex items-center gap-1.5">
             <span className="h-3.5 w-6 rounded-[4px] border border-dashed border-[var(--viz-axis)]" /> Planned
@@ -415,6 +454,11 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
           </span>
         </span>
         <div className="ml-auto flex items-center gap-1.5">
+          {library.length > 0 && (
+            <Button variant={libraryOpen ? 'secondary' : 'outline'} onClick={() => setLibraryOpen((o) => !o)} aria-expanded={libraryOpen}>
+              <Library aria-hidden className="mr-1.5 h-4 w-4" /> Library
+            </Button>
+          )}
           <Button variant="outline" size="icon" aria-label="Previous month" onClick={() => goTo(firstWeekOfMonth(addMonths(month, -1)))}>
             <ChevronUp className="h-4 w-4" />
           </Button>
@@ -426,11 +470,11 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start" style={height ? ({ '--cal-h': `${height}px` } as React.CSSProperties) : undefined}>
+      <div className="relative">
         <div
           ref={scrollerRef}
           onScroll={onScroll}
-          className="plan-scroller relative h-[calc(100dvh-8rem)] min-w-0 flex-1 overflow-y-auto overscroll-contain rounded-lg border bg-background"
+          className="plan-scroller relative h-[calc(100dvh-8rem)] min-w-0 overflow-y-auto overscroll-contain bg-background"
           style={height ? { height } : undefined}
           aria-busy={pending || loading !== null}
         >
@@ -451,9 +495,7 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
               <><SkeletonWeek /><SkeletonWeek /></>
             )}
             {weeks.map((w) => (
-              <WeekBlock key={w.monday} planEnd={planEndAfter(w.monday)}>
-                <GridWeek week={w} today={today} weather={weather} over={overIn(w.monday)} disabled={pending} h={handlers} />
-              </WeekBlock>
+              <GridWeek key={w.monday} week={w} today={today} weather={weather} over={overIn(w.monday)} h={handlers} />
             ))}
             {failed.after !== null && loading !== 'after' ? (
               <LoadError text="Could not load later weeks" onRetry={() => retry('after')} />
@@ -478,9 +520,7 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
                 </h2>
                 <div className="space-y-2 pt-2">
                   {g.weeks.map((w) => (
-                    <WeekBlock key={w.monday} planEnd={planEndAfter(w.monday)}>
-                      <AgendaWeek week={w} today={today} weather={weather} disabled={pending} h={handlers} />
-                    </WeekBlock>
+                    <AgendaWeek key={w.monday} week={w} today={today} weather={weather} h={handlers} />
                   ))}
                 </div>
               </div>
@@ -494,24 +534,30 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
           <div ref={bottomRef} aria-hidden className="h-px" />
         </div>
 
-        <WorkoutLibrary items={library} today={today} onAdd={add} disabled={pending} className="lg:max-h-[var(--cal-h)] lg:overflow-y-auto" />
+        {libraryOpen && (
+          // Not modal: the calendar stays live under it, so a library item can be dragged onto a day.
+          <WorkoutLibrary
+            items={library}
+            today={today}
+            onAdd={add}
+            disabled={pending}
+            onClose={() => setLibraryOpen(false)}
+            className="absolute right-0 top-0 z-30 max-h-full w-72 overflow-y-auto bg-background shadow-2xl"
+          />
+        )}
       </div>
-    </div>
-  );
-}
-
-function WeekBlock({ planEnd, children }: { planEnd: string | null; children: React.ReactNode }) {
-  return (
-    <>
-      {children}
-      {planEnd && (
-        <p className="flex h-7 items-center justify-center gap-2 border-b border-dashed text-[11px] text-[var(--viz-muted)]">
-          <span className="h-px w-8 bg-[var(--viz-axis)]" />
-          The plan ends {longDate(planEnd)}. Later weeks show completed activities only.
-          <span className="h-px w-8 bg-[var(--viz-axis)]" />
-        </p>
+      {preview && previewItems && (
+        <ItemPreview
+          anchor={preview.anchor}
+          items={previewItems.items}
+          title={previewItems.title}
+          onClose={closePreview}
+          actions={previewActions}
+          disabled={pending}
+          scroller={scrollerRef.current}
+        />
       )}
-    </>
+    </div>
   );
 }
 
@@ -557,13 +603,12 @@ function SkeletonAgenda() {
 // Grid (tablet and desktop)
 
 const GridWeek = memo(function GridWeek({
-  week, today, weather, over, disabled, h,
+  week, today, weather, over, h,
 }: {
   week: WeekRow;
   today: string;
   weather: Record<string, DayWeather>;
   over: string | null;
-  disabled: boolean;
   h: Handlers;
 }) {
   const weatherUntil = addDays(today, 14);
@@ -576,7 +621,6 @@ const GridWeek = memo(function GridWeek({
           today={today}
           wx={day.date >= today && day.date <= weatherUntil ? weather[day.date] : undefined}
           over={over === day.date}
-          disabled={disabled}
           h={h}
         />
       ))}
@@ -585,9 +629,8 @@ const GridWeek = memo(function GridWeek({
   );
 });
 
-function DayCell({ day, today, wx, over, disabled, h }: { day: Day; today: string; wx?: DayWeather; over: boolean; disabled: boolean; h: Handlers }) {
+function DayCell({ day, today, wx, over, h }: { day: Day; today: string; wx?: DayWeather; over: boolean; h: Handlers }) {
   const d = day.date;
-  const edge = monthEdges(d);
   const past = d < today;
   const isToday = d === today;
   const { shown, more } = visibleChips(day.items) as { shown: Item[]; more: number };
@@ -604,18 +647,20 @@ function DayCell({ day, today, wx, over, disabled, h }: { day: Day; today: strin
       className={cn(
         'group/day relative flex min-h-0 min-w-0 flex-col gap-0.5 overflow-hidden border-r px-1 pb-1 pt-0.5 transition-colors',
         past && 'bg-muted/40',
-        edge.top && 'border-t-2 border-t-foreground/25',
-        edge.left && 'border-l-2 border-l-foreground/25',
         isToday && 'bg-primary/[0.04] ring-2 ring-inset ring-primary',
         over && 'bg-primary/10 ring-2 ring-inset ring-primary/70'
       )}
     >
       <DayHead d={d} past={past} isToday={isToday} wx={wx} />
-      {shown.map((item) => <Chip key={item.key} item={item} disabled={disabled} h={h} />)}
+      {shown.map((item) => <Chip key={item.key} item={item} h={h} />)}
       {more > 0 && (
-        <Link href={weekHref(d)} className="rounded px-1 text-[11px] font-medium text-[var(--viz-ink-2)] hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <button
+          type="button"
+          onClick={(e) => h.open({ kind: 'day', date: d }, e.currentTarget)}
+          className="rounded px-1 text-left text-[11px] font-medium text-[var(--viz-ink-2)] hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
           +{more} more
-        </Link>
+        </button>
       )}
     </div>
   );
@@ -625,18 +670,15 @@ function DayHead({ d, past, isToday, wx, roomy = false }: { d: string; past: boo
   const isFirst = d.slice(8) === '01';
   return (
     <div className="flex h-5 shrink-0 items-center gap-1">
-      <Link
-        href={weekHref(d)}
-        aria-label={`Open the week of ${longDate(d)}`}
+      <span
         className={cn(
-          'inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-          isToday ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'hover:bg-accent',
-          !isToday && (past ? 'text-[var(--viz-muted)]' : 'text-[var(--viz-ink)]')
+          'inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold tabular-nums',
+          isToday ? 'bg-primary text-primary-foreground' : past ? 'text-[var(--viz-muted)]' : 'text-[var(--viz-ink)]'
         )}
       >
         {isFirst && <span className="mr-1 uppercase tracking-wide">{monthShort(d)}</span>}
         {Number(d.slice(8))}
-      </Link>
+      </span>
       {isToday && <span className="text-[10px] font-semibold uppercase tracking-wide text-primary">Today</span>}
       {past && !roomy && (
         <Link
@@ -653,16 +695,19 @@ function DayHead({ d, past, isToday, wx, roomy = false }: { d: string; past: boo
   );
 }
 
-function Chip({ item, disabled, h, roomy = false }: { item: Item; disabled: boolean; h: Handlers; roomy?: boolean }) {
-  if (item.kind === 'planned') return <PlannedChip w={item.w} actual={item.actual} disabled={disabled} h={h} roomy={roomy} />;
-  if (item.kind === 'activity') return <ActivityChip a={item.a} roomy={roomy} />;
-  return <LiftChip l={item.l} roomy={roomy} />;
+function Chip({ item, h, roomy = false }: { item: Item; h: Handlers; roomy?: boolean }) {
+  const open = (e: React.MouseEvent<HTMLElement>) => h.open({ kind: 'item', key: item.key }, e.currentTarget);
+  if (item.kind === 'planned') return <PlannedChip w={item.w} actual={item.actual} roomy={roomy} onOpen={open} />;
+  if (item.kind === 'activity') return <ActivityChip a={item.a} roomy={roomy} onOpen={open} />;
+  return <LiftChip l={item.l} roomy={roomy} onOpen={open} />;
 }
 
 const chipBase = 'group/chip relative flex min-w-0 flex-col justify-center rounded-[5px] border border-l-[3px] px-1.5 text-[11px] leading-[15px] transition-shadow';
 const chipFocus = 'rounded-[4px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
-function PlannedChip({ w, actual, disabled, h, roomy }: { w: CalendarWorkout; actual: CalendarActivity | null; disabled: boolean; h: Handlers; roomy: boolean }) {
+type OnOpen = (e: React.MouseEvent<HTMLElement>) => void;
+
+function PlannedChip({ w, actual, roomy, onOpen }: { w: CalendarWorkout; actual: CalendarActivity | null; roomy: boolean; onOpen: OnOpen }) {
   const lvl = levelStyle(w.compliance.level);
   const done = w.state === 'done';
   const missed = w.state === 'missed';
@@ -695,7 +740,7 @@ function PlannedChip({ w, actual, disabled, h, roomy }: { w: CalendarWorkout; ac
       style={{ borderLeftColor: sport(w.sport).color, borderLeftStyle: 'solid', '--chip-tint': lvl.color } as React.CSSProperties}
       title={tooltip}
     >
-      <Link href={`/plan?week=${mondayOf(w.date)}#w-${w.id}`} draggable={false} className={cn('block min-w-0', chipFocus)}>
+      <button type="button" onClick={onOpen} draggable={false} className={cn('block min-w-0 text-left', chipFocus)}>
         <span className="flex min-w-0 items-center gap-1">
           <SportIcon id={w.sport} className="h-3 w-3" />
           <span className={cn('min-w-0 flex-1 truncate font-medium text-[var(--viz-ink)]', w.state === 'skipped' && 'line-through')}>{plainTitle(w.title)}</span>
@@ -711,33 +756,19 @@ function PlannedChip({ w, actual, disabled, h, roomy }: { w: CalendarWorkout; ac
             plannedText || sport(w.sport).label
           )}
         </span>
-      </Link>
-      <span className={cn('absolute bottom-0.5 right-0.5 items-center gap-0.5', roomy ? 'flex' : 'hidden group-focus-within/chip:flex group-hover/chip:flex')}>
-        {actual && (
-          <a href={actual.url} aria-label={`Open ${actual.name}`}
-            className="rounded bg-card p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            <ExternalLink aria-hidden className="h-3 w-3" />
-          </a>
-        )}
-        <RemoveWorkout
-          variant="icon"
-          floating
-          workout={{ title: plainTitle(w.title), date: w.date, state: w.state, imported: w.imported }}
-          onRemove={() => h.remove(w.id)}
-          disabled={disabled}
-        />
-      </span>
+      </button>
     </div>
   );
 }
 
-function ActivityChip({ a, roomy }: { a: CalendarActivity; roomy: boolean }) {
+function ActivityChip({ a, roomy, onOpen }: { a: CalendarActivity; roomy: boolean; onOpen: OnOpen }) {
   const text = [dur(a.min), a.km >= 0.5 ? `${a.km} km` : null, a.tss ? `${Math.round(a.tss)} TSS` : null].filter(Boolean).join(' · ');
   return (
-    <a
-      href={a.url}
-      title={`${a.name}\n${text}\nCompleted, not planned. Opens the workout.`}
-      className={cn(chipBase, roomy ? 'py-1.5' : 'h-[34px] shrink-0', 'border-transparent bg-card shadow-sm hover:shadow-md', chipFocus, 'rounded-[5px]')}
+    <button
+      type="button"
+      onClick={onOpen}
+      title={`${a.name}\n${text}\nCompleted, not planned.`}
+      className={cn(chipBase, 'text-left', roomy ? 'py-1.5' : 'h-[34px] shrink-0', 'border-transparent bg-card shadow-sm hover:shadow-md', chipFocus, 'rounded-[5px]')}
       style={{ borderLeftColor: sport(a.sport).color }}
     >
       <span className="flex min-w-0 items-center gap-1">
@@ -746,16 +777,17 @@ function ActivityChip({ a, roomy }: { a: CalendarActivity; roomy: boolean }) {
         <span className="sr-only">Completed, not planned</span>
       </span>
       <span className="block truncate tabular-nums text-[var(--viz-ink-2)]">{text}</span>
-    </a>
+    </button>
   );
 }
 
-function LiftChip({ l, roomy }: { l: CalendarLift; roomy: boolean }) {
+function LiftChip({ l, roomy, onOpen }: { l: CalendarLift; roomy: boolean; onOpen: OnOpen }) {
   return (
-    <Link
-      href="/lift"
+    <button
+      type="button"
+      onClick={onOpen}
       title={`${l.name}\n${l.setsLogged} sets logged in Lift`}
-      className={cn(chipBase, roomy ? 'py-1.5' : 'h-[34px] shrink-0', 'border-transparent bg-card shadow-sm hover:shadow-md', chipFocus, 'rounded-[5px]')}
+      className={cn(chipBase, 'text-left', roomy ? 'py-1.5' : 'h-[34px] shrink-0', 'border-transparent bg-card shadow-sm hover:shadow-md', chipFocus, 'rounded-[5px]')}
       style={{ borderLeftColor: sport('strength').color }}
     >
       <span className="flex min-w-0 items-center gap-1">
@@ -763,7 +795,7 @@ function LiftChip({ l, roomy }: { l: CalendarLift; roomy: boolean }) {
         <span className="min-w-0 flex-1 truncate font-medium text-[var(--viz-ink)]">{l.name}</span>
       </span>
       <span className="block tabular-nums text-[var(--viz-ink-2)]">{l.setsLogged} sets · Lift</span>
-    </Link>
+    </button>
   );
 }
 
@@ -851,12 +883,11 @@ function WeekColumn({ s, monday, today }: { s: WeekSummary | null; monday: strin
 // Agenda (phones)
 
 const AgendaWeek = memo(function AgendaWeek({
-  week, today, weather, disabled, h,
+  week, today, weather, h,
 }: {
   week: WeekRow;
   today: string;
   weather: Record<string, DayWeather>;
-  disabled: boolean;
   h: Handlers;
 }) {
   const weatherUntil = addDays(today, 14);
@@ -865,9 +896,7 @@ const AgendaWeek = memo(function AgendaWeek({
   return (
     <section data-week={week.monday} className="plan-agenda-week overflow-hidden rounded-lg border bg-background">
       <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b bg-[var(--viz-surface)] px-3 py-2">
-        <Link href={`/plan?week=${week.monday}`} className="text-sm font-semibold text-[var(--viz-ink)] hover:underline">
-          Week of {shortDate(week.monday)}
-        </Link>
+        <span className="text-sm font-semibold text-[var(--viz-ink)]">Week of {shortDate(week.monday)}</span>
         {s && weekColumnMode(s, today) === 'empty' && week.monday > today && <span className="text-[11px] text-[var(--viz-muted)]">No plan</span>}
         {s && weekColumnMode(s, today) !== 'empty' && (
           <span className="flex flex-wrap gap-x-3 text-[11px] tabular-nums">
@@ -893,7 +922,7 @@ const AgendaWeek = memo(function AgendaWeek({
             const wx = d >= today && d <= weatherUntil ? weather[d] : undefined;
             return (
               <li key={d} className={cn('flex gap-3 px-3 py-2', past && 'bg-muted/30', isToday && 'bg-primary/[0.05]')}>
-                <Link href={weekHref(d)} className={cn('w-9 shrink-0 rounded text-center', chipFocus)} aria-label={`Open the week of ${longDate(d)}`}>
+                <div className="w-9 shrink-0 text-center">
                   <span className={cn('block text-[10px] font-semibold uppercase tracking-wide', isToday ? 'text-primary' : 'text-[var(--viz-muted)]')}>
                     {isToday ? 'Today' : weekday(d)}
                   </span>
@@ -905,14 +934,14 @@ const AgendaWeek = memo(function AgendaWeek({
                   >
                     {Number(d.slice(8))}
                   </span>
-                </Link>
+                </div>
                 <div className="min-w-0 flex-1 space-y-1.5">
                   {wx && (
                     <div className="flex justify-end">
                       <WeatherBadge w={wx} date={d} />
                     </div>
                   )}
-                  {day.items.map((item) => <Chip key={item.key} item={item} disabled={disabled} h={h} roomy />)}
+                  {day.items.map((item) => <Chip key={item.key} item={item} h={h} roomy />)}
                   {day.items.length === 0 && <p className="py-1 text-xs text-[var(--viz-muted)]">Nothing planned</p>}
                 </div>
               </li>
