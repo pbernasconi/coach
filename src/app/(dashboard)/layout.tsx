@@ -6,6 +6,8 @@ import { loadStatusCached, type Warning } from '@/lib/status';
 import HotkeysProvider from '@/components/hotkeys/HotkeysProvider';
 import DashboardNav from './DashboardNav';
 import MainContainer from './MainContainer';
+import { cn } from '@/lib/utils';
+import { PAGE_FRAME } from '@/lib/page-frame';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,7 +21,7 @@ async function StatusBanner() {
   if (warnings.length === 0) return null;
   return (
     <div className="border-b border-amber-500/40 bg-amber-500/10">
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2 text-sm sm:px-6 lg:px-8">
+      <div className={cn(PAGE_FRAME, 'flex flex-wrap items-center gap-x-4 gap-y-1 py-2 text-sm')}>
         {warnings.map((w) => (
           <span key={w.text}>{w.text}</span>
         ))}
