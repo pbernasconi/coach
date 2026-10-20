@@ -11,7 +11,10 @@
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "typecheck": "tsc --noEmit -p .",
+    "test:integration": "node --import tsx --test scripts/integration/*.test.ts",
+    "smoke": "node scripts/smoke.mjs"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.39.8",
@@ -50,6 +53,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.5.28",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   },
   "overrides": {

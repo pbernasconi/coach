@@ -1,4 +1,5 @@
 import { sql } from '@/db';
+import { toDay, toIso } from '@/lib/db-time.mjs';
 
 export type Targets = { runKm: number; rideHours: number; strength: number };
 export const DEFAULT_TARGETS: Targets = { runKm: 35, rideHours: 4, strength: 2 };
@@ -20,19 +21,6 @@ export type Status = {
 };
 
 type Row = Record<string, unknown>;
-/**
- * A database time as ISO 8601, or null. Postgres sends `timestamp` as '2026-10-20 03:00:41.123' (UTC here) and
- * `timestamptz` as '2026-10-20 03:00:41.123+00'; only a value without a zone gets 'Z'. An unreadable value is null,
- * so one odd row never breaks the start page.
- */
-export function iso(v: unknown): string | null {
-  if (v == null) return null;
-  if (v instanceof Date) return Number.isNaN(v.getTime()) ? null : v.toISOString();
-  const text = String(v).trim().replace(' ', 'T');
-  const zoned = /(Z|[+-]\d{2}(:?\d{2})?)$/.test(text);
-  const d = new Date(zoned ? text.replace(/([+-]\d{2})$/, '$1:00') : `${text}Z`);
-  return Number.isNaN(d.getTime()) ? null : d.toISOString();
-}
 const hoursSince = (at: string | null, now: number) => (at ? (now - Date.parse(at)) / 3_600_000 : Infinity);
 
 function ago(hours: number) {
@@ -80,17 +68,17 @@ export async function loadStatus(userId: string, now = Date.now()): Promise<Stat
   const strava: Status['strava'] = {
     connected: Boolean(conn[0]?.is_active),
     athleteId: conn[0] ? Number(conn[0].athlete_id) : null,
-    lastSyncedAt: iso(conn[0]?.last_synced_at),
-    newestActivity: newest[0]?.at ? String(iso(newest[0].at)).slice(0, 10) : null,
+    lastSyncedAt: toIso(conn[0]?.last_synced_at),
+    newestActivity: toDay(newest[0]?.at),
     canSync: Boolean(env.STRAVA_CLIENT_ID && env.STRAVA_CLIENT_SECRET),
     canConnect: Boolean(env.STRAVA_CLIENT_ID && env.STRAVA_REDIRECT_URI),
   };
   const liftStatus: Status['lift'] = {
     tokenSet: Boolean(env.LIFT_SYNC_TOKEN),
-    lastChangeAt: iso(lift[0]?.at),
+    lastChangeAt: toIso(lift[0]?.at),
     sessions: Number(lift[0]?.sessions ?? 0),
   };
-  const calendars = cals.map((c) => ({ email: String(c.google_email), active: Boolean(c.is_active), lastSyncedAt: iso(c.last_synced_at) }));
+  const calendars = cals.map((c) => ({ email: String(c.google_email), active: Boolean(c.is_active), lastSyncedAt: toIso(c.last_synced_at) }));
 
   const warnings: Warning[] = [];
   if (!strava.connected) {

@@ -8,6 +8,8 @@
 //   written (per hand for dumbbell pairs, per side for plate-loaded bars; added load for bodyweight).
 // - Estimated 1RM uses Epley, w x (1 + reps / 30), for 1-12 reps; a single is its own max (as LiftCore).
 
+import { toDay } from '../db-time.mjs';
+
 export const LB_PER_KG = 1 / 0.45359237;
 export const MAX_RELIABLE_REPS = 12;
 
@@ -95,7 +97,7 @@ export function buildModel(data) {
   const sessions = new Map();
   for (const s of data.sessions) {
     const id = lowerId(s.id);
-    const day = str(s.day);
+    const day = toDay(s.day); // 'YYYY-MM-DD'; a malformed day drops the session instead of breaking every page
     if (!id || !day || isDeleted(s)) continue;
     sessions.set(id, {
       id,
