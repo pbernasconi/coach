@@ -1,3 +1,4 @@
+import LinkHotkeys from '@/components/hotkeys/LinkHotkeys';
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -45,6 +46,14 @@ export default async function HealthDayPage({ params }: { params: Promise<{ date
 
   return (
     <div className="space-y-6" data-smoke="health-day">
+      <LinkHotkeys
+        links={[
+          { key: '[', label: 'Previous day', href: `/health/day/${prev}` },
+          { key: ']', label: 'Next day', href: next <= today ? `/health/day/${next}` : null },
+          { key: 't', label: 'Today', href: date !== today ? `/health/day/${today}` : null },
+          { key: 'b', label: 'Back to Health', href: '/health' },
+        ]}
+      />
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="space-y-1">
           <Link href="/health" className="text-sm text-muted-foreground underline-offset-4 hover:underline">← Health</Link>
