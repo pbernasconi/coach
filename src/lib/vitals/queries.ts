@@ -1,5 +1,6 @@
 import { sql } from '@/db';
 import { toDay } from '@/lib/db-time.mjs';
+import { cached } from '@/lib/data-cache';
 import { addDays, hrvMetricOf, readinessFrom, seriesOf, type ReadinessSummary, type SampleRow } from './readiness.mjs';
 import type { LabStatus } from './labs.mjs';
 import { garminStatusFrom, type GarminStatus } from './garmin.mjs';
@@ -14,14 +15,17 @@ const CHART_METRICS = [...READINESS_METRICS, 'vo2max'];
 
 const utcToday = () => new Date().toISOString().slice(0, 10);
 
-/** Samples for `userId` from `from` to `today`, owner-scoped. */
-async function samples(userId: string, from: string, today: string, metrics: string[]): Promise<SampleRow[]> {
-  return (await sql`
-    SELECT to_char(date, 'YYYY-MM-DD') AS date, metric, value
-    FROM health_samples
-    WHERE user_id = ${userId} AND date >= ${from}::date AND date <= ${today}::date AND metric = ANY(${metrics}::text[])
-    ORDER BY date`) as SampleRow[];
-}
+/** Samples for `userId` from `from` to `today`, owner-scoped. Cached under 'vitals' (src/lib/data-cache.ts). */
+const samples = cached(
+  async (userId: string, from: string, today: string, metrics: string[]): Promise<SampleRow[]> =>
+    (await sql`
+      SELECT to_char(date, 'YYYY-MM-DD') AS date, metric, value
+      FROM health_samples
+      WHERE user_id = ${userId} AND date >= ${from}::date AND date <= ${today}::date AND metric = ANY(${metrics}::text[])
+      ORDER BY date`) as SampleRow[],
+  'health-samples',
+  'vitals'
+);
 
 /**
  * Today's readiness (HRV and resting HR against their 60-day baselines, last night's sleep, weight trend) for the

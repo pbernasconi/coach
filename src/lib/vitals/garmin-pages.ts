@@ -1,5 +1,6 @@
 import { sql } from '@/db';
 import { toDay } from '@/lib/db-time.mjs';
+import { cached } from '@/lib/data-cache';
 import { parseDay } from './garmin-day.mjs';
 import {
   hrvNights, intensityWeeks, latestWithChange, parseEnduranceScore, parseHillScore, parsePersonalRecords, parseTrainingStatus,
@@ -15,12 +16,21 @@ import { addDays } from './readiness.mjs';
 
 type Row = Record<string, unknown>;
 
+// health_samples and garmin_raw change only through the vitals and Garmin pushes, which clear the 'vitals' tag
+// (src/lib/data-cache.ts), so the reads here are cached.
+const sampleRows = cached(
+  async (userId: string, from: string, to: string, metrics: string[] | null) =>
+    (await sql`
+      SELECT date, metric, value FROM health_samples
+      WHERE user_id = ${userId} AND date >= ${from}::date AND date <= ${to}::date
+        AND (${metrics}::text[] IS NULL OR metric = ANY(${metrics}::text[]))
+      ORDER BY date`) as Row[],
+  'garmin-samples',
+  'vitals'
+);
+
 async function samples(userId: string, from: string, to: string, metrics: string[] | null): Promise<SampleRow[]> {
-  const rows = (await sql`
-    SELECT date, metric, value FROM health_samples
-    WHERE user_id = ${userId} AND date >= ${from}::date AND date <= ${to}::date
-      AND (${metrics}::text[] IS NULL OR metric = ANY(${metrics}::text[]))
-    ORDER BY date`) as Row[];
+  const rows = await sampleRows(userId, from, to, metrics);
   return rows.flatMap((r) => {
     const date = toDay(r.date);
     return date ? [{ date, metric: String(r.metric), value: Number(r.value) }] : [];
@@ -28,17 +38,30 @@ async function samples(userId: string, from: string, to: string, metrics: string
 }
 
 /** The payloads of one day, by kind. */
+const rawDayRows = cached(
+  async (userId: string, date: string) => (await sql`SELECT kind, payload FROM garmin_raw WHERE user_id = ${userId} AND date = ${date}::date`) as Row[],
+  'garmin-raw-day',
+  'vitals'
+);
+
 async function rawDay(userId: string, date: string): Promise<Record<string, unknown>> {
-  const rows = (await sql`SELECT kind, payload FROM garmin_raw WHERE user_id = ${userId} AND date = ${date}::date`) as Row[];
+  const rows = await rawDayRows(userId, date);
   return Object.fromEntries(rows.map((r) => [String(r.kind), r.payload]));
 }
 
 /** The newest payload of each kind, on or before `today`. */
+const rawLatestRows = cached(
+  async (userId: string, kinds: string[], today: string) =>
+    (await sql`
+      SELECT DISTINCT ON (kind) kind, date, payload FROM garmin_raw
+      WHERE user_id = ${userId} AND kind = ANY(${kinds}::text[]) AND date <= ${today}::date
+      ORDER BY kind, date DESC`) as Row[],
+  'garmin-raw-latest',
+  'vitals'
+);
+
 async function rawLatest(userId: string, kinds: string[], today: string): Promise<Record<string, { date: string | null; payload: unknown }>> {
-  const rows = (await sql`
-    SELECT DISTINCT ON (kind) kind, date, payload FROM garmin_raw
-    WHERE user_id = ${userId} AND kind = ANY(${kinds}::text[]) AND date <= ${today}::date
-    ORDER BY kind, date DESC`) as Row[];
+  const rows = await rawLatestRows(userId, kinds, today);
   return Object.fromEntries(rows.map((r) => [String(r.kind), { date: toDay(r.date), payload: r.payload }]));
 }
 
