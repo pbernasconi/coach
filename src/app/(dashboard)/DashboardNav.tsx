@@ -15,6 +15,7 @@ import {
 import { useState } from 'react';
 import { NAV_KEYS } from '@/lib/hotkeys.mjs';
 import { cn } from '@/lib/utils';
+import { PAGE_FRAME } from '@/lib/page-frame';
 import CoachMark from '@/components/brand/CoachMark';
 
 // The nav links use Next's default (partial) prefetch: the page shell and its loading.tsx, not its data. A full
@@ -32,7 +33,6 @@ const keyOf = (href: string) => NAV_KEYS.find((n) => n.href === href)?.key;
 
 export default function DashboardNav() {
   const pathname = usePathname();
-  const wide = pathname.startsWith('/plan'); // match MainContainer's width
   // The current section: / only on its own, others also for their sub-pages (/health/day/… is Health).
   const isActive = (href: string) => (href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`));
   const { isLoaded } = useUser();
@@ -40,7 +40,7 @@ export default function DashboardNav() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-      <div className={cn('mx-auto flex h-14 items-center gap-2 px-4 sm:px-6', wide ? 'max-w-[1920px] lg:px-6' : 'container max-w-7xl lg:px-8')}>
+      <div className={cn(PAGE_FRAME, 'flex h-14 items-center gap-2')}>
         {/* Mobile menu button */}
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
