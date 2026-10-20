@@ -54,13 +54,5 @@ export type Overview = {
   totals: { sessions: number; exercises: number; volume: number };
 };
 
-/** A 'YYYY-MM-DD' day as text ("Oct 20" by default). */
-export function fmtDay(d: string, opts: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' }) {
-  const [y, m, n] = d.split('-').map(Number);
-  return new Date(Date.UTC(y, m - 1, n, 12)).toLocaleDateString('en-US', { ...opts, timeZone: 'UTC' });
-}
-export const weight = (v: number, unit: string) => `${Math.round(v).toLocaleString('en-US')} ${unit}`;
-export const compact = (v: number) => (v >= 10_000 ? `${(v / 1000).toFixed(1)}k` : Math.round(v).toLocaleString('en-US'));
-export const fmtSets = (n: number) => (n % 1 ? n.toFixed(1) : String(n));
-export const muscleName = (m: string) => m.charAt(0).toUpperCase() + m.slice(1);
-export const ago = (days: number) => (days === 0 ? 'today' : days === 1 ? 'yesterday' : `${days} days ago`);
+// The text helpers live in lift-dashboard/text.mjs, shared with the Lift app's API.
+export { ago, compact, fmtDay, fmtSets, muscleName, weight } from '@/lib/lift-dashboard/text.mjs';

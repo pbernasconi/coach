@@ -1,12 +1,13 @@
 import Link from 'next/link';
-import { tssMethodLabel } from '@/lib/strava-sync/tss.mjs';
-import type { ReactNode } from 'react';
+import { Fragment, type ReactNode } from 'react';
 import SectionError from '@/components/SectionError';
 import ComplianceMark from '@/components/plan/ComplianceMark';
-import { duration, int, km, kmh, pace, paceOfSeconds, signed, zoneRange } from '@/lib/activity/format.mjs';
+import { percents } from '@/lib/activity/format.mjs';
 import type { ActivityContext, ActivityView, Zone } from '@/lib/activity/queries';
-import { compass, weatherLabel } from '@/lib/activity/weather.mjs';
-import { zoneOf } from '@/lib/performance/form';
+import {
+  achievementsText, bestEffortRow, bestEffortsNote, effortView, garminRows, gearView, heartRateNote, lapRow, loadView, noStreamsText,
+  overviewStats, paceHistogramView, plannedTexts, rankedSegments, sameRouteRows, segmentRow, segmentsNote, splitRow, weatherView, zoneTexts,
+} from '@/lib/activity/view.mjs';
 import { rangeOfIndexes, splitRanges } from '@/lib/activity/ranges.mjs';
 import { RangeRow, type HighlightRange } from './ActivityHover';
 import Histogram from './Histogram';
@@ -67,7 +68,7 @@ const th = 'px-2 py-1.5 text-right font-medium whitespace-nowrap';
 const td = 'px-2 py-1.5 text-right tabular-nums whitespace-nowrap';
 
 export function ZoneBars({ zones, unit, kind }: { zones: Zone[]; unit: string; kind: 'hr' | 'power' }) {
-  const total = zones.reduce((n, z) => n + z.seconds, 0) || 1;
+  const pct = percents(zones.map((z) => z.seconds));
   const max = Math.max(...zones.map((z) => z.seconds), 1);
   return (
     <div className="overflow-x-auto rounded-lg border bg-[var(--viz-surface)]">
@@ -83,19 +84,19 @@ export function ZoneBars({ zones, unit, kind }: { zones: Zone[]; unit: string; k
           </tr>
         </thead>
         <tbody>
-          {[...zones].reverse().map((z) => (
+          {zones.map((z, i) => ({ z, share: pct[i] })).reverse().map(({ z, share }) => (
             <tr key={z.zone} className="border-t">
               <td className="px-3 py-1.5 whitespace-nowrap">
                 <b className="tabular-nums">Z{z.zone}</b> <span className="text-[var(--viz-ink-2)]">{z.name}</span>
                 {/* On a phone the share bar sits under the zone name; its own column is hidden. */}
                 <div aria-hidden className="mt-1 h-1.5 rounded-r-[3px] sm:hidden" style={{ width: `${Math.max(z.seconds ? 2 : 0, (z.seconds / max) * 100)}%`, background: `var(--viz-z${Math.min(7, z.zone)})` }} />
               </td>
-              <td className="px-2 py-1.5 whitespace-nowrap tabular-nums text-[var(--viz-ink-2)]">{zoneRange(z.min, z.max, unit)}</td>
+              <td className="px-2 py-1.5 whitespace-nowrap tabular-nums text-[var(--viz-ink-2)]">{zoneTexts(z, unit).rangeText}</td>
               <td className="hidden px-2 py-1.5 sm:table-cell">
                 <div className="h-3 rounded-r-[4px]" style={{ width: `${Math.max(z.seconds ? 1 : 0, (z.seconds / max) * 100)}%`, background: `var(--viz-z${Math.min(7, z.zone)})` }} />
               </td>
-              <td className={td}>{z.seconds ? duration(z.seconds) : '–'}</td>
-              <td className={`${td} pr-3`}>{Math.round((z.seconds / total) * 100)}%</td>
+              <td className={td}>{zoneTexts(z, unit).timeText}</td>
+              <td className={`${td} pr-3`}>{share}%</td>
             </tr>
           ))}
         </tbody>
@@ -105,68 +106,40 @@ export function ZoneBars({ zones, unit, kind }: { zones: Zone[]; unit: string; k
 }
 
 function Overview({ v, color }: { v: ActivityView; color: string }) {
-  const foot = v.layout === 'run';
   const st = v.stats;
-  const big = [
-    st.distance > 0 && { label: 'Distance', value: km(st.distance), unit: 'km' },
-    { label: 'Moving Time', value: duration(st.moving) },
-    foot && st.avgSpeed && { label: 'Pace', value: pace(st.avgSpeed), unit: '/km' },
-    !foot && st.avgSpeed && st.distance > 0 && { label: 'Avg Speed', value: kmh(st.avgSpeed), unit: 'km/h' },
-    v.effort.sufferScore != null && { label: 'Relative Effort', value: String(v.effort.sufferScore) },
-    v.effort.tss != null && { label: 'Coach TSS', value: String(Math.round(v.effort.tss)) },
-  ].filter(Boolean) as { label: string; value: string; unit?: string }[];
-  const small = [
-    st.elevGain > 0 && { label: 'Elevation', value: int(st.elevGain), unit: 'm' },
-    { label: 'Elapsed Time', value: duration(st.elapsed) },
-    st.calories != null && { label: 'Calories', value: int(st.calories) },
-    foot && st.avgGapSpeed && { label: 'GAP', value: pace(st.avgGapSpeed), unit: '/km' },
-    st.avgHr && { label: 'Avg Heart Rate', value: int(st.avgHr), unit: 'bpm' },
-    st.maxHr && { label: 'Max Heart Rate', value: int(st.maxHr), unit: 'bpm' },
-    st.avgCadence && { label: 'Cadence', value: int(st.avgCadence), unit: foot ? 'spm' : 'rpm' },
-    st.avgWatts && { label: st.deviceWatts ? 'Avg Power' : 'Est. Avg Power', value: int(st.avgWatts), unit: 'W' },
-    v.layout === 'ride' && st.np && { label: 'Weighted Avg Power', value: int(st.np), unit: 'W' },
-    st.kj && v.layout === 'ride' && { label: 'Total Work', value: int(st.kj), unit: 'kJ' },
-    !foot && st.maxSpeed && st.distance > 0 && { label: 'Max Speed', value: kmh(st.maxSpeed), unit: 'km/h' },
-    st.avgTemp != null && { label: 'Device Temp', value: String(Math.round(st.avgTemp)), unit: '°C' },
-    st.perceivedExertion != null && { label: 'Perceived Exertion', value: `${st.perceivedExertion}/10` },
-  ].filter(Boolean) as { label: string; value: string; unit?: string }[];
-  const w = v.weather;
+  const { big, small } = overviewStats(v);
+  const achievements = achievementsText(st);
+  const w = v.weather ? weatherView(v.weather) : null;
+  const gear = gearView(v);
   const splitR = v.series ? splitRanges(v.splits, v.series) : v.splits.map(() => null);
   const points = v.series?.lat && v.series.lng ? v.series.lat.map((la, i) => (la != null && v.series!.lng![i] != null ? ([v.series!.lng![i]!, la] as [number, number]) : null)) : null;
 
   return (
     <div className="space-y-6">
       <div className="rounded-lg border bg-[var(--viz-surface)] p-4">
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">{big.map((b) => <Stat key={b.label} {...b} big />)}</div>
-        <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 border-t pt-4 sm:grid-cols-4 lg:grid-cols-6">{small.map((b) => <Stat key={b.label} {...b} />)}</div>
-        {(st.achievements > 0 || st.prs > 0 || st.kudos > 0) && (
-          <p className="mt-3 text-xs text-[var(--viz-muted)]">
-            {[st.prs ? `${st.prs} PR${st.prs > 1 ? 's' : ''}` : null, st.achievements ? `${st.achievements} achievement${st.achievements > 1 ? 's' : ''}` : null, st.kudos ? `${st.kudos} kudos` : null].filter(Boolean).join(' · ')}
-          </p>
-        )}
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">{big.map((b) => <Stat key={b.label} label={b.label} value={b.valueText} unit={b.unit} big />)}</div>
+        <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 border-t pt-4 sm:grid-cols-4 lg:grid-cols-6">{small.map((b) => <Stat key={b.label} label={b.label} value={b.valueText} unit={b.unit} />)}</div>
+        {achievements && <p className="mt-3 text-xs text-[var(--viz-muted)]">{achievements}</p>}
       </div>
 
       {(w || v.device || v.gear) && <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {w && (
           <div className="rounded-lg border p-4 text-sm">
             <div className="text-xs font-medium text-[var(--viz-muted)]">Weather at the start</div>
-            <div className="mt-1 text-lg font-semibold">{weatherLabel(w.code)}{w.tempC != null ? `, ${Math.round(w.tempC)} °C` : ''}</div>
+            <div className="mt-1 text-lg font-semibold">{w.headline}</div>
             <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
-              {w.feelsLikeC != null && (<><dt className="text-[var(--viz-muted)]">Feels like</dt><dd className="tabular-nums">{Math.round(w.feelsLikeC)} °C</dd></>)}
-              {w.humidityPct != null && (<><dt className="text-[var(--viz-muted)]">Humidity</dt><dd className="tabular-nums">{Math.round(w.humidityPct)}%</dd></>)}
-              {w.windKmh != null && (<><dt className="text-[var(--viz-muted)]">Wind</dt><dd className="tabular-nums">{w.windKmh.toFixed(1)} km/h {compass(w.windDeg)}</dd></>)}
-              {w.precipMm != null && w.precipMm > 0 && (<><dt className="text-[var(--viz-muted)]">Rain</dt><dd className="tabular-nums">{w.precipMm} mm/h</dd></>)}
+              {w.rows.map((r) => (<Fragment key={r.label}><dt className="text-[var(--viz-muted)]">{r.label}</dt><dd className="tabular-nums">{r.valueText}</dd></Fragment>))}
             </dl>
-            <p className="mt-2 text-[10px] text-[var(--viz-muted)]">Open-Meteo{w.source.includes('archive') ? ' archive' : ''}, the hour nearest the start</p>
+            <p className="mt-2 text-[10px] text-[var(--viz-muted)]">{w.source}</p>
           </div>
         )}
         {(v.device || v.gear) && (
           <div className="rounded-lg border p-4 text-sm">
             {v.device && (<><div className="text-xs font-medium text-[var(--viz-muted)]">Device</div><div className="mb-2 font-medium">{v.device}</div></>)}
-            {v.gear && (
+            {gear && (
               <>
-                <div className="text-xs font-medium text-[var(--viz-muted)]">{v.layout === 'ride' ? 'Bike' : 'Shoes'}</div>
-                <div className="font-medium">{v.gear.name}{v.gear.distance != null && <span className="font-normal text-[var(--viz-ink-2)]"> ({int(v.gear.distance / 1000)} km)</span>}</div>
+                <div className="text-xs font-medium text-[var(--viz-muted)]">{gear.label}</div>
+                <div className="font-medium">{gear.name}{gear.distanceText && <span className="font-normal text-[var(--viz-ink-2)]"> {gear.distanceText}</span>}</div>
               </>
             )}
           </div>
@@ -183,15 +156,18 @@ function Overview({ v, color }: { v: ActivityView; color: string }) {
                   <tr><th className="px-3 py-1.5 text-left font-medium">Km</th><th className={th}>Pace</th><th className={th}>GAP</th><th className={th}>Elev</th><th className={`${th} pr-3`}>HR</th></tr>
                 </thead>
                 <tbody>
-                  {v.splits.map((s, i) => (
-                    <RangeRow key={s.index} className="border-t" range={splitR[i] ? { key: `split-${s.index}`, label: `Km ${s.index}`, from: splitR[i]!.from, to: splitR[i]!.to } : null}>
-                      <td className="px-3 py-1.5 tabular-nums">{s.distance < 950 ? (s.distance / 1000).toFixed(1) : s.index}</td>
-                      <td className={td}>{pace(s.speed ?? (s.moving ? s.distance / s.moving : 0))}</td>
-                      <td className={td}>{s.gapSpeed ? pace(s.gapSpeed) : '–'}</td>
-                      <td className={td}>{s.elevDiff != null ? signed(s.elevDiff) : '–'}</td>
-                      <td className={`${td} pr-3`}>{s.hr ? Math.round(s.hr) : '–'}</td>
-                    </RangeRow>
-                  ))}
+                  {v.splits.map((s, i) => {
+                    const r = splitRow(s);
+                    return (
+                      <RangeRow key={s.index} className="border-t" range={splitR[i] ? { key: `split-${s.index}`, label: `Km ${s.index}`, from: splitR[i]!.from, to: splitR[i]!.to } : null}>
+                        <td className="px-3 py-1.5 tabular-nums">{r.label}</td>
+                        <td className={td}>{r.paceText}</td>
+                        <td className={td}>{r.gapText}</td>
+                        <td className={td}>{r.elevText}</td>
+                        <td className={`${td} pr-3`}>{r.hrText}</td>
+                      </RangeRow>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -209,8 +185,9 @@ function Overview({ v, color }: { v: ActivityView; color: string }) {
 
 function CoachView({ v, c, failed }: { v: ActivityView; c: ActivityContext | null; failed: boolean }) {
   if (failed || !c) return <SectionError label="Coach's view" />;
-  const g = c.garmin;
-  const d = c.load;
+  const garmin = garminRows(c.garmin);
+  const load = loadView(v, c.load);
+  const planned = c.planned ? plannedTexts(c.planned) : null;
   return (
     <div className="grid gap-4 md:grid-cols-3">
       <div className="rounded-lg border p-4 text-sm">
@@ -218,14 +195,10 @@ function CoachView({ v, c, failed }: { v: ActivityView; c: ActivityContext | nul
         {c.planned ? (
           <>
             <Link href={`/plan?week=${c.planned.date}`} className="mt-1 block font-medium hover:underline">{c.planned.title}</Link>
-            <p className="text-xs text-[var(--viz-ink-2)]">
-              {[c.planned.duration ? `${c.planned.duration} min planned` : null, c.planned.tss ? `${Math.round(c.planned.tss)} TSS planned` : null].filter(Boolean).join(' · ')}
-            </p>
+            <p className="text-xs text-[var(--viz-ink-2)]">{planned!.plannedText}</p>
             <p className="mt-2 flex items-center gap-1.5 text-sm">
               <ComplianceMark level={c.planned.compliance.level} showLabel />
-              {c.planned.compliance.ratio != null && (
-                <span className="tabular-nums text-[var(--viz-ink-2)]">· {Math.round(c.planned.compliance.ratio * 100)}% of the planned {c.planned.compliance.basis === 'tss' ? 'TSS' : 'time'}</span>
-              )}
+              {planned!.ratioText && <span className="tabular-nums text-[var(--viz-ink-2)]">· {planned!.ratioText}</span>}
             </p>
           </>
         ) : (
@@ -235,18 +208,15 @@ function CoachView({ v, c, failed }: { v: ActivityView; c: ActivityContext | nul
       <div className="rounded-lg border p-4 text-sm">
         <div className="text-xs font-medium text-[var(--viz-muted)]">Load</div>
         <p className="mt-1">
-          <b className="text-lg tabular-nums">{v.effort.tss != null ? Math.round(v.effort.tss) : '–'}</b> TSS
-          <span className="text-xs text-[var(--viz-muted)]">{v.effort.tssMethod ? ` · ${tssMethodLabel(v.effort.tssMethod)}` : ''}</span>
+          <b className="text-lg tabular-nums">{load.tssText}</b> TSS
+          <span className="text-xs text-[var(--viz-muted)]">{load.methodText ? ` · ${load.methodText}` : ''}</span>
         </p>
-        {d ? (
+        {load.rows.length ? (
           <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs tabular-nums">
-            <dt className="text-[var(--viz-muted)]">Fitness (CTL)</dt><dd>{Math.round(d.after.ctl)}{d.before ? ` (${signed(d.after.ctl - d.before.ctl, 1)})` : ''}</dd>
-            <dt className="text-[var(--viz-muted)]">Fatigue (ATL)</dt><dd>{Math.round(d.after.atl)}{d.before ? ` (${signed(d.after.atl - d.before.atl, 1)})` : ''}</dd>
-            <dt className="text-[var(--viz-muted)]">Form (TSB)</dt><dd>{signed(d.after.tsb)} {zoneOf(d.after.tsb).toLowerCase()}{d.before ? ` (${signed(d.after.tsb - d.before.tsb, 1)})` : ''}</dd>
-            {d.dayTss !== (v.effort.tss ?? 0) && (<><dt className="text-[var(--viz-muted)]">TSS that day</dt><dd>{Math.round(d.dayTss)}</dd></>)}
+            {load.rows.map((r) => (<Fragment key={r.key}><dt className="text-[var(--viz-muted)]">{r.label}</dt><dd>{r.valueText}</dd></Fragment>))}
           </dl>
         ) : (
-          <p className="mt-1 text-xs text-[var(--viz-ink-2)]">No load row for {v.day}.</p>
+          <p className="mt-1 text-xs text-[var(--viz-ink-2)]">{load.emptyText}</p>
         )}
       </div>
       <div className="rounded-lg border p-4 text-sm">
@@ -254,13 +224,9 @@ function CoachView({ v, c, failed }: { v: ActivityView; c: ActivityContext | nul
           <span className="text-xs font-medium text-[var(--viz-muted)]">Garmin that day</span>
           <Link href={`/health/day/${v.day}`} className="text-xs underline underline-offset-4">Day →</Link>
         </div>
-        {g ? (
+        {c.garmin ? (
           <dl className="mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs tabular-nums">
-            {g.sleep_score != null && (<><dt className="text-[var(--viz-muted)]">Sleep the night before</dt><dd>{Math.round(g.sleep_score)}{g.sleep_total_min ? ` · ${duration(g.sleep_total_min * 60).replace(/:\d\d$/, '')} h` : ''}</dd></>)}
-            {g.body_battery_high != null && (<><dt className="text-[var(--viz-muted)]">Body Battery</dt><dd>{Math.round(g.body_battery_high)} high · {Math.round(g.body_battery_low ?? 0)} low</dd></>)}
-            {g.hrv_night_avg_ms != null && (<><dt className="text-[var(--viz-muted)]">HRV (night)</dt><dd>{Math.round(g.hrv_night_avg_ms)} ms</dd></>)}
-            {g.resting_hr_bpm != null && (<><dt className="text-[var(--viz-muted)]">Resting HR</dt><dd>{Math.round(g.resting_hr_bpm)} bpm</dd></>)}
-            {g.training_readiness != null && (<><dt className="text-[var(--viz-muted)]">Training readiness</dt><dd>{Math.round(g.training_readiness)}</dd></>)}
+            {garmin.map((r) => (<Fragment key={r.key}><dt className="text-[var(--viz-muted)]">{r.label}</dt><dd>{r.valueText}</dd></Fragment>))}
           </dl>
         ) : (
           <p className="mt-1 text-xs text-[var(--viz-ink-2)]">No Garmin data for {v.day}.</p>
@@ -272,7 +238,7 @@ function CoachView({ v, c, failed }: { v: ActivityView; c: ActivityContext | nul
 
 function SameRoute({ v, c }: { v: ActivityView; c: ActivityContext | null }) {
   if (!c?.sameRoute.length) return null;
-  const rows = [{ stravaId: v.stravaId, day: v.day, name: v.name, moving: v.stats.moving, distance: v.stats.distance }, ...c.sameRoute].sort((a, b) => a.moving / a.distance - b.moving / b.distance);
+  const rows = sameRouteRows(v, c);
   const foot = v.layout === 'run';
   return (
     <div>
@@ -282,12 +248,12 @@ function SameRoute({ v, c }: { v: ActivityView; c: ActivityContext | null }) {
           <thead className="text-xs text-[var(--viz-muted)]"><tr><th className="px-3 py-1.5 text-left font-medium">Date</th><th className="px-2 py-1.5 text-left font-medium">Name</th><th className={th}>Distance</th><th className={th}>Time</th><th className={`${th} pr-3`}>{foot ? 'Pace' : 'Speed'}</th></tr></thead>
           <tbody>
             {rows.map((r) => (
-              <tr key={r.stravaId} className={`border-t ${r.stravaId === v.stravaId ? 'bg-muted/50 font-medium' : ''}`}>
+              <tr key={r.stravaId} className={`border-t ${r.isThis ? 'bg-muted/50 font-medium' : ''}`}>
                 <td className="px-3 py-1.5 tabular-nums">{r.day}</td>
-                <td className="max-w-[12rem] truncate px-2 py-1.5">{r.stravaId === v.stravaId ? 'This activity' : <Link href={`/activities/${r.stravaId}`} className="hover:underline">{r.name}</Link>}</td>
-                <td className={td}>{km(r.distance)} km</td>
-                <td className={td}>{duration(r.moving)}</td>
-                <td className={`${td} pr-3`}>{foot ? pace(r.distance / r.moving) : `${kmh(r.distance / r.moving)} km/h`}</td>
+                <td className="max-w-[12rem] truncate px-2 py-1.5">{r.isThis ? 'This activity' : <Link href={`/activities/${r.stravaId}`} className="hover:underline">{r.name}</Link>}</td>
+                <td className={td}>{r.distanceText}</td>
+                <td className={td}>{r.timeText}</td>
+                <td className={`${td} pr-3`}>{r.paceText}</td>
               </tr>
             ))}
           </tbody>
@@ -295,12 +261,6 @@ function SameRoute({ v, c }: { v: ActivityView; c: ActivityContext | null }) {
       </div>
     </div>
   );
-}
-
-/** Segments with a PR or KOM rank first (best rank first), then the rest in ride order. */
-function rankedSegments(v: ActivityView) {
-  const rank = (x: ActivityView['segments'][number]) => Math.min(x.prRank ?? 99, x.komRank ?? 99);
-  return [...v.segments].sort((a, b) => rank(a) - rank(b));
 }
 
 function SegmentTable({ v, rows, bare = false }: { v: ActivityView; rows: ActivityView['segments']; bare?: boolean }) {
@@ -312,17 +272,20 @@ function SegmentTable({ v, rows, bare = false }: { v: ActivityView; rows: Activi
           <tr><th className="px-3 py-1.5 text-left font-medium">Name</th><th className={th}>Distance</th><th className={th}>Grade</th><th className={th}>Time</th><th className={th}>{foot ? 'Pace' : 'Speed'}</th><th className={th}>HR</th><th className={`${th} pr-3`}>Rank</th></tr>
         </thead>
         <tbody>
-          {rows.map((sg, i) => (
-            <RangeRow key={`${sg.id}-${i}`} className="border-t" range={indexRange(v, `seg-${v.segments.indexOf(sg)}`, sg.name, sg)}>
-              <td className="max-w-[16rem] truncate px-3 py-1.5"><a href={`https://www.strava.com/segments/${sg.id}`} target="_blank" rel="noreferrer" className="hover:underline">{sg.name}</a></td>
-              <td className={td}>{km(sg.distance)} km</td>
-              <td className={td}>{sg.grade != null ? `${sg.grade.toFixed(1)}%` : '–'}</td>
-              <td className={td}>{duration(sg.seconds)}</td>
-              <td className={td}>{foot ? `${pace(sg.distance / sg.seconds)} /km` : `${kmh(sg.distance / sg.seconds)} km/h`}</td>
-              <td className={td}>{sg.hr ? Math.round(sg.hr) : '–'}</td>
-              <td className={`${td} pr-3`}>{sg.komRank ? `KOM #${sg.komRank}` : sg.prRank === 1 ? 'PR' : sg.prRank ? `#${sg.prRank}` : ''}</td>
-            </RangeRow>
-          ))}
+          {rows.map((sg, i) => {
+            const r = segmentRow(sg, foot);
+            return (
+              <RangeRow key={`${sg.id}-${i}`} className="border-t" range={indexRange(v, `seg-${v.segments.indexOf(sg)}`, sg.name, sg)}>
+                <td className="max-w-[16rem] truncate px-3 py-1.5"><a href={`https://www.strava.com/segments/${sg.id}`} target="_blank" rel="noreferrer" className="hover:underline">{sg.name}</a></td>
+                <td className={td}>{r.distanceText}</td>
+                <td className={td}>{r.gradeText}</td>
+                <td className={td}>{r.timeText}</td>
+                <td className={td}>{r.paceText}</td>
+                <td className={td}>{r.hrText}</td>
+                <td className={`${td} pr-3`}>{r.rankText}</td>
+              </RangeRow>
+            );
+          })}
         </tbody>
       </table>
     </div>
@@ -335,7 +298,8 @@ export function ActivityBody({ v, context, contextFailed, color }: { v: Activity
   const series = v.series;
   const st = v.stats;
   const hrTotal = v.hrZones.reduce((n, z) => n + z.seconds, 0);
-  const avgBin = foot && st.avgSpeed ? v.paceBins.findIndex((b) => 1000 / st.avgSpeed! >= b.from && 1000 / st.avgSpeed! < b.to) : -1;
+  const effort = effortView(v);
+  const hist = paceHistogramView(v);
   return (
     <>
       <Overview v={v} color={color} />
@@ -360,7 +324,7 @@ export function ActivityBody({ v, context, contextFailed, color }: { v: Activity
       ) : (
         <Card id="analysis" title="Analysis">
           <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-            {v.fetch.needed ? 'The streams are loading from Strava.' : v.fetch.note ? 'The streams did not load from Strava yet.' : 'Strava has no streams for this activity (no GPS or sensor data).'}
+            {noStreamsText(v.fetch)}
           </p>
         </Card>
       )}
@@ -375,11 +339,11 @@ export function ActivityBody({ v, context, contextFailed, color }: { v: Activity
         <Card id="pace-distribution" title="Pace Distribution" note="Moving time per 15 s of pace">
           <div className="rounded-lg border bg-[var(--viz-surface)] p-4">
             <Histogram
-              bins={v.paceBins.map((b) => ({ label: paceOfSeconds(b.from), seconds: b.seconds }))}
+              bins={hist.bins}
               color={color}
               title="Moving time by pace"
               unit="/km"
-              mark={avgBin >= 0 ? { index: avgBin, label: `avg ${pace(st.avgSpeed!)}` } : undefined}
+              mark={hist.avgLabel ? { index: hist.avgIndex, label: hist.avgLabel } : undefined}
             />
           </div>
         </Card>
@@ -387,20 +351,13 @@ export function ActivityBody({ v, context, contextFailed, color }: { v: Activity
 
       <Card id="relative-effort" title="Relative Effort" note="Strava's score and two other ways to count the load">
         <div className="grid grid-cols-2 gap-4 rounded-lg border bg-[var(--viz-surface)] p-4 sm:grid-cols-4">
-          <Stat label="Relative Effort (Strava)" value={v.effort.sufferScore != null ? String(v.effort.sufferScore) : '–'} big />
-          <Stat label="TRIMP (from HR)" value={v.effort.trimp != null ? String(v.effort.trimp) : '–'} big />
-          <Stat label="Coach TSS" value={v.effort.tss != null ? String(Math.round(v.effort.tss)) : '–'} big />
-          <Stat label="TSS per hour" value={v.effort.tss != null && st.moving ? String(Math.round(v.effort.tss / (st.moving / 3600))) : '–'} big />
+          {effort.stats.map((x) => <Stat key={x.label} label={x.label} value={x.valueText} big />)}
         </div>
-        {(v.effort.tssMethod === 'power' || v.effort.tssMethod === 'power_stream') && v.layout === 'run' && v.effort.ftp && (
-          <p className="text-xs text-[var(--viz-muted)]">
-            This TSS uses running power against the cycling FTP ({v.effort.ftp} W), so it reads high for a run. TRIMP and Relative Effort come from heart rate.
-          </p>
-        )}
+        {effort.note && <p className="text-xs text-[var(--viz-muted)]">{effort.note}</p>}
       </Card>
 
       {hrTotal > 0 && (
-        <Card id="heart-rate" title="Heart Rate" note={`Strava's zones${st.avgHr ? ` · avg ${Math.round(st.avgHr)} bpm` : ''}${st.maxHr ? ` · max ${st.maxHr} bpm` : ''}`}>
+        <Card id="heart-rate" title="Heart Rate" note={heartRateNote(st)}>
           <ZoneBars zones={v.hrZones} unit="bpm" kind="hr" />
         </Card>
       )}
@@ -429,18 +386,21 @@ export function ActivityBody({ v, context, contextFailed, color }: { v: Activity
                 </tr>
               </thead>
               <tbody>
-                {v.laps.map((l) => (
-                  <RangeRow key={l.index} className="border-t" range={indexRange(v, `lap-${l.index}`, `Lap ${l.index}`, l)}>
-                    <td className="px-3 py-1.5 tabular-nums">{l.index}</td>
-                    <td className={td}>{km(l.distance)} km</td>
-                    <td className={td}>{duration(l.moving || l.elapsed)}</td>
-                    <td className={td}>{foot ? `${pace(l.speed ?? 0)} /km` : `${kmh(l.speed ?? 0)} km/h`}</td>
-                    {foot && <td className={td}>{l.gapSpeed ? `${pace(l.gapSpeed)} /km` : '–'}</td>}
-                    <td className={td}>{l.elevGain != null ? `${int(l.elevGain)} m` : '–'}</td>
-                    <td className={td}>{l.hr ? `${Math.round(l.hr)} bpm` : '–'}</td>
-                    {v.laps.some((x) => x.watts) && <td className={`${td} pr-3`}>{l.watts ? `${Math.round(l.watts)} W` : '–'}</td>}
-                  </RangeRow>
-                ))}
+                {v.laps.map((l) => {
+                  const r = lapRow(l, foot);
+                  return (
+                    <RangeRow key={l.index} className="border-t" range={indexRange(v, `lap-${l.index}`, `Lap ${l.index}`, l)}>
+                      <td className="px-3 py-1.5 tabular-nums">{l.index}</td>
+                      <td className={td}>{r.distanceText}</td>
+                      <td className={td}>{r.timeText}</td>
+                      <td className={td}>{r.paceText}</td>
+                      {foot && <td className={td}>{r.gapText}</td>}
+                      <td className={td}>{r.elevText}</td>
+                      <td className={td}>{r.hrText}</td>
+                      {v.laps.some((x) => x.watts) && <td className={`${td} pr-3`}>{r.powerText}</td>}
+                    </RangeRow>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -448,7 +408,7 @@ export function ActivityBody({ v, context, contextFailed, color }: { v: Activity
       )}
 
       {v.bestEfforts.length > 0 && (
-        <Card id="best-efforts" title="Best Efforts" note={v.bestEffortsSource === 'streams' ? 'From the streams (Strava sent none)' : 'From Strava'}>
+        <Card id="best-efforts" title="Best Efforts" note={bestEffortsNote(v.bestEffortsSource)}>
           <div className="overflow-x-auto rounded-lg border bg-[var(--viz-surface)]">
             <table className="w-full text-sm">
               <thead className="text-xs text-[var(--viz-muted)]"><tr><th className="px-3 py-1.5 text-left font-medium">Distance</th><th className={th}>Time</th><th className={th}>Pace</th><th className={`${th} pr-3`}>Rank</th></tr></thead>
@@ -456,9 +416,9 @@ export function ActivityBody({ v, context, contextFailed, color }: { v: Activity
                 {v.bestEfforts.map((e) => (
                   <RangeRow key={e.label} className="border-t" range={indexRange(v, `best-${e.label}`, `Best ${e.label}`, e)}>
                     <td className="px-3 py-1.5">{e.label}</td>
-                    <td className={td}>{duration(e.seconds)}</td>
-                    <td className={td}>{pace(e.distance / e.seconds)} /km</td>
-                    <td className={`${td} pr-3`}>{e.prRank === 1 ? 'PR' : e.prRank ? `${e.prRank === 2 ? '2nd' : '3rd'} best` : ''}</td>
+                    <td className={td}>{bestEffortRow(e).timeText}</td>
+                    <td className={td}>{bestEffortRow(e).paceText}</td>
+                    <td className={`${td} pr-3`}>{bestEffortRow(e).rankText}</td>
                   </RangeRow>
                 ))}
               </tbody>
@@ -468,8 +428,8 @@ export function ActivityBody({ v, context, contextFailed, color }: { v: Activity
       )}
 
       {v.segments.length > 0 && (
-        <Card id="segments" title="Segments" note={`${v.segments.length} segment${v.segments.length > 1 ? 's' : ''}${v.segments.some((x) => x.prRank || x.komRank) ? ' · PRs and top 10s first' : ''}`}>
-          <SegmentTable v={v} rows={rankedSegments(v).slice(0, 15)} />
+        <Card id="segments" title="Segments" note={segmentsNote(v.segments)}>
+          <SegmentTable v={v} rows={rankedSegments(v.segments).slice(0, 15)} />
           {v.segments.length > 15 && (
             <details className="rounded-lg border">
               <summary className="cursor-pointer select-none p-3 text-sm font-medium">All {v.segments.length} segments, in ride order</summary>

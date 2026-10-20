@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Trophy } from 'lucide-react';
-import { fmtDay, weight, type LiftPoint, type MainLift } from './types';
+import { changeText, isNewBest, liftBestText, liftLastText } from '@/lib/lift-dashboard/text.mjs';
+import { fmtDay, type LiftPoint, type MainLift } from './types';
 
 const W = 280;
 const H = 84;
@@ -40,7 +41,6 @@ function E1rmLine({ points, best, label }: { points: LiftPoint[]; best: number |
 
 /** The most-done lifts of the last 12 weeks: estimated 1RM, its change, the best ever, and the last top set. */
 export default function MainLifts({ lifts, unit, today }: { lifts: MainLift[]; unit: string; today: string }) {
-  const recent = (d: string | null) => d !== null && Date.parse(`${today}T00:00:00Z`) - Date.parse(`${d}T00:00:00Z`) <= 14 * 864e5;
   return (
     <section className="rounded-xl border bg-card" aria-labelledby="main-lifts">
       <div className="flex flex-wrap items-baseline justify-between gap-2 border-b px-4 py-3">
@@ -52,7 +52,7 @@ export default function MainLifts({ lifts, unit, today }: { lifts: MainLift[]; u
       ) : (
         <div className="grid sm:grid-cols-2">
           {lifts.map((l, i) => {
-            const isPr = recent(l.prDay) && l.best && l.latest && l.best.sessionId === l.latest.sessionId;
+            const isPr = isNewBest(l, today);
             return (
               <Link
                 key={l.key}
@@ -74,16 +74,16 @@ export default function MainLifts({ lifts, unit, today }: { lifts: MainLift[]; u
                   <span className="text-sm text-[var(--viz-muted)]">{unit}</span>
                   {l.change !== null && (
                     <span className={`text-xs font-medium ${l.change >= 0 ? 'text-[var(--viz-up)]' : 'text-[var(--viz-down)]'}`}>
-                      {l.change >= 0 ? '▲' : '▼'} {Math.abs(Math.round(l.change * 100))}% in 12 weeks
+                      {changeText(l.change)}
                     </span>
                   )}
                 </div>
                 <E1rmLine points={l.points} best={l.best?.e1rm ?? null} label={`${l.name}, estimated 1RM per session`} />
                 <div className="flex justify-between gap-2 text-[11px] text-[var(--viz-ink-2)]">
                   <span className="truncate">
-                    Last {l.latest ? `${weight(l.latest.weight, unit)} × ${l.latest.reps} · ${fmtDay(l.latest.day)}` : '–'}
+                    {liftLastText(l.latest, unit)}
                   </span>
-                  <span className="shrink-0 tabular-nums">Best {l.best ? `${Math.round(l.best.e1rm)} · ${fmtDay(l.best.day)}` : '–'}</span>
+                  <span className="shrink-0 tabular-nums">{liftBestText(l.best)}</span>
                 </div>
               </Link>
             );
