@@ -3,8 +3,8 @@ import KoboTokens
 
 /// The spinner of a control that answers a tap (Try again): it shows while the work runs and for at least
 /// `Motion.Duration.spinnerHold` after the tap or the start of the work, so a fast answer (an offline refusal that
-/// settles before a frame shows the work) still reads as an attempt. Reduce Motion keeps it: nothing moves. Ported
-/// from Trellis's `SpinnerHold`; pure, so it is tested without rendering.
+/// settles before a frame shows the work) still reads as an attempt. Reduce Motion keeps it: nothing moves. It is
+/// pure, so it is tested without rendering.
 nonisolated struct SpinnerHold: Equatable, Sendable {
     private(set) var isBusy = false
     private(set) var isHolding = false

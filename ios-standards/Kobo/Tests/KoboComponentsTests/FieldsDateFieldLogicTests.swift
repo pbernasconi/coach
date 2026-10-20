@@ -3,7 +3,7 @@ import Testing
 
 @testable import KoboComponents
 
-/// Typed dates, ported from Trellis's date-picker-field vectors (contracts/ui-vectors) and edge-case tests, in the
+/// Typed dates and edge cases, in the
 /// US month/day/year pattern plus the other two orders.
 @Suite struct FieldsDateFieldLogicTests {
     static let calendar: Calendar = {

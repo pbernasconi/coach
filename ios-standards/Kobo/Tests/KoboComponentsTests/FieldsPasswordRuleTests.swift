@@ -2,7 +2,7 @@ import Testing
 
 @testable import KoboComponents
 
-/// The generic password checklist (ported from Trellis `PasswordRulesTests`, with rules passed in).
+/// The generic password checklist, with rules passed in.
 @Suite struct FieldsPasswordRuleTests {
     private let rules: [PasswordRule] = [
         .minimumLength(8, label: "At least 8 characters"),

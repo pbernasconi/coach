@@ -36,7 +36,7 @@ already done around it. The build keeps going around these; nothing here blocks 
   Identifiers → + → App Groups → `group.com.pbernasconi.lift`; then on each of the three App IDs, App Groups →
   Configure → tick it → Save. Then restore the three `com.apple.security.application-groups: [$(LIFT_APP_GROUP)]`
   entitlement lines in `ios/project.yml`.
-- **Real-device check.** Haptics (Trellis found `.sensoryFeedback` silent on an iOS 26 device), Liquid
+- **Real-device check.** Haptics (`.sensoryFeedback` was silent on an iOS 26 device in an earlier app), Liquid
   Glass rendering, the rest-timer Live Activity with its +30s and Skip buttons, and sharing a note from Apple Notes
   to Lift can only be confirmed on your iPhone (CI builds them for the simulator without signing, so the App Group
   is not provisioned there).

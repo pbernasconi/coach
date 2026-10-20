@@ -6,7 +6,7 @@ import SwiftUI
 ///
 /// The layout reports the whole proposed width, not the toast's: a stack that hugs its content proposes its own width
 /// on the next pass, and a layout that hugged too would measure the cap from the toast itself and shrink it to the
-/// floor, breaking the label inside a word. Ported from Trellis's `ToastWidthLimit`.
+/// floor, breaking the label inside a word.
 struct ToastWidthLimit: Layout {
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache _: inout ()) -> CGSize {
         guard let toast = subviews.first else { return .zero }

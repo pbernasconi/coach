@@ -1,7 +1,7 @@
 # iOS standards kit
 
 A drop-in standard for building native iOS apps with coding agents. It is based on two of our shipped apps
-(Trellis for discipline, Holdings for small size) and adds offline-first data rules that neither of them had.
+(a large team app for discipline, a small app for size) and adds offline-first data rules that neither of them had.
 
 | File | What it is | Where it goes in an app repo |
 | --- | --- | --- |
@@ -38,8 +38,8 @@ Most rules are written so a machine can check them:
 
 As a check on the rules themselves:
 
-- **Trellis:** one full feature package (149 Swift files) passes the guard with no findings.
-- **Holdings:** the guard flags real issues: services passed through `@Environment`, `ForEach` over
+- **The large app:** one full feature package (149 Swift files) passes the guard with no findings.
+- **The small app:** the guard flags real issues: services passed through `@Environment`, `ForEach` over
   `\.self`, two files over the size limit, and real-clock sleeps in the API client.
 
 ## Adopting it in a new app

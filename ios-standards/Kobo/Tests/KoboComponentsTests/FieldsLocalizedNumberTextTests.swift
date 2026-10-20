@@ -3,7 +3,7 @@ import Testing
 
 @testable import KoboComponents
 
-/// Typing and pasting in the region's style, ported from Trellis's amount-locale vectors. Kobo shows grouping in the
+/// Typing and pasting in the region's style. Kobo shows grouping in the
 /// region's style too, so the German edit vectors start from German text ("1.234,5").
 @Suite struct FieldsLocalizedNumberTextTests {
     private static let money = NumberEntryRules(range: 0...999_999_999.99, decimalPlaces: 2)
