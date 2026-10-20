@@ -3,7 +3,17 @@ import type { Body } from '@/lib/vitals/garmin-pages';
 
 type MuscleRow = { muscle: string; sets: number; status: string };
 type TopLift = { key: string; name: string; points: { e1rm: number }[]; latest: number | null; change: number | null };
-export type LiftSummary = { thisWeek: MuscleRow[]; top: TopLift[]; unit: string; hasData: boolean };
+type SessionRef = { id: string; day: string; title: string };
+export type LiftSummary = {
+  thisWeek: MuscleRow[];
+  top: TopLift[];
+  unit: string;
+  hasData: boolean;
+  last?: SessionRef | null;
+  daysSince?: number | null;
+  next?: SessionRef | null;
+  prs?: number;
+};
 
 const BAND = { min: 10, max: 20 }; // weekly hard sets per muscle (MUSCLE_TARGET in lift-dashboard/stats.mjs)
 const BAR_MAX = 25;
@@ -109,7 +119,7 @@ export default function LeanStrong({
 
       <div className="flex flex-col gap-2.5 border-b px-4 py-4">
         <span className="flex justify-between text-[11px] font-medium uppercase tracking-wide text-[var(--viz-muted)]">
-          <span>Arms · hard sets this week</span>
+          <Link href="/lift#muscles" className="hover:text-foreground">Arms · hard sets this week</Link>
           <span className="normal-case tracking-normal">target {BAND.min}–{BAND.max}</span>
         </span>
         {ARMS.map((m) => <SetsBar key={m} name={m} sets={sets(m)} />)}
@@ -136,10 +146,35 @@ export default function LeanStrong({
         )}
       </div>
 
-      <div className="flex justify-between px-4 py-3 text-sm">
+      <Link href="/lift" className="flex justify-between px-4 py-3 text-sm transition-colors hover:bg-[var(--viz-band)]">
         <span className="text-[var(--viz-muted)]">Strength sessions</span>
         <b className="tabular-nums">{strength.done} / {strength.target} this week</b>
-      </div>
+      </Link>
+      {(lift?.last || lift?.next) && (
+        <div className="grid grid-cols-2 border-t text-xs">
+          {lift.last ? (
+            <Link href={`/lift/sessions/${lift.last.id}`} className="min-w-0 px-4 py-2.5 transition-colors hover:bg-[var(--viz-band)]">
+              <span className="block text-[11px] uppercase tracking-wide text-[var(--viz-muted)]">Last lift</span>
+              <span className={`block truncate font-medium ${lift.daysSince != null && lift.daysSince >= 10 ? 'text-[var(--viz-down)]' : ''}`}>
+                {lift.daysSince === 0 ? 'Today' : lift.daysSince === 1 ? 'Yesterday' : `${lift.daysSince} days ago`}
+              </span>
+              <span className="block truncate text-[var(--viz-ink-2)]">{lift.last.title || 'Session'}{lift.prs ? ` · ${lift.prs} PR${lift.prs > 1 ? 's' : ''}` : ''}</span>
+            </Link>
+          ) : <span />}
+          {lift.next ? (
+            <Link href={`/lift/sessions/${lift.next.id}`} className="min-w-0 border-l px-4 py-2.5 transition-colors hover:bg-[var(--viz-band)]">
+              <span className="block text-[11px] uppercase tracking-wide text-[var(--viz-muted)]">Next lift</span>
+              <span className="block truncate font-medium">{fmtDate(lift.next.day)}</span>
+              <span className="block truncate text-[var(--viz-ink-2)]">{lift.next.title || 'Session'}</span>
+            </Link>
+          ) : (
+            <Link href="/lift" className="min-w-0 border-l px-4 py-2.5 text-[var(--viz-ink-2)] transition-colors hover:bg-[var(--viz-band)]">
+              <span className="block text-[11px] uppercase tracking-wide text-[var(--viz-muted)]">Next lift</span>
+              <span className="block">Not planned yet →</span>
+            </Link>
+          )}
+        </div>
+      )}
     </aside>
   );
 }
