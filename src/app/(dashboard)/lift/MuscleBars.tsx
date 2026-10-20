@@ -1,7 +1,8 @@
+import { MUSCLE_BAND, bandStatus, muscleGroups } from '@/lib/lift-dashboard/text.mjs';
 import { fmtSets, muscleName, type MuscleRow } from './types';
 
-const MIN = 10;
-const MAX = 20;
+const MIN = MUSCLE_BAND.min;
+const MAX = MUSCLE_BAND.max;
 
 /**
  * Hard sets per muscle: this week as a bar, the average of the 4 weeks before as a tick, the 10-20 growth band
@@ -10,9 +11,8 @@ const MAX = 20;
 export default function MuscleBars({ rows }: { rows: MuscleRow[] }) {
   const top = Math.max(24, ...rows.map((r) => Math.max(r.week, r.avg)));
   const pct = (v: number) => `${(Math.min(v, top) / top) * 100}%`;
-  const arms = rows.filter((r) => r.arm);
-  const rest = rows.filter((r) => !r.arm && (r.week > 0 || r.avg > 0 || ['chest', 'back', 'shoulders', 'quads', 'hamstrings', 'glutes'].includes(r.muscle)));
-  const status = (v: number) => (v < MIN ? 'below' : v > MAX ? 'above' : 'in');
+  const { arms, rest } = muscleGroups(rows);
+  const status = bandStatus;
   const Row = ({ r }: { r: MuscleRow }) => {
     const s = status(r.avg);
     return (

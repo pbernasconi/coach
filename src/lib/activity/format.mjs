@@ -57,3 +57,22 @@ export function zoneRange(min, max, unit = '') {
   if (!min) return `< ${max}${u}`;
   return `${min + 1}–${max}${u}`;
 }
+
+/**
+ * Whole percentages that add up to 100 (largest remainder), for values that do not all equal 0. All zero: all 0.
+ * @param {number[]} values
+ */
+export function percents(values) {
+  const total = values.reduce((n, v) => n + Math.max(0, v || 0), 0);
+  if (!(total > 0)) return values.map(() => 0);
+  const raw = values.map((v) => (Math.max(0, v || 0) / total) * 100);
+  const out = raw.map(Math.floor);
+  let left = 100 - out.reduce((n, v) => n + v, 0);
+  const order = raw.map((r, i) => [r - Math.floor(r), i]).sort((a, b) => b[0] - a[0] || a[1] - b[1]);
+  for (const [, i] of order) {
+    if (left <= 0) break;
+    out[i] += 1;
+    left -= 1;
+  }
+  return out;
+}

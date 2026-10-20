@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { CalendarClock, Dumbbell, Flame } from 'lucide-react';
-import { ago, compact, fmtDay, type Overview } from './types';
+import { nextWhen, plannedText, weekStats } from '@/lib/lift-dashboard/text.mjs';
+import { fmtDay, type Overview } from './types';
 
 const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
@@ -11,12 +12,7 @@ export default function WeekHero({ o }: { o: Overview }) {
   const pct = Math.min(1, done / Math.max(1, o.strengthTarget));
   const next = o.upcoming[0] ?? null;
   const plannedDays = new Map(o.upcoming.map((u) => [u.day, u]));
-  const stats: [string, string, string][] = [
-    ['Sets', String(o.thisWeek.sets), 'hard sets this week'],
-    ['Volume', `${compact(o.thisWeek.volume)} ${o.unit}`, 'reps × weight'],
-    ['Last lift', o.daysSince === null ? '–' : ago(o.daysSince), o.last ? `${o.last.title || 'Session'} · ${fmtDay(o.last.day)}` : ''],
-    ['Streak', `${o.streak} ${o.streak === 1 ? 'week' : 'weeks'}`, `at ${o.strengthTarget}+ a week`],
-  ];
+  const stats: [string, string, string][] = weekStats(o).map((s) => [s.label, s.value, s.detail]);
   return (
     <section
       className="overflow-hidden rounded-2xl border"
@@ -83,11 +79,11 @@ export default function WeekHero({ o }: { o: Overview }) {
             className="group flex flex-col justify-between gap-3 rounded-xl border bg-background/80 p-4 transition-colors hover:border-[var(--sport-strength)]"
           >
             <span className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-[var(--viz-muted)]">
-              <CalendarClock aria-hidden className="h-3.5 w-3.5" /> Next up · {next.day === o.today ? 'today' : fmtDay(next.day, { weekday: 'short', month: 'short', day: 'numeric' })}
+              <CalendarClock aria-hidden className="h-3.5 w-3.5" /> Next up · {nextWhen(next.day, o.today)}
             </span>
             <span className="text-lg font-semibold leading-tight text-[var(--viz-ink)]">{next.title || 'Lift session'}</span>
             <span className="text-xs text-[var(--viz-ink-2)]">
-              {next.exercises} exercises · {next.sets} sets planned
+              {plannedText(next)}
             </span>
             <span className="text-xs font-medium" style={{ color: 'var(--sport-strength)' }}>Open the plan →</span>
           </Link>

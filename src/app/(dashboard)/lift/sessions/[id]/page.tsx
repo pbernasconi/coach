@@ -6,6 +6,7 @@ import LinkHotkeys from '@/components/hotkeys/LinkHotkeys';
 import ExerciseCard from '@/components/lift/ExerciseCard';
 import ExerciseThumb from '@/components/lift/ExerciseThumb';
 import { muscleLabel, num } from '@/components/lift/format';
+import { SESSION_STATE_LABEL, clockText, sessionStats } from '@/lib/lift-dashboard/text.mjs';
 import { loadLiftModel } from '@/lib/lift-dashboard/queries';
 import { formatDay } from '@/lib/lift-dashboard/format';
 import { plannedVolume, richSession, sessionMuscles, sessionState, type RichSession } from '@/lib/lift/session';
@@ -16,21 +17,12 @@ import { cn } from '@/lib/utils';
 export const dynamic = 'force-dynamic';
 
 const STATE = {
-  planned: { label: 'Planned', className: 'border bg-background text-[var(--viz-ink-2)]' },
-  inProgress: { label: 'In progress', className: 'bg-[color-mix(in_oklab,var(--plan-partial,#b98000)_15%,transparent)] text-[#8f5f00] dark:text-[#ffc21a]' },
-  done: { label: 'Done', className: 'bg-[color-mix(in_oklab,var(--viz-good)_15%,transparent)] text-[var(--viz-up)]' },
+  planned: { label: SESSION_STATE_LABEL.planned, className: 'border bg-background text-[var(--viz-ink-2)]' },
+  inProgress: { label: SESSION_STATE_LABEL.inProgress, className: 'bg-[color-mix(in_oklab,var(--plan-partial,#b98000)_15%,transparent)] text-[#8f5f00] dark:text-[#ffc21a]' },
+  done: { label: SESSION_STATE_LABEL.done, className: 'bg-[color-mix(in_oklab,var(--viz-good)_15%,transparent)] text-[var(--viz-up)]' },
 } as const;
 
-function clock(iso: string | null, tz: string) {
-  if (!iso) return null;
-  return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: tz });
-}
-
-function duration(minutes: number | null) {
-  if (minutes === null) return '–';
-  const h = Math.floor(minutes / 60);
-  return h ? `${h} h ${minutes % 60} min` : `${minutes} min`;
-}
+const clock = clockText;
 
 /**
  * One Lift session: what it is (template, day, state), how far along it is, the muscles it works, and each exercise
@@ -112,13 +104,7 @@ function Hero({ d, start }: { d: RichSession; start: string | null }) {
   const muscles = sessionMuscles(d).slice(0, 8);
   const most = muscles[0]?.sets ?? 1;
   const planned = plannedVolume(d);
-  const stats: [string, string, string?][] = [
-    ['Exercises', String(d.exercises.length)],
-    ['Sets', `${d.setsLogged} / ${d.setsTotal}`, 'logged'],
-    ['Planned volume', planned ? `${num(planned, 0)} ${d.unit}` : '–'],
-    ['Logged volume', `${num(d.volume, 0)} ${d.unit}`, 'warm-ups excluded'],
-    ['Duration', duration(d.minutes)],
-  ];
+  const stats: [string, string, string?][] = sessionStats(d, planned).map((s) => [s.label, s.value, s.detail ?? undefined]);
   return (
     <section
       className="overflow-hidden rounded-2xl border"

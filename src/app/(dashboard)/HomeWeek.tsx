@@ -9,6 +9,7 @@ import { cellItems, dur } from '@/lib/plan/cells.mjs';
 import type { CalendarActivity, CalendarLift, CalendarRange, CalendarWorkout, WeekSummary } from '@/lib/plan/month';
 import type { DayWeather } from '@/lib/plan/weather';
 import { addDays } from '@/lib/plan/week.mjs';
+import { readinessCue as cueFor, todayItemText, todayWorkouts } from '@/lib/performance/display.mjs';
 import { sport } from '@/lib/sports';
 
 type Item =
@@ -20,14 +21,6 @@ const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const hm = (min: number) => `${Math.floor(min / 60)}:${String(Math.round(min % 60)).padStart(2, '0')}`;
 const signed = (n: number) => `${n > 0 ? '+' : ''}${Math.round(n)}`;
 
-// Garmin's readiness bands, with what they mean for today's session.
-function cueFor(readiness: number | null) {
-  if (readiness == null) return null;
-  if (readiness >= 75) return 'Readiness high: go as planned';
-  if (readiness >= 50) return 'Readiness moderate: hold back about 10%';
-  if (readiness >= 25) return 'Readiness low: keep it easy';
-  return 'Readiness poor: consider rest';
-}
 
 const chipBase = 'relative z-10 block min-w-0 rounded-[5px] border border-l-[3px] px-1.5 py-1 text-[11px] leading-[15px] transition-shadow hover:shadow-md';
 
@@ -151,7 +144,7 @@ export default function HomeWeek({
     ) as Item[];
     return { date, items };
   });
-  const todays = range.workouts.filter((w) => w.date === today && w.status !== 'skipped');
+  const { items: todays, emptyText } = todayWorkouts(range);
   const cue = cueFor(readiness);
   const planHref = `/plan?week=${monday}`;
   const openHref = (key: string) => `${planHref}&open=${encodeURIComponent(key)}`;
@@ -168,7 +161,7 @@ export default function HomeWeek({
         <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--viz-muted)]">Today</span>
         {todays.length === 0 ? (
           <Link href={planHref} className="text-[var(--viz-ink-2)] hover:text-foreground">
-            {range.workouts.length ? 'Rest day' : 'No plan this week. Run /plan in Claude Code to make one.'}
+            {emptyText}
           </Link>
         ) : (
           todays.map((w) => (
@@ -176,8 +169,7 @@ export default function HomeWeek({
               <SportIcon id={w.sport} className="h-3.5 w-3.5" />
               {plainTitle(w.title)}
               <span className="font-normal tabular-nums text-[var(--viz-muted)]">
-                {[w.startTime, w.duration ? dur(w.duration) : null].filter(Boolean).join(' · ')}
-                {w.state === 'done' && ' · done'}
+                {todayItemText(w)}
               </span>
             </Link>
           ))

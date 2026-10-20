@@ -6,6 +6,7 @@ import type { SportWeek } from '@/lib/performance/queries';
 import { SPORTS, sport, type SportId } from '@/lib/sports';
 import { ChartTooltip, LegendItem, type TooltipRow } from './ChartTooltip';
 import { niceTicks, useMeasure } from './useMeasure';
+import { hoursSeries, hoursText as hm, shortDate as fmtWeek, sportDetail } from '@/lib/performance/display.mjs';
 
 export type HoursWeek = {
   week: string; // Monday, YYYY-MM-DD
@@ -14,8 +15,6 @@ export type HoursWeek = {
   tss: number;
 };
 
-const fmtWeek = (w: string) => new Date(`${w}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
-const hm = (h: number) => `${Math.floor(h)}:${String(Math.round((h % 1) * 60)).padStart(2, '0')}`;
 
 /** A path for a bar segment with 4px rounded top corners (square at the bottom). */
 function topRounded(x: number, y: number, w: number, h: number, r: number) {
@@ -25,14 +24,8 @@ function topRounded(x: number, y: number, w: number, h: number, r: number) {
 
 const hoursOf = (w: HoursWeek, id: SportId) => w.sports[id]?.hours ?? 0;
 
-/** The tooltip text for one sport: its exact Strava types where they differ from the sport ("Hike", "Virtual ride"), and km. */
-function detail(id: SportId, sw: SportWeek) {
-  const types = Object.entries(sw.types).sort((a, b) => b[1] - a[1]).map(([t]) => t);
-  const named = types.filter((t) => t !== sport(id).label);
-  const parts = [named.length || id === 'other' ? types.join(', ') : sport(id).label];
-  if (sw.km >= 0.5 && id !== 'strength') parts.push(id === 'ride' ? `${Math.round(sw.km)} km` : `${sw.km.toFixed(1)} km`);
-  return parts.join(' · ');
-}
+/** The tooltip text for one sport (sportDetail in display.mjs). */
+const detail = (id: SportId, sw: SportWeek) => sportDetail(sport(id), sw);
 
 /**
  * Hours per week, stacked by sport in the design/sports.json order, with strength sessions as a dot row under
@@ -47,16 +40,13 @@ export default function WeeklyHoursChart({ weeks, currentWeek }: { weeks: HoursW
   const H = 300;
   const plotW = width - M.left - M.right;
   const plotH = H - M.top - M.bottom;
-  const series = SPORTS.filter((s) => s.id !== 'rest' && weeks.some((w) => hoursOf(w, s.id) > 0));
-  const total = (w: HoursWeek) => series.reduce((n, s) => n + hoursOf(w, s.id), 0);
+  const { series, total, average: avg } = hoursSeries(weeks, currentWeek, SPORTS) as { series: typeof SPORTS; total: (w: HoursWeek) => number; average: number };
   const ticks = niceTicks(Math.max(4, ...weeks.map(total)));
   const yMax = ticks[ticks.length - 1];
   const y = (v: number) => M.top + plotH - (v / yMax) * plotH;
   const band = plotW / weeks.length;
   const barW = Math.min(24, band * 0.56);
   const cx = (i: number) => M.left + band * i + band / 2;
-  const complete = weeks.filter((w) => w.week !== currentWeek);
-  const avg = complete.length ? complete.reduce((n, w) => n + total(w), 0) / complete.length : 0;
   const maxIdx = weeks.reduce((best, w, i) => (total(w) > total(weeks[best]) ? i : best), 0);
   const lastComplete = weeks.findLastIndex((w) => w.week !== currentWeek);
   const labelled = new Set([maxIdx, lastComplete]);

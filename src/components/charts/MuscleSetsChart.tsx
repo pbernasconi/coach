@@ -2,11 +2,10 @@
 
 import { useState } from 'react';
 import { LegendItem } from './ChartTooltip';
+import { decimalText as fmt, muscleLabel as label, muscleStatusText } from '@/lib/performance/display.mjs';
 
 export type MuscleBar = { muscle: string; week: number; avg: number };
 
-const label = (m: string) => m.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^./, (c) => c.toUpperCase());
-const fmt = (n: number) => (n % 1 ? n.toFixed(1) : String(n));
 
 /**
  * Hard sets per muscle this week as bars, the 4-week average as a tick, and the 10-20 target band
@@ -31,7 +30,7 @@ export default function MuscleSetsChart({ rows }: { rows: MuscleBar[] }) {
       </div>
       <div className="space-y-1.5">
         {rows.map((r) => {
-          const status = r.week < 10 ? 'below target' : r.week > 20 ? 'above target' : 'in target';
+          const status = muscleStatusText(r.week);
           const on = hover === r.muscle;
           return (
             <div
