@@ -28,8 +28,6 @@ export default function DashboardNav() {
   const { isLoaded } = useUser();
   const [open, setOpen] = useState(false);
 
-  if (!isLoaded) return <div className="h-16 border-b" />;
-
   return (
     <>
       {/* Navigation */}
@@ -89,7 +87,8 @@ export default function DashboardNav() {
 
           {/* Right side */}
           <div className="flex items-center ml-auto space-x-2">
-            <UserButton afterSignOutUrl="/sign-in" />
+            {/* The links render at once; only the account button waits for Clerk's script. */}
+            {isLoaded ? <UserButton afterSignOutUrl="/sign-in" /> : <div className="h-7 w-7 rounded-full bg-muted" />}
           </div>
         </div>
       </header>
