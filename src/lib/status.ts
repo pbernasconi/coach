@@ -102,7 +102,7 @@ export async function loadStatus(userId: string, now = Date.now()): Promise<Stat
   if (!liftStatus.tokenSet) {
     warnings.push({ level: 'warn', source: 'lift', text: 'Lift sync is off: LIFT_SYNC_TOKEN is not set.' });
   } else if (!liftStatus.lastChangeAt) {
-    warnings.push({ level: 'info', source: 'lift', text: 'Lift has not synced yet. Paste the sync token into Lift → Settings → Sync.' });
+    warnings.push({ level: 'info', source: 'lift', text: 'Lift has not synced yet. Connect Lift in Settings → Lift.' });
   } else if (hoursSince(liftStatus.lastChangeAt, now) > 10 * 24) {
     warnings.push({ level: 'info', source: 'lift', text: `No Lift changes for ${ago(hoursSince(liftStatus.lastChangeAt, now))}.` });
   }
@@ -112,5 +112,12 @@ export async function loadStatus(userId: string, now = Date.now()): Promise<Stat
   }
   // Garmin: an expired login is an error, no success for 36 h a warning, "not set up" or a recent error info only.
   if (garmin.warning) warnings.push({ ...garmin.warning, source: 'garmin' });
+  // A Vercel preview reads a copy of the data and must not sync (a Strava refresh there would rotate production's
+  // token), so its missing secrets are expected: show them on Settings only, not as a banner.
+  if (env.VERCEL_ENV === 'preview') {
+    const quiet = warnings.map((w) => ({ ...w, level: 'info' as const }));
+    quiet.unshift({ level: 'info', source: 'strava', text: 'Preview deployment: it reads the development database, and syncs are off.' });
+    return { strava, lift: liftStatus, calendars, garmin, warnings: quiet };
+  }
   return { strava, lift: liftStatus, calendars, garmin, warnings };
 }
