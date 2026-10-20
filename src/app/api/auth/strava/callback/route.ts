@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { ownerForSignedInUser } from '@/lib/owner';
 import StravaService from '@/modules/strava/strava-service';
 import { StravaPersister } from '@/modules/strava/strava-persister';
 
@@ -17,7 +17,7 @@ const stravaService = new StravaService({
 export async function GET(request: NextRequest) {
   try {
     // Get user from Clerk
-    const { userId } = await auth();
+    const userId = await ownerForSignedInUser();
     if (!userId) {
       return NextResponse.redirect(new URL('/sign-in', request.url));
     }
@@ -32,28 +32,28 @@ export async function GET(request: NextRequest) {
     // Handle authorization denial
     if (error) {
       return NextResponse.redirect(
-        new URL(`/admin?error=${encodeURIComponent('Strava authorization was denied')}`, request.url)
+        new URL(`/settings?error=${encodeURIComponent('Strava authorization was denied')}`, request.url)
       );
     }
 
     // Validate code
     if (!code) {
       return NextResponse.redirect(
-        new URL(`/admin?error=${encodeURIComponent('No authorization code received')}`, request.url)
+        new URL(`/settings?error=${encodeURIComponent('No authorization code received')}`, request.url)
       );
     }
 
     // Verify state matches userId
     if (state !== userId) {
       return NextResponse.redirect(
-        new URL(`/admin?error=${encodeURIComponent('Invalid state parameter')}`, request.url)
+        new URL(`/settings?error=${encodeURIComponent('Invalid state parameter')}`, request.url)
       );
     }
 
     // Validate scope
     if (!scope) {
       return NextResponse.redirect(
-        new URL(`/admin?error=${encodeURIComponent('No scope received from Strava')}`, request.url)
+        new URL(`/settings?error=${encodeURIComponent('No scope received from Strava')}`, request.url)
       );
     }
 
@@ -83,15 +83,15 @@ export async function GET(request: NextRequest) {
       scopeToSave
     );
 
-    // Redirect back to admin page with success message
+    // Redirect back to Settings with success message
     return NextResponse.redirect(
-      new URL('/admin?success=strava_connected', request.url)
+      new URL('/settings?success=strava_connected', request.url)
     );
   } catch (error) {
     console.error('Strava OAuth callback error:', error);
     return NextResponse.redirect(
       new URL(
-        `/admin?error=${encodeURIComponent('Failed to connect Strava account')}`,
+        `/settings?error=${encodeURIComponent('Failed to connect Strava account')}`,
         request.url
       )
     );

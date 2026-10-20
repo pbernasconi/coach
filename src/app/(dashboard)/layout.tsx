@@ -1,105 +1,27 @@
-'use client';
-
-import { UserButton, useUser } from '@clerk/nextjs';
 import Link from 'next/link';
-import { Menu } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet';
-import { useState } from 'react';
+import { ownerForSignedInUser } from '@/lib/owner';
+import { loadStatus } from '@/lib/status';
+import DashboardNav from './DashboardNav';
 
-const navLinks = [
-  { href: '/', label: 'Performance' },
-  { href: '/plan', label: 'Plan' },
-  { href: '/lift', label: 'Lift' },
-  { href: '/settings', label: 'Settings' },
-];
+export const dynamic = 'force-dynamic';
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { isLoaded } = useUser();
-  const [open, setOpen] = useState(false);
-
-  if (!isLoaded) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div>Loading...</div>
-      </div>
-    );
-  }
-
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const owner = await ownerForSignedInUser();
+  const warnings = owner ? (await loadStatus(owner)).warnings.filter((w) => w.level !== 'info') : [];
   return (
     <div className="min-h-screen bg-background">
-      {/* Navigation */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex h-16 items-center">
-          {/* Mobile menu button */}
-          <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="mr-2 md:hidden">
-                <Menu className="h-5 w-5" />
-                <span className="sr-only">Toggle menu</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left">
-              <SheetHeader>
-                <SheetTitle>Coach</SheetTitle>
-              </SheetHeader>
-              <nav className="flex flex-col space-y-4 mt-4">
-                {navLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setOpen(false)}
-                    className="text-lg transition-colors hover:text-foreground/80 text-foreground/60"
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-              </nav>
-            </SheetContent>
-          </Sheet>
-
-          {/* Desktop menu */}
-          <div className="mr-4 hidden md:flex">
-            <Link href="/" className="mr-6 flex items-center space-x-2">
-              <span className="font-bold text-xl">
-                Coach
-              </span>
-            </Link>
-            <nav className="flex items-center space-x-6 text-sm font-medium">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="transition-colors hover:text-foreground/80 text-foreground/60"
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
-          </div>
-
-          {/* Mobile logo */}
-          <Link href="/" className="flex md:hidden mr-auto items-center">
-            <span className="font-bold text-xl">Coach</span>
-          </Link>
-
-          {/* Right side */}
-          <div className="flex items-center ml-auto space-x-2">
-            <UserButton afterSignOutUrl="/sign-in" />
+      <DashboardNav />
+      {warnings.length > 0 && (
+        <div className="border-b border-amber-500/40 bg-amber-500/10">
+          <div className="container mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2 text-sm sm:px-6 lg:px-8">
+            {warnings.map((w) => (
+              <span key={w.text}>{w.text}</span>
+            ))}
+            <Link href="/settings" className="ml-auto underline underline-offset-4">Fix in Settings</Link>
           </div>
         </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {children}
-      </main>
+      )}
+      <main className="container mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">{children}</main>
     </div>
   );
 }
