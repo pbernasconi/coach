@@ -129,7 +129,9 @@ export default async function HomePage() {
           ) : (
             <SectionError label="This week" />
           )}
-          {pmc.ok ? <PmcSection pmc={pmc.value} ramp={false} /> : <SectionError label="Fitness and form" />}
+          <div id="fitness" className="scroll-mt-20">
+            {pmc.ok ? <PmcSection pmc={pmc.value} ramp={false} /> : <SectionError label="Fitness and form" />}
+          </div>
           {perf.ok && last4.length > 0 && (
             <section className="grid grid-cols-2 gap-y-4 rounded-lg border bg-[var(--viz-surface)] py-4 sm:grid-cols-4" aria-label="Last 4 weeks">
               {[
