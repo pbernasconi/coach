@@ -15,6 +15,10 @@ const nextConfig: NextConfig = {
     // (revalidatePath) clears this cache, so an edit shows at once; other data is at most this old on a click.
     staleTimes: { dynamic: 30, static: 60 },
   },
+  // Events moved from /goals into Settings (2026-10-20); old links and bookmarks land there.
+  async redirects() {
+    return [{ source: "/goals", destination: "/settings#events", permanent: true }];
+  },
 };
 
 export default nextConfig;

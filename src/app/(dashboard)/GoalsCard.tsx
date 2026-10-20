@@ -16,7 +16,7 @@ export default function GoalsCard({ goals }: { goals: GoalProgress[] }) {
     <section className="space-y-3 rounded-lg border p-4">
       <div className="flex items-baseline justify-between">
         <h2 className="font-semibold">Goals</h2>
-        <Link href="/settings" className="text-xs underline underline-offset-4">Edit goals →</Link>
+        <Link href="/settings#goals" className="text-xs underline underline-offset-4">Edit goals →</Link>
       </div>
       {goals.length === 0 && <p className="text-sm text-muted-foreground">No goals. Add milestones in Settings.</p>}
       <div className="grid gap-3 md:grid-cols-2">
