@@ -1,3 +1,4 @@
+// @ts-check
 // Pure summaries of synced Lift rows for the read-only dashboard. Input is the `payload` of every
 // non-deleted lift_rows row (LiftStore column names as keys). No framework imports, so it is testable with
 // `node --test`.
@@ -423,7 +424,7 @@ export function exerciseDetail(model, key, unit, bestCount = 10) {
  * @param {number} [points]
  */
 export function exerciseHistory(model, key, unit, day, sessionId, points = 10) {
-  /** @type {Map<string, { sessionId: string, day: string, sets: { reps: number | null, weight: number | null }[], e1rm: number | null }>} */
+  /** @type {Map<string, { sessionId: string, day: string, sets: { reps: number | null, weight: number | null, position: number }[], e1rm: number | null }>} */
   const bySession = new Map();
   for (const s of model.sets) {
     if (s.exerciseKey !== key || s.sessionId === sessionId || s.day > day || !isCountedSet(s)) continue;
@@ -487,6 +488,8 @@ export function sessionDetail(model, id, unit) {
   for (const set of model.sets) {
     if (set.sessionId !== summary.id) continue;
     const g = groups.get(set.sessionExerciseId);
+    // A set whose exercise row has not synced (or was deleted) has no group: leave it out, do not fail the page.
+    if (!g) continue;
     g.sets.push(set);
     g.volume += setVolume(set, unit);
     if (set.status === 'done') g.setsLogged += 1;

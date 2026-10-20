@@ -1,3 +1,4 @@
+// @ts-check
 // Training Stress Score for one activity. No framework or database imports, so node --test can run it (tss.test.mjs).
 //
 // The methods, best first:
@@ -14,24 +15,36 @@
 
 import { gapSpeeds } from '../activity/streams.mjs';
 
+/** @typedef {{ ftp?: number | null, runLthr?: number | null, rideLthr?: number | null, restingHr?: number | null, runPaceS?: number | null }} Thresholds */
+/** @typedef {{ time?: number[], heartrate?: (number | null)[], watts?: (number | null)[], velocity_smooth?: (number | null)[], grade_smooth?: (number | null)[] }} Streams */
+/** @typedef {{ np?: number, ngs?: number, hr?: Record<string, number> }} TssInputs */
+/** @typedef {{ value: number | null, source: string | null }} Sourced */
+
 export const RIDE_TYPES = new Set(['Ride', 'VirtualRide', 'GravelRide', 'MountainBikeRide', 'EBikeRide', 'EMountainBikeRide', 'Velomobile', 'Handcycle']);
 const RUN_TYPES = new Set(['Run', 'TrailRun', 'VirtualRun']);
 
-/** The sport family of an activity, for its threshold heart rate: ride, run or other. */
+/**
+ * The sport family of an activity, for its threshold heart rate: ride, run or other.
+ * @param {{ sport_type?: string | null, type?: string | null } | null | undefined} a
+ */
 export function sportFamily(a) {
-  const t = a?.sport_type ?? a?.type;
+  const t = a?.sport_type ?? a?.type ?? '';
   if (RIDE_TYPES.has(t)) return 'ride';
   if (RUN_TYPES.has(t)) return 'run';
   return 'other';
 }
 
 // A typical intensity factor without power, pace or heart rate.
+/** @type {Record<string, number>} */
 const FALLBACK_IF = { Run: 0.75, TrailRun: 0.75, Ride: 0.65, VirtualRide: 0.7, Swim: 0.7, WeightTraining: 0.55, Yoga: 0.35, Walk: 0.4 };
 
+/** @param {number} x */
 const round1 = (x) => Math.round(x * 10) / 10;
+/** @param {number} hours @param {number} intensity */
 const tssOf = (hours, intensity) => round1(hours * intensity * intensity * 100);
 
 /** The seconds a sample counts for: the time to the next sample; a gap over 30 s (a pause) counts 1 s. */
+/** @param {number[] | undefined} time @param {number} i */
 function dtAt(time, i) {
   let dt = time && i + 1 < time.length ? time[i + 1] - time[i] : 1;
   if (!Number.isFinite(dt) || dt <= 0 || dt > 30) dt = 1;
@@ -46,19 +59,21 @@ function dtAt(time, i) {
  */
 export function normalizedPower(watts, time) {
   if (!watts?.length) return null;
+  /** @type {[number, number][]} */
   const queue = [];
   let sum = 0;
   let span = 0;
   let acc = 0;
   let w = 0;
   for (let i = 0; i < watts.length; i++) {
-    const p = typeof watts[i] === 'number' && watts[i] > 0 ? watts[i] : 0;
+    const raw = watts[i];
+    const p = typeof raw === 'number' && raw > 0 ? raw : 0;
     const dt = dtAt(time, i);
     queue.push([p, dt]);
     sum += p * dt;
     span += dt;
-    while (span - queue[0][1] >= 30) {
-      const [q, qdt] = queue.shift();
+    while (queue.length > 1 && span - queue[0][1] >= 30) {
+      const [q, qdt] = /** @type {[number, number]} */ (queue.shift());
       sum -= q * qdt;
       span -= qdt;
     }
@@ -74,15 +89,21 @@ export function normalizedPower(watts, time) {
 /**
  * Normalized grade-adjusted speed (m/s) of a run: the 4th-power mean of the 30-second rolling grade-adjusted
  * speed, over moving samples. The 4th power gives hard stretches their weight, as Normalized Power does.
+ * @param {(number | null)[]} velocity
+ * @param {(number | null)[] | undefined} gradePct
+ * @param {number[] | undefined} time
  */
 export function normalizedGradedSpeed(velocity, gradePct, time) {
   if (!velocity?.length) return null;
   const gap = gapSpeeds(velocity, gradePct ?? []);
-  const powered = gap.map((v) => (typeof v === 'number' && v > 0.5 ? v : 0));
+  const powered = gap.map((/** @type {number | null} */ v) => (typeof v === 'number' && v > 0.5 ? v : 0));
   return normalizedPower(powered, time);
 }
 
-/** The heart-rate intensity factor of one value: its share of the reserve up to the LTHR, from 0 to 1.3. */
+/**
+ * The heart-rate intensity factor of one value: its share of the reserve up to the LTHR, from 0 to 1.3.
+ * @param {number} hr @param {number} lthr @param {number} restHr
+ */
 export function hrIntensity(hr, lthr, restHr) {
   if (!(hr > 0) || !(lthr > restHr)) return 0;
   return Math.max(0, Math.min(1.3, (hr - restHr) / (lthr - restHr)));
@@ -98,26 +119,41 @@ export function hrIntensity(hr, lthr, restHr) {
  */
 export function resolveThresholds({ settings, stravaFtp, stravaHrZones, restingHr, garminLthr, garminLtPaceS, best10kS, best5kS } = {}) {
   const s = settings ?? {};
+  /** @param {unknown} v @returns {number | null} */
   const num = (v) => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : null);
-  const pick = (own, fallback, from) => (num(own) != null ? { value: num(own), source: 'settings' } : fallback != null ? { value: fallback, source: from } : { value: null, source: null });
+  /** @param {unknown} own @param {number | null} fallback @param {string} from @returns {Sourced} */
+  const pick = (own, fallback, from) => {
+    const mine = num(own);
+    if (mine != null) return { value: mine, source: 'settings' };
+    return fallback != null ? { value: fallback, source: from } : { value: null, source: null };
+  };
 
   const zoneLthr = num(stravaHrZones?.[2]?.max);
+  const garminHr = num(garminLthr);
+  const garminPace = num(garminLtPaceS);
+  const rested = num(restingHr);
+  const b10 = num(best10kS);
+  const b5 = num(best5kS);
   const ftp = pick(s.ftp, num(stravaFtp), 'strava');
-  const runLthr = num(garminLthr)
-    ? pick(s.runLthr, Math.round(num(garminLthr)), 'garmin')
+  const runLthr = garminHr != null
+    ? pick(s.runLthr, Math.round(garminHr), 'garmin')
     : pick(s.runLthr, zoneLthr ?? 168, zoneLthr ? 'strava zones' : 'default');
   // Cycling LTHR is usually 5 to 10 bpm below running LTHR (less muscle mass works).
   const rideLthr = pick(s.rideLthr, runLthr.value != null ? runLthr.value - 5 : null, 'run LTHR − 5');
-  const rest = pick(s.restingHr, num(restingHr) != null ? Math.round(num(restingHr)) : 50, num(restingHr) ? 'garmin' : 'default');
+  const rest = pick(s.restingHr, rested != null ? Math.round(rested) : 50, rested != null ? 'garmin' : 'default');
   // Threshold pace (about one hour's race pace) is about 4 % slower than 10 km pace, 8 % slower than 5 km pace.
-  const est = num(best10kS) ? Math.round((num(best10kS) / 10) * 1.04) : num(best5kS) ? Math.round((num(best5kS) / 5) * 1.08) : null;
-  const runPace = num(garminLtPaceS)
-    ? pick(s.runPaceS, Math.round(num(garminLtPaceS)), 'garmin')
-    : pick(s.runPaceS, est, num(best10kS) ? 'best 10 km (365 d) + 4 %' : 'best 5 km (365 d) + 8 %');
+  const est = b10 != null ? Math.round((b10 / 10) * 1.04) : b5 != null ? Math.round((b5 / 5) * 1.08) : null;
+  const runPace = garminPace != null
+    ? pick(s.runPaceS, Math.round(garminPace), 'garmin')
+    : pick(s.runPaceS, est, b10 != null ? 'best 10 km (365 d) + 4 %' : 'best 5 km (365 d) + 8 %');
   return { ftp, runLthr, rideLthr, restingHr: rest, runPaceS: runPace };
 }
 
-/** The plain values of resolveThresholds, for computeTss. */
+/**
+ * The plain values of resolveThresholds, for computeTss.
+ * @param {ReturnType<typeof resolveThresholds>} t
+ * @returns {Thresholds}
+ */
 export function thresholdValues(t) {
   return {
     ftp: t.ftp.value,
@@ -132,11 +168,12 @@ export function thresholdValues(t) {
  * The parts of the streams TSS needs, and nothing that depends on a threshold: Normalized Power (W), the normalized
  * grade-adjusted speed (m/s) and the seconds at each heart rate (bpm → s). Stored per activity (tss_inputs), so a
  * new threshold recomputes every TSS without reading the streams again. Null without usable streams.
- * @param {{ time?: number[], heartrate?: (number | null)[], watts?: (number | null)[], velocity_smooth?: (number | null)[], grade_smooth?: (number | null)[] } | null} streams
- * @returns {{ np?: number, ngs?: number, hr?: Record<string, number> } | null}
+ * @param {Streams | null | undefined} streams
+ * @returns {TssInputs | null}
  */
 export function tssInputs(streams) {
   if (!streams) return null;
+  /** @type {TssInputs} */
   const out = {};
   const time = streams.time;
   const np = streams.watts?.length ? normalizedPower(streams.watts, time) : null;
@@ -144,10 +181,11 @@ export function tssInputs(streams) {
   const ngs = streams.velocity_smooth?.length ? normalizedGradedSpeed(streams.velocity_smooth, streams.grade_smooth, time) : null;
   if (ngs) out.ngs = Math.round(ngs * 1000) / 1000;
   if (streams.heartrate?.length) {
+    /** @type {Record<string, number>} */
     const hist = {};
     for (let i = 0; i < streams.heartrate.length; i++) {
-      const hr = streams.heartrate[i];
-      if (!(hr > 0)) continue;
+      const hr = /** @type {number | null} */ (streams.heartrate[i]);
+      if (typeof hr !== 'number' || !(hr > 0)) continue;
       const k = String(Math.round(hr));
       hist[k] = (hist[k] ?? 0) + dtAt(time, i);
     }
@@ -159,8 +197,8 @@ export function tssInputs(streams) {
 /**
  * TSS for one activity, from its streams (tssInputs computes them) or its averages.
  * @param {Record<string, any>} a  a Strava activity (list or stored row): sport_type, moving_time, weighted_average_watts, device_watts, average_heartrate
- * @param {{ ftp?: number | null, runLthr?: number | null, rideLthr?: number | null, restingHr?: number | null, runPaceS?: number | null }} th
- * @param {Parameters<typeof tssInputs>[0]} [streams]
+ * @param {Thresholds} [th]
+ * @param {Streams | null} [streams]
  * @returns {{ tss: number, method: string, intensity: number | null }}
  */
 export function computeTss(a, th = {}, streams = null) {
@@ -170,8 +208,9 @@ export function computeTss(a, th = {}, streams = null) {
 /**
  * TSS for one activity from its stored tss_inputs (or null: the averages only).
  * @param {Record<string, any>} a
- * @param {{ ftp?: number | null, runLthr?: number | null, rideLthr?: number | null, restingHr?: number | null, runPaceS?: number | null }} th
- * @param {ReturnType<typeof tssInputs>} inputs
+ * @param {Thresholds} [th]
+ * @param {TssInputs | null} [inputs]
+ * @returns {{ tss: number, method: string, intensity: number | null }}
  */
 export function tssFromInputs(a, th = {}, inputs = null) {
   const hours = (a.moving_time ?? a.elapsed_time ?? 0) / 3600;
@@ -181,14 +220,16 @@ export function tssFromInputs(a, th = {}, inputs = null) {
   const lthr = family === 'ride' ? th.rideLthr ?? th.runLthr ?? 163 : th.runLthr ?? 168;
 
   // Power: rides with a power meter only. Running power (Garmin or Stryd) against the cycling FTP counts runs far too high.
-  if (family === 'ride' && a.device_watts && th.ftp > 0) {
-    if (inputs?.np) return { tss: tssOf(hours, inputs.np / th.ftp), method: 'power_stream', intensity: round2(inputs.np / th.ftp) };
-    if (a.weighted_average_watts) return { tss: tssOf(hours, a.weighted_average_watts / th.ftp), method: 'power', intensity: round2(a.weighted_average_watts / th.ftp) };
+  const ftp = th.ftp ?? 0;
+  if (family === 'ride' && a.device_watts && ftp > 0) {
+    if (inputs?.np) return { tss: tssOf(hours, inputs.np / ftp), method: 'power_stream', intensity: round2(inputs.np / ftp) };
+    if (a.weighted_average_watts) return { tss: tssOf(hours, a.weighted_average_watts / ftp), method: 'power', intensity: round2(a.weighted_average_watts / ftp) };
   }
 
   // Pace: runs with streams and a threshold pace.
-  if (family === 'run' && th.runPaceS > 0 && inputs?.ngs) {
-    const intensity = inputs.ngs / (1000 / th.runPaceS);
+  const pace = th.runPaceS ?? 0;
+  if (family === 'run' && pace > 0 && inputs?.ngs) {
+    const intensity = inputs.ngs / (1000 / pace);
     return { tss: tssOf(hours, intensity), method: 'pace', intensity: round2(intensity) };
   }
 
@@ -215,18 +256,22 @@ export function tssFromInputs(a, th = {}, inputs = null) {
   return { tss: tssOf(hours, intensity), method: 'duration_fallback', intensity };
 }
 
+/** @param {number} x */
 function round2(x) {
   return Math.round(x * 100) / 100;
 }
 
 /** A short label for a TSS method, for the activity page. */
+/** @param {string} method */
 export function tssMethodLabel(method) {
-  return {
+  /** @type {Record<string, string>} */
+  const labels = {
     power_stream: 'from power',
     power: 'from power',
     pace: 'from grade-adjusted pace',
     hr_stream: 'from heart rate',
     hr: 'from average heart rate',
     duration_fallback: 'estimated from time',
-  }[method] ?? method;
+  };
+  return labels[method] ?? method;
 }
