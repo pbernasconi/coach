@@ -806,7 +806,7 @@ function DevicesPanel({ w }: { w: CalendarWorkout }) {
             </p>
           ) : (
             <p className="text-xs text-[var(--viz-muted)]">
-              {target === 'garmin' ? 'Not sent yet: the Garmin job sends it within the hour.' : 'Not sent yet: the Mac writes it within 30 minutes.'}
+              {target === 'garmin' ? 'Not sent yet: the Garmin job sends it within the hour.' : 'Not sent yet: the cloud sends it to Zwift (through intervals.icu) within 30 minutes.'}
             </p>
           ))}
         {ride && (

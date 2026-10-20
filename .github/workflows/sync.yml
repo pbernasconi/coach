@@ -5,7 +5,7 @@ name: Sync
 
 on:
   schedule:
-    - cron: "*/30 * * * *" # calendar, every 30 minutes
+    - cron: "*/30 * * * *" # calendar and the Zwift rides (through intervals.icu), every 30 minutes
     - cron: "10 */3 * * *" # Strava, every 3 hours (the webhook is the main path)
   workflow_dispatch:
 
@@ -22,6 +22,12 @@ jobs:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           curl -fsS --max-time 90 -H "Authorization: Bearer $CRON_SECRET" https://coach-paolo.vercel.app/api/cron/calendar
+      - name: Zwift rides (intervals.icu)
+        if: github.event.schedule != '10 */3 * * *'
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -fsS --max-time 90 -H "Authorization: Bearer $CRON_SECRET" https://coach-paolo.vercel.app/api/cron/workouts
       - name: Strava
         if: github.event.schedule == '10 */3 * * *' || github.event_name == 'workflow_dispatch'
         env:
