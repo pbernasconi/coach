@@ -97,3 +97,44 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Chart tokens (validated with the dataviz palette checks, light and dark). Charts use these roles,
+   never raw hex. Ride = categorical slot 1 (blue), run = slot 2 (orange); "other" is neutral, not a
+   categorical hue. Fatigue (ATL) is slot 5 (magenta): it is below 3:1 on the light surface, so the
+   load chart labels its lines directly and has a tooltip. */
+:root {
+  --viz-surface: #fcfcfb;
+  --viz-ink: #0b0b0b;
+  --viz-ink-2: #52514e;
+  --viz-muted: #898781;
+  --viz-grid: #e1e0d9;
+  --viz-axis: #c3c2b7;
+  --viz-ride: #2a78d6;
+  --viz-run: #eb6834;
+  --viz-other: #c3c2b7;
+  --viz-ctl: #2a78d6;
+  --viz-atl: #e87ba4;
+  --viz-tsb: #52514e;
+  --viz-band: #f0efec;
+  --viz-good: #0ca30c;
+  --viz-up: #006300;
+  --viz-down: #d03b3b;
+}
+.dark {
+  --viz-surface: #1a1a19;
+  --viz-ink: #f0efec;
+  --viz-ink-2: #c3c2b7;
+  --viz-muted: #898781;
+  --viz-grid: #2c2c2a;
+  --viz-axis: #383835;
+  --viz-ride: #3987e5;
+  --viz-run: #d95926;
+  --viz-other: #5b5a56;
+  --viz-ctl: #3987e5;
+  --viz-atl: #d55181;
+  --viz-tsb: #c3c2b7;
+  --viz-band: #262624;
+  --viz-good: #0ca30c;
+  --viz-up: #0ca30c;
+  --viz-down: #e66767;
+}

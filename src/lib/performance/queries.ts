@@ -16,7 +16,7 @@ export type WeekStats = {
   done: number;
 };
 
-export type LoadPoint = { date: string; ctl: number; atl: number; tsb: number };
+export type LoadPoint = { date: string; ctl: number; atl: number; tsb: number; tss: number };
 
 export type Performance = {
   weeks: WeekStats[]; // oldest first
@@ -36,7 +36,7 @@ export async function loadPerformance(userId: string, today: string, weekCount =
       FROM strava_activities
       WHERE user_id = ${userId} AND start_date_local >= ${firstWeek} AND COALESCE(commute, false) = false` as Promise<Row[]>,
     sql`
-      SELECT date, ctl, atl, tsb FROM daily_training_load
+      SELECT date, ctl, atl, tsb, tss FROM daily_training_load
       WHERE user_id = ${userId} AND date >= ${firstWeek} ORDER BY date` as Promise<Row[]>,
     sql`
       SELECT a.scheduled_date, a.activity_type, a.status
@@ -98,7 +98,7 @@ export async function loadPerformance(userId: string, today: string, weekCount =
 
   return {
     weeks: [...weeks.values()],
-    load: load.map((r) => ({ date: day(r.date), ctl: Number(r.ctl), atl: Number(r.atl), tsb: Number(r.tsb) })),
+    load: load.map((r) => ({ date: day(r.date), ctl: Number(r.ctl), atl: Number(r.atl), tsb: Number(r.tsb), tss: Number(r.tss ?? 0) })),
     latestActivity: latest || null,
     lastSync: conn[0]?.last_synced_at ? String(conn[0].last_synced_at) : null,
   };
