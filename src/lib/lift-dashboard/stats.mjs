@@ -266,10 +266,13 @@ export function displayUnit(sets) {
 }
 
 /**
+ * Sessions with at least one logged set, newest first. A session planned ahead (in Lift, or by Coach's
+ * scripts/lift-plan.mjs) has only planned sets until it is done, so it is left out unless `planned` is true.
  * @param {ReturnType<typeof buildModel>} model
  * @param {Unit} unit
+ * @param {{ planned?: boolean }} [options]
  */
-export function sessionSummaries(model, unit) {
+export function sessionSummaries(model, unit, { planned = false } = {}) {
   const byId = new Map();
   for (const s of model.sessions.values()) {
     byId.set(s.id, { id: s.id, day: s.day, title: s.title, startedAt: s.startedAt, setsLogged: 0, setsTotal: 0, volume: 0 });
@@ -280,9 +283,9 @@ export function sessionSummaries(model, unit) {
     if (set.status === 'done') summary.setsLogged += 1;
     summary.volume += setVolume(set, unit);
   }
-  return [...byId.values()].sort(
-    (a, b) => b.day.localeCompare(a.day) || String(b.startedAt ?? '').localeCompare(String(a.startedAt ?? ''))
-  );
+  return [...byId.values()]
+    .filter((s) => planned || s.setsLogged > 0)
+    .sort((a, b) => b.day.localeCompare(a.day) || String(b.startedAt ?? '').localeCompare(String(a.startedAt ?? '')));
 }
 
 /**

@@ -64,6 +64,19 @@ import Testing
         #expect(squat.sets.map(\.target.weight) == Array(repeating: .kg(expected), count: 3))
     }
 
+    @Test(arguments: [
+        (Self.thursday, 102.5 as Double),  // 3 days later: the normal step up
+        (Fixtures.monday.adding(days: 14), 90.0),  // 2 weeks later: about 90% of the last load
+    ])
+    func aSessionAfterABreakStartsLighter(day: LocalDay, expected: Double) async throws {
+        let store = try TestStore.make()
+        _ = try await store.loggedSquats(reps: [5, 5, 5], weight: .kg(100))
+        let template = try await lowerA(store)
+        let session = try await store.plans.createSession(from: template.id, on: day, unit: .kg)
+        let squat = try #require(try await detail(session.id, store).items.first)
+        #expect(squat.sets.map(\.target) == Array(repeating: SetTarget(reps: 5, weight: .kg(expected)), count: 3))
+    }
+
     @Test func theIncreaseIsAStepThePlatesCanMake() async throws {
         var gym = GymSetup.standard
         for index in gym.kg.plates.indices where gym.kg.plates[index].size < 5 {

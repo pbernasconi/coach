@@ -64,6 +64,12 @@ test('matchWeek: Strava by sport and day, Lift for strength, missed and today', 
   assert.equal(result.get('long').status, 'planned');
 });
 
+test('matchWeek: a Lift session with nothing logged is not a done lift', () => {
+  const result = matchWeek(week(), [], [{ id: 'l1', date: day(0), name: 'Heavy', setsLogged: 0 }], day(2));
+  assert.equal(result.get('lift').match, null);
+  assert.equal(result.get('lift').status, 'missed');
+});
+
 test('tired on a quality day swaps it with a later easy day not next to another quality day', () => {
   const ws = week();
   const updates = adaptForFeel(ws, 'tired', day(2)); // Wednesday: threshold run

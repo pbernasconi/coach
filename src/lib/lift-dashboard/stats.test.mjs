@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildModel, muscleSets, topLifts, weeklyVolume } from './stats.mjs';
+import { buildModel, muscleSets, sessionSummaries, topLifts, weeklyVolume } from './stats.mjs';
 
 const SQUAT = 'AAAAAAAA-0000-0000-0000-000000000001';
 const ROW = 'AAAAAAAA-0000-0000-0000-000000000002';
@@ -66,4 +66,14 @@ test('a session with a malformed day is dropped, not an exception (the pages kee
   });
   assert.deepEqual([...model.sessions.values()].map((s) => s.day), ['2026-10-20']);
   assert.doesNotThrow(() => weeklyVolume(model, 'kg'));
+});
+
+test('sessionSummaries leaves out a planned session with nothing logged', () => {
+  const d = data();
+  d.sessions.push({ id: 's3', day: '2026-10-27', title: 'Heavy', deletedAt: null });
+  d.sessionExercises.push({ id: 'e5', sessionID: 's3', exerciseID: SQUAT, displayName: 'Back squat', deletedAt: null });
+  d.sets.push({ id: 'q', sessionExerciseID: 'e5', actualReps: null, actualWeight: null, unit: 'kg', kind: 'working', status: 'planned', deletedAt: null });
+  const m = buildModel(d);
+  assert.deepEqual(sessionSummaries(m, 'kg').map((s) => s.id), ['s2', 's1']);
+  assert.deepEqual(sessionSummaries(m, 'kg', { planned: true }).map((s) => s.id), ['s3', 's2', 's1']);
 });

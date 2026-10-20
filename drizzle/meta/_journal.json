@@ -36,6 +36,13 @@
       "when": 1792479591805,
       "tag": "0004_lab_catalog",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792508781563,
+      "tag": "0005_plan_lift_session",
+      "breakpoints": true
     }
   ]
 }

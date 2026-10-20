@@ -18,16 +18,17 @@
  * --two-weeks is an alias for --weeks 2.
  */
 
-import { neon } from '@neondatabase/serverless';
+import { goalLine, loadGoals, measureGoals } from '../src/lib/goals/goals.mjs';
+import { connect } from '../src/db/neon.mjs';
 import { execFileSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { resolveTravel, dateKeysBetween, HOME_TZ } from './travel.mjs';
-import { loadRotation } from './rotation.mjs';
+import { label, loadRotation } from './rotation.mjs';
 import { untrusted } from './untrusted.mjs';
 import { healthProfileMarkdown } from './health-profile.mjs';
 
-const sql = neon(process.env.DATABASE_URL);
+const sql = connect();
 const args = process.argv.slice(2);
 const weekOfIdx = args.indexOf('--week-of');
 const weekOfArg = weekOfIdx >= 0 ? args[weekOfIdx + 1] : null;
@@ -74,14 +75,20 @@ if (!SKIP_SYNC) {
 }
 
 // ===== Week date math =====
+/** 'YYYY-MM-DD' of an instant on the wall clock of an IANA time zone. */
+function localDateKey(d, tz) {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+}
 function mondayOf(d) {
   const x = new Date(d); x.setUTCHours(0, 0, 0, 0);
   const day = x.getUTCDay();
   x.setUTCDate(x.getUTCDate() + (day === 0 ? -6 : 1 - day));
   return x;
 }
-const today = new Date();
-const weekStart = weekOfArg ? new Date(`${weekOfArg}T00:00:00Z`) : mondayOf(today);
+// Today on Paolo's home wall clock: after 17:00 in San Francisco, UTC is already tomorrow (and on a Sunday evening,
+// next week).
+const todayLocal = localDateKey(new Date(), HOME_TZ);
+const weekStart = weekOfArg ? new Date(`${weekOfArg}T00:00:00Z`) : mondayOf(new Date(`${todayLocal}T00:00:00Z`));
 const weekEnd = new Date(weekStart); weekEnd.setUTCDate(weekEnd.getUTCDate() + 7);
 // Full planning horizon (WEEKS long). weekEnd stays the *first* week's end so
 // existing single-week consumers keep working.
@@ -95,7 +102,8 @@ const weekWindows = Array.from({ length: WEEKS }, (_, i) => {
 // ===== 1. User + athlete profile =====
 const [user] = await sql`SELECT * FROM users WHERE id = ${USER_ID}`;
 const [prof] = await sql`SELECT * FROM strava_athlete_profile WHERE user_id = ${USER_ID} ORDER BY updated_at DESC LIMIT 1`;
-const [goals] = await sql`SELECT * FROM user_goals WHERE user_id = ${USER_ID}`;
+// Milestone goals (Coach → Settings → Goals), measured from Strava and Garmin.
+const goals = await measureGoals(sql, USER_ID, await loadGoals(sql, USER_ID), todayLocal);
 const ftp = prof?.ftp ?? null;
 const hrZones = prof?.hr_zones?.zones ?? [];
 const thresholdHr = hrZones[2]?.max ?? 168;
@@ -137,7 +145,7 @@ function tssOf(a) {
 function r1(n) { return Math.round(n * 10) / 10; }
 
 // Read CTL/ATL/TSB from precomputed daily_training_load (O(1) instead of O(120 days)).
-const todayKey = new Date().toISOString().slice(0, 10);
+const todayKey = todayLocal;
 const dtl = await sql`
   SELECT date, tss, ctl, atl, tsb
   FROM daily_training_load
@@ -307,13 +315,58 @@ try {
   }
 } catch (e) { console.error('lift templates fail:', e.message); }
 
+// Lift sessions: the latest logged ones (what was really lifted, set by set) and the planned ones from today on.
+const liftSessions = { logged: [], planned: [] };
+try {
+  const rows = await sql`
+    SELECT s.id, s.payload->>'day' AS d, s.payload->>'title' AS title, s.payload->>'startedAt' AS started,
+      se.payload->>'displayName' AS ex, (se.payload->>'position')::int AS pos, se.payload->>'loadMode' AS lm,
+      st.payload->>'kind' AS kind, st.payload->>'status' AS status, (st.payload->>'position')::int AS spos,
+      st.payload->>'actualReps' AS ar, st.payload->>'actualWeight' AS aw,
+      coalesce(st.payload->>'targetReps', st.payload->>'targetRepMin') AS tr, st.payload->>'targetWeight' AS tw,
+      st.payload->>'unit' AS unit
+    FROM lift_rows s
+    JOIN lift_rows se ON se.entity = 'sessionExercise' AND se.deleted_at IS NULL AND lower(se.payload->>'sessionID') = s.id::text
+    JOIN lift_rows st ON st.entity = 'set' AND st.deleted_at IS NULL AND lower(st.payload->>'sessionExerciseID') = se.id::text
+    WHERE s.entity = 'session' AND s.deleted_at IS NULL
+      AND s.id IN (
+        (SELECT id FROM lift_rows WHERE entity = 'session' AND deleted_at IS NULL AND payload->>'day' < ${todayLocal}
+          AND EXISTS (SELECT 1 FROM lift_rows x JOIN lift_rows y ON y.entity = 'set' AND y.deleted_at IS NULL
+            AND lower(y.payload->>'sessionExerciseID') = x.id::text AND y.payload->>'status' = 'done'
+            WHERE x.entity = 'sessionExercise' AND x.deleted_at IS NULL AND lower(x.payload->>'sessionID') = lift_rows.id::text)
+          ORDER BY payload->>'day' DESC LIMIT 4)
+        UNION
+        (SELECT id FROM lift_rows WHERE entity = 'session' AND deleted_at IS NULL AND payload->>'day' >= ${todayLocal}))
+    ORDER BY d, s.id, pos, spos`;
+  const bySession = new Map();
+  for (const r of rows) {
+    if (!bySession.has(r.id)) bySession.set(r.id, { day: r.d, title: r.title, exercises: new Map() });
+    const ses = bySession.get(r.id);
+    if (!ses.exercises.has(r.pos)) ses.exercises.set(r.pos, { name: r.ex, loadMode: r.lm, sets: [] });
+    ses.exercises.get(r.pos).sets.push(r);
+  }
+  const wt = (w, lm) => (w == null ? (lm === 'bodyweight' ? 'bw' : '-') : `${lm === 'bodyweight' ? '+' : ''}${Number(w)}`);
+  for (const ses of bySession.values()) {
+    const lines = [...ses.exercises.values()].map((e) => {
+      const work = e.sets.filter((x) => x.kind !== 'warmUp');
+      const sets = ses.day < todayLocal
+        ? work.filter((x) => x.status === 'done').map((x) => `${x.ar ?? '?'}×${wt(x.aw, e.loadMode)}`)
+        : work.map((x) => `${x.tr ?? '?'}×${wt(x.tw, e.loadMode)}`);
+      const unit = e.sets.find((x) => x.unit)?.unit ?? 'lb';
+      return `${e.name}${e.loadMode === 'perHand' ? ' (each hand)' : ''}: ${sets.join(', ') || 'nothing logged'} ${unit}`;
+    });
+    (ses.day < todayLocal ? liftSessions.logged : liftSessions.planned).push({ day: ses.day, title: ses.title, lines });
+  }
+  liftSessions.logged.reverse();
+} catch (e) { console.error('lift sessions fail:', e.message); }
+
 // ===== 8b. Quality rotation state (from prior plans in the database, not vibes) =====
 const rotation = await loadRotation(sql, user.id, weekStart.toISOString().slice(0, 10));
 
 // ===== 9. Build markdown profile =====
 const md = [];
 md.push(`# Athlete Profile — ${user.first_name ?? user.email}`);
-md.push(`_Generated ${new Date().toISOString().slice(0, 10)} · horizon ${weekStart.toISOString().slice(0, 10)} → ${new Date(horizonEnd.getTime() - 86400_000).toISOString().slice(0, 10)} (${WEEKS} week${WEEKS > 1 ? 's' : ''})_\n`);
+md.push(`_Generated ${todayLocal} · horizon ${weekStart.toISOString().slice(0, 10)} → ${new Date(horizonEnd.getTime() - 86400_000).toISOString().slice(0, 10)} (${WEEKS} week${WEEKS > 1 ? 's' : ''})_\n`);
 
 md.push(`## Physiology`);
 md.push(`- **Sex**: ${prof?.sex ?? 'unknown'}`);
@@ -412,12 +465,16 @@ for (const w of weekWindows) {
     for (const e of evs) {
       const s = new Date(e.start_time);
       const eend = new Date(e.end_time);
-      const day = DOW_NAMES[s.getUTCDay()];
+      // The day comes from the local wall clock, not UTC: 18:00 in San Francisco is already the next day in UTC.
+      const homeKey = localDateKey(s, HOME.tz);
       // Render each event in the timezone of wherever he actually is that day.
-      const tz = travel.placeByDate[s.toISOString().slice(0, 10)]?.tz ?? HOME.tz;
+      const tz = travel.placeByDate[homeKey]?.tz ?? HOME.tz;
+      // All-day events are stored at midnight UTC of their date.
+      const key = e.is_all_day ? s.toISOString().slice(0, 10) : localDateKey(s, tz);
+      const day = DOW_NAMES[new Date(`${key}T00:00:00Z`).getUTCDay()];
       const fmt = (d) => d.toLocaleTimeString('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit' });
       const tzTag = tz === HOME.tz ? '' : ` _(${tz})_`;
-      md.push(`> - **${day} ${s.toISOString().slice(5, 10)}** ${e.is_all_day ? '(all-day)' : `${fmt(s)}–${fmt(eend)}`} · ${untrusted(e.summary)}${tzTag}`);
+      md.push(`> - **${day} ${key.slice(5)}** ${e.is_all_day ? '(all-day)' : `${fmt(s)}–${fmt(eend)}`} · ${untrusted(e.summary)}${tzTag}`);
     }
   }
   md.push('');
@@ -436,9 +493,20 @@ for (const w of weekWindows) {
   md.push('');
 }
 
-md.push(`## Quality Rotation State`);
-md.push(`- **Last quality session planned**: ${rotation.lastQuality ?? '_none found_'}${rotation.lastQualityWeek ? ` (week of ${rotation.lastQualityWeek})` : ''}`);
-md.push(`- **→ This horizon's first quality session should be**: **${rotation.nextQuality}**`);
+md.push(`## Workout rotation (plans/PLAN-STRUCTURE.md order)`);
+md.push(`- **Next workouts, in order**: ${rotation.nextLabels.join(' → ')}`);
+md.push(`- **Last time** (progress it when done; repeat or step back when not):`);
+for (const [bank, l] of Object.entries(rotation.last)) {
+  md.push(`  - ${label(bank)}: ${l.date}, ${l.sport}, ${l.intensity ?? 'no prescription saved'}, ${l.done ? 'done' : 'NOT done'}`);
+}
+if (Object.keys(rotation.last).length === 0) md.push('  - _No bank workout planned yet: start each one at its first step._');
+md.push(`- **10k test**: ${rotation.lastTest10k ? `last ${rotation.lastTest10k} (${rotation.weeksSinceTest10k} weeks ago)` : 'none yet'}${rotation.test10kDue ? ' → due: put one in this horizon in place of a workout' : ''}`);
+md.push('');
+
+md.push(`## Goals: milestones (Coach → Settings; authoritative)`);
+md.push('Each goal is a measured target with a deadline, not a race. Train toward the nearest deadline; a goal that is behind gets priority.');
+if (goals.length === 0) md.push('_(none set: add them in Coach → Settings → Goals)_');
+for (const g of goals) md.push(goalLine(g));
 md.push('');
 
 md.push(`## Coaching preferences (Coach → Settings; authoritative)`);
@@ -452,6 +520,21 @@ for (const t of liftTemplates) {
   for (const s of t.slots) md.push(`- ${s}`);
 }
 md.push('');
+md.push(`## Lift sessions (reps × load per set, from Lift)`);
+md.push('A strength workout names its template in `liftTemplate`; scripts/lift-plan.mjs plans the Lift session, and Lift sets each target from the template and these logs (about 90% of the last load after 14 days off).');
+md.push('### Last logged');
+if (liftSessions.logged.length === 0) md.push('_(none)_');
+for (const ses of liftSessions.logged) {
+  md.push(`- **${ses.day} ${ses.title}**`);
+  for (const l of ses.lines) md.push(`  - ${l}`);
+}
+md.push('### Planned in Lift (targets)');
+if (liftSessions.planned.length === 0) md.push('_(none)_');
+for (const ses of liftSessions.planned) {
+  md.push(`- **${ses.day} ${ses.title}**`);
+  for (const l of ses.lines) md.push(`  - ${l}`);
+}
+md.push('');
 
 md.push(`## Inferred Goals (from data)`);
 const goalInferences = [];
@@ -461,7 +544,6 @@ if (runStats && runStats.avgPace) goalInferences.push(`Run pace averaging ${runS
 if (rhythmSummary['Ride']?.topDays?.[0]?.d === 'Sat' || rhythmSummary['Ride']?.topDays?.[0]?.d === 'Sun') goalInferences.push(`Weekend long-ride habit established.`);
 if (liftStats && liftStats.perWeek >= 1) goalInferences.push(`Maintains 1+ strength session/wk — keeps injury risk down.`);
 for (const g of goalInferences) md.push(`- ${g}`);
-if (!goals) md.push(`- ⚠️ No user_goals row set — defaults inferred from training history. To override, populate the user_goals table.`);
 md.push('');
 
 // Write outputs
@@ -506,7 +588,7 @@ const profileJson = {
       .filter((e) => new Date(e.start_time) >= w.start && new Date(e.start_time) < w.end)
       .map((e) => ({
         summary: e.summary, start: e.start_time, end: e.end_time, allDay: e.is_all_day, location: e.location,
-        tz: travel.placeByDate[new Date(e.start_time).toISOString().slice(0, 10)]?.tz ?? HOME.tz,
+        tz: travel.placeByDate[localDateKey(new Date(e.start_time), HOME.tz)]?.tz ?? HOME.tz,
       })),
   })),
   home: HOME,
@@ -522,6 +604,7 @@ const profileJson = {
   rotation,
   weather,
   liftTemplates,
+  liftSessions,
   goals: goals ?? null,
   inferredGoals: goalInferences,
 };

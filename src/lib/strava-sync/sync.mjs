@@ -420,6 +420,8 @@ export async function syncStrava(sql, opts = {}) {
   return { upserted: upsertCount, detailed: detailedCount, streams: streamCount, apiCalls: apiCallsInWindow };
 }
 
+const HOME_TIME_ZONE = 'America/Los_Angeles';
+
 /** Rebuilds daily_training_load (CTL/ATL/TSB) for the last 180 days from strava_activities.tss. */
 export async function rebuildTrainingLoad(sql, userId, log = console.log) {
   // ===== Rebuild daily_training_load (CTL/ATL/TSB) =====
@@ -443,7 +445,11 @@ export async function rebuildTrainingLoad(sql, userId, log = console.log) {
   if (tssByDate.size > 0) {
     const sortedDates = [...tssByDate.keys()].sort();
     const start = new Date(sortedDates[0]);
-    const todayUTC = new Date(); todayUTC.setUTCHours(0, 0, 0, 0);
+    // The last day is today on the athlete's wall clock (home, or the newest activity's day when traveling ahead of
+    // home), not today in UTC: at 18:00 in San Francisco UTC is already tomorrow, and that empty day lowered TSB.
+    const homeToday = new Intl.DateTimeFormat('en-CA', { timeZone: HOME_TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+    const lastKey = [homeToday, sortedDates.at(-1)].sort().at(-1);
+    const todayUTC = new Date(`${lastKey}T00:00:00Z`);
 
     // Get prior CTL/ATL starting point — use the row before our first date, if it exists.
     const [priorRow] = await sql`
@@ -467,6 +473,9 @@ export async function rebuildTrainingLoad(sql, userId, log = console.log) {
         tsb: Math.round((ctl - atl) * 10) / 10,
       });
     }
+
+    // Drop days after the last one: an earlier run in UTC could have written tomorrow.
+    await sql`DELETE FROM daily_training_load WHERE user_id = ${userId} AND date > ${lastKey}`;
 
     // Upsert all rows
     for (const r of rows) {

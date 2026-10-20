@@ -7,19 +7,29 @@ import Foundation
 /// - Every working set hit the top of the range: one increment over the last load, from the bottom of the range.
 /// - Otherwise: the last load again, one more rep (clamped to the range).
 /// - Two sessions below the range: the deload load, from the bottom of the range.
+/// - The last session was `breakDays` or more before this one: about 90% of the last load (the same load when the
+///   increment is too coarse for that), from the bottom of the range, so the first session back is not a step up.
 ///
-/// A planned load heavier than the history suggests wins (the plan was raised by hand); only a deload goes lower.
-/// Warm-up slots keep their own target.
+/// A planned load heavier than the history suggests wins (the plan was raised by hand); only a deload or a break goes
+/// lower. Warm-up slots keep their own target.
 public enum SlotPlanner {
+    /// The gap, in days, after which the next session starts lighter.
+    public static let breakDays = 14
+
     public static func target(
         for slot: TemplateExercise,
         last: [LoggedSet],
         previous: [LoggedSet] = [],
         increment: Weight,
-        unit: WeightUnit
+        unit: WeightUnit,
+        daysSinceLast: Int? = nil
     ) -> SetTarget {
         let planned = slot.weight.map { inUnit($0, unit: unit, increment: increment) }
         guard slot.kind != .warmUp else { return target(slot, reps: nil, weight: planned) }
+        if let daysSinceLast, daysSinceLast >= breakDays, last.contains(where: { $0.isDone && $0.kind != .warmUp }) {
+            let lastWeight = heaviestWorking(last).map { inUnit($0, unit: unit, increment: increment) }
+            return target(slot, reps: slot.repRange.lowerBound, weight: lastWeight.map { afterBreak($0, increment) })
+        }
         let suggestion = Progression.suggest(
             repRange: slot.repRange,
             last: last,
@@ -70,6 +80,13 @@ public enum SlotPlanner {
             return SetTarget(reps: range.lowerBound, weight: weight)
         }
         return SetTarget(reps: reps, repRange: range, weight: weight)
+    }
+
+    /// About 90% of `weight`, on the nearest increment. When the increment is too coarse for that to be lighter (a
+    /// 15 lb dumbbell in 5 lb steps), the same weight: one step down would be a far bigger cut than 10%.
+    static func afterBreak(_ weight: Weight, _ increment: Weight) -> Weight {
+        let lighter = weight.scaled(by: Progression.deloadFactor).rounded(to: increment)
+        return lighter.value < weight.value ? lighter : weight
     }
 
     private static func heaviestWorking(_ sets: [LoggedSet]) -> Weight? {

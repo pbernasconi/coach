@@ -20,6 +20,9 @@ import PmcSection from '@/components/performance/PmcSection';
 import PeakPerformances from '@/components/performance/PeakPerformances';
 import UpcomingEvents from '@/components/performance/UpcomingEvents';
 import RecoveryToday from '@/components/vitals/RecoveryToday';
+import { sql } from '@/db';
+import { loadGoals, measureGoals } from '@/lib/goals/goals.mjs';
+import GoalsCard from './GoalsCard';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,7 +42,7 @@ export default async function PerformancePage() {
   const today = todayIn(zone((await cookies()).get('tz')?.value));
   const monday = mondayOf(today);
   // Each section loads on its own: a failure shows SectionError for that section and leaves the others.
-  const [perf, week, targets, lift, pmc, peaks, events, recovery] = await Promise.all([
+  const [perf, week, targets, lift, pmc, peaks, events, recovery, goals] = await Promise.all([
     load('Performance', () => loadPerformance(userId, today)),
     load("This week's plan", () => loadWeek(userId, monday, today)),
     safe('targets', () => loadTargets(userId), DEFAULT_TARGETS),
@@ -57,6 +60,7 @@ export default async function PerformancePage() {
     load('Peak performances', () => loadPeakPerformances(userId, today)),
     safe('events', () => loadUpcomingEvents(userId, today, 365), []),
     safe('recovery today', () => loadRecoveryToday(userId, today), null),
+    load('Goals', async () => measureGoals(sql, userId, await loadGoals(sql, userId), today)),
   ]);
   return (
     <div className="space-y-6" data-smoke="performance">
@@ -70,6 +74,7 @@ export default async function PerformancePage() {
       {events.length > 0 && <UpcomingEvents events={events} />}
       {recovery?.hasData && <RecoveryToday r={recovery} />}
       {week.ok ? <TodayCard week={week.value} thisWeek={perf.ok ? perf.value.weeks.at(-1) : undefined} targets={targets} /> : <SectionError label="Today" />}
+      {goals.ok ? <GoalsCard goals={goals.value} /> : <SectionError label="Goals" />}
       {perf.ok ? <PerformanceView perf={perf.value} today={today} strengthTarget={targets.strength} /> : <SectionError label="Performance" />}
       {pmc.ok ? <PmcSection pmc={pmc.value} /> : <SectionError label="Fitness and form" />}
       {peaks.ok ? <PeakPerformances peaks={peaks.value} /> : <SectionError label="Peak performances" />}

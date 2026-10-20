@@ -12,12 +12,12 @@
  * Every change sets edited_at, so a later plan-import keeps it. Add --no-calendar to skip the calendar update.
  */
 
-import { neon } from '@neondatabase/serverless';
+import { connect } from '../src/db/neon.mjs';
 import { pushWeek } from '../src/lib/calendar-sync/push.mjs';
 
 const [cmd, a, b, ...rest] = process.argv.slice(2).filter((x) => x !== '--no-calendar');
 const noCalendar = process.argv.includes('--no-calendar');
-const sql = neon(process.env.DATABASE_URL);
+const sql = connect();
 const [user] = await sql`SELECT id FROM users ORDER BY created_at LIMIT 1`;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const day = (v) => new Date(v).toISOString().slice(0, 10);
@@ -52,7 +52,7 @@ async function push(weeks) {
   }
 }
 
-const COLUMNS = { title: 'title', duration: 'duration', intensity: 'intensity', description: 'description', why: 'why', start_time: 'start_time', end_time: 'end_time', time_zone: 'time_zone', workout_type: 'workout_type', tss: 'tss' };
+const COLUMNS = { title: 'title', duration: 'duration', intensity: 'intensity', description: 'description', why: 'why', start_time: 'start_time', end_time: 'end_time', time_zone: 'time_zone', workout_type: 'workout_type', tss: 'tss', lift_template: 'lift_template' };
 
 if (cmd === 'show') {
   if (!DATE.test(a ?? '')) fail('show YYYY-MM-DD');
