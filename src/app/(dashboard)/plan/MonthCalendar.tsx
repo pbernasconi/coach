@@ -648,7 +648,7 @@ function DayHead({ d, past, isToday, wx, roomy = false }: { d: string; past: boo
         </Link>
       )}
       <span className="flex-1" />
-      {wx && <WeatherBadge w={wx} compact={!roomy} />}
+      {wx && <WeatherBadge w={wx} date={d} compact={!roomy} />}
     </div>
   );
 }
@@ -909,7 +909,7 @@ const AgendaWeek = memo(function AgendaWeek({
                 <div className="min-w-0 flex-1 space-y-1.5">
                   {wx && (
                     <div className="flex justify-end">
-                      <WeatherBadge w={wx} />
+                      <WeatherBadge w={wx} date={d} />
                     </div>
                   )}
                   {day.items.map((item) => <Chip key={item.key} item={item} disabled={disabled} h={h} roomy />)}

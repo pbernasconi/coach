@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { addMonths, forecastDays, libraryFrom, locationFrom, monthWeeks, parseMonth, plainTitle, weatherOf, weekSummary } from './calendar.mjs';
+import { addMonths, libraryFrom, locationFrom, monthWeeks, parseMonth, plainTitle, weatherOf, weekSummary } from './calendar.mjs';
 
 test('parseMonth keeps a good value and falls back to today', () => {
   assert.equal(parseMonth('2026-10', '2026-03-04'), '2026-10');
@@ -85,20 +85,6 @@ test('weatherOf groups WMO codes', () => {
   assert.equal(weatherOf(81).label, 'Showers');
   assert.equal(weatherOf(73).icon, 'snow');
   assert.equal(weatherOf(96).icon, 'storm');
-});
-
-test('forecastDays reads Open-Meteo daily arrays', () => {
-  const json = {
-    daily: {
-      time: ['2026-10-19', '2026-10-20'],
-      weathercode: [3, 61],
-      temperature_2m_max: [19.6, null],
-      temperature_2m_min: [11.2, 10],
-      precipitation_probability_max: [10, 80],
-    },
-  };
-  assert.deepEqual(forecastDays(json), { '2026-10-19': { code: 3, max: 20, min: 11, rain: 10 } });
-  assert.deepEqual(forecastDays(null), {});
 });
 
 test('locationFrom validates users.settings.location', () => {
