@@ -183,6 +183,14 @@ async function applyChanges(userId: string, id: string, changes: Record<string, 
   await sql`UPDATE training_plan_activities SET edited_at = NOW(), updated_at = NOW() WHERE id = ${id}`;
 }
 
+/** A workout's day ('YYYY-MM-DD') when the user owns it, else null. */
+export async function workoutDate(userId: string, id: string): Promise<string | null> {
+  const [r] = (await sql`
+    SELECT a.scheduled_date FROM training_plan_activities a JOIN training_plans p ON p.id = a.plan_id
+    WHERE a.id = ${id} AND p.user_id = ${userId}`) as Row[];
+  return r ? day(r.scheduled_date) : null;
+}
+
 /** Moves a workout to another day (and plan week, when the day is in another week). */
 export async function moveWorkout(userId: string, id: string, date: string) {
   const planId = await ensurePlan(userId, mondayOf(date));

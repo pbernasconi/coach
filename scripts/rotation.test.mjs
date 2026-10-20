@@ -2,23 +2,21 @@
 /**
  * Tests for rotation.mjs — the bike VO2 <-> run intervals alternation.
  *
- * Uses a temp plans dir so the real plans/ is never touched.
+ * Pure: plans are passed in as data (the database loader is a thin query around rotationFromPlans).
  *
  * Run: npm test
  */
 
-import { test, beforeEach, afterEach } from 'node:test';
+import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { rotationState } from './rotation.mjs';
+import { rotationFromPlans } from './rotation.mjs';
 
-let dir;
-beforeEach(() => { dir = mkdtempSync(join(tmpdir(), 'coach-rotation-')); });
-afterEach(() => { rmSync(dir, { recursive: true, force: true }); });
+let plans;
+beforeEach(() => { plans = []; });
 
-const plan = (key, events) => writeFileSync(join(dir, `${key}.json`), JSON.stringify({ weekStart: key, events }));
+const plan = (key, events) => plans.push({ weekStart: key, events });
+const rotationState = (_ignored, key) => rotationFromPlans(plans, key);
+const dir = null;
 const q = (type, start) => ({ title: type, start, end: start, workoutType: type });
 
 test('last quality was bike => next is run', () => {
@@ -76,25 +74,20 @@ test('no prior plans => defaults to ride-vo2', () => {
   assert.deepEqual(rotationState(dir, '2026-07-13'), { lastQuality: null, lastQualityWeek: null, nextQuality: 'ride-vo2' });
 });
 
-test('malformed JSON is skipped, not fatal', () => {
+test('a plan with broken events is skipped, not fatal', () => {
   plan('2026-06-29', [q('run-intervals', '2026-07-01T08:00:00')]);
-  writeFileSync(join(dir, '2026-07-06.json'), '{ this is not json');
+  plans.push({ weekStart: '2026-07-06', events: [null, { start: 3 }] });
   const r = rotationState(dir, '2026-07-13');
-  assert.equal(r.lastQualityWeek, '2026-06-29', 'skipped the broken file and kept looking');
+  assert.equal(r.lastQualityWeek, '2026-06-29', 'skipped the broken plan and kept looking');
 });
 
 test('plan with no events key is skipped safely', () => {
-  writeFileSync(join(dir, '2026-07-06.json'), JSON.stringify({ weekStart: '2026-07-06' }));
+  plans.push({ weekStart: '2026-07-06' });
   assert.equal(rotationState(dir, '2026-07-13').nextQuality, 'ride-vo2');
 });
 
-test('missing plans dir => defaults rather than throwing', () => {
-  assert.equal(rotationState(join(dir, 'does-not-exist'), '2026-07-13').nextQuality, 'ride-vo2');
-});
-
-test('ignores non-plan files in the dir', () => {
+test('entries without a week are ignored', () => {
   plan('2026-07-06', [q('ride-vo2', '2026-07-10T08:00:00')]);
-  writeFileSync(join(dir, 'PLAN-STRUCTURE.md'), '# not a plan');
-  writeFileSync(join(dir, '.gitkeep'), '');
+  plans.push({ events: [q('run-intervals', '2026-07-11T08:00:00')] });
   assert.equal(rotationState(dir, '2026-07-13').lastQualityWeek, '2026-07-06');
 });
