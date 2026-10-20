@@ -7,11 +7,13 @@ import { ArrowRight, Dumbbell, X } from 'lucide-react';
 import SportIcon from '@/components/SportIcon';
 import ComplianceMark from '@/components/plan/ComplianceMark';
 import RemoveWorkout from '@/components/plan/RemoveWorkout';
+import LiftSessionSets from '@/components/plan/LiftSessionSets';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { sport } from '@/lib/sports';
 import { plainTitle } from '@/lib/plan/calendar.mjs';
 import { dur } from '@/lib/plan/cells.mjs';
+import { LIFT_MARKER } from '@/lib/plan/lift-plan.mjs';
 import type { CalendarActivity, CalendarLift, CalendarWorkout } from '@/lib/plan/month';
 
 export type Item =
@@ -42,6 +44,7 @@ export function detailHref(item: Item): { href: string; label: string } | null {
   if (item.kind === 'activity') return { href: item.a.url, label: 'Open activity' };
   if (item.kind === 'lift') return { href: liftHref(item.l.id), label: 'Open session' };
   const m = item.w.match;
+  if (item.w.lift) return { href: liftHref(item.w.lift.id), label: 'Open Lift session' };
   if (item.actual) return { href: item.actual.url, label: 'Open activity' };
   if (m?.source === 'strava') return { href: `/activities/${m.id}`, label: 'Open activity' };
   if (m?.source === 'lift') return { href: liftHref(m.id), label: 'Open session' };
@@ -254,6 +257,8 @@ function ItemBody({ item, actions, disabled }: { item: Item; actions: PreviewAct
 
   const { w, actual } = item;
   const editable = w.state !== 'done';
+  // With the Lift session shown set by set, the text copy of the sets (scripts/lift-plan.mjs) is left out.
+  const note = w.lift && w.description ? w.description.split(LIFT_MARKER)[0].trim() : w.description;
   const pct = w.compliance.ratio != null ? `${Math.round(w.compliance.ratio * 100)} % of planned ${w.compliance.basis === 'tss' ? 'TSS' : 'time'}` : null;
   return (
     <div className="space-y-4 p-4">
@@ -273,15 +278,20 @@ function ItemBody({ item, actions, disabled }: { item: Item; actions: PreviewAct
         )}
         {actual && actual.km >= 0.5 && <Stat label="Distance" value={`${actual.km} km`} />}
       </dl>
-      {w.intensity && <p className="text-xs text-[var(--viz-ink-2)]">Intensity: {w.intensity}</p>}
+      {w.intensity && !w.lift && <p className="text-xs text-[var(--viz-ink-2)]">Intensity: {w.intensity}</p>}
       {w.match && (
         <p className="text-xs text-[var(--viz-ink-2)]">
           Done as {w.match.source === 'lift' ? 'Lift session' : 'activity'}: <span className="font-medium text-[var(--viz-ink)]">{w.match.name}</span>
         </p>
       )}
-      {w.description && (
+      {note && (
         <div className="max-h-56 overflow-y-auto whitespace-pre-wrap rounded-md bg-muted/50 p-3 text-xs leading-relaxed text-[var(--viz-ink)]">
-          {w.description}
+          {note}
+        </div>
+      )}
+      {w.lift && (
+        <div className="rounded-md border p-3">
+          <LiftSessionSets lift={w.lift} />
         </div>
       )}
       {w.why && <p className="text-xs text-[var(--viz-muted)]">Why: {w.why}</p>}

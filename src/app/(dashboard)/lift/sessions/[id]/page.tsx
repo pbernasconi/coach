@@ -17,6 +17,16 @@ type Detail = NonNullable<ReturnType<typeof sessionDetail>>;
 
 const STATUS: Record<string, string> = { done: 'Done', skipped: 'Skipped', planned: 'Not logged' };
 
+type SetRow = Detail['exercises'][number]['sets'][number];
+
+/** What Lift planned for a set: "230 lb × 8", "+25 lb × 8–10", or "-". */
+function targetText(t: SetRow['target'], loadMode: string | null, unit: string) {
+  const reps = t.reps != null ? String(t.reps) : t.repMin != null && t.repMax != null ? (t.repMin === t.repMax ? String(t.repMin) : `${t.repMin}–${t.repMax}`) : null;
+  const w = loadMode === 'bodyweight' ? (t.weight ? `+${formatWeight(t.weight, unit)}` : 'BW') : t.weight != null ? formatWeight(t.weight, unit) : null;
+  if (!reps && !w) return '-';
+  return `${w ?? '-'} × ${reps ?? '-'}`;
+}
+
 function startTime(iso: string | null, tz: string) {
   if (!iso) return null;
   return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: tz });
@@ -118,6 +128,7 @@ export default async function LiftSessionPage({ params }: { params: Promise<{ id
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-12">Set</TableHead>
+                    <TableHead className="text-right text-muted-foreground">Target</TableHead>
                     <TableHead className="text-right">Weight × reps</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="hidden sm:table-cell">Note</TableHead>
@@ -127,8 +138,11 @@ export default async function LiftSessionPage({ params }: { params: Promise<{ id
                   {e.sets.map((s) => (
                     <TableRow key={s.id} className={s.status === 'done' ? '' : 'text-muted-foreground'}>
                       <TableCell className="tabular-nums" title={s.kind === 'warmUp' ? 'Warm-up' : undefined}>{s.label}</TableCell>
+                      <TableCell className="whitespace-nowrap text-right tabular-nums text-muted-foreground">
+                        {targetText(s.target, e.loadMode, unit)}
+                      </TableCell>
                       <TableCell className="whitespace-nowrap text-right tabular-nums">
-                        {formatWeight(s.weight, unit)} × {s.reps ?? '-'}
+                        {s.status === 'done' ? `${formatWeight(s.weight, unit)} × ${s.reps ?? '-'}` : '-'}
                       </TableCell>
                       <TableCell>
                         {STATUS[s.status] ?? s.status}
