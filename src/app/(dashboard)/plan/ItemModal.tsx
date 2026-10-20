@@ -6,7 +6,6 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { ArrowUpRight, ChevronLeft, ChevronRight, Copy, Dumbbell, ExternalLink, X } from 'lucide-react';
 import SportIcon from '@/components/SportIcon';
 import ComplianceMark from '@/components/plan/ComplianceMark';
-import LiftSessionSets from '@/components/plan/LiftSessionSets';
 import { totals } from '@/lib/workouts/steps.mjs';
 import PeakCurve from '@/components/charts/PeakCurve';
 import { Button } from '@/components/ui/button';
@@ -30,6 +29,7 @@ import RouteMap from '../activities/[id]/RouteMap';
 import StreamCharts from '../activities/[id]/StreamCharts';
 import { ZoneBars } from '../activities/[id]/Sections';
 import { Card as PCard, Forecast, KeyTargets, Structure, ZoneTime } from './PlannedDetails';
+import LiftView, { liftStats } from './LiftView';
 import { BestEfforts, ElevationProfile, LoadTiles, MinAvgMax, PlanVsDone, SplitBars, StatGrid, ZoneStrip } from './ActivityOverview';
 import { activityPreviewAction, liftPreviewAction } from './actions';
 import { liftHref, type Item } from './ItemPreview';
@@ -711,22 +711,7 @@ function LapTable({ v }: { v: ActivityView }) {
 // ---------------------------------------------------------------------------------------------------------------
 // Lift
 
-const STATUS: Record<string, string> = { done: 'Done', skipped: 'Skipped', planned: 'Not logged' };
 
-const num1 = (v: number) => v.toLocaleString('en-US', { maximumFractionDigits: 1 });
-
-/** A load as Lift shows it: "230 lb", "+25 lb" (added to bodyweight), "BW", or "" with no load. */
-function loadText(weight: number | null, loadMode: string | null, unit: string) {
-  if (loadMode === 'bodyweight') return weight ? `+${num1(weight)} ${unit}` : 'BW';
-  return weight == null ? '' : `${num1(weight)} ${unit}`;
-}
-
-/** The planned reps and load of a set: "8 × 230 lb", "8–10 × BW", or "–". */
-function targetText(t: { reps: number | null; repMin: number | null; repMax: number | null; weight: number | null }, loadMode: string | null, unit: string) {
-  const reps = t.reps != null ? String(t.reps) : t.repMin != null && t.repMax != null ? (t.repMin === t.repMax ? String(t.repMin) : `${t.repMin}–${t.repMax}`) : '';
-  const w = loadText(t.weight, loadMode, unit);
-  return reps || w ? [reps, w].filter(Boolean).join(' × ') : '–';
-}
 
 function LiftModal({ id, planned, onClose }: { id: string; planned: CalendarWorkout | null; onClose: () => void }) {
   const state = useLoad(() => liftPreviewAction(id), [id]);
@@ -765,67 +750,29 @@ function LiftModal({ id, planned, onClose }: { id: string; planned: CalendarWork
             planned?.tss != null && { label: 'Planned TSS', value: String(Math.round(planned.tss)) },
           ]}
         />
-        <div className="grid gap-6 p-4 sm:p-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-          <div className="space-y-6">
-            <Panel title="Summary">
-              <PlanTable
-                showPlanned
-                rows={[
-                  ['Exercises', String(d.exercises.length), String(exercisesDone)],
-                  ['Sets', String(d.setsTotal), String(d.setsLogged)],
-                  ['Reps', null, String(reps)],
-                  ['Volume', null, vol(d.volume)],
-                  ['Duration', planned?.duration ? dur(planned.duration) : null, d.minutes != null ? dur(d.minutes) : null],
-                ]}
-              />
-            </Panel>
-            {d.note && <Description title="Session note" text={d.note} />}
-            {planned?.description && planned.description.split(LIFT_MARKER)[0].trim() && (
-              <Description title="The plan" text={planned.description.split(LIFT_MARKER)[0].trim()} />
-            )}
-          </div>
-          <div className="space-y-4">
-            {d.exercises.length === 0 && <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">No exercises in this session.</p>}
-            {d.exercises.map((e) => (
-              <section key={e.id} className="overflow-hidden rounded-lg border">
-                <header className="flex items-baseline justify-between gap-2 bg-muted/50 px-3 py-2">
-                  <Link href={`/lift/exercises/${encodeURIComponent(e.key)}`} className="font-medium text-[var(--viz-ink)] hover:underline">{e.name}</Link>
-                  <span className="shrink-0 text-xs tabular-nums text-[var(--viz-muted)]">{e.setsLogged}/{e.sets.length} sets · {vol(e.volume)}</span>
-                </header>
-                {e.note && <p className="border-t px-3 py-1.5 text-xs text-[var(--viz-ink-2)]">{e.note}</p>}
-                <table className="w-full table-fixed text-sm">
-                  <colgroup>
-                    <col className="w-10" />
-                    <col className="w-32" />
-                    <col className="w-32" />
-                    <col className="w-24" />
-                    <col />
-                  </colgroup>
-                  <thead className="border-t text-left text-[11px] text-[var(--viz-muted)]">
-                    <tr>
-                      <th className="px-3 py-1 font-medium">Set</th>
-                      <th className="px-3 py-1 font-medium">Target</th>
-                      <th className="px-3 py-1 font-medium">Done</th>
-                      <th className="px-3 py-1 font-medium"><span className="sr-only">Status</span></th>
-                      <th className="px-3 py-1 font-medium"><span className="sr-only">Note</span></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {e.sets.map((s) => (
-                      <tr key={s.id} className={cn('border-t', s.status !== 'done' && 'text-[var(--viz-muted)]')}>
-                        <td className="w-10 px-3 py-1 tabular-nums">{s.label}</td>
-                        <td className="px-3 py-1 tabular-nums text-[var(--viz-muted)]">{targetText(s.target, e.loadMode, unit)}</td>
-                        <td className="px-3 py-1 font-medium tabular-nums">{s.status === 'done' ? `${s.reps ?? '?'} × ${loadText(s.weight, e.loadMode, unit) || '–'}` : '–'}</td>
-                        <td className="px-3 py-1 text-xs">{STATUS[s.status] ?? s.status}</td>
-                        <td className="px-3 py-1 text-xs text-[var(--viz-ink-2)]">{s.note}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </section>
-            ))}
-          </div>
-        </div>
+        <LiftView
+          lift={d}
+          extra={
+            <>
+              <PCard title="Planned vs done">
+                <PlanTable
+                  showPlanned
+                  rows={[
+                    ['Exercises', String(d.exercises.length), String(exercisesDone)],
+                    ['Sets', String(d.setsTotal), String(d.setsLogged)],
+                    ['Reps', null, String(reps)],
+                    ['Volume', liftStats(d).plannedVolume > 0 ? vol(liftStats(d).plannedVolume) : null, vol(d.volume)],
+                    ['Duration', planned?.duration ? dur(planned.duration) : null, d.minutes != null ? dur(d.minutes) : null],
+                  ]}
+                />
+              </PCard>
+              {d.note && <Description title="Session note" text={d.note} />}
+              {planned?.description && planned.description.split(LIFT_MARKER)[0].trim() && (
+                <Description title="The plan" text={planned.description.split(LIFT_MARKER)[0].trim()} />
+              )}
+            </>
+          }
+        />
       </div>
     </>
   );
@@ -870,6 +817,16 @@ function DevicesPanel({ w }: { w: CalendarWorkout }) {
   );
 }
 
+/** Hero numbers for a Lift session: exercises, working sets and the planned volume. */
+function liftHero(lift: NonNullable<CalendarWorkout['lift']>): HeroStat[] {
+  const st = liftStats(lift);
+  return [
+    { label: 'Exercises', value: String(st.exercises) },
+    { label: 'Working sets', value: String(st.workingSets) },
+    st.plannedVolume > 0 && { label: 'Planned volume', value: Math.round(st.plannedVolume).toLocaleString('en-US'), unit: lift.unit },
+  ].filter(Boolean) as HeroStat[];
+}
+
 function PlannedModal({ w, onClose, onCopy, wx }: { w: CalendarWorkout; onClose: () => void; onCopy?: (w: CalendarWorkout) => void; wx?: DayWeather }) {
   const targets = zonesFor(w) as { zone: string; label: string; target: string }[];
   // With the Lift session shown set by set, the text copy of the sets (scripts/lift-plan.mjs) is left out.
@@ -904,17 +861,31 @@ function PlannedModal({ w, onClose, onCopy, wx }: { w: CalendarWorkout; onClose:
             { label: 'Planned time', value: w.duration ? dur(w.duration) : '–' },
             w.tss != null && { label: 'Planned TSS', value: String(Math.round(w.tss)) },
             plan && plan.if > 0 && { label: 'Planned IF', value: plan.if.toFixed(2) },
+            ...(w.lift ? liftHero(w.lift) : []),
           ]}
         />
+        {w.lift ? (
+          <LiftView
+            lift={w.lift}
+            extra={
+              <>
+                {w.why && (
+                  <PCard title="Why">
+                    <p className="text-sm leading-relaxed text-[var(--viz-ink-2)]">{w.why}</p>
+                  </PCard>
+                )}
+                {text && <Description title="Notes" text={text} />}
+                <Link href={liftHref(w.lift.id)} className="block rounded-xl border px-4 py-3 text-sm font-medium text-[var(--viz-ink)] hover:bg-accent/50">
+                  Open the session in full →
+                </Link>
+              </>
+            }
+          />
+        ) : (
         <div className="grid gap-4 p-4 sm:p-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
           <div className="space-y-4">
             {w.steps && <Structure workout={w.steps} />}
-            {w.lift && (
-              <PCard title="Lift session" note={<Link href={liftHref(w.lift.id)} className="underline underline-offset-2">Open in full</Link>}>
-                <LiftSessionSets lift={w.lift} />
-              </PCard>
-            )}
-            {text ? <Description title={w.steps ? 'Notes' : 'The workout'} text={text} /> : !w.lift && !w.steps && <p className="text-sm text-muted-foreground">No description.</p>}
+            {text ? <Description title={w.steps ? 'Notes' : 'The workout'} text={text} /> : !w.steps && <p className="text-sm text-muted-foreground">No description.</p>}
           </div>
           <div className="space-y-4">
             {w.steps && <KeyTargets workout={w.steps} />}
@@ -946,6 +917,7 @@ function PlannedModal({ w, onClose, onCopy, wx }: { w: CalendarWorkout; onClose:
             {w.steps && <DevicesPanel w={w} />}
           </div>
         </div>
+        )}
       </div>
     </>
   );
