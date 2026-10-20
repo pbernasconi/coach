@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-import { ChevronDown, ChevronUp, Dumbbell, HeartPulse, Library, TriangleAlert } from 'lucide-react';
+import { ChevronDown, ChevronUp, ClipboardPaste, Copy, Dumbbell, HeartPulse, Library, MoreHorizontal, Plus, Trash2, TriangleAlert } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import SportIcon from '@/components/SportIcon';
 import ComplianceMark, { levelStyle } from '@/components/plan/ComplianceMark';
 import LegendPopover from '@/components/plan/LegendPopover';
@@ -21,7 +22,8 @@ import {
 import { addDays, mondayOf } from '@/lib/plan/week.mjs';
 import type { CalendarActivity, CalendarLift, CalendarRange, CalendarWorkout, DataBounds, LibraryItem, WeekSummary } from '@/lib/plan/month';
 import type { DayWeather } from '@/lib/plan/weather';
-import { addFromLibraryAction, loadWeeksAction, moveWorkoutAction, removeWorkoutAction, skipWorkoutAction } from './actions';
+import { addFromLibraryAction, duplicateWorkoutAction, loadWeeksAction, moveWorkoutAction, removeWorkoutAction, skipWorkoutAction } from './actions';
+import CreateWorkout from './CreateWorkout';
 import ItemModal from './ItemModal';
 import ItemPreview, { type Item, type PreviewActions, type PreviewTarget } from './ItemPreview';
 import WorkoutLibrary, { LIBRARY_MIME, WORKOUT_MIME } from './WorkoutLibrary';
@@ -58,7 +60,12 @@ type Handlers = {
   leave: (date: string) => void;
   /** Opens the preview card for an item or a day, next to the clicked element. */
   open: (target: PreviewTarget, anchor: HTMLElement) => void;
+  /** The day menu and the "+": add a workout, copy or paste the day's planned workouts, or delete them. */
+  day: (date: string, action: DayAction) => void;
 };
+type DayAction = 'add' | 'copy' | 'paste' | 'clear';
+/** Planned workouts copied for Paste: their ids and a label for the menu. */
+type Clip = { ids: string[]; label: string };
 type Change = { id: string; date?: string; remove?: boolean };
 
 type Props = {
@@ -91,6 +98,8 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
   const [height, setHeight] = useState<number | null>(null);
   const [preview, setPreview] = useState<{ date: string; anchor: HTMLElement } | null>(null);
   const [modalKey, setModalKey] = useState<string | null>(null);
+  const [createOn, setCreateOn] = useState<string | null>(null);
+  const [clip, setClip] = useState<Clip | null>(null);
   const [libraryOpen, setLibraryOpen] = useState(false);
 
   const scrollerRef = useRef<HTMLDivElement>(null);
@@ -391,6 +400,58 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
     });
   }
 
+  /** The day's planned workouts that are not done (the ones Copy, Paste and Delete act on). */
+  const plannedOn = (date: string) => dataRef.current.workouts.filter((w) => w.date === date && w.state !== 'done');
+
+  function copy(ws: CalendarWorkout[]) {
+    if (!ws.length) return;
+    const label = ws.length === 1 ? plainTitle(ws[0].title) : `${ws.length} workouts`;
+    setClip({ ids: ws.map((w) => w.id), label });
+    toast.success(`Copied ${label}. Use Paste in a day's menu.`);
+  }
+
+  function paste(date: string) {
+    const c = clipRef.current;
+    if (!c) return;
+    startTransition(async () => {
+      try {
+        for (const id of c.ids) await duplicateWorkoutAction(id, date);
+        toast.success(`Pasted ${c.label} on ${longDate(date)}`);
+      } catch {
+        toast.error('Could not paste the workout');
+      }
+      await reload([mondayOf(date)]);
+    });
+  }
+
+  function clearDay(date: string) {
+    const ws = plannedOn(date);
+    if (!ws.length) return;
+    toast(`Delete ${ws.length === 1 ? plainTitle(ws[0].title) : `${ws.length} planned workouts`} on ${longDate(date)}?`, {
+      action: {
+        label: 'Delete',
+        onClick: () => {
+          ws.forEach((w) => changeLocal({ id: w.id, remove: true }));
+          startTransition(async () => {
+            try {
+              for (const w of ws) await removeWorkoutAction(w.id);
+            } catch {
+              toast.error('Could not delete the workouts');
+            }
+            await reload([mondayOf(date)]);
+          });
+        },
+      },
+    });
+  }
+
+  function dayAction(date: string, action: DayAction) {
+    if (action === 'add') setCreateOn(date);
+    else if (action === 'copy') copy(plannedOn(date));
+    else if (action === 'paste') paste(date);
+    else clearDay(date);
+  }
+
   function openTarget(target: PreviewTarget, anchor: HTMLElement) {
     if (target.kind === 'item') {
       setPreview(null);
@@ -399,8 +460,10 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
   }
 
   // The rows get one stable handler object; it calls the latest move / add / remove through this ref.
-  const impl = useRef({ move, add, remove, skip });
-  impl.current = { move, add, remove, skip };
+  const impl = useRef({ move, add, remove, skip, dayAction });
+  impl.current = { move, add, remove, skip, dayAction };
+  const clipRef = useRef(clip);
+  clipRef.current = clip;
   const handlers = useMemo<Handlers>(() => ({
     drop: (e, date) => {
       e.preventDefault();
@@ -413,6 +476,7 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
     over: (date) => setDragOver(date),
     leave: (date) => setDragOver((x) => (x === date ? null : x)),
     open: (target, anchor) => openTarget(target, anchor),
+    day: (date, action) => impl.current.dayAction(date, action),
   }), []);
   const closePreview = useCallback(() => setPreview(null), []);
   const previewActions = useMemo<PreviewActions>(() => ({
@@ -507,7 +571,7 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
               <><SkeletonWeek /><SkeletonWeek /></>
             )}
             {weeks.map((w) => (
-              <GridWeek key={w.monday} week={w} today={today} weather={weather} over={overIn(w.monday)} h={handlers} />
+              <GridWeek key={w.monday} week={w} today={today} weather={weather} over={overIn(w.monday)} clip={clip?.label ?? null} h={handlers} />
             ))}
             {failed.after !== null && loading !== 'after' ? (
               <LoadError text="Could not load later weeks" onRetry={() => retry('after')} />
@@ -532,7 +596,7 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
                 </h2>
                 <div className="space-y-2 pt-2">
                   {g.weeks.map((w) => (
-                    <AgendaWeek key={w.monday} week={w} today={today} weather={weather} h={handlers} />
+                    <AgendaWeek key={w.monday} week={w} today={today} weather={weather} clip={clip?.label ?? null} h={handlers} />
                   ))}
                 </div>
               </div>
@@ -574,6 +638,20 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
           onClose={() => setModalKey(null)}
           onStep={stepModal}
           canStep={{ prev: modalIndex > 0, next: modalIndex < allItems.length - 1 }}
+          onCopy={(w) => copy([w])}
+          weather={weather}
+        />
+      )}
+      {createOn && (
+        <CreateWorkout
+          date={createOn}
+          library={library}
+          onClose={() => setCreateOn(null)}
+          onCreated={(date) => {
+            router.refresh();
+            void reload([mondayOf(date)]);
+          }}
+          onAddFromLibrary={add}
         />
       )}
     </div>
@@ -622,12 +700,13 @@ function SkeletonAgenda() {
 // Grid (tablet and desktop)
 
 const GridWeek = memo(function GridWeek({
-  week, today, weather, over, h,
+  week, today, weather, over, clip, h,
 }: {
   week: WeekRow;
   today: string;
   weather: Record<string, DayWeather>;
   over: string | null;
+  clip: string | null;
   h: Handlers;
 }) {
   const weatherUntil = addDays(today, 14);
@@ -640,6 +719,7 @@ const GridWeek = memo(function GridWeek({
           today={today}
           wx={day.date >= today && day.date <= weatherUntil ? weather[day.date] : undefined}
           over={over === day.date}
+          clip={clip}
           h={h}
         />
       ))}
@@ -648,7 +728,7 @@ const GridWeek = memo(function GridWeek({
   );
 });
 
-function DayCell({ day, today, wx, over, h }: { day: Day; today: string; wx?: DayWeather; over: boolean; h: Handlers }) {
+function DayCell({ day, today, wx, over, clip, h }: { day: Day; today: string; wx?: DayWeather; over: boolean; clip: string | null; h: Handlers }) {
   const d = day.date;
   const past = d < today;
   const isToday = d === today;
@@ -663,6 +743,9 @@ function DayCell({ day, today, wx, over, h }: { day: Day; today: string; wx?: Da
         if (!e.currentTarget.contains(e.relatedTarget as Node | null)) h.leave(d);
       }}
       onDrop={(e) => h.drop(e, d)}
+      onDoubleClick={(e) => {
+        if (e.target === e.currentTarget) h.day(d, 'add');
+      }}
       className={cn(
         'group/day relative flex min-h-0 min-w-0 flex-col gap-0.5 overflow-hidden border-r px-1 pb-1 pt-0.5 transition-colors',
         past && 'bg-muted/40',
@@ -670,7 +753,7 @@ function DayCell({ day, today, wx, over, h }: { day: Day; today: string; wx?: Da
         over && 'bg-primary/10 ring-2 ring-inset ring-primary/70'
       )}
     >
-      <DayHead d={d} past={past} isToday={isToday} wx={wx} />
+      <DayHead d={d} past={past} isToday={isToday} wx={wx} menu={<DayMenu d={d} day={day} clip={clip} h={h} />} />
       {shown.map((item) => <Chip key={item.key} item={item} h={h} />)}
       {more > 0 && (
         <button
@@ -681,11 +764,52 @@ function DayCell({ day, today, wx, over, h }: { day: Day; today: string; wx?: Da
           +{more} more
         </button>
       )}
+      {more === 0 && (
+        <button
+          type="button"
+          onClick={() => h.day(d, 'add')}
+          aria-label={`Add a workout on ${longDate(d)}`}
+          className="mt-0.5 flex h-6 shrink-0 items-center justify-center rounded-[5px] border border-dashed border-[var(--viz-axis)] text-[var(--viz-muted)] opacity-0 transition-opacity hover:border-[var(--viz-ink-2)] hover:text-[var(--viz-ink)] focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group-hover/day:opacity-100"
+        >
+          <Plus aria-hidden className="h-3.5 w-3.5" />
+        </button>
+      )}
     </div>
   );
 }
 
-function DayHead({ d, past, isToday, wx, roomy = false }: { d: string; past: boolean; isToday: boolean; wx?: DayWeather; roomy?: boolean }) {
+/** The day menu (TrainingPeaks style): add a workout, copy or paste planned workouts, delete them. */
+function DayMenu({ d, day, clip, h }: { d: string; day: Day; clip: string | null; h: Handlers }) {
+  const planned = day.items.filter((i) => i.kind === 'planned' && i.w.state !== 'done').length;
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        aria-label={`Menu for ${longDate(d)}`}
+        className="rounded p-0.5 text-[var(--viz-muted)] opacity-0 transition-opacity hover:bg-accent hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group-hover/day:opacity-100 data-[state=open]:opacity-100"
+      >
+        <MoreHorizontal aria-hidden className="h-3.5 w-3.5" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-52">
+        <DropdownMenuItem onSelect={() => h.day(d, 'add')}>
+          <Plus aria-hidden className="mr-2 h-4 w-4" /> Add a workout…
+        </DropdownMenuItem>
+        <DropdownMenuItem disabled={!planned} onSelect={() => h.day(d, 'copy')}>
+          <Copy aria-hidden className="mr-2 h-4 w-4" /> Copy {planned > 1 ? `${planned} workouts` : 'workout'}
+        </DropdownMenuItem>
+        <DropdownMenuItem disabled={!clip} onSelect={() => h.day(d, 'paste')}>
+          <ClipboardPaste aria-hidden className="mr-2 h-4 w-4" />
+          <span className="truncate">Paste{clip ? ` ${clip}` : ''}</span>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem disabled={!planned} onSelect={() => h.day(d, 'clear')} className="text-[var(--plan-missed)] focus:text-[var(--plan-missed)]">
+          <Trash2 aria-hidden className="mr-2 h-4 w-4" /> Delete {planned > 1 ? `${planned} planned` : 'planned'}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function DayHead({ d, past, isToday, wx, menu, roomy = false }: { d: string; past: boolean; isToday: boolean; wx?: DayWeather; menu?: React.ReactNode; roomy?: boolean }) {
   const isFirst = d.slice(8) === '01';
   return (
     <div className="flex h-5 shrink-0 items-center gap-1">
@@ -710,6 +834,7 @@ function DayHead({ d, past, isToday, wx, roomy = false }: { d: string; past: boo
       )}
       <span className="flex-1" />
       {wx && <WeatherBadge w={wx} date={d} compact={!roomy} />}
+      {menu}
     </div>
   );
 }
@@ -902,9 +1027,10 @@ function WeekColumn({ s, monday, today }: { s: WeekSummary | null; monday: strin
 // Agenda (phones)
 
 const AgendaWeek = memo(function AgendaWeek({
-  week, today, weather, h,
+  week, today, weather, clip, h,
 }: {
   week: WeekRow;
+  clip: string | null;
   today: string;
   weather: Record<string, DayWeather>;
   h: Handlers;
@@ -955,11 +1081,18 @@ const AgendaWeek = memo(function AgendaWeek({
                   </span>
                 </div>
                 <div className="min-w-0 flex-1 space-y-1.5">
-                  {wx && (
-                    <div className="flex justify-end">
-                      <WeatherBadge w={wx} date={d} />
-                    </div>
-                  )}
+                  <div className="group/day flex items-center justify-end gap-1">
+                    {wx && <WeatherBadge w={wx} date={d} />}
+                    <button
+                      type="button"
+                      onClick={() => h.day(d, 'add')}
+                      aria-label={`Add a workout on ${longDate(d)}`}
+                      className="grid h-8 w-8 place-items-center rounded-md text-[var(--viz-muted)] hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <Plus aria-hidden className="h-4 w-4" />
+                    </button>
+                    <span className="[&>button]:opacity-100"><DayMenu d={d} day={day} clip={clip} h={h} /></span>
+                  </div>
                   {day.items.map((item) => <Chip key={item.key} item={item} h={h} roomy />)}
                   {day.items.length === 0 && <p className="py-1 text-xs text-[var(--viz-muted)]">Nothing planned</p>}
                 </div>
