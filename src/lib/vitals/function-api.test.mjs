@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { importFromResultsReport } from './function-api.mjs';
+import { importFromResultsReport, notesFromResponse } from './function-api.mjs';
 import { normalizeImport } from './labs.mjs';
 
 // Synthetic values in the shape of results-report (no real results).
@@ -42,4 +42,20 @@ test('the result passes the lab import validation', () => {
 
 test('a bad body gives no results', () => {
   assert.deepEqual(importFromResultsReport(null), { source: 'function', results: [] });
+});
+
+test('clinician notes: one row per note, in order, with the date and category', () => {
+  const rows = notesFromResponse([
+    { requisition_id: 'r1', date: '2030-01-20T10:00:00.000000Z', visits: [], notes: [
+      { note: ' Your LDL is high. ', category: { id: 'c', categoryName: 'Heart' } },
+      { note: '', category: null },
+      { note: 'Keep training.', category: null },
+    ] },
+    { requisition_id: null, date: '2030-01-20', notes: [{ note: 'x' }] },
+  ]);
+  assert.deepEqual(rows.map(({ raw, ...r }) => r), [
+    { requisitionId: 'r1', position: 0, notedOn: '2030-01-20', category: 'Heart', body: 'Your LDL is high.' },
+    { requisitionId: 'r1', position: 2, notedOn: '2030-01-20', category: null, body: 'Keep training.' },
+  ]);
+  assert.deepEqual(notesFromResponse(null), []);
 });

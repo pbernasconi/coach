@@ -51,3 +51,24 @@ export function importFromResultsReport(report) {
   }
   return { source: 'function', results };
 }
+
+/**
+ * Rows for clinician_notes from a notes response: one per note, in Function's order, with the order's date and
+ * the note's category. Empty notes are skipped.
+ * @param {any} notes the parsed notes body
+ */
+export function notesFromResponse(notes) {
+  if (!Array.isArray(notes)) return [];
+  const rows = [];
+  for (const order of notes) {
+    const requisitionId = typeof order?.requisition_id === 'string' ? order.requisition_id : null;
+    const notedOn = toDay(order?.date) ?? toDay(order?.visits?.[0]?.visit_date);
+    if (!requisitionId || !notedOn) continue;
+    (Array.isArray(order.notes) ? order.notes : []).forEach((n, position) => {
+      const body = typeof n?.note === 'string' ? n.note.trim() : '';
+      if (!body) return;
+      rows.push({ requisitionId, position, notedOn, category: n?.category?.categoryName ?? null, body, raw: n });
+    });
+  }
+  return rows;
+}

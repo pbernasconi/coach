@@ -1,4 +1,5 @@
 import { sql } from '@/db';
+import { toDay } from '@/lib/db-time.mjs';
 import { addDays, hrvMetricOf, readinessFrom, seriesOf, type ReadinessSummary, type SampleRow } from './readiness.mjs';
 import type { LabStatus } from './labs.mjs';
 import { garminStatusFrom, type GarminStatus } from './garmin.mjs';
@@ -135,4 +136,20 @@ export async function loadHealth(userId: string, today: string): Promise<HealthV
 /** The Garmin job's state for /health, Settings and the status banner (src/lib/vitals/garmin.mjs). */
 export async function loadGarminStatus(userId: string, now: number = Date.now()): Promise<GarminStatus> {
   return garminStatusFrom(await garminConnection(userId), now);
+}
+
+export type ClinicianNoteGroup = { requisitionId: string; notedOn: string; notes: { category: string | null; body: string }[] };
+
+/** The clinician's notes per Function test order, newest order first, in Function's order inside an order. */
+export async function loadClinicianNotes(userId: string): Promise<ClinicianNoteGroup[]> {
+  const rows = (await sql`
+    SELECT requisition_id, noted_on, category, body FROM clinician_notes
+    WHERE user_id = ${userId} ORDER BY noted_on DESC, requisition_id, position`) as Record<string, unknown>[];
+  const groups = new Map<string, ClinicianNoteGroup>();
+  for (const r of rows) {
+    const id = String(r.requisition_id);
+    if (!groups.has(id)) groups.set(id, { requisitionId: id, notedOn: toDay(r.noted_on) ?? '', notes: [] });
+    groups.get(id)!.notes.push({ category: r.category == null ? null : String(r.category), body: String(r.body) });
+  }
+  return [...groups.values()];
 }
