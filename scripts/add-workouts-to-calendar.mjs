@@ -9,7 +9,7 @@
  * Uses Coach's calendar connection (calendar_connections) and GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET.
  */
 
-import { neon } from '@neondatabase/serverless';
+import { connect } from '../src/db/neon.mjs';
 import { pushWeek } from '../src/lib/calendar-sync/push.mjs';
 
 const args = process.argv.slice(2);
@@ -18,7 +18,7 @@ if (!args.includes('--week') || !/^\d{4}-\d{2}-\d{2}$/.test(week ?? '')) {
   console.error('Usage: add-workouts-to-calendar.mjs --week YYYY-MM-DD (the Monday) [--dry-run]');
   process.exit(1);
 }
-const sql = neon(process.env.DATABASE_URL);
+const sql = connect();
 const [user] = await sql`SELECT id FROM users ORDER BY created_at LIMIT 1`;
 const result = await pushWeek(sql, user.id, week, { dryRun: args.includes('--dry-run'), log: (m) => console.log(' ', m) });
 console.log(result.skipped ? `Not pushed: ${result.skipped}` : `Calendar ${args.includes('--dry-run') ? '(dry run) ' : ''}for ${week}: ${result.created} created, ${result.updated} updated, ${result.deleted} deleted.`);

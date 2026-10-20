@@ -24,22 +24,37 @@
             ]
         )
 
-        /// Monday done, today (Thursday) selected with nothing planned, Friday planned.
-        private static let sections = [
-            WeekDaySection(
-                id: day(-3),
-                title: "Monday, 2 March",
-                isSelected: false,
-                sessions: [SessionSummary.fixtureLower.moved(to: day(-3))]
-            ),
-            WeekDaySection(id: day(0), title: "Today · Thursday, 5 March", isSelected: true, sessions: []),
-            WeekDaySection(
-                id: day(1),
-                title: "Friday, 6 March",
-                isSelected: false,
-                sessions: [SessionSummary.fixtureUpper.moved(to: day(1))]
-            ),
-        ]
+        private static let dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+
+        /// A day of the week of 2 March, `offset` days from today (Thursday 5 March).
+        private static func section(
+            _ offset: Int,
+            sessions: [SessionSummary] = [],
+            selected: Bool = false
+        ) -> WeekDaySection {
+            let name = dayNames[offset + 3]
+            let long = "\(name), \(5 + offset) March"
+            return WeekDaySection(
+                id: day(offset),
+                title: offset == 0 ? "Today · \(long)" : long,
+                weekday: String(name.prefix(3)),
+                dayNumber: "\(5 + offset)",
+                isToday: offset == 0,
+                isSelected: selected,
+                sessions: sessions
+            )
+        }
+
+        /// The week of 2 March with `sessions` on the days given (offsets from today); today is selected.
+        private static func week(_ sessions: [Int: [SessionSummary]] = [:]) -> [WeekDaySection] {
+            (-3...3).map { section($0, sessions: sessions[$0] ?? [], selected: $0 == 0) }
+        }
+
+        /// Monday done, today (Thursday) selected with nothing planned, Friday planned, the rest rest days.
+        private static let sections = week([
+            -3: [SessionSummary.fixtureLower.moved(to: day(-3))],
+            1: [SessionSummary.fixtureUpper.moved(to: day(1))],
+        ])
 
         private static let upperRef = WeekSessionRef(
             id: SessionSummary.fixtureUpper.id,
@@ -47,11 +62,12 @@
             dayTitle: "Friday, 6 March"
         )
 
-        static let fixtureDefault = WeekState(strip: strip, sessions: .loaded(sections))
+        static let fixtureDefault = WeekState(strip: strip, sessions: .loaded(sections), canPlanNextWeek: true)
         static let fixtureLoading = WeekState(strip: strip, sessions: .loading)
+        /// Nothing planned this week: seven rest days.
         static let fixtureEmpty = WeekState(
             strip: strip,
-            sessions: .empty,
+            sessions: .loaded(week()),
             templates: [
                 WeekTemplateChoice(
                     id: UUID(uuid: (0xD1, 0, 0, 0, 0, 0, 0x40, 0, 0x80, 0, 0, 0, 0, 0, 0, 1)),
@@ -60,18 +76,24 @@
             ]
         )
         /// A first launch: no sessions and no templates, so the page points to New template.
-        static let fixtureFirstRun = WeekState(strip: strip, sessions: .empty)
+        static let fixtureFirstRun = WeekState(strip: strip, sessions: .loaded(week()))
         static let fixtureFailed = WeekState(strip: strip, sessions: .failed(.unknown))
         static let fixtureLongText = WeekState(
             strip: strip,
-            sessions: .loaded([
-                WeekDaySection(
-                    id: day(0),
-                    title: "Today · Thursday, 5 March",
-                    isSelected: true,
-                    sessions: [SessionSummary.fixtureLongTitle]
-                )
-            ])
+            sessions: .loaded(week([0: [SessionSummary.fixtureLongTitle]]))
+        )
+        /// Two sessions on Friday: the date badge shows once.
+        static let fixtureTwoOnADay = WeekState(
+            strip: strip,
+            sessions: .loaded(
+                week([
+                    1: [
+                        SessionSummary.fixtureUpper.moved(to: day(1)),
+                        SessionSummary.fixtureLower.moved(to: day(1)),
+                    ]
+                ])
+            ),
+            canPlanNextWeek: true
         )
         static let fixtureOptions = WeekState(
             strip: strip,

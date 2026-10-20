@@ -125,7 +125,7 @@ private struct LegendLabelStyle: LabelStyle {
 }
 
 /// A horizontal line through the middle of its frame, stroked dashed as the heaviest-set line is.
-private struct LegendDash: Shape {
+private nonisolated struct LegendDash: Shape {
     func path(in rect: CGRect) -> Path {
         Path { path in
             path.move(to: CGPoint(x: rect.minX, y: rect.midY))

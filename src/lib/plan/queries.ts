@@ -105,7 +105,8 @@ async function activitiesBetween(userId: string, from: string, to: string): Prom
 async function liftsBetween(from: string, to: string): Promise<DayLift[]> {
   const { model, unit } = await loadLiftModel();
   return sessionSummaries(model, unit)
-    .filter((s: { day: string }) => s.day >= from && s.day <= to)
+    // Planned Lift sessions with nothing logged are not done lifts.
+    .filter((s: { day: string; setsLogged: number }) => s.day >= from && s.day <= to && s.setsLogged > 0)
     .map((s: { id: string; day: string; title: string; setsLogged: number }) => ({
       id: s.id,
       date: s.day,

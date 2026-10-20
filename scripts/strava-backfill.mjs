@@ -11,14 +11,14 @@
  *   node --env-file=.env.local scripts/strava-backfill.mjs --force    # force full re-pull ignoring last_synced_at
  */
 
-import { neon } from '@neondatabase/serverless';
+import { connect } from '../src/db/neon.mjs';
 import { syncStrava } from '../src/lib/strava-sync/sync.mjs';
 
 const args = process.argv.slice(2);
 const daysIdx = args.indexOf('--days');
 
 try {
-  await syncStrava(neon(process.env.DATABASE_URL), {
+  await syncStrava(connect(), {
     days: daysIdx >= 0 ? parseInt(args[daysIdx + 1], 10) : null,
     detailed: args.includes('--detailed'),
     streams: args.includes('--streams'),

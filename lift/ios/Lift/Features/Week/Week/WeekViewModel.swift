@@ -70,6 +70,8 @@ final class WeekViewModel {
         switch action {
         case .daySelected(let date):
             select(days.day(of: date))
+        case .dayTapped(let day):
+            select(day)
         case .weekChanged(let offset):
             changeWeek(to: offset)
         case .sessionTapped(let id):
@@ -141,7 +143,7 @@ final class WeekViewModel {
             return
         }
         state.strip = WeekStrip(today: todayDate, selected: selectedDate, days: layout.markedDays(all))
-        state.sessions = layout.sections(all, offset: state.weekOffset, selected: selected)
+        state.sessions = .loaded(layout.sections(all, offset: state.weekOffset, selected: selected))
         let week = layout.week(offset: state.weekOffset)
         state.canPlanNextWeek = all.contains { week.contains($0.day) && $0.templateID != nil }
     }

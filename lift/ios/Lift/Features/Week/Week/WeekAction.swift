@@ -4,7 +4,10 @@ import LiftStore
 
 /// Every user intent on the Week screen, named for what happened (SCR-1).
 nonisolated enum WeekAction: Equatable, Sendable {
+    /// A day picked in the week strip.
     case daySelected(Date)
+    /// A rest day's row tapped in the list.
+    case dayTapped(LocalDay)
     case weekChanged(Int)
     case sessionTapped(UUID)
     /// The "…" button of a planned session: opens the lift sheet.
@@ -18,7 +21,7 @@ nonisolated enum WeekAction: Equatable, Sendable {
     /// "Undo" on the toast after a lift sheet action.
     case undoTapped(RescheduleUndo)
     case destinationDismissed
-    /// "Add workout" on a day (nil: the selected day): opens the template picker.
+    /// "Add workout" in the header (nil: the selected day): opens the template picker.
     case addWorkoutTapped(LocalDay?)
     /// A template picked for a day: plans a session from it there.
     case templatePicked(UUID, on: LocalDay)
