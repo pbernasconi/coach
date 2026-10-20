@@ -154,6 +154,8 @@ export async function loadRange(userId: string, fromMonday: string, toMonday: st
       const all = (r.syncs ?? {}) as Record<string, { status: string; error: string | null; syncedAt: unknown }>;
       const out: CalendarWorkout['syncs'] = {};
       for (const [k, s] of Object.entries(all)) out[k] = { status: s.status, error: s.error, syncedAt: toIso(s.syncedAt) };
+      // Zwift rides go through intervals.icu in the cloud; its state is the Zwift state (the Mac folder is the fallback).
+      if (out.intervals) out.zwift = out.intervals;
       return [String(r.id), out] as const;
     })
   );
