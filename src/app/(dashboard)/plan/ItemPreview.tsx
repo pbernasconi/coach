@@ -1,19 +1,12 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowRight, Dumbbell, X } from 'lucide-react';
+import { Dumbbell, X } from 'lucide-react';
 import SportIcon from '@/components/SportIcon';
-import ComplianceMark from '@/components/plan/ComplianceMark';
-import RemoveWorkout from '@/components/plan/RemoveWorkout';
-import LiftSessionSets from '@/components/plan/LiftSessionSets';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import { sport } from '@/lib/sports';
 import { plainTitle } from '@/lib/plan/calendar.mjs';
 import { dur } from '@/lib/plan/cells.mjs';
-import { LIFT_MARKER } from '@/lib/plan/lift-plan.mjs';
 import type { CalendarActivity, CalendarLift, CalendarWorkout } from '@/lib/plan/month';
 
 export type Item =
@@ -34,38 +27,21 @@ export type PreviewActions = {
 const W = 352; // the popover width (px), w-[22rem]
 const GAP = 8;
 
-const longDate = (d: string) =>
-  new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', timeZone: 'UTC' });
-
 export const liftHref = (id: string) => `/lift/sessions/${encodeURIComponent(id)}`;
 
-/** Where a done item opens in full: the activity page or the Lift session page. Null when there is no page. */
-export function detailHref(item: Item): { href: string; label: string } | null {
-  if (item.kind === 'activity') return { href: item.a.url, label: 'Open activity' };
-  if (item.kind === 'lift') return { href: liftHref(item.l.id), label: 'Open session' };
-  const m = item.w.match;
-  if (item.w.lift) return { href: liftHref(item.w.lift.id), label: 'Open Lift session' };
-  if (item.actual) return { href: item.actual.url, label: 'Open activity' };
-  if (m?.source === 'strava') return { href: `/activities/${m.id}`, label: 'Open activity' };
-  if (m?.source === 'lift') return { href: liftHref(m.id), label: 'Open session' };
-  return null;
-}
-
 /**
- * A preview card next to the clicked chip. It shows the main numbers, and a button opens the full page.
+ * The "+N more" list of a day, next to the clicked button. A click on an item opens the item modal.
  * Escape, a click outside or a scroll of the calendar closes it.
  */
 export default function ItemPreview({
-  anchor, items, title, onClose, actions, disabled, scroller,
+  anchor, items, title, onClose, actions, scroller,
 }: {
   anchor: HTMLElement;
-  /** One item, or the items of a day. */
   items: Item[];
-  /** The day heading for a day list. */
-  title?: string;
+  /** The day heading. */
+  title: string;
   onClose: () => void;
   actions: PreviewActions;
-  disabled: boolean;
   scroller: HTMLElement | null;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -121,12 +97,11 @@ export default function ItemPreview({
     ref.current?.focus({ preventScroll: true });
   }, []);
 
-  const one = items.length === 1 && !title ? items[0] : null;
   return createPortal(
     <div
       ref={ref}
       role="dialog"
-      aria-label={one ? itemName(one) : title}
+      aria-label={title}
       tabIndex={-1}
       className="fixed z-50 max-h-[min(36rem,calc(100dvh-1rem))] w-[22rem] max-w-[calc(100vw-1rem)] overflow-y-auto rounded-xl border bg-background text-sm shadow-2xl outline-none"
       style={pos ? { left: pos.left, top: pos.top } : { left: -9999, top: 0 }}
@@ -139,10 +114,7 @@ export default function ItemPreview({
       >
         <X aria-hidden className="h-4 w-4" />
       </button>
-      {one ? (
-        <ItemBody item={one} actions={actions} disabled={disabled} />
-      ) : (
-        <div className="space-y-2 p-4">
+      <div className="space-y-2 p-4">
           <h2 className="pr-6 font-semibold text-[var(--viz-ink)]">{title}</h2>
           <ul className="space-y-1.5">
             {items.map((item) => (
@@ -161,7 +133,6 @@ export default function ItemPreview({
             ))}
           </ul>
         </div>
-      )}
     </div>,
     document.body
   );
@@ -179,147 +150,4 @@ const itemLine = (item: Item) => {
 function ItemIcon({ item }: { item: Item }) {
   if (item.kind === 'lift') return <Dumbbell aria-hidden className="h-3.5 w-3.5 shrink-0" style={{ color: sport('strength').color }} />;
   return <SportIcon id={itemSport(item)} className="h-3.5 w-3.5" />;
-}
-
-function Stat({ label, value, sub }: { label: string; value: string; sub?: string | null }) {
-  return (
-    <div className="min-w-0">
-      <dt className="text-[11px] text-[var(--viz-muted)]">{label}</dt>
-      <dd className="truncate text-base font-semibold tabular-nums text-[var(--viz-ink)]">
-        {value}
-        {sub && <span className="ml-1 text-xs font-normal text-[var(--viz-muted)]">{sub}</span>}
-      </dd>
-    </div>
-  );
-}
-
-/** Pace (min/km) for runs, walks and hikes; speed (km/h) for rides. */
-function paceOrSpeed(sportId: string, km: number, min: number): [string, string] | null {
-  if (!km || !min) return null;
-  if (sportId === 'ride') return ['Speed', `${(km / (min / 60)).toFixed(1)} km/h`];
-  if (sportId === 'run' || sportId === 'walk' || sportId === 'hike') {
-    const p = min / km;
-    const s = Math.round((p % 1) * 60);
-    return ['Pace', `${Math.floor(p) + (s === 60 ? 1 : 0)}:${String(s === 60 ? 0 : s).padStart(2, '0')} /km`];
-  }
-  return null;
-}
-
-function ItemBody({ item, actions, disabled }: { item: Item; actions: PreviewActions; disabled: boolean }) {
-  const detail = detailHref(item);
-  const head = (date: string, extra?: string | null) => (
-    <header className="space-y-1 pr-6">
-      <p className="flex items-center gap-1.5 text-xs text-[var(--viz-muted)]">
-        <ItemIcon item={item} />
-        {sport(itemSport(item)).label} · {longDate(date)}
-        {extra && <> · {extra}</>}
-      </p>
-      <h2 className="text-base font-semibold leading-snug text-[var(--viz-ink)]">{itemName(item)}</h2>
-    </header>
-  );
-  const open = detail && (
-    <Button asChild className="w-full">
-      <Link href={detail.href}>
-        {detail.label} <ArrowRight aria-hidden className="ml-1 h-4 w-4" />
-      </Link>
-    </Button>
-  );
-
-  if (item.kind === 'activity') {
-    const a = item.a;
-    const ps = paceOrSpeed(a.sport, a.km, a.min);
-    return (
-      <div className="space-y-4 p-4">
-        {head(a.date, a.commute ? 'Commute' : null)}
-        <dl className="grid grid-cols-3 gap-3">
-          <Stat label="Time" value={dur(a.min)} />
-          {a.km >= 0.5 && <Stat label="Distance" value={`${a.km} km`} />}
-          {a.tss != null && <Stat label="TSS" value={String(Math.round(a.tss))} />}
-          {ps && <Stat label={ps[0]} value={ps[1]} />}
-        </dl>
-        <p className="text-xs text-[var(--viz-muted)]">Completed. Not in the plan.</p>
-        {open}
-      </div>
-    );
-  }
-
-  if (item.kind === 'lift') {
-    return (
-      <div className="space-y-4 p-4">
-        {head(item.l.date)}
-        <dl className="grid grid-cols-3 gap-3">
-          <Stat label="Sets logged" value={String(item.l.setsLogged)} />
-        </dl>
-        {open}
-      </div>
-    );
-  }
-
-  const { w, actual } = item;
-  const editable = w.state !== 'done';
-  // With the Lift session shown set by set, the text copy of the sets (scripts/lift-plan.mjs) is left out.
-  const note = w.lift && w.description ? w.description.split(LIFT_MARKER)[0].trim() : w.description;
-  const pct = w.compliance.ratio != null ? `${Math.round(w.compliance.ratio * 100)} % of planned ${w.compliance.basis === 'tss' ? 'TSS' : 'time'}` : null;
-  return (
-    <div className="space-y-4 p-4">
-      {head(w.date, w.startTime)}
-      <div className="flex items-center gap-1.5 text-xs">
-        <ComplianceMark level={w.compliance.level} showLabel />
-        {pct && <span className="text-[var(--viz-muted)]">· {pct}</span>}
-      </div>
-      <dl className="grid grid-cols-3 gap-3">
-        <Stat label="Time" value={actual ? dur(actual.min) : w.duration ? dur(w.duration) : '–'} sub={actual && w.duration ? `/ ${dur(w.duration)}` : null} />
-        {(w.tss || actual?.tss) && (
-          <Stat
-            label="TSS"
-            value={actual?.tss != null ? String(Math.round(actual.tss)) : String(Math.round(w.tss ?? 0))}
-            sub={actual?.tss != null && w.tss ? `/ ${Math.round(w.tss)}` : null}
-          />
-        )}
-        {actual && actual.km >= 0.5 && <Stat label="Distance" value={`${actual.km} km`} />}
-      </dl>
-      {w.intensity && !w.lift && <p className="text-xs text-[var(--viz-ink-2)]">Intensity: {w.intensity}</p>}
-      {w.match && (
-        <p className="text-xs text-[var(--viz-ink-2)]">
-          Done as {w.match.source === 'lift' ? 'Lift session' : 'activity'}: <span className="font-medium text-[var(--viz-ink)]">{w.match.name}</span>
-        </p>
-      )}
-      {note && (
-        <div className="max-h-56 overflow-y-auto whitespace-pre-wrap rounded-md bg-muted/50 p-3 text-xs leading-relaxed text-[var(--viz-ink)]">
-          {note}
-        </div>
-      )}
-      {w.lift && (
-        <div className="rounded-md border p-3">
-          <LiftSessionSets lift={w.lift} />
-        </div>
-      )}
-      {w.why && <p className="text-xs text-[var(--viz-muted)]">Why: {w.why}</p>}
-      {w.adaptedFrom && <p className="text-xs text-[var(--plan-partial)]">Changed for how you feel.</p>}
-      {open}
-      {editable && (
-        <div className="flex flex-wrap items-center gap-2 border-t pt-3 text-xs">
-          <label className="flex items-center gap-1.5 text-[var(--viz-ink-2)]">
-            Move to
-            <input
-              type="date"
-              value={w.date}
-              disabled={disabled}
-              onChange={(e) => e.target.value && actions.move(w.id, e.target.value)}
-              className="h-8 rounded-md border bg-background px-2 text-xs"
-            />
-          </label>
-          <Button size="sm" variant="outline" className={cn('h-8')} disabled={disabled} onClick={() => actions.skip(w)}>
-            {w.status === 'skipped' ? 'Unskip' : 'Skip'}
-          </Button>
-          <RemoveWorkout
-            workout={{ title: plainTitle(w.title), date: w.date, state: w.state, imported: w.imported }}
-            onRemove={() => actions.remove(w.id)}
-            disabled={disabled}
-            className="ml-auto"
-          />
-        </div>
-      )}
-    </div>
-  );
 }
