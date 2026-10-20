@@ -14,3 +14,30 @@
   --plan-missed: var(--viz-down);
   --plan-idle: var(--viz-muted);
 }
+
+/* The continuous calendar. Week rows have a fixed height, so a prepend, a snap and content-visibility all agree on
+   the same sizes (no layout shift). */
+.plan-scroller {
+  scroll-snap-type: y proximity;
+  overflow-anchor: none; /* the calendar keeps its own position when weeks are added above */
+  scrollbar-gutter: stable;
+}
+.plan-week {
+  scroll-snap-align: start;
+  scroll-margin-top: var(--plan-head, 2rem); /* snap under the sticky weekday header, not behind it */
+  content-visibility: auto;
+  contain-intrinsic-size: auto var(--plan-row, 9.5rem);
+}
+.plan-agenda-week {
+  scroll-snap-align: start;
+  scroll-margin-top: var(--plan-head, 2rem);
+  content-visibility: auto;
+  contain-intrinsic-size: auto 16rem;
+}
+/* A chip tinted by its compliance colour, over the cell background, in light and dark. */
+.plan-tint {
+  background: color-mix(in srgb, var(--chip-tint, transparent) 11%, hsl(var(--card)));
+}
+.plan-dragging {
+  opacity: 0.4;
+}

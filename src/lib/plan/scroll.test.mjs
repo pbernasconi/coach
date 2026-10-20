@@ -88,3 +88,17 @@ test('monthEdges steps along the first week of a month', () => {
   assert.deepEqual(monthEdges('2026-11-02'), { top: true, left: false, odd: true }); // Monday: no left edge
   assert.equal(monthEdges('2026-06-01').left, false); // the 1st on a Monday
 });
+
+test('topWeekFor puts one past week above the open week', async () => {
+  const { topWeekFor } = await import('./scroll.mjs');
+  assert.equal(topWeekFor('2026-10-19'), '2026-10-12');
+  assert.equal(topWeekFor('2026-10-19', '2026-10-15'), '2026-10-12');
+  assert.equal(topWeekFor('2026-10-19', '2026-10-21'), '2026-10-19'); // no earlier data: the week itself
+});
+
+test('withTimeout passes a fast result and rejects a slow one', async () => {
+  const { withTimeout } = await import('./scroll.mjs');
+  assert.equal(await withTimeout(Promise.resolve(7), 50), 7);
+  await assert.rejects(withTimeout(new Promise(() => {}), 10, 'weeks'), /weeks timed out/);
+  await assert.rejects(withTimeout(Promise.reject(new Error('401')), 50), /401/);
+});
