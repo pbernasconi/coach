@@ -56,6 +56,29 @@ export const labResults = pgTable(
 );
 
 /**
+ * `clinician_notes`: the clinician's notes on each Function test order (scripts/function-sync.mjs). One row per note;
+ * a sync replaces the notes of each order it reads. `position` keeps Function's order inside the order.
+ */
+export const clinicianNotes = pgTable(
+  'clinician_notes',
+  {
+    userId: text('user_id').notNull(),
+    source: text('source').notNull().default('function'),
+    requisitionId: text('requisition_id').notNull(),
+    position: bigint('position', { mode: 'number' }).notNull(),
+    notedOn: date('noted_on', { mode: 'string' }).notNull(),
+    category: text('category'),
+    body: text('body').notNull(),
+    raw: jsonb('raw').$type<Record<string, unknown>>(),
+    importedAt: timestamp('imported_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ name: 'clinician_notes_pk', columns: [t.userId, t.source, t.requisitionId, t.position] }),
+    index('clinician_notes_user_day_idx').on(t.userId, t.notedOn),
+  ]
+);
+
+/**
  * `garmin_connections`: the Garmin job's state (scripts/garmin/sync.py, src/lib/vitals/garmin.mjs). One row for the
  * owner. `tokens_ciphertext` is the Garmin login, encrypted with AES-256-GCM by the job; the key (GARMIN_TOKEN_KEY)
  * is only in GitHub and on Paolo's Mac, so Coach cannot read it. `synced_through` is the last day the job fetched,

@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { ownerForSignedInUser } from '@/lib/owner';
-import { CHART_DAYS, loadGarminStatus, loadHealth } from '@/lib/vitals/queries';
+import { CHART_DAYS, loadClinicianNotes, loadGarminStatus, loadHealth } from '@/lib/vitals/queries';
+import ClinicianNotes from './ClinicianNotes';
 import { load, safe } from '@/lib/safe';
 import { loadGarminSections } from '@/lib/vitals/garmin-pages';
 import SectionError from '@/components/SectionError';
@@ -32,11 +33,12 @@ export default async function HealthPage() {
   if (!userId) return <p data-smoke="health" className="text-sm text-muted-foreground">This account has no Coach data.</p>;
   const today = todayIn(zone((await cookies()).get('tz')?.value));
   const from = addDays(today, -(CHART_DAYS - 1));
-  const [{ readiness, series, hrvMeasure, sleepStages, baselines, labs }, garmin, sections] = await Promise.all([
+  const [{ readiness, series, hrvMeasure, sleepStages, baselines, labs }, garmin, sections, notes] = await Promise.all([
     loadHealth(userId, today),
     // The Garmin line is optional: the page still renders when it fails.
     safe('garmin status', () => loadGarminStatus(userId), null),
     load('Sleep and recovery', () => loadGarminSections(userId, today)),
+    load('Clinician notes', () => loadClinicianNotes(userId)),
   ]);
   const now = Date.now();
   const hasSamples = readiness.lastSampleDate !== null || Object.values(series).some((s) => s.length > 0);
@@ -92,6 +94,7 @@ export default async function HealthPage() {
       )}
 
       <LabsSection categories={labs.categories} draws={labs.draws} />
+      {notes.ok ? <ClinicianNotes groups={notes.value} /> : <SectionError label="Clinician notes" />}
     </div>
   );
 }
