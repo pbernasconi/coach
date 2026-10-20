@@ -36,13 +36,18 @@ import Testing
     }
 
     /// A history entry for a session of Back squat on `day` whose logged sets hold `reps` at `kg`.
-    func entry(id: UInt64, on day: LocalDay, reps: [Int], kg: Double) -> ExerciseHistoryEntry {
+    func entry(id: UInt64, on day: LocalDay, reps: [Int], kg: Double, note: String? = nil) -> ExerciseHistoryEntry {
         var detail = SessionBuilder.session(id: id, on: day, done: reps.count, planned: 0)
         for (index, value) in reps.enumerated() {
             detail.items[0].sets[index].actualReps = value
             detail.items[0].sets[index].actualWeight = .kg(kg)
         }
-        return ExerciseHistoryEntry(session: detail.session, loadMode: .total, sets: detail.items[0].sets)
+        return ExerciseHistoryEntry(session: detail.session, loadMode: .total, sets: detail.items[0].sets, note: note)
+    }
+
+    func firstExercise(_ vm: WorkoutViewModel) -> WorkoutExercise? {
+        guard case .loaded(let workout) = vm.state.workout else { return nil }
+        return workout.exercises.first
     }
 
     func rows(_ vm: WorkoutViewModel) -> [WorkoutSetItem] {
@@ -69,6 +74,34 @@ import Testing
         #expect(rows(vm).map(\.badge) == ["1", "2", "3"])
         #expect(rows(vm).map(\.weight) == ["100", "100", "100"])
         #expect(rows(vm).map(\.reps) == ["5", "5", "5"])
+    }
+
+    @Test func runShowsLastTimesNoteFromTheLatestEarlierSession() async {
+        let history = FakeExerciseHistoryRepository(emissions: [
+            [
+                entry(id: 2, on: lastWeekDay, reps: [5], kg: 95, note: "Felt heavy"),
+                entry(id: 4, on: Fixtures.monday.adding(days: -14), reps: [5], kg: 90, note: "Older"),
+            ]
+        ])
+        let vm = makeViewModel(current, history: history)
+
+        await vm.run()
+
+        #expect(firstExercise(vm)?.lastNote == "Felt heavy")
+    }
+
+    @Test func runLeavesOutLastTimesNoteWhenItMatchesThisSessionsNote() async {
+        var detail = current
+        detail.items[0].exercise.note = "Deep squat"
+        let history = FakeExerciseHistoryRepository(emissions: [
+            [entry(id: 2, on: lastWeekDay, reps: [5], kg: 95, note: "Deep squat")]
+        ])
+        let vm = makeViewModel(detail, history: history)
+
+        await vm.run()
+
+        #expect(firstExercise(vm)?.lastNote == nil)
+        #expect(firstExercise(vm)?.note == "Deep squat")
     }
 
     @Test func runLeavesPreviousEmptyWithoutAnEarlierSession() async {

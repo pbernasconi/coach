@@ -14,10 +14,13 @@ nonisolated struct PreviousSets: Equatable, Sendable {
     var day: LocalDay
     /// The logged sets, in order.
     var sets: [PreviousSet]
+    /// What was written about the exercise that time ("felt heavy"); nil when nothing was.
+    var note: String?
 
-    init(day: LocalDay, sets: [PreviousSet]) {
+    init(day: LocalDay, sets: [PreviousSet], note: String? = nil) {
         self.day = day
         self.sets = sets
+        self.note = note
     }
 
     /// The newest entry from another session on or before `session`'s day. `entries` come newest day first, as the
@@ -27,7 +30,8 @@ nonisolated struct PreviousSets: Equatable, Sendable {
         guard let earlier else { return nil }
         self.init(
             day: earlier.session.day,
-            sets: earlier.sets.map { PreviousSet(kind: $0.kind, reps: $0.actualReps, weight: $0.actualWeight) }
+            sets: earlier.sets.map { PreviousSet(kind: $0.kind, reps: $0.actualReps, weight: $0.actualWeight) },
+            note: earlier.note
         )
     }
 

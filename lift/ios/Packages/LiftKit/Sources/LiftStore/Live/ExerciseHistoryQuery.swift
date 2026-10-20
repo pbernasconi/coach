@@ -33,7 +33,13 @@ enum ExerciseHistoryQuery {
         return sessions.compactMap { session in
             guard let slots = slotsBySession[session.id], let first = slots.first else { return nil }
             let logged = slots.flatMap { setsBySlot[$0.id] ?? [] }
-            return ExerciseHistoryEntry(session: session, loadMode: first.loadMode, sets: logged)
+            let notes = slots.compactMap { NoteText.normalized($0.note) }
+            return ExerciseHistoryEntry(
+                session: session,
+                loadMode: first.loadMode,
+                sets: logged,
+                note: notes.isEmpty ? nil : notes.joined(separator: "\n")
+            )
         }
     }
 }
