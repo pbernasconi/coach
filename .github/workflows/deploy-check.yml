@@ -1,0 +1,101 @@
+# Checks each deploy on the real data, and production every 30 minutes (scripts/smoke.mjs, /api/health).
+# - Preview deploy: /api/health and /sign-in on the deployment URL. A failure fails this run on the PR commit.
+# - Production deploy: waits until coach.paolobernasconi.com serves the new commit, then checks the API and renders
+#   every dashboard page as the owner. On a failure it rolls production back to the deployment before it and
+#   opens an "outage" issue.
+# - Schedule: the same production check. Data alone can break a page (the 2026-10-19 outage), so this catches a
+#   failure that no deploy caused. It opens an issue; it does not roll back (the same data breaks the old deploy).
+# Secrets: HEALTH_TOKEN (also in Vercel, Production and Preview), VERCEL_TOKEN, VERCEL_BYPASS_SECRET.
+name: Deploy check
+
+on:
+  deployment_status:
+  schedule:
+    - cron: "7,37 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: deploy-check-${{ github.event.deployment.environment || 'production' }}
+  cancel-in-progress: false
+
+env:
+  PRODUCTION_URL: https://coach.paolobernasconi.com
+  VERCEL_TEAM: team_Hwpc5IVS3EI80M3wxEu8wK2E
+  VERCEL_PROJECT: prj_w56et7EBbNWCBLgA0g3AFys4A6MD
+
+jobs:
+  smoke:
+    if: github.event_name != 'deployment_status' || github.event.deployment_status.state == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      HEALTH_TOKEN: ${{ secrets.HEALTH_TOKEN }}
+      VERCEL_BYPASS_SECRET: ${{ secrets.VERCEL_BYPASS_SECRET }}
+      IS_DEPLOY: ${{ github.event_name == 'deployment_status' }}
+      IS_PRODUCTION: ${{ github.event_name != 'deployment_status' || github.event.deployment.environment == 'Production' }}
+      DEPLOY_URL: ${{ github.event.deployment_status.environment_url || github.event.deployment_status.target_url }}
+      DEPLOY_SHA: ${{ github.event.deployment.sha }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+        with:
+          # The deployed commit's own smoke script (its pages and markers); main for the scheduled check.
+          ref: ${{ github.event.deployment.sha || 'main' }}
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
+        with:
+          node-version: 22
+
+      - name: Smoke check (preview)
+        if: env.IS_PRODUCTION != 'true'
+        run: node scripts/smoke.mjs "$DEPLOY_URL"
+
+      - name: Smoke check (production)
+        id: production
+        if: env.IS_PRODUCTION == 'true'
+        run: |
+          if [ "$IS_DEPLOY" = true ]; then
+            node scripts/smoke.mjs "$PRODUCTION_URL" --pages --expect-commit "$DEPLOY_SHA"
+          else
+            node scripts/smoke.mjs "$PRODUCTION_URL" --pages
+          fi
+
+      - name: Roll production back
+        id: rollback
+        if: failure() && steps.production.outcome == 'failure' && env.IS_DEPLOY == 'true'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          # The newest ready production deployment of another commit: the one that served before this deploy.
+          previous=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" \
+            "https://api.vercel.com/v6/deployments?projectId=$VERCEL_PROJECT&teamId=$VERCEL_TEAM&target=production&state=READY&limit=20" \
+            | jq -r --arg sha "$DEPLOY_SHA" '[.deployments[] | select(.meta.githubCommitSha != $sha)][0].uid')
+          if [ -z "$previous" ] || [ "$previous" = null ]; then echo "No earlier production deployment found"; exit 1; fi
+          echo "Rolling back to $previous"
+          npx -y vercel@64.7.0 rollback "$previous" --yes --token "$VERCEL_TOKEN" --scope "$VERCEL_TEAM" --timeout 5m
+          echo "to=$previous" >> "$GITHUB_OUTPUT"
+
+      - name: Open or update the outage issue
+        if: failure() && env.IS_PRODUCTION == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ROLLED_BACK_TO: ${{ steps.rollback.outputs.to }}
+        run: |
+          run_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          if [ -n "$ROLLED_BACK_TO" ]; then
+            note="Rolled production back to $ROLLED_BACK_TO. Vercel now holds new deploys back from production: after the fix is on main and its deploy check passes, run \`vercel promote <url>\` or undo the rollback in the Vercel dashboard."
+          elif [ "$IS_DEPLOY" = true ]; then
+            note="Deploy of ${DEPLOY_SHA:0:7} failed the check. Production was not rolled back (see the run)."
+          else
+            note="The scheduled check failed: production is broken without a new deploy (likely data). Not rolled back."
+          fi
+          body="$(printf 'Coach failed its smoke check.\n\n%s\n\nRun: %s' "$note" "$run_url")"
+          gh label create outage --color B60205 --description "Coach smoke check failed" 2>/dev/null || true
+          existing=$(gh issue list --label outage --state open --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "$body"
+          else
+            gh issue create --title "Coach is down: smoke check failed" --label outage --body "$body" --assignee "$GITHUB_REPOSITORY_OWNER"
+          fi

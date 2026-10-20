@@ -2,6 +2,7 @@ import { sql } from '@/db';
 import { loadLiftModel } from '@/lib/lift-dashboard/queries';
 import { sessionSummaries } from '@/lib/lift-dashboard/stats.mjs';
 import { addDays, adaptForFeel, matchWeek, mondayOf, sportOfStrava, undoAdapts } from './week.mjs';
+import { toDay } from '@/lib/db-time.mjs';
 
 export type Feel = 'wrecked' | 'tired' | 'ok' | 'fresh';
 export const FEELS: Feel[] = ['wrecked', 'tired', 'ok', 'fresh'];
@@ -42,7 +43,6 @@ export type Week = {
 };
 
 type Row = Record<string, unknown>;
-const day = (v: unknown) => (v instanceof Date ? v.toISOString().slice(0, 10) : String(v).slice(0, 10));
 
 /** The single user (Coach is personal): the first row in users. */
 export async function ownerId(): Promise<string | null> {
@@ -68,7 +68,7 @@ async function workoutRows(planId: string) {
 function toWorkout(r: Row): Omit<Workout, 'state' | 'match'> {
   return {
     id: String(r.id),
-    date: day(r.scheduled_date),
+    date: toDay(r.scheduled_date) ?? '',
     startTime: (r.start_time as string) ?? null,
     endTime: (r.end_time as string) ?? null,
     title: String(r.title),
@@ -93,7 +93,7 @@ async function activitiesBetween(userId: string, from: string, to: string): Prom
     ORDER BY start_date_local`) as Row[];
   return rows.map((r) => ({
     id: String(r.strava_activity_id),
-    date: day(r.start_date_local),
+    date: toDay(r.start_date_local) ?? '',
     sport: sportOfStrava(r.sport_type),
     sportType: String(r.sport_type ?? ''),
     name: String(r.name ?? ''),
@@ -188,7 +188,7 @@ export async function workoutDate(userId: string, id: string): Promise<string | 
   const [r] = (await sql`
     SELECT a.scheduled_date FROM training_plan_activities a JOIN training_plans p ON p.id = a.plan_id
     WHERE a.id = ${id} AND p.user_id = ${userId}`) as Row[];
-  return r ? day(r.scheduled_date) : null;
+  return r ? toDay(r.scheduled_date) : null;
 }
 
 /** Moves a workout to another day (and plan week, when the day is in another week). */

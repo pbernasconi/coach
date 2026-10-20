@@ -28,7 +28,7 @@ export default async function LiftOverviewPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-smoke="lift">
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <StatCard title="Sessions" value={String(sessions.length)} />
         <StatCard title="Exercises" value={String(exercises.length)} />

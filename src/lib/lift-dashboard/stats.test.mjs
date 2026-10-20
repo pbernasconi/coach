@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildModel, muscleSets, topLifts } from './stats.mjs';
+import { buildModel, muscleSets, topLifts, weeklyVolume } from './stats.mjs';
 
 const SQUAT = 'AAAAAAAA-0000-0000-0000-000000000001';
 const ROW = 'AAAAAAAA-0000-0000-0000-000000000002';
@@ -52,4 +52,18 @@ test('topLifts ranks by sessions and gives the e1RM change', () => {
   assert.ok(squat.change > 0.09 && squat.change < 0.11); // 100 -> 110 kg at 5 reps
   assert.equal(row.change, null); // one session: no trend yet
   assert.deepEqual(topLifts(m, 'kg', '2026-10-21'), []);
+});
+
+test('a session with a malformed day is dropped, not an exception (the pages keep working)', () => {
+  const model = buildModel({
+    exercises: [],
+    sessions: [
+      { id: 'A', day: '2026-10-20T00:00', title: 'Odd but readable' },
+      { id: 'B', day: 'next tuesday', title: 'Unreadable' },
+    ],
+    sessionExercises: [],
+    sets: [],
+  });
+  assert.deepEqual([...model.sessions.values()].map((s) => s.day), ['2026-10-20']);
+  assert.doesNotThrow(() => weeklyVolume(model, 'kg'));
 });
