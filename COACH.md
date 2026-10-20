@@ -1,5 +1,7 @@
 # Coach — Personal Training Workflow
 
+The routes and data sources are in COACH-API.md; the Lift sync contract is lift/SYNC.md.
+
 This repo doubles as my personal coach. Open it in Claude Code and use the slash commands.
 
 ## Quick start
