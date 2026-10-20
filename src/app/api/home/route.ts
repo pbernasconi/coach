@@ -12,7 +12,7 @@ import { loadLiftModel } from '@/lib/lift-dashboard/queries';
 import { sessionSummaries, weeklyVolume } from '@/lib/lift-dashboard/stats.mjs';
 import { loadWeek, ownerId } from '@/lib/plan/queries';
 import { addDays, mondayOf, todayIn } from '@/lib/plan/week.mjs';
-import { loadStatus, loadTargets } from '@/lib/status';
+import { loadStatusCached, loadTargets } from '@/lib/status';
 import { zonesFor } from '@/lib/plan/zones.mjs';
 import { homeEvents } from '@/lib/calendar-sync/events';
 import { syncCalendars } from '@/lib/calendar-sync/sync.mjs';
@@ -104,7 +104,7 @@ export async function GET(request: Request) {
       sql`SELECT last_synced_at, is_active FROM strava_connections LIMIT 1` as Promise<Row[]>,
       sql`SELECT max(updated_at) AS at FROM lift_rows` as Promise<Row[]>,
       loadLiftModel(),
-      loadStatus(userId),
+      loadStatusCached(userId),
       loadTargets(userId),
       homeEvents(userId, startOfToday, 7),
     ]);

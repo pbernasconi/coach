@@ -2,7 +2,7 @@ import Testing
 
 @testable import KoboComponents
 
-/// One-time code cells, ported from an earlier app's otp-input vectors and `OtpCompletion`.
+/// One-time code cells: sanitizing and completion.
 @Suite struct FieldsCodeInputLogicTests {
     @Test(arguments: [
         ("123456", 6, "123456"),

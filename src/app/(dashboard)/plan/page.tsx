@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { ownerForSignedInUser } from '@/lib/owner';
 import { safe } from '@/lib/safe';
 import { dataBounds, loadLibrary, loadRange, userSettings } from '@/lib/plan/month';
@@ -7,6 +8,8 @@ import { loadForecast, placeFrom } from '@/lib/plan/weather';
 import { mondayOf, todayIn } from '@/lib/plan/week.mjs';
 import MonthCalendar from './MonthCalendar';
 import './plan.css';
+
+export const metadata: Metadata = { title: 'Plan' };
 
 export const dynamic = 'force-dynamic';
 

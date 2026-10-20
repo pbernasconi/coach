@@ -68,7 +68,9 @@ Daily vitals and lab results. They are shown on `/health`, and `scripts/health-p
 - **Garmin Connect**: a Python job in GitHub Actions (the `garminconnect` library) pushes one value per day and
   metric with `source: "garmin"`.
 - **Apple Health**: the Lift app can push in the same way later.
-- **Lab results**: they come from Function Health through `/labs` (`.claude/commands/labs.md` → `scripts/labs-import.mjs`).
+- **Lab results**: they come from Function Health. The "Function Health sync" workflow (by hand, after new results)
+  runs `scripts/function-sync.mjs`, which posts to `POST /api/vitals/function`. `/labs` (`scripts/labs-import.mjs`)
+  still imports a PDF.
 
 The code is in `src/lib/vitals/` and the tables are in `drizzle/0015_health.sql` (`health_samples`, `lab_results`). A server-side job
 can skip HTTP and call `upsertVitals(sql, userId, samples)` from `src/lib/vitals/sync.mjs`. It applies the same
@@ -179,6 +181,15 @@ The middleware lets `/api/vitals/sync` through without Clerk, the same as the ot
 The Function Health connector is at `https://services.functionhealth.com/ai-chat/mcp` (OAuth). Its v1.0 docs list
 only summary counts (`overall-summary`, `category-summary`) and meal plans (`get-action-plans`), with no values for
 each draw. `/labs` uses the connector when it returns values. Otherwise `/labs` reads Function's PDF reports.
+
+### `POST /api/vitals/function`
+
+`Authorization: Bearer <CRON_SECRET>`. One Function Health sync, from `scripts/function-sync.mjs`:
+`{ file, notes, catalog, contents, raw, planned, plannedOk }` (the shapes are in `src/lib/vitals/function-store.mjs`),
+or `{ error }` to record a failed run. Coach upserts the results, replaces the notes of each test order, upserts the
+catalog, and replaces the planned draw. A catalog with less than 80 % of the stored biomarkers is partial: Coach
+deletes no biomarker or category then. The run is recorded in `users.settings.functionSync` (Settings shows it), and
+the `labs` cache is cleared. Returns `{ results, rejected, notes, biomarkers, partial, plannedUpdated }`.
 
 ### Garmin (direct)
 

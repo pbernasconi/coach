@@ -293,20 +293,48 @@ export async function addFromLibrary(userId: string, itemId: string, date: strin
 }
 
 /** Stores a new workout from the calendar ("+" on a day). `w` comes from cleanNewWorkout (src/lib/plan/create.mjs). */
-export async function createWorkout(
-  userId: string,
-  w: { sport: string; date: string; startTime: string | null; title: string; duration: number | null; distance: number | null; tss: number | null; intensity: string | null; description: string | null; steps: Record<string, unknown> | null }
-): Promise<string> {
+export type WorkoutInput = {
+  sport: string; date: string; startTime: string | null; title: string; duration: number | null; distance: number | null;
+  tss: number | null; intensity: string | null; description: string | null; steps: Record<string, unknown> | null; workoutType: string | null;
+};
+
+export async function createWorkout(userId: string, w: WorkoutInput): Promise<string> {
   const planId = await ensurePlan(userId, mondayOf(w.date));
   const id = crypto.randomUUID();
   await sql`
     INSERT INTO training_plan_activities
-      (id, plan_id, activity_type, title, description, scheduled_date, start_time, duration, distance, intensity, tss, steps, status, sort_order, edited_at)
+      (id, plan_id, activity_type, title, description, scheduled_date, start_time, duration, distance, intensity, workout_type, tss, steps, status, sort_order, edited_at)
     VALUES (${id}, ${planId}, ${w.sport}, ${w.title}, ${w.description}, ${w.date}, ${w.startTime}, ${w.duration}, ${w.distance},
-            ${w.intensity}, ${w.tss}, ${w.steps ? JSON.stringify(w.steps) : null}::jsonb, 'planned',
+            ${w.intensity}, ${w.workoutType}, ${w.tss}, ${w.steps ? JSON.stringify(w.steps) : null}::jsonb, 'planned',
             (SELECT COALESCE(MAX(sort_order), -1) + 1 FROM training_plan_activities WHERE plan_id = ${planId} AND scheduled_date = ${w.date}),
             NOW())`;
   return id;
+}
+
+/**
+ * Changes a planned workout the user owns (the modal's Edit). A new day moves it to that week's plan. edited_at marks
+ * it as changed on the web, so a later plan import keeps this version. An empty distance keeps the stored one.
+ * Returns the old and new day, or null when there is no such workout.
+ */
+export async function updateWorkout(userId: string, id: string, w: WorkoutInput): Promise<{ from: string; to: string } | null> {
+  const [r] = (await sql`
+    SELECT a.scheduled_date FROM training_plan_activities a JOIN training_plans p ON p.id = a.plan_id
+    WHERE a.id = ${id} AND p.user_id = ${userId}`) as Row[];
+  if (!r) return null;
+  const from = dayOf(r.scheduled_date);
+  const planId = await ensurePlan(userId, mondayOf(w.date));
+  await sql`
+    UPDATE training_plan_activities SET
+      plan_id = ${planId}, activity_type = ${w.sport}, title = ${w.title}, description = ${w.description},
+      scheduled_date = ${w.date}, start_time = ${w.startTime}, duration = ${w.duration},
+      distance = COALESCE(${w.distance}, distance), intensity = ${w.intensity}, tss = ${w.tss},
+      steps = ${w.steps ? JSON.stringify(w.steps) : null}::jsonb,
+      -- A bank workout's type comes from its steps. A workout without steps keeps a non-bank type (strength-heavy),
+      -- but loses a bank type, so the rotation does not count a workout that no longer has the steps.
+      workout_type = COALESCE(${w.workoutType}, CASE WHEN workout_type ~ '^(run|ride)-(threshold|vo2|tempo|test)' THEN NULL ELSE workout_type END),
+      edited_at = NOW(), updated_at = NOW()
+    WHERE id = ${id}`;
+  return { from, to: w.date };
 }
 
 /** Copies one planned workout the user owns to another day (the calendar's Copy and Paste). Returns the new id. */
@@ -343,12 +371,26 @@ export async function importedIds(userId: string, weekStart: string): Promise<st
   return rows.map((r) => String(r.id));
 }
 
-/** Deletes one planned workout the user owns. Returns its day ('YYYY-MM-DD'), or null when there was no such workout. */
-export async function removeWorkout(userId: string, id: string): Promise<string | null> {
+/**
+ * Deletes one planned workout the user owns. Returns its day ('YYYY-MM-DD') and the deleted row (for Undo,
+ * restoreWorkout), or null when there was no such workout.
+ */
+export async function removeWorkout(userId: string, id: string): Promise<{ date: string; row: Record<string, unknown> } | null> {
   const rows = (await sql`
     DELETE FROM training_plan_activities a USING training_plans p
     WHERE a.id = ${id} AND p.id = a.plan_id AND p.user_id = ${userId}
-    RETURNING a.scheduled_date`) as Row[];
+    RETURNING to_jsonb(a.*) AS row, a.scheduled_date`) as Row[];
+  return rows[0] ? { date: dayOf(rows[0].scheduled_date), row: rows[0].row as Record<string, unknown> } : null;
+}
+
+/** Puts a deleted workout back as it was (the Undo of a delete). Only into a plan the user owns. */
+export async function restoreWorkout(userId: string, row: Record<string, unknown>): Promise<string | null> {
+  const rows = (await sql`
+    INSERT INTO training_plan_activities
+    SELECT r.* FROM jsonb_populate_record(NULL::training_plan_activities, ${JSON.stringify(row)}::jsonb) r
+    WHERE EXISTS (SELECT 1 FROM training_plans p WHERE p.id = r.plan_id AND p.user_id = ${userId})
+    ON CONFLICT (id) DO NOTHING
+    RETURNING scheduled_date`) as Row[];
   return rows[0] ? dayOf(rows[0].scheduled_date) : null;
 }
 

@@ -3,7 +3,7 @@ import Testing
 
 @testable import KoboComponents
 
-/// `NumberEntry` canonical-text maths, ported from an earlier app's AmountEntry vectors (shared vectors) with a nine-digit,
+/// `NumberEntry` canonical-text maths, with a nine-digit,
 /// two-decimal rule set standing in for the money field.
 @Suite struct FieldsNumberEntryLogicTests {
     static let money = NumberEntryRules(range: 0...999_999_999.99, decimalPlaces: 2)

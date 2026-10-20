@@ -1,6 +1,6 @@
 /**
  * POST /api/cron/cache?tag=labs clears one tag of the server data cache (src/lib/data-cache.ts). For writers that
- * go straight to the database, such as the Function sync (.github/workflows/function.yml). Authenticated by
+ * go straight to the database, such as a script. Authenticated by
  * `Authorization: Bearer $CRON_SECRET`. Public to Clerk (/api/cron).
  */
 

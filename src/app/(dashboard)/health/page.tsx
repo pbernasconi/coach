@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { ownerForSignedInUser } from '@/lib/owner';
 import { CHART_DAYS, loadClinicianNotes, loadGarminStatus, loadHealth } from '@/lib/vitals/queries';
@@ -13,6 +14,8 @@ import type { TooltipRow } from '@/components/charts/ChartTooltip';
 import HealthTrendChart from './HealthTrendChart';
 import LabsSection from './LabsSection';
 import ReadinessTiles from './ReadinessTiles';
+
+export const metadata: Metadata = { title: 'Health' };
 
 export const dynamic = 'force-dynamic';
 
@@ -57,7 +60,7 @@ export default async function HealthPage() {
   return (
     <div className="space-y-8" data-smoke="health">
       <div className="space-y-1">
-        <h1 className="text-3xl font-bold tracking-tight">Health</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Health</h1>
         <p className="text-muted-foreground">
           Recovery signals from Garmin Connect (or Apple Health) and blood tests from Function Health.
           {readiness.lastSampleDate && ` Newest health data: ${readiness.lastSampleDate}.`}

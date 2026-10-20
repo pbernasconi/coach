@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import QRCode from 'qrcode';
 import { sql } from '@/db';
@@ -8,14 +9,18 @@ import { loadEventsWithCountdown } from '@/lib/performance/events';
 import { todayIn } from '@/lib/plan/week.mjs';
 import { loadGoals } from '@/lib/goals/goals.mjs';
 import { createEnrollmentCode } from '@/lib/lift-sync/enroll.mjs';
-import StravaService from '@/modules/strava/strava-service';
+import { FlaskConical } from 'lucide-react';
+import { loadThresholdSources } from '@/lib/strava-sync/thresholds.mjs';
+import { resolveThresholds } from '@/lib/strava-sync/tss.mjs';
 import SectionError from '@/components/SectionError';
-import { CoachingNotesForm, LocationForm, StravaSyncButton, TargetsForm } from './SettingsControls';
+import { CoachingNotesForm, LocationForm, StravaSyncButton, TargetsForm, ThresholdsForm, type ThresholdView } from './SettingsControls';
 import { GarminLogo, GoogleCalendarLogo, LiftLogo, StravaLogo } from './BrandLogos';
 import ConnectLift from './ConnectLift';
 import EventsEditor from './EventsEditor';
 import GoalsForm from './GoalsForm';
 import SettingsNav from './SettingsNav';
+
+export const metadata: Metadata = { title: 'Settings' };
 
 export const dynamic = 'force-dynamic';
 
@@ -139,6 +144,7 @@ const SECTIONS = [
   { id: 'events', label: 'Events' },
   { id: 'goals', label: 'Goals' },
   { id: 'targets', label: 'Weekly targets' },
+  { id: 'thresholds', label: 'Thresholds' },
   { id: 'preferences', label: 'Coaching preferences' },
   { id: 'location', label: 'Weather location' },
 ];
@@ -147,12 +153,13 @@ export default async function SettingsPage() {
   const userId = await ownerForSignedInUser();
   if (!userId) return <p data-smoke="settings" className="text-sm text-muted-foreground">This account has no Coach data.</p>;
   const today = todayIn(zone((await cookies()).get('tz')?.value));
-  const [status, targets, coachingNotes, goals, events] = await Promise.all([
+  const [status, targets, coachingNotes, goals, events, thresholds] = await Promise.all([
     loadStatus(userId),
     loadTargets(userId),
     loadCoachingNotes(userId),
     load('Goals', () => loadGoals(sql, userId)),
     load('Events', () => loadEventsWithCountdown(userId, today)),
+    load('Thresholds', () => loadThresholdSources(sql, userId)),
   ]);
 
   const levelOf = (source: Warning['source']): Level =>
@@ -167,13 +174,19 @@ export default async function SettingsPage() {
   // (/api/lift/enroll). A new code each time the page renders, valid 15 minutes.
   const liftLink = process.env.LIFT_SYNC_TOKEN ? `lift://sync?code=${(await createEnrollmentCode(sql)).code}` : null;
   const liftQr = liftLink ? await QRCode.toString(liftLink, { type: 'svg', margin: 0, errorCorrectionLevel: 'M' }) : '';
-  const connectUrl = status.strava.canConnect
-    ? new StravaService({
-        clientId: process.env.STRAVA_CLIENT_ID!,
-        clientSecret: process.env.STRAVA_CLIENT_SECRET ?? '',
-        redirectUri: process.env.STRAVA_REDIRECT_URI!,
-      }).getAuthorizationUrl()
+  // The OAuth start route sets a random state cookie, which the callback checks.
+  const connectUrl = status.strava.canConnect ? '/api/auth/strava/start' : null;
+  // Each threshold: the athlete's own value, and the automatic one (Garmin, Strava, an estimate) for the hint.
+  const thresholdView = thresholds.ok
+    ? (() => {
+        const auto = resolveThresholds({ ...thresholds.value, settings: null });
+        const own = (thresholds.value.settings ?? {}) as Record<string, number | undefined>;
+        return Object.fromEntries(
+          (Object.keys(auto) as (keyof typeof auto)[]).map((k) => [k, { own: own[k] ?? null, auto: auto[k].value, source: auto[k].source }]),
+        ) as ThresholdView;
+      })()
     : null;
+  const fn = status.functionSync;
 
   const garmin = status.garmin;
   const garminOk = garmin.connected && garmin.status !== 'auth_failed';
@@ -190,7 +203,7 @@ export default async function SettingsPage() {
       <div className="min-w-0 space-y-8">
         <div className="flex flex-wrap items-end justify-between gap-2">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
             <p className="text-sm text-muted-foreground">Connections, events, goals and how Coach plans your week.</p>
           </div>
           <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs ${attention ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground'}`}>
@@ -217,7 +230,7 @@ export default async function SettingsPage() {
               details={[
                 ['Athlete', status.strava.athleteId ?? '-'],
                 ['Newest activity', status.strava.newestActivity ?? '-'],
-                ['Auto sync', status.strava.canSync ? 'Webhook and daily at 13:00 UTC' : 'Off (Strava app secret not set)'],
+                ['Auto sync', status.strava.canSync ? 'Webhook, and every 3 hours' : 'Off (Strava app secret not set)'],
               ]}
             />
 
@@ -253,7 +266,7 @@ export default async function SettingsPage() {
               notes={notes('calendar')}
               details={[
                 ...status.calendars.map((c) => [c.email, c.active ? `synced ${when(c.lastSyncedAt)}` : 'off'] as [string, string]),
-                ['Auto sync', 'Every 30 min (GitHub Actions)'],
+                ['Auto sync', 'Every hour (GitHub Actions)'],
               ]}
             />
 
@@ -271,6 +284,20 @@ export default async function SettingsPage() {
             >
               {liftLink && <ConnectLift link={liftLink} qrSvg={liftQr} connected={liftConnected} />}
             </Connection>
+
+            <Connection
+              logo={<FlaskConical aria-hidden className="h-5 w-5 text-muted-foreground" />}
+              name="Function Health (labs)"
+              connected={Boolean(fn.lastSuccessAt)}
+              level={levelOf('function')}
+              summary={fn.lastSuccessAt ? `Synced ${when(fn.lastSuccessAt)} · runs by hand` : 'Lab results come from Function Health; the sync runs by hand.'}
+              notes={notes('function')}
+              details={[
+                ['Last success', when(fn.lastSuccessAt)],
+                ['Last run', when(fn.lastAttemptAt)],
+                ['Sync', 'By hand: Actions → Function Health sync → Run workflow, or gh workflow run function.yml'],
+              ]}
+            />
           </ul>
         </Group>
 
@@ -283,6 +310,9 @@ export default async function SettingsPage() {
           </Panel>
           <Panel id="targets" title="Weekly targets" help="Today measures each week against these.">
             <TargetsForm targets={targets} />
+          </Panel>
+          <Panel id="thresholds" title="Thresholds" help="TSS, and so fitness (CTL), fatigue (ATL) and form (TSB), comes from these. Leave a field empty for the automatic value from Garmin, Strava or your best runs.">
+            {thresholdView ? <ThresholdsForm view={thresholdView} /> : <SectionError label="Thresholds" />}
           </Panel>
         </Group>
 

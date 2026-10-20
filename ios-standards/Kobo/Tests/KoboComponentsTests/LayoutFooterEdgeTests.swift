@@ -3,7 +3,7 @@ import Testing
 
 @testable import KoboComponents
 
-/// Ported from an earlier app's footer edge rule: the hairline shows only while content runs under the footer.
+/// The footer edge rule: the hairline shows only while content runs under the footer.
 @Suite struct LayoutFooterEdgeTests {
     @Test(arguments: [
         // (content height, visible bottom, bottom inset, shows)

@@ -14,9 +14,11 @@ import {
 } from '@/components/ui/sheet';
 import { useState } from 'react';
 import { NAV_KEYS } from '@/lib/hotkeys.mjs';
+import { cn } from '@/lib/utils';
+import CoachMark from '@/components/brand/CoachMark';
 
-// Every nav link (and the Coach logo: a partial prefetch of / would take the cache slot first) prefetches its page in full (data included) when it is on screen, so a click is instant; the
-// browser keeps it for staleTimes.static (next.config.ts).
+// The nav links use Next's default (partial) prefetch: the page shell and its loading.tsx, not its data. A full
+// prefetch rendered all six pages, with their database reads, on every page view (Neon compute and transfer).
 const navLinks = [
   { href: '/', label: 'Today' },
   { href: '/plan', label: 'Plan' },
@@ -37,79 +39,73 @@ export default function DashboardNav() {
   const [open, setOpen] = useState(false);
 
   return (
-    <>
-      {/* Navigation */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className={`mx-auto flex h-16 items-center px-4 sm:px-6 ${wide ? 'max-w-[1920px] lg:px-6' : 'container max-w-7xl lg:px-8'}`}>
-          {/* Mobile menu button */}
-          <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="mr-2 md:hidden">
-                <Menu className="h-5 w-5" />
-                <span className="sr-only">Toggle menu</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left">
-              <SheetHeader>
-                <SheetTitle>Coach</SheetTitle>
-              </SheetHeader>
-              <nav className="mt-4 flex flex-col">
-                {navLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    prefetch
-                    onClick={() => setOpen(false)}
-                    aria-current={isActive(link.href) ? 'page' : undefined}
-                    className={`flex min-h-11 items-center rounded-md px-2 text-lg transition-colors hover:text-foreground/80 ${
-                      isActive(link.href) ? 'bg-muted font-medium text-foreground' : 'text-foreground/60'
-                    }`}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-              </nav>
-            </SheetContent>
-          </Sheet>
-
-          {/* Desktop menu */}
-          <div className="mr-4 hidden md:flex">
-            <Link href="/" prefetch className="mr-6 flex items-center space-x-2">
-              <span className="font-bold text-xl">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+      <div className={cn('mx-auto flex h-14 items-center gap-2 px-4 sm:px-6', wide ? 'max-w-[1920px] lg:px-6' : 'container max-w-7xl lg:px-8')}>
+        {/* Mobile menu button */}
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="icon" className="-ml-2 md:hidden">
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">Open menu</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left">
+            <SheetHeader className="text-left">
+              <SheetTitle className="flex items-center gap-2">
+                <CoachMark />
                 Coach
-              </span>
-            </Link>
-            {/* key: the links mount again after each navigation, so they prefetch again (the page you came from
-                included) and stay fresh in the router cache. */}
-            <nav key={pathname} className="flex items-center space-x-6 text-sm font-medium">
+              </SheetTitle>
+            </SheetHeader>
+            <nav className="-mx-3 mt-4 flex flex-col gap-0.5">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
-                  prefetch
+                  onClick={() => setOpen(false)}
                   aria-current={isActive(link.href) ? 'page' : undefined}
-                  title={`${link.label} · press ${keyOf(link.href)}`}
-                  aria-keyshortcuts={keyOf(link.href)}
-                  className={`transition-colors hover:text-foreground/80 ${isActive(link.href) ? 'text-foreground' : 'text-foreground/60'}`}
+                  className={cn(
+                    'flex min-h-11 items-center rounded-md px-3 text-base transition-colors hover:bg-muted hover:text-foreground',
+                    isActive(link.href) ? 'bg-muted font-medium text-foreground' : 'text-muted-foreground',
+                  )}
                 >
                   {link.label}
                 </Link>
               ))}
             </nav>
-          </div>
+          </SheetContent>
+        </Sheet>
 
-          {/* Mobile logo */}
-          <Link href="/" prefetch className="flex md:hidden mr-auto items-center">
-            <span className="font-bold text-xl">Coach</span>
-          </Link>
+        {/* Logo */}
+        <Link href="/" className="mr-6 flex items-center gap-2 rounded-md" aria-label="Coach, home">
+          <CoachMark />
+          <span className="text-[15px] font-semibold tracking-tight">Coach</span>
+        </Link>
 
-          {/* Right side */}
-          <div className="flex items-center ml-auto space-x-2">
-            {/* The links render at once; only the account button waits for Clerk's script. */}
-            {isLoaded ? <UserButton afterSignOutUrl="/sign-in" /> : <div className="h-8 w-8 rounded-full bg-muted" />}
-          </div>
+        {/* Desktop menu: the current section has a line under it, on the header's bottom edge. */}
+        <nav className="hidden h-full items-stretch gap-1 text-sm md:flex">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              aria-current={isActive(link.href) ? 'page' : undefined}
+              title={`${link.label} · press ${keyOf(link.href)}`}
+              aria-keyshortcuts={keyOf(link.href)}
+              className={cn(
+                'relative flex items-center px-3 transition-colors hover:text-foreground',
+                'after:absolute after:inset-x-3 after:-bottom-px after:h-0.5 after:rounded-full after:bg-foreground after:opacity-0 after:transition-opacity',
+                isActive(link.href) ? 'font-medium text-foreground after:opacity-100' : 'text-muted-foreground',
+              )}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+
+        {/* Right side. The links render at once; only the account button waits for Clerk's script. */}
+        <div className="ml-auto flex items-center">
+          {isLoaded ? <UserButton afterSignOutUrl="/sign-in" /> : <div className="h-7 w-7 rounded-full bg-muted" />}
         </div>
-      </header>
-    </>
+      </div>
+    </header>
   );
 }

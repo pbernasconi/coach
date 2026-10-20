@@ -12,7 +12,7 @@
  * means the window is full. A cushion stays free for the regular sync.
  */
 
-import { connectionWithToken } from '../strava-sync/sync.mjs';
+import { connectionWithToken } from '../strava-sync/token.mjs';
 import { PEAKS_VERSION, countRequest, extractPeaks, msToNextWindow, rateDecision, rateUsage, rollUsage } from './peaks.mjs';
 
 const RIDE_WITH_POWER = `(a.sport_type ~ 'Ride$' AND a.sport_type NOT IN ('EBikeRide', 'EMountainBikeRide') AND a.device_watts = true AND COALESCE(a.moving_time, 0) >= 5)`;

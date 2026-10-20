@@ -2,7 +2,7 @@ import Testing
 
 @testable import KoboComponents
 
-/// Ported from an earlier app's `ToggleRowLookTests`: a saving row shows the tapped value, and the stored value always wins.
+/// A saving row shows the tapped value, and the stored value always wins.
 @Suite struct ControlsToggleRowTests {
     @Test func onlyAnIdleRowTakesTaps() {
         #expect(ToggleRowInteraction.enabled.acceptsTaps)

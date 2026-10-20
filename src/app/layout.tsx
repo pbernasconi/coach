@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "sonner";
@@ -14,9 +14,20 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// The icons are file conventions in this folder: icon.svg and favicon.ico (browser tabs), apple-icon.png (the iPhone
+// home screen). manifest.ts names the app when it is added to a home screen.
 export const metadata: Metadata = {
-  title: "Coach",
+  title: { default: "Coach", template: "%s · Coach" },
   description: "Training plan, Strava and Lift",
+  applicationName: "Coach",
+  appleWebApp: { title: "Coach", statusBarStyle: "default" },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+  ],
 };
 
 // Without Clerk keys the pages cannot sign in. The token routes (Lift sync, /api/home, cron, Strava
@@ -59,8 +70,9 @@ export default function RootLayout({
         >
           {children}
           <Toaster position="bottom-right" toastOptions={{
+            // Neutral, like the rest of the app: blue is the ride colour.
             classNames: {
-              info: 'bg-blue-600 text-white border-blue-700',
+              info: 'bg-foreground text-background border-foreground',
             },
           }} />
         </body>

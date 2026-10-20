@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button';
 import type { Targets } from '@/lib/status';
 import type { Place } from '@/lib/plan/weather';
 import {
-  loadLocationAction, saveCoachingNotesAction, saveLocationAction, saveTargetsAction, searchPlacesAction, syncStravaNow,
-  type PlaceHit,
+  loadLocationAction, saveCoachingNotesAction, saveLocationAction, saveTargetsAction, saveThresholdsAction, searchPlacesAction, syncStravaNow,
+  type PlaceHit, type ThresholdInput,
 } from './actions';
 
 export function StravaSyncButton() {
@@ -68,6 +68,69 @@ export function TargetsForm({ targets }: { targets: Targets }) {
         {field('strength', 'Strength', 'x', 1)}
       </div>
       <Button size="sm" className="self-start sm:self-auto" type="submit" disabled={pending || !changed}>{pending ? 'Saving…' : 'Save targets'}</Button>
+    </form>
+  );
+}
+
+export type ThresholdView = Record<keyof ThresholdInput, { own: number | null; auto: number | null; source: string | null }>;
+
+const paceText = (s: number | null) => (s == null ? '' : `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`);
+const paceSeconds = (text: string) => {
+  const m = /^\s*(\d{1,2}):(\d{2})\s*$/.exec(text);
+  return m ? Number(m[1]) * 60 + Number(m[2]) : null;
+};
+
+/** FTP, LTHR per sport, resting HR and threshold pace for TSS. An empty field uses the automatic value shown. */
+export function ThresholdsForm({ view }: { view: ThresholdView }) {
+  const [own, setOwn] = useState<Record<keyof ThresholdInput, string>>({
+    ftp: view.ftp.own?.toString() ?? '', runLthr: view.runLthr.own?.toString() ?? '', rideLthr: view.rideLthr.own?.toString() ?? '',
+    restingHr: view.restingHr.own?.toString() ?? '', runPaceS: paceText(view.runPaceS.own),
+  });
+  const [pending, start] = useTransition();
+  const field = (key: keyof ThresholdInput, label: string, unit: string) => {
+    const auto = key === 'runPaceS' ? paceText(view[key].auto) : view[key].auto?.toString() ?? '';
+    return (
+      <label className="flex items-center justify-between gap-4">
+        <span className="min-w-0 text-muted-foreground">
+          {label}
+          <span className="block text-xs">{auto ? `Automatic: ${auto} ${unit} (${view[key].source})` : 'No automatic value'}</span>
+        </span>
+        <input
+          inputMode={key === 'runPaceS' ? 'text' : 'numeric'}
+          placeholder={auto || '–'}
+          value={own[key]}
+          onChange={(e) => setOwn({ ...own, [key]: e.target.value })}
+          aria-label={label}
+          className="h-10 w-24 shrink-0 rounded-md border bg-background px-2 text-right text-base md:h-auto md:py-1 md:text-sm"
+        />
+      </label>
+    );
+  };
+  return (
+    <form
+      className="space-y-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        const num = (v: string) => (v.trim() === '' ? null : Number(v));
+        const pace = own.runPaceS.trim() === '' ? null : paceSeconds(own.runPaceS);
+        if (own.runPaceS.trim() !== '' && pace == null) {
+          toast.error('Write the threshold pace as m:ss, for example 4:48.');
+          return;
+        }
+        start(async () => {
+          const msg = await saveThresholdsAction({
+            ftp: num(own.ftp), runLthr: num(own.runLthr), rideLthr: num(own.rideLthr), restingHr: num(own.restingHr), runPaceS: pace,
+          });
+          toast.success(msg);
+        });
+      }}
+    >
+      {field('ftp', 'Cycling FTP', 'W')}
+      {field('rideLthr', 'Cycling threshold HR', 'bpm')}
+      {field('runLthr', 'Running threshold HR', 'bpm')}
+      {field('runPaceS', 'Threshold run pace', '/km')}
+      {field('restingHr', 'Resting HR', 'bpm')}
+      <Button size="sm" type="submit" disabled={pending}>{pending ? 'Recomputing TSS…' : 'Save and recompute TSS'}</Button>
     </form>
   );
 }
