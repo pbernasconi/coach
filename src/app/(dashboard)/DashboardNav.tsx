@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/sheet';
 import { useState } from 'react';
 
-// Every nav link prefetches its page in full (data included) when it is on screen, so a click is instant; the
+// Every nav link (and the Coach logo: a partial prefetch of / would take the cache slot first) prefetches its page in full (data included) when it is on screen, so a click is instant; the
 // browser keeps it for staleTimes.static (next.config.ts).
 const navLinks = [
   { href: '/', label: 'Performance' },
@@ -26,7 +26,8 @@ const navLinks = [
 ];
 
 export default function DashboardNav() {
-  const wide = usePathname().startsWith('/plan'); // match MainContainer's width
+  const pathname = usePathname();
+  const wide = pathname.startsWith('/plan'); // match MainContainer's width
   const { isLoaded } = useUser();
   const [open, setOpen] = useState(false);
 
@@ -65,12 +66,14 @@ export default function DashboardNav() {
 
           {/* Desktop menu */}
           <div className="mr-4 hidden md:flex">
-            <Link href="/" className="mr-6 flex items-center space-x-2">
+            <Link href="/" prefetch className="mr-6 flex items-center space-x-2">
               <span className="font-bold text-xl">
                 Coach
               </span>
             </Link>
-            <nav className="flex items-center space-x-6 text-sm font-medium">
+            {/* key: the links mount again after each navigation, so they prefetch again (the page you came from
+                included) and stay fresh in the router cache. */}
+            <nav key={pathname} className="flex items-center space-x-6 text-sm font-medium">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
@@ -85,7 +88,7 @@ export default function DashboardNav() {
           </div>
 
           {/* Mobile logo */}
-          <Link href="/" className="flex md:hidden mr-auto items-center">
+          <Link href="/" prefetch className="flex md:hidden mr-auto items-center">
             <span className="font-bold text-xl">Coach</span>
           </Link>
 
