@@ -29,9 +29,9 @@ function cueFor(readiness: number | null) {
   return 'Readiness poor: consider rest';
 }
 
-const chipBase = 'block min-w-0 rounded-[5px] border border-l-[3px] px-1.5 py-1 text-[11px] leading-[15px] transition-shadow hover:shadow-md';
+const chipBase = 'relative z-10 block min-w-0 rounded-[5px] border border-l-[3px] px-1.5 py-1 text-[11px] leading-[15px] transition-shadow hover:shadow-md';
 
-function Chip({ item }: { item: Item }) {
+function Chip({ item, href }: { item: Item; href: string }) {
   if (item.kind === 'planned') {
     const { w, actual } = item;
     const done = w.state === 'done';
@@ -39,7 +39,8 @@ function Chip({ item }: { item: Item }) {
     const planned = [w.duration ? dur(w.duration) : null, w.tss ? `${Math.round(w.tss)} TSS` : null].filter(Boolean).join(' · ');
     const doneText = actual ? [dur(actual.min), actual.tss ? `${Math.round(actual.tss)} TSS` : null].filter(Boolean).join(' · ') : null;
     return (
-      <div
+      <Link
+        href={href}
         className={cn(
           chipBase,
           done && 'border-transparent bg-card shadow-sm',
@@ -48,7 +49,7 @@ function Chip({ item }: { item: Item }) {
           w.state === 'skipped' && 'opacity-60'
         )}
         style={{ borderLeftColor: sport(w.sport).color, borderLeftStyle: 'solid' }}
-        title={w.compliance.label}
+        title={`${plainTitle(w.title)}: ${w.compliance.label}`}
       >
         <span className="flex min-w-0 items-center gap-1">
           <SportIcon id={w.sport} className="h-3 w-3" />
@@ -56,36 +57,37 @@ function Chip({ item }: { item: Item }) {
           <ComplianceMark level={w.compliance.level} title={w.compliance.label} />
         </span>
         <span className="block truncate tabular-nums text-[var(--viz-ink-2)]">{done && doneText ? doneText : planned || sport(w.sport).label}</span>
-      </div>
+      </Link>
     );
   }
   if (item.kind === 'activity') {
     const a = item.a;
     const text = [dur(a.min), a.km >= 0.5 ? `${a.km} km` : null, a.tss ? `${Math.round(a.tss)} TSS` : null].filter(Boolean).join(' · ');
     return (
-      <div className={cn(chipBase, 'border-transparent bg-card shadow-sm')} style={{ borderLeftColor: sport(a.sport).color }}>
+      <Link href={href} title={a.name || sport(a.sport).label} className={cn(chipBase, 'border-transparent bg-card shadow-sm')} style={{ borderLeftColor: sport(a.sport).color }}>
         <span className="flex min-w-0 items-center gap-1">
           <SportIcon id={a.sport} className="h-3 w-3" />
           <span className="min-w-0 flex-1 truncate font-medium text-[var(--viz-ink)]">{a.name || sport(a.sport).label}</span>
         </span>
         <span className="block truncate tabular-nums text-[var(--viz-ink-2)]">{text}</span>
-      </div>
+      </Link>
     );
   }
   const l = item.l;
   return (
-    <div className={cn(chipBase, 'border-transparent bg-card shadow-sm')} style={{ borderLeftColor: sport('strength').color }}>
+    <Link href={href} title={l.name} className={cn(chipBase, 'border-transparent bg-card shadow-sm')} style={{ borderLeftColor: sport('strength').color }}>
       <span className="flex min-w-0 items-center gap-1">
         <Dumbbell aria-hidden className="h-3 w-3 shrink-0" style={{ color: sport('strength').color }} />
         <span className="min-w-0 flex-1 truncate font-medium text-[var(--viz-ink)]">{l.name}</span>
       </span>
       <span className="block tabular-nums text-[var(--viz-ink-2)]">{l.setsLogged} sets · Lift</span>
-    </div>
+    </Link>
   );
 }
 
 function WeekSide({ s }: { s: WeekSummary | null }) {
   if (!s) return <div className="hidden border-l bg-[var(--viz-surface)] md:block" />;
+  const link = 'rounded px-1 -mx-1 transition-colors hover:bg-[var(--viz-band)]';
   const rows: [string, string, string | null][] = [
     ['Time', hm(s.done.min), s.planned.min ? hm(s.planned.min) : null],
     ['TSS', String(Math.round(s.done.tss)), s.planned.tss ? String(Math.round(s.planned.tss)) : null],
@@ -95,7 +97,7 @@ function WeekSide({ s }: { s: WeekSummary | null }) {
   return (
     <div className="hidden flex-col gap-2 border-l bg-[var(--viz-surface)] px-2 py-1.5 text-[11px] leading-4 md:flex" aria-label="This week">
       {s.fitness && (
-        <div className="grid grid-cols-3 gap-1">
+        <Link href="#fitness" title="Fitness, fatigue and form" className={cn('grid grid-cols-3 gap-1', link)}>
           {([['Fit', String(Math.round(s.fitness.ctl)), 'var(--viz-ctl)'], ['Fat', String(Math.round(s.fitness.atl)), 'var(--viz-atl)'], ['Form', signed(s.fitness.tsb), 'var(--viz-tsb)']] as const).map(
             ([label, value, color]) => (
               <div key={label} className="min-w-0">
@@ -107,26 +109,28 @@ function WeekSide({ s }: { s: WeekSummary | null }) {
               </div>
             )
           )}
-        </div>
+        </Link>
       )}
-      <dl className="grid grid-cols-[auto_1fr] gap-x-2 tabular-nums">
+      <Link href="/trends" title="Every week on Trends" className={cn('grid grid-cols-[auto_1fr] gap-x-2 tabular-nums', link)}>
         {rows.map(([label, value, of]) => (
-          <div key={label} className="contents">
-            <dt className="text-[var(--viz-muted)]">{label}</dt>
-            <dd className="text-right text-[var(--viz-ink)]">
+          <span key={label} className="contents">
+            <span className="text-[var(--viz-muted)]">{label}</span>
+            <span className="text-right text-[var(--viz-ink)]">
               {value}
               {of && <span className="text-[var(--viz-muted)]"> / {of}</span>}
-            </dd>
-          </div>
+            </span>
+          </span>
         ))}
-      </dl>
+      </Link>
     </div>
   );
 }
 
 /**
  * This week on the home page, drawn like a week row of the Plan calendar (same chips, weather and week column),
- * with today's session and a readiness cue on one line above it. Read-only: each date links to the week in Plan.
+ * with today's session and a readiness cue on one line above it. Everything links on: a chip opens that item in
+ * Plan (?open=), a day opens its week in Plan, the date opens that day's health, the week column opens the fitness
+ * chart and Trends, and the readiness cue opens today's health.
  */
 export default function HomeWeek({
   range, weather, readiness,
@@ -150,62 +154,80 @@ export default function HomeWeek({
   const todays = range.workouts.filter((w) => w.date === today && w.status !== 'skipped');
   const cue = cueFor(readiness);
   const planHref = `/plan?week=${monday}`;
+  const openHref = (key: string) => `${planHref}&open=${encodeURIComponent(key)}`;
   return (
     <section className="overflow-hidden rounded-lg border bg-card" aria-labelledby="home-week">
       <div className="flex items-baseline justify-between gap-3 px-4 pb-3 pt-4">
-        <h2 id="home-week" className="font-semibold">This week</h2>
+        <h2 id="home-week" className="font-semibold">
+          <Link href={planHref} className="hover:underline hover:underline-offset-4">This week</Link>
+        </h2>
         <Link href={planHref} className="text-xs text-[var(--viz-muted)] hover:text-foreground">Open Plan →</Link>
       </div>
 
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t bg-[var(--viz-surface)] px-4 py-2 text-sm">
         <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--viz-muted)]">Today</span>
         {todays.length === 0 ? (
-          <span className="text-[var(--viz-ink-2)]">{range.workouts.length ? 'Rest day' : 'No plan this week. Run /plan in Claude Code to make one.'}</span>
+          <Link href={planHref} className="text-[var(--viz-ink-2)] hover:text-foreground">
+            {range.workouts.length ? 'Rest day' : 'No plan this week. Run /plan in Claude Code to make one.'}
+          </Link>
         ) : (
           todays.map((w) => (
-            <span key={w.id} className="flex items-center gap-1.5 font-medium">
+            <Link key={w.id} href={openHref(`w-${w.id}`)} className="flex items-center gap-1.5 rounded font-medium hover:underline hover:underline-offset-4">
               <SportIcon id={w.sport} className="h-3.5 w-3.5" />
               {plainTitle(w.title)}
               <span className="font-normal tabular-nums text-[var(--viz-muted)]">
                 {[w.startTime, w.duration ? dur(w.duration) : null].filter(Boolean).join(' · ')}
                 {w.state === 'done' && ' · done'}
               </span>
-            </span>
+            </Link>
           ))
         )}
-        {cue && todays.length > 0 && <span className="text-amber-800 dark:text-amber-300">{cue}</span>}
+        {cue && todays.length > 0 && (
+          <Link href={`/health/day/${today}`} className="text-amber-800 hover:underline hover:underline-offset-4 dark:text-amber-300">{cue}</Link>
+        )}
       </div>
 
       <div className="grid grid-cols-[repeat(7,minmax(0,1fr))] border-t md:grid-cols-[repeat(7,minmax(0,1fr))_7rem]">
+        {WEEKDAYS.map((d) => (
+          <span key={d} className="border-b border-r px-1.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--viz-muted)]">{d}</span>
+        ))}
+        <Link
+          href="/trends"
+          className="hidden border-b px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--viz-muted)] hover:text-foreground md:block"
+        >
+          Week
+        </Link>
         {days.map(({ date, items }, i) => {
           const isToday = date === today;
           const past = date < today;
           const wx = date >= today ? weather[date] : undefined;
+          const day = Number(date.slice(8));
           return (
             <div
               key={date}
               className={cn(
-                'flex min-h-36 min-w-0 flex-col gap-1 border-r px-1 pb-1.5 pt-1',
+                'group relative flex min-h-32 min-w-0 flex-col gap-1 border-r px-1 pb-1.5 pt-1 transition-colors hover:bg-[var(--viz-band)]',
                 past && 'bg-muted/40',
                 isToday && 'bg-primary/[0.04] ring-2 ring-inset ring-primary'
               )}
             >
-              <span className="flex h-5 shrink-0 items-center gap-1">
-                <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--viz-muted)]">{WEEKDAYS[i]}</span>
+              {/* The whole day opens its week in Plan; the date, weather and chips sit above this link. */}
+              <Link href={planHref} className="absolute inset-0" aria-label={`${WEEKDAYS[i]} ${day}${isToday ? ', today' : ''}: open in Plan`} />
+              <span className="relative z-10 flex h-5 shrink-0 items-center gap-1">
                 <Link
-                  href={planHref}
-                  aria-label={`${WEEKDAYS[i]} ${Number(date.slice(8))}${isToday ? ', today' : ''}: open in Plan`}
+                  href={`/health/day/${date}`}
+                  title="Health that day"
                   className={cn(
                     'inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold tabular-nums hover:ring-1 hover:ring-border',
                     isToday ? 'bg-primary text-primary-foreground' : past ? 'text-[var(--viz-muted)]' : 'text-[var(--viz-ink)]'
                   )}
                 >
-                  {Number(date.slice(8))}
+                  {day}
                 </Link>
                 <span className="flex-1" />
-                {wx && <span className="hidden lg:inline"><WeatherBadge w={wx} date={date} compact /></span>}
+                {wx && <span className="hidden min-w-0 lg:inline"><WeatherBadge w={wx} date={date} compact /></span>}
               </span>
-              {items.map((item) => <Chip key={item.key} item={item} />)}
+              {items.map((item) => <Chip key={item.key} item={item} href={openHref(item.key)} />)}
             </div>
           );
         })}

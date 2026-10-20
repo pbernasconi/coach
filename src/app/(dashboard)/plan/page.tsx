@@ -10,10 +10,11 @@ import './plan.css';
 
 export const dynamic = 'force-dynamic';
 
-type Search = { week?: string; month?: string };
+type Search = { week?: string; month?: string; open?: string };
 
 const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
+const ITEM = /^[wal]-\S{1,200}$/;
 
 /**
  * The Plan page: one continuous month calendar. It opens at ?month (its first week), at the week of ?week (old
@@ -24,7 +25,7 @@ export default async function PlanPage({ searchParams }: { searchParams: Promise
   if (!userId) return <p data-smoke="plan" className="text-sm text-muted-foreground">This account has no Coach data.</p>;
   const timeZone = await cookieTimeZone();
   const today = todayIn(timeZone);
-  const { week: weekParam, month: monthParam } = await searchParams;
+  const { week: weekParam, month: monthParam, open: openParam } = await searchParams;
   const settings = await userSettings(userId);
   const place = placeFrom(settings);
 
@@ -49,6 +50,7 @@ export default async function PlanPage({ searchParams }: { searchParams: Promise
         placeName={place.name}
         library={library}
         timeZone={timeZone}
+        openItem={openParam && ITEM.test(openParam) ? openParam : undefined}
       />
     </div>
   );
