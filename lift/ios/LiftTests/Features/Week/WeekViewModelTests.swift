@@ -50,27 +50,30 @@ import Testing
 
     // MARK: - run
 
-    @Test func runShowsTheWholeWeekGroupedByDayWithTodaySelected() async {
+    /// The loaded week's days, or none.
+    func days(_ vm: WeekViewModel) -> [WeekDaySection] {
+        guard case .loaded(let days) = vm.state.sessions else { return [] }
+        return days
+    }
+
+    @Test func runShowsAllSevenDaysWithTheirSessionsAndTodaySelected() async {
         let nextWeek = SessionBuilder.session(id: 3, on: monday.adding(days: 8), done: 0, planned: 3)
         let repository = FakeSessionRepository(emissions: [weekSessions + [nextWeek]])
         let (vm, _) = await loadedWeek(repository)
 
         #expect(repository.requestedRanges == [monday.adding(days: -28)...monday.adding(days: 34)])
-        let sections = [
-            WeekDaySection(
-                id: monday,
-                title: title(monday),
-                isSelected: true,
-                sessions: [SessionSummary(detail: done)]
-            ),
-            WeekDaySection(
-                id: monday.adding(days: 4),
-                title: title(monday.adding(days: 4)),
-                isSelected: false,
-                sessions: [SessionSummary(detail: planned)]
-            ),
+        let week = days(vm)
+        #expect(week.map(\.id) == (0..<7).map { monday.adding(days: $0) })
+        let sessions: [[SessionSummary]] = [
+            [SessionSummary(detail: done)], [], [], [], [SessionSummary(detail: planned)], [], [],
         ]
-        #expect(vm.state.sessions == .loaded(sections))
+        #expect(week.map(\.sessions) == sessions)
+        #expect(week.map(\.isSelected) == [true, false, false, false, false, false, false])
+        #expect(week.map(\.isToday) == [true, false, false, false, false, false, false])
+        let calendarDays = DayCalendar(calendar: calendar)
+        #expect(week[0].title == title(monday))
+        #expect(week[0].weekday == calendarDays.weekdayTitle(of: monday))
+        #expect(week[4].dayNumber == calendarDays.dayNumber(of: monday.adding(days: 4)))
         let expectedDays = [
             WeekDay(date: date(monday), status: .done),
             WeekDay(date: date(monday.adding(days: 4)), status: .planned),
@@ -80,22 +83,12 @@ import Testing
         #expect(title(monday).hasPrefix("Today"))
     }
 
-    @Test func runKeepsTheSelectedEmptyDayInTheList() async {
-        let (vm, _) = await loadedWeek(FakeSessionRepository(emissions: [[planned]]))
-
-        guard case .loaded(let sections) = vm.state.sessions else {
-            Issue.record("expected a loaded week")
-            return
-        }
-        #expect(sections.map(\.id) == [monday, monday.adding(days: 4)])
-        #expect(sections[0].isSelected && sections[0].sessions.isEmpty)
-    }
-
-    @Test func runShowsEmptyOnlyWhenTheWholeWeekIsEmpty() async {
+    @Test func runShowsAWeekWithNothingPlannedAsSevenRestDays() async {
         let nextWeek = SessionBuilder.session(id: 3, on: monday.adding(days: 8), done: 0, planned: 3)
         let (vm, _) = await loadedWeek(FakeSessionRepository(emissions: [[], [nextWeek]]))
 
-        #expect(vm.state.sessions == .empty)
+        #expect(days(vm).count == 7)
+        #expect(days(vm).allSatisfy { $0.sessions.isEmpty })
         #expect(vm.state.strip?.days == [WeekDay(date: date(monday.adding(days: 8)), status: .planned)])
     }
 
@@ -109,12 +102,19 @@ import Testing
 
         #expect(task == nil)
         #expect(vm.state.strip?.selected == date(friday))
-        guard case .loaded(let sections) = vm.state.sessions else {
-            Issue.record("expected a loaded week")
-            return
-        }
-        #expect(sections.map(\.id) == [monday, friday])
-        #expect(sections.map(\.isSelected) == [false, true])
+        #expect(days(vm).map(\.isSelected) == [false, false, false, false, true, false, false])
+    }
+
+    @Test func dayTappedSelectsThatRestDay() async {
+        let (vm, _) = await loadedWeek()
+        let wednesday = monday.adding(days: 2)
+
+        let task = vm.send(.dayTapped(wednesday))
+
+        #expect(task == nil)
+        #expect(vm.state.strip?.selected == date(wednesday))
+        #expect(vm.state.weekOffset == 0)
+        #expect(days(vm).first(where: \.isSelected)?.id == wednesday)
     }
 
     @Test func weekChangedShowsThatWeekAndSelectsItsFirstDay() async {
@@ -126,11 +126,8 @@ import Testing
 
         #expect(vm.state.weekOffset == 1)
         #expect(vm.state.strip?.selected == date(nextMonday))
-        guard case .loaded(let sections) = vm.state.sessions else {
-            Issue.record("expected a loaded week")
-            return
-        }
-        #expect(sections.map(\.id) == [nextMonday, monday.adding(days: 9)])
+        #expect(days(vm).first?.id == nextMonday)
+        #expect(days(vm)[2].sessions.map(\.id) == [nextWeek.id])
 
         vm.send(.weekChanged(0))
 

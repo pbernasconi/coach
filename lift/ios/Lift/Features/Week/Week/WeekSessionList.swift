@@ -3,8 +3,10 @@ import KoboTokens
 import LiftCore
 import SwiftUI
 
-/// The visible week's sessions grouped by day, scrolled so the selected day sits at the top; or why there are none.
+/// The visible week as seven rows, one per day, Monday first; a day without sessions is a rest day. Picking a day
+/// brings its row into view; or, on a first launch, where to start.
 struct WeekSessionList: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let state: WeekState
     let send: (WeekAction) -> Void
 
@@ -18,9 +20,10 @@ struct WeekSessionList: View {
                 .padding(.top, Space.sm)
                 .padding(.bottom, Space.xxl)
             }
-            .onChange(of: selectedDay, initial: true) { _, day in
+            .onChange(of: selectedDay) { _, day in
                 guard let day else { return }
-                proxy.scrollTo(day, anchor: .top)
+                // No anchor: scroll only as far as needed to show the row.
+                withAnimation(reduceMotion ? nil : .snappy) { proxy.scrollTo(day) }
             }
         }
     }
@@ -30,107 +33,44 @@ struct WeekSessionList: View {
         case .loading:
             LoadingState()
         case .empty:
-            WeekEmptyState(hasTemplates: !state.templates.isEmpty, send: send)
+            WeekFirstRunState(send: send)
         case .failed:
             ErrorState(title: "Workouts could not be loaded")
-        case .loaded(let sections):
-            ForEach(sections) { section in
-                WeekDaySectionView(section: section, send: send)
-                    .id(section.id)
-            }
-            if state.canPlanNextWeek {
-                WeekPlanNextRow(send: send)
+        case .loaded(let days):
+            if state.templates.isEmpty && days.allSatisfy(\.sessions.isEmpty) {
+                WeekFirstRunState(send: send)
+            } else {
+                ListSection {
+                    ForEach(days) { day in
+                        WeekDayRows(day: day, send: send)
+                            .id(day.id)
+                    }
+                }
             }
         }
     }
 
     private var selectedDay: LocalDay? {
-        guard case .loaded(let sections) = state.sessions else { return nil }
-        return sections.first(where: \.isSelected)?.id
+        guard case .loaded(let days) = state.sessions else { return nil }
+        return days.first(where: \.isSelected)?.id
     }
 }
 
-/// One day: its header (accented and marked when selected) and its sessions, or a quiet placeholder row when it has
-/// none.
-private struct WeekDaySectionView: View {
-    @Environment(\.koboTheme) private var theme
-    let section: WeekDaySection
+/// A first launch: no templates and nothing planned. Days get planned from templates, so it points to making one; a
+/// blank workout is the other way in.
+private struct WeekFirstRunState: View {
     let send: (WeekAction) -> Void
 
     var body: some View {
-        ListSection {
-            if section.sessions.isEmpty {
-                ListRow("Nothing planned", subtitle: "Rest day") { WeekRowMark(kind: .empty) }
-                    .listRowEmphasis(.quiet)
-            }
-            ForEach(section.sessions) { session in
-                WeekSessionRow(session: session, send: send)
-            }
-            if section.isSelected {
-                ListRow("Add workout", action: { send(.addWorkoutTapped(section.id)) }) { WeekRowMark(kind: .add) }
-            }
-        } header: {
-            header
-        }
-    }
-
-    private var header: some View {
-        HStack(alignment: .firstTextBaseline, spacing: Space.xs) {
-            if section.isSelected {
-                // A fill, so the bright accent, like the strip's day dots; the title beside it is text (accentText).
-                Image(systemName: "circle.fill")
-                    .imageScale(.small)
-                    .foregroundStyle(theme.palette.accent)
-                    .accessibilityHidden(true)
-            }
-            Text(verbatim: section.title)
-                .foregroundStyle(section.isSelected ? theme.palette.accentText : theme.palette.textSecondary)
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(section.isSelected ? .isSelected : [])
-    }
-}
-
-/// "Plan next week": copies the visible week's template days a week forward, with Undo in a toast.
-private struct WeekPlanNextRow: View {
-    let send: (WeekAction) -> Void
-
-    var body: some View {
-        ListSection {
-            ListRow(
-                "Plan next week",
-                subtitle: "Copy this week's template workouts to the same days",
-                action: { send(.planNextWeekTapped) }
-            ) {
-                WeekRowMark(kind: .plan)
-            }
-        }
-    }
-}
-
-/// A week with nothing planned. Without templates yet (a first launch), it points to making one, which is how days get
-/// planned; a blank workout is the other way in.
-private struct WeekEmptyState: View {
-    let hasTemplates: Bool
-    let send: (WeekAction) -> Void
-
-    var body: some View {
-        if hasTemplates {
-            EmptyState(symbol: "calendar", title: "No workouts", message: "Nothing is planned for this week.") {
-                Button("Add workout", systemImage: "plus") { send(.addWorkoutTapped(nil)) }
-                    .buttonStyle(.kobo(.primary))
-            }
-        } else {
-            EmptyState(
-                symbol: "calendar",
-                title: "No workouts yet",
-                message: "Make a template, such as Upper A, then plan days from it here."
-            ) {
-                Button("New template", systemImage: "list.bullet.rectangle") { send(.newTemplateTapped) }
-                    .buttonStyle(.kobo(.primary))
-                Button("Blank workout", systemImage: "plus") { send(.addWorkoutTapped(nil)) }
-                    .buttonStyle(.kobo(.secondary))
-            }
+        EmptyState(
+            symbol: "calendar",
+            title: "No workouts yet",
+            message: "Make a template, such as Upper A, then plan days from it here."
+        ) {
+            Button("New template", systemImage: "list.bullet.rectangle") { send(.newTemplateTapped) }
+                .buttonStyle(.kobo(.primary))
+            Button("Blank workout", systemImage: "plus") { send(.addWorkoutTapped(nil)) }
+                .buttonStyle(.kobo(.secondary))
         }
     }
 }

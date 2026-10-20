@@ -35,23 +35,22 @@ nonisolated struct WeekLayout: Sendable {
         week(offset: offset).contains(today) ? today : weekStart(offset: offset)
     }
 
-    /// The list for the week `offset`: each day with sessions, plus the selected day so the list and the strip
-    /// agree. `.empty` when the week has no sessions at all.
-    func sections(_ summaries: [SessionSummary], offset: Int, selected: LocalDay) -> Loadable<[WeekDaySection]> {
+    /// The list for the week `offset`: all seven days, each with its sessions. A day without any is a rest day.
+    func sections(_ summaries: [SessionSummary], offset: Int, selected: LocalDay) -> [WeekDaySection] {
         let week = week(offset: offset)
         let byDay = Dictionary(grouping: summaries.filter { week.contains($0.day) }, by: \.day)
-        guard !byDay.isEmpty else { return .empty }
-        var shown = Set(byDay.keys)
-        if week.contains(selected) { shown.insert(selected) }
-        let sections = shown.sorted().map { day in
-            WeekDaySection(
+        return (0..<7).map { index in
+            let day = week.lowerBound.adding(days: index)
+            return WeekDaySection(
                 id: day,
                 title: title(of: day),
+                weekday: days.weekdayTitle(of: day),
+                dayNumber: days.dayNumber(of: day),
+                isToday: day == today,
                 isSelected: day == selected,
                 sessions: byDay[day] ?? []
             )
         }
-        return .loaded(sections)
     }
 
     /// Days with sessions, marked done when every session that day is done.

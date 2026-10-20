@@ -7,7 +7,8 @@ import LiftCore
 /// The one date rule for every screen: `longTitle` ("Thursday, October 15") names a day where it is a title (a
 /// screen's kicker, a section header); `shortTitle` ("Thu, Oct 15") names it inside a row, toast or caption, where
 /// space is tight; `weekTitle` heads a week; `monthDayTitle` ("Oct 15") names a day on a chart (its axis, its "since"
-/// caption), where the weekday adds nothing. No screen formats a day any other way.
+/// caption), where the weekday adds nothing; `weekdayTitle` and `dayNumber` ("Thu" over "15") make the date badge of a
+/// Week row. No screen formats a day any other way.
 nonisolated struct DayCalendar: Sendable {
     let calendar: Calendar
 
@@ -34,6 +35,16 @@ nonisolated struct DayCalendar: Sendable {
     /// "Thu 15 Oct" in the calendar's locale.
     func shortTitle(of day: LocalDay) -> String {
         format(day, style.weekday(.abbreviated).month(.abbreviated).day())
+    }
+
+    /// "Thu" in the calendar's locale: the top line of a Week row's date badge.
+    func weekdayTitle(of day: LocalDay) -> String {
+        format(day, style.weekday(.abbreviated))
+    }
+
+    /// "15": the day of the month under `weekdayTitle` in a Week row's date badge.
+    func dayNumber(of day: LocalDay) -> String {
+        format(day, style.day())
     }
 
     /// "15 Oct" in the calendar's locale.
