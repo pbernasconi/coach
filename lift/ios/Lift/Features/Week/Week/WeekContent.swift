@@ -2,8 +2,8 @@ import KoboComponents
 import KoboTokens
 import SwiftUI
 
-/// Dumb view: the week strip pinned on top, the visible week's sessions grouped by day below, the lift sheet and the
-/// day picker (SCR-2).
+/// Dumb view: the header with Plan next week and Add workout, the week strip pinned under it, the visible week's days
+/// below, the lift sheet and the day picker (SCR-2).
 struct WeekContent: View {
     let state: WeekState
     let send: (WeekAction) -> Void
@@ -16,7 +16,7 @@ struct WeekContent: View {
                 }
             }
             .screenCanvas()
-            .tabRootHeader { AppHeader("Week") }
+            .tabRootHeader { header }
             .weekSessionOptions(target: state.optionsTarget, send: send)
             .weekTemplatePickers(state: state, send: send)
             .koboSheet(
@@ -31,5 +31,15 @@ struct WeekContent: View {
                     send: send
                 )
             }
+    }
+
+    /// Plan next week copies the visible week's template days a week forward, with Undo in a toast; it is off while the
+    /// week has none. Add workout plans the selected day.
+    private var header: some View {
+        AppHeader("Week") {
+            Button("Plan next week", systemImage: "calendar.badge.plus") { send(.planNextWeekTapped) }
+                .disabled(!state.canPlanNextWeek)
+            Button("Add workout", systemImage: "plus") { send(.addWorkoutTapped(nil)) }
+        }
     }
 }

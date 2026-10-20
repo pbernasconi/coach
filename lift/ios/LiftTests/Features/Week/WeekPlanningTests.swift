@@ -206,7 +206,11 @@ import Testing
             units: InMemoryUnitSettings(.kg)
         )
         await vm.run()
-        #expect(vm.state.sessions == .empty)
+        guard case .loaded(let days) = vm.state.sessions else {
+            Issue.record("expected a loaded week")
+            return
+        }
+        #expect(days.allSatisfy { $0.sessions.isEmpty })
         #expect(vm.state.templates.isEmpty)  // the first-run empty state points to New template
 
         await vm.send(.newTemplateTapped)?.value
