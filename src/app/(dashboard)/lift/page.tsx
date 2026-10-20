@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { StatCard } from '@/components/stat-card';
+import ResponsiveDay from '@/components/ResponsiveDay';
 import { loadLiftModel } from '@/lib/lift-dashboard/queries';
 import { exerciseList, sessionSummaries, weeklyVolume } from '@/lib/lift-dashboard/stats.mjs';
 import { formatDay, formatVolume, formatWeight } from '@/lib/lift-dashboard/format';
@@ -56,20 +57,23 @@ export default async function LiftOverviewPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Date</TableHead>
-                <TableHead>Title</TableHead>
-                <TableHead className="text-right">Sets logged</TableHead>
+                <TableHead className="hidden sm:table-cell">Title</TableHead>
+                <TableHead className="text-right">Sets<span className="hidden sm:inline"> logged</span></TableHead>
                 <TableHead className="text-right">Volume</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {sessions.slice(0, RECENT_SESSIONS).map((s) => (
                 <TableRow key={s.id}>
-                  <TableCell className="whitespace-nowrap">{formatDay(s.day)}</TableCell>
-                  <TableCell>{s.title || '-'}</TableCell>
-                  <TableCell className="text-right tabular-nums">
+                  <TableCell>
+                    <div className="whitespace-nowrap"><ResponsiveDay day={s.day} /></div>
+                    <div className="text-xs text-muted-foreground sm:hidden">{s.title || '-'}</div>
+                  </TableCell>
+                  <TableCell className="hidden sm:table-cell">{s.title || '-'}</TableCell>
+                  <TableCell className="whitespace-nowrap text-right tabular-nums">
                     {s.setsLogged} / {s.setsTotal}
                   </TableCell>
-                  <TableCell className="text-right tabular-nums">{formatVolume(s.volume, unit)}</TableCell>
+                  <TableCell className="whitespace-nowrap text-right tabular-nums">{formatVolume(s.volume, unit)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -88,8 +92,8 @@ export default async function LiftOverviewPage() {
               <TableRow>
                 <TableHead>Exercise</TableHead>
                 <TableHead className="text-right">Sessions</TableHead>
-                <TableHead>Last done</TableHead>
-                <TableHead className="text-right">Best est. 1RM</TableHead>
+                <TableHead className="hidden sm:table-cell">Last done</TableHead>
+                <TableHead className="whitespace-nowrap text-right">Best<span className="hidden sm:inline"> est.</span> 1RM</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -99,10 +103,11 @@ export default async function LiftOverviewPage() {
                     <Link href={`/lift/exercises/${encodeURIComponent(e.key)}`} className="font-medium hover:underline">
                       {e.name}
                     </Link>
+                    <div className="text-xs text-muted-foreground sm:hidden"><ResponsiveDay day={e.lastDay} /></div>
                   </TableCell>
                   <TableCell className="text-right tabular-nums">{e.sessions}</TableCell>
-                  <TableCell className="whitespace-nowrap">{formatDay(e.lastDay)}</TableCell>
-                  <TableCell className="text-right tabular-nums">{formatWeight(e.bestE1rm, unit)}</TableCell>
+                  <TableCell className="hidden whitespace-nowrap sm:table-cell">{formatDay(e.lastDay)}</TableCell>
+                  <TableCell className="whitespace-nowrap text-right tabular-nums">{formatWeight(e.bestE1rm, unit)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

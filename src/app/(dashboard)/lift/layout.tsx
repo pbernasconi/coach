@@ -18,7 +18,7 @@ export default function LiftLayout({ children }: { children: React.ReactNode }) 
             <Link
               key={link.href}
               href={link.href}
-              className="transition-colors hover:text-foreground/80 text-foreground/60"
+              className="inline-flex h-10 items-center transition-colors hover:text-foreground/80 text-foreground/60 md:h-auto"
             >
               {link.label}
             </Link>

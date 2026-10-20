@@ -12,7 +12,7 @@ const r0 = (v: number | null | undefined) => (v == null ? '-' : Math.round(v).to
 
 function Card({ title, children, note }: { title: string; children: React.ReactNode; note?: React.ReactNode }) {
   return (
-    <section className="space-y-3 rounded-lg border bg-[var(--viz-surface)] p-4">
+    <section className="space-y-3 rounded-lg border bg-[var(--viz-surface)] p-3 sm:p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-lg font-semibold text-[var(--viz-ink)]">{title}</h2>
         {note && <span className="text-xs text-[var(--viz-muted)]">{note}</span>}
@@ -88,7 +88,7 @@ export default function DayDetail({ d }: { d: DayView }) {
           </ul>
         )}
         <Hypnogram stages={stages} from={sleepFrom} to={sleepTo} />
-        <div className="grid gap-3 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
           <TimeChart title="Heart rate in sleep" points={s?.hr ?? []} from={sleepFrom} to={sleepTo} unit="bpm" color="var(--viz-down)" empty="No sleep heart rate." height={120} />
           <TimeChart title="Stress in sleep" points={s?.stress ?? []} from={sleepFrom} to={sleepTo} unit="stress" kind="bars" yMin={0} yMax={100} color="var(--color-amber-500)" empty="No sleep stress." height={120} />
           <TimeChart
@@ -152,7 +152,7 @@ export default function DayDetail({ d }: { d: DayView }) {
       </Card>
 
       <Card title="All day">
-        <div className="grid gap-3 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           <TimeChart
             title="Heart rate"
             subtitle={d.heartRate?.resting != null ? `Resting ${d.heartRate.resting} bpm${d.heartRate.max != null ? ` · max ${d.heartRate.max}` : ''}` : undefined}

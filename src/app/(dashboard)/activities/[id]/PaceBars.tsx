@@ -118,7 +118,7 @@ export default function PaceBars({ splits, laps, series, layout, color }: { spli
           }}
           onBlur={() => setHover(null)}
           onPointerLeave={() => setHover(null)}
-          className="outline-none focus-visible:ring-2 focus-visible:ring-[var(--viz-ctl)]"
+          className="max-w-full outline-none focus-visible:ring-2 focus-visible:ring-[var(--viz-ctl)]"
         >
           {ticks.map((t) => (
             <g key={t}>

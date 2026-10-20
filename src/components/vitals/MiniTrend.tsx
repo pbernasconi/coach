@@ -8,7 +8,7 @@ import { useMeasure } from '@/components/charts/useMeasure';
  * of a high value stay visible). The latest point is in the accent. Hover reads a point; the tile has the values.
  */
 export default function MiniTrend({ points, display, height = 34, accent = 'var(--viz-ctl)' }: { points: { date: string; value: number }[]; display: string[]; height?: number; accent?: string }) {
-  const [ref, width] = useMeasure<HTMLDivElement>(160);
+  const [ref, width] = useMeasure<HTMLDivElement>(160, 60);
   const [hover, setHover] = useState<number | null>(null);
   if (points.length < 2) return <div className="mt-2 text-[10px] text-[var(--viz-muted)]">{points.length ? 'One reading so far' : 'No trend yet'}</div>;
   const pad = 4;
@@ -25,6 +25,7 @@ export default function MiniTrend({ points, display, height = 34, accent = 'var(
   return (
     <div ref={ref} className="mt-2">
       <svg
+        className="max-w-full"
         width={width}
         height={height}
         aria-hidden

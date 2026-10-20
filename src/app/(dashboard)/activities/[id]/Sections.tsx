@@ -70,13 +70,13 @@ function ZoneBars({ zones, unit, kind }: { zones: Zone[]; unit: string; kind: 'h
   const max = Math.max(...zones.map((z) => z.seconds), 1);
   return (
     <div className="overflow-x-auto rounded-lg border bg-[var(--viz-surface)]">
-      <table className="w-full min-w-[420px] text-sm">
+      <table className="w-full text-sm sm:min-w-[420px]">
         <caption className="sr-only">Time in {kind === 'hr' ? 'heart-rate' : 'power'} zones</caption>
         <thead className="text-xs text-[var(--viz-muted)]">
           <tr>
             <th className="px-3 py-2 text-left font-medium">Zone</th>
             <th className="px-2 py-2 text-left font-medium">Range</th>
-            <th className="w-1/2 px-2 py-2 text-left font-medium"><span className="sr-only">Share</span></th>
+            <th className="hidden w-1/2 px-2 py-2 text-left font-medium sm:table-cell"><span className="sr-only">Share</span></th>
             <th className={th}>Time</th>
             <th className={`${th} pr-3`}>%</th>
           </tr>
@@ -84,9 +84,13 @@ function ZoneBars({ zones, unit, kind }: { zones: Zone[]; unit: string; kind: 'h
         <tbody>
           {[...zones].reverse().map((z) => (
             <tr key={z.zone} className="border-t">
-              <td className="px-3 py-1.5 whitespace-nowrap"><b className="tabular-nums">Z{z.zone}</b> <span className="text-[var(--viz-ink-2)]">{z.name}</span></td>
+              <td className="px-3 py-1.5 whitespace-nowrap">
+                <b className="tabular-nums">Z{z.zone}</b> <span className="text-[var(--viz-ink-2)]">{z.name}</span>
+                {/* On a phone the share bar sits under the zone name; its own column is hidden. */}
+                <div aria-hidden className="mt-1 h-1.5 rounded-r-[3px] sm:hidden" style={{ width: `${Math.max(z.seconds ? 2 : 0, (z.seconds / max) * 100)}%`, background: `var(--viz-z${Math.min(7, z.zone)})` }} />
+              </td>
               <td className="px-2 py-1.5 whitespace-nowrap tabular-nums text-[var(--viz-ink-2)]">{zoneRange(z.min, z.max, unit)}</td>
-              <td className="px-2 py-1.5">
+              <td className="hidden px-2 py-1.5 sm:table-cell">
                 <div className="h-3 rounded-r-[4px]" style={{ width: `${Math.max(z.seconds ? 1 : 0, (z.seconds / max) * 100)}%`, background: `var(--viz-z${Math.min(7, z.zone)})` }} />
               </td>
               <td className={td}>{z.seconds ? duration(z.seconds) : '–'}</td>

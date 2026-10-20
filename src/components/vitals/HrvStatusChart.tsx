@@ -99,7 +99,7 @@ export default function HrvStatusChart({ nights, from, to }: { nights: HrvNight[
               e.preventDefault();
               setHover((i) => Math.min(pts.length - 1, Math.max(0, (i ?? pts.length - 1) + (e.key === 'ArrowLeft' ? -1 : 1))));
             }}
-            className="cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[var(--viz-ctl)]"
+            className="max-w-full cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[var(--viz-ctl)]"
           >
             {bandPath && <path d={bandPath} fill="var(--viz-band)" />}
             {ticks.map((v) => (

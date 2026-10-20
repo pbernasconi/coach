@@ -16,7 +16,7 @@ export default function Sparkline({
   accent?: string;
   height?: number;
 }) {
-  const [ref, width] = useMeasure<HTMLDivElement>(160);
+  const [ref, width] = useMeasure<HTMLDivElement>(160, 60);
   const [hover, setHover] = useState<number | null>(null);
   if (values.length < 2) return null;
   const pad = 5;
@@ -29,6 +29,7 @@ export default function Sparkline({
   return (
     <div ref={ref} className="relative mt-2">
       <svg
+        className="max-w-full"
         width={width}
         height={height}
         aria-hidden
