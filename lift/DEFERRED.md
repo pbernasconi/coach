@@ -30,7 +30,8 @@ already done around it. The build keeps going around these; nothing here blocks 
   - Signing certificate (done 2026-10-20): environment secrets `LIFT_CERT_P12` (base64 `.p12`) and
     `LIFT_CERT_PASSWORD`, and the variable `LIFT_CERT_ID` (`4LULT6RP3J`, an Apple Development certificate made through
     the API, valid until 2027-10-20). CI imports it so that automatic signing does not make a new certificate on each
-    runner. Before it expires, make a new one and replace the three values.
+    runner. Before it expires, make a new one and replace the three values. `LIFT_CERT_ID` also lists, after a comma,
+    `S7S7J3Y7N8`: the certificate on Paolo's Mac for installs by cable (`xcrun devicectl device install app`).
   Every push to `main` that touches the app then archives with automatic signing and uploads a build numbered by
   the CI run. Optional variable `LIFT_SYNC_BASE_URL` (https origin of the coach web app) turns sync on in
   those builds.
