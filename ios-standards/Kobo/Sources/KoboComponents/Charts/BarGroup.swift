@@ -27,10 +27,10 @@ public struct BarGroup<X: KoboChartX>: Identifiable, Hashable, Sendable {
 
     public var id: X { x }
 
-    /// - Parameter values: category id to value; missing categories count as zero.
+    /// - Parameter values: category id to value; missing, negative and non-finite values count as zero.
     public init(x: X, values: [String: Double], isPartial: Bool = false, isMarked: Bool = false) {
         self.x = x
-        self.values = values
+        self.values = values.filter { $0.value.isFinite && $0.value > 0 }
         self.isPartial = isPartial
         self.isMarked = isMarked
     }

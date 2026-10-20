@@ -74,18 +74,40 @@ test('the phone moving a session moves its plan workout; a removed session or a 
   const { planFollowMoves, pushedSessions } = await import('./follow-plan.mjs');
   const A = ID.toLowerCase();
   const B = 'b0000000-0000-4000-8000-000000000001';
+  const moved = '2026-10-20T12:00:00.000Z';
   const sessions = pushedSessions([
-    { entity: 'session', id: ID, payload: { day: '2026-10-21' }, deletedAt: null },
-    { entity: 'session', id: ID, payload: { day: '2026-10-22' }, deletedAt: null }, // the last change wins
+    { entity: 'session', id: ID, payload: { day: '2026-10-21', dayMovedAt: moved }, deletedAt: null },
+    { entity: 'session', id: ID, payload: { day: '2026-10-22', dayMovedAt: moved }, deletedAt: null }, // the last change wins
     { entity: 'set', id: B, payload: { day: '2026-10-25' }, deletedAt: null },
-    { entity: 'session', id: B, payload: { day: '2026-10-24' }, deletedAt: new Date() },
+    { entity: 'session', id: B, payload: { day: '2026-10-24', dayMovedAt: moved }, deletedAt: new Date() },
   ]);
   assert.deepEqual([...sessions.keys()], [A, B]);
-  const w = (id, liftSessionId, date, status = 'planned') => ({ id, liftSessionId, date, status });
+  const w = (id, liftSessionId, date, status = 'planned', changedAt = new Date('2026-10-19T08:00:00Z')) => ({ id, liftSessionId, date, status, changedAt });
   assert.deepEqual(planFollowMoves(sessions, [w('w1', ID, '2026-10-20')]), [{ id: 'w1', sessionId: A, from: '2026-10-20', to: '2026-10-22' }]);
   assert.deepEqual(planFollowMoves(sessions, [w('w1', A, '2026-10-22')]), [], 'already on the day');
   assert.deepEqual(planFollowMoves(sessions, [w('w1', A, '2026-10-20', 'skipped')]), [], 'a skipped workout stays');
   assert.deepEqual(planFollowMoves(sessions, [w('w2', B, '2026-10-20')]), [], 'a removed session leaves its workout');
-  const odd = pushedSessions([{ entity: 'session', id: A, payload: { day: '2026-10-22T00:00' }, deletedAt: null }]);
+  const odd = pushedSessions([{ entity: 'session', id: A, payload: { day: '2026-10-22T00:00', dayMovedAt: moved }, deletedAt: null }]);
   assert.deepEqual(planFollowMoves(odd, [w('w1', A, '2026-10-20')]), [], 'a malformed day moves nothing');
+});
+
+test('the gate: only a phone move (dayMovedAt) newer than the last server change moves the workout', async () => {
+  const { planFollowMoves, pushedSessions } = await import('./follow-plan.mjs');
+  const push = (dayMovedAt) => pushedSessions([{ entity: 'session', id: ID, payload: { day: '2026-10-22', ...(dayMovedAt === undefined ? {} : { dayMovedAt }) }, deletedAt: null }]);
+  const changed = new Date('2026-10-20T12:00:00.000Z');
+  const w = (changedAt) => [{ id: 'w1', liftSessionId: ID, date: '2026-10-20', status: 'planned', changedAt }];
+  assert.deepEqual(planFollowMoves(push(undefined), w(changed)), [], 'no key (builds before v8): no follow');
+  assert.deepEqual(planFollowMoves(push(null), w(changed)), [], 'null: no follow');
+  assert.deepEqual(planFollowMoves(push('2026-10-20T11:59:59.999Z'), w(changed)), [], 'older than the web move: no follow');
+  assert.deepEqual(planFollowMoves(push('2026-10-20T12:00:00.000Z'), w(changed)), [], 'as old: no follow');
+  assert.equal(planFollowMoves(push('2026-10-20T12:00:00.001Z'), w(changed)).length, 1, 'newer: follows');
+  assert.equal(planFollowMoves(push('2026-10-20 12:00:01.000'), w(changed)).length, 1, 'GRDB text reads as UTC');
+  assert.equal(planFollowMoves(push('2026-10-20T12:00:00.001Z'), w(null)).length, 1, 'a workout never changed on the server');
+});
+
+test('a web move keeps the stored dayMovedAt, so it never looks like a phone move', () => {
+  const r = liftFollowChange(row(session({ dayMovedAt: '2026-10-18T09:00:00.000Z' })), { day: '2026-10-22' }, opts);
+  assert.equal(r.change.payload.dayMovedAt, '2026-10-18T09:00:00.000Z');
+  const none = liftFollowChange(row(), { day: '2026-10-22' }, opts);
+  assert.equal('dayMovedAt' in none.change.payload, false, 'not added when the row has none');
 });

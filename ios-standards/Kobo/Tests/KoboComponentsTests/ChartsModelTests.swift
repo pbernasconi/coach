@@ -39,6 +39,25 @@ import Testing
         #expect(group.total == 14)
     }
 
+    @Test func barGroupDropsNonFiniteValues() {
+        let group = BarGroup(x: 1, values: ["a": .nan, "b": 2, "c": .infinity])
+        #expect(group.segments([BarCategory(id: "a", name: "A"), BarCategory(id: "b", name: "B")]).count == 1)
+        #expect(group.total == 2)
+    }
+
+    @Test func seriesPointCoveringSkipsXOutsideItsSpan() {
+        let series = ChartSeries(id: "a", name: "A", points: [5.0, 10].map { ChartPoint(x: $0, y: $0) })
+        #expect(series.point(covering: 2) == nil)
+        #expect(series.point(covering: 9)?.x == 10)
+        #expect(series.point(covering: 11) == nil)
+    }
+
+    @Test func longSeriesAreThinnedForDrawing() {
+        let series = ChartSeries(id: "a", name: "A", points: (0..<5_000).map { ChartPoint(x: Double($0), y: 1) })
+        #expect(series.plotted.count == ChartSeries<Double>.maxPlotted)
+        #expect(series.plotted.last?.x == 4_999)
+    }
+
     @Test func chartColorsCycleAndAcceptAnyIndex() {
         let palette = Theme.system.palette
         #expect(palette.chartColor(0) == palette.accent)

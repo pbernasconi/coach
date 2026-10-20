@@ -68,6 +68,28 @@ import Testing
         #expect(week[4].isEmpty)  // the plan's day wins over the session's own day
     }
 
+    @Test func aSessionMovedOnThisPhoneAfterTheFetchShowsOnItsNewDay() async throws {
+        let link = CoachPlanSamples.item(
+            "lift",
+            on: monday.adding(days: 2),
+            sport: "strength",
+            session: lowerCaseID(friday)
+        )
+        let fetched = try #require(CoachPlanDates.date(fromISO: "2026-03-02T13:05:00Z"))
+        var moved = friday
+        moved.session.dayMovedAt = fetched.addingTimeInterval(60)  // after the plan was fetched: the move wins
+        var older = friday
+        older.session.dayMovedAt = fetched.addingTimeInterval(-60)  // before: the server already had it
+
+        let (afterFetch, _) = await loaded([moved], plan: [try snapshot([(monday.adding(days: 2), link)])])
+        #expect(entries(afterFetch)[2].isEmpty)
+        #expect(entries(afterFetch)[4] == [.session(SessionSummary(detail: moved))])
+
+        let (beforeFetch, _) = await loaded([older], plan: [try snapshot([(monday.adding(days: 2), link)])])
+        #expect(entries(beforeFetch)[2] == [.session(SessionSummary(detail: older))])
+        #expect(entries(beforeFetch)[4].isEmpty)
+    }
+
     @Test func aLinkMatchesTheSessionIdInAnyCase() async throws {
         let upper = CoachPlanSamples.item("lift", on: monday, sport: "strength", session: friday.id.uuidString)
         let lower = CoachPlanSamples.item("lift2", on: monday, sport: "strength", session: lowerCaseID(friday))

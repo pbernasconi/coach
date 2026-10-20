@@ -4,7 +4,7 @@ import KoboTokens
 import SwiftUI
 
 /// One bar of a `VariableWidthBarChart`: how wide it is (a distance, a duration), its value (its height) and an
-/// optional label for the callout ("4:55 /km").
+/// optional label for the callout ("4 min 55 s").
 public struct WidthBar: Identifiable, Hashable, Sendable {
     public let id: String
     public let width: Double
@@ -24,7 +24,7 @@ public struct WidthBar: Identifiable, Hashable, Sendable {
 /// bars still grow from the bottom, and a lower value makes a taller bar. Touching a bar shows its label.
 ///
 ///     VariableWidthBarChart(
-///         bars: splits.map { WidthBar(id: $0.id, width: $0.km, value: $0.minutesPerKm, label: $0.text) },
+///         bars: legs.map { WidthBar(id: $0.id, width: $0.distance, value: $0.minutes, label: $0.text) },
 ///         yDirection: .down,
 ///         xText: { "\(Int($0)) km" },
 ///         accessibilityLabel: "Splits"
@@ -40,7 +40,7 @@ public struct VariableWidthBarChart: View {
     private let height: ChartHeight
     private let xText: (Double) -> String
     private let yText: (Double) -> String
-    private let label: Text
+    private var label: Text
 
     /// - Parameters:
     ///   - xText: text for the running total of widths along the axis.
@@ -55,7 +55,7 @@ public struct VariableWidthBarChart: View {
         yText: @escaping (Double) -> String = ChartFormat.number,
         accessibilityLabel: LocalizedStringKey
     ) {
-        self.bars = bars.filter(\.value.isFinite)
+        self.bars = bars.filter { $0.value.isFinite && $0.width.isFinite && $0.width > 0 }
         self.reference = reference
         self.yDirection = yDirection
         self.color = color
@@ -63,6 +63,30 @@ public struct VariableWidthBarChart: View {
         self.xText = xText
         self.yText = yText
         self.label = Text(accessibilityLabel)
+    }
+
+    /// A chart whose accessibility label is shown as is (it names user data).
+    public init(
+        bars: [WidthBar],
+        reference: ChartReference? = nil,
+        yDirection: ChartYDirection = .up,
+        color: Color? = nil,
+        height: ChartHeight = .regular,
+        xText: @escaping (Double) -> String = ChartFormat.number,
+        yText: @escaping (Double) -> String = ChartFormat.number,
+        verbatimAccessibilityLabel: String
+    ) {
+        self.init(
+            bars: bars,
+            reference: reference,
+            yDirection: yDirection,
+            color: color,
+            height: height,
+            xText: xText,
+            yText: yText,
+            accessibilityLabel: ""
+        )
+        self.label = Text(verbatim: verbatimAccessibilityLabel)
     }
 
     public var body: some View {

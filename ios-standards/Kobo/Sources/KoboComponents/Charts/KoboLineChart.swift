@@ -107,7 +107,7 @@ public struct KoboLineChart<X: KoboChartX>: View {
             markerMarks
             selectionMarks
         }
-        .chartXScale(domain: xDomain, type: isLogarithmic ? .log : nil)
+        .modifier(ChartXScale(domain: xDomain, isLogarithmic: isLogarithmic))
         .chartYScale(domain: yScaleDomain)
         .chartForegroundStyleScale(domain: series.map(\.name), range: series.indices.map(color(at:)))
         .chartLegend(series.count > 1 ? .visible : .hidden)

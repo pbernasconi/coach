@@ -122,23 +122,53 @@ const planned = async (id: string) =>
     [id]
   )).rows[0] as { day: string; week: string; edited_at: Date | null; status: string };
 
-test('the phone moving a session moves its plan workout, into the next week too; a stale push moves nothing', async () => {
+test('the phone moving a session (dayMovedAt) moves its plan workout, into the next week too; a stale push moves nothing', async () => {
   const s = await session(SESSION);
-  const moves = await phonePush({ ...s.payload, day: '2030-03-12', updatedAt: new Date(s.updated_at.getTime() + 60_000).toISOString() });
+  // dayMovedAt is the phone's clock at the move (now); updatedAt only has to beat the stored row.
+  const now = s.updated_at.getTime() + 60_000;
+  const moves = await phonePush({ ...s.payload, day: '2030-03-12', dayMovedAt: new Date().toISOString(), updatedAt: new Date(now).toISOString() });
   assert.equal(moves.length, 1);
   const w = await planned(activity);
   assert.deepEqual([w.day, w.week], ['2030-03-12', '2030-03-11']);
   assert.ok(w.edited_at, 'marked edited, so a re-import keeps it');
 
-  const stale = await phonePush({ ...s.payload, day: '2030-03-05', updatedAt: s.updated_at.toISOString() });
-  assert.deepEqual(stale, []);
+  const stale = await phonePush({ ...s.payload, day: '2030-03-05', dayMovedAt: new Date(Date.now() + 1000).toISOString(), updatedAt: new Date(now).toISOString() });
+  assert.deepEqual(stale, [], 'not applied (same updatedAt), so no follow');
   assert.equal((await planned(activity)).day, '2030-03-12');
+});
+
+test('a session push without dayMovedAt (an older build, or another edit) never moves the plan', async () => {
+  const s = await session(SESSION);
+  const at = new Date(s.updated_at.getTime() + 60_000).toISOString();
+  const noKey = { ...s.payload };
+  delete noKey.dayMovedAt;
+  assert.deepEqual(await phonePush({ ...noKey, day: '2030-03-14', updatedAt: at }), []);
+  assert.equal((await planned(activity)).day, '2030-03-12');
+  // Put the session back on the plan's day for the next tests.
+  await phonePush({ ...s.payload, day: '2030-03-12', updatedAt: new Date(s.updated_at.getTime() + 120_000).toISOString() });
+});
+
+test('race: a web move, then an offline phone edit with the old day and an older dayMovedAt, leaves the plan moved', async () => {
+  const before = await session(SESSION);
+  const oldDay = String(before.payload.day);
+  const phoneMovedAt = before.payload.dayMovedAt as string; // the phone's last own move, before the web move
+  await new Promise((r) => setTimeout(r, 5));
+  await moveWorkout(USER, activity, '2030-03-15');
+  const afterWeb = await session(SESSION);
+  assert.equal(afterWeb.payload.day, '2030-03-15', 'the web move reached Lift');
+  assert.equal(afterWeb.payload.dayMovedAt, phoneMovedAt, 'the web move keeps the stored dayMovedAt');
+
+  // The phone, offline, wrote a note on the session before it pulled: old day, its own old dayMovedAt, newer updatedAt.
+  const at = new Date(afterWeb.updated_at.getTime() + 60_000).toISOString();
+  assert.deepEqual(await phonePush({ ...before.payload, note: 'felt good', day: oldDay, dayMovedAt: phoneMovedAt, updatedAt: at }), []);
+  assert.equal((await planned(activity)).day, '2030-03-15', 'the plan keeps the web move');
+  assert.equal((await session(SESSION)).payload.day, oldDay, 'last writer wins in Lift; lift-plan.mjs puts it right');
 });
 
 test('the phone removing a session leaves the plan workout as it is', async () => {
   const s = await session(SESSION);
   const at = new Date(s.updated_at.getTime() + 60_000).toISOString();
-  assert.deepEqual(await phonePush({ ...s.payload, day: '2030-03-13', updatedAt: at, deletedAt: at }), []);
+  assert.deepEqual(await phonePush({ ...s.payload, day: '2030-03-13', dayMovedAt: at, updatedAt: at, deletedAt: at }), []);
   const w = await planned(activity);
-  assert.deepEqual([w.day, w.status], ['2030-03-12', 'planned']);
+  assert.deepEqual([w.day, w.status], ['2030-03-15', 'planned']);
 });

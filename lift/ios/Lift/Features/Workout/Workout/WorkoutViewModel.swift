@@ -150,11 +150,10 @@ final class WorkoutViewModel {
 
     /// One tap logs a planned set; a logged or skipped set goes back to planned.
     private func toggleLog(_ id: UUID) -> Task<Void, Never>? {
-        guard case (let item, let set)? = detail?.find(setID: id), !inFlight.contains(id) else { return nil }
+        guard let detail, case (_, let set)? = detail.find(setID: id), !inFlight.contains(id) else { return nil }
         inFlight.insert(id)
         let isPlanned = set.status == .planned
-        let rest = item.exercise.restSeconds ?? RestTimer.defaultSeconds
-        let restSeconds = detail?.hasPlannedSet(besides: id) == true ? rest : 0  // none after the last planned set
+        let restSeconds = detail.restSeconds(afterLogging: id)
         let activity = isPlanned ? state.restActivity(afterLogging: id) : nil
         return Task {
             defer { inFlight.remove(id) }
@@ -188,13 +187,9 @@ final class WorkoutViewModel {
     private func remove(_ id: UUID) -> Task<Void, Never>? {
         guard detail?.find(setID: id) != nil else { return nil }
         if state.editor?.id == id { state.editor = nil }
-        return Task {
-            do {
-                try await sets.remove(setID: id)
-                showToast(.removed(setID: id))
-            } catch {
-                showToast(.failed)
-            }
+        return write { sets in
+            try await sets.remove(setID: id)
+            self.showToast(.removed(setID: id))
         }
     }
 

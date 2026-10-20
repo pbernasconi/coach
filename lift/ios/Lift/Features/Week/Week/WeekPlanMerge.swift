@@ -6,6 +6,8 @@ import LiftSync
 /// Lift session (`liftSessionId`), and the server decides every state.
 ///
 /// - An item that names a local session shows that session, on the item's day (the plan's day wins).
+/// - Except after this phone moved the session later than the item's plan was fetched: the session shows on its own
+///   day and the item is left out, until a fetch after the server followed the move (WEEK-API.md, `dayMovedAt`).
 /// - A local session that no kept item names shows on its own day, after the day's items.
 /// - Without a plan (sync off), every day is its sessions, as before the plan existed.
 nonisolated struct WeekPlanMerge: Sendable {
@@ -16,8 +18,8 @@ nonisolated struct WeekPlanMerge: Sendable {
     private let dayTitle: @Sendable (LocalDay) -> String
 
     init(summaries: [SessionSummary], book: CoachPlanBook?, dayTitle: @escaping @Sendable (LocalDay) -> String) {
-        let items = (book?.weeks.values).map { weeks in weeks.flatMap(\.days).flatMap(\.items) } ?? []
         let byID = Dictionary(summaries.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let items = Self.items(book, sessions: byID)
         let linked = Set(
             items.compactMap(\.liftSessionId).compactMap(UUID.init(uuidString:)).filter { byID[$0] != nil }
         )
@@ -25,6 +27,20 @@ nonisolated struct WeekPlanMerge: Sendable {
         sessionsByID = byID
         unlinkedByDay = Dictionary(grouping: summaries.filter { !linked.contains($0.id) }, by: \.day)
         self.dayTitle = dayTitle
+    }
+
+    /// The kept items, without those whose session this phone moved after the item's plan was fetched.
+    private static func items(_ book: CoachPlanBook?, sessions: [UUID: SessionSummary]) -> [CoachItem] {
+        guard let book else { return [] }
+        return book.weeks.flatMap { start, week in
+            let fetched = book.updatedAt(of: start) ?? .distantPast
+            return week.days.flatMap(\.items).filter { item in
+                guard let id = item.liftSessionId.flatMap(UUID.init(uuidString:)), let session = sessions[id],
+                    let moved = session.dayMovedAt
+                else { return true }
+                return session.day == item.date || moved <= fetched
+            }
+        }
     }
 
     /// The day's rows: its plan items in the server's order, each linked one as its session, then its other sessions.

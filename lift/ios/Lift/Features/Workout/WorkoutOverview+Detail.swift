@@ -105,9 +105,12 @@ extension WorkoutExercise {
 }
 
 extension SessionDetail {
-    /// True when a planned set other than `setID` is left in the session, so logging `setID` is not the last one.
-    func hasPlannedSet(besides setID: UUID) -> Bool {
-        items.contains { item in item.sets.contains { $0.status == .planned && $0.id != setID } }
+    /// The rest after logging `setID`: its exercise's rest (or the default), or 0 when no other planned set is left in
+    /// the session, since the workout is done.
+    func restSeconds(afterLogging setID: UUID) -> Int {
+        let isLast = !items.contains { item in item.sets.contains { $0.status == .planned && $0.id != setID } }
+        guard !isLast, case (let item, _)? = find(setID: setID) else { return 0 }
+        return item.exercise.restSeconds ?? RestTimer.defaultSeconds
     }
 
     /// The set with `setID` and the exercise it belongs to, or nil when the session has no such set.

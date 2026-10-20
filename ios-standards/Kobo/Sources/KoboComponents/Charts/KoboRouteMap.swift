@@ -25,7 +25,7 @@ public struct KoboRouteMap: View {
     private let interaction: Interaction
     private let height: ChartHeight
     private let color: Color?
-    private let label: Text
+    private var label: Text
     private let onExpand: (() -> Void)?
 
     /// - Parameters:
@@ -65,6 +65,26 @@ public struct KoboRouteMap: View {
             accessibilityLabel: accessibilityLabel,
             onExpand: onExpand
         )
+    }
+
+    /// A route whose accessibility label is shown as is (it names user data: "Route of River loop").
+    public init(
+        coordinates: [CLLocationCoordinate2D],
+        interaction: Interaction = .fixed,
+        height: ChartHeight = .regular,
+        color: Color? = nil,
+        verbatimAccessibilityLabel: String,
+        onExpand: (() -> Void)? = nil
+    ) {
+        self.init(
+            coordinates: coordinates,
+            interaction: interaction,
+            height: height,
+            color: color,
+            accessibilityLabel: "",
+            onExpand: onExpand
+        )
+        self.label = Text(verbatim: verbatimAccessibilityLabel)
     }
 
     public var body: some View {

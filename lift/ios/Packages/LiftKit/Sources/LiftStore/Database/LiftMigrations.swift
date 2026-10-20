@@ -10,9 +10,13 @@ enum LiftMigrations {
     static let v5HealthWorkout = "v5_healthWorkout"
     static let v6TemplateNote = "v6_templateNote"
     static let v7SetRPE = "v7_setRPE"
+    static let v8SessionDayMovedAt = "v8_sessionDayMovedAt"
 
     /// Identifiers in the order they run.
-    static let all = [v1Initial, v2SyncState, v3CatalogID, v4Templates, v5HealthWorkout, v6TemplateNote, v7SetRPE]
+    static let all = [
+        v1Initial, v2SyncState, v3CatalogID, v4Templates, v5HealthWorkout, v6TemplateNote, v7SetRPE,
+        v8SessionDayMovedAt,
+    ]
 
     static var migrator: DatabaseMigrator {
         var migrator = DatabaseMigrator()
@@ -23,6 +27,7 @@ enum LiftMigrations {
         migrator.registerMigration(v5HealthWorkout, migrate: SchemaV5.create)
         migrator.registerMigration(v6TemplateNote, migrate: SchemaV6.create)
         migrator.registerMigration(v7SetRPE, migrate: SchemaV7.create)
+        migrator.registerMigration(v8SessionDayMovedAt, migrate: SchemaV8.create)
         return migrator
     }
 }

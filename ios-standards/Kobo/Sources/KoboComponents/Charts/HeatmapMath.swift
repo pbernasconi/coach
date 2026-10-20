@@ -36,7 +36,9 @@ nonisolated enum HeatmapMath {
         guard weeks > 0, let lastWeek = calendar.dateInterval(of: .weekOfYear, for: end)?.start else { return [] }
         let endDay = calendar.startOfDay(for: end)
         var totals: [Date: Double] = [:]
-        for day in days { totals[calendar.startOfDay(for: day.date), default: 0] += day.value }
+        for day in days where day.value.isFinite {
+            totals[calendar.startOfDay(for: day.date), default: 0] += day.value
+        }
         let dates: [[Date]] = (0..<weeks).map { column in
             let weekStart = calendar.date(byAdding: .weekOfYear, value: column - (weeks - 1), to: lastWeek) ?? lastWeek
             return (0..<7).map { calendar.date(byAdding: .day, value: $0, to: weekStart) ?? weekStart }
@@ -54,7 +56,7 @@ nonisolated enum HeatmapMath {
 
     /// The shade of `value` on a scale of `levels` steps up to `max`: 0 for nothing, else 1...levels.
     static func level(_ value: Double, max top: Double, levels: Int) -> Int {
-        guard value > 0, top > 0, levels > 0 else { return 0 }
+        guard value > 0, top > 0, value.isFinite, top.isFinite, levels > 0 else { return 0 }
         return Swift.min(Swift.max(Int((value / top * Double(levels)).rounded(.up)), 1), levels)
     }
 

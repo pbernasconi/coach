@@ -75,3 +75,18 @@ struct LineChartDescriptor<X: KoboChartX>: AXChartDescriptorRepresentable {
         return AXChartDescriptor(title: nil, summary: chart.summary, xAxis: xAxis, yAxis: yAxis, series: series)
     }
 }
+
+/// The x scale of a line chart: the data's range, or the chart's own choice when the range has no width (one point),
+/// so a single value never gets an empty domain.
+struct ChartXScale<X: KoboChartX>: ViewModifier {
+    let domain: ClosedRange<X>
+    let isLogarithmic: Bool
+
+    func body(content: Content) -> some View {
+        if domain.lowerBound < domain.upperBound {
+            content.chartXScale(domain: domain, type: isLogarithmic ? .log : nil)
+        } else {
+            content.chartXScale(type: isLogarithmic ? .log : nil)
+        }
+    }
+}

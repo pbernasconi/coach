@@ -57,7 +57,8 @@ public struct CoachPlanBook: Equatable, Sendable {
         for plan in plans { add(plan) }
     }
 
-    /// Adds a response's weeks; a week already held from a newer response stays.
+    /// Adds a response's weeks; a week already held from a newer response stays. An item that a newer response has
+    /// in another week (the plan moved it) leaves the older week, so it never shows twice.
     public mutating func add(_ plan: CoachPlan) {
         let made = plan.generatedDate ?? .distantPast
         for week in plan.weeks where (madeAt[week.start] ?? .distantPast) <= made {
@@ -65,6 +66,33 @@ public struct CoachPlanBook: Equatable, Sendable {
             madeAt[week.start] = made
         }
         if let date = plan.generatedDate, date > (updatedAt ?? .distantPast) { updatedAt = date }
+        dropMovedItems()
+    }
+
+    /// When the response that holds the week of `start` was made; nil when the week is not held or the time is
+    /// unknown. A week from an older response is as old as that response, not as the newest one.
+    public func updatedAt(of start: LocalDay) -> Date? {
+        madeAt[start].flatMap { $0 == .distantPast ? nil : $0 }
+    }
+
+    /// Removes each item from every week but the one from the newest response that has it.
+    private mutating func dropMovedItems() {
+        var newest: [String: Date] = [:]
+        for (start, week) in weeks {
+            let made = madeAt[start] ?? .distantPast
+            for item in week.days.flatMap(\.items) where made > (newest[item.id] ?? .distantPast) {
+                newest[item.id] = made
+            }
+        }
+        for (start, week) in weeks {
+            let made = madeAt[start] ?? .distantPast
+            guard week.days.contains(where: { $0.items.contains { (newest[$0.id] ?? made) > made } }) else { continue }
+            var kept = week
+            for index in kept.days.indices {
+                kept.days[index].items.removeAll { (newest[$0.id] ?? made) > made }
+            }
+            weeks[start] = kept
+        }
     }
 
     /// Whether every week of `starts` is held.

@@ -15,15 +15,21 @@ nonisolated public struct HistogramBin: Identifiable, Equatable, Hashable, Senda
     }
 
     /// Values grouped into bins of `width`, aligned to multiples of `width` (so 0–5, 5–10…), with every empty bin
-    /// between the first and the last kept so gaps show. Non-finite values are skipped; a width of zero or less gives
-    /// no bins.
+    /// between the first and the last kept so gaps show. Non-finite values are skipped; a width of zero or less, or a
+    /// spread that would need more than `maxBins` bins, gives no bins.
     ///
     ///     HistogramBin.bins([3, 4, 12], width: 5)   // [0–5: 2, 5–10: 0, 10–15: 1]
-    public static func bins(_ values: [Double], width: Double) -> [HistogramBin] {
+    public static func bins(_ values: [Double], width: Double, maxBins: Int = 1_000) -> [HistogramBin] {
         let finite = values.filter(\.isFinite)
-        guard width > 0, let low = finite.min(), let high = finite.max() else { return [] }
-        let first = Int((low / width).rounded(.down))
-        let last = Int((high / width).rounded(.down))
+        guard width > 0, width.isFinite, let low = finite.min(), let high = finite.max() else { return [] }
+        let lowIndex = (low / width).rounded(.down)
+        let highIndex = (high / width).rounded(.down)
+        // Checked in floating point first, so a huge spread never reaches Int(_:) or a huge allocation.
+        guard lowIndex.isFinite, highIndex.isFinite, highIndex - lowIndex < Double(maxBins),
+            abs(lowIndex) < 1e15, abs(highIndex) < 1e15
+        else { return [] }
+        let first = Int(lowIndex)
+        let last = Int(highIndex)
         var counts = [Int](repeating: 0, count: last - first + 1)
         for value in finite {
             counts[Int((value / width).rounded(.down)) - first] += 1

@@ -16,7 +16,7 @@ public struct KoboHeatmap: View {
     private let end: Date
     private let levels: Int
     private let calendar: Calendar
-    private let label: Text
+    private var label: Text
 
     /// - Parameters:
     ///   - weeks: how many week columns to show, ending with the week that holds `end`.
@@ -37,6 +37,19 @@ public struct KoboHeatmap: View {
         self.levels = max(levels, 1)
         self.calendar = calendar
         self.label = Text(accessibilityLabel)
+    }
+
+    /// A heatmap whose accessibility label is shown as is (it names user data).
+    public init(
+        days: [HeatmapDay],
+        weeks: Int = 12,
+        end: Date,
+        levels: Int = 4,
+        calendar: Calendar = .current,
+        verbatimAccessibilityLabel: String
+    ) {
+        self.init(days: days, weeks: weeks, end: end, levels: levels, calendar: calendar, accessibilityLabel: "")
+        self.label = Text(verbatim: verbatimAccessibilityLabel)
     }
 
     public var body: some View {

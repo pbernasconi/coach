@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Body } from '@/lib/vitals/garmin-pages';
+import { MUSCLE_TARGET, daysAgoText, e1rmText, liftChangeText, setsText, shortDate, weightChange } from '@/lib/performance/display.mjs';
 
 type MuscleRow = { muscle: string; sets: number; status: string };
 type TopLift = { key: string; name: string; points: { e1rm: number }[]; latest: number | null; change: number | null };
@@ -15,10 +16,9 @@ export type LiftSummary = {
   prs?: number;
 };
 
-const BAND = { min: 10, max: 20 }; // weekly hard sets per muscle (MUSCLE_TARGET in lift-dashboard/stats.mjs)
+const BAND = MUSCLE_TARGET; // weekly hard sets per muscle
 const BAR_MAX = 25;
 const ARMS = ['biceps', 'triceps'];
-const fmtDate = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
 
 /** A small trend line scaled to its own range (a weight series sits far from zero). */
 function Trend({ values, color, height = 56, label }: { values: number[]; color: string; height?: number; label: string }) {
@@ -61,7 +61,7 @@ function SetsBar({ name, sets }: { name: string; sets: number }) {
         <div className="absolute inset-y-0 bg-[var(--viz-good)]/20" style={{ left: pct(BAND.min), width: `${((BAND.max - BAND.min) / BAR_MAX) * 100}%` }} />
         <div className="relative h-full rounded-sm bg-[var(--sport-strength)]" style={{ width: pct(sets) }} />
       </div>
-      <span className="text-right tabular-nums">{Math.round(sets * 2) / 2}</span>
+      <span className="text-right tabular-nums">{setsText(sets)}</span>
     </div>
   );
 }
@@ -78,7 +78,7 @@ export default function LeanStrong({
   strength: { done: number; target: number };
 }) {
   const sets = (m: string) => lift?.thisWeek.find((r) => r.muscle.toLowerCase() === m)?.sets ?? 0;
-  const change = body?.change4w;
+  const change = weightChange(body?.change4w ?? null);
   return (
     <aside className="flex flex-col overflow-hidden rounded-lg border bg-card" aria-labelledby="lean-strong">
       <div className="flex items-baseline justify-between border-b px-4 py-3">
@@ -95,15 +95,13 @@ export default function LeanStrong({
               <span className="text-sm text-[var(--viz-muted)]">kg</span>
             </span>
             <span className="text-xs tabular-nums text-[var(--viz-ink-2)]">
-              {change != null ? (
+              {change ? (
                 <>
-                  <span className={change <= 0 ? 'text-[var(--viz-good)]' : 'text-[var(--viz-down)]'}>
-                    {change <= 0 ? '▼' : '▲'} {Math.abs(change).toFixed(1)} kg
-                  </span>{' '}
-                  in 4 weeks · {(change / 4).toFixed(2)} kg a week
+                  <span className={change.tone === 'good' ? 'text-[var(--viz-good)]' : 'text-[var(--viz-down)]'}>{change.text}</span>{' '}
+                  in 4 weeks · {change.perWeekText}
                 </>
               ) : (
-                `as of ${fmtDate(body.weight.date)}`
+                `as of ${shortDate(body.weight.date)}`
               )}
             </span>
             <Trend values={body.series.map((p) => p.value)} color="var(--viz-ink)" label="Weight, last 12 weeks" />
@@ -135,9 +133,9 @@ export default function LeanStrong({
             <Link key={l.key} href={`/lift/exercises/${encodeURIComponent(l.key)}`} className="flex min-h-9 items-center gap-2 text-sm hover:bg-muted/40">
               <span className="min-w-0 flex-1 truncate">{l.name}</span>
               <Spark points={l.points} />
-              <span className="w-16 text-right font-semibold tabular-nums">{l.latest ? `${Math.round(l.latest)} ${lift.unit}` : '–'}</span>
+              <span className="w-16 text-right font-semibold tabular-nums">{e1rmText(l.latest, lift.unit)}</span>
               <span className={`w-10 text-right text-xs tabular-nums ${l.change == null ? 'text-[var(--viz-muted)]' : l.change >= 0 ? 'text-[var(--viz-good)]' : 'text-[var(--viz-down)]'}`}>
-                {l.change == null ? '' : `${l.change >= 0 ? '+' : ''}${Math.round(l.change * 100)}%`}
+                {liftChangeText(l.change)}
               </span>
             </Link>
           ))
@@ -156,7 +154,7 @@ export default function LeanStrong({
             <Link href={`/lift/sessions/${lift.last.id}`} className="min-w-0 px-4 py-2.5 transition-colors hover:bg-[var(--viz-band)]">
               <span className="block text-[11px] uppercase tracking-wide text-[var(--viz-muted)]">Last lift</span>
               <span className={`block truncate font-medium ${lift.daysSince != null && lift.daysSince >= 10 ? 'text-[var(--viz-down)]' : ''}`}>
-                {lift.daysSince === 0 ? 'Today' : lift.daysSince === 1 ? 'Yesterday' : `${lift.daysSince} days ago`}
+                {daysAgoText(lift.daysSince)}
               </span>
               <span className="block truncate text-[var(--viz-ink-2)]">{lift.last.title || 'Session'}{lift.prs ? ` · ${lift.prs} PR${lift.prs > 1 ? 's' : ''}` : ''}</span>
             </Link>
@@ -164,7 +162,7 @@ export default function LeanStrong({
           {lift.next ? (
             <Link href={`/lift/sessions/${lift.next.id}`} className="min-w-0 border-l px-4 py-2.5 transition-colors hover:bg-[var(--viz-band)]">
               <span className="block text-[11px] uppercase tracking-wide text-[var(--viz-muted)]">Next lift</span>
-              <span className="block truncate font-medium">{fmtDate(lift.next.day)}</span>
+              <span className="block truncate font-medium">{shortDate(lift.next.day)}</span>
               <span className="block truncate text-[var(--viz-ink-2)]">{lift.next.title || 'Session'}</span>
             </Link>
           ) : (

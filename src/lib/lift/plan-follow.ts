@@ -1,5 +1,5 @@
 import { sql } from '@/db';
-import { toDay } from '@/lib/db-time.mjs';
+import { toDate, toDay } from '@/lib/db-time.mjs';
 import { ensurePlan } from '@/lib/plan/queries';
 import { mondayOf } from '@/lib/plan/week.mjs';
 import { planFollowMoves, pushedSessions } from './follow-plan.mjs';
@@ -8,8 +8,8 @@ type Row = Record<string, unknown>;
 export type PlanMove = { id: string; userId: string; from: string; to: string };
 
 /**
- * After a Lift sync push from the iPhone: a planned session it moved to another day takes its plan workout along
- * (follow-plan.mjs, planFollowMoves). The workout is marked edited, so a plan re-import keeps the new day. It writes
+ * After a Lift sync push from the iPhone: a planned session it moved to another day (`dayMovedAt` newer than the
+ * workout's last server change) takes its plan workout along (follow-plan.mjs, planFollowMoves). The workout is marked edited, so a plan re-import keeps the new day. It writes
  * only the plan, never Lift, so nothing goes back to the phone. Returns the moves, for the calendar push.
  * @param changes the push's applied changes (sync.mjs push, `applied`)
  */
@@ -17,13 +17,18 @@ export async function followSessionsInPlan(changes: { entity: string; id: string
   const sessions = pushedSessions(changes);
   if (sessions.size === 0) return [];
   const rows = (await sql`
-    SELECT a.id, a.lift_session_id, a.scheduled_date, a.status, p.user_id
+    SELECT a.id, a.lift_session_id, a.scheduled_date, a.status, a.edited_at, a.updated_at, p.user_id
     FROM training_plan_activities a JOIN training_plans p ON p.id = a.plan_id
     WHERE lower(a.lift_session_id) = ANY(${[...sessions.keys()]})`) as Row[];
   const userOf = new Map(rows.map((r) => [String(r.id), String(r.user_id)]));
   const moves = planFollowMoves(
     sessions,
-    rows.map((r) => ({ id: String(r.id), liftSessionId: String(r.lift_session_id), date: toDay(r.scheduled_date) ?? '', status: String(r.status ?? '') }))
+    rows.map((r) => {
+      // The workout's last change on the server: a web or /check-in edit (edited_at), or a script (updated_at).
+      const times = [toDate(r.edited_at), toDate(r.updated_at)].filter((t): t is Date => t !== null);
+      const changedAt = times.length ? new Date(Math.max(...times.map((t) => t.getTime()))) : null;
+      return { id: String(r.id), liftSessionId: String(r.lift_session_id), date: toDay(r.scheduled_date) ?? '', status: String(r.status ?? ''), changedAt };
+    })
   );
   const done: PlanMove[] = [];
   for (const m of moves) {

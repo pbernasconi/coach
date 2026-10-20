@@ -60,6 +60,20 @@ import Testing
         #expect(HeatmapMath.longestStreak(in: grid) == 3)
     }
 
+    @Test func nonFiniteDaysAreSkipped() {
+        let days = [HeatmapDay(date: Self.day(0), value: .infinity), HeatmapDay(date: Self.day(-1), value: 5)]
+        let grid = HeatmapMath.grid(days: days, weeks: 1, end: Self.wednesday, levels: 4, calendar: Self.calendar)
+        #expect(grid[0][2].level == 0)
+        #expect(grid[0][1].level == 4)
+        #expect(HeatmapMath.level(.nan, max: 10, levels: 4) == 0)
+    }
+
+    @Test func spansAcrossTheAntimeridianAreCapped() throws {
+        let points = [GeoPoint(latitude: 0.5, longitude: -179.9), GeoPoint(latitude: 1, longitude: 179.9)]
+        let bounds = try #require(RouteMath.bounds(points, padding: 0.5))
+        #expect(bounds.longitudeSpan <= 360)
+    }
+
     @Test func noWeeksIsEmpty() {
         #expect(HeatmapMath.grid(days: [], weeks: 0, end: Self.wednesday, levels: 4, calendar: Self.calendar).isEmpty)
     }

@@ -69,7 +69,7 @@ public struct Sparkline: View {
         _ format: @escaping (Double) -> String,
         _ label: Text
     ) {
-        self.values = values.filter(\.isFinite)
+        self.values = ChartMath.thinned(values.filter(\.isFinite), to: 500)
         self.style = style
         self.reference = reference
         self.showsLastPoint = showsLastPoint

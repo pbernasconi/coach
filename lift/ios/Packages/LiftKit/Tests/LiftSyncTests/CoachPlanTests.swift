@@ -139,6 +139,60 @@ import Testing
         #expect(!CoachPlanBook([older.plan]).holds([start, start.adding(days: 7)]))
     }
 
+    @Test func bookDatesEachWeekByItsOwnResponse() throws {
+        let older = try CoachPlanResponse(
+            data: Self.plan(generatedAt: "2026-10-20T08:00:00Z", start: "2026-10-19", title: "Old")
+        )
+        let newer = try CoachPlanResponse(
+            data: Self.plan(generatedAt: "2026-10-21T09:00:00Z", start: "2026-10-26", title: "New")
+        )
+        let book = CoachPlanBook([older.plan, newer.plan])
+        let first = LocalDay(year: 2026, month: 10, day: 19)
+        #expect(book.updatedAt(of: first) == CoachPlanDates.date(fromISO: "2026-10-20T08:00:00Z"))
+        #expect(book.updatedAt(of: first.adding(days: 7)) == CoachPlanDates.date(fromISO: "2026-10-21T09:00:00Z"))
+        #expect(book.updatedAt(of: first.adding(days: 14)) == nil)
+    }
+
+    @Test func bookShowsAnItemTheNewerResponseMovedToAnotherWeekOnce() {
+        let first = LocalDay(year: 2026, month: 10, day: 19)
+        let second = first.adding(days: 7)
+        func week(_ start: LocalDay, items: [CoachItem]) -> CoachWeek {
+            let totals = CoachTotals(text: "", plannedCount: 0, doneCount: 0, missedCount: 0)
+            let days = (0..<7).map { index in
+                let day = start.adding(days: index)
+                return CoachDay(date: day, items: items.filter { $0.date == day })
+            }
+            return CoachWeek(start: start, title: nil, hasPlan: true, totals: totals, days: days)
+        }
+        func item(_ day: LocalDay) -> CoachItem {
+            CoachItem(
+                id: "lift-1",
+                date: day,
+                title: "Lift",
+                sport: "strength",
+                subtitle: "",
+                state: .planned,
+                stateLabel: "Planned"
+            )
+        }
+        let older = CoachPlan(
+            generatedAt: "2026-10-20T08:00:00Z",
+            timeZone: "UTC",
+            today: first,
+            weeks: [week(first, items: [item(first.adding(days: 1))]), week(second, items: [])]
+        )
+        let newer = CoachPlan(
+            generatedAt: "2026-10-21T08:00:00Z",
+            timeZone: "UTC",
+            today: first,
+            weeks: [week(second, items: [item(second)])]
+        )
+        for book in [CoachPlanBook([older, newer]), CoachPlanBook([newer, older])] {
+            let ids = book.weeks.values.flatMap(\.days).flatMap(\.items).map(\.date)
+            #expect(ids == [second])
+        }
+    }
+
     @Test func fileCacheSavesLoadsAndPrunes() throws {
         let folder = FileManager.default.temporaryDirectory.appending(path: "CoachPlanTests-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: folder) }

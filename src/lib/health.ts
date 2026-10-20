@@ -2,6 +2,13 @@ import journal from '../../drizzle/meta/_journal.json';
 import { openProposal } from '@/lib/plan/proposals';
 import { GET as homeSummary } from '@/app/api/home/route';
 import { GET as liftWeek } from '@/app/api/lift/week/route';
+import { GET as appLiftRoute } from '@/app/api/app/lift/route';
+import { GET as appLiftWeeklyRoute } from '@/app/api/app/lift/weekly/route';
+import { GET as appLiftSessionRoute } from '@/app/api/app/lift/sessions/[id]/route';
+import { GET as appLiftExerciseRoute } from '@/app/api/app/lift/exercises/[key]/route';
+import { loadAppLift } from '@/lib/lift-dashboard/app-api';
+import { exerciseResponse, failedSections, sessionResponse, weeklyResponse } from '@/lib/lift-dashboard/app-api.mjs';
+import { richSession } from '@/lib/lift/session';
 import { sql } from '@/db';
 import { loadLiftModel } from '@/lib/lift-dashboard/queries';
 import { exerciseDetail, exerciseList, muscleSets, sessionDetail, sessionSummaries, topLifts, weeklyVolume } from '@/lib/lift-dashboard/stats.mjs';
@@ -19,6 +26,11 @@ import { loadClinicianNotes, loadGarminStatus, loadHealth } from '@/lib/vitals/q
 import { loadBody, loadDay, loadGarminSections, loadRecoveryToday, loadTraining } from '@/lib/vitals/garmin-pages';
 import { loadBiomarker, loadLabsIndex } from '@/lib/vitals/labs-pages';
 import { loadActivity, loadActivityContext } from '@/lib/activity/queries';
+import { appActivityResponse, loadAppActivities, loadAppActivity } from '@/lib/activity/app-api';
+import { GET as appActivities } from '@/app/api/app/activities/route';
+import { GET as appToday } from '@/app/api/app/today/route';
+import { GET as appTrends } from '@/app/api/app/trends/route';
+import { loadAppToday, loadAppTrends } from '@/lib/performance/app-pages';
 
 export type Check = { name: string; ok: boolean; ms: number; error?: string };
 
@@ -80,6 +92,27 @@ export async function runChecks(now = new Date(), { migrations = true }: { migra
       const v = await loadActivity(userId, 'latest');
       if (v) await loadActivityContext(userId, v, today);
     }),
+    // GET /api/app/activities and /api/app/activities/latest (the Lift app's Activities): a section that failed to
+    // build is { ok: false } in the response, so it fails here.
+    check('app activities', async () => {
+      const list = await loadAppActivities(userId, null, 30, today, 'America/Los_Angeles', now);
+      if (list && !list.plannedOk) throw new Error('planned titles failed');
+    }),
+    check('app activity (latest)', async () => {
+      const body = (await loadAppActivity(userId, 'latest', today, 'America/Los_Angeles', now))?.body;
+      const failed = body ? Object.entries(body).filter(([, x]) => x && typeof x === 'object' && (x as { ok?: boolean }).ok === false).map(([k]) => k) : [];
+      if (failed.length) throw new Error(`sections failed: ${failed.join(', ')}`);
+    }),
+    // GET /api/app/today and /api/app/trends (the Lift app's Today and Trends): each section loads on its own and a
+    // failed one is { ok: false } in the response, so it fails here.
+    check('app today', async () => {
+      const failed = Object.entries(await loadAppToday(userId, today, 'America/Los_Angeles', now)).filter(([, x]) => (x as { ok?: boolean })?.ok === false);
+      if (failed.length) throw new Error(`sections failed: ${failed.map(([k]) => k).join(', ')}`);
+    }),
+    check('app trends', async () => {
+      const failed = Object.entries(await loadAppTrends(userId, today, 'America/Los_Angeles', now)).filter(([, x]) => (x as { ok?: boolean })?.ok === false);
+      if (failed.length) throw new Error(`sections failed: ${failed.map(([k]) => k).join(', ')}`);
+    }),
     check('lift', async () => {
       const { model, unit } = await loadLiftModel();
       muscleSets(model, monday, addDays(monday, 6));
@@ -89,6 +122,23 @@ export async function runChecks(now = new Date(), { migrations = true }: { migra
       weeklyVolume(model, unit);
       liftOverview(model, unit, today);
       for (const e of exerciseList(model, unit)) exerciseDetail(model, e.key, unit);
+    }),
+    // GET /api/app/lift… (the Lift app's Lift tab): every section of the overview and the weekly table, and every
+    // session and exercise screen. A route hides a failed section from the phone; this check fails on it.
+    check('app lift', async () => {
+      const tz = 'America/Los_Angeles';
+      const bad = failedSections(await loadAppLift(userId, today, tz, now)).map((s) => `overview ${s}`);
+      const { model, unit } = await loadLiftModel();
+      bad.push(...failedSections(weeklyResponse({ weeks: weeklyVolume(model, unit), unit, now })).map((s) => `weekly ${s}`));
+      for (const s of sessionSummaries(model, unit, { planned: true })) {
+        const session = richSession(model, s.id, unit);
+        if (session) bad.push(...failedSections(sessionResponse({ session, timeZone: tz, now })).map((x) => `session ${s.id} ${x}`));
+      }
+      for (const e of exerciseList(model, unit)) {
+        const detail = exerciseDetail(model, e.key, unit);
+        if (detail) bad.push(...failedSections(exerciseResponse({ detail, unit, now })).map((x) => `exercise ${e.key} ${x}`));
+      }
+      if (bad.length) throw new Error(`failed sections: ${bad.slice(0, 5).join(', ')}${bad.length > 5 ? ` and ${bad.length - 5} more` : ''}`);
     }),
   ]);
   // Every migration in this deploy is applied (the Deploy workflow runs them before it promotes). Previews and the
@@ -120,6 +170,52 @@ export async function runChecks(now = new Date(), { migrations = true }: { migra
           new Request('http://health.local/api/lift/week?weeks=2&tz=America/Los_Angeles', { headers: { authorization: `Bearer ${process.env.LIFT_SYNC_TOKEN}` } })
         );
         if (res.status !== 200) throw new Error(`status ${res.status}: ${(await res.text()).slice(0, 200)}`);
+      })
+    );
+    const auth = { headers: { authorization: `Bearer ${process.env.LIFT_SYNC_TOKEN}` } };
+    checks.push(
+      await check('/api/app/activities', async () => {
+        const res = await appActivities(new Request('http://health.local/api/app/activities?limit=30&tz=America/Los_Angeles', auth));
+        if (res.status !== 200) throw new Error(`status ${res.status}: ${(await res.text()).slice(0, 200)}`);
+      }),
+      // 404 only when there is no activity at all. The route's handler without its Strava fetch: a check never
+      // calls Strava or after().
+      await check('/api/app/activities/latest', async () => {
+        const res = await appActivityResponse(new Request('http://health.local/api/app/activities/latest?tz=America/Los_Angeles', auth), 'latest', {
+          fetchMissing: false,
+        });
+        if (res.status !== 200 && res.status !== 404) throw new Error(`status ${res.status}: ${(await res.text()).slice(0, 200)}`);
+      })
+    );
+    checks.push(
+      await check('/api/app/today', async () => {
+        const res = await appToday(new Request('http://health.local/api/app/today?tz=America/Los_Angeles', auth));
+        if (res.status !== 200) throw new Error(`status ${res.status}: ${(await res.text()).slice(0, 200)}`);
+      }),
+      await check('/api/app/trends', async () => {
+        const res = await appTrends(new Request('http://health.local/api/app/trends?tz=America/Los_Angeles', auth));
+        if (res.status !== 200) throw new Error(`status ${res.status}: ${(await res.text()).slice(0, 200)}`);
+      })
+    );
+    checks.push(
+      await check('/api/app/lift', async () => {
+        const get = (path: string) => new Request(`http://health.local${path}`, auth);
+        const { model, unit } = await loadLiftModel();
+        const session = sessionSummaries(model, unit)[0]?.id;
+        const exercise = exerciseList(model, unit)[0]?.key;
+        const calls: [string, () => Promise<Response>][] = [
+          ['/api/app/lift', () => appLiftRoute(get('/api/app/lift?tz=America/Los_Angeles'))],
+          ['/api/app/lift/weekly', () => appLiftWeeklyRoute(get('/api/app/lift/weekly'))],
+        ];
+        if (session) calls.push(['/api/app/lift/sessions/:id', () => appLiftSessionRoute(get(`/api/app/lift/sessions/${session}`), { params: Promise.resolve({ id: session }) })]);
+        if (exercise) {
+          const key = encodeURIComponent(exercise);
+          calls.push(['/api/app/lift/exercises/:key', () => appLiftExerciseRoute(get(`/api/app/lift/exercises/${key}`), { params: Promise.resolve({ key }) })]);
+        }
+        for (const [name, call] of calls) {
+          const res = await call();
+          if (res.status !== 200) throw new Error(`${name}: status ${res.status}: ${(await res.text()).slice(0, 200)}`);
+        }
       })
     );
   }

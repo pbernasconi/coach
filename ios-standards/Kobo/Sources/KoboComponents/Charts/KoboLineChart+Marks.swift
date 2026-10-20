@@ -7,7 +7,7 @@ import SwiftUI
 extension KoboLineChart {
     @ChartContentBuilder var bandMarks: some ChartContent {
         if let xDomain {
-            ForEach(Array(bands.enumerated()), id: \.offset) { _, band in
+            ForEach(Array(visibleBands.enumerated()), id: \.offset) { _, band in
                 RectangleMark(
                     xStart: .value("Start", xDomain.lowerBound),
                     xEnd: .value("End", xDomain.upperBound),
@@ -28,13 +28,14 @@ extension KoboLineChart {
     }
 
     @ChartContentBuilder var seriesMarks: some ChartContent {
+        let base = areaBase
         ForEach(Array(series.enumerated()), id: \.element.id) { index, line in
             let color = color(at: index)
-            ForEach(line.points, id: \.x) { point in
+            ForEach(Array(line.plotted.enumerated()), id: \.offset) { _, point in
                 if line.fillsArea {
                     AreaMark(
                         x: .value("X", point.x),
-                        yStart: .value("Base", areaBase),
+                        yStart: .value("Base", base),
                         yEnd: .value(line.name, point.y),
                         series: .value("Series", "\(line.id)-area")
                     )
@@ -98,7 +99,7 @@ extension KoboLineChart {
                     ChartCallout(title: xText(anchor), rows: calloutRows(at: anchor))
                 }
             ForEach(Array(series.enumerated()), id: \.element.id) { index, line in
-                if let point = line.nearest(to: anchor) {
+                if let point = line.point(covering: anchor) {
                     PointMark(x: .value("X", point.x), y: .value("Y", point.y))
                         .foregroundStyle(color(at: index))
                         .symbolSize(Space.xxxl * 2)
@@ -109,14 +110,23 @@ extension KoboLineChart {
 
     /// The x of the data point nearest a touch, across every series, so the crosshair snaps to real data.
     func nearestX(to x: X) -> X? {
-        let xs = Array(Set(series.flatMap { $0.points.map(\.x) })).sorted()
+        let xs = Array(Set(series.flatMap { $0.plotted.map(\.x) })).sorted()
         return ChartMath.nearestIndex(in: xs.map(\.chartPosition), to: x.chartPosition).map { xs[$0] }
     }
 
     func calloutRows(at x: X) -> [ChartCallout.Row] {
         series.enumerated().compactMap { index, line in
-            guard let point = line.nearest(to: x) else { return nil }
+            guard let point = line.point(covering: x) else { return nil }
             return ChartCallout.Row(name: line.name, value: yText(point.y), color: color(at: index))
+        }
+    }
+
+    /// The bands cut to the plotted y range, so a band never spills past the plot; bands fully outside are dropped.
+    private var visibleBands: [ChartBand] {
+        bands.compactMap { band in
+            let low = max(band.range.lowerBound, yDomain.lowerBound)
+            let high = min(band.range.upperBound, yDomain.upperBound)
+            return low < high ? ChartBand(low...high, label: band.label, tone: band.tone) : nil
         }
     }
 

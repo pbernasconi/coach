@@ -62,9 +62,10 @@ nonisolated struct WeekLayout: Sendable {
 
     /// The plan line for the week `offset`, or nil when sync is off or the week is not kept.
     func planHeader(_ snapshot: CoachPlanSnapshot, offset: Int) -> WeekPlanHeader? {
-        guard let book = snapshot.shownBook, let week = book.weeks[weekStart(offset: offset)] else { return nil }
+        let start = weekStart(offset: offset)
+        guard let book = snapshot.shownBook, let week = book.weeks[start] else { return nil }
         let isOffline = snapshot.status == .offline
-        let updated = book.updatedAt.map { date in
+        let updated = book.updatedAt(of: start).map { date in
             let time = days.day(of: date) == today ? days.timeTitle(of: date) : days.shortTitle(of: days.day(of: date))
             return isOffline ? String(localized: "Offline · updated \(time)") : String(localized: "Updated \(time)")
         }

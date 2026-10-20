@@ -55,9 +55,23 @@ public struct ChartSeries<X: KoboChartX>: Identifiable, Hashable, Sendable {
         }
     }
 
+    /// The points to draw: at most `ChartSeries.maxPlotted`, picked evenly with both ends kept, so a long stream stays
+    /// smooth to draw and to touch. Summaries still read every point.
+    var plotted: [ChartPoint<X>] { ChartMath.thinned(points, to: Self.maxPlotted) }
+
+    /// The most points a line draws.
+    static var maxPlotted: Int { 1_000 }
+
     /// The point nearest `x`, or `nil` for an empty series.
     func nearest(to x: X) -> ChartPoint<X>? {
         ChartMath.nearestIndex(in: points.map(\.x.chartPosition), to: x.chartPosition).map { points[$0] }
+    }
+
+    /// The point nearest `x` when `x` falls within the series' own span, so a plan that starts next month has no value
+    /// to show today.
+    func point(covering x: X) -> ChartPoint<X>? {
+        guard let first = points.first, let last = points.last, first.x <= x, x <= last.x else { return nil }
+        return nearest(to: x)
     }
 }
 

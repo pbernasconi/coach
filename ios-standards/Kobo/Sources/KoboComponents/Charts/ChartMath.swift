@@ -70,16 +70,26 @@ nonisolated enum ChartMath {
 
     /// At most `maxCount` items picked evenly from `items`, keeping the first and the last.
     static func thinned<T>(_ items: [T], to maxCount: Int) -> [T] {
-        guard items.count > maxCount, maxCount > 1 else { return maxCount == 1 ? Array(items.prefix(1)) : items }
+        guard maxCount > 0 else { return [] }
+        guard items.count > maxCount, maxCount > 1 else { return Array(items.prefix(maxCount)) }
         let stride = Double(items.count - 1) / Double(maxCount - 1)
         return (0..<maxCount).map { items[Int((Double($0) * stride).rounded())] }
     }
 
-    /// Each width laid end to end from zero: `[2, 3]` becomes `[0..<2, 2..<5]`. Negative widths count as zero.
+    /// Evenly spaced indices into `count` items, at most `maxCount`, always including the last (the newest period),
+    /// so axis labels sit at a steady rhythm: 10 items, at most 6 → 1, 3, 5, 7, 9.
+    static func strideIndices(count: Int, maxCount: Int) -> [Int] {
+        guard count > 0, maxCount > 0 else { return [] }
+        let step = (count + maxCount - 1) / maxCount
+        return Array(stride(from: count - 1, through: 0, by: -step).reversed())
+    }
+
+    /// Each width laid end to end from zero: `[2, 3]` becomes `[0..<2, 2..<5]`. Negative and non-finite widths count
+    /// as zero.
     static func spans(widths: [Double]) -> [Range<Double>] {
         var start = 0.0
         return widths.map { width in
-            let end = start + max(width, 0)
+            let end = start + (width.isFinite ? max(width, 0) : 0)
             defer { start = end }
             return start..<end
         }

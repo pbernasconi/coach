@@ -18,7 +18,7 @@ public struct BandBar: View {
     private let tick: Double?
     private let tone: Tone
     private let valueText: String?
-    private let label: Text?
+    private var label: Text?
 
     /// - Parameters:
     ///   - scaleMax: the value at the trailing edge; larger values are clamped.
@@ -43,6 +43,20 @@ public struct BandBar: View {
         self.tone = tone
         self.valueText = valueText
         self.label = accessibilityLabel.map { Text($0) }
+    }
+
+    /// A bar whose accessibility label is shown as is (it names user data).
+    public init(
+        value: Double,
+        scaleMax: Double,
+        band: ClosedRange<Double>? = nil,
+        tick: Double? = nil,
+        tone: Tone = .accent,
+        valueText: String? = nil,
+        verbatimAccessibilityLabel: String
+    ) {
+        self.init(value: value, scaleMax: scaleMax, band: band, tick: tick, tone: tone, valueText: valueText)
+        self.label = Text(verbatim: verbatimAccessibilityLabel)
     }
 
     public var body: some View {

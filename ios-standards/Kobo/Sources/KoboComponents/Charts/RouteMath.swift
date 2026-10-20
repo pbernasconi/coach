@@ -17,8 +17,9 @@ nonisolated struct GeoBounds: Hashable, Sendable {
         GeoPoint(latitude: (minLatitude + maxLatitude) / 2, longitude: (minLongitude + maxLongitude) / 2)
     }
 
-    var latitudeSpan: Double { maxLatitude - minLatitude }
-    var longitudeSpan: Double { maxLongitude - minLongitude }
+    var latitudeSpan: Double { min(maxLatitude - minLatitude, 180) }
+    /// At most 360: a route that crosses the antimeridian shows the whole world rather than an invalid region.
+    var longitudeSpan: Double { min(maxLongitude - minLongitude, 360) }
 }
 
 /// Pure route maths: which points are valid, the box that fits them, and thinning long tracks.

@@ -1,11 +1,10 @@
-import { formatDuration, formatPace } from '@/lib/performance/peaks.mjs';
 import { RUN_DISTANCES } from '@/lib/performance/peaks.mjs';
+import { peakText, shortDateYear as fmtDate } from '@/lib/performance/display.mjs';
 import type { PeakCell, PeakPerformances as Peaks, PeakRow } from '@/lib/performance/peaks';
 
-const fmtDate = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit', timeZone: 'UTC' });
 const meters = new Map(RUN_DISTANCES.map((d: { span: number; meters: number }) => [d.span, d.meters]));
 
-function Cell({ cell, render, best }: { cell: PeakCell; render: (v: number) => { main: string; sub?: string }; best: boolean }) {
+function Cell({ cell, render, best }: { cell: PeakCell; render: (v: number) => { main: string; sub: string | null }; best: boolean }) {
   if (!cell) return <td className="p-2 text-right text-[var(--viz-muted)]">–</td>;
   const { main, sub } = render(cell.value);
   return (
@@ -28,7 +27,7 @@ function Table({ title, unit, rows, windows, render }: {
   unit: string;
   rows: PeakRow[];
   windows: Peaks['windows'];
-  render: (row: PeakRow) => (v: number) => { main: string; sub?: string };
+  render: (row: PeakRow) => (v: number) => { main: string; sub: string | null };
 }) {
   const empty = rows.every((r) => !r.cells.all);
   return (
@@ -89,14 +88,14 @@ export default function PeakPerformances({ peaks }: { peaks: Peaks }) {
           unit="best average, W"
           rows={peaks.power}
           windows={peaks.windows}
-          render={() => (v) => ({ main: `${Math.round(v)} W` })}
+          render={(row) => (v) => peakText('power', row.span, v)}
         />
         <Table
           title="Run"
           unit="fastest time · pace /km"
           rows={peaks.run}
           windows={peaks.windows}
-          render={(row) => (v) => ({ main: formatDuration(v), sub: formatPace(meters.get(row.span) ?? row.span, v) })}
+          render={(row) => (v) => peakText('run', meters.get(row.span) ?? row.span, v)}
         />
       </div>
     </section>

@@ -16,6 +16,7 @@
  * DATABASE_URL is production's, else pass --push-lift to push anyway.
  */
 
+import { createHash } from 'node:crypto';
 import { connect } from '../src/db/neon.mjs';
 import { pushWeek } from '../src/lib/calendar-sync/push.mjs';
 import { followWorkout } from '../src/lib/lift/follow-plan.mjs';
@@ -58,8 +59,9 @@ async function push(weeks) {
 }
 
 const PROD_SERVER = 'https://coach.paolobernasconi.com';
-// The production database's Neon endpoint (with or without "-pooler"). Not a secret: no user or password.
-const PROD_DB_HOST = 'ep-billowing-bread-afcze7hb.c-2.us-west-2.aws.neon.tech';
+// SHA-256 of the production database's Neon endpoint host (without "-pooler"). The repository is public, so it holds
+// only the hash, not the host.
+const PROD_DB_HOST_SHA256 = '4cdd4dc086014eec0575d90103f2c8538e8c1ea3e6972f06705a84c9d7a6b79d';
 const LIFT_SERVER = process.env.LIFT_SYNC_BASE_URL ?? PROD_SERVER;
 const dbHost = (() => {
   try {
@@ -70,7 +72,7 @@ const dbHost = (() => {
 })();
 // The session rows come from DATABASE_URL and the push goes to LIFT_SERVER: push only when both are production, or
 // when --push-lift says the two match.
-const liftPushOk = process.argv.includes('--push-lift') || (LIFT_SERVER === PROD_SERVER && dbHost === PROD_DB_HOST);
+const liftPushOk = process.argv.includes('--push-lift') || (LIFT_SERVER === PROD_SERVER && createHash('sha256').update(dbHost).digest('hex') === PROD_DB_HOST_SHA256);
 
 /** Pushes Lift changes through the server, as the iPhone does, so they get a seq and the server's cache is cleared. */
 async function pushLift(changes) {

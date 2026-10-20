@@ -16,6 +16,9 @@ public struct SessionRecord: Hashable, Sendable, Identifiable {
     public var unitsAtLog: WeightUnit
     /// The Apple Health workout Lift saved for this session (v5); nil when none was saved.
     public var healthWorkoutID: UUID?
+    /// When Lift last changed `day` on this device (v8): a move, a push to next week, or the undo of one. Other edits
+    /// keep it. Nil when the day was never moved here.
+    public var dayMovedAt: Date?
     public var createdAt: Date
     public var updatedAt: Date
     public var deletedAt: Date?
@@ -31,6 +34,7 @@ public struct SessionRecord: Hashable, Sendable, Identifiable {
         note: String? = nil,
         unitsAtLog: WeightUnit,
         healthWorkoutID: UUID? = nil,
+        dayMovedAt: Date? = nil,
         createdAt: Date,
         updatedAt: Date,
         deletedAt: Date? = nil
@@ -45,6 +49,7 @@ public struct SessionRecord: Hashable, Sendable, Identifiable {
         self.note = note
         self.unitsAtLog = unitsAtLog
         self.healthWorkoutID = healthWorkoutID
+        self.dayMovedAt = dayMovedAt
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.deletedAt = deletedAt
@@ -66,6 +71,7 @@ extension SessionRecord: SyncedRecord {
         note = try row.optional("note")
         unitsAtLog = try row.raw("unitsAtLog")
         healthWorkoutID = try row.optional("healthWorkoutID")  // absent from payloads written before v5
+        dayMovedAt = try row.optional("dayMovedAt")  // absent from payloads written before v8
         createdAt = try row.required("createdAt")
         updatedAt = try row.required("updatedAt")
         deletedAt = try row.optional("deletedAt")
@@ -82,6 +88,7 @@ extension SessionRecord: SyncedRecord {
         container["note"] = note
         container["unitsAtLog"] = unitsAtLog.rawValue
         container["healthWorkoutID"] = healthWorkoutID
+        container["dayMovedAt"] = dayMovedAt
         container["createdAt"] = createdAt
         container["updatedAt"] = updatedAt
         container["deletedAt"] = deletedAt

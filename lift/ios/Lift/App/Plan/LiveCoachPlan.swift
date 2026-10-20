@@ -19,6 +19,9 @@ final class LiveCoachPlan: CoachPlanProviding {
     private var shownWeek: LocalDay?
     /// Start weeks with a request in flight, so a second trigger does not ask twice.
     private var inFlight: Set<LocalDay> = []
+    /// Start weeks asked for again while their request was in flight (a sync run ended meanwhile): fetched once more
+    /// when it ends, so the plan never stays on a response made before that sync's sets reached the server.
+    private var askedAgain: Set<LocalDay> = []
     private var subscribers: [Int: AsyncStream<CoachPlanSnapshot>.Continuation] = [:]
     private var nextSubscriber = 0
 
@@ -81,9 +84,19 @@ final class LiveCoachPlan: CoachPlanProviding {
     }
 
     private func fetch(from start: LocalDay) async {
-        guard !inFlight.contains(start) else { return }
+        guard !inFlight.contains(start) else {
+            askedAgain.insert(start)
+            return
+        }
         inFlight.insert(start)
         defer { inFlight.remove(start) }
+        repeat {
+            askedAgain.remove(start)
+            await fetchOnce(from: start)
+        } while askedAgain.contains(start) && !Task.isCancelled
+    }
+
+    private func fetchOnce(from start: LocalDay) async {
         do {
             let response = try await client.weeks(
                 from: start,

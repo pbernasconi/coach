@@ -74,6 +74,21 @@ import Testing
         #expect(ChartMath.thinned(Array(0...10), to: 1) == [0])
     }
 
+    @Test func strideIndicesEndOnTheLast() {
+        #expect(ChartMath.strideIndices(count: 10, maxCount: 6) == [1, 3, 5, 7, 9])
+        #expect(ChartMath.strideIndices(count: 4, maxCount: 6) == [0, 1, 2, 3])
+        #expect(ChartMath.strideIndices(count: 12, maxCount: 3) == [3, 7, 11])
+        #expect(ChartMath.strideIndices(count: 0, maxCount: 3).isEmpty)
+    }
+
+    @Test func spansTreatNonFiniteWidthsAsZero() {
+        #expect(ChartMath.spans(widths: [1, .nan, .infinity, 2]) == [0..<1, 1..<1, 1..<1, 1..<3])
+    }
+
+    @Test func thinnedToZeroIsEmpty() {
+        #expect(ChartMath.thinned([1, 2, 3], to: 0).isEmpty)
+    }
+
     @Test func spansLayWidthsEndToEnd() {
         #expect(ChartMath.spans(widths: [2, 3, -1, 1]) == [0..<2, 2..<5, 5..<5, 5..<6])
         #expect(ChartMath.spans(widths: []).isEmpty)
@@ -101,6 +116,13 @@ import Testing
         #expect(HistogramBin.bins([-3, 2], width: 5).map(\.lower) == [-5, 0])
         #expect(HistogramBin.bins([1, 2], width: 0).isEmpty)
         #expect(HistogramBin.bins([], width: 5).isEmpty)
+    }
+
+    @Test func histogramRefusesHugeSpreads() {
+        #expect(HistogramBin.bins([0, 1e9], width: 1).isEmpty)
+        #expect(HistogramBin.bins([0, 1e300], width: 1e-300).isEmpty)
+        #expect(HistogramBin.bins([1, 2], width: .infinity).isEmpty)
+        #expect(HistogramBin.bins([0, 999], width: 1).count == 1_000)
     }
 
     @Test func histogramModeIsTheFirstFullest() {

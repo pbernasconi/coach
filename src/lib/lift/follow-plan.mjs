@@ -103,28 +103,37 @@ export async function followWorkout(sql, pushChanges, activityId, opts = {}) {
 }
 
 // The other way: the iPhone moves a planned Lift session to another day (Week tab), so its plan workout moves with
-// it (src/lib/lift/plan-follow.ts, after a Lift sync push). Only the phone's pushes run it, never the web's own pushes
-// above, so a change cannot bounce between the two. A session the phone removed leaves its workout as it is
-// (lift/WEEK-API.md, "Phone behaviour").
+// it (src/lib/lift/plan-follow.ts, after a Lift sync push). Only an explicit move on the phone counts: the phone
+// stamps `dayMovedAt` when it changes `day` (lift/SYNC.md, schema v8), and the server follows only a stamp newer than
+// the workout's last change on the server. So an offline phone edit (a note, a start) that still carries the old day
+// cannot move a workout back after a web move, phones before v8 never move the plan, and the web's own pushes above
+// keep the stored `dayMovedAt`, so they never look like a phone move. A session the phone removed leaves its workout
+// as it is (lift/WEEK-API.md, "Phone behaviour").
 
 /**
  * The session rows of a push, the last change of each session winning.
  * @param {{ entity: string, id: string, payload: Record<string, any>, deletedAt: Date | null }[]} changes  applied changes
- * @returns {Map<string, { day: unknown, removed: boolean }>}  by lower-case session id
+ * @returns {Map<string, { day: unknown, removed: boolean, dayMovedAt: Date | null }>}  by lower-case session id
  */
 export function pushedSessions(changes) {
   const out = new Map();
   for (const c of changes) {
     if (c.entity !== 'session') continue;
-    out.set(String(c.id).toLowerCase(), { day: c.payload?.day, removed: Boolean(c.deletedAt || c.payload?.deletedAt) });
+    out.set(String(c.id).toLowerCase(), {
+      day: c.payload?.day,
+      removed: Boolean(c.deletedAt || c.payload?.deletedAt),
+      dayMovedAt: toDate(c.payload?.dayMovedAt),
+    });
   }
   return out;
 }
 
 /**
- * The plan workouts to move to their session's new day.
- * @param {Map<string, { day: unknown, removed: boolean }>} sessions  from pushedSessions
- * @param {{ id: string, liftSessionId: string, date: string, status: string }[]} workouts  the workouts linked to them
+ * The plan workouts to move to their session's new day: the session was moved on the phone (`dayMovedAt`) after the
+ * workout last changed on the server (`changedAt`: the later of its edited_at and updated_at).
+ * @param {Map<string, { day: unknown, removed: boolean, dayMovedAt: Date | null }>} sessions  from pushedSessions
+ * @param {{ id: string, liftSessionId: string, date: string, status: string, changedAt: Date | null }[]} workouts
+ *   the workouts linked to them
  * @returns {{ id: string, sessionId: string, from: string, to: string }[]}
  */
 export function planFollowMoves(sessions, workouts) {
@@ -134,6 +143,7 @@ export function planFollowMoves(sessions, workouts) {
     const s = sessions.get(sessionId);
     if (!s || s.removed || typeof s.day !== 'string' || !DAY.test(s.day)) continue;
     if (w.status === 'skipped' || w.date === s.day) continue;
+    if (!s.dayMovedAt || (w.changedAt && s.dayMovedAt.getTime() <= w.changedAt.getTime())) continue;
     moves.push({ id: w.id, sessionId, from: w.date, to: s.day });
   }
   return moves;

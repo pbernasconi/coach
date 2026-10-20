@@ -29,7 +29,7 @@ public struct KoboStackedBarChart<X: KoboChartX>: View {
     private let height: ChartHeight
     private let xText: (X) -> String
     private let yText: (Double) -> String
-    private let label: Text
+    private var label: Text
 
     /// - Parameters:
     ///   - groups: oldest first, one bar each.
@@ -53,6 +53,30 @@ public struct KoboStackedBarChart<X: KoboChartX>: View {
         self.xText = xText
         self.yText = yText
         self.label = Text(accessibilityLabel)
+    }
+
+    /// A chart whose accessibility label is shown as is (it names user data).
+    public init(
+        groups: [BarGroup<X>],
+        categories: [BarCategory],
+        reference: ChartReference? = nil,
+        markLabel: String? = nil,
+        height: ChartHeight = .regular,
+        xText: @escaping (X) -> String,
+        yText: @escaping (Double) -> String = ChartFormat.number,
+        verbatimAccessibilityLabel: String
+    ) {
+        self.init(
+            groups: groups,
+            categories: categories,
+            reference: reference,
+            markLabel: markLabel,
+            height: height,
+            xText: xText,
+            yText: yText,
+            accessibilityLabel: ""
+        )
+        self.label = Text(verbatim: verbatimAccessibilityLabel)
     }
 
     public var body: some View {
@@ -82,6 +106,7 @@ public struct KoboStackedBarChart<X: KoboChartX>: View {
                     bar(index: index, group: group, category: segment.category, span: segment.span)
                 }
             }
+            dotMarks
             referenceMark
             selectionMark
         }
@@ -121,7 +146,21 @@ public struct KoboStackedBarChart<X: KoboChartX>: View {
                     Text(verbatim: reference.label)
                         .font(theme.font(.caption).weight(.semibold))
                         .foregroundStyle(theme.palette.textSecondary)
+                        .padding(.horizontal, Space.xxs)
+                        .background(theme.palette.surface.opacity(0.9), in: RoundedRectangle(cornerRadius: Radius.xs))
                 }
+        }
+    }
+
+    /// A dot under each marked bar, just below the baseline, above its date label.
+    @ChartContentBuilder private var dotMarks: some ChartContent {
+        ForEach(Array(groups.enumerated()), id: \.offset) { index, group in
+            if group.isMarked {
+                PointMark(x: .value("Dot", Double(index)), y: .value("Zero", 0))
+                    .foregroundStyle(theme.palette.textPrimary)
+                    .symbolSize(dot * dot)
+                    .offset(y: dot + Space.xs)
+            }
         }
     }
 
@@ -155,7 +194,7 @@ public struct KoboStackedBarChart<X: KoboChartX>: View {
 
     @AxisContentBuilder private var xAxis: some AxisContent {
         let maxLabels = dynamicTypeSize.isAccessibilitySize ? 3 : 6
-        AxisMarks(values: ChartMath.thinned(groups.indices.map(Double.init), to: maxLabels)) { value in
+        AxisMarks(values: ChartMath.strideIndices(count: groups.count, maxCount: maxLabels).map(Double.init)) { value in
             AxisValueLabel {
                 if let index = value.as(Double.self).map({ Int($0.rounded()) }), groups.indices.contains(index) {
                     xLabel(groups[index])
@@ -165,10 +204,9 @@ public struct KoboStackedBarChart<X: KoboChartX>: View {
     }
 
     private func xLabel(_ group: BarGroup<X>) -> some View {
+        // Leaves room under the baseline for the dot row (`dotMarks`).
         VStack(spacing: Space.xxs) {
-            Circle()
-                .fill(group.isMarked ? theme.palette.textPrimary : .clear)
-                .frame(width: dot, height: dot)
+            Color.clear.frame(width: dot, height: groups.contains(where: \.isMarked) ? dot + Space.xs : 0)
             Text(verbatim: xText(group.x))
                 .font(theme.font(.caption))
                 .foregroundStyle(theme.palette.textSecondary)

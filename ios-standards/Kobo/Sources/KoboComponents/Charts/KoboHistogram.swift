@@ -17,7 +17,7 @@ public struct KoboHistogram: View {
     private let color: Color?
     private let height: ChartHeight
     private let xText: (Double) -> String
-    private let label: Text
+    private var label: Text
 
     /// A histogram of ready-made bins.
     ///
@@ -62,14 +62,31 @@ public struct KoboHistogram: View {
         )
     }
 
+    /// A histogram of ready-made bins whose accessibility label is shown as is (it names user data).
+    public init(
+        bins: [HistogramBin],
+        marker: ChartMarker<Double>? = nil,
+        color: Color? = nil,
+        height: ChartHeight = .regular,
+        xText: @escaping (Double) -> String = ChartFormat.number,
+        verbatimAccessibilityLabel: String
+    ) {
+        self.init(bins: bins, marker: marker, color: color, height: height, xText: xText, accessibilityLabel: "")
+        self.label = Text(verbatim: verbatimAccessibilityLabel)
+    }
+
     public var body: some View {
-        if let first = bins.first, let last = bins.last {
+        if let low = bins.map({ min($0.lower, $0.upper) }).min(),
+            let high = bins.map({ max($0.lower, $0.upper) }).max(),
+            low.isFinite, high.isFinite, low < high
+        {
             Chart {
-                ForEach(bins) { bin in
-                    BarMark(
+                ForEach(Array(bins.enumerated()), id: \.offset) { _, bin in
+                    RectangleMark(
                         xStart: .value("Lower", bin.lower),
                         xEnd: .value("Upper", bin.upper),
-                        y: .value("Count", bin.count)
+                        yStart: .value("Zero", 0),
+                        yEnd: .value("Count", bin.count)
                     )
                     .foregroundStyle(color ?? theme.palette.accent)
                     .cornerRadius(Radius.xs / 2)
@@ -89,7 +106,7 @@ public struct KoboHistogram: View {
                         }
                 }
             }
-            .chartXScale(domain: first.lower...last.upper)
+            .chartXScale(domain: low...high)
             .chartAxes(xTicks: edges, xText: xText, yText: ChartFormat.number)
             .frame(height: height.points * scale)
             .koboAnimation(.state, value: bins)
@@ -103,7 +120,7 @@ public struct KoboHistogram: View {
 
     /// Every bin edge, so labels sit on bar boundaries (thinned by the axes).
     private var edges: [Double] {
-        bins.map(\.lower) + (bins.last.map { [$0.upper] } ?? [])
+        Array(Set(bins.flatMap { [$0.lower, $0.upper] }.filter(\.isFinite))).sorted()
     }
 }
 
