@@ -1,0 +1,24 @@
+# Calls Coach's sync routes on a schedule. Vercel Hobby crons run only once a day, and GitHub's scheduled
+# workflows are free for this public repository. GitHub may start a scheduled run some minutes late.
+# GitHub turns off schedules after 60 days without commits; re-enable in Actions if that happens.
+name: Sync
+
+on:
+  schedule:
+    - cron: "*/30 * * * *" # calendar, every 30 minutes
+    - cron: "10 */3 * * *" # Strava, every 3 hours (the webhook is the main path)
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Calendar
+        if: github.event.schedule != '10 */3 * * *'
+        run: curl -fsS --max-time 90 -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" https://coach-paolo.vercel.app/api/cron/calendar
+      - name: Strava
+        if: github.event.schedule == '10 */3 * * *' || github.event_name == 'workflow_dispatch'
+        run: curl -fsS --max-time 300 -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" https://coach-paolo.vercel.app/api/cron/strava

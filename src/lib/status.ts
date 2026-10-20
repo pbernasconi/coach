@@ -84,8 +84,8 @@ export async function loadStatus(userId: string, now = Date.now()): Promise<Stat
     warnings.push({ level: 'info', source: 'lift', text: `No Lift changes for ${ago(hoursSince(liftStatus.lastChangeAt, now))}.` });
   }
   const personal = calendars.find((c) => c.active);
-  if (personal && hoursSince(personal.lastSyncedAt, now) > 3 * 24) {
-    warnings.push({ level: 'info', source: 'calendar', text: `Calendar last synced ${ago(hoursSince(personal.lastSyncedAt, now))} ago (it syncs when /plan runs).` });
+  if (personal && hoursSince(personal.lastSyncedAt, now) > 3) {
+    warnings.push({ level: 'warn', source: 'calendar', text: `Calendar has not synced for ${ago(hoursSince(personal.lastSyncedAt, now))} (it should sync every 30 min).` });
   }
   return { strava, lift: liftStatus, calendars, warnings };
 }
