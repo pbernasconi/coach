@@ -1,10 +1,12 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
+import { Pencil } from 'lucide-react';
 import ExerciseCard from '@/components/lift/ExerciseCard';
 import ExerciseThumb from '@/components/lift/ExerciseThumb';
 import { loadText, muscleLabel, repsText } from '@/components/lift/format';
-import { plannedVolume, sessionMuscles, type RichExercise, type RichSession } from '@/lib/lift/session';
+import { plannedVolume, sessionMuscles, sessionState, type RichExercise, type RichSession } from '@/lib/lift/session';
+import LiftEditor from './LiftEditor';
 
 // The Lift session in the item modal, planned or done: the session page's exercise cards (picture, muscles, sets,
 // last time, best estimated 1RM), with a side column for the session at a glance and the muscles it works.
@@ -41,17 +43,37 @@ function Side({ title, children }: { title: string; children: ReactNode }) {
 /** Scrolls the modal to an exercise card. */
 const jump = (id: string) => document.getElementById(`ex-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-export default function LiftView({ lift, extra }: { lift: RichSession; extra?: ReactNode }) {
+export default function LiftView({ lift, extra, onChanged }: { lift: RichSession; extra?: ReactNode; onChanged?: () => Promise<void> | void }) {
   const unit = lift.unit;
+  const [editing, setEditing] = useState(false);
+  // A finished session is edited in Lift; a planned or started one can change here (logged sets stay).
+  const editable = Boolean(onChanged) && sessionState(lift) !== 'done';
   const muscles = sessionMuscles(lift).slice(0, 8);
   const top = Math.max(1, ...muscles.map((m) => m.sets));
   return (
     <div className="grid gap-4 p-4 sm:p-6 lg:grid-cols-[minmax(0,8fr)_minmax(0,4fr)]">
       <div className="min-w-0 space-y-3">
-        {lift.exercises.length === 0 && <p className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">No exercises in this session.</p>}
-        {lift.exercises.map((e, i) => (
-          <ExerciseCard key={e.id} e={e} unit={unit} index={i} />
-        ))}
+        {editing && onChanged ? (
+          <LiftEditor lift={lift} onChanged={onChanged} onDone={() => setEditing(false)} />
+        ) : (
+          <>
+            {editable && (
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setEditing(true)}
+                  className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm font-medium hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <Pencil aria-hidden className="h-3.5 w-3.5" /> Edit session
+                </button>
+              </div>
+            )}
+            {lift.exercises.length === 0 && <p className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">No exercises in this session.</p>}
+            {lift.exercises.map((e, i) => (
+              <ExerciseCard key={e.id} e={e} unit={unit} index={i} />
+            ))}
+          </>
+        )}
       </div>
       <aside className="min-w-0 space-y-4 lg:sticky lg:top-4 lg:self-start">
         <Side title="At a glance">
