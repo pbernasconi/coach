@@ -156,3 +156,69 @@ export function clock(seconds) {
   const s = seconds % 60;
   return h ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}` : `${m}:${String(s).padStart(2, '0')}`;
 }
+
+// Display text for the steps, shared by the web (PlannedDetails, WorkoutSteps) and GET /api/lift/week.
+
+/** A step kind as a label. */
+export const STEP_KIND = { warmup: 'Warm-up', work: 'Work', recovery: 'Recovery', rest: 'Rest', cooldown: 'Cool-down' };
+
+/** The Coach zone of a step, for colors: its target's zone, or Z5 for an open work step and Z1 for another open step. */
+export function stepZone(s, sport) {
+  if (!s.target || s.target.type === 'open') return s.kind === 'work' ? 'Z5' : 'Z1';
+  return zoneOf(s.target, sport);
+}
+
+/** "5:00", "10 km", "400 m", or "Lap button". */
+export function stepLength(s) {
+  const d = s.duration;
+  if (d.type === 'distance') return d.m % 1000 === 0 ? `${d.m / 1000} km` : `${d.m} m`;
+  if (d.type === 'lap') return 'Lap button';
+  return clock(stepSeconds(s));
+}
+
+/** The target of a step: "270–290 W", "Ramp 150–200 W · 85–95 rpm", "All out" or "Easy". */
+export function stepTarget(s, anchors = ANCHORS) {
+  const base = !s.target || s.target.type === 'open' ? (s.kind === 'work' ? 'All out' : 'Easy') : `${s.ramp ? 'Ramp ' : ''}${targetText(s.target, anchors)}`;
+  return `${base}${s.cadence ? ` · ${s.cadence[0]}–${s.cadence[1]} rpm` : ''}`;
+}
+
+/** The aim of a work step in a sentence: the target, or "all out" / "easy" for an open step. */
+function aim(s, anchors) {
+  return !s.target || s.target.type === 'open' ? (s.kind === 'work' ? 'all out' : 'easy') : targetText(s.target, anchors);
+}
+
+/**
+ * The work of the workout in one line each, with the zone of its first work step: "6 × 5:00 at 269–291 W, 2:00 easy",
+ * "20:00 at 235–255 W · steady". Warm-up, recovery and cool-down steps at the top level are left out.
+ * @returns {{ text: string, zone: string }[]}
+ */
+export function keyTargets(w, anchors = ANCHORS) {
+  const lines = [];
+  for (const s of w.steps ?? []) {
+    if (s.kind === 'repeat') {
+      const work = (s.steps ?? []).filter((x) => x.kind === 'work');
+      const rest = (s.steps ?? []).find((x) => x.kind !== 'work' && x.kind !== 'repeat');
+      if (!work.length) continue;
+      const restText = rest ? `, ${stepLength(rest)} ${rest.kind === 'rest' ? 'rest' : 'easy'}` : '';
+      lines.push({ text: `${s.count} × ${work.map((x) => `${stepLength(x)} at ${aim(x, anchors)}`).join(' + ')}${restText}`, zone: stepZone(work[0], w.sport) });
+    } else if (s.kind === 'work') {
+      lines.push({ text: `${stepLength(s)} at ${aim(s, anchors)}${s.notes ? ` · ${s.notes}` : ''}`, zone: stepZone(s, w.sport) });
+    }
+  }
+  return lines;
+}
+
+/**
+ * The steps as display lines, one per top-level step: { label: "Warm-up", detail: "10:00 · 157–210 W" }, and for a
+ * repeat { label: "6 ×", detail: "5:00 Work 269–291 W, 3:00 Recovery Easy" }.
+ * @returns {{ label: string, detail: string }[]}
+ */
+export function stepLines(w, anchors = ANCHORS) {
+  const one = (s) => [stepLength(s), stepTarget(s, anchors), s.notes].filter(Boolean).join(' · ');
+  const inner = (s) => (s.kind === 'repeat' ? `${s.count} × (${(s.steps ?? []).map(inner).join(', ')})` : `${stepLength(s)} ${STEP_KIND[s.kind] ?? s.kind} ${stepTarget(s, anchors)}`);
+  return (w.steps ?? []).map((s) =>
+    s.kind === 'repeat'
+      ? { label: `${s.count} ×`, detail: (s.steps ?? []).map(inner).join(', ') }
+      : { label: STEP_KIND[s.kind] ?? s.kind, detail: one(s) }
+  );
+}

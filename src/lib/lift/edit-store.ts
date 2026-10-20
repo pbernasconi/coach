@@ -3,6 +3,7 @@ import { mergeDescription, intensityText } from '@/lib/plan/lift-plan.mjs';
 import { push } from '@/lib/lift-sync/sync.mjs';
 import { drizzleLiftRepository } from '@/lib/lift-sync/drizzle-repository';
 import { planLiftEdit, planShape, type LiftEdit } from './edit.mjs';
+import { followLiftSession, followWorkout } from './follow-plan.mjs';
 
 type Row = Record<string, unknown>;
 
@@ -64,4 +65,31 @@ export async function applyLiftEdit(userId: string, sessionId: string, edits: Li
       WHERE id = ${a.id}`;
   }
   return { weeks: [...new Set(linked.map((a) => a.week))] };
+}
+
+type FollowResult = { done: string } | { skip: string };
+const pushLift = (changes: Record<string, unknown>[]) => push(drizzleLiftRepository, changes);
+
+/**
+ * After a plan workout moved, was skipped or un-skipped, or came back with Undo: puts its Lift session on its day, or
+ * removes it (src/lib/lift/follow-plan.mjs). Never throws: the plan change is already saved, and lift-plan.mjs puts
+ * the session right on its next run.
+ */
+export async function followWorkoutInLift(activityId: string, opts: { restore?: boolean } = {}): Promise<FollowResult> {
+  try {
+    return (await followWorkout(sql, pushLift, activityId, opts)) as FollowResult;
+  } catch (error) {
+    console.error('Lift follow failed:', error);
+    return { skip: 'error' };
+  }
+}
+
+/** After a plan workout was deleted: removes its Lift session when nothing was logged in it. Never throws. */
+export async function removeFromLift(sessionId: string | null | undefined): Promise<FollowResult> {
+  try {
+    return (await followLiftSession(sql, pushLift, sessionId, { remove: true })) as FollowResult;
+  } catch (error) {
+    console.error('Lift remove failed:', error);
+    return { skip: 'error' };
+  }
 }

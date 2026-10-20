@@ -1,6 +1,7 @@
 import journal from '../../drizzle/meta/_journal.json';
 import { openProposal } from '@/lib/plan/proposals';
 import { GET as homeSummary } from '@/app/api/home/route';
+import { GET as liftWeek } from '@/app/api/lift/week/route';
 import { sql } from '@/db';
 import { loadLiftModel } from '@/lib/lift-dashboard/queries';
 import { exerciseDetail, exerciseList, muscleSets, sessionDetail, sessionSummaries, topLifts, weeklyVolume } from '@/lib/lift-dashboard/stats.mjs';
@@ -10,6 +11,7 @@ import { loadWeek, ownerId } from '@/lib/plan/queries';
 import { addDays, mondayOf, todayIn } from '@/lib/plan/week.mjs';
 import { loadCoachingNotes, loadStatus, loadTargets } from '@/lib/status';
 import { loadLibrary, loadMonth, loadRange } from '@/lib/plan/month';
+import { loadLiftWeeks } from '@/lib/plan/week-api';
 import { loadPmc } from '@/lib/performance/projection';
 import { loadPeakPerformances } from '@/lib/performance/peaks';
 import { loadEventsWithCountdown } from '@/lib/performance/events';
@@ -72,6 +74,8 @@ export async function runChecks(now = new Date(), { migrations = true }: { migra
     check('recovery today', () => loadRecoveryToday(userId, today)),
     check('body', () => loadBody(userId, today)),
     check('home week', () => loadRange(userId, monday, monday, today)),
+    // GET /api/lift/week (the Lift app's Week tab): this week and the next three.
+    check('lift week', () => loadLiftWeeks(userId, monday, 4, today, 'America/Los_Angeles', now)),
     check('activity (latest)', async () => {
       const v = await loadActivity(userId, 'latest');
       if (v) await loadActivityContext(userId, v, today);
@@ -104,6 +108,16 @@ export async function runChecks(now = new Date(), { migrations = true }: { migra
       await check('/api/home', async () => {
         const res = await homeSummary(
           new Request('http://health.local/api/home?tz=America/Los_Angeles', { headers: { authorization: `Bearer ${process.env.HOME_TOKEN}` } })
+        );
+        if (res.status !== 200) throw new Error(`status ${res.status}: ${(await res.text()).slice(0, 200)}`);
+      })
+    );
+  }
+  if (process.env.LIFT_SYNC_TOKEN) {
+    checks.push(
+      await check('/api/lift/week', async () => {
+        const res = await liftWeek(
+          new Request('http://health.local/api/lift/week?weeks=2&tz=America/Los_Angeles', { headers: { authorization: `Bearer ${process.env.LIFT_SYNC_TOKEN}` } })
         );
         if (res.status !== 200) throw new Error(`status ${res.status}: ${(await res.text()).slice(0, 200)}`);
       })
