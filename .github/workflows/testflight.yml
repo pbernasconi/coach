@@ -2,12 +2,12 @@
 name: TestFlight
 
 # Archives the Lift app and uploads it to App Store Connect (TestFlight). Builds are batched, not one per merge:
-# a nightly run (8 pm Pacific in summer, 7 pm in winter) uploads only when the app changed since the last
-# successful upload, and "Run workflow" uploads now. Until the App Store Connect API key and the Apple identifiers
+# an hourly run uploads only when the app changed since the last successful upload, and "Run workflow" uploads
+# now. Until the App Store Connect API key and the Apple identifiers
 # are configured, the job explains what is missing and stops without failing. Setup steps: lift/DEFERRED.md.
 "on":
   schedule:
-    - cron: "0 3 * * *"
+    - cron: "0 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   changes:
-    # Nightly runs skip when nothing under the app changed since the last successful upload.
+    # Scheduled runs skip when nothing under the app changed since the last successful upload.
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -49,7 +49,7 @@ jobs:
             echo "Changed since $last:"; echo "$changed" | head -50
             echo "build=true" >> "$GITHUB_OUTPUT"
           else
-            echo "::notice::No app changes since the last upload ($last); skipping tonight's build."
+            echo "::notice::No app changes since the last upload ($last); skipping this hour's build."
             echo "build=false" >> "$GITHUB_OUTPUT"
           fi
 
