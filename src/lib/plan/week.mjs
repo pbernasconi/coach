@@ -64,9 +64,16 @@ export function isHard(w) {
   return /vo2|threshold|interval|tempo|race|sweet.?spot|test-10k|10k test/i.test(`${w.workoutType ?? ''} ${w.title ?? ''}`);
 }
 
+/** The Strava activity a match holds: the match itself, or the watch activity next to a Lift session. */
+export function matchActivityId(match) {
+  if (!match) return null;
+  return match.source === 'strava' ? match.id : match.activityId ?? null;
+}
+
 /**
  * Status for each workout: done (an activity or Lift session on that day matches its sport), skipped,
- * missed (a past day with no match), today, or planned. Each activity matches at most one workout.
+ * missed (a past day with no match), today, or planned. Each activity matches at most one workout. A strength
+ * workout matches its Lift session and also the day's Strava strength activity (the watch), as `activityId`.
  *
  * @param {Array<object>} workouts
  * @param {Array<{ id: string, date: string, sport: string, name: string }>} activities  Strava, by local day
@@ -87,7 +94,11 @@ export function matchWeek(workouts, activities, liftSessions, today) {
         const lift = liftSessions.find((s) => s.date === w.date && (s.setsLogged ?? 1) > 0 && !used.has(`lift:${s.id}`));
         if (lift) {
           used.add(`lift:${lift.id}`);
-          match = { source: 'lift', id: lift.id, name: lift.name };
+          // The watch records the same lift as a Strava strength activity: claim it too, so it is not shown twice
+          // and its time and TSS count as the workout's actual.
+          const act = activities.find((a) => a.date === w.date && a.sport === 'strength' && !used.has(`strava:${a.id}`));
+          if (act) used.add(`strava:${act.id}`);
+          match = { source: 'lift', id: lift.id, name: lift.name, activityId: act?.id ?? null };
         }
       }
       if (!match) {

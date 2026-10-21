@@ -2,7 +2,7 @@ import { sql } from '@/db';
 import { toDay } from '@/lib/db-time.mjs';
 import { complianceOf } from '@/lib/plan/compliance.mjs';
 import { loadWeek } from '@/lib/plan/queries';
-import { addDays, mondayOf, sportOf, sportOfStrava } from '@/lib/plan/week.mjs';
+import { addDays, matchActivityId, mondayOf, sportOf, sportOfStrava } from '@/lib/plan/week.mjs';
 import { bestPower } from '@/lib/performance/peaks.mjs';
 import type { SportId } from '@/lib/sports';
 import { HR_ZONE_NAMES, POWER_ZONE_NAMES } from './format.mjs';
@@ -367,7 +367,7 @@ async function heartRange(userId: string, day: string): Promise<{ restHr: number
 /** The planned workout this activity completed (the plan's own matching), with its compliance. */
 async function plannedFor(userId: string, stravaId: string, day: string, today: string, moving: number | null, tss: number | null) {
   const week = await loadWeek(userId, mondayOf(day), today);
-  const w = week.workouts.find((x) => x.match?.source === 'strava' && x.match.id === stravaId);
+  const w = week.workouts.find((x) => matchActivityId(x.match) === stravaId);
   if (!w) return null;
   const c = complianceOf(w, w.state, { min: moving != null ? Math.round(moving / 60) : null, tss }, { rest: sportOf(w) === 'rest' }) as {
     level: string; label: string; ratio: number | null; basis: string | null;

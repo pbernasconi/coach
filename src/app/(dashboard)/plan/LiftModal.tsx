@@ -5,7 +5,7 @@ import { sport } from '@/lib/sports';
 import { plainTitle } from '@/lib/plan/calendar.mjs';
 import { dur } from '@/lib/plan/cells.mjs';
 import { LIFT_MARKER } from '@/lib/plan/lift-plan.mjs';
-import type { CalendarWorkout } from '@/lib/plan/month';
+import type { CalendarActivity, CalendarWorkout } from '@/lib/plan/month';
 import { Card as PCard } from './PlannedDetails';
 import LiftView, { liftStats } from './LiftView';
 import { liftPreviewAction } from './actions';
@@ -15,7 +15,8 @@ import { Description, Failed, Header, Hero, Loading, OpenButton, PlanTable, long
 // ---------------------------------------------------------------------------------------------------------------
 // Lift
 
-export default function LiftModal({ id, planned, onClose }: { id: string; planned: CalendarWorkout | null; onClose: () => void }) {
+/** `watch`: the Strava strength activity the watch recorded for the same lift (its TSS and a link), or null. */
+export default function LiftModal({ id, planned, watch = null, onClose }: { id: string; planned: CalendarWorkout | null; watch?: CalendarActivity | null; onClose: () => void }) {
   const state = useLoad(() => liftPreviewAction(id), [id]);
   const icon = <Dumbbell aria-hidden className="h-5 w-5" style={{ color: sport('strength').color }} />;
   if (state.status === 'loading') return (<><Header icon={icon} title={planned ? plainTitle(planned.title) : 'Lift session'} sub="Loading…" onClose={onClose} /><Loading /></>);
@@ -38,7 +39,12 @@ export default function LiftModal({ id, planned, onClose }: { id: string; planne
         icon={icon}
         title={d.title || 'Lift session'}
         sub={[longDay(d.day), start, 'Lift'].filter(Boolean).join(' · ')}
-        right={<OpenButton href={liftHref(d.id)} label="Full page" />}
+        right={
+          <>
+            {watch && <OpenButton href={`/activities/${watch.id}`} label="Watch activity" />}
+            <OpenButton href={liftHref(d.id)} label="Full page" />
+          </>
+        }
         onClose={onClose}
       />
       <div className="min-h-0 flex-1 overflow-y-auto">
@@ -49,6 +55,7 @@ export default function LiftModal({ id, planned, onClose }: { id: string; planne
             { label: 'Sets logged', value: `${d.setsLogged}/${d.setsTotal}` },
             { label: 'Reps', value: String(reps) },
             { label: 'Exercises', value: String(d.exercises.length) },
+            watch?.tss != null && { label: 'TSS', value: String(Math.round(watch.tss)) },
             planned?.tss != null && { label: 'Planned TSS', value: String(Math.round(planned.tss)) },
           ]}
         />
