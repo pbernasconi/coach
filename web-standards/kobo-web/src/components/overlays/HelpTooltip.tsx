@@ -18,6 +18,8 @@ export interface HelpTooltipProps {
   variant?: 'standard' | 'dark' | 'card'
   /** Draw a caret that points at the "?". */
   showArrow?: boolean
+  /** The trigger's icon, in place of the "?" (for example an "i" for a note on a figure). Sized by the button. */
+  icon?: React.ReactNode
 }
 
 /**
@@ -36,6 +38,7 @@ export function HelpTooltip({
   className,
   variant = 'dark',
   showArrow = false,
+  icon,
 }: HelpTooltipProps) {
   return (
     <TooltipProvider>
@@ -47,11 +50,11 @@ export function HelpTooltip({
             aria-label={label}
             className={cn(
               'inline-flex shrink-0 text-ink-muted transition-colors duration-(--motion-state) ease-standard',
-              'hover:text-ink focus-visible:text-ink focus-visible:outline-none',
+              'hover:text-ink focus-visible:text-ink focus-visible:outline-none [&_svg]:size-3.5',
               className,
             )}
           >
-            <CircleHelp aria-hidden="true" className="size-3.5" />
+            {icon ?? <CircleHelp aria-hidden="true" />}
           </button>
         </TooltipTrigger>
         <TooltipContent side={side} variant={variant} showArrow={showArrow} className="max-w-xs text-pretty">

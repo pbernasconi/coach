@@ -111,7 +111,7 @@ export default function LeanStrong({
             </span>
           </>
         ) : (
-          <span className="text-sm text-[var(--viz-muted)]">No weight in the last 12 weeks. Step on the scale and it arrives with the next vitals push.</span>
+          <span className="text-sm text-[var(--viz-muted)]">No weight in the last 12 weeks.</span>
         )}
       </Link>
 

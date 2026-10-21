@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronDown, CircleCheck, FileText, FolderPlus } from 'lucide-react'
+import { ChevronDown, CircleCheck, FileText, FolderPlus, Info } from 'lucide-react'
 import { Button } from '../../src/components/controls/Button'
 import { Checkbox, CheckboxField } from '../../src/components/controls/Checkbox'
 import { ChoiceCard } from '../../src/components/controls/ChoiceCard'
@@ -232,6 +232,12 @@ export function PrimitivesSection() {
           </Tooltip>
           <span className="inline-flex items-center gap-1.5 text-subhead font-semibold text-ink">
             Tag <HelpTooltip label="What is a tag?">Tags group notes across folders.</HelpTooltip>
+          </span>
+          <span className="inline-flex items-center gap-1.5 text-subhead font-semibold text-ink">
+            Reading time{' '}
+            <HelpTooltip label="About reading time" icon={<Info aria-hidden="true" />}>
+              At 200 words a minute.
+            </HelpTooltip>
           </span>
         </Specimen>
       </Grid>

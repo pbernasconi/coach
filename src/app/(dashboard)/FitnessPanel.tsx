@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { Bike, Footprints } from 'lucide-react';
+import { Bike, Footprints, Info as InfoIcon } from 'lucide-react';
+import { HelpTooltip } from '@kobo/web';
 import { RUN_DISTANCES } from '@/lib/performance/peaks.mjs';
 import { loadTiles, peakText, rampTiles, recoveryRows, shortDate } from '@/lib/performance/display.mjs';
 import type { Pmc } from '@/lib/performance/projection';
@@ -11,12 +12,17 @@ const meters = new Map(RUN_DISTANCES.map((d: { span: number; meters: number; lab
 const powerLabel = (s: number) => (s < 60 ? `${s} s` : `${s / 60} min`);
 
 const Kicker = ({ children }: { children: React.ReactNode }) => (
-  <span className="text-[11px] font-medium uppercase tracking-wide text-[var(--viz-muted)]">{children}</span>
+  <span className="inline-flex items-center gap-1 text-[11px] font-medium uppercase tracking-wide text-[var(--viz-muted)]">{children}</span>
+);
+
+/** An (i) that shows a short note on hover. */
+const Info = ({ label, children }: { label: string; children: React.ReactNode }) => (
+  <HelpTooltip label={label} icon={<InfoIcon aria-hidden />} className="normal-case tracking-normal">{children}</HelpTooltip>
 );
 
 /**
- * Recovery today (the header chips before 2026-10-21): Garmin readiness, HRV status and sleep, each with a line on
- * what it means. Links to today's health page.
+ * Recovery today (the header chips before 2026-10-21): Garmin readiness, HRV status and sleep. What each means is in
+ * an (i) tooltip. Links to today's health page.
  */
 export function RecoveryCard({ recovery, today }: { recovery: RecoveryToday | null; today: string }) {
   const rows = recoveryRows(recovery);
@@ -29,15 +35,11 @@ export function RecoveryCard({ recovery, today }: { recovery: RecoveryToday | nu
       {rows.length ? (
         <ul className="divide-y">
           {rows.map((r) => (
-            <li key={r.key} className="flex gap-3 px-4 py-2.5">
-              <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full" style={{ background: TONE[r.tone] }} aria-hidden />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-baseline justify-between gap-2 text-sm">
-                  <span className="text-[var(--viz-ink-2)]">{r.label}</span>
-                  <b className="tabular-nums">{r.valueText}</b>
-                </div>
-                <p className="text-xs leading-snug text-[var(--viz-muted)]">{r.note}</p>
-              </div>
+            <li key={r.key} className="flex items-center gap-2.5 px-4 py-2 text-sm">
+              <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: TONE[r.tone] }} aria-hidden />
+              <span className="text-[var(--viz-ink-2)]">{r.label}</span>
+              <Info label={`About ${r.label}`}>{r.note}</Info>
+              <b className="ml-auto tabular-nums">{r.valueText}</b>
             </li>
           ))}
         </ul>
@@ -102,7 +104,12 @@ export default function FitnessPanel({ pmc, peaks }: { pmc: Pmc | null; peaks: R
   return (
     <section className="overflow-hidden rounded-lg border bg-card" aria-labelledby="fitness-panel" data-testid="fitness-panel">
       <div className="flex items-baseline justify-between border-b px-4 py-3">
-        <h2 id="fitness-panel" className="font-semibold">Fitness</h2>
+        <h2 id="fitness-panel" className="inline-flex items-center gap-1.5 font-semibold">
+          Fitness
+          <Info label="About fitness, fatigue and form">
+            Fitness: average daily training load over 6 weeks. Fatigue: the same over 1 week. Form: fitness minus fatigue.
+          </Info>
+        </h2>
         <Link href="#fitness" className="text-xs text-[var(--viz-muted)] hover:text-foreground">Chart ↓</Link>
       </div>
 
@@ -119,30 +126,27 @@ export default function FitnessPanel({ pmc, peaks }: { pmc: Pmc | null; peaks: R
                   style={main ? { background: 'var(--viz-ctl)' } : undefined}
                 >
                   <span className="text-3xl font-semibold tabular-nums tracking-tight" style={main ? undefined : { color }}>{t.valueText}</span>
-                  <span className={`text-[11px] font-medium uppercase tracking-wide ${main ? 'text-white/85' : 'text-[var(--viz-muted)]'}`}>{t.label}</span>
+                  <span
+                    className={`text-[11px] font-medium uppercase tracking-wide ${main ? 'text-white/85' : 'text-[var(--viz-muted)]'}`}
+                    title={t.meaning ? `${t.zone}: ${t.meaning}` : undefined}
+                  >
+                    {t.label}{t.zone ? ` · ${t.zone}` : ''}
+                  </span>
                 </div>
               );
             })}
           </div>
-          <div className="mt-3 space-y-1 text-xs leading-snug text-[var(--viz-ink-2)]">
-            <p><b className="font-medium text-[var(--viz-ink)]">Fitness</b> is your average daily training load over 6 weeks. Higher is fitter.</p>
-            <p><b className="font-medium text-[var(--viz-ink)]">Fatigue</b> is the same over the last week: how tired you are.</p>
-            <p>
-              <b className="font-medium text-[var(--viz-ink)]">Form</b> is fitness minus fatigue.
-              {tiles[2].zone && <> You are <b className="font-medium text-[var(--viz-ink)]">{tiles[2].zone.toLowerCase()}</b>: {tiles[2].meaning}.</>}
-            </p>
-          </div>
         </div>
       ) : (
-        <p className="px-4 py-3 text-sm text-[var(--viz-muted)]">No training load yet. It fills in after the next Strava sync.</p>
+        <p className="px-4 py-3 text-sm text-[var(--viz-muted)]">No training load yet.</p>
       )}
 
       {pmc && (
         <div className="border-t px-4 py-4">
-          <div className="flex items-baseline justify-between">
-            <Kicker>Fitness ramp</Kicker>
-            <span className="text-[11px] text-[var(--viz-muted)]">change in fitness</span>
-          </div>
+          <Kicker>
+            Fitness ramp
+            <Info label="About the fitness ramp">Fitness gained or lost over each period. More than +8 a week raises injury risk.</Info>
+          </Kicker>
           <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-3">
             {ramps.map((r) => (
               <div key={r.days} className="min-w-0">
@@ -160,19 +164,21 @@ export default function FitnessPanel({ pmc, peaks }: { pmc: Pmc | null; peaks: R
               </div>
             ))}
           </div>
-          <p className="mt-2 text-[11px] leading-snug text-[var(--viz-muted)]">Points of fitness gained or lost. More than +8 a week raises injury risk.</p>
         </div>
       )}
 
       <div className="border-t px-4 py-3">
         <div className="mb-1 flex items-baseline justify-between">
-          <Kicker>Recent peaks</Kicker>
+          <Kicker>
+            Recent peaks
+            <Info label="About recent peaks">Efforts from the last 4 weeks in your top 3 all time, this year or the last 90 days.</Info>
+          </Kicker>
           <Link href="/trends#peaks" className="text-xs text-[var(--viz-muted)] hover:text-foreground">All peaks →</Link>
         </div>
         {peaks == null ? (
           <p className="py-1 text-sm text-[var(--viz-muted)]">Peaks could not load.</p>
         ) : byDate.size === 0 ? (
-          <p className="py-1 text-sm text-[var(--viz-muted)]">No top-3 efforts in the last 4 weeks.</p>
+          <p className="py-1 text-sm text-[var(--viz-muted)]">None in the last 4 weeks.</p>
         ) : (
           [...byDate].map(([date, list]) => (
             <div key={date} className="py-1">
