@@ -52,6 +52,37 @@ import Testing
         await #expect(throws: SyncTransportError.missingToken) { try await client.get("api/app/today") }
     }
 
+    /// A token store that cannot be read, as the Keychain of an unsigned simulator build.
+    private struct UnreadableTokens: TokenProvider {
+        func token() async throws -> String? { throw AppError(.unknown, detail: "keychain read -34018") }
+    }
+
+    @Test func aTokenThatCannotBeReadCountsAsNoToken() async throws {
+        let base = try #require(URL(string: "https://coach.test"))
+        let app = URLSessionAppAPIClient(
+            session: URLSession(configuration: .ephemeral),
+            baseURL: base,
+            tokens: UnreadableTokens(),
+            timeZone: { "UTC" }
+        )
+        await #expect(throws: SyncTransportError.missingToken) { try await app.get("api/app/today") }
+        let plan = URLSessionCoachPlanClient(
+            session: URLSession(configuration: .ephemeral),
+            baseURL: base,
+            tokens: UnreadableTokens()
+        )
+        await #expect(throws: SyncTransportError.missingToken) {
+            try await plan.weeks(from: LocalDay(year: 2026, month: 10, day: 19), count: 2, timeZone: "UTC")
+        }
+        let blank = URLSessionAppAPIClient(
+            session: URLSession(configuration: .ephemeral),
+            baseURL: base,
+            tokens: StaticTokenProvider(""),
+            timeZone: { "UTC" }
+        )
+        await #expect(throws: SyncTransportError.missingToken) { try await blank.get("api/app/today") }
+    }
+
     private struct Holder: Decodable, Equatable, Sendable {
         let one: AppSection<Inner>
         let two: AppSection<Inner>

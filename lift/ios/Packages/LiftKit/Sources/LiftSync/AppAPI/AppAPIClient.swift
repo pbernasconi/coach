@@ -44,7 +44,7 @@ public struct URLSessionAppAPIClient: AppAPIFetching {
     /// Runs off the caller's actor.
     @concurrent
     public func get(_ path: String, query: [URLQueryItem]) async throws -> Data {
-        guard let token = try await tokens.token(), !token.isEmpty else { throw SyncTransportError.missingToken }
+        guard let token = try await TokenRead.token(from: tokens) else { throw SyncTransportError.missingToken }
         let request = AppAPIRequest.make(
             baseURL: baseURL,
             path: path,
