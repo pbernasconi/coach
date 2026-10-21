@@ -4,9 +4,15 @@ import LiftSync
 
 /// What a screen shows of one App API path: its content, and how fresh it is.
 nonisolated struct AppResourceState<Value: Equatable & Sendable>: Equatable, Sendable {
-    /// `.empty` means not connected to the coach (sync off or no token); `.failed` a fetch failed with nothing kept.
+    /// `.empty` means not connected to the coach (sync off, no token, or a token the coach refused); `.failed` a fetch
+    /// failed with nothing kept.
     var content: KoboPatterns.Loadable<Value> = .loading
     var freshness: AppFreshness?
+    /// The coach refused the stored token (401): the not-connected state asks to connect again.
+    var needsReconnect = false
+
+    /// Not connected to the coach: the screen shows `AppNotConnectedView`.
+    var isNotConnected: Bool { content == .empty }
 }
 
 /// "Updated 1:05 PM", or "Offline · updated 1:05 PM" while the shown body is a kept one.
@@ -44,6 +50,8 @@ struct AppResource<Value: Decodable & Equatable & Sendable> {
             return
         } catch SyncTransportError.missingToken {
             update(AppResourceState(content: .empty))
+        } catch SyncTransportError.unauthorized {
+            update(AppResourceState(content: .empty, needsReconnect: true))
         } catch {
             AppLog.sync.error(
                 "App API \(path, privacy: .public) failed: \(String(describing: error), privacy: .public)"

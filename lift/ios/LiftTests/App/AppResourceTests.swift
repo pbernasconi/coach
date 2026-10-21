@@ -64,7 +64,6 @@ import Testing
 
     @Test(arguments: [
         (SyncTransportError.retryable(status: 500), "Coach could not be reached. Pull down to try again."),
-        (.unauthorized, "Coach refused the sync token. Connect Lift again in Settings."),
         (.rejected(status: 404), "Coach has nothing here."),
         (.invalidResponse, "Coach sent something Lift cannot read."),
     ])
@@ -76,6 +75,21 @@ import Testing
     @Test func aBodyLiftCannotReadFails() async {
         let last = await run(FakeAppData([.success(Data("{}".utf8))])).last
         #expect(last?.content == .failed(message: "Coach sent something Lift cannot read."))
+    }
+
+    @Test func aRefusedTokenIsNotConnectedAndAsksToReconnect() async {
+        let source = FakeAppData([.failure(.unauthorized)])
+        let keptAt = Date(timeIntervalSince1970: 1_772_442_000)
+        source.keptBodies[AppToday.path] = AppAPIKept(data: body, fetchedAt: keptAt)
+        let last = await run(source).last
+        #expect(last == AppResourceState(content: .empty, needsReconnect: true))
+        #expect(last?.isNotConnected == true)
+    }
+
+    @Test func noTokenIsNotConnectedWithoutAReconnectHint() async {
+        let last = await run(FakeAppData([.failure(.missingToken)])).last
+        #expect(last == AppResourceState(content: .empty))
+        #expect(last?.needsReconnect == false)
     }
 
     @Test func notConnectedIsEmptyAndFetchesNothing() async {
