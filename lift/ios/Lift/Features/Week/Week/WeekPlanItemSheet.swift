@@ -7,13 +7,23 @@ extension View {
     /// The read-only detail sheet of a coach plan item: its state, why, notes, key targets and steps, all as the server
     /// sent them. Nothing here can change the plan; the web app owns it.
     func weekPlanItemSheet(item: WeekPlanItem?, send: @escaping (WeekAction) -> Void) -> some View {
+        planItemSheet(item: item, onOpenActivity: { send(.planActivityTapped($0)) }) { send(.destinationDismissed) }
+    }
+
+    /// The same sheet for any screen. `onOpenActivity` opens the matched Strava activity; `onDismiss` runs when it
+    /// closes.
+    func planItemSheet(
+        item: WeekPlanItem?,
+        onOpenActivity: @escaping (String) -> Void,
+        onDismiss: @escaping () -> Void
+    ) -> some View {
         koboSheet(
-            item: .action(item) { if $0 == nil { send(.destinationDismissed) } },
+            item: .action(item) { if $0 == nil { onDismiss() } },
             title: \.title,
             subtitle: { $0.dayTitle },
             detents: [.medium, .large]
         ) { item in
-            WeekPlanItemDetail(item: item)
+            WeekPlanItemDetail(item: item, onOpenActivity: onOpenActivity)
         }
     }
 }
@@ -22,6 +32,7 @@ extension View {
 struct WeekPlanItemDetail: View {
     @Environment(\.koboTheme) private var theme
     let item: WeekPlanItem
+    let onOpenActivity: (String) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: Space.section) {
@@ -37,6 +48,10 @@ struct WeekPlanItemDetail: View {
                 KoboTag("Adapted by the coach", tone: .info, systemImage: "arrow.triangle.2.circlepath")
             }
             if let done = item.doneText { textSection("Done", done) }
+            if let activity = item.doneActivityId {
+                Button("Open activity", systemImage: "figure.outdoor.cycle") { onOpenActivity(activity) }
+                    .buttonStyle(.kobo(.secondary))
+            }
             if let why = item.why { textSection("Why", why) }
             if let notes = item.notes { textSection("Notes", notes) }
             if !item.keyTargets.isEmpty {

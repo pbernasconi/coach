@@ -1,0 +1,46 @@
+import KoboComponents
+import KoboPatterns
+import KoboTokens
+import LiftSync
+import SwiftUI
+
+/// The latest weight with its 4-week change and 12-week trend line, and body fat.
+struct TodayBodyView: View {
+    @Environment(\.koboTheme) private var theme
+    @Environment(\.dynamicTypeSize) private var typeSize
+    let reading: TodayBody
+
+    var body: some View {
+        if let weight = reading.weight {
+            let layout =
+                typeSize.isAccessibilitySize
+                ? AnyLayout(VStackLayout(alignment: .leading, spacing: Space.sm))
+                : AnyLayout(HStackLayout(alignment: .top, spacing: Space.sm))
+            layout {
+                StatTile(verbatim: String(localized: "Weight"), value: weight.text, unit: weight.unit) {
+                    if let change = weight.changeText {
+                        StatusPill(verbatim: change, tone: weight.changeTone?.kobo ?? .neutral, symbol: "scalemass")
+                    }
+                    if let note = weight.noteText {
+                        Text(verbatim: note)
+                            .font(theme.font(.caption))
+                            .foregroundStyle(theme.palette.textSecondary)
+                    }
+                    Sparkline(
+                        values: reading.series.map(\.kg),
+                        style: .area,
+                        format: { $0.formatted(.number.precision(.fractionLength(1))) },
+                        accessibilityLabel: "Weight, last 12 weeks"
+                    )
+                }
+                .layoutPriority(1)
+                StatTile(verbatim: String(localized: "Body fat"), value: reading.bodyFatText ?? "–")
+            }
+        } else {
+            SectionEmptyCard(
+                verbatim: reading.emptyText ?? String(localized: "No weight yet"),
+                systemImage: "scalemass"
+            )
+        }
+    }
+}

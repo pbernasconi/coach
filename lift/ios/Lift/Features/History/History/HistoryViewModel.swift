@@ -14,13 +14,18 @@ final class HistoryViewModel {
     private let now: @Sendable () -> Date
     private let days: DayCalendar
     private let volume: HistoryVolumeBuilder
+    /// True when connected to the coach: a finished session opens the coach's read-only page instead of the workout.
+    private let opensCoachSessions: Bool
     /// The latest sessions and library, which the Progress view is built from; `.loading` until the library is read.
     @ObservationIgnored private var details: [Session] = []
     @ObservationIgnored private var library: Loadable<[Exercise]> = .loading
     /// The week the muscle bars show; nil for this week.
     @ObservationIgnored private var selectedWeek: LocalDay?
+    /// The finished sessions among the latest ones, by id.
+    @ObservationIgnored private var finishedIDs: Set<UUID> = []
 
-    /// Protocols only, no defaults, no work (SCR-3). `segment` is the view to open on (`-open progress`).
+    /// Protocols only, no defaults, no work (SCR-3). `segment` is the view to open on (`-open progress`);
+    /// `opensCoachSessions` sends finished sessions to the coach's page (`AppDataSource.isConnected`).
     init(
         sessions: any SessionRepository,
         exercises: any ExerciseRepository,
@@ -28,7 +33,8 @@ final class HistoryViewModel {
         importFlow: any ImportFlowPresenting,
         now: @escaping @Sendable () -> Date,
         calendar: Calendar,
-        segment: HistorySegment
+        segment: HistorySegment,
+        opensCoachSessions: Bool
     ) {
         self.sessions = sessions
         self.exercises = exercises
@@ -38,6 +44,7 @@ final class HistoryViewModel {
         let days = DayCalendar(calendar: calendar)
         self.days = days
         self.volume = HistoryVolumeBuilder(days: days)
+        self.opensCoachSessions = opensCoachSessions
         state.segment = segment
     }
 
@@ -54,7 +61,8 @@ final class HistoryViewModel {
     func send(_ action: HistoryAction) -> Task<Void, Never>? {
         switch action {
         case .sessionTapped(let id):
-            router.open(.workout(id))
+            let isCoachPage = opensCoachSessions && finishedIDs.contains(id)
+            router.open(isCoachPage ? LiftLinks.session(id.uuidString) : .workout(id))
         case .importTapped:
             importFlow.presentImport()
         case .segmentChanged(let segment):
@@ -83,6 +91,7 @@ final class HistoryViewModel {
             let weeks = group(past)
             state.weeks = weeks.isEmpty ? .empty : .loaded(weeks)
             self.details = details.map(\.domain)
+            finishedIDs = Set(details.filter { $0.session.finishedAt != nil }.map(\.id))
             rebuildVolume()
         }
     }

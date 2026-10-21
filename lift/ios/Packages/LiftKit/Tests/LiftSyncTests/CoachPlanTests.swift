@@ -28,7 +28,7 @@ import Testing
               "steps": [{ "label": "Warm up", "detail": "10:00 · 55–75% FTP" },
                         { "label": "6 ×", "detail": "5:00 at 105–110% FTP, 3:00 easy" }],
               "liftSessionId": "ca4f651b-98c7-4765-83a9-07ab74435d69",
-              "done": { "source": "strava", "name": "Morning Ride", "minutes": 62, "tss": 70,
+              "done": { "source": "strava", "activityId": "16234567890", "name": "Morning Ride", "minutes": 62, "tss": 70,
                         "text": "62 min · 70 TSS / 60 min · 45 TSS" }
             }]}]
           }]
@@ -67,6 +67,7 @@ import Testing
         )
         #expect(item.keyTargets == ["6 × 5:00 at 105–110% FTP"])
         #expect(item.done?.name == "Morning Ride")
+        #expect(item.done?.activityId == "16234567890")
         #expect(item.done?.text == "62 min · 70 TSS / 60 min · 45 TSS")
         #expect(item.durationMinutes == 60)
     }

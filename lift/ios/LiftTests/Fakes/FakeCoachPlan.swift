@@ -97,7 +97,7 @@ nonisolated enum CoachPlanSamples {
             "sport":"\(sport)","workoutType":null,"intensity":null,"durationMinutes":60,"tss":50,"subtitle":"60 min",
             "state":"\(state)","stateLabel":"\(state.capitalized)","compliance":null,"adapted":false,"why":"Because",
             "notes":null,"keyTargets":[],"steps":[{"label":"Warm up","detail":"10:00"}],"liftSessionId":\(link),
-            "done":{"source":"strava","name":null,"minutes":62,"tss":70,"text":"62 min / 60 min"}}
+            "done":{"source":"strava","name":null,"minutes":62,"tss":70,"text":"62 min / 60 min","activityId":"8001"}}
             """
     }
 

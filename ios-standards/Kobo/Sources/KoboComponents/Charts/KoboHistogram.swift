@@ -17,6 +17,7 @@ public struct KoboHistogram: View {
     private let color: Color?
     private let height: ChartHeight
     private let xText: (Double) -> String
+    private var countText: (Double) -> String = ChartFormat.number
     private var label: Text
 
     /// A histogram of ready-made bins.
@@ -107,7 +108,7 @@ public struct KoboHistogram: View {
                 }
             }
             .chartXScale(domain: low...high)
-            .chartAxes(xTicks: edges, xText: xText, yText: ChartFormat.number)
+            .chartAxes(xTicks: edges, xText: xText, yText: countText)
             .frame(height: height.points * scale)
             .koboAnimation(.state, value: bins)
             .accessibilityElement(children: .ignore)
@@ -116,6 +117,13 @@ public struct KoboHistogram: View {
         } else {
             ChartEmpty(height: height.points * scale, label: label)
         }
+    }
+
+    /// Text for the counts on the y axis, when a count stands for something else (seconds as "21:36").
+    public func countText(_ text: @escaping (Double) -> String) -> Self {
+        var copy = self
+        copy.countText = text
+        return copy
     }
 
     /// Every bin edge, so labels sit on bar boundaries (thinned by the axes).

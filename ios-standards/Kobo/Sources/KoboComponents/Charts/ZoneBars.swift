@@ -10,18 +10,29 @@ public struct ZoneBarItem: Identifiable, Hashable, Sendable {
     public let amount: Double
     public let amountText: String
     public let color: Color?
+    /// A percentage the caller already worked out (a server's); `ZoneBars` works it out when `nil`.
+    public let percent: Int?
 
     /// - Parameters:
     ///   - name: shown as is; also the id.
     ///   - amount: the row's share of the total comes from this.
     ///   - color: the bar; a cool-to-hot ramp by row when `nil`.
-    public init(name: String, detail: String? = nil, amount: Double, amountText: String, color: Color? = nil) {
+    ///   - percent: shown as is; worked out so the rows add up to 100 when `nil`.
+    public init(
+        name: String,
+        detail: String? = nil,
+        amount: Double,
+        amountText: String,
+        color: Color? = nil,
+        percent: Int? = nil
+    ) {
         self.id = name
         self.name = name
         self.detail = detail
         self.amount = amount
         self.amountText = amountText
         self.color = color
+        self.percent = percent
     }
 }
 
@@ -45,7 +56,8 @@ public struct ZoneBars: View {
     }
 
     public var body: some View {
-        let percentages = ShareMath.percentages(items.map(\.amount))
+        let worked = ShareMath.percentages(items.map(\.amount))
+        let percentages = items.indices.map { items[$0].percent ?? worked[$0] }
         let fractions = ShareMath.fractions(items.map(\.amount))
         let top = fractions.max() ?? 0
         VStack(alignment: .leading, spacing: Space.sm) {

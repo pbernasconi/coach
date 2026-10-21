@@ -36,7 +36,7 @@ extension CatalogComponent {
             .charts
         case .card, .listRow, .listSection, .keyValueList, .sectionHeader, .separator, .collapsible,
             .pinnedFooter,
-            .sheetHeader, .dayStrip, .segmentedProgress, .miniPlayerBar:
+            .sheetHeader, .dayStrip, .segmentedProgress, .miniPlayerBar, .tileGrid:
             .layout
         case .appHeader, .headerButton, .headerProfileButton, .countBadge, .tabShell, .textLink:
             .navigation

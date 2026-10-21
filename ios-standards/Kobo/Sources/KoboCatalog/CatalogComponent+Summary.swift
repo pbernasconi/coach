@@ -95,6 +95,7 @@ extension CatalogComponent {
         case .sheetHeader: "Title with close and confirm buttons for sheets"
         case .dayStrip: "Swipeable week calendar with day markers"
         case .segmentedProgress: "Done, planned, required and optional segments toward a goal"
+        case .tileGrid: "Tiles two to a row, equal height, one per row at large text sizes"
         case .miniPlayerBar: "Compact live-session bar for the tab bar accessory"
         case .appHeader: "Tab root header with kicker, profile and actions"
         case .headerButton: "Close, back or symbol button for toolbars"

@@ -1,0 +1,1170 @@
+{
+ "generatedAt": "2026-10-20T20:30:00.000Z",
+ "timeZone": "America/Los_Angeles",
+ "today": "2026-10-20",
+ "performance": {
+  "ok": true,
+  "staleText": null,
+  "tiles": [
+   {
+    "key": "hours",
+    "label": "Hours, last 4 weeks",
+    "valueText": "11:29",
+    "sport": null,
+    "delta": {
+     "pct": -52,
+     "text": "▼ 52%",
+     "tone": "down"
+    },
+    "footText": "vs the 4 weeks before",
+    "spark": {
+     "values": [
+      5.5,
+      7.76,
+      6.55,
+      6.54,
+      6.1,
+      6.9,
+      4.3,
+      3.28,
+      2.48,
+      3.64,
+      2.08,
+      0.77
+     ],
+     "labels": [
+      "Week of Aug 3",
+      "Week of Aug 10",
+      "Week of Aug 17",
+      "Week of Aug 24",
+      "Week of Aug 31",
+      "Week of Sep 7",
+      "Week of Sep 14",
+      "Week of Sep 21",
+      "Week of Sep 28",
+      "Week of Oct 5",
+      "Week of Oct 12",
+      "Week of Oct 19"
+     ],
+     "texts": [
+      "5:30 h",
+      "7:46 h",
+      "6:33 h",
+      "6:32 h",
+      "6:06 h",
+      "6:54 h",
+      "4:18 h",
+      "3:17 h",
+      "2:29 h",
+      "3:39 h",
+      "2:05 h",
+      "0:46 h"
+     ]
+    }
+   },
+   {
+    "key": "run",
+    "label": "Run, last 4 weeks",
+    "valueText": "47 km",
+    "sport": "run",
+    "delta": null,
+    "footText": "Pace 5:43/km",
+    "spark": {
+     "values": [
+      31.5,
+      30.92,
+      29.25,
+      26.67,
+      23.47,
+      19.99,
+      16.63,
+      13.75,
+      11.66,
+      10.61,
+      10.69,
+      3.57
+     ],
+     "labels": [
+      "Week of Aug 3",
+      "Week of Aug 10",
+      "Week of Aug 17",
+      "Week of Aug 24",
+      "Week of Aug 31",
+      "Week of Sep 7",
+      "Week of Sep 14",
+      "Week of Sep 21",
+      "Week of Sep 28",
+      "Week of Oct 5",
+      "Week of Oct 12",
+      "Week of Oct 19"
+     ],
+     "texts": [
+      "31.5 km",
+      "30.9 km",
+      "29.3 km",
+      "26.7 km",
+      "23.5 km",
+      "20.0 km",
+      "16.6 km",
+      "13.7 km",
+      "11.7 km",
+      "10.6 km",
+      "10.7 km",
+      "3.6 km"
+     ]
+    }
+   },
+   {
+    "key": "ride",
+    "label": "Ride, last 4 weeks",
+    "valueText": "5:26 h",
+    "sport": "ride",
+    "delta": {
+     "pct": -61,
+     "text": "▼ 61%",
+     "tone": "down"
+    },
+    "footText": "vs the 4 weeks before",
+    "spark": {
+     "values": [
+      2.5,
+      3.22,
+      3.76,
+      4,
+      3.86,
+      3.4,
+      2.71,
+      1.97,
+      1.36,
+      1.03,
+      1.06,
+      0.43
+     ],
+     "labels": [
+      "Week of Aug 3",
+      "Week of Aug 10",
+      "Week of Aug 17",
+      "Week of Aug 24",
+      "Week of Aug 31",
+      "Week of Sep 7",
+      "Week of Sep 14",
+      "Week of Sep 21",
+      "Week of Sep 28",
+      "Week of Oct 5",
+      "Week of Oct 12",
+      "Week of Oct 19"
+     ],
+     "texts": [
+      "2:30 h",
+      "3:13 h",
+      "3:46 h",
+      "4:00 h",
+      "3:52 h",
+      "3:24 h",
+      "2:43 h",
+      "1:58 h",
+      "1:22 h",
+      "1:02 h",
+      "1:04 h",
+      "0:26 h"
+     ]
+    }
+   },
+   {
+    "key": "form",
+    "label": "Form today",
+    "valueText": "+5",
+    "sport": null,
+    "delta": null,
+    "footText": "Neutral · fitness 38 · strength 5/8",
+    "spark": {
+     "values": [
+      47.36,
+      49.84,
+      51.73,
+      52.81,
+      52.93,
+      52.1,
+      50.4,
+      48.05,
+      45.33,
+      42.57,
+      40.11,
+      38.23
+     ],
+     "labels": [
+      "2026-08-04",
+      "2026-08-11",
+      "2026-08-18",
+      "2026-08-25",
+      "2026-09-01",
+      "2026-09-08",
+      "2026-09-15",
+      "2026-09-22",
+      "2026-09-29",
+      "2026-10-06",
+      "2026-10-13",
+      "2026-10-20"
+     ],
+     "texts": [
+      "fitness 47",
+      "fitness 50",
+      "fitness 52",
+      "fitness 53",
+      "fitness 53",
+      "fitness 52",
+      "fitness 50",
+      "fitness 48",
+      "fitness 45",
+      "fitness 43",
+      "fitness 40",
+      "fitness 38"
+     ]
+    }
+   }
+  ],
+  "weeklyHours": {
+   "sports": [
+    {
+     "id": "ride",
+     "label": "Ride"
+    },
+    {
+     "id": "run",
+     "label": "Run"
+    },
+    {
+     "id": "hike",
+     "label": "Hike"
+    }
+   ],
+   "average": 5.01,
+   "averageText": "avg 5:01",
+   "weeks": [
+    {
+     "week": "2026-08-03",
+     "label": "Aug 3",
+     "current": false,
+     "hours": 5.5,
+     "hoursText": "5:30",
+     "sports": [
+      {
+       "id": "ride",
+       "hours": 2.5,
+       "hoursText": "2:30",
+       "detail": "Ride · 70 km"
+      },
+      {
+       "id": "run",
+       "hours": 3,
+       "hoursText": "3:00",
+       "detail": "Run · 31.5 km"
+      }
+     ],
+     "strength": 2,
+     "tss": 341
+    },
+    {
+     "week": "2026-08-10",
+     "label": "Aug 10",
+     "current": false,
+     "hours": 7.76,
+     "hoursText": "7:46",
+     "sports": [
+      {
+       "id": "ride",
+       "hours": 3.22,
+       "hoursText": "3:13",
+       "detail": "Ride · 90 km"
+      },
+      {
+       "id": "run",
+       "hours": 2.94,
+       "hoursText": "2:57",
+       "detail": "Run · 30.9 km"
+      },
+      {
+       "id": "hike",
+       "hours": 1.6,
+       "hoursText": "1:36",
+       "detail": "Hike · 5.4 km"
+      }
+     ],
+     "strength": 1,
+     "tss": 481
+    },
+    {
+     "week": "2026-08-17",
+     "label": "Aug 17",
+     "current": false,
+     "hours": 6.55,
+     "hoursText": "6:33",
+     "sports": [
+      {
+       "id": "ride",
+       "hours": 3.76,
+       "hoursText": "3:46",
+       "detail": "Ride · 105 km"
+      },
+      {
+       "id": "run",
+       "hours": 2.79,
+       "hoursText": "2:47",
+       "detail": "Run · 29.3 km"
+      }
+     ],
+     "strength": 1,
+     "tss": 406
+    },
+    {
+     "week": "2026-08-24",
+     "label": "Aug 24",
+     "current": false,
+     "hours": 6.54,
+     "hoursText": "6:32",
+     "sports": [
+      {
+       "id": "ride",
+       "hours": 4,
+       "hoursText": "4:00",
+       "detail": "Ride · 112 km"
+      },
+      {
+       "id": "run",
+       "hours": 2.54,
+       "hoursText": "2:32",
+       "detail": "Run · 26.7 km"
+      }
+     ],
+     "strength": 2,
+     "tss": 405
+    },
+    {
+     "week": "2026-08-31",
+     "label": "Aug 31",
+     "current": false,
+     "hours": 6.1,
+     "hoursText": "6:06",
+     "sports": [
+      {
+       "id": "ride",
+       "hours": 3.86,
+       "hoursText": "3:52",
+       "detail": "Ride · 108 km"
+      },
+      {
+       "id": "run",
+       "hours": 2.24,
+       "hoursText": "2:14",
+       "detail": "Run · 23.5 km"
+      }
+     ],
+     "strength": 1,
+     "tss": 378
+    },
+    {
+     "week": "2026-09-07",
+     "label": "Sep 7",
+     "current": false,
+     "hours": 6.9,
+     "hoursText": "6:54",
+     "sports": [
+      {
+       "id": "ride",
+       "hours": 3.4,
+       "hoursText": "3:24",
+       "detail": "Ride · 95 km"
+      },
+      {
+       "id": "run",
+       "hours": 1.9,
+       "hoursText": "1:54",
+       "detail": "Run · 20.0 km"
+      },
+      {
+       "id": "hike",
+       "hours": 1.6,
+       "hoursText": "1:36",
+       "detail": "Hike · 5.4 km"
+      }
+     ],
+     "strength": 1,
+     "tss": 428
+    },
+    {
+     "week": "2026-09-14",
+     "label": "Sep 14",
+     "current": false,
+     "hours": 4.3,
+     "hoursText": "4:18",
+     "sports": [
+      {
+       "id": "ride",
+       "hours": 2.71,
+       "hoursText": "2:43",
+       "detail": "Ride · 76 km"
+      },
+      {
+       "id": "run",
+       "hours": 1.58,
+       "hoursText": "1:35",
+       "detail": "Run · 16.6 km"
+      }
+     ],
+     "strength": 2,
+     "tss": 266
+    },
+    {
+     "week": "2026-09-21",
+     "label": "Sep 21",
+     "current": false,
+     "hours": 3.28,
+     "hoursText": "3:17",
+     "sports": [
+      {
+       "id": "ride",
+       "hours": 1.97,
+       "hoursText": "1:58",
+       "detail": "Ride · 55 km"
+      },
+      {
+       "id": "run",
+       "hours": 1.31,
+       "hoursText": "1:19",
+       "detail": "Run · 13.7 km"
+      }
+     ],
+     "strength": 1,
+     "tss": 204
+    },
+    {
+     "week": "2026-09-28",
+     "label": "Sep 28",
+     "current": false,
+     "hours": 2.48,
+     "hoursText": "2:29",
+     "sports": [
+      {
+       "id": "ride",
+       "hours": 1.36,
+       "hoursText": "1:22",
+       "detail": "Ride · 38 km"
+      },
+      {
+       "id": "run",
+       "hours": 1.11,
+       "hoursText": "1:07",
+       "detail": "Run · 11.7 km"
+      }
+     ],
+     "strength": 1,
+     "tss": 153
+    },
+    {
+     "week": "2026-10-05",
+     "label": "Oct 5",
+     "current": false,
+     "hours": 3.64,
+     "hoursText": "3:39",
+     "sports": [
+      {
+       "id": "ride",
+       "hours": 1.03,
+       "hoursText": "1:02",
+       "detail": "Ride · 29 km"
+      },
+      {
+       "id": "run",
+       "hours": 1.01,
+       "hoursText": "1:01",
+       "detail": "Run · 10.6 km"
+      },
+      {
+       "id": "hike",
+       "hours": 1.6,
+       "hoursText": "1:36",
+       "detail": "Hike · 5.4 km"
+      }
+     ],
+     "strength": 2,
+     "tss": 226
+    },
+    {
+     "week": "2026-10-12",
+     "label": "Oct 12",
+     "current": false,
+     "hours": 2.08,
+     "hoursText": "2:05",
+     "sports": [
+      {
+       "id": "ride",
+       "hours": 1.06,
+       "hoursText": "1:04",
+       "detail": "Ride · 30 km"
+      },
+      {
+       "id": "run",
+       "hours": 1.02,
+       "hoursText": "1:01",
+       "detail": "Run · 10.7 km"
+      }
+     ],
+     "strength": 1,
+     "tss": 129
+    },
+    {
+     "week": "2026-10-19",
+     "label": "Oct 19",
+     "current": true,
+     "hours": 0.77,
+     "hoursText": "0:46",
+     "sports": [
+      {
+       "id": "ride",
+       "hours": 0.43,
+       "hoursText": "0:26",
+       "detail": "Ride · 12 km"
+      },
+      {
+       "id": "run",
+       "hours": 0.34,
+       "hoursText": "0:20",
+       "detail": "Run · 3.6 km"
+      }
+     ],
+     "strength": 1,
+     "tss": 48
+    }
+   ]
+  },
+  "table": [
+   {
+    "week": "2026-10-19",
+    "current": true,
+    "label": "Oct 19 (this week)",
+    "hoursText": "0:46",
+    "runKmText": "3.6",
+    "runPaceText": "5:43/km",
+    "rideKmText": "12",
+    "strengthText": "1",
+    "tssText": "48",
+    "planText": "1/5"
+   },
+   {
+    "week": "2026-10-12",
+    "current": false,
+    "label": "Oct 12",
+    "hoursText": "2:05",
+    "runKmText": "10.7",
+    "runPaceText": "5:43/km",
+    "rideKmText": "30",
+    "strengthText": "1",
+    "tssText": "129",
+    "planText": "4/5"
+   },
+   {
+    "week": "2026-10-05",
+    "current": false,
+    "label": "Oct 5",
+    "hoursText": "3:39",
+    "runKmText": "10.6",
+    "runPaceText": "5:43/km",
+    "rideKmText": "29",
+    "strengthText": "2",
+    "tssText": "226",
+    "planText": "4/5"
+   },
+   {
+    "week": "2026-09-28",
+    "current": false,
+    "label": "Sep 28",
+    "hoursText": "2:29",
+    "runKmText": "11.7",
+    "runPaceText": "5:43/km",
+    "rideKmText": "38",
+    "strengthText": "1",
+    "tssText": "153",
+    "planText": "4/5"
+   },
+   {
+    "week": "2026-09-21",
+    "current": false,
+    "label": "Sep 21",
+    "hoursText": "3:17",
+    "runKmText": "13.7",
+    "runPaceText": "5:43/km",
+    "rideKmText": "55",
+    "strengthText": "1",
+    "tssText": "204",
+    "planText": "4/5"
+   },
+   {
+    "week": "2026-09-14",
+    "current": false,
+    "label": "Sep 14",
+    "hoursText": "4:18",
+    "runKmText": "16.6",
+    "runPaceText": "5:43/km",
+    "rideKmText": "76",
+    "strengthText": "2",
+    "tssText": "266",
+    "planText": "4/5"
+   },
+   {
+    "week": "2026-09-07",
+    "current": false,
+    "label": "Sep 7",
+    "hoursText": "6:54",
+    "runKmText": "20.0",
+    "runPaceText": "5:43/km",
+    "rideKmText": "95",
+    "strengthText": "1",
+    "tssText": "428",
+    "planText": "4/5"
+   },
+   {
+    "week": "2026-08-31",
+    "current": false,
+    "label": "Aug 31",
+    "hoursText": "6:06",
+    "runKmText": "23.5",
+    "runPaceText": "5:43/km",
+    "rideKmText": "108",
+    "strengthText": "1",
+    "tssText": "378",
+    "planText": "4/5"
+   },
+   {
+    "week": "2026-08-24",
+    "current": false,
+    "label": "Aug 24",
+    "hoursText": "6:32",
+    "runKmText": "26.7",
+    "runPaceText": "5:43/km",
+    "rideKmText": "112",
+    "strengthText": "2",
+    "tssText": "405",
+    "planText": "4/5"
+   },
+   {
+    "week": "2026-08-17",
+    "current": false,
+    "label": "Aug 17",
+    "hoursText": "6:33",
+    "runKmText": "29.3",
+    "runPaceText": "5:43/km",
+    "rideKmText": "105",
+    "strengthText": "1",
+    "tssText": "406",
+    "planText": "4/5"
+   },
+   {
+    "week": "2026-08-10",
+    "current": false,
+    "label": "Aug 10",
+    "hoursText": "7:46",
+    "runKmText": "30.9",
+    "runPaceText": "5:43/km",
+    "rideKmText": "90",
+    "strengthText": "1",
+    "tssText": "481",
+    "planText": "4/5"
+   },
+   {
+    "week": "2026-08-03",
+    "current": false,
+    "label": "Aug 3",
+    "hoursText": "5:30",
+    "runKmText": "31.5",
+    "runPaceText": "5:43/km",
+    "rideKmText": "70",
+    "strengthText": "2",
+    "tssText": "341",
+    "planText": "4/5"
+   }
+  ]
+ },
+ "ramp": {
+  "ok": true,
+  "rates": [
+   {
+    "days": 7,
+    "label": "7 days",
+    "change": -2.1,
+    "changeText": "-2.1",
+    "perWeek": -2.1,
+    "perWeekText": "-2.1/wk",
+    "level": "falling",
+    "levelText": "Falling",
+    "warn": false
+   },
+   {
+    "days": 28,
+    "label": "28 days",
+    "change": 4,
+    "changeText": "+4.0",
+    "perWeek": 1,
+    "perWeekText": "+1.0/wk",
+    "level": "steady",
+    "levelText": "Steady",
+    "warn": false
+   },
+   {
+    "days": 90,
+    "label": "90 days",
+    "change": 18,
+    "changeText": "+18.0",
+    "perWeek": 1.4,
+    "perWeekText": "+1.4/wk",
+    "level": "steady",
+    "levelText": "Steady",
+    "warn": false
+   },
+   {
+    "days": 365,
+    "label": "1 year",
+    "change": null,
+    "changeText": "–",
+    "perWeek": null,
+    "perWeekText": null,
+    "level": null,
+    "levelText": "Not enough data",
+    "warn": false
+   }
+  ],
+  "note": "CTL points. Over +8 a week is a high injury risk; +5 to +8 is aggressive."
+ },
+ "peaks": {
+  "ok": true,
+  "note": "From Strava streams. Elapsed time for runs, so stops count. 3 activities still to scan.",
+  "windows": [
+   {
+    "key": "all",
+    "label": "All time"
+   },
+   {
+    "key": "d90",
+    "label": "90 days"
+   },
+   {
+    "key": "d28",
+    "label": "28 days"
+   }
+  ],
+  "power": {
+   "title": "Power",
+   "unitText": "best average, W",
+   "empty": false,
+   "rows": [
+    {
+     "span": 5,
+     "label": "5 s",
+     "cells": {
+      "all": {
+       "value": 820,
+       "text": "820 W",
+       "subText": null,
+       "date": "2026-06-14",
+       "dateText": "Jun 14, 26",
+       "activityId": "9000000040",
+       "name": "Hill repeats",
+       "best": true
+      },
+      "d90": {
+       "value": 790,
+       "text": "790 W",
+       "subText": null,
+       "date": "2026-10-18",
+       "dateText": "Oct 18, 26",
+       "activityId": "9000000103",
+       "name": "Valley ride",
+       "best": false
+      },
+      "d28": {
+       "value": 760,
+       "text": "760 W",
+       "subText": null,
+       "date": "2026-10-18",
+       "dateText": "Oct 18, 26",
+       "activityId": "9000000103",
+       "name": "Valley ride",
+       "best": false
+      }
+     }
+    },
+    {
+     "span": 60,
+     "label": "1 min",
+     "cells": {
+      "all": {
+       "value": 430,
+       "text": "430 W",
+       "subText": null,
+       "date": "2026-06-14",
+       "dateText": "Jun 14, 26",
+       "activityId": "9000000040",
+       "name": "Hill repeats",
+       "best": true
+      },
+      "d90": {
+       "value": 410,
+       "text": "410 W",
+       "subText": null,
+       "date": "2026-10-18",
+       "dateText": "Oct 18, 26",
+       "activityId": "9000000103",
+       "name": "Valley ride",
+       "best": false
+      },
+      "d28": {
+       "value": 395,
+       "text": "395 W",
+       "subText": null,
+       "date": "2026-10-18",
+       "dateText": "Oct 18, 26",
+       "activityId": "9000000103",
+       "name": "Valley ride",
+       "best": false
+      }
+     }
+    },
+    {
+     "span": 300,
+     "label": "5 min",
+     "cells": {
+      "all": {
+       "value": 318,
+       "text": "318 W",
+       "subText": null,
+       "date": "2026-06-14",
+       "dateText": "Jun 14, 26",
+       "activityId": "9000000040",
+       "name": "Hill repeats",
+       "best": true
+      },
+      "d90": {
+       "value": 300,
+       "text": "300 W",
+       "subText": null,
+       "date": "2026-10-18",
+       "dateText": "Oct 18, 26",
+       "activityId": "9000000103",
+       "name": "Valley ride",
+       "best": false
+      },
+      "d28": {
+       "value": 291,
+       "text": "291 W",
+       "subText": null,
+       "date": "2026-10-18",
+       "dateText": "Oct 18, 26",
+       "activityId": "9000000103",
+       "name": "Valley ride",
+       "best": false
+      }
+     }
+    },
+    {
+     "span": 1200,
+     "label": "20 min",
+     "cells": {
+      "all": {
+       "value": 271,
+       "text": "271 W",
+       "subText": null,
+       "date": "2026-06-14",
+       "dateText": "Jun 14, 26",
+       "activityId": "9000000040",
+       "name": "Hill repeats",
+       "best": true
+      },
+      "d90": {
+       "value": 262,
+       "text": "262 W",
+       "subText": null,
+       "date": "2026-10-18",
+       "dateText": "Oct 18, 26",
+       "activityId": "9000000103",
+       "name": "Valley ride",
+       "best": false
+      },
+      "d28": null
+     }
+    },
+    {
+     "span": 3600,
+     "label": "1 h",
+     "cells": {
+      "all": {
+       "value": 244,
+       "text": "244 W",
+       "subText": null,
+       "date": "2026-06-14",
+       "dateText": "Jun 14, 26",
+       "activityId": "9000000040",
+       "name": "Hill repeats",
+       "best": true
+      },
+      "d90": {
+       "value": 236,
+       "text": "236 W",
+       "subText": null,
+       "date": "2026-10-18",
+       "dateText": "Oct 18, 26",
+       "activityId": "9000000103",
+       "name": "Valley ride",
+       "best": false
+      },
+      "d28": null
+     }
+    }
+   ]
+  },
+  "run": {
+   "title": "Run",
+   "unitText": "fastest time · pace /km",
+   "empty": false,
+   "rows": [
+    {
+     "span": 1000,
+     "label": "1 km",
+     "cells": {
+      "all": {
+       "value": 262,
+       "text": "4:22",
+       "subText": "4:22",
+       "date": "2025-11-08",
+       "dateText": "Nov 8, 25",
+       "activityId": "9000000020",
+       "name": "Race morning",
+       "best": true
+      },
+      "d90": {
+       "value": 281,
+       "text": "4:41",
+       "subText": "4:41",
+       "date": "2026-10-17",
+       "dateText": "Oct 17, 26",
+       "activityId": "9000000102",
+       "name": "Harbour loop",
+       "best": false
+      },
+      "d28": {
+       "value": 295,
+       "text": "4:55",
+       "subText": "4:55",
+       "date": "2026-10-17",
+       "dateText": "Oct 17, 26",
+       "activityId": "9000000102",
+       "name": "Harbour loop",
+       "best": false
+      }
+     }
+    },
+    {
+     "span": 5000,
+     "label": "5 km",
+     "cells": {
+      "all": {
+       "value": 1440,
+       "text": "24:00",
+       "subText": "4:48",
+       "date": "2025-11-08",
+       "dateText": "Nov 8, 25",
+       "activityId": "9000000020",
+       "name": "Race morning",
+       "best": true
+      },
+      "d90": {
+       "value": 1530,
+       "text": "25:30",
+       "subText": "5:06",
+       "date": "2026-10-17",
+       "dateText": "Oct 17, 26",
+       "activityId": "9000000102",
+       "name": "Harbour loop",
+       "best": false
+      },
+      "d28": {
+       "value": 1590,
+       "text": "26:30",
+       "subText": "5:18",
+       "date": "2026-10-17",
+       "dateText": "Oct 17, 26",
+       "activityId": "9000000102",
+       "name": "Harbour loop",
+       "best": false
+      }
+     }
+    },
+    {
+     "span": 10000,
+     "label": "10 km",
+     "cells": {
+      "all": {
+       "value": 3050,
+       "text": "50:50",
+       "subText": "5:05",
+       "date": "2025-11-08",
+       "dateText": "Nov 8, 25",
+       "activityId": "9000000020",
+       "name": "Race morning",
+       "best": true
+      },
+      "d90": null,
+      "d28": null
+     }
+    },
+    {
+     "span": 21097,
+     "label": "Half",
+     "cells": {
+      "all": {
+       "value": 6900,
+       "text": "1:55:00",
+       "subText": "5:27",
+       "date": "2025-11-08",
+       "dateText": "Nov 8, 25",
+       "activityId": "9000000020",
+       "name": "Race morning",
+       "best": true
+      },
+      "d90": null,
+      "d28": null
+     }
+    }
+   ]
+  }
+ },
+ "lift": {
+  "ok": true,
+  "hasData": true,
+  "emptyText": null,
+  "muscles": {
+   "band": {
+    "min": 10,
+    "max": 20
+   },
+   "note": "This week. A set counts 1 for a primary muscle and 0.5 for a secondary one.",
+   "rows": [
+    {
+     "muscle": "upperBack",
+     "label": "Upper Back",
+     "week": 14,
+     "weekText": "14",
+     "avg": 14,
+     "avgText": "14",
+     "status": "inRange",
+     "statusText": "in target"
+    },
+    {
+     "muscle": "quads",
+     "label": "Quads",
+     "week": 12,
+     "weekText": "12",
+     "avg": 13,
+     "avgText": "13",
+     "status": "inRange",
+     "statusText": "in target"
+    },
+    {
+     "muscle": "hamstrings",
+     "label": "Hamstrings",
+     "week": 22,
+     "weekText": "22",
+     "avg": 11,
+     "avgText": "11",
+     "status": "above",
+     "statusText": "above target"
+    },
+    {
+     "muscle": "chest",
+     "label": "Chest",
+     "week": 8,
+     "weekText": "8",
+     "avg": 10,
+     "avgText": "10",
+     "status": "below",
+     "statusText": "below target"
+    },
+    {
+     "muscle": "biceps",
+     "label": "Biceps",
+     "week": 0,
+     "weekText": "0",
+     "avg": 5,
+     "avgText": "5",
+     "status": "below",
+     "statusText": "below target"
+    }
+   ]
+  },
+  "mainLifts": [
+   {
+    "exerciseKey": "demo-squat",
+    "name": "Back squat",
+    "points": [
+     {
+      "day": "2026-08-10",
+      "e1rm": 280
+     },
+     {
+      "day": "2026-09-01",
+      "e1rm": 292
+     },
+     {
+      "day": "2026-09-20",
+      "e1rm": 300
+     },
+     {
+      "day": "2026-10-12",
+      "e1rm": 306
+     }
+    ],
+    "latest": 306,
+    "latestText": "306 lb",
+    "change": 0.093,
+    "changeText": "+9%",
+    "tone": "good",
+    "sparkText": null
+   },
+   {
+    "exerciseKey": "demo-bench",
+    "name": "Bench press",
+    "points": [
+     {
+      "day": "2026-08-12",
+      "e1rm": 210
+     },
+     {
+      "day": "2026-09-15",
+      "e1rm": 206
+     }
+    ],
+    "latest": 206,
+    "latestText": "206 lb",
+    "change": -0.019,
+    "changeText": "-2%",
+    "tone": "bad",
+    "sparkText": null
+   },
+   {
+    "exerciseKey": "demo-row",
+    "name": "Barbell row",
+    "points": [
+     {
+      "day": "2026-10-14",
+      "e1rm": 190
+     }
+    ],
+    "latest": 190,
+    "latestText": "190 lb",
+    "change": null,
+    "changeText": "",
+    "tone": null,
+    "sparkText": "1 session"
+   }
+  ],
+  "unit": "lb"
+ }
+}
