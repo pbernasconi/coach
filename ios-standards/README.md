@@ -10,6 +10,11 @@ A drop-in standard for building native iOS apps with coding agents. It is based 
 | `scripts/ios-guard.sh` | Grep-based enforcement of the bans; runs anywhere | `ios/scripts/` |
 | `scripts/lint.sh`, `test.sh`, `generate.sh` | One command per check, the same locally and in CI | `ios/scripts/` |
 | `scripts/lint-all.sh`, `install-tools.sh`, `tools.lock` | Full static suite with pinned tools; runs on Linux and in an agent session | `ios/scripts/` |
+| `RUNNING.md` | How to build, run and screenshot an app on a simulator or a real iPhone, and signing checks | `ios/RUNNING.md` |
+| `scripts/ios-run.sh`, `ios-screenshots.sh`, `ios-signing.sh` | Simulator and device runs, screenshots, signing health (see `RUNNING.md`) | `ios/scripts/` |
+| `scripts/package-tests.sh`, `check-vendor-pins.py`, `asc-revoke-ci-certs.py` | Parallel package tests, exact package pins, CI certificate cleanup | `ios/scripts/` |
+| `scripts/tests/run-tools-test.sh` | Tests for the run scripts, with a fake `xcrun` | `ios/scripts/tests/` |
+| `templates/config/.ios-run.env` | Project values for `ios-run.sh` | next to `project.yml` |
 | `.yamllint.yml`, `.markdownlint-cli2.yaml`, `_typos.toml` | Configs for the non-Swift linters | `ios/` |
 | `Kobo/` | Reusable SwiftUI component library (tokens, components, patterns, catalog) | its own package or repo |
 | `templates/Screen/` | The eight-file screen set, with a full test file | copy and rename per screen |
