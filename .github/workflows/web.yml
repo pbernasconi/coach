@@ -1,7 +1,7 @@
 # Web app checks on every pull request and on main. Branch protection requires "web checks", "web build"
 # and "web integration" before a merge (the iOS jobs in ios.yml do not check the web app). The three jobs run
 # in parallel; each restores node_modules from a cache keyed by package-lock.json and runs npm ci only on a miss.
-# "web build" also stages the production build that a merge promotes (deploy.yml, RELIABILITY.md).
+# "web build" builds the production output; it uploads nothing (stage.yml stages a build on demand, RELIABILITY.md).
 name: Web
 
 on:
@@ -55,9 +55,9 @@ jobs:
           fi
 
   build:
-    # On a pull request that changes the web app: the production output (vercel build --prod), uploaded as a
-    # staged production deployment (no domain) and checked on the real data. The Deploy workflow promotes it at
-    # the merge (deploy.yml). Otherwise (main, iOS-only pull requests, drafts): a plain next build.
+    # On a pull request that changes the web app: the production output (vercel build --prod), so a build that
+    # Vercel would reject fails here. It uploads nothing: the merge builds once (deploy.yml), and the label "stage"
+    # stages a build before the merge (stage.yml). Otherwise (main, iOS-only pull requests, drafts): next build.
     name: web build
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -99,53 +99,16 @@ jobs:
           DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
           # "web checks" runs tsc at the same time (next.config.ts).
           SKIP_BUILD_TYPECHECK: "1"
-          # Staged builds migrate at the merge (deploy.yml), never here.
+          # Migrations run at the merge (deploy.yml), never here.
           SKIP_DB_MIGRATE: "1"
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
           if [ "${{ steps.changes.outputs.web }}" = true ]; then
             npx -y "$VERCEL_CLI" pull --yes --environment=production --token "$VERCEL_TOKEN" >/dev/null
             npx -y "$VERCEL_CLI" build --prod --token "$VERCEL_TOKEN"
-            echo "STAGE=1" >> "$GITHUB_ENV"
           else
             npm run build
           fi
-      - name: Stage the production build
-        if: env.STAGE == '1'
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          HEALTH_TOKEN: ${{ secrets.HEALTH_TOKEN }}
-          VERCEL_BYPASS_SECRET: ${{ secrets.VERCEL_BYPASS_SECRET }}
-          PROD_DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
-          PR: ${{ github.event.pull_request.number }}
-        run: |
-          # The tree of the pull request merged into main: equal to the merge commit's tree when main does not move.
-          tree=$(git rev-parse 'HEAD^{tree}')
-          if ! out=$(npx -y "$VERCEL_CLI" deploy --prebuilt --prod --skip-domain --token "$VERCEL_TOKEN" \
-            --meta stagedTree="$tree" --meta stagedPr="$PR" --meta stagedSha="$GITHUB_SHA" 2>&1); then
-            # The Hobby plan allows 100 deployments a day. At the limit this pull request is not staged, and the
-            # merge builds it instead (deploy.yml); the build above already proved it builds.
-            if grep -qE 'api-deployments-free-per-day|Resource is limited' <<<"$out"; then
-              echo "::warning::Vercel's daily deployment limit is reached: not staged. The merge builds it (deploy.yml)."
-              exit 0
-            fi
-            echo "$out"
-            exit 1
-          fi
-          url=$(grep -oE 'https://[a-z0-9-]+\.vercel\.app' <<<"$out" | head -1)
-          [ -n "$url" ] || { echo "$out"; echo "::error::no deployment URL"; exit 1; }
-          echo "Staged $url for tree ${tree:0:7}"
-          # The loaders on the production data, before any merge. A pull request with migrations production has not
-          # applied cannot run them yet (its loaders read the new tables): deploy.yml checks the build at the merge,
-          # after the migrations, before the promote; "web integration" ran every loader on the migrated schema.
-          applied=$(psql "$PROD_DATABASE_URL" -Atc 'SELECT count(*) FROM drizzle.__drizzle_migrations')
-          want=$(jq '.entries | length' drizzle/meta/_journal.json)
-          if [ "$applied" -lt "$want" ]; then
-            echo "$((want - applied)) new migration(s): the check of this build runs at the merge, after they are applied."
-          else
-            node scripts/smoke.mjs "$url" --staged
-          fi
-          echo "Staged production build: $url (tree \`${tree:0:12}\`). Merging promotes it." >> "$GITHUB_STEP_SUMMARY"
 
   integration:
     # Every page loader on a real Postgres, with times as Date objects and as text (src/lib/health.ts).
