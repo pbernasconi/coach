@@ -1,5 +1,5 @@
 # Production deploys (RELIABILITY.md). Vercel does not build main (vercel.json); this workflow puts each merge live:
-#   1. find the staged build of this exact tree (stage.yml, with the label "stage"), or build it now;
+#   1. build it (a production deployment with no domain yet);
 #   2. apply new migrations (additive only, DATABASE.md), so the old build keeps working;
 #   3. check the build on the real data, then promote it (an alias swap: production serves it in seconds);
 #   4. render every page on coach.paolobernasconi.com; on a failure, promote the build before it again and open
@@ -20,7 +20,7 @@ on:
       - "!scripts/garmin/**"
       - "!.github/**"
       - ".github/workflows/deploy.yml"
-  workflow_dispatch: # redeploys main (builds it when no staged build matches)
+  workflow_dispatch: # redeploys main
 
 permissions:
   contents: read
@@ -49,18 +49,13 @@ jobs:
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
 
-      - name: Find the staged build and the live one
+      - name: Find the live build
         id: find
         run: |
-          auth=(-H "Authorization: Bearer $VERCEL_TOKEN")
-          q="teamId=$VERCEL_ORG_ID"
-          tree=$(git rev-parse 'HEAD^{tree}')
-          staged=$(curl -fsS "${auth[@]}" "$VERCEL_API/v6/deployments?projectId=$VERCEL_PROJECT_ID&$q&target=production&state=READY&limit=100" \
-            | jq -r --arg t "$tree" '[.deployments[] | select(.meta.stagedTree == $t)][0].uid // empty')
-          live=$(curl -fsS "${auth[@]}" "$VERCEL_API/v9/projects/$VERCEL_PROJECT_ID?$q" | jq -r '.targets.production.id')
-          echo "staged=$staged" >> "$GITHUB_OUTPUT"
+          live=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" "$VERCEL_API/v9/projects/$VERCEL_PROJECT_ID?teamId=$VERCEL_ORG_ID" \
+            | jq -r '.targets.production.id')
           echo "live=$live" >> "$GITHUB_OUTPUT"
-          echo "tree ${tree:0:12}: staged build ${staged:-none}; live now $live"
+          echo "live now $live"
 
       - name: Pending migrations?
         id: migrations
@@ -71,25 +66,22 @@ jobs:
           echo "pending=$([ "$applied" -lt "$want" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
-        if: steps.migrations.outputs.pending == 'true' || steps.find.outputs.staged == ''
         with:
           node-version: 22
       - id: deps
-        if: steps.migrations.outputs.pending == 'true' || steps.find.outputs.staged == ''
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: node_modules
           key: node-modules-Web-node22-v1-${{ hashFiles('package-lock.json') }}
-      - if: (steps.migrations.outputs.pending == 'true' || steps.find.outputs.staged == '') && steps.deps.outputs.cache-hit != 'true'
+      - if: steps.deps.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: Apply migrations
         if: steps.migrations.outputs.pending == 'true'
         run: node scripts/db/migrate.mjs --yes
 
-      - name: Build now (no staged build for this tree)
+      - name: Build
         id: build
-        if: steps.find.outputs.staged == ''
         env:
           SKIP_BUILD_TYPECHECK: "1" # the pull request's "web checks" type-checked this code
           SKIP_DB_MIGRATE: "1" # migrated above
@@ -98,7 +90,7 @@ jobs:
           DATABASE_URL=postgresql://build:build@localhost:5432/build npx -y "$VERCEL_CLI" build --prod --token "$VERCEL_TOKEN"
           # --archive=tgz uploads a few archive files, not every changed file (the Hobby plan allows 5,000 a day).
           if ! out=$(npx -y "$VERCEL_CLI" deploy --prebuilt --prod --skip-domain --archive=tgz --token "$VERCEL_TOKEN" \
-            --meta stagedTree="$(git rev-parse 'HEAD^{tree}')" --meta stagedSha="$GITHUB_SHA" 2>&1); then
+            --meta builtSha="$GITHUB_SHA" 2>&1); then
             echo "$out"
             if grep -qE 'api-deployments-free-per-day|api-upload-free|Resource is limited' <<<"$out"; then
               echo "::error::A Vercel daily limit is reached. Production did not change. Rerun this workflow later."
@@ -112,8 +104,7 @@ jobs:
       - name: Check the build before it goes live
         id: target
         run: |
-          id="${{ steps.find.outputs.staged }}"
-          id="${id:-${{ steps.build.outputs.id }}}"
+          id="${{ steps.build.outputs.id }}"
           url=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" "$VERCEL_API/v13/deployments/$id?teamId=$VERCEL_ORG_ID" | jq -r .url)
           echo "id=$id" >> "$GITHUB_OUTPUT"
           node scripts/smoke.mjs "https://$url"

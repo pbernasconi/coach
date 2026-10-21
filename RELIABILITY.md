@@ -27,7 +27,7 @@ noticed. These guards exist so a bad value, a bad deploy or a bad migration cann
   **every** return branch, empty states included. A branch without it reads as a failed page and rolls back a
   good deploy (2026-10-19, `/lift` with no sessions).
 - **A new environment variable** a page needs at build time (`NEXT_PUBLIC_*`) must not be marked Sensitive in
-  Vercel: staged builds run in CI and receive Sensitive values only at runtime.
+  Vercel: the builds run in CI and receive Sensitive values only at runtime.
 
 ## Deploys
 
@@ -35,7 +35,8 @@ Vercel builds nothing from Git (`vercel.json`). The Hobby plan has two daily lim
 below them:
 
 - **100 deployments a day.** Only a merge that changes the web app makes one (`deploy.yml` has the same paths filter
-  as "web build": not `lift/`, Markdown, or other workflows). Pull requests upload nothing unless labelled.
+  as "web build": not `lift/`, Markdown, or other workflows). Pull requests upload nothing, except with the label
+  `preview`.
 - **5,000 file uploads a day.** Every `vercel deploy` passes `--archive=tgz`: a build (about 630 files, 16 MB) is a
   few archive files, not each changed file.
 
@@ -43,8 +44,7 @@ A merge goes live in about 3 to 4 minutes, and only after a check on the product
 
 1. **On the pull request**, "web build" builds the production output (`vercel build --prod`, the PR merged into
    main), so a build that Vercel would reject fails the pull request. It uploads nothing.
-2. **At the merge**, `deploy.yml` finds a staged build whose tree equals the merge commit's tree, or builds one. It
-   applies new migrations, checks the build on the production data (`/api/health` and `/sign-in`), and only then
+2. **At the merge**, `deploy.yml` builds it as a production deployment with no domain. It applies new migrations, checks the build on the production data (`/api/health` and `/sign-in`), and only then
    promotes it (an alias swap). A failed check stops the deploy: production does not change. Merges in quick
    succession share one deploy (the concurrency group keeps one run waiting, the newest).
 3. Then it renders every page in `PAGES` on coach.paolobernasconi.com as the owner. On a failure it promotes the
@@ -54,10 +54,8 @@ A merge goes live in about 3 to 4 minutes, and only after a check on the product
 At a daily limit the deploy stops before the promote, production stays on the build before it, and the `outage`
 issue says so. To redeploy main by hand, run the Deploy workflow (Actions → Deploy → Run workflow).
 
-**Staging is on demand:** add the label `stage` (or `perf`) to a pull request. `stage.yml` uploads its production
-build with no domain and checks it on the production data before the merge (a pull request with new migrations
-skips that check until the merge). If the merge commit has the same tree, `deploy.yml` promotes that build in
-seconds. Use it for a risky change; each later push to that pull request stages it again.
+There is no staging before the merge (removed 2026-10-20): the check before the promote is the gate, and each staged
+build used one of the 100 deployments a day. **Page speed** is a manual run on production (Actions → Perf).
 
 **Previews are on demand:** add the label `preview` to a pull request. `preview.yml` deploys it with the Preview
 environment (the Neon development branch, Clerk's development sign-in), checks it, and comments the link; each
@@ -68,7 +66,7 @@ later push to that pull request redeploys it.
 `scripts/smoke.mjs` calls `/api/health` (Bearer `HEALTH_TOKEN`: every loader, `/api/home`, and the migrations)
 and renders each page in `PAGES` as the owner. The `x-coach-health` header grants that, for GET only.
 
-- **Before a promote, and on a staged build** (`stage.yml`): `/api/health` and `/sign-in` on the deployment URL.
+- **Before a promote** (`deploy.yml`): `/api/health` and `/sign-in` on the deployment URL.
 - **After a promote**: every page on production (`--pages --expect-deployment <id>`).
 - **Preview deploy**: `/api/health` and `/sign-in` on the preview URL (`preview.yml`).
 - **Every hour, after the Sync workflow** (`workflow_run`, while the database is awake): production, every page. A failure here opens an issue and does not roll back: without a
@@ -82,8 +80,9 @@ Run it yourself: `HEALTH_TOKEN=… npm run smoke -- https://coach.paolobernascon
 | --- | --- | --- |
 | `HEALTH_TOKEN` | Vercel (Production, Preview), GitHub | `/api/health`, page rendering as the owner |
 | `VERCEL_BYPASS_SECRET` | GitHub (Vercel automation bypass) | The check of protected `*.vercel.app` preview URLs |
-| `VERCEL_TOKEN` | GitHub (team token "coach GitHub deploy check (rollback)", expires 2027-10-19) | Staging, promote, rollback |
+| `VERCEL_TOKEN` | GitHub (team token "coach GitHub deploy check (rollback)", expires 2027-10-19) | Build, promote, rollback |
 | `PROD_DATABASE_URL` | GitHub | Migrations at the merge (`deploy.yml`) |
+| `NEON_API_KEY` | GitHub (Neon key "coach-usage-check", this project only) | The daily usage check (`neon-usage.yml`) |
 
 ## Data cache
 
@@ -112,3 +111,8 @@ wake-ups an hour (the old schedules) were about 70 of the 100 CU-hours a month. 
 database each hour: `sync.yml` at :00. The deploy check and the Garmin workout push start when it ends
 (`workflow_run`), while the database is still awake. The Garmin data sync runs at 11:00 and 17:00 UTC, at the same
 minute. A new scheduled job that reads the database must also start from Sync, not from its own cron.
+
+The quotas are hard: 100 CU-hours and 20 GB of transfer a month (Launch plan). At one, Neon stops production until
+the next month. `neon-usage.yml` reads the usage from the Neon API every day (it does not wake the database) and
+opens a `neon-usage` issue at 50% or 80% of a quota, or when the month's pace would pass one. Each deploy renders
+every page on production, so a day with many merges also uses Neon.
