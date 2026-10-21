@@ -98,6 +98,7 @@ enum CompositionRoot {
             sync: sync,
             health: makeHealth(sessions: sessions, isSaved: source.isSaved),
             coachPlan: makeCoachPlan(source: source, sessions: sessions, sync: sync, now: now, calendar: appCalendar),
+            appData: makeAppData(source: source, sync: sync, now: now),
             seedsDemo: seedsDemo,
             practice: practice
         )
@@ -168,7 +169,8 @@ enum CompositionRoot {
         return AppInfo(
             version: version ?? "0",
             build: build ?? "0",
-            unit: source == .demo || source == .fresh ? .kg : localUnit,  // replaced by the `units` preference in AppDependencies.info
+            // Replaced by the `units` preference in AppDependencies.info.
+            unit: source == .demo || source == .fresh ? .kg : localUnit,
             dataSource: source
         )
     }

@@ -81,6 +81,27 @@ import Testing
         #expect(ChartMath.strideIndices(count: 0, maxCount: 3).isEmpty)
     }
 
+    @Test func extremaKeepPeaksEndsAndOrder() {
+        let values = (0..<1_000).map { Double($0 % 50) } + [412] + (0..<1_000).map { Double($0 % 50) }
+        let kept = ChartMath.extremaIndices(values, maxCount: 100)
+        #expect(kept.count <= 100)
+        #expect(kept.first == 0)
+        #expect(kept.last == values.count - 1)
+        #expect(kept == kept.sorted())
+        #expect(kept.contains(1_000), "the peak survives")
+        #expect(ChartMath.extremaIndices([1, 2, 3], maxCount: 100) == [0, 1, 2])
+    }
+
+    @Test(arguments: [("▼ 7%", "down 7%"), ("▲ 3 km", "up 3 km"), ("+5", "+5")])
+    func deltaArrowsAreSpoken(text: String, expected: String) {
+        #expect(DeltaSpeech.spoken(text) == expected)
+    }
+
+    @Test func firstIndicesKeepTheFirstOfEachName() {
+        #expect(ChartMath.firstIndices(of: ["Fitness", "Fatigue", "Fitness", "Form"]) == [0, 1, 3])
+        #expect(ChartMath.firstIndices(of: []).isEmpty)
+    }
+
     @Test func spansTreatNonFiniteWidthsAsZero() {
         #expect(ChartMath.spans(widths: [1, .nan, .infinity, 2]) == [0..<1, 1..<1, 1..<1, 1..<3])
     }

@@ -47,6 +47,10 @@ final class AppDependencies {
     let health: any WorkoutHealthRecording
     /// The coach's full weekly plan for the Week screen, or a stand-in that is always off (lift/WEEK-API.md).
     let coachPlan: any CoachPlanProviding
+    /// The coach's read-only pages (Today, Training, Lift; lift/APP-API.md), or a stand-in that is not connected.
+    let appData: any AppDataSource
+    /// The shell's selected tab, for screens that link to another tab (`TabSwitching`).
+    let tabs = TabSwitcher()
     /// Opens and closes Import from Notes, which the shell shows as a modal page above the tabs.
     let importFlow: ImportFlowPresenter
     /// Opens, closes and undoes `lift://templates` links, which the shell shows as a sheet above the tabs.
@@ -81,6 +85,7 @@ final class AppDependencies {
         sync: any Syncing,
         health: any WorkoutHealthRecording,
         coachPlan: any CoachPlanProviding,
+        appData: any AppDataSource,
         seedsDemo: Bool,
         practice: any PracticeModeSwitching
     ) {
@@ -104,6 +109,7 @@ final class AppDependencies {
         self.sync = sync
         self.health = health
         self.coachPlan = coachPlan
+        self.appData = appData
         self.seedsDemo = seedsDemo
         self.practice = practice
         let importFlow = ImportFlowPresenter()

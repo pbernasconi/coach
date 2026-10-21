@@ -84,6 +84,31 @@ nonisolated enum ChartMath {
         return Array(stride(from: count - 1, through: 0, by: -step).reversed())
     }
 
+    /// The index of the first occurrence of each distinct key, in order: `["a", "b", "a"]` gives `[0, 1]`.
+    static func firstIndices(of keys: [String]) -> [Int] {
+        var seen = Set<String>()
+        return keys.indices.filter { seen.insert(keys[$0]).inserted }
+    }
+
+    /// At most about `maxCount` indices into `values` that keep the shape: the first and the last, and in each of the
+    /// buckets between them the index of the lowest and of the highest value, in order. Peaks and dips survive, which
+    /// an even stride would drop. Fewer values than `maxCount` give every index.
+    static func extremaIndices(_ values: [Double], maxCount: Int) -> [Int] {
+        guard values.count > maxCount, maxCount >= 4 else { return Array(values.indices) }
+        let buckets = (maxCount - 2) / 2
+        let inner = 1..<(values.count - 1)
+        var picked: Set<Int> = [0, values.count - 1]
+        for bucket in 0..<buckets {
+            let lower = inner.lowerBound + inner.count * bucket / buckets
+            let upper = inner.lowerBound + inner.count * (bucket + 1) / buckets
+            guard lower < upper else { continue }
+            let slice = lower..<upper
+            if let low = slice.min(by: { values[$0] < values[$1] }) { picked.insert(low) }
+            if let high = slice.max(by: { values[$0] < values[$1] }) { picked.insert(high) }
+        }
+        return picked.sorted()
+    }
+
     /// Each width laid end to end from zero: `[2, 3]` becomes `[0..<2, 2..<5]`. Negative and non-finite widths count
     /// as zero.
     static func spans(widths: [Double]) -> [Range<Double>] {

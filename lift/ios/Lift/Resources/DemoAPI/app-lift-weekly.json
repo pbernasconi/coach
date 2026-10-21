@@ -1,0 +1,156 @@
+{
+ "generatedAt": "2026-10-21T16:00:00.000Z",
+ "unit": "kg",
+ "weeks": {
+  "ok": true,
+  "title": "Weekly volume",
+  "caption": "Weeks start on Monday. Volume = reps x logged weight over logged sets, warm-ups excluded, in kg.",
+  "emptyText": "No sessions yet.",
+  "items": [
+   {
+    "week": "2026-10-19",
+    "weekText": "Mon, Oct 19, 2026",
+    "sessions": 1,
+    "sets": 16,
+    "volume": 6200,
+    "volumeText": "6,200 kg",
+    "relative": 0.359
+   },
+   {
+    "week": "2026-10-12",
+    "weekText": "Mon, Oct 12, 2026",
+    "sessions": 2,
+    "sets": 35,
+    "volume": 15211,
+    "volumeText": "15,211 kg",
+    "relative": 0.88
+   },
+   {
+    "week": "2026-10-05",
+    "weekText": "Mon, Oct 5, 2026",
+    "sessions": 2,
+    "sets": 39,
+    "volume": 15359,
+    "volumeText": "15,359 kg",
+    "relative": 0.889
+   },
+   {
+    "week": "2026-09-28",
+    "weekText": "Mon, Sep 28, 2026",
+    "sessions": 2,
+    "sets": 33,
+    "volume": 15507,
+    "volumeText": "15,507 kg",
+    "relative": 0.897
+   },
+   {
+    "week": "2026-09-21",
+    "weekText": "Mon, Sep 21, 2026",
+    "sessions": 2,
+    "sets": 37,
+    "volume": 15655,
+    "volumeText": "15,655 kg",
+    "relative": 0.906
+   },
+   {
+    "week": "2026-09-14",
+    "weekText": "Mon, Sep 14, 2026",
+    "sessions": 2,
+    "sets": 36,
+    "volume": 15803,
+    "volumeText": "15,803 kg",
+    "relative": 0.914
+   },
+   {
+    "week": "2026-09-07",
+    "weekText": "Mon, Sep 7, 2026",
+    "sessions": 2,
+    "sets": 35,
+    "volume": 15951,
+    "volumeText": "15,951 kg",
+    "relative": 0.923
+   },
+   {
+    "week": "2026-08-31",
+    "weekText": "Mon, Aug 31, 2026",
+    "sessions": 2,
+    "sets": 39,
+    "volume": 16099,
+    "volumeText": "16,099 kg",
+    "relative": 0.931
+   },
+   {
+    "week": "2026-08-24",
+    "weekText": "Mon, Aug 24, 2026",
+    "sessions": 2,
+    "sets": 33,
+    "volume": 16247,
+    "volumeText": "16,247 kg",
+    "relative": 0.94
+   },
+   {
+    "week": "2026-08-17",
+    "weekText": "Mon, Aug 17, 2026",
+    "sessions": 2,
+    "sets": 37,
+    "volume": 16395,
+    "volumeText": "16,395 kg",
+    "relative": 0.949
+   },
+   {
+    "week": "2026-08-10",
+    "weekText": "Mon, Aug 10, 2026",
+    "sessions": 2,
+    "sets": 36,
+    "volume": 16543,
+    "volumeText": "16,543 kg",
+    "relative": 0.957
+   },
+   {
+    "week": "2026-08-03",
+    "weekText": "Mon, Aug 3, 2026",
+    "sessions": 2,
+    "sets": 35,
+    "volume": 16691,
+    "volumeText": "16,691 kg",
+    "relative": 0.966
+   },
+   {
+    "week": "2026-07-27",
+    "weekText": "Mon, Jul 27, 2026",
+    "sessions": 2,
+    "sets": 39,
+    "volume": 16839,
+    "volumeText": "16,839 kg",
+    "relative": 0.974
+   },
+   {
+    "week": "2026-07-20",
+    "weekText": "Mon, Jul 20, 2026",
+    "sessions": 2,
+    "sets": 33,
+    "volume": 16987,
+    "volumeText": "16,987 kg",
+    "relative": 0.983
+   },
+   {
+    "week": "2026-07-13",
+    "weekText": "Mon, Jul 13, 2026",
+    "sessions": 2,
+    "sets": 37,
+    "volume": 13535,
+    "volumeText": "13,535 kg",
+    "relative": 0.783
+   },
+   {
+    "week": "2026-07-06",
+    "weekText": "Mon, Jul 6, 2026",
+    "sessions": 2,
+    "sets": 36,
+    "volume": 17283,
+    "volumeText": "17,283 kg",
+    "relative": 1.0
+   }
+  ]
+ }
+}

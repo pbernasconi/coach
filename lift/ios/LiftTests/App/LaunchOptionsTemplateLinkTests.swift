@@ -8,7 +8,7 @@ import Testing
     @Test func openTemplateLinkInDemoModeOpensTheSampleOverExercises() {
         let options = LaunchOptions(arguments: ["Lift", "-demo", "-tab", "exercises", "-open", "template-link"])
         #expect(options.opening == .templateLink)
-        #expect(options.opening?.tab == .exercises)
+        #expect(options.opening?.tab == .lift)
         #expect(options.opensTemplateLinkSample)
         #expect(options.initialRoute(upcomingSessionID: nil) == nil)
     }

@@ -94,7 +94,7 @@ final class WeekViewModel {
         case .weekChanged(let offset):
             return changeWeek(to: offset)
         case .sessionTapped(let id):
-            router.open(.workout(id))
+            router.open(WeekLinks.session(summary(id), id: id, coachIsOn: plan.status != .off))
         case .sessionOptionsTapped(let id):
             state.destination = sessionRef(id).map { .options($0) }
         case .moveTapped(let id):
@@ -108,18 +108,13 @@ final class WeekViewModel {
             return reschedule(id, .remove, message: String(localized: "Removed \(title)"))
         case .destinationDismissed:
             state.destination = nil
-        case .planItemTapped(let id):
-            state.destination = merge?.item(id).map { .planItem($0) }
-        case .refreshPulled:
-            let coachPlan = coachPlan
-            return Task { await coachPlan.refresh() }
         default:
             return sendPlanning(action)
         }
         return nil
     }
 
-    /// The pickers of Add workout and Change workout, and the planning writes with their Undo (`WeekPlanEdits`).
+    /// The pickers, the planning writes with their Undo (`WeekPlanEdits`), and the coach plan's links and refresh.
     private func sendPlanning(_ action: WeekAction) -> Task<Void, Never>? {
         switch action {
         case .addWorkoutTapped(let day):
@@ -128,15 +123,18 @@ final class WeekViewModel {
             state.destination = sessionRef(id).map { .change($0) }
         case .undoTapped(let undo):
             return undoChange(undo)
+        case .planItemTapped(let id):
+            guard let item = merge?.item(id) else { return nil }
+            if let route = WeekLinks.planItem(item) { router.open(route) } else { state.destination = .planItem(item) }
+        case .planActivityTapped(let id):
+            state.destination = nil
+            router.open(.activity(id))
+        case .refreshPulled:
+            return Task { [coachPlan] in await coachPlan.refresh() }
         default:
             state.destination = nil
-            let weekStart = layout?.weekStart(offset: state.weekOffset)
-            let write = WeekPlanEdits.write(
-                for: action,
-                templates: state.templates,
-                weekStart: weekStart,
-                router: router
-            )
+            let start = layout?.weekStart(offset: state.weekOffset)
+            let write = WeekPlanEdits.write(for: action, templates: state.templates, weekStart: start, router: router)
             return write.flatMap { perform($0.key, $0.body) }
         }
         return nil

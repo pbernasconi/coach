@@ -25,7 +25,8 @@ public struct ChartSeries<X: KoboChartX>: Identifiable, Hashable, Sendable {
     public let showsPoints: Bool
 
     /// - Parameters:
-    ///   - name: shown as is in the legend, the callout and the VoiceOver summary.
+    ///   - name: shown as is in the legend, the callout and the VoiceOver summary. Series with the same name are one
+    ///     legend item and draw their line in the first one's colour (a measured line and its dashed projection).
     ///   - points: sorted by x here, so callers can pass them in any order. Non-finite values are dropped.
     ///   - color: the line colour; the theme's `chartColor` for the series' position when `nil`.
     ///   - fillsArea: a soft fill under the line.
@@ -55,9 +56,11 @@ public struct ChartSeries<X: KoboChartX>: Identifiable, Hashable, Sendable {
         }
     }
 
-    /// The points to draw: at most `ChartSeries.maxPlotted`, picked evenly with both ends kept, so a long stream stays
-    /// smooth to draw and to touch. Summaries still read every point.
-    var plotted: [ChartPoint<X>] { ChartMath.thinned(points, to: Self.maxPlotted) }
+    /// The points to draw: at most `ChartSeries.maxPlotted`, keeping both ends and each stretch's lowest and highest
+    /// point, so a long stream stays smooth to draw and to touch without losing its peaks. Summaries read every point.
+    var plotted: [ChartPoint<X>] {
+        ChartMath.extremaIndices(points.map(\.y), maxCount: Self.maxPlotted).map { points[$0] }
+    }
 
     /// The most points a line draws.
     static var maxPlotted: Int { 1_000 }

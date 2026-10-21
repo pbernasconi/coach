@@ -2,11 +2,13 @@ import Foundation
 import KoboTokens
 import SwiftUI
 
-/// A change shown under a stat ("+5 km"), toned and always with a glyph, so it never reads by colour alone.
+/// A change shown under a stat ("+5 km"), toned and with a glyph, so it never reads by colour alone. The glyph is an
+/// SF Symbol, or the text's own arrow ("▼ 7%", `textOnly`).
 public struct StatDelta {
     public let text: Text
     public let tone: Tone
-    public let symbol: String
+    /// `nil` when the text carries its own arrow.
+    public let symbol: String?
 
     /// A delta with localized text ("on track", "+\(change)%").
     ///
@@ -22,6 +24,18 @@ public struct StatDelta {
         self.text = Text(verbatim: text)
         self.tone = tone
         self.symbol = symbol ?? tone.feedbackSymbol
+    }
+
+    private init(text: Text, tone: Tone) {
+        self.text = text
+        self.tone = tone
+        self.symbol = nil
+    }
+
+    /// A delta whose text already carries its arrow ("▼ 7%", "▲ 3 km"): coloured by `tone`, with no icon, so a fall
+    /// does not read as an error. VoiceOver reads the arrow as a word ("down 7%").
+    public static func textOnly(verbatim text: String, tone: Tone) -> StatDelta {
+        StatDelta(text: Text(verbatim: text).accessibilityLabel(Text(verbatim: DeltaSpeech.spoken(text))), tone: tone)
     }
 }
 
@@ -40,6 +54,7 @@ public struct StatTile<Value: View, Footer: View>: View {
     private let delta: StatDelta?
     private let footer: Footer
     @Environment(\.koboTheme) private var theme
+    @Environment(\.statTileFillsHeight) private var fillsHeight
 
     private init(label: Text, content: Value, unit: Text?, delta: StatDelta?, footer: Footer) {
         self.label = label
@@ -69,7 +84,7 @@ public struct StatTile<Value: View, Footer: View>: View {
                 Label {
                     delta.text
                 } icon: {
-                    Image(systemName: delta.symbol).accessibilityHidden(true)
+                    if let symbol = delta.symbol { Image(systemName: symbol).accessibilityHidden(true) }
                 }
                 .font(theme.font(.caption).weight(.semibold))
                 .foregroundStyle(theme.palette.status(delta.tone).ink)
@@ -77,7 +92,8 @@ public struct StatTile<Value: View, Footer: View>: View {
             footer
         }
         .fixedSize(horizontal: false, vertical: true)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        // In a `.statTileRow()`, fills the row's height, top-aligned, so tiles in a row are as tall as the tallest.
+        .frame(maxWidth: .infinity, maxHeight: fillsHeight ? .infinity : nil, alignment: .topLeading)
         .padding(.horizontal, Space.md)
         .padding(.vertical, Space.rowVertical)
         .background(theme.palette.surface, in: RoundedRectangle(cornerRadius: Radius.lg, style: .continuous))
@@ -143,6 +159,20 @@ extension StatTile where Value == AnimatedNumber<FloatingPointFormatStyle<Double
     public init(label: LocalizedStringKey, value: Double, unit: LocalizedStringKey? = nil, delta: StatDelta? = nil) {
         let unit = unit.map { Text($0) }
         self.init(label: Text(label), content: AnimatedNumber(value), unit: unit, delta: delta, footer: EmptyView())
+    }
+}
+
+extension EnvironmentValues {
+    @Entry var statTileFillsHeight = false
+}
+
+extension View {
+    /// Makes the `StatTile`s inside take the full height they are offered, so tiles in one `Grid` row are equally tall.
+    /// Off by default: a lone tile in a sheet or a stack keeps its own height.
+    ///
+    ///     Grid { GridRow { StatTile(…); StatTile(…) } }.statTileRow()
+    public func statTileRow() -> some View {
+        environment(\.statTileFillsHeight, true)
     }
 }
 

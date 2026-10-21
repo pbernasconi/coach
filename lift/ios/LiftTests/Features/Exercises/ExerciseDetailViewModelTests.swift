@@ -19,9 +19,12 @@ import Testing
     ) -> ExerciseDetailViewModel {
         ExerciseDetailViewModel(
             exerciseID: exerciseID,
+            exerciseKey: LiftLinks.key(forLibraryID: exerciseID),
             exercises: FakeExerciseRepository(emissions: [library]),
             history: history,
             catalog: catalog,
+            data: DisabledAppData(),
+            router: RecordingNavigator(),
             now: SessionBuilder.now,
             calendar: SessionBuilder.calendar,
             unit: .kg

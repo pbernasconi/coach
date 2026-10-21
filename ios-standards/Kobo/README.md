@@ -63,7 +63,7 @@ A brand is one value: `Palette.make(accent:onAccent:accentText:)` builds a full 
 | Status | `BannerStack` + `.bannerStack`, `NudgeBanner`, `SystemNotice`, `OfflineBanner`, `InlineNotice`, `IconNotice`, `InlineProgress`, `SectionState`, `SlowWaitNote` |
 | Display | `ProgressRing`, `CountdownRing`, `AnimatedNumber`, `StatTile`, `Avatar`, `Monogram`, `Thumbnail`, `ThumbnailBadge` |
 | Charts | `Sparkline` (also in a `StatTile` footer), `KoboLineChart` (+ `.logarithmicX()`), `KoboLinePanels`, `KoboStackedBarChart`, `KoboHistogram`, `VariableWidthBarChart`, `BandBar`, `ZoneBars`, `KoboHeatmap`, `KoboDataTable`, `KoboRouteMap` |
-| Layout | `.koboCard()`, `CardSection`, `ListRow`, `ListSection`, `KeyValueRow`, `KeyValueList`, `SectionHeader`, `Separator`, `Collapsible`, `.pinnedFooter`, `SheetHeader`, `DayStrip`, `SegmentedProgress`, `MiniPlayerBar` |
+| Layout | `.koboCard()`, `CardSection`, `ListRow`, `ListSection`, `KeyValueRow`, `KeyValueList`, `SectionHeader`, `Separator`, `Collapsible`, `.pinnedFooter`, `SheetHeader`, `DayStrip`, `SegmentedProgress`, `TileGrid`, `MiniPlayerBar` |
 | Navigation | `AppHeader` + `.tabRootHeader`, `HeaderButton`, `HeaderProfileButton`, `CountBadge` + `.countBadge`, `TabShell`, `TextLink` |
 | Overlays | `KoboSheet` + `.koboSheet`, `.koboActionSheet`, `ModalPage` + `.koboModalPage`, `InputModal`, `InfoButton`, `InfoSheet`, `.itemSheet` |
 | QuickActions | `ActionChipRow`, `ActionCircle`, `SetupChecklistCard`, `SuggestionCard`, `SummaryStrip`, `TonalCardRow` |
