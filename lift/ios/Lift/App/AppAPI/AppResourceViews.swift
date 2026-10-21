@@ -37,20 +37,24 @@ struct AppResourcePage<Value: Equatable & Sendable, Loaded: View>: View {
                 loaded(value)
             }
         } empty: {
-            AppNotConnectedView(onConnect: onConnect)
+            AppNotConnectedView(needsReconnect: state.needsReconnect, onConnect: onConnect)
         }
     }
 }
 
 /// The one not-connected state of every coach screen: what is missing and the way to Settings → Sync.
 struct AppNotConnectedView: View {
+    /// The coach refused the stored token: ask to connect again rather than for the first time.
+    var needsReconnect = false
     let onConnect: (() -> Void)?
 
     var body: some View {
         EmptyState(
-            symbol: "link.badge.plus",
-            title: "Connect Lift to Coach",
-            message: "Your coach's plan and numbers show here once Lift syncs. Connect it in Settings, under Sync."
+            symbol: needsReconnect ? "arrow.triangle.2.circlepath" : "link.badge.plus",
+            title: needsReconnect ? "Connect Lift to Coach again" : "Connect Lift to Coach",
+            message: needsReconnect
+                ? "Coach did not accept Lift's sync token. Connect Lift again in Settings, under Sync."
+                : "Your coach's plan and numbers show here once Lift syncs. Connect it in Settings, under Sync."
         ) {
             if let onConnect {
                 Button("Open Settings", systemImage: "gearshape", action: onConnect)
