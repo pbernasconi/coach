@@ -28,10 +28,11 @@ lift/
 │   │   │                                  GIF and thumbnail views
 │   │   ├── Features/Sessions/             SessionSummary, DayCalendar, SessionText (shared by Week and History)
 │   │   └── Resources/      Localizable.xcstrings
-│   ├── LiftWidgets/        widget extension: the rest Live Activity (Lock Screen, Dynamic Island); it also
-│   │                       compiles Lift/Features/Workout/LiveActivity/RestActivityAttributes.swift
-│   │                       and the +30s/Skip LiveActivityIntents (Lift/App/RestActivityIntents.swift) with the rest
-│   │                       they share with the app through the App Group (RestSnapshot)
+│   ├── LiftWidgets/        widget extension: the workout Live Activity (Lock Screen, Dynamic Island) from the first
+│   │                       logged set until the workout is finished; it also compiles WorkoutActivityAttributes and
+│   │                       RestSnapshot (Lift/Features/Workout/LiveActivity/) and the Done/Next/+30s/Skip
+│   │                       LiveActivityIntents (Lift/App/WorkoutActivityIntents.swift). The intents run in the app's
+│   │                       process and reach WorkoutActivityCenter through WorkoutActivityButtons (set in LiftApp.init)
 │   ├── LiftShare/          Share extension: a note shared from Apple Notes goes to the App Group inbox, then
 │   │                       Lift's Import (lift://import, IncomingNoteRouter; the app also checks on foreground)
 │   ├── LiftTests/          Swift Testing ViewModel tests, hand-written fakes in Fakes/
