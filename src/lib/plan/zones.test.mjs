@@ -5,7 +5,7 @@ import { zonesFor } from './zones.mjs';
 test('a VO2 ride gets Z5 power and a Z2 finish', () => {
   const z = zonesFor({ title: 'VO2 A bike', workoutType: 'vo2-bike', sport: 'ride' });
   assert.deepEqual(z.map((x) => x.zone), ['Z5', 'Z2']);
-  assert.match(z[0].target, /300–335 W/);
+  assert.match(z[0].target, /284–318 W/);
 });
 
 test('a threshold run goes by heart rate only', () => {

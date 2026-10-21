@@ -6,11 +6,11 @@
 // workouts: rides in % of FTP, runs in % of LTHR (PLAN-STRUCTURE: heart rate for all but Z5). Pure; node --test.
 
 /** Paolo's anchors (plans/PLAN-STRUCTURE.md). */
-export const ANCHORS = { ftp: 280, lthr: 168, maxHr: 182 };
+export const ANCHORS = { ftp: 265, lthr: 168, maxHr: 182 };
 
 /**
  * Coach zones as ranges of the anchors. Power in % of FTP, heart rate in % of LTHR. From the zone table in
- * PLAN-STRUCTURE.md at FTP 280 W and LTHR 168 (Z4 top 270–290 W = 96–104 %, 175–182 bpm = 104–108 %).
+ * PLAN-STRUCTURE.md at FTP 265 W and LTHR 168 (Z4 top 254–276 W = 96–104 %, 175–182 bpm = 104–108 %).
  */
 export const ZONE_RANGES = {
   Z1: { power: [45, 55], hr: [60, 72] },
