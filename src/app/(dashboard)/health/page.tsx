@@ -1,19 +1,17 @@
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { ownerForSignedInUser } from '@/lib/owner';
-import { CHART_DAYS, loadClinicianNotes, loadGarminStatus, loadHealth } from '@/lib/vitals/queries';
+import Link from 'next/link';
+import { loadClinicianNotes, loadGarminStatus, loadHealth } from '@/lib/vitals/queries';
 import ClinicianNotes from './ClinicianNotes';
 import { load, safe } from '@/lib/safe';
-import { loadGarminSections } from '@/lib/vitals/garmin-pages';
+import { loadBoard } from '@/lib/vitals/garmin-pages';
 import SectionError from '@/components/SectionError';
-import GarminSections from '@/components/vitals/GarminSections';
 import GarminStatusLine from '@/components/vitals/GarminStatusLine';
-import { addDays } from '@/lib/vitals/readiness.mjs';
+import HealthBoard from '@/components/vitals/HealthBoard';
+import VitalsSummary from '@/components/vitals/VitalsSummary';
 import { todayIn } from '@/lib/plan/week.mjs';
-import type { TooltipRow } from '@/components/charts/ChartTooltip';
-import HealthTrendChart from './HealthTrendChart';
 import LabsSection from './LabsSection';
-import ReadinessTiles from './ReadinessTiles';
 
 export const metadata: Metadata = { title: 'Health' };
 
@@ -29,70 +27,64 @@ function zone(tz: string | undefined) {
   return 'America/Los_Angeles';
 }
 
-const hm = (m: number) => `${Math.floor(Math.round(m) / 60)}:${String(Math.round(m) % 60).padStart(2, '0')}`;
+const RANGES = [30, 90] as const;
 
-export default async function HealthPage() {
+export default async function HealthPage({ searchParams }: { searchParams: Promise<{ days?: string }> }) {
   const userId = await ownerForSignedInUser();
   if (!userId) return <p data-smoke="health" className="text-sm text-muted-foreground">This account has no Coach data.</p>;
   const today = todayIn(zone((await cookies()).get('tz')?.value));
-  const from = addDays(today, -(CHART_DAYS - 1));
-  const [{ readiness, series, hrvMeasure, sleepStages, baselines, labs }, garmin, sections, notes] = await Promise.all([
+  const days = (await searchParams).days === '90' ? 90 : 30;
+  // The Garmin line is optional: the page still renders when it fails.
+  const garminP = safe('garmin status', () => loadGarminStatus(userId), null);
+  const [{ readiness, labs }, garmin, board, notes] = await Promise.all([
     loadHealth(userId, today),
-    // The Garmin line is optional: the page still renders when it fails.
-    safe('garmin status', () => loadGarminStatus(userId), null),
-    load('Sleep and recovery', () => loadGarminSections(userId, today)),
+    garminP,
+    garminP.then((g) => load('Health board', () => loadBoard(userId, today, days, g?.syncedThrough ?? null))),
     load('Clinician notes', () => loadClinicianNotes(userId)),
   ]);
   const now = Date.now();
-  const hasSamples = readiness.lastSampleDate !== null || Object.values(series).some((s) => s.length > 0);
-
-  const sleepDetails: Record<string, TooltipRow[]> = Object.fromEntries(
-    Object.entries(sleepStages).map(([d, s]) => [
-      d,
-      (['deep', 'rem', 'core', 'awake'] as const).flatMap((k) =>
-        s[k] === null ? [] : [{ key: k, label: k === 'rem' ? 'REM' : k === 'awake' ? 'awake' : `${k} sleep`, value: hm(s[k]) }]
-      ),
-    ])
-  );
-  const band = (b: { mean: number; sd: number } | null, unit: string) =>
-    b ? { low: b.mean - b.sd, high: b.mean + b.sd, label: `60-day baseline ${Math.round(b.mean)} ± ${Math.round(b.sd)} ${unit}` } : null;
+  const hasSamples = readiness.lastSampleDate !== null || (board.ok && board.value.counts.worn + board.value.counts.partial > 0);
 
   return (
-    <div className="space-y-8" data-smoke="health">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Health</h1>
-        <p className="text-muted-foreground">
-          Recovery signals from Garmin Connect (or Apple Health) and blood tests from Function Health.
-          {readiness.lastSampleDate && ` Newest health data: ${readiness.lastSampleDate}.`}
-        </p>
-        <GarminStatusLine status={garmin} now={now} />
+    <div className="space-y-6" data-smoke="health">
+      <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
+        <div className="space-y-0.5">
+          <h1 className="text-2xl font-semibold tracking-tight">Health</h1>
+          <GarminStatusLine status={garmin} now={now} />
+        </div>
+        <div className="flex items-center gap-4 text-sm">
+          <Link href={`/health/day/${today}`} className="text-muted-foreground hover:text-foreground">Today</Link>
+          <Link href="/health/training" className="text-muted-foreground hover:text-foreground">Training</Link>
+          <Link href="/health/labs" className="text-muted-foreground hover:text-foreground">Labs</Link>
+          <nav aria-label="Chart range" className="inline-flex rounded-md border p-0.5">
+            {RANGES.map((r) => (
+              <Link
+                key={r}
+                href={r === 30 ? '/health' : `/health?days=${r}`}
+                aria-current={r === days ? 'page' : undefined}
+                scroll={false}
+                className={`rounded px-2 py-0.5 text-xs tabular-nums ${r === days ? 'bg-muted font-medium text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                {r}d
+              </Link>
+            ))}
+          </nav>
+        </div>
       </div>
 
       {hasSamples ? (
-        <>
-          <ReadinessTiles r={readiness} />
-          {sections.ok ? <GarminSections s={sections.value} /> : <SectionError label="Sleep and recovery" />}
-          <section className="space-y-3">
-            <h2 className="text-xl font-semibold tracking-tight">Last 90 days</h2>
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              <HealthTrendChart
-                title={`HRV (${hrvMeasure})`}
-                subtitle={hrvMeasure === 'RMSSD' ? 'Overnight average RMSSD from Garmin. Higher than your normal means recovered.' : 'Daily SDNN from Apple Health. Higher than your normal means recovered.'}
-                points={series.hrv} from={from} to={today} unit="ms" band={band(baselines.hrv, 'ms')} linkDays />
-              <HealthTrendChart title="Sleep" subtitle="Time asleep, by the night that ends on the day." points={series.sleep} from={from} to={today} unit="asleep" kind="bar" format="duration" details={sleepDetails} linkDays />
-              <HealthTrendChart title="Weight" subtitle="Daily weight." points={series.weight} from={from} to={today} unit="kg" decimals={1} linkDays />
-              <HealthTrendChart title="VO2max" subtitle="Estimated by the watch after outdoor runs and rides." points={series.vo2max} from={from} to={today} unit="mL/kg/min" decimals={1} />
-            </div>
-          </section>
-        </>
+        board.ok ? (
+          <>
+            <VitalsSummary r={readiness} b={board.value} />
+            <HealthBoard b={board.value} />
+          </>
+        ) : (
+          <SectionError label="Health board" />
+        )
       ) : (
         <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
           <p className="font-medium text-foreground">No health data yet.</p>
-          <p className="mt-1">
-            A daily job in GitHub Actions reads Garmin Connect and sends one value per day and metric to Coach: HRV, resting heart rate,
-            sleep and sleep score, Body Battery, stress, training readiness, VO2max, weight and more. Data appears here after its first run.
-            The Lift app can also send Apple Health data in the same way.
-          </p>
+          <p className="mt-1">The Garmin job in GitHub Actions sends one value per day and metric. Data appears here after its first run.</p>
         </div>
       )}
 
