@@ -1,0 +1,2732 @@
+{
+ "generatedAt": "2026-10-21T16:00:00.000Z",
+ "timeZone": "Europe/Zurich",
+ "today": "2026-10-21",
+ "unit": "kg",
+ "empty": null,
+ "week": {
+  "ok": true,
+  "title": "This week · Oct 19–Oct 25",
+  "done": 1,
+  "target": 2,
+  "doneText": "1 / 2",
+  "caption": "strength sessions",
+  "progress": 0.5,
+  "targetMet": false,
+  "days": [
+   {
+    "date": "2026-10-19",
+    "letter": "M",
+    "state": "done",
+    "today": false,
+    "sessionId": "de300000-0000-4000-8000-000000000100",
+    "label": "Monday: Lower A done"
+   },
+   {
+    "date": "2026-10-20",
+    "letter": "T",
+    "state": "none",
+    "today": false,
+    "sessionId": null,
+    "label": "Tuesday"
+   },
+   {
+    "date": "2026-10-21",
+    "letter": "W",
+    "state": "planned",
+    "today": true,
+    "sessionId": "de300000-0000-4000-8000-000000000001",
+    "label": "Wednesday: planned"
+   },
+   {
+    "date": "2026-10-22",
+    "letter": "T",
+    "state": "none",
+    "today": false,
+    "sessionId": null,
+    "label": "Thursday"
+   },
+   {
+    "date": "2026-10-23",
+    "letter": "F",
+    "state": "planned",
+    "today": false,
+    "sessionId": "de300000-0000-4000-8000-000000000002",
+    "label": "Friday: planned"
+   },
+   {
+    "date": "2026-10-24",
+    "letter": "S",
+    "state": "none",
+    "today": false,
+    "sessionId": null,
+    "label": "Saturday"
+   },
+   {
+    "date": "2026-10-25",
+    "letter": "S",
+    "state": "none",
+    "today": false,
+    "sessionId": null,
+    "label": "Sunday"
+   }
+  ],
+  "stats": [
+   {
+    "id": "sets",
+    "label": "Sets",
+    "value": "18",
+    "detail": "hard sets this week",
+    "flame": false
+   },
+   {
+    "id": "volume",
+    "label": "Volume",
+    "value": "7,140 kg",
+    "detail": "reps × weight",
+    "flame": false
+   },
+   {
+    "id": "last",
+    "label": "Last lift",
+    "value": "2 days ago",
+    "detail": "Lower A · Oct 19",
+    "flame": false
+   },
+   {
+    "id": "streak",
+    "label": "Streak",
+    "value": "6 weeks",
+    "detail": "at 2+ a week",
+    "flame": true
+   }
+  ],
+  "next": {
+   "sessionId": "de300000-0000-4000-8000-000000000001",
+   "date": "2026-10-21",
+   "title": "Upper A",
+   "whenText": "Next up · today",
+   "detail": "5 exercises · 18 sets planned"
+  },
+  "nextEmptyText": "No Lift session planned. Put one on the plan, or start one from a template in Lift."
+ },
+ "tips": {
+  "ok": true,
+  "title": "Coach notes",
+  "items": [
+   {
+    "id": "best",
+    "tone": "good",
+    "title": "New best on Back squat",
+    "body": "Estimated 1RM up to 144 kg. Keep the same top weight next time and add a rep.",
+    "link": {
+     "kind": "exercise",
+     "exerciseKey": "id-4c494654-0000-4000-8000-000000000001"
+    }
+   },
+   {
+    "id": "arms",
+    "tone": "warn",
+    "title": "Biceps and triceps are below 10 sets a week",
+    "body": "Add 2 sets of curls and pushdowns to each upper day.",
+    "link": {
+     "kind": "section",
+     "section": "muscles"
+    }
+   },
+   {
+    "id": "plan",
+    "tone": "info",
+    "title": "One more session to hit 2 this week",
+    "body": "Upper A is planned for today.",
+    "link": {
+     "kind": "week"
+    }
+   }
+  ]
+ },
+ "lifts": {
+  "ok": true,
+  "caption": "estimated 1RM per session · dashed line is your best",
+  "emptyText": "No lifts in the last 12 weeks.",
+  "items": [
+   {
+    "exerciseKey": "id-4c494654-0000-4000-8000-000000000001",
+    "name": "Back squat",
+    "sessions": 12,
+    "sessionsText": "12 sessions",
+    "newBest": true,
+    "e1rm": 142.0,
+    "e1rmText": "142",
+    "change": 0.183,
+    "changeText": "▲ 18% in 12 weeks",
+    "best": 142.0,
+    "points": [
+     {
+      "date": "2026-07-30",
+      "sessionId": "de300000-0000-4000-8000-000000000123",
+      "e1rm": 120.0,
+      "label": "Jul 30: e1RM 120"
+     },
+     {
+      "date": "2026-08-06",
+      "sessionId": "de300000-0000-4000-8000-000000000121",
+      "e1rm": 125.0,
+      "label": "Aug 6: e1RM 125"
+     },
+     {
+      "date": "2026-08-13",
+      "sessionId": "de300000-0000-4000-8000-000000000119",
+      "e1rm": 122.0,
+      "label": "Aug 13: e1RM 122"
+     },
+     {
+      "date": "2026-08-20",
+      "sessionId": "de300000-0000-4000-8000-000000000117",
+      "e1rm": 126.0,
+      "label": "Aug 20: e1RM 126"
+     },
+     {
+      "date": "2026-08-27",
+      "sessionId": "de300000-0000-4000-8000-000000000115",
+      "e1rm": 131.0,
+      "label": "Aug 27: e1RM 131"
+     },
+     {
+      "date": "2026-09-03",
+      "sessionId": "de300000-0000-4000-8000-000000000113",
+      "e1rm": 130.0,
+      "label": "Sep 3: e1RM 130"
+     },
+     {
+      "date": "2026-09-10",
+      "sessionId": "de300000-0000-4000-8000-000000000111",
+      "e1rm": 130.0,
+      "label": "Sep 10: e1RM 130"
+     },
+     {
+      "date": "2026-09-17",
+      "sessionId": "de300000-0000-4000-8000-000000000109",
+      "e1rm": 137.0,
+      "label": "Sep 17: e1RM 137"
+     },
+     {
+      "date": "2026-09-24",
+      "sessionId": "de300000-0000-4000-8000-000000000107",
+      "e1rm": 136.0,
+      "label": "Sep 24: e1RM 136"
+     },
+     {
+      "date": "2026-10-01",
+      "sessionId": "de300000-0000-4000-8000-000000000105",
+      "e1rm": 138.0,
+      "label": "Oct 1: e1RM 138"
+     },
+     {
+      "date": "2026-10-08",
+      "sessionId": "de300000-0000-4000-8000-000000000103",
+      "e1rm": 141.0,
+      "label": "Oct 8: e1RM 141"
+     },
+     {
+      "date": "2026-10-15",
+      "sessionId": "de300000-0000-4000-8000-000000000101",
+      "e1rm": 142.0,
+      "label": "Oct 15: e1RM 142"
+     }
+    ],
+    "chartEmptyText": null,
+    "lastText": "Last 120 kg × 5 · Oct 15",
+    "bestText": "Best 142 · Oct 15"
+   },
+   {
+    "exerciseKey": "id-4c494654-0000-4000-8000-000000000002",
+    "name": "Bench press",
+    "sessions": 12,
+    "sessionsText": "12 sessions",
+    "newBest": false,
+    "e1rm": 99.0,
+    "e1rmText": "99",
+    "change": 0.125,
+    "changeText": "▲ 12% in 12 weeks",
+    "best": 99.0,
+    "points": [
+     {
+      "date": "2026-08-03",
+      "sessionId": "de300000-0000-4000-8000-000000000122",
+      "e1rm": 88.0,
+      "label": "Aug 3: e1RM 88"
+     },
+     {
+      "date": "2026-08-10",
+      "sessionId": "de300000-0000-4000-8000-000000000120",
+      "e1rm": 92.0,
+      "label": "Aug 10: e1RM 92"
+     },
+     {
+      "date": "2026-08-17",
+      "sessionId": "de300000-0000-4000-8000-000000000118",
+      "e1rm": 88.0,
+      "label": "Aug 17: e1RM 88"
+     },
+     {
+      "date": "2026-08-24",
+      "sessionId": "de300000-0000-4000-8000-000000000116",
+      "e1rm": 91.0,
+      "label": "Aug 24: e1RM 91"
+     },
+     {
+      "date": "2026-08-31",
+      "sessionId": "de300000-0000-4000-8000-000000000114",
+      "e1rm": 95.0,
+      "label": "Aug 31: e1RM 95"
+     },
+     {
+      "date": "2026-09-07",
+      "sessionId": "de300000-0000-4000-8000-000000000112",
+      "e1rm": 93.0,
+      "label": "Sep 7: e1RM 93"
+     },
+     {
+      "date": "2026-09-14",
+      "sessionId": "de300000-0000-4000-8000-000000000110",
+      "e1rm": 92.0,
+      "label": "Sep 14: e1RM 92"
+     },
+     {
+      "date": "2026-09-21",
+      "sessionId": "de300000-0000-4000-8000-000000000108",
+      "e1rm": 98.0,
+      "label": "Sep 21: e1RM 98"
+     },
+     {
+      "date": "2026-09-28",
+      "sessionId": "de300000-0000-4000-8000-000000000106",
+      "e1rm": 96.0,
+      "label": "Sep 28: e1RM 96"
+     },
+     {
+      "date": "2026-10-05",
+      "sessionId": "de300000-0000-4000-8000-000000000104",
+      "e1rm": 97.0,
+      "label": "Oct 5: e1RM 97"
+     },
+     {
+      "date": "2026-10-12",
+      "sessionId": "de300000-0000-4000-8000-000000000102",
+      "e1rm": 99.0,
+      "label": "Oct 12: e1RM 99"
+     },
+     {
+      "date": "2026-10-19",
+      "sessionId": "de300000-0000-4000-8000-000000000100",
+      "e1rm": 99.0,
+      "label": "Oct 19: e1RM 99"
+     }
+    ],
+    "chartEmptyText": null,
+    "lastText": "Last 85 kg × 5 · Oct 19",
+    "bestText": "Best 99 · Oct 12"
+   },
+   {
+    "exerciseKey": "id-4c494654-0000-4000-8000-000000000003",
+    "name": "Romanian deadlift",
+    "sessions": 10,
+    "sessionsText": "10 sessions",
+    "newBest": false,
+    "e1rm": 123.5,
+    "e1rmText": "123.5",
+    "change": 0.123,
+    "changeText": "▲ 12% in 12 weeks",
+    "best": 123.5,
+    "points": [
+     {
+      "date": "2026-08-13",
+      "sessionId": "de300000-0000-4000-8000-000000000119",
+      "e1rm": 110.0,
+      "label": "Aug 13: e1RM 110"
+     },
+     {
+      "date": "2026-08-20",
+      "sessionId": "de300000-0000-4000-8000-000000000117",
+      "e1rm": 114.5,
+      "label": "Aug 20: e1RM 114.5"
+     },
+     {
+      "date": "2026-08-27",
+      "sessionId": "de300000-0000-4000-8000-000000000115",
+      "e1rm": 111.0,
+      "label": "Aug 27: e1RM 111"
+     },
+     {
+      "date": "2026-09-03",
+      "sessionId": "de300000-0000-4000-8000-000000000113",
+      "e1rm": 114.5,
+      "label": "Sep 3: e1RM 114.5"
+     },
+     {
+      "date": "2026-09-10",
+      "sessionId": "de300000-0000-4000-8000-000000000111",
+      "e1rm": 119.0,
+      "label": "Sep 10: e1RM 119"
+     },
+     {
+      "date": "2026-09-17",
+      "sessionId": "de300000-0000-4000-8000-000000000109",
+      "e1rm": 117.5,
+      "label": "Sep 17: e1RM 117.5"
+     },
+     {
+      "date": "2026-09-24",
+      "sessionId": "de300000-0000-4000-8000-000000000107",
+      "e1rm": 117.0,
+      "label": "Sep 24: e1RM 117"
+     },
+     {
+      "date": "2026-10-01",
+      "sessionId": "de300000-0000-4000-8000-000000000105",
+      "e1rm": 123.5,
+      "label": "Oct 1: e1RM 123.5"
+     },
+     {
+      "date": "2026-10-08",
+      "sessionId": "de300000-0000-4000-8000-000000000103",
+      "e1rm": 122.0,
+      "label": "Oct 8: e1RM 122"
+     },
+     {
+      "date": "2026-10-15",
+      "sessionId": "de300000-0000-4000-8000-000000000101",
+      "e1rm": 123.5,
+      "label": "Oct 15: e1RM 123.5"
+     }
+    ],
+    "chartEmptyText": null,
+    "lastText": "Last 105 kg × 5 · Oct 15",
+    "bestText": "Best 123.5 · Oct 1"
+   },
+   {
+    "exerciseKey": "id-4c494654-0000-4000-8000-000000000004",
+    "name": "Overhead press",
+    "sessions": 9,
+    "sessionsText": "9 sessions",
+    "newBest": false,
+    "e1rm": 59.8,
+    "e1rmText": "59.8",
+    "change": 0.087,
+    "changeText": "▲ 9% in 12 weeks",
+    "best": 62.2,
+    "points": [
+     {
+      "date": "2026-08-24",
+      "sessionId": "de300000-0000-4000-8000-000000000116",
+      "e1rm": 55.0,
+      "label": "Aug 24: e1RM 55"
+     },
+     {
+      "date": "2026-08-31",
+      "sessionId": "de300000-0000-4000-8000-000000000114",
+      "e1rm": 58.6,
+      "label": "Aug 31: e1RM 58.6"
+     },
+     {
+      "date": "2026-09-07",
+      "sessionId": "de300000-0000-4000-8000-000000000112",
+      "e1rm": 54.2,
+      "label": "Sep 7: e1RM 54.2"
+     },
+     {
+      "date": "2026-09-14",
+      "sessionId": "de300000-0000-4000-8000-000000000110",
+      "e1rm": 56.8,
+      "label": "Sep 14: e1RM 56.8"
+     },
+     {
+      "date": "2026-09-21",
+      "sessionId": "de300000-0000-4000-8000-000000000108",
+      "e1rm": 60.4,
+      "label": "Sep 21: e1RM 60.4"
+     },
+     {
+      "date": "2026-09-28",
+      "sessionId": "de300000-0000-4000-8000-000000000106",
+      "e1rm": 58.0,
+      "label": "Sep 28: e1RM 58"
+     },
+     {
+      "date": "2026-10-05",
+      "sessionId": "de300000-0000-4000-8000-000000000104",
+      "e1rm": 56.6,
+      "label": "Oct 5: e1RM 56.6"
+     },
+     {
+      "date": "2026-10-12",
+      "sessionId": "de300000-0000-4000-8000-000000000102",
+      "e1rm": 62.2,
+      "label": "Oct 12: e1RM 62.2"
+     },
+     {
+      "date": "2026-10-19",
+      "sessionId": "de300000-0000-4000-8000-000000000100",
+      "e1rm": 59.8,
+      "label": "Oct 19: e1RM 59.8"
+     }
+    ],
+    "chartEmptyText": null,
+    "lastText": "Last 50 kg × 5 · Oct 19",
+    "bestText": "Best 62.2 · Oct 12"
+   },
+   {
+    "exerciseKey": "id-4c494654-0000-4000-8000-000000000006",
+    "name": "Dumbbell curl",
+    "sessions": 1,
+    "sessionsText": "1 session",
+    "newBest": false,
+    "e1rm": 18.0,
+    "e1rmText": "18",
+    "change": null,
+    "changeText": null,
+    "best": 18.0,
+    "points": [
+     {
+      "date": "2026-10-19",
+      "sessionId": "de300000-0000-4000-8000-000000000100",
+      "e1rm": 18.0,
+      "label": "Oct 19: e1RM 18"
+     }
+    ],
+    "chartEmptyText": "One session so far. The chart starts with the second.",
+    "lastText": "Last 15 kg × 5 · Oct 19",
+    "bestText": "Best 18 · Oct 19"
+   }
+  ]
+ },
+ "muscles": {
+  "ok": true,
+  "title": "Hard sets per muscle",
+  "caption": "10–20 a week grows a muscle. Primary muscle 1 set, secondary ½.",
+  "band": {
+   "min": 10,
+   "max": 20
+  },
+  "scaleMax": 24,
+  "arms": [
+   {
+    "muscle": "biceps",
+    "name": "Biceps",
+    "arm": true,
+    "week": 3,
+    "weekText": "3",
+    "avg": 6.5,
+    "avgText": "6.5",
+    "status": "below",
+    "label": "Biceps: 3 sets this week, 6.5 a week on average, below the 10 to 20 range"
+   },
+   {
+    "muscle": "triceps",
+    "name": "Triceps",
+    "arm": true,
+    "week": 2,
+    "weekText": "2",
+    "avg": 7.0,
+    "avgText": "7",
+    "status": "below",
+    "label": "Triceps: 2 sets this week, 7 a week on average, below the 10 to 20 range"
+   }
+  ],
+  "other": [
+   {
+    "muscle": "quads",
+    "name": "Quads",
+    "arm": false,
+    "week": 9,
+    "weekText": "9",
+    "avg": 14.5,
+    "avgText": "14.5",
+    "status": "inRange",
+    "label": "Quads: 9 sets this week, 14.5 a week on average, within the 10 to 20 range"
+   },
+   {
+    "muscle": "glutes",
+    "name": "Glutes",
+    "arm": false,
+    "week": 8,
+    "weekText": "8",
+    "avg": 13,
+    "avgText": "13",
+    "status": "inRange",
+    "label": "Glutes: 8 sets this week, 13 a week on average, within the 10 to 20 range"
+   },
+   {
+    "muscle": "hamstrings",
+    "name": "Hamstrings",
+    "arm": false,
+    "week": 6,
+    "weekText": "6",
+    "avg": 10.5,
+    "avgText": "10.5",
+    "status": "inRange",
+    "label": "Hamstrings: 6 sets this week, 10.5 a week on average, within the 10 to 20 range"
+   },
+   {
+    "muscle": "chest",
+    "name": "Chest",
+    "arm": false,
+    "week": 0,
+    "weekText": "0",
+    "avg": 11,
+    "avgText": "11",
+    "status": "inRange",
+    "label": "Chest: 0 sets this week, 11 a week on average, within the 10 to 20 range"
+   },
+   {
+    "muscle": "back",
+    "name": "Back",
+    "arm": false,
+    "week": 1.5,
+    "weekText": "1.5",
+    "avg": 12.5,
+    "avgText": "12.5",
+    "status": "inRange",
+    "label": "Back: 1.5 sets this week, 12.5 a week on average, within the 10 to 20 range"
+   },
+   {
+    "muscle": "shoulders",
+    "name": "Shoulders",
+    "arm": false,
+    "week": 1,
+    "weekText": "1",
+    "avg": 9,
+    "avgText": "9",
+    "status": "below",
+    "label": "Shoulders: 1 sets this week, 9 a week on average, below the 10 to 20 range"
+   },
+   {
+    "muscle": "core",
+    "name": "Core",
+    "arm": false,
+    "week": 2,
+    "weekText": "2",
+    "avg": 4,
+    "avgText": "4",
+    "status": "below",
+    "label": "Core: 2 sets this week, 4 a week on average, below the 10 to 20 range"
+   }
+  ]
+ },
+ "sessions": {
+  "ok": true,
+  "caption": "32 logged · volume = reps × weight, warm-ups out",
+  "shown": 8,
+  "upcoming": [
+   {
+    "sessionId": "de300000-0000-4000-8000-000000000001",
+    "date": "2026-10-21",
+    "title": "Upper A",
+    "badge": "Today",
+    "detail": "Wed, Oct 21 · 18 sets"
+   },
+   {
+    "sessionId": "de300000-0000-4000-8000-000000000002",
+    "date": "2026-10-23",
+    "title": "Lower B",
+    "badge": null,
+    "detail": "Fri, Oct 23 · 16 sets"
+   }
+  ],
+  "logged": [
+   {
+    "sessionId": "de300000-0000-4000-8000-000000000100",
+    "date": "2026-10-19",
+    "weekdayText": "Mon",
+    "dayText": "19",
+    "monthText": "Oct",
+    "title": "Lower A",
+    "meta": "5 exercises · 16 sets · 48 min",
+    "sets": 16,
+    "exercises": 5,
+    "minutes": 48,
+    "volume": 6200,
+    "volumeText": "6,200",
+    "volumeUnit": "kg",
+    "relative": 0.633,
+    "muscles": [
+     "Quads",
+     "Glutes",
+     "Hamstrings"
+    ],
+    "prs": [
+     "Back squat"
+    ],
+    "prText": "New best: Back squat"
+   },
+   {
+    "sessionId": "de300000-0000-4000-8000-000000000101",
+    "date": "2026-10-15",
+    "weekdayText": "Thu",
+    "dayText": "15",
+    "monthText": "Oct",
+    "title": "Upper A",
+    "meta": "6 exercises · 17 sets · 55 min",
+    "sets": 17,
+    "exercises": 6,
+    "minutes": 55,
+    "volume": 7137,
+    "volumeText": "7,137",
+    "volumeUnit": "kg",
+    "relative": 0.728,
+    "muscles": [
+     "Chest",
+     "Back",
+     "Shoulders"
+    ],
+    "prs": [],
+    "prText": null
+   },
+   {
+    "sessionId": "de300000-0000-4000-8000-000000000102",
+    "date": "2026-10-12",
+    "weekdayText": "Mon",
+    "dayText": "12",
+    "monthText": "Oct",
+    "title": "Lower B",
+    "meta": "5 exercises · 18 sets · 62 min",
+    "sets": 18,
+    "exercises": 5,
+    "minutes": 62,
+    "volume": 8074,
+    "volumeText": "8,074",
+    "volumeUnit": "kg",
+    "relative": 0.824,
+    "muscles": [
+     "Quads",
+     "Glutes",
+     "Hamstrings"
+    ],
+    "prs": [],
+    "prText": null
+   },
+   {
+    "sessionId": "de300000-0000-4000-8000-000000000103",
+    "date": "2026-10-08",
+    "weekdayText": "Thu",
+    "dayText": "8",
+    "monthText": "Oct",
+    "title": "Upper B",
+    "meta": "6 exercises · 19 sets · 49 min",
+    "sets": 19,
+    "exercises": 6,
+    "minutes": 49,
+    "volume": 9011,
+    "volumeText": "9,011",
+    "volumeUnit": "kg",
+    "relative": 0.919,
+    "muscles": [
+     "Chest",
+     "Back",
+     "Shoulders"
+    ],
+    "prs": [
+     "Bench press"
+    ],
+    "prText": "New best: Bench press"
+   },
+   {
+    "sessionId": "de300000-0000-4000-8000-000000000104",
+    "date": "2026-10-05",
+    "weekdayText": "Mon",
+    "dayText": "5",
+    "monthText": "Oct",
+    "title": "Lower A",
+    "meta": "5 exercises · 20 sets · 56 min",
+    "sets": 20,
+    "exercises": 5,
+    "minutes": 56,
+    "volume": 6348,
+    "volumeText": "6,348",
+    "volumeUnit": "kg",
+    "relative": 0.648,
+    "muscles": [
+     "Quads",
+     "Glutes",
+     "Hamstrings"
+    ],
+    "prs": [],
+    "prText": null
+   },
+   {
+    "sessionId": "de300000-0000-4000-8000-000000000105",
+    "date": "2026-10-01",
+    "weekdayText": "Thu",
+    "dayText": "1",
+    "monthText": "Oct",
+    "title": "Upper A",
+    "meta": "6 exercises · 16 sets · 63 min",
+    "sets": 16,
+    "exercises": 6,
+    "minutes": 63,
+    "volume": 7285,
+    "volumeText": "7,285",
+    "volumeUnit": "kg",
+    "relative": 0.743,
+    "muscles": [
+     "Chest",
+     "Back",
+     "Shoulders"
+    ],
+    "prs": [
+     "Back squat"
+    ],
+    "prText": "New best: Back squat"
+   },
+   {
+    "sessionId": "de300000-0000-4000-8000-000000000106",
+    "date": "2026-09-28",
+    "weekdayText": "Mon",
+    "dayText": "28",
+    "monthText": "Sep",
+    "title": "Lower B",
+    "meta": "5 exercises · 17 sets · 50 min",
+    "sets": 17,
+    "exercises": 5,
+    "minutes": 50,
+    "volume": 8222,
+    "volumeText": "8,222",
+    "volumeUnit": "kg",
+    "relative": 0.839,
+    "muscles": [
+     "Quads",
+     "Glutes",
+     "Hamstrings"
+    ],
+    "prs": [],
+    "prText": null
+   },
+   {
+    "sessionId": "de300000-0000-4000-8000-000000000107",
+    "date": "2026-09-24",
+    "weekdayText": "Thu",
+    "dayText": "24",
+    "monthText": "Sep",
+    "title": "Upper B",
+    "meta": "6 exercises · 18 sets · 57 min",
+    "sets": 18,
+    "exercises": 6,
+    "minutes": 57,
+    "volume": 9159,
+    "volumeText": "9,159",
+    "volumeUnit": "kg",
+    "relative": 0.935,
+    "muscles": [
+     "Chest",
+     "Back",
+     "Shoulders"
+    ],
+    "prs": [],
+    "prText": null
+   },
+   {
+    "sessionId": "de300000-0000-4000-8000-000000000108",
+    "date": "2026-09-21",
+    "weekdayText": "Mon",
+    "dayText": "21",
+    "monthText": "Sep",
+    "title": "Lower A",
+    "meta": "5 exercises · 19 sets · 64 min",
+    "sets": 19,
+    "exercises": 5,
+    "minutes": 64,
+    "volume": 6496,
+    "volumeText": "6,496",
+    "volumeUnit": "kg",
+    "relative": 0.663,
+    "muscles": [
+     "Quads",
+     "Glutes",
+     "Hamstrings"
+    ],
+    "prs": [],
+    "prText": null
+   },
+   {
+    "sessionId": "de300000-0000-4000-8000-000000000109",
+    "date": "2026-09-17",
+    "weekdayText": "Thu",
+    "dayText": "17",
+    "monthText": "Sep",
+    "title": "Upper A",
+    "meta": "6 exercises · 20 sets · 51 min",
+    "sets": 20,
+    "exercises": 6,
+    "minutes": 51,
+    "volume": 7433,
+    "volumeText": "7,433",
+    "volumeUnit": "kg",
+    "relative": 0.758,
+    "muscles": [
+     "Chest",
+     "Back",
+     "Shoulders"
+    ],
+    "prs": [],
+    "prText": null
+   },
+   {
+    "sessionId": "de300000-0000-4000-8000-000000000110",
+    "date": "2026-09-14",
+    "weekdayText": "Mon",
+    "dayText": "14",
+    "monthText": "Sep",
+    "title": "Lower B",
+    "meta": "5 exercises · 16 sets · 58 min",
+    "sets": 16,
+    "exercises": 5,
+    "minutes": 58,
+    "volume": 8370,
+    "volumeText": "8,370",
+    "volumeUnit": "kg",
+    "relative": 0.854,
+    "muscles": [
+     "Quads",
+     "Glutes",
+     "Hamstrings"
+    ],
+    "prs": [],
+    "prText": null
+   },
+   {
+    "sessionId": "de300000-0000-4000-8000-000000000111",
+    "date": "2026-09-10",
+    "weekdayText": "Thu",
+    "dayText": "10",
+    "monthText": "Sep",
+    "title": "Upper B",
+    "meta": "6 exercises · 17 sets · 65 min",
+    "sets": 17,
+    "exercises": 6,
+    "minutes": 65,
+    "volume": 9307,
+    "volumeText": "9,307",
+    "volumeUnit": "kg",
+    "relative": 0.95,
+    "muscles": [
+     "Chest",
+     "Back",
+     "Shoulders"
+    ],
+    "prs": [],
+    "prText": null
+   },
+   {
+    "sessionId": "de300000-0000-4000-8000-000000000112",
+    "date": "2026-09-07",
+    "weekdayText": "Mon",
+    "dayText": "7",
+    "monthText": "Sep",
+    "title": "Lower A",
+    "meta": "5 exercises · 18 sets · 52 min",
+    "sets": 18,
+    "exercises": 5,
+    "minutes": 52,
+    "volume": 6644,
+    "volumeText": "6,644",
+    "volumeUnit": "kg",
+    "relative": 0.678,
+    "muscles": [
+     "Quads",
+     "Glutes",
+     "Hamstrings"
+    ],
+    "prs": [],
+    "prText": null
+   },
+   {
+    "sessionId": "de300000-0000-4000-8000-000000000113",
+    "date": "2026-09-03",
+    "weekdayText": "Thu",
+    "dayText": "3",
+    "monthText": "Sep",
+    "title": "Upper A",
+    "meta": "6 exercises · 19 sets · 59 min",
+    "sets": 19,
+    "exercises": 6,
+    "minutes": 59,
+    "volume": 7581,
+    "volumeText": "7,581",
+    "volumeUnit": "kg",
+    "relative": 0.774,
+    "muscles": [
+     "Chest",
+     "Back",
+     "Shoulders"
+    ],
+    "prs": [],
+    "prText": null
+   },
+   {
+    "sessionId": "de300000-0000-4000-8000-000000000114",
+    "date": "2026-08-31",
+    "weekdayText": "Mon",
+    "dayText": "31",
+    "monthText": "Aug",
+    "title": "Lower B",
+    "meta": "5 exercises · 20 sets · 66 min",
+    "sets": 20,
+    "exercises": 5,
+    "minutes": 66,
+    "volume": 8518,
+    "volumeText": "8,518",
+    "volumeUnit": "kg",
+    "relative": 0.869,
+    "muscles": [
+     "Quads",
+     "Glutes",
+     "Hamstrings"
+    ],
+    "prs": [],
+    "prText": null
+   },
+   {
+    "sessionId": "de300000-0000-4000-8000-000000000115",
+    "date": "2026-08-27",
+    "weekdayText": "Thu",
+    "dayText": "27",
+    "monthText": "Aug",
+    "title": "Upper B",
+    "meta": "6 exercises · 16 sets · 53 min",
+    "sets": 16,
+    "exercises": 6,
+    "minutes": 53,
+    "volume": 9455,
+    "volumeText": "9,455",
+    "volumeUnit": "kg",
+    "relative": 0.965,
+    "muscles": [
+     "Chest",
+     "Back",
+     "Shoulders"
+    ],
+    "prs": [],
+    "prText": null
+   },
+   {
+    "sessionId": "de300000-0000-4000-8000-000000000116",
+    "date": "2026-08-24",
+    "weekdayText": "Mon",
+    "dayText": "24",
+    "monthText": "Aug",
+    "title": "Lower A",
+    "meta": "5 exercises · 17 sets · 60 min",
+    "sets": 17,
+    "exercises": 5,
+    "minutes": 60,
+    "volume": 6792,
+    "volumeText": "6,792",
+    "volumeUnit": "kg",
+    "relative": 0.693,
+    "muscles": [
+     "Quads",
+     "Glutes",
+     "Hamstrings"
+    ],
+    "prs": [],
+    "prText": null
+   },
+   {
+    "sessionId": "de300000-0000-4000-8000-000000000117",
+    "date": "2026-08-20",
+    "weekdayText": "Thu",
+    "dayText": "20",
+    "monthText": "Aug",
+    "title": "Upper A",
+    "meta": "6 exercises · 18 sets · 67 min",
+    "sets": 18,
+    "exercises": 6,
+    "minutes": 67,
+    "volume": 7729,
+    "volumeText": "7,729",
+    "volumeUnit": "kg",
+    "relative": 0.789,
+    "muscles": [
+     "Chest",
+     "Back",
+     "Shoulders"
+    ],
+    "prs": [],
+    "prText": null
+   },
+   {
+    "sessionId": "de300000-0000-4000-8000-000000000118",
+    "date": "2026-08-17",
+    "weekdayText": "Mon",
+    "dayText": "17",
+    "monthText": "Aug",
+    "title": "Lower B",
+    "meta": "5 exercises · 19 sets · 54 min",
+    "sets": 19,
+    "exercises": 5,
+    "minutes": 54,
+    "volume": 8666,
+    "volumeText": "8,666",
+    "volumeUnit": "kg",
+    "relative": 0.884,
+    "muscles": [
+     "Quads",
+     "Glutes",
+     "Hamstrings"
+    ],
+    "prs": [],
+    "prText": null
+   },
+   {
+    "sessionId": "de300000-0000-4000-8000-000000000119",
+    "date": "2026-08-13",
+    "weekdayText": "Thu",
+    "dayText": "13",
+    "monthText": "Aug",
+    "title": "Upper B",
+    "meta": "6 exercises · 20 sets · 61 min",
+    "sets": 20,
+    "exercises": 6,
+    "minutes": 61,
+    "volume": 9603,
+    "volumeText": "9,603",
+    "volumeUnit": "kg",
+    "relative": 0.98,
+    "muscles": [
+     "Chest",
+     "Back",
+     "Shoulders"
+    ],
+    "prs": [],
+    "prText": null
+   },
+   {
+    "sessionId": "de300000-0000-4000-8000-000000000120",
+    "date": "2026-08-10",
+    "weekdayText": "Mon",
+    "dayText": "10",
+    "monthText": "Aug",
+    "title": "Lower A",
+    "meta": "5 exercises · 16 sets · 48 min",
+    "sets": 16,
+    "exercises": 5,
+    "minutes": 48,
+    "volume": 6940,
+    "volumeText": "6,940",
+    "volumeUnit": "kg",
+    "relative": 0.708,
+    "muscles": [
+     "Quads",
+     "Glutes",
+     "Hamstrings"
+    ],
+    "prs": [],
+    "prText": null
+   },
+   {
+    "sessionId": "de300000-0000-4000-8000-000000000121",
+    "date": "2026-08-06",
+    "weekdayText": "Thu",
+    "dayText": "6",
+    "monthText": "Aug",
+    "title": "Upper A",
+    "meta": "6 exercises · 17 sets · 55 min",
+    "sets": 17,
+    "exercises": 6,
+    "minutes": 55,
+    "volume": 7877,
+    "volumeText": "7,877",
+    "volumeUnit": "kg",
+    "relative": 0.804,
+    "muscles": [
+     "Chest",
+     "Back",
+     "Shoulders"
+    ],
+    "prs": [],
+    "prText": null
+   },
+   {
+    "sessionId": "de300000-0000-4000-8000-000000000122",
+    "date": "2026-08-03",
+    "weekdayText": "Mon",
+    "dayText": "3",
+    "monthText": "Aug",
+    "title": "Lower B",
+    "meta": "5 exercises · 18 sets · 62 min",
+    "sets": 18,
+    "exercises": 5,
+    "minutes": 62,
+    "volume": 8814,
+    "volumeText": "8,814",
+    "volumeUnit": "kg",
+    "relative": 0.899,
+    "muscles": [
+     "Quads",
+     "Glutes",
+     "Hamstrings"
+    ],
+    "prs": [],
+    "prText": null
+   },
+   {
+    "sessionId": "de300000-0000-4000-8000-000000000123",
+    "date": "2026-07-30",
+    "weekdayText": "Thu",
+    "dayText": "30",
+    "monthText": "Jul",
+    "title": "Upper B",
+    "meta": "6 exercises · 19 sets · 49 min",
+    "sets": 19,
+    "exercises": 6,
+    "minutes": 49,
+    "volume": 9751,
+    "volumeText": "9,751",
+    "volumeUnit": "kg",
+    "relative": 0.995,
+    "muscles": [
+     "Chest",
+     "Back",
+     "Shoulders"
+    ],
+    "prs": [],
+    "prText": null
+   },
+   {
+    "sessionId": "de300000-0000-4000-8000-000000000124",
+    "date": "2026-07-27",
+    "weekdayText": "Mon",
+    "dayText": "27",
+    "monthText": "Jul",
+    "title": "Lower A",
+    "meta": "5 exercises · 20 sets · 56 min",
+    "sets": 20,
+    "exercises": 5,
+    "minutes": 56,
+    "volume": 7088,
+    "volumeText": "7,088",
+    "volumeUnit": "kg",
+    "relative": 0.723,
+    "muscles": [
+     "Quads",
+     "Glutes",
+     "Hamstrings"
+    ],
+    "prs": [],
+    "prText": null
+   },
+   {
+    "sessionId": "de300000-0000-4000-8000-000000000125",
+    "date": "2026-07-23",
+    "weekdayText": "Thu",
+    "dayText": "23",
+    "monthText": "Jul",
+    "title": "Upper A",
+    "meta": "6 exercises · 16 sets · 63 min",
+    "sets": 16,
+    "exercises": 6,
+    "minutes": 63,
+    "volume": 8025,
+    "volumeText": "8,025",
+    "volumeUnit": "kg",
+    "relative": 0.819,
+    "muscles": [
+     "Chest",
+     "Back",
+     "Shoulders"
+    ],
+    "prs": [],
+    "prText": null
+   },
+   {
+    "sessionId": "de300000-0000-4000-8000-000000000126",
+    "date": "2026-07-20",
+    "weekdayText": "Mon",
+    "dayText": "20",
+    "monthText": "Jul",
+    "title": "Lower B",
+    "meta": "5 exercises · 17 sets · 50 min",
+    "sets": 17,
+    "exercises": 5,
+    "minutes": 50,
+    "volume": 8962,
+    "volumeText": "8,962",
+    "volumeUnit": "kg",
+    "relative": 0.914,
+    "muscles": [
+     "Quads",
+     "Glutes",
+     "Hamstrings"
+    ],
+    "prs": [],
+    "prText": null
+   },
+   {
+    "sessionId": "de300000-0000-4000-8000-000000000127",
+    "date": "2026-07-16",
+    "weekdayText": "Thu",
+    "dayText": "16",
+    "monthText": "Jul",
+    "title": "Upper B",
+    "meta": "6 exercises · 18 sets · 57 min",
+    "sets": 18,
+    "exercises": 6,
+    "minutes": 57,
+    "volume": 6299,
+    "volumeText": "6,299",
+    "volumeUnit": "kg",
+    "relative": 0.643,
+    "muscles": [
+     "Chest",
+     "Back",
+     "Shoulders"
+    ],
+    "prs": [],
+    "prText": null
+   },
+   {
+    "sessionId": "de300000-0000-4000-8000-000000000128",
+    "date": "2026-07-13",
+    "weekdayText": "Mon",
+    "dayText": "13",
+    "monthText": "Jul",
+    "title": "Lower A",
+    "meta": "5 exercises · 19 sets · 64 min",
+    "sets": 19,
+    "exercises": 5,
+    "minutes": 64,
+    "volume": 7236,
+    "volumeText": "7,236",
+    "volumeUnit": "kg",
+    "relative": 0.738,
+    "muscles": [
+     "Quads",
+     "Glutes",
+     "Hamstrings"
+    ],
+    "prs": [],
+    "prText": null
+   },
+   {
+    "sessionId": "de300000-0000-4000-8000-000000000129",
+    "date": "2026-07-09",
+    "weekdayText": "Thu",
+    "dayText": "9",
+    "monthText": "Jul",
+    "title": "Upper A",
+    "meta": "6 exercises · 20 sets · 51 min",
+    "sets": 20,
+    "exercises": 6,
+    "minutes": 51,
+    "volume": 8173,
+    "volumeText": "8,173",
+    "volumeUnit": "kg",
+    "relative": 0.834,
+    "muscles": [
+     "Chest",
+     "Back",
+     "Shoulders"
+    ],
+    "prs": [],
+    "prText": null
+   },
+   {
+    "sessionId": "de300000-0000-4000-8000-000000000130",
+    "date": "2026-07-06",
+    "weekdayText": "Mon",
+    "dayText": "6",
+    "monthText": "Jul",
+    "title": "Lower B",
+    "meta": "5 exercises · 16 sets · 58 min",
+    "sets": 16,
+    "exercises": 5,
+    "minutes": 58,
+    "volume": 9110,
+    "volumeText": "9,110",
+    "volumeUnit": "kg",
+    "relative": 0.93,
+    "muscles": [
+     "Quads",
+     "Glutes",
+     "Hamstrings"
+    ],
+    "prs": [],
+    "prText": null
+   },
+   {
+    "sessionId": "de300000-0000-4000-8000-000000000131",
+    "date": "2026-07-02",
+    "weekdayText": "Thu",
+    "dayText": "2",
+    "monthText": "Jul",
+    "title": "Upper B",
+    "meta": "6 exercises · 17 sets · 65 min",
+    "sets": 17,
+    "exercises": 6,
+    "minutes": 65,
+    "volume": 6447,
+    "volumeText": "6,447",
+    "volumeUnit": "kg",
+    "relative": 0.658,
+    "muscles": [
+     "Chest",
+     "Back",
+     "Shoulders"
+    ],
+    "prs": [],
+    "prText": null
+   }
+  ]
+ },
+ "exercises": {
+  "ok": true,
+  "title": "All exercises",
+  "count": 8,
+  "items": [
+   {
+    "exerciseKey": "id-4c494654-0000-4000-8000-000000000001",
+    "name": "Back squat",
+    "sessions": 19,
+    "detail": "19 sessions · last Oct 15",
+    "bestText": "120 kg"
+   },
+   {
+    "exerciseKey": "id-4c494654-0000-4000-8000-000000000002",
+    "name": "Bench press",
+    "sessions": 18,
+    "detail": "18 sessions · last Oct 12",
+    "bestText": "92 kg"
+   },
+   {
+    "exerciseKey": "id-4c494654-0000-4000-8000-000000000003",
+    "name": "Romanian deadlift",
+    "sessions": 17,
+    "detail": "17 sessions · last Oct 19",
+    "bestText": "112 kg"
+   },
+   {
+    "exerciseKey": "id-4c494654-0000-4000-8000-000000000004",
+    "name": "Overhead press",
+    "sessions": 16,
+    "detail": "16 sessions · last Oct 15",
+    "bestText": "58 kg"
+   },
+   {
+    "exerciseKey": "id-4c494654-0000-4000-8000-000000000005",
+    "name": "Barbell row",
+    "sessions": 15,
+    "detail": "15 sessions · last Oct 12",
+    "bestText": "80 kg"
+   },
+   {
+    "exerciseKey": "id-4c494654-0000-4000-8000-000000000006",
+    "name": "Dumbbell curl",
+    "sessions": 14,
+    "detail": "14 sessions · last Oct 19",
+    "bestText": "16 kg"
+   },
+   {
+    "exerciseKey": "id-4c494654-0000-4000-8000-000000000007",
+    "name": "Triceps pushdown",
+    "sessions": 13,
+    "detail": "13 sessions · last Oct 15",
+    "bestText": "30 kg"
+   },
+   {
+    "exerciseKey": "id-4c494654-0000-4000-8000-000000000008",
+    "name": "Pull-up",
+    "sessions": 12,
+    "detail": "12 sessions · last Oct 12",
+    "bestText": null
+   }
+  ]
+ },
+ "consistency": {
+  "ok": true,
+  "caption": "16 weeks",
+  "stats": [
+   {
+    "id": "hits",
+    "value": "7/8",
+    "label": "weeks at target"
+   },
+   {
+    "id": "avg",
+    "value": "1.9",
+    "label": "a week, 8 wks"
+   },
+   {
+    "id": "total",
+    "value": "32",
+    "label": "sessions logged"
+   }
+  ],
+  "hits": 7,
+  "avg": 1.9,
+  "total": 32,
+  "heatmap": [
+   {
+    "start": "2026-07-06",
+    "monthText": "Jul",
+    "days": [
+     {
+      "date": "2026-07-06",
+      "sets": 18,
+      "level": 3,
+      "future": false,
+      "today": false,
+      "sessionId": "de300000-0000-4000-8000-000000000130",
+      "label": "Mon, Jul 6: 18 sets"
+     },
+     {
+      "date": "2026-07-07",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Tue, Jul 7"
+     },
+     {
+      "date": "2026-07-08",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Wed, Jul 8"
+     },
+     {
+      "date": "2026-07-09",
+      "sets": 15,
+      "level": 3,
+      "future": false,
+      "today": false,
+      "sessionId": "de300000-0000-4000-8000-000000000129",
+      "label": "Thu, Jul 9: 15 sets"
+     },
+     {
+      "date": "2026-07-10",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Fri, Jul 10"
+     },
+     {
+      "date": "2026-07-11",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Sat, Jul 11"
+     },
+     {
+      "date": "2026-07-12",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Sun, Jul 12"
+     }
+    ]
+   },
+   {
+    "start": "2026-07-13",
+    "monthText": null,
+    "days": [
+     {
+      "date": "2026-07-13",
+      "sets": 18,
+      "level": 3,
+      "future": false,
+      "today": false,
+      "sessionId": "de300000-0000-4000-8000-000000000128",
+      "label": "Mon, Jul 13: 18 sets"
+     },
+     {
+      "date": "2026-07-14",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Tue, Jul 14"
+     },
+     {
+      "date": "2026-07-15",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Wed, Jul 15"
+     },
+     {
+      "date": "2026-07-16",
+      "sets": 15,
+      "level": 3,
+      "future": false,
+      "today": false,
+      "sessionId": "de300000-0000-4000-8000-000000000127",
+      "label": "Thu, Jul 16: 15 sets"
+     },
+     {
+      "date": "2026-07-17",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Fri, Jul 17"
+     },
+     {
+      "date": "2026-07-18",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Sat, Jul 18"
+     },
+     {
+      "date": "2026-07-19",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Sun, Jul 19"
+     }
+    ]
+   },
+   {
+    "start": "2026-07-20",
+    "monthText": null,
+    "days": [
+     {
+      "date": "2026-07-20",
+      "sets": 18,
+      "level": 3,
+      "future": false,
+      "today": false,
+      "sessionId": "de300000-0000-4000-8000-000000000126",
+      "label": "Mon, Jul 20: 18 sets"
+     },
+     {
+      "date": "2026-07-21",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Tue, Jul 21"
+     },
+     {
+      "date": "2026-07-22",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Wed, Jul 22"
+     },
+     {
+      "date": "2026-07-23",
+      "sets": 15,
+      "level": 3,
+      "future": false,
+      "today": false,
+      "sessionId": "de300000-0000-4000-8000-000000000125",
+      "label": "Thu, Jul 23: 15 sets"
+     },
+     {
+      "date": "2026-07-24",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Fri, Jul 24"
+     },
+     {
+      "date": "2026-07-25",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Sat, Jul 25"
+     },
+     {
+      "date": "2026-07-26",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Sun, Jul 26"
+     }
+    ]
+   },
+   {
+    "start": "2026-07-27",
+    "monthText": null,
+    "days": [
+     {
+      "date": "2026-07-27",
+      "sets": 18,
+      "level": 3,
+      "future": false,
+      "today": false,
+      "sessionId": "de300000-0000-4000-8000-000000000124",
+      "label": "Mon, Jul 27: 18 sets"
+     },
+     {
+      "date": "2026-07-28",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Tue, Jul 28"
+     },
+     {
+      "date": "2026-07-29",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Wed, Jul 29"
+     },
+     {
+      "date": "2026-07-30",
+      "sets": 15,
+      "level": 3,
+      "future": false,
+      "today": false,
+      "sessionId": "de300000-0000-4000-8000-000000000123",
+      "label": "Thu, Jul 30: 15 sets"
+     },
+     {
+      "date": "2026-07-31",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Fri, Jul 31"
+     },
+     {
+      "date": "2026-08-01",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Sat, Aug 1"
+     },
+     {
+      "date": "2026-08-02",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Sun, Aug 2"
+     }
+    ]
+   },
+   {
+    "start": "2026-08-03",
+    "monthText": "Aug",
+    "days": [
+     {
+      "date": "2026-08-03",
+      "sets": 18,
+      "level": 3,
+      "future": false,
+      "today": false,
+      "sessionId": "de300000-0000-4000-8000-000000000122",
+      "label": "Mon, Aug 3: 18 sets"
+     },
+     {
+      "date": "2026-08-04",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Tue, Aug 4"
+     },
+     {
+      "date": "2026-08-05",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Wed, Aug 5"
+     },
+     {
+      "date": "2026-08-06",
+      "sets": 15,
+      "level": 3,
+      "future": false,
+      "today": false,
+      "sessionId": "de300000-0000-4000-8000-000000000121",
+      "label": "Thu, Aug 6: 15 sets"
+     },
+     {
+      "date": "2026-08-07",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Fri, Aug 7"
+     },
+     {
+      "date": "2026-08-08",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Sat, Aug 8"
+     },
+     {
+      "date": "2026-08-09",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Sun, Aug 9"
+     }
+    ]
+   },
+   {
+    "start": "2026-08-10",
+    "monthText": null,
+    "days": [
+     {
+      "date": "2026-08-10",
+      "sets": 18,
+      "level": 3,
+      "future": false,
+      "today": false,
+      "sessionId": "de300000-0000-4000-8000-000000000120",
+      "label": "Mon, Aug 10: 18 sets"
+     },
+     {
+      "date": "2026-08-11",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Tue, Aug 11"
+     },
+     {
+      "date": "2026-08-12",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Wed, Aug 12"
+     },
+     {
+      "date": "2026-08-13",
+      "sets": 15,
+      "level": 3,
+      "future": false,
+      "today": false,
+      "sessionId": "de300000-0000-4000-8000-000000000119",
+      "label": "Thu, Aug 13: 15 sets"
+     },
+     {
+      "date": "2026-08-14",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Fri, Aug 14"
+     },
+     {
+      "date": "2026-08-15",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Sat, Aug 15"
+     },
+     {
+      "date": "2026-08-16",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Sun, Aug 16"
+     }
+    ]
+   },
+   {
+    "start": "2026-08-17",
+    "monthText": null,
+    "days": [
+     {
+      "date": "2026-08-17",
+      "sets": 18,
+      "level": 3,
+      "future": false,
+      "today": false,
+      "sessionId": "de300000-0000-4000-8000-000000000118",
+      "label": "Mon, Aug 17: 18 sets"
+     },
+     {
+      "date": "2026-08-18",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Tue, Aug 18"
+     },
+     {
+      "date": "2026-08-19",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Wed, Aug 19"
+     },
+     {
+      "date": "2026-08-20",
+      "sets": 15,
+      "level": 3,
+      "future": false,
+      "today": false,
+      "sessionId": "de300000-0000-4000-8000-000000000117",
+      "label": "Thu, Aug 20: 15 sets"
+     },
+     {
+      "date": "2026-08-21",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Fri, Aug 21"
+     },
+     {
+      "date": "2026-08-22",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Sat, Aug 22"
+     },
+     {
+      "date": "2026-08-23",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Sun, Aug 23"
+     }
+    ]
+   },
+   {
+    "start": "2026-08-24",
+    "monthText": null,
+    "days": [
+     {
+      "date": "2026-08-24",
+      "sets": 18,
+      "level": 3,
+      "future": false,
+      "today": false,
+      "sessionId": "de300000-0000-4000-8000-000000000116",
+      "label": "Mon, Aug 24: 18 sets"
+     },
+     {
+      "date": "2026-08-25",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Tue, Aug 25"
+     },
+     {
+      "date": "2026-08-26",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Wed, Aug 26"
+     },
+     {
+      "date": "2026-08-27",
+      "sets": 15,
+      "level": 3,
+      "future": false,
+      "today": false,
+      "sessionId": "de300000-0000-4000-8000-000000000115",
+      "label": "Thu, Aug 27: 15 sets"
+     },
+     {
+      "date": "2026-08-28",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Fri, Aug 28"
+     },
+     {
+      "date": "2026-08-29",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Sat, Aug 29"
+     },
+     {
+      "date": "2026-08-30",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Sun, Aug 30"
+     }
+    ]
+   },
+   {
+    "start": "2026-08-31",
+    "monthText": null,
+    "days": [
+     {
+      "date": "2026-08-31",
+      "sets": 18,
+      "level": 3,
+      "future": false,
+      "today": false,
+      "sessionId": "de300000-0000-4000-8000-000000000114",
+      "label": "Mon, Aug 31: 18 sets"
+     },
+     {
+      "date": "2026-09-01",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Tue, Sep 1"
+     },
+     {
+      "date": "2026-09-02",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Wed, Sep 2"
+     },
+     {
+      "date": "2026-09-03",
+      "sets": 15,
+      "level": 3,
+      "future": false,
+      "today": false,
+      "sessionId": "de300000-0000-4000-8000-000000000113",
+      "label": "Thu, Sep 3: 15 sets"
+     },
+     {
+      "date": "2026-09-04",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Fri, Sep 4"
+     },
+     {
+      "date": "2026-09-05",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Sat, Sep 5"
+     },
+     {
+      "date": "2026-09-06",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Sun, Sep 6"
+     }
+    ]
+   },
+   {
+    "start": "2026-09-07",
+    "monthText": "Sep",
+    "days": [
+     {
+      "date": "2026-09-07",
+      "sets": 18,
+      "level": 3,
+      "future": false,
+      "today": false,
+      "sessionId": "de300000-0000-4000-8000-000000000112",
+      "label": "Mon, Sep 7: 18 sets"
+     },
+     {
+      "date": "2026-09-08",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Tue, Sep 8"
+     },
+     {
+      "date": "2026-09-09",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Wed, Sep 9"
+     },
+     {
+      "date": "2026-09-10",
+      "sets": 15,
+      "level": 3,
+      "future": false,
+      "today": false,
+      "sessionId": "de300000-0000-4000-8000-000000000111",
+      "label": "Thu, Sep 10: 15 sets"
+     },
+     {
+      "date": "2026-09-11",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Fri, Sep 11"
+     },
+     {
+      "date": "2026-09-12",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Sat, Sep 12"
+     },
+     {
+      "date": "2026-09-13",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Sun, Sep 13"
+     }
+    ]
+   },
+   {
+    "start": "2026-09-14",
+    "monthText": null,
+    "days": [
+     {
+      "date": "2026-09-14",
+      "sets": 18,
+      "level": 3,
+      "future": false,
+      "today": false,
+      "sessionId": "de300000-0000-4000-8000-000000000110",
+      "label": "Mon, Sep 14: 18 sets"
+     },
+     {
+      "date": "2026-09-15",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Tue, Sep 15"
+     },
+     {
+      "date": "2026-09-16",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Wed, Sep 16"
+     },
+     {
+      "date": "2026-09-17",
+      "sets": 15,
+      "level": 3,
+      "future": false,
+      "today": false,
+      "sessionId": "de300000-0000-4000-8000-000000000109",
+      "label": "Thu, Sep 17: 15 sets"
+     },
+     {
+      "date": "2026-09-18",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Fri, Sep 18"
+     },
+     {
+      "date": "2026-09-19",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Sat, Sep 19"
+     },
+     {
+      "date": "2026-09-20",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Sun, Sep 20"
+     }
+    ]
+   },
+   {
+    "start": "2026-09-21",
+    "monthText": null,
+    "days": [
+     {
+      "date": "2026-09-21",
+      "sets": 18,
+      "level": 3,
+      "future": false,
+      "today": false,
+      "sessionId": "de300000-0000-4000-8000-000000000108",
+      "label": "Mon, Sep 21: 18 sets"
+     },
+     {
+      "date": "2026-09-22",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Tue, Sep 22"
+     },
+     {
+      "date": "2026-09-23",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Wed, Sep 23"
+     },
+     {
+      "date": "2026-09-24",
+      "sets": 15,
+      "level": 3,
+      "future": false,
+      "today": false,
+      "sessionId": "de300000-0000-4000-8000-000000000107",
+      "label": "Thu, Sep 24: 15 sets"
+     },
+     {
+      "date": "2026-09-25",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Fri, Sep 25"
+     },
+     {
+      "date": "2026-09-26",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Sat, Sep 26"
+     },
+     {
+      "date": "2026-09-27",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Sun, Sep 27"
+     }
+    ]
+   },
+   {
+    "start": "2026-09-28",
+    "monthText": null,
+    "days": [
+     {
+      "date": "2026-09-28",
+      "sets": 18,
+      "level": 3,
+      "future": false,
+      "today": false,
+      "sessionId": "de300000-0000-4000-8000-000000000106",
+      "label": "Mon, Sep 28: 18 sets"
+     },
+     {
+      "date": "2026-09-29",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Tue, Sep 29"
+     },
+     {
+      "date": "2026-09-30",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Wed, Sep 30"
+     },
+     {
+      "date": "2026-10-01",
+      "sets": 15,
+      "level": 3,
+      "future": false,
+      "today": false,
+      "sessionId": "de300000-0000-4000-8000-000000000105",
+      "label": "Thu, Oct 1: 15 sets"
+     },
+     {
+      "date": "2026-10-02",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Fri, Oct 2"
+     },
+     {
+      "date": "2026-10-03",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Sat, Oct 3"
+     },
+     {
+      "date": "2026-10-04",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Sun, Oct 4"
+     }
+    ]
+   },
+   {
+    "start": "2026-10-05",
+    "monthText": "Oct",
+    "days": [
+     {
+      "date": "2026-10-05",
+      "sets": 18,
+      "level": 3,
+      "future": false,
+      "today": false,
+      "sessionId": "de300000-0000-4000-8000-000000000104",
+      "label": "Mon, Oct 5: 18 sets"
+     },
+     {
+      "date": "2026-10-06",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Tue, Oct 6"
+     },
+     {
+      "date": "2026-10-07",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Wed, Oct 7"
+     },
+     {
+      "date": "2026-10-08",
+      "sets": 15,
+      "level": 3,
+      "future": false,
+      "today": false,
+      "sessionId": "de300000-0000-4000-8000-000000000103",
+      "label": "Thu, Oct 8: 15 sets"
+     },
+     {
+      "date": "2026-10-09",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Fri, Oct 9"
+     },
+     {
+      "date": "2026-10-10",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Sat, Oct 10"
+     },
+     {
+      "date": "2026-10-11",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Sun, Oct 11"
+     }
+    ]
+   },
+   {
+    "start": "2026-10-12",
+    "monthText": null,
+    "days": [
+     {
+      "date": "2026-10-12",
+      "sets": 18,
+      "level": 3,
+      "future": false,
+      "today": false,
+      "sessionId": "de300000-0000-4000-8000-000000000102",
+      "label": "Mon, Oct 12: 18 sets"
+     },
+     {
+      "date": "2026-10-13",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Tue, Oct 13"
+     },
+     {
+      "date": "2026-10-14",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Wed, Oct 14"
+     },
+     {
+      "date": "2026-10-15",
+      "sets": 15,
+      "level": 3,
+      "future": false,
+      "today": false,
+      "sessionId": "de300000-0000-4000-8000-000000000101",
+      "label": "Thu, Oct 15: 15 sets"
+     },
+     {
+      "date": "2026-10-16",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Fri, Oct 16"
+     },
+     {
+      "date": "2026-10-17",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Sat, Oct 17"
+     },
+     {
+      "date": "2026-10-18",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Sun, Oct 18"
+     }
+    ]
+   },
+   {
+    "start": "2026-10-19",
+    "monthText": null,
+    "days": [
+     {
+      "date": "2026-10-19",
+      "sets": 18,
+      "level": 3,
+      "future": false,
+      "today": false,
+      "sessionId": "de300000-0000-4000-8000-000000000100",
+      "label": "Mon, Oct 19: 18 sets"
+     },
+     {
+      "date": "2026-10-20",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": false,
+      "sessionId": null,
+      "label": "Tue, Oct 20"
+     },
+     {
+      "date": "2026-10-21",
+      "sets": 0,
+      "level": 0,
+      "future": false,
+      "today": true,
+      "sessionId": null,
+      "label": "Wed, Oct 21"
+     },
+     {
+      "date": "2026-10-22",
+      "sets": 0,
+      "level": 0,
+      "future": true,
+      "today": false,
+      "sessionId": null,
+      "label": "Thu, Oct 22"
+     },
+     {
+      "date": "2026-10-23",
+      "sets": 0,
+      "level": 0,
+      "future": true,
+      "today": false,
+      "sessionId": null,
+      "label": "Fri, Oct 23"
+     },
+     {
+      "date": "2026-10-24",
+      "sets": 0,
+      "level": 0,
+      "future": true,
+      "today": false,
+      "sessionId": null,
+      "label": "Sat, Oct 24"
+     },
+     {
+      "date": "2026-10-25",
+      "sets": 0,
+      "level": 0,
+      "future": true,
+      "today": false,
+      "sessionId": null,
+      "label": "Sun, Oct 25"
+     }
+    ]
+   }
+  ],
+  "weeks": {
+   "target": 2,
+   "scaleMax": 3,
+   "caption": "line = target 2",
+   "items": [
+    {
+     "week": "2026-07-06",
+     "sessions": 2,
+     "sets": 33,
+     "met": true,
+     "label": "Week of Jul 6: 2 sessions, 33 sets"
+    },
+    {
+     "week": "2026-07-13",
+     "sessions": 2,
+     "sets": 33,
+     "met": true,
+     "label": "Week of Jul 13: 2 sessions, 33 sets"
+    },
+    {
+     "week": "2026-07-20",
+     "sessions": 2,
+     "sets": 33,
+     "met": true,
+     "label": "Week of Jul 20: 2 sessions, 33 sets"
+    },
+    {
+     "week": "2026-07-27",
+     "sessions": 2,
+     "sets": 33,
+     "met": true,
+     "label": "Week of Jul 27: 2 sessions, 33 sets"
+    },
+    {
+     "week": "2026-08-03",
+     "sessions": 2,
+     "sets": 33,
+     "met": true,
+     "label": "Week of Aug 3: 2 sessions, 33 sets"
+    },
+    {
+     "week": "2026-08-10",
+     "sessions": 2,
+     "sets": 33,
+     "met": true,
+     "label": "Week of Aug 10: 2 sessions, 33 sets"
+    },
+    {
+     "week": "2026-08-17",
+     "sessions": 2,
+     "sets": 33,
+     "met": true,
+     "label": "Week of Aug 17: 2 sessions, 33 sets"
+    },
+    {
+     "week": "2026-08-24",
+     "sessions": 2,
+     "sets": 33,
+     "met": true,
+     "label": "Week of Aug 24: 2 sessions, 33 sets"
+    },
+    {
+     "week": "2026-08-31",
+     "sessions": 2,
+     "sets": 33,
+     "met": true,
+     "label": "Week of Aug 31: 2 sessions, 33 sets"
+    },
+    {
+     "week": "2026-09-07",
+     "sessions": 2,
+     "sets": 33,
+     "met": true,
+     "label": "Week of Sep 7: 2 sessions, 33 sets"
+    },
+    {
+     "week": "2026-09-14",
+     "sessions": 2,
+     "sets": 33,
+     "met": true,
+     "label": "Week of Sep 14: 2 sessions, 33 sets"
+    },
+    {
+     "week": "2026-09-21",
+     "sessions": 2,
+     "sets": 33,
+     "met": true,
+     "label": "Week of Sep 21: 2 sessions, 33 sets"
+    },
+    {
+     "week": "2026-09-28",
+     "sessions": 2,
+     "sets": 33,
+     "met": true,
+     "label": "Week of Sep 28: 2 sessions, 33 sets"
+    },
+    {
+     "week": "2026-10-05",
+     "sessions": 2,
+     "sets": 33,
+     "met": true,
+     "label": "Week of Oct 5: 2 sessions, 33 sets"
+    },
+    {
+     "week": "2026-10-12",
+     "sessions": 2,
+     "sets": 33,
+     "met": true,
+     "label": "Week of Oct 12: 2 sessions, 33 sets"
+    },
+    {
+     "week": "2026-10-19",
+     "sessions": 1,
+     "sets": 18,
+     "met": false,
+     "label": "Week of Oct 19: 1 sessions, 18 sets"
+    }
+   ]
+  }
+ },
+ "records": {
+  "ok": true,
+  "title": "Recent records",
+  "caption": "estimated 1RM",
+  "emptyText": "No records yet. They appear when a set beats every earlier session.",
+  "items": [
+   {
+    "exerciseKey": "id-4c494654-0000-4000-8000-000000000001",
+    "sessionId": "de300000-0000-4000-8000-000000000100",
+    "name": "Back squat",
+    "date": "2026-10-19",
+    "detail": "122.5 kg × 5 · Oct 19",
+    "e1rm": 143.9,
+    "e1rmText": "144",
+    "gainText": "+2 kg"
+   },
+   {
+    "exerciseKey": "id-4c494654-0000-4000-8000-000000000002",
+    "sessionId": "de300000-0000-4000-8000-000000000103",
+    "name": "Bench press",
+    "date": "2026-10-08",
+    "detail": "85 kg × 6 · Oct 8",
+    "e1rm": 102,
+    "e1rmText": "102",
+    "gainText": "+1 kg"
+   },
+   {
+    "exerciseKey": "id-4c494654-0000-4000-8000-000000000001",
+    "sessionId": "de300000-0000-4000-8000-000000000105",
+    "name": "Back squat",
+    "date": "2026-10-01",
+    "detail": "120 kg × 5 · Oct 1",
+    "e1rm": 141.9,
+    "e1rmText": "142",
+    "gainText": "+3 kg"
+   }
+  ]
+ }
+}

@@ -1,0 +1,565 @@
+{
+ "generatedAt": "2026-10-21T16:00:00.000Z",
+ "unit": "kg",
+ "exerciseKey": "id-4c494654-0000-4000-8000-000000000001",
+ "name": "Back squat",
+ "stats": {
+  "ok": true,
+  "items": [
+   {
+    "id": "sessions",
+    "label": "Sessions",
+    "value": "30",
+    "detail": null
+   },
+   {
+    "id": "sets",
+    "label": "Logged sets",
+    "value": "104",
+    "detail": "Warm-ups excluded"
+   },
+   {
+    "id": "heaviest",
+    "label": "Heaviest set",
+    "value": "122.5 kg",
+    "detail": null
+   },
+   {
+    "id": "best",
+    "label": "Best est. 1RM",
+    "value": "144 kg",
+    "detail": null
+   }
+  ]
+ },
+ "chart": {
+  "ok": true,
+  "title": "Estimated 1RM over time",
+  "caption": "Best set per session, Epley: weight x (1 + reps / 30), 1 to 12 reps, in kg.",
+  "emptyText": "No sets with weight and 1 to 12 reps.",
+  "points": [
+   {
+    "date": "2026-07-05",
+    "sessionId": "de300000-0000-4000-8000-000000000200",
+    "e1rm": 120.0,
+    "label": "Sun, Jul 5, 2026: 120 kg est. 1RM (102.5 kg x 5)"
+   },
+   {
+    "date": "2026-07-09",
+    "sessionId": "de300000-0000-4000-8000-000000000201",
+    "e1rm": 123.8,
+    "label": "Thu, Jul 9, 2026: 124 kg est. 1RM (105 kg x 5)"
+   },
+   {
+    "date": "2026-07-13",
+    "sessionId": "de300000-0000-4000-8000-000000000202",
+    "e1rm": 119.6,
+    "label": "Mon, Jul 13, 2026: 120 kg est. 1RM (102.5 kg x 5)"
+   },
+   {
+    "date": "2026-07-16",
+    "sessionId": "de300000-0000-4000-8000-000000000203",
+    "e1rm": 122.4,
+    "label": "Thu, Jul 16, 2026: 122 kg est. 1RM (105 kg x 5)"
+   },
+   {
+    "date": "2026-07-19",
+    "sessionId": "de300000-0000-4000-8000-000000000204",
+    "e1rm": 126.2,
+    "label": "Sun, Jul 19, 2026: 126 kg est. 1RM (107.5 kg x 5)"
+   },
+   {
+    "date": "2026-07-23",
+    "sessionId": "de300000-0000-4000-8000-000000000205",
+    "e1rm": 124.0,
+    "label": "Thu, Jul 23, 2026: 124 kg est. 1RM (107.5 kg x 5)"
+   },
+   {
+    "date": "2026-07-27",
+    "sessionId": "de300000-0000-4000-8000-000000000206",
+    "e1rm": 122.8,
+    "label": "Mon, Jul 27, 2026: 123 kg est. 1RM (105 kg x 5)"
+   },
+   {
+    "date": "2026-07-30",
+    "sessionId": "de300000-0000-4000-8000-000000000207",
+    "e1rm": 128.6,
+    "label": "Thu, Jul 30, 2026: 129 kg est. 1RM (110 kg x 5)"
+   },
+   {
+    "date": "2026-08-02",
+    "sessionId": "de300000-0000-4000-8000-000000000208",
+    "e1rm": 126.4,
+    "label": "Sun, Aug 2, 2026: 126 kg est. 1RM (107.5 kg x 5)"
+   },
+   {
+    "date": "2026-08-06",
+    "sessionId": "de300000-0000-4000-8000-000000000209",
+    "e1rm": 127.2,
+    "label": "Thu, Aug 6, 2026: 127 kg est. 1RM (110 kg x 5)"
+   },
+   {
+    "date": "2026-08-10",
+    "sessionId": "de300000-0000-4000-8000-000000000210",
+    "e1rm": 129.0,
+    "label": "Mon, Aug 10, 2026: 129 kg est. 1RM (110 kg x 5)"
+   },
+   {
+    "date": "2026-08-13",
+    "sessionId": "de300000-0000-4000-8000-000000000211",
+    "e1rm": 128.8,
+    "label": "Thu, Aug 13, 2026: 129 kg est. 1RM (110 kg x 5)"
+   },
+   {
+    "date": "2026-08-16",
+    "sessionId": "de300000-0000-4000-8000-000000000212",
+    "e1rm": 129.6,
+    "label": "Sun, Aug 16, 2026: 130 kg est. 1RM (110 kg x 5)"
+   },
+   {
+    "date": "2026-08-20",
+    "sessionId": "de300000-0000-4000-8000-000000000213",
+    "e1rm": 133.4,
+    "label": "Thu, Aug 20, 2026: 133 kg est. 1RM (115 kg x 5)"
+   },
+   {
+    "date": "2026-08-24",
+    "sessionId": "de300000-0000-4000-8000-000000000214",
+    "e1rm": 129.2,
+    "label": "Mon, Aug 24, 2026: 129 kg est. 1RM (110 kg x 5)"
+   },
+   {
+    "date": "2026-08-27",
+    "sessionId": "de300000-0000-4000-8000-000000000215",
+    "e1rm": 132.0,
+    "label": "Thu, Aug 27, 2026: 132 kg est. 1RM (112.5 kg x 5)"
+   },
+   {
+    "date": "2026-08-30",
+    "sessionId": "de300000-0000-4000-8000-000000000216",
+    "e1rm": 135.8,
+    "label": "Sun, Aug 30, 2026: 136 kg est. 1RM (117.5 kg x 5)"
+   },
+   {
+    "date": "2026-09-03",
+    "sessionId": "de300000-0000-4000-8000-000000000217",
+    "e1rm": 133.6,
+    "label": "Thu, Sep 3, 2026: 134 kg est. 1RM (115 kg x 5)"
+   },
+   {
+    "date": "2026-09-07",
+    "sessionId": "de300000-0000-4000-8000-000000000218",
+    "e1rm": 132.4,
+    "label": "Mon, Sep 7, 2026: 132 kg est. 1RM (112.5 kg x 5)"
+   },
+   {
+    "date": "2026-09-10",
+    "sessionId": "de300000-0000-4000-8000-000000000219",
+    "e1rm": 138.2,
+    "label": "Thu, Sep 10, 2026: 138 kg est. 1RM (117.5 kg x 5)"
+   },
+   {
+    "date": "2026-09-13",
+    "sessionId": "de300000-0000-4000-8000-000000000220",
+    "e1rm": 136.0,
+    "label": "Sun, Sep 13, 2026: 136 kg est. 1RM (117.5 kg x 5)"
+   },
+   {
+    "date": "2026-09-17",
+    "sessionId": "de300000-0000-4000-8000-000000000221",
+    "e1rm": 136.8,
+    "label": "Thu, Sep 17, 2026: 137 kg est. 1RM (117.5 kg x 5)"
+   },
+   {
+    "date": "2026-09-21",
+    "sessionId": "de300000-0000-4000-8000-000000000222",
+    "e1rm": 138.6,
+    "label": "Mon, Sep 21, 2026: 139 kg est. 1RM (120 kg x 5)"
+   },
+   {
+    "date": "2026-09-24",
+    "sessionId": "de300000-0000-4000-8000-000000000223",
+    "e1rm": 138.4,
+    "label": "Thu, Sep 24, 2026: 138 kg est. 1RM (117.5 kg x 5)"
+   },
+   {
+    "date": "2026-09-27",
+    "sessionId": "de300000-0000-4000-8000-000000000224",
+    "e1rm": 139.2,
+    "label": "Sun, Sep 27, 2026: 139 kg est. 1RM (120 kg x 5)"
+   },
+   {
+    "date": "2026-10-01",
+    "sessionId": "de300000-0000-4000-8000-000000000225",
+    "e1rm": 143.0,
+    "label": "Thu, Oct 1, 2026: 143 kg est. 1RM (122.5 kg x 5)"
+   },
+   {
+    "date": "2026-10-05",
+    "sessionId": "de300000-0000-4000-8000-000000000226",
+    "e1rm": 138.8,
+    "label": "Mon, Oct 5, 2026: 139 kg est. 1RM (120 kg x 5)"
+   },
+   {
+    "date": "2026-10-08",
+    "sessionId": "de300000-0000-4000-8000-000000000227",
+    "e1rm": 141.6,
+    "label": "Thu, Oct 8, 2026: 142 kg est. 1RM (122.5 kg x 5)"
+   },
+   {
+    "date": "2026-10-11",
+    "sessionId": "de300000-0000-4000-8000-000000000228",
+    "e1rm": 145.4,
+    "label": "Sun, Oct 11, 2026: 145 kg est. 1RM (125 kg x 5)"
+   },
+   {
+    "date": "2026-10-15",
+    "sessionId": "de300000-0000-4000-8000-000000000229",
+    "e1rm": 143.2,
+    "label": "Thu, Oct 15, 2026: 143 kg est. 1RM (122.5 kg x 5)"
+   }
+  ]
+ },
+ "sessions": {
+  "ok": true,
+  "items": [
+   {
+    "date": "2026-10-15",
+    "dateText": "Thu, Oct 15, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000229",
+    "bestSetText": "122.5 kg x 5",
+    "e1rm": 143.2,
+    "e1rmText": "143 kg"
+   },
+   {
+    "date": "2026-10-11",
+    "dateText": "Sun, Oct 11, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000228",
+    "bestSetText": "125 kg x 5",
+    "e1rm": 145.4,
+    "e1rmText": "145 kg"
+   },
+   {
+    "date": "2026-10-08",
+    "dateText": "Thu, Oct 8, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000227",
+    "bestSetText": "122.5 kg x 5",
+    "e1rm": 141.6,
+    "e1rmText": "142 kg"
+   },
+   {
+    "date": "2026-10-05",
+    "dateText": "Mon, Oct 5, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000226",
+    "bestSetText": "120 kg x 5",
+    "e1rm": 138.8,
+    "e1rmText": "139 kg"
+   },
+   {
+    "date": "2026-10-01",
+    "dateText": "Thu, Oct 1, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000225",
+    "bestSetText": "122.5 kg x 5",
+    "e1rm": 143.0,
+    "e1rmText": "143 kg"
+   },
+   {
+    "date": "2026-09-27",
+    "dateText": "Sun, Sep 27, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000224",
+    "bestSetText": "120 kg x 5",
+    "e1rm": 139.2,
+    "e1rmText": "139 kg"
+   },
+   {
+    "date": "2026-09-24",
+    "dateText": "Thu, Sep 24, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000223",
+    "bestSetText": "117.5 kg x 5",
+    "e1rm": 138.4,
+    "e1rmText": "138 kg"
+   },
+   {
+    "date": "2026-09-21",
+    "dateText": "Mon, Sep 21, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000222",
+    "bestSetText": "120 kg x 5",
+    "e1rm": 138.6,
+    "e1rmText": "139 kg"
+   },
+   {
+    "date": "2026-09-17",
+    "dateText": "Thu, Sep 17, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000221",
+    "bestSetText": "117.5 kg x 5",
+    "e1rm": 136.8,
+    "e1rmText": "137 kg"
+   },
+   {
+    "date": "2026-09-13",
+    "dateText": "Sun, Sep 13, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000220",
+    "bestSetText": "117.5 kg x 5",
+    "e1rm": 136.0,
+    "e1rmText": "136 kg"
+   },
+   {
+    "date": "2026-09-10",
+    "dateText": "Thu, Sep 10, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000219",
+    "bestSetText": "117.5 kg x 5",
+    "e1rm": 138.2,
+    "e1rmText": "138 kg"
+   },
+   {
+    "date": "2026-09-07",
+    "dateText": "Mon, Sep 7, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000218",
+    "bestSetText": "112.5 kg x 5",
+    "e1rm": 132.4,
+    "e1rmText": "132 kg"
+   },
+   {
+    "date": "2026-09-03",
+    "dateText": "Thu, Sep 3, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000217",
+    "bestSetText": "115 kg x 5",
+    "e1rm": 133.6,
+    "e1rmText": "134 kg"
+   },
+   {
+    "date": "2026-08-30",
+    "dateText": "Sun, Aug 30, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000216",
+    "bestSetText": "117.5 kg x 5",
+    "e1rm": 135.8,
+    "e1rmText": "136 kg"
+   },
+   {
+    "date": "2026-08-27",
+    "dateText": "Thu, Aug 27, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000215",
+    "bestSetText": "112.5 kg x 5",
+    "e1rm": 132.0,
+    "e1rmText": "132 kg"
+   },
+   {
+    "date": "2026-08-24",
+    "dateText": "Mon, Aug 24, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000214",
+    "bestSetText": "110 kg x 5",
+    "e1rm": 129.2,
+    "e1rmText": "129 kg"
+   },
+   {
+    "date": "2026-08-20",
+    "dateText": "Thu, Aug 20, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000213",
+    "bestSetText": "115 kg x 5",
+    "e1rm": 133.4,
+    "e1rmText": "133 kg"
+   },
+   {
+    "date": "2026-08-16",
+    "dateText": "Sun, Aug 16, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000212",
+    "bestSetText": "110 kg x 5",
+    "e1rm": 129.6,
+    "e1rmText": "130 kg"
+   },
+   {
+    "date": "2026-08-13",
+    "dateText": "Thu, Aug 13, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000211",
+    "bestSetText": "110 kg x 5",
+    "e1rm": 128.8,
+    "e1rmText": "129 kg"
+   },
+   {
+    "date": "2026-08-10",
+    "dateText": "Mon, Aug 10, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000210",
+    "bestSetText": "110 kg x 5",
+    "e1rm": 129.0,
+    "e1rmText": "129 kg"
+   },
+   {
+    "date": "2026-08-06",
+    "dateText": "Thu, Aug 6, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000209",
+    "bestSetText": "110 kg x 5",
+    "e1rm": 127.2,
+    "e1rmText": "127 kg"
+   },
+   {
+    "date": "2026-08-02",
+    "dateText": "Sun, Aug 2, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000208",
+    "bestSetText": "107.5 kg x 5",
+    "e1rm": 126.4,
+    "e1rmText": "126 kg"
+   },
+   {
+    "date": "2026-07-30",
+    "dateText": "Thu, Jul 30, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000207",
+    "bestSetText": "110 kg x 5",
+    "e1rm": 128.6,
+    "e1rmText": "129 kg"
+   },
+   {
+    "date": "2026-07-27",
+    "dateText": "Mon, Jul 27, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000206",
+    "bestSetText": "105 kg x 5",
+    "e1rm": 122.8,
+    "e1rmText": "123 kg"
+   },
+   {
+    "date": "2026-07-23",
+    "dateText": "Thu, Jul 23, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000205",
+    "bestSetText": "107.5 kg x 5",
+    "e1rm": 124.0,
+    "e1rmText": "124 kg"
+   },
+   {
+    "date": "2026-07-19",
+    "dateText": "Sun, Jul 19, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000204",
+    "bestSetText": "107.5 kg x 5",
+    "e1rm": 126.2,
+    "e1rmText": "126 kg"
+   },
+   {
+    "date": "2026-07-16",
+    "dateText": "Thu, Jul 16, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000203",
+    "bestSetText": "105 kg x 5",
+    "e1rm": 122.4,
+    "e1rmText": "122 kg"
+   },
+   {
+    "date": "2026-07-13",
+    "dateText": "Mon, Jul 13, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000202",
+    "bestSetText": "102.5 kg x 5",
+    "e1rm": 119.6,
+    "e1rmText": "120 kg"
+   },
+   {
+    "date": "2026-07-09",
+    "dateText": "Thu, Jul 9, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000201",
+    "bestSetText": "105 kg x 5",
+    "e1rm": 123.8,
+    "e1rmText": "124 kg"
+   },
+   {
+    "date": "2026-07-05",
+    "dateText": "Sun, Jul 5, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000200",
+    "bestSetText": "102.5 kg x 5",
+    "e1rm": 120.0,
+    "e1rmText": "120 kg"
+   }
+  ]
+ },
+ "bestSets": {
+  "ok": true,
+  "title": "Best sets",
+  "caption": "Top sets by estimated 1RM.",
+  "items": [
+   {
+    "date": "2026-10-11",
+    "dateText": "Sun, Oct 11, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000228",
+    "weightText": "125 kg",
+    "repsText": "5",
+    "e1rm": 145.4,
+    "e1rmText": "145 kg"
+   },
+   {
+    "date": "2026-10-15",
+    "dateText": "Thu, Oct 15, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000229",
+    "weightText": "122.5 kg",
+    "repsText": "5",
+    "e1rm": 143.2,
+    "e1rmText": "143 kg"
+   },
+   {
+    "date": "2026-10-01",
+    "dateText": "Thu, Oct 1, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000225",
+    "weightText": "122.5 kg",
+    "repsText": "5",
+    "e1rm": 143.0,
+    "e1rmText": "143 kg"
+   },
+   {
+    "date": "2026-10-08",
+    "dateText": "Thu, Oct 8, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000227",
+    "weightText": "122.5 kg",
+    "repsText": "5",
+    "e1rm": 141.6,
+    "e1rmText": "142 kg"
+   },
+   {
+    "date": "2026-09-27",
+    "dateText": "Sun, Sep 27, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000224",
+    "weightText": "120 kg",
+    "repsText": "5",
+    "e1rm": 139.2,
+    "e1rmText": "139 kg"
+   },
+   {
+    "date": "2026-10-05",
+    "dateText": "Mon, Oct 5, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000226",
+    "weightText": "120 kg",
+    "repsText": "5",
+    "e1rm": 138.8,
+    "e1rmText": "139 kg"
+   },
+   {
+    "date": "2026-09-21",
+    "dateText": "Mon, Sep 21, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000222",
+    "weightText": "120 kg",
+    "repsText": "5",
+    "e1rm": 138.6,
+    "e1rmText": "139 kg"
+   },
+   {
+    "date": "2026-09-24",
+    "dateText": "Thu, Sep 24, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000223",
+    "weightText": "117.5 kg",
+    "repsText": "5",
+    "e1rm": 138.4,
+    "e1rmText": "138 kg"
+   },
+   {
+    "date": "2026-09-10",
+    "dateText": "Thu, Sep 10, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000219",
+    "weightText": "117.5 kg",
+    "repsText": "5",
+    "e1rm": 138.2,
+    "e1rmText": "138 kg"
+   },
+   {
+    "date": "2026-09-17",
+    "dateText": "Thu, Sep 17, 2026",
+    "sessionId": "de300000-0000-4000-8000-000000000221",
+    "weightText": "117.5 kg",
+    "repsText": "5",
+    "e1rm": 136.8,
+    "e1rmText": "137 kg"
+   }
+  ]
+ }
+}

@@ -18,6 +18,8 @@ import SwiftUI
 public struct KoboLineChart<X: KoboChartX>: View {
     @Environment(\.koboTheme) var theme
     @ScaledMetric(relativeTo: .caption) private var scale = 1
+    /// One row of marker labels: the caption line and its chip padding.
+    @ScaledMetric(relativeTo: .caption) var markerRow = Space.xl
     @State private var ownSelection: X?
     let series: [ChartSeries<X>]
     let bands: [ChartBand]
@@ -109,8 +111,8 @@ public struct KoboLineChart<X: KoboChartX>: View {
         }
         .modifier(ChartXScale(domain: xDomain, isLogarithmic: isLogarithmic))
         .chartYScale(domain: yScaleDomain)
-        .chartForegroundStyleScale(domain: series.map(\.name), range: series.indices.map(color(at:)))
-        .chartLegend(series.count > 1 ? .visible : .hidden)
+        .chartForegroundStyleScale(domain: legend.map(\.name), range: legend.map(\.color))
+        .chartLegend(legend.count > 1 ? .visible : .hidden)
         .chartLegend(position: .top, alignment: .leading)
         .chartAxes(xTicks: xTicks, xText: xText, yText: yText, showsXLabels: showsXLabels)
         .chartXSelection(value: selection)
@@ -144,11 +146,25 @@ public struct KoboLineChart<X: KoboChartX>: View {
         return ChartMath.domain(values)
     }
 
-    func color(at index: Int) -> Color {
-        series[index].color ?? theme.palette.chartColor(index)
+    /// One legend entry per name, in order, in the colour of the first series with that name: a measured line and its
+    /// dashed projection share a name and read as one item.
+    var legend: [(name: String, color: Color)] {
+        ChartMath.firstIndices(of: series.map(\.name)).map { (series[$0].name, color(at: $0)) }
     }
 
+    /// The colour of the series at `index`: that of the first series with its name, so a line and its same-name
+    /// projection share one colour everywhere (line, fill, points, selection dot and callout).
+    func color(at index: Int) -> Color {
+        let first = series.firstIndex { $0.name == series[index].name } ?? index
+        return series[first].color ?? theme.palette.chartColor(first)
+    }
+
+    /// One sentence per name: a line and its same-name projection read as one series.
     var summary: String {
-        ChartSpeech.lines(series.map { ($0.name, $0.points.map(\.y)) }, format: yText)
+        let names = ChartMath.firstIndices(of: series.map(\.name)).map { series[$0].name }
+        let grouped = names.map { name in
+            (name, series.filter { $0.name == name }.flatMap { $0.points.map(\.y) })
+        }
+        return ChartSpeech.lines(grouped, format: yText)
     }
 }

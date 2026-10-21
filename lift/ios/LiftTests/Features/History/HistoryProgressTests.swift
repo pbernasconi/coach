@@ -20,7 +20,8 @@ import Testing
             importFlow: RecordingImportFlow(),
             now: SessionBuilder.now,
             calendar: SessionBuilder.calendar,
-            segment: segment
+            segment: segment,
+            opensCoachSessions: false
         )
     }
 

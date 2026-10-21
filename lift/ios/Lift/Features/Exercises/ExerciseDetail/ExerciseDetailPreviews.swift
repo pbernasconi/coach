@@ -14,6 +14,12 @@
     }
 
     #Preview("Default") { ExerciseDetailPreview(state: .fixtureDefault) }
+    #Preview("Coach numbers") { ExerciseDetailPreview(state: .fixtureServer) }
+    #Preview("Coach numbers, dark") { ExerciseDetailPreview(state: .fixtureServerTouched).preferredColorScheme(.dark) }
+    #Preview("Coach numbers, AX3") {
+        ExerciseDetailPreview(state: .fixtureServer).dynamicTypeSize(.accessibility3)
+    }
+    #Preview("Coach only") { ExerciseDetailPreview(state: .fixtureServerOnly) }
     #Preview("Dark") { ExerciseDetailPreview(state: .fixtureDefault).preferredColorScheme(.dark) }
     #Preview("With media") { ExerciseDetailPreview(state: .fixtureWithMedia) }
     #Preview("With media, dark") { ExerciseDetailPreview(state: .fixtureWithMedia).preferredColorScheme(.dark) }
