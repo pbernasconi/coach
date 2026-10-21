@@ -1,0 +1,31 @@
+# ESP32 firmware in devices/: protocol unit tests on the runner, then a firmware build with the example config.
+name: Devices
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - "devices/**"
+      - ".github/workflows/devices.yml"
+  pull_request:
+    paths:
+      - "devices/**"
+      - ".github/workflows/devices.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  scale-bridge:
+    name: scale bridge
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: devices/scale-bridge
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+      - run: pipx install platformio==6.2.0
+      - run: pio test -e native
+      - run: cp include/config.example.h include/config.h
+      - run: pio run -e atoms3
