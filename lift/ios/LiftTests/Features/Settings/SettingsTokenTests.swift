@@ -19,6 +19,7 @@ import Testing
             sync: sync,
             health: RecordingHealthRecorder(status: .notSaved),
             units: InMemoryUnitSettings(.kg),
+            practice: RecordingPracticeModeSwitch(),
             now: { now() },
             router: RecordingNavigator()
         )
@@ -64,6 +65,7 @@ import Testing
             sync: sync,
             health: RecordingHealthRecorder(status: .notSaved),
             units: InMemoryUnitSettings(.kg),
+            practice: RecordingPracticeModeSwitch(),
             now: { ManualNow.start },
             router: RecordingNavigator()
         )

@@ -4,22 +4,21 @@ import SwiftUI
 @main
 struct LiftApp: App {
     private let options: LaunchOptions
-    private let launch: CompositionRoot.Launch
+    /// Opens the data now, in `init`, so the workout Live Activity's buttons find it also when they launch Lift in the
+    /// background (`AppLauncher` hands them the center).
+    @State private var launcher: AppLauncher
 
     init() {
         let options = LaunchOptions(arguments: ProcessInfo.processInfo.arguments)
         self.options = options
-        let launch = CompositionRoot.launch(options: options)
-        self.launch = launch
-        // The workout Live Activity's buttons run in this process, also when they launch Lift in the background.
-        if case .ready(let dependencies) = launch {
-            WorkoutActivityButtons.center = dependencies.workoutActivity
-        }
+        _launcher = State(
+            initialValue: AppLauncher(options: options, setting: UserDefaultsPracticeModeSettings.standard())
+        )
     }
 
     var body: some Scene {
         WindowGroup {
-            RootView(launch: launch, options: options)
+            RootView(launcher: launcher, options: options)
                 .koboTheme(.lift)
                 .preferredColorScheme(colorScheme)
         }

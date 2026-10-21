@@ -13,6 +13,15 @@ nonisolated struct SettingsState: Equatable, Sendable {
     /// Saving finished workouts to Apple Health.
     var health: HealthStatus
 
+    /// The Practice mode switch, from where the data lives.
+    var practice: PracticeSection {
+        switch dataSource {
+        case .device: .off
+        case .practice: .on
+        case .demo, .fresh: .unavailable
+        }
+    }
+
     init(
         unit: WeightUnit,
         version: String,
@@ -37,4 +46,13 @@ nonisolated struct SettingsState: Equatable, Sendable {
             sync: sync
         )
     }
+}
+
+/// The Practice mode section: a switch for the log and for practice data, and nothing for demo and `-fresh` launches.
+nonisolated enum PracticeSection: Equatable, Sendable {
+    case off
+    case on
+    case unavailable
+
+    var isOn: Bool { self == .on }
 }

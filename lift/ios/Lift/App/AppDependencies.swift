@@ -54,6 +54,10 @@ final class AppDependencies {
     /// Routes `lift://` links: Import from Notes (and notes shared through the Share extension), template links and
     /// sync links.
     let incomingNotes: IncomingNoteRouter
+    /// Turns practice mode on or off (Settings, and the practice banner's Turn off).
+    let practice: any PracticeModeSwitching
+    /// Fills the database with the fabricated demo sessions in `prepare()`: demo data, and new practice data.
+    private let seedsDemo: Bool
     private var isPrepared = false
 
     init(
@@ -76,7 +80,9 @@ final class AppDependencies {
         outbox: any OutboxRepository,
         sync: any Syncing,
         health: any WorkoutHealthRecording,
-        coachPlan: any CoachPlanProviding
+        coachPlan: any CoachPlanProviding,
+        seedsDemo: Bool,
+        practice: any PracticeModeSwitching
     ) {
         self.sessions = sessions
         self.exercises = exercises
@@ -98,6 +104,8 @@ final class AppDependencies {
         self.sync = sync
         self.health = health
         self.coachPlan = coachPlan
+        self.seedsDemo = seedsDemo
+        self.practice = practice
         let importFlow = ImportFlowPresenter()
         self.importFlow = importFlow
         let templateLinks = TemplateLinkPresenter(templates: templates, exercises: exercises)
@@ -110,18 +118,16 @@ final class AppDependencies {
         )
     }
 
-    /// Work that finishes before the tabs show: the seed exercise library on this iPhone (and in `-fresh`), or the
-    /// fabricated demo sessions in demo mode. Runs once; a failure is logged and the app opens with what the database
-    /// holds. A workout Live Activity left from a previous launch is picked up first, or ended when its workout is over.
+    /// Work that finishes before the tabs show: the seed exercise library on this iPhone (also in `-fresh` and in
+    /// practice data made before), or the fabricated demo sessions in demo mode and in new practice data. Runs once; a
+    /// failure is logged and the app opens with what the database holds. A workout Live Activity left from a previous
+    /// launch is picked up first, or ended when its workout is over.
     func prepare() async {
         guard !isPrepared else { return }
         isPrepared = true
         workoutActivity.resume()
         do {
-            switch info.dataSource {
-            case .device, .fresh:
-                _ = try await exercises.installLibrary()
-            case .demo:
+            if seedsDemo {
                 let seeder = DemoSeeder(
                     exercises: exercises,
                     sessions: sessions,
@@ -130,6 +136,8 @@ final class AppDependencies {
                     plans: plans
                 )
                 try await seeder.seed(today: LocalDay(now(), calendar: calendar), calendar: calendar)
+            } else {
+                _ = try await exercises.installLibrary()
             }
         } catch {
             AppLog.launch.error("Preparing data failed: \(String(describing: error), privacy: .private)")
