@@ -20,4 +20,6 @@ nonisolated enum SettingsAction: Equatable, Sendable {
     case tokenEditorDismissed
     /// The Apple Health switch: save finished workouts to Health, or stop.
     case healthToggled(Bool)
+    /// The Practice mode switch: sample workouts in their own database, or back to the log.
+    case practiceModeToggled(Bool)
 }

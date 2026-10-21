@@ -32,6 +32,7 @@ struct SettingsContent: View {
                 dataSection
                 SettingsHealthSection(status: state.health, send: send)
                 SettingsSyncSection(section: state.sync, send: send)
+                SettingsPracticeSection(section: state.practice, send: send)
                 ListSection("About") {
                     ListRow("Version", value: state.version)
                     ListRow("Acknowledgements", action: { send(.acknowledgementsTapped) })
@@ -67,6 +68,10 @@ struct SettingsContent: View {
         case .fresh:
             ListSection("Data", footer: "This launch starts empty and is not saved.") {
                 ListRow("Stored", value: String(localized: "Not saved"))
+            }
+        case .practice:
+            ListSection("Data", footer: "Sample workouts, kept apart from your log.") {
+                ListRow("Stored", value: String(localized: "Practice data"))
             }
         }
     }

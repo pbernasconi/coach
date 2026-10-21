@@ -4,7 +4,7 @@ import LiftStore
 import LiftSync
 
 extension CompositionRoot {
-    /// The coach's weekly plan: fetched over the sync server and token when this build syncs, made up for demo data,
+    /// The coach's weekly plan: fetched over the sync server and token when this build syncs, made up for demo and practice data,
     /// and off otherwise (`-fresh`, no server), when the Week screen shows only Lift sessions.
     static func makeCoachPlan(
         source: AppInfo.DataSource,
@@ -13,7 +13,7 @@ extension CompositionRoot {
         now: @escaping @Sendable () -> Date,
         calendar: Calendar
     ) -> any CoachPlanProviding {
-        if source == .demo {
+        if source.isSample {
             return DemoCoachPlan(sessions: sessions, now: now, calendar: calendar)
         }
         let baseURL = SyncServer.baseURL(from: Bundle.main.object(forInfoDictionaryKey: SyncServer.infoKey))

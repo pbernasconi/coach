@@ -13,6 +13,8 @@ final class SettingsViewModel {
     private let health: any WorkoutHealthRecording
     /// The preferred weight unit, kept on this iPhone.
     private let units: any UnitPreference
+    /// Opens practice data or the log; the app starts over on it.
+    private let practice: any PracticeModeSwitching
     /// The latest sync status, kept to redraw the status row when the token changes.
     @ObservationIgnored private var latest = SyncStatus.initial
 
@@ -22,6 +24,7 @@ final class SettingsViewModel {
         sync: any Syncing,
         health: any WorkoutHealthRecording,
         units: any UnitPreference,
+        practice: any PracticeModeSwitching,
         now: @escaping @Sendable () -> Date,
         router: any Navigating
     ) {
@@ -33,6 +36,7 @@ final class SettingsViewModel {
         self.sync = sync
         self.health = health
         self.units = units
+        self.practice = practice
         self.now = now
     }
 
@@ -64,6 +68,10 @@ final class SettingsViewModel {
             return syncNow()
         case .healthToggled(let isOn):
             return setHealth(isOn)
+        case .practiceModeToggled(let isOn):
+            // Only the log and practice data can switch; demo and `-fresh` launches keep theirs.
+            guard state.practice.isOn != isOn, state.practice != .unavailable else { return nil }
+            practice.setPracticeMode(isOn)
         default:
             return sendToken(action)
         }
@@ -158,7 +166,7 @@ final class SettingsViewModel {
 
     private static func section(dataSource: AppInfo.DataSource, isConfigured: Bool) -> SyncSection {
         switch dataSource {
-        case .demo, .fresh:
+        case .demo, .fresh, .practice:
             return .demo
         case .device:
             guard isConfigured else { return .unavailable }
