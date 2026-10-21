@@ -4,13 +4,13 @@ import { ANCHORS, flatten, targetText, totals, validate, zoneOf, zoneTarget } fr
 import { BANK, bankWorkout } from './bank.mjs';
 import { toZwo } from './zwo.mjs';
 
-test('zones match the PLAN-STRUCTURE table at FTP 280 W and LTHR 168', () => {
-  assert.equal(targetText(zoneTarget('Z4top', 'ride')), '269–291 W');
+test('zones match the PLAN-STRUCTURE table at FTP 265 W and LTHR 168', () => {
+  assert.equal(targetText(zoneTarget('Z4top', 'ride')), '254–276 W');
   assert.equal(targetText(zoneTarget('Z4top', 'run')), '175–181 bpm');
-  assert.equal(targetText(zoneTarget('Z2top', 'ride')), '196–210 W');
+  assert.equal(targetText(zoneTarget('Z2top', 'ride')), '186–199 W');
   assert.equal(targetText(zoneTarget('Z2', 'run')), '123–153 bpm');
   assert.equal(zoneOf(zoneTarget('Z3', 'ride'), 'ride'), 'Z3');
-  assert.equal(ANCHORS.ftp, 280);
+  assert.equal(ANCHORS.ftp, 265);
 });
 
 test('every bank workout is valid at every level, for both sports', () => {

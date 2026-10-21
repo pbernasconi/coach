@@ -105,12 +105,12 @@ Zones: prescribe by HR for all but Z5 (HR needs ~5 min at wattage to settle); ca
 - Explosive: box split jump 3 × 5, box jump from seated × 3 (unweighted)
 - Main: hamstring curl (ball) or single-leg DB RDL 3 × 8; pistol squat 3 × 8 (band-assisted OK); single-leg calf raise 3 × 8
 
-## Paolo's zone anchors (FTP 280 W, LTHR 168, max ~182+)
+## Paolo's zone anchors (FTP 265 W, LTHR 168, max ~182+; FTP was 280 W until 2026-10-20)
 
 | Zone | HR | Power |
 |---|---|---|
-| Z1 | <122 | <155 W |
-| Z2 | 122–153 (top end ~145–153) | 155–210 W (top end ~195–210 W) |
-| Z3 | 153–168 | 213–252 W |
-| Z4 | 168–182 (top end ~175–182) | 255–294 W (top end ~270–290 W) |
-| Z5/VO2 | max effort, HR lags | ~300–335 W (best sustainable) |
+| Z1 | <122 | <146 W |
+| Z2 | 122–153 (top end ~145–153) | 148–199 W (top end ~186–199 W) |
+| Z3 | 153–168 | 201–239 W |
+| Z4 | 168–182 (top end ~175–182) | 241–278 W (top end ~254–276 W) |
+| Z5/VO2 | max effort, HR lags | ~284–318 W (best sustainable) |
