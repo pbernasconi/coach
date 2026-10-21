@@ -63,7 +63,7 @@ not port plan logic. Change this file first, then both sides.
                 { "label": "6 ×", "detail": "5:00 Work 294–308 W, 3:00 Recovery 126–154 W" }
               ],
               "liftSessionId": "ca4f651b-98c7-4765-83a9-07ab74435d69",
-              "done": { "source": "strava", "name": "Morning Ride", "minutes": 62, "tss": 70, "text": "62 min · 70 TSS / 60 min · 45 TSS" }
+              "done": { "source": "strava", "activityId": "16234567890", "name": "Morning Ride", "minutes": 62, "tss": 70, "text": "62 min · 70 TSS / 60 min · 45 TSS" }
             }
           ]
         }
@@ -90,6 +90,8 @@ Field rules:
   phone shows them as they are. Targets are in watts or beats with the athlete's anchors, as on the web.
 - `subtitle`: start time, planned minutes and TSS; the sport label when all three are unknown.
 - `done`: the matched Strava activity or Lift session (`minutes` of a Lift session from its start and finish).
+  `done.activityId`: the Strava activity id as a string, the id `GET /api/app/activities/:id` takes; `null` when the
+  match is a Lift session.
   `done.text`: done / planned, as the web's chip. `null` for a rest day.
 - `totals`: as the web's week column. `doneMinutes`/`doneTss` count every activity of the week (not commutes), planned
   or not. `text` is "x/y done · h:mm of h:mm · a of b TSS" for a week that has started, "9 planned · 11:45 · 630 TSS"
