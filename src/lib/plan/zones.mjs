@@ -1,14 +1,14 @@
-// Paolo's zone anchors, from plans/PLAN-STRUCTURE.md (FTP 280 W, LTHR 168). Change them there and here.
+// Paolo's zone anchors, from plans/PLAN-STRUCTURE.md (FTP 265 W, LTHR 168). Change them there and here.
 // No imports, so node --test can run it (zones.test.mjs).
 
 export const ZONES = {
-  Z1: { hr: '<122 bpm', power: '<155 W' },
-  Z2: { hr: '122–153 bpm', power: '155–210 W' },
-  Z2top: { hr: '145–153 bpm', power: '195–210 W' },
-  Z3: { hr: '153–168 bpm', power: '213–252 W' },
-  Z4: { hr: '168–182 bpm', power: '255–294 W' },
-  Z4top: { hr: '175–182 bpm', power: '270–290 W' },
-  Z5: { hr: 'max effort, HR lags', power: '300–335 W' },
+  Z1: { hr: '<122 bpm', power: '<146 W' },
+  Z2: { hr: '122–153 bpm', power: '148–199 W' },
+  Z2top: { hr: '145–153 bpm', power: '186–199 W' },
+  Z3: { hr: '153–168 bpm', power: '201–239 W' },
+  Z4: { hr: '168–182 bpm', power: '241–278 W' },
+  Z4top: { hr: '175–182 bpm', power: '254–276 W' },
+  Z5: { hr: 'max effort, HR lags', power: '284–318 W' },
 };
 
 /**

@@ -71,7 +71,7 @@ test('a done ride: compliance, done minutes and TSS from the matched activity, k
   assert.equal(item.compliance, 'good');
   assert.equal(item.stateLabel, 'On target');
   assert.deepEqual(item.done, { source: 'strava', name: 'Morning Ride', minutes: 62, tss: 70, text: '62 min · 70 TSS / 60 min · 45 TSS' });
-  assert.deepEqual(item.keyTargets, ['6 × 5:00 at 294–308 W']);
+  assert.deepEqual(item.keyTargets, ['6 × 5:00 at 278–292 W']);
   assert.equal(item.steps.length, 1);
 });
 
