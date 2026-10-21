@@ -155,10 +155,13 @@ private struct TodayGoalCard: View {
             let values = [goal.currentText, goal.targetText.map { String(localized: "target \($0)") }]
             Text(verbatim: values.compactMap(\.self).joined(separator: " · "))
                 .font(theme.font(.subheadline).monospacedDigit())
-            ForEach(Array(([goal.timeText].compactMap(\.self) + goal.detail).enumerated()), id: \.offset) { _, line in
-                Text(verbatim: line)
+            // The time left and the server's detail lines, one per line; a single Text needs no ids.
+            let lines = [goal.timeText].compactMap(\.self) + goal.detail
+            if !lines.isEmpty {
+                Text(verbatim: lines.joined(separator: "\n"))
                     .font(theme.font(.caption))
                     .foregroundStyle(theme.palette.textSecondary)
+                    .lineSpacing(Space.xs)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }

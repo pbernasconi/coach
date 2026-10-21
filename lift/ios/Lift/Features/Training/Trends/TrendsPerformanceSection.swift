@@ -13,7 +13,7 @@ struct TrendsPerformanceSection: View {
             if let stale = performance.staleText {
                 InlineNotice(verbatim: stale, tone: .warning)
             }
-            TileGrid(items: performance.tiles) { tile in tileView(tile) }
+            TileGrid(performance.tiles, id: \.key) { tile in tileView(tile) }
             WeeklyHoursChart(hours: performance.weeklyHours)
             TrendsWeeklyTable(rows: performance.table)
         }

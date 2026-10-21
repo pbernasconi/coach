@@ -69,7 +69,7 @@ struct ActivityOverviewView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Space.md) {
-            TileGrid(items: overview.big) { stat in
+            TileGrid(overview.big, id: \.label) { stat in
                 StatTile(verbatim: stat.label, value: stat.valueText, unit: stat.unit)
             }
             if !overview.small.isEmpty {
@@ -133,6 +133,6 @@ struct ActivityEffortView: View {
     let effort: ActivityRelativeEffort
 
     var body: some View {
-        TileGrid(items: effort.stats) { stat in StatTile(verbatim: stat.label, value: stat.valueText) }
+        TileGrid(effort.stats, id: \.label) { stat in StatTile(verbatim: stat.label, value: stat.valueText) }
     }
 }

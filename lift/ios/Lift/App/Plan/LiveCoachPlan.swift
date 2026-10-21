@@ -111,7 +111,8 @@ final class LiveCoachPlan: CoachPlanProviding {
             await keep(response, start: start)
             snapshot.book.add(response.plan)
             snapshot.status = .ready
-        } catch SyncTransportError.missingToken {
+        } catch SyncTransportError.missingToken, SyncTransportError.unauthorized {
+            // No token, or one the coach refused: Week shows only Lift sessions, as without sync.
             snapshot.status = .off
         } catch is CancellationError {
             return

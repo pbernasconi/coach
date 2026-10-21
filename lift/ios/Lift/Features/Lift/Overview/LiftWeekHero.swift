@@ -48,9 +48,12 @@ struct LiftWeekDays: View {
 
     var body: some View {
         let dated = days.compactMap { day in LiftDay.date(day.date, calendar: calendar).map { (day, $0) } }
-        if let today = dated.first(where: { $0.0.today })?.1 ?? dated.first?.1 {
+        if let today = dated.first(where: \.0.today)?.1 ?? dated.first?.1 {
             DayStrip(
-                items: dated.map { DayItem(date: $0.1, marker: Self.marker($0.0.state)) },
+                // The server's `label` is the day's spoken text ("Tuesday: Heavy barbell planned").
+                items: dated.map {
+                    DayItem(date: $0.1, marker: Self.marker($0.0.state), accessibilityLabel: $0.0.label)
+                },
                 today: today,
                 week: .constant(0),
                 weeks: 0...0
