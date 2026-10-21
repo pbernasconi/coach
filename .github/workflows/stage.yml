@@ -1,0 +1,84 @@
+# A staged production build on demand: add the label "stage" (or "perf") to a pull request. It builds the
+# production output (the pull request merged into main), uploads it as a production deployment with no domain, and
+# checks it on the production data. A merge whose tree matches promotes it in seconds (deploy.yml); without one, the
+# merge builds and checks it before the promote. Each later push to a labelled pull request stages it again.
+# Opt-in because the Hobby plan allows 100 deployments a day (RELIABILITY.md "Deploys").
+# Secrets: VERCEL_TOKEN, HEALTH_TOKEN, VERCEL_BYPASS_SECRET, PROD_DATABASE_URL.
+name: Stage
+
+on:
+  pull_request:
+    types: [labeled, synchronize, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stage-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  stage:
+    if: >-
+      (contains(github.event.pull_request.labels.*.name, 'stage') || contains(github.event.pull_request.labels.*.name, 'perf')) &&
+      (github.event.action != 'labeled' || github.event.label.name == 'stage' || github.event.label.name == 'perf')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      VERCEL_ORG_ID: team_Hwpc5IVS3EI80M3wxEu8wK2E
+      VERCEL_PROJECT_ID: prj_w56et7EBbNWCBLgA0g3AFys4A6MD
+      VERCEL_CLI: vercel@64.7.0
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
+        with:
+          node-version: 22
+      - id: deps
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: node_modules
+          key: node-modules-Web-node22-v1-${{ hashFiles('package-lock.json') }}
+      - if: steps.deps.outputs.cache-hit != 'true'
+        run: npm ci
+      - name: Build
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci # build time only
+          SKIP_BUILD_TYPECHECK: "1" # "web checks" runs tsc
+          SKIP_DB_MIGRATE: "1" # staged builds migrate at the merge (deploy.yml)
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          npx -y "$VERCEL_CLI" pull --yes --environment=production --token "$VERCEL_TOKEN" >/dev/null
+          npx -y "$VERCEL_CLI" build --prod --token "$VERCEL_TOKEN"
+      - name: Stage and check
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          HEALTH_TOKEN: ${{ secrets.HEALTH_TOKEN }}
+          VERCEL_BYPASS_SECRET: ${{ secrets.VERCEL_BYPASS_SECRET }}
+          PROD_DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          # The tree of the pull request merged into main: equal to the merge commit's tree when main does not move.
+          tree=$(git rev-parse 'HEAD^{tree}')
+          # --archive=tgz uploads a few archive files, not every changed file (the Hobby plan allows 5,000 a day).
+          if ! out=$(npx -y "$VERCEL_CLI" deploy --prebuilt --prod --skip-domain --archive=tgz --token "$VERCEL_TOKEN" \
+            --meta stagedTree="$tree" --meta stagedPr="$PR" --meta stagedSha="$GITHUB_SHA" 2>&1); then
+            if grep -qE 'api-deployments-free-per-day|api-upload-free|Resource is limited' <<<"$out"; then
+              echo "::warning::A Vercel daily limit is reached: not staged. The merge builds and checks it (deploy.yml)."
+              exit 0
+            fi
+            echo "$out"
+            exit 1
+          fi
+          url=$(grep -oE 'https://[a-z0-9-]+\.vercel\.app' <<<"$out" | head -1)
+          [ -n "$url" ] || { echo "$out"; echo "::error::no deployment URL"; exit 1; }
+          echo "Staged $url for tree ${tree:0:7}"
+          # A pull request with migrations production has not applied cannot run its loaders yet: deploy.yml checks
+          # the build at the merge, after the migrations, before the promote.
+          applied=$(psql "$PROD_DATABASE_URL" -Atc 'SELECT count(*) FROM drizzle.__drizzle_migrations')
+          want=$(jq '.entries | length' drizzle/meta/_journal.json)
+          if [ "$applied" -lt "$want" ]; then
+            echo "$((want - applied)) new migration(s): the check of this build runs at the merge, after they are applied."
+          else
+            node scripts/smoke.mjs "$url" --staged
+          fi
+          echo "Staged production build: $url (tree \`${tree:0:12}\`). Merging promotes it." >> "$GITHUB_STEP_SUMMARY"

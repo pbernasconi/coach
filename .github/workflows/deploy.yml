@@ -1,5 +1,5 @@
 # Production deploys (RELIABILITY.md). Vercel does not build main (vercel.json); this workflow puts each merge live:
-#   1. find the staged build of this exact tree ("web build" staged it on the pull request), or build it now;
+#   1. find the staged build of this exact tree (stage.yml, with the label "stage"), or build it now;
 #   2. apply new migrations (additive only, DATABASE.md), so the old build keeps working;
 #   3. check the build on the real data, then promote it (an alias swap: production serves it in seconds);
 #   4. render every page on coach.paolobernasconi.com; on a failure, promote the build before it again and open
@@ -10,6 +10,16 @@ name: Deploy
 on:
   push:
     branches: [main]
+    # Only merges that change the web app: each deploy counts toward the Hobby plan's 100 deployments a day.
+    # Later patterns win, so deploy.yml itself still deploys. Keep in step with web.yml's filter.
+    paths:
+      - "**"
+      - "!lift/**"
+      - "!ios-standards/**"
+      - "!**/*.md"
+      - "!scripts/garmin/**"
+      - "!.github/**"
+      - ".github/workflows/deploy.yml"
   workflow_dispatch: # redeploys main (builds it when no staged build matches)
 
 permissions:
@@ -86,8 +96,15 @@ jobs:
         run: |
           npx -y "$VERCEL_CLI" pull --yes --environment=production --token "$VERCEL_TOKEN" >/dev/null
           DATABASE_URL=postgresql://build:build@localhost:5432/build npx -y "$VERCEL_CLI" build --prod --token "$VERCEL_TOKEN"
-          out=$(npx -y "$VERCEL_CLI" deploy --prebuilt --prod --skip-domain --token "$VERCEL_TOKEN" \
-            --meta stagedTree="$(git rev-parse 'HEAD^{tree}')" --meta stagedSha="$GITHUB_SHA")
+          # --archive=tgz uploads a few archive files, not every changed file (the Hobby plan allows 5,000 a day).
+          if ! out=$(npx -y "$VERCEL_CLI" deploy --prebuilt --prod --skip-domain --archive=tgz --token "$VERCEL_TOKEN" \
+            --meta stagedTree="$(git rev-parse 'HEAD^{tree}')" --meta stagedSha="$GITHUB_SHA" 2>&1); then
+            echo "$out"
+            if grep -qE 'api-deployments-free-per-day|api-upload-free|Resource is limited' <<<"$out"; then
+              echo "::error::A Vercel daily limit is reached. Production did not change. Rerun this workflow later."
+            fi
+            exit 1
+          fi
           url=$(grep -oE 'https://[a-z0-9-]+\.vercel\.app' <<<"$out" | head -1)
           id=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" "$VERCEL_API/v13/deployments/${url#https://}?teamId=$VERCEL_ORG_ID" | jq -r .id)
           echo "id=$id" >> "$GITHUB_OUTPUT"
