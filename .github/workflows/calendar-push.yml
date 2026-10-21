@@ -1,0 +1,35 @@
+# Re-pushes plan weeks to Google Calendar from production (the same push as a web edit), for example after a change
+# to what the events carry. Weeks: comma-separated Mondays; empty means this week and the next two.
+# Secrets: CRON_SECRET (the same value as in Vercel).
+name: Calendar push
+
+on:
+  workflow_dispatch:
+    inputs:
+      weeks:
+        description: Mondays, comma-separated (YYYY-MM-DD). Empty for this week and the next two.
+        required: false
+        default: ''
+
+concurrency: calendar-push
+
+permissions:
+  contents: read
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Push the weeks
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          WEEKS: ${{ inputs.weeks }}
+        run: |
+          if [ -z "$WEEKS" ]; then
+            monday=$(TZ=America/Los_Angeles date -d "$(TZ=America/Los_Angeles date +%F) -$(( $(TZ=America/Los_Angeles date +%u) - 1 )) days" +%F)
+            WEEKS="$monday,$(date -d "$monday +7 days" +%F),$(date -d "$monday +14 days" +%F)"
+          fi
+          echo "Weeks: $WEEKS"
+          curl -fsS --max-time 90 -X POST -H "Authorization: Bearer $CRON_SECRET" -H 'content-type: application/json' \
+            -d "{\"action\":\"push\",\"weeks\":\"$WEEKS\"}" https://coach.paolobernasconi.com/api/plan/proposals
