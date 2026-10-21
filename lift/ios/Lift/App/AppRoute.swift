@@ -22,6 +22,15 @@ nonisolated enum AppRoute: Hashable, Sendable {
     case exercisePicker(ExercisePickerTarget)
     /// A finished session's duration, sets, volume and new bests.
     case workoutSummary(UUID)
+    /// One Strava activity from the coach (`/api/app/activities/{id}`), by its `activityId`.
+    case activity(String)
+    /// One Lift session as the coach shows it (`/api/app/lift/sessions/{id}`), by its lower-case `sessionId`. The
+    /// screen opens the local workout instead for a session this iPhone has that is not finished.
+    case liftSession(String)
+    /// One exercise as the coach shows it (`/api/app/lift/exercises/{key}`), by its `exerciseKey`.
+    case liftExercise(String)
+    /// Volume per week as the coach shows it (`/api/app/lift/weekly`).
+    case liftWeekly
 }
 
 /// Where the exercise picker adds the exercise it picks.

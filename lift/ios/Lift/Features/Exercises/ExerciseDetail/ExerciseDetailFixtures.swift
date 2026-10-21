@@ -1,6 +1,7 @@
 #if DEBUG
     import Foundation
     import LiftCore
+    import LiftSync
 
     /// Named states for previews and snapshots. Fake data only (TEST-8).
     extension ExerciseDetailState {
@@ -95,9 +96,42 @@
             ),
             history: .empty
         )
+        /// The coach's numbers (the bundled demo body) over a library exercise: they replace the local chart and history.
+        static var fixtureServer: ExerciseDetailState {
+            var state = fixtureWithMedia
+            state.withServer()
+            return state
+        }
+        /// The touched chart point shows its label and "View session".
+        static var fixtureServerTouched: ExerciseDetailState {
+            var state = fixtureServer
+            state.serverPoint = state.serverChart.last
+            return state
+        }
+        /// An exercise only the coach knows (a `name-…` key): the coach's numbers alone.
+        static var fixtureServerOnly: ExerciseDetailState {
+            var state = ExerciseDetailState(exercise: .empty, history: .empty)
+            state.withServer()
+            return state
+        }
         static let fixtureLoading = ExerciseDetailState(exercise: .loading)
         static let fixtureEmpty = ExerciseDetailState(exercise: .empty)
         static let fixtureFailed = ExerciseDetailState(exercise: .failed(.unknown))
         static let fixtureHistoryLoading = ExerciseDetailState(exercise: .loaded(item(seed: 17)), history: .loading)
+    }
+
+    extension ExerciseDetailState {
+        /// Puts the bundled demo body in `server`, with its chart points in the current calendar.
+        fileprivate mutating func withServer() {
+            guard let stats = LiftDemoBodies.exercise else { return }
+            server = AppResourceState(
+                content: .loaded(stats),
+                freshness: AppFreshness(text: "Updated 9:41 AM", isOffline: false)
+            )
+            serverChart = ExerciseServerPoint.points(
+                stats.chart.value?.points ?? [],
+                days: DayCalendar(calendar: Calendar(identifier: .gregorian))
+            )
+        }
     }
 #endif

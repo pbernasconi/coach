@@ -12,24 +12,33 @@ import Testing
         (["Lift", "-demo"], LaunchOptions(isDemo: true)),
         (["Lift", "--demo"], LaunchOptions(isDemo: true)),
         (["Lift", "-fresh"], LaunchOptions(isFresh: true)),
-        (["Lift", "-demo", "-fresh", "-tab", "history"], LaunchOptions(initialTab: .history, isFresh: true)),
-        (["Lift", "-tab", "history"], LaunchOptions(initialTab: .history)),
-        (["Lift", "-demo", "-tab", "Exercises"], LaunchOptions(isDemo: true, initialTab: .exercises)),
+        (
+            ["Lift", "-demo", "-fresh", "-tab", "history"],
+            LaunchOptions(initialTab: .lift, liftSegment: .history, isFresh: true)
+        ),
+        (["Lift", "-tab", "history"], LaunchOptions(initialTab: .lift, liftSegment: .history)),
+        (
+            ["Lift", "-demo", "-tab", "Exercises"],
+            LaunchOptions(isDemo: true, initialTab: .lift, liftSegment: .exercises)
+        ),
         (["Lift", "-tab", "settings", "-appearance", "dark"], LaunchOptions(initialTab: .settings, appearance: .dark)),
         (["Lift", "-appearance", "light"], LaunchOptions(appearance: .light)),
         (["Lift", "-tab", "nope", "-appearance", "sepia"], LaunchOptions()),
         (["Lift", "-tab"], LaunchOptions()),
+        (["Lift", "-tab", "lift"], LaunchOptions(initialTab: .lift)),
+        (["Lift", "-tab", "today"], LaunchOptions(initialTab: .today)),
+        (["Lift", "-tab", "training"], LaunchOptions(initialTab: .training)),
         (["Lift", "-demo", "-open", "workout"], LaunchOptions(isDemo: true, opening: .workout)),
         (["Lift", "-open", "Workout"], LaunchOptions(opening: .workout)),
         (["Lift", "-open", "nope"], LaunchOptions()),
         (["Lift", "-open"], LaunchOptions()),
         (
             ["Lift", "-demo", "-tab", "history", "-open", "import"],
-            LaunchOptions(isDemo: true, initialTab: .history, opening: .importNotes)
+            LaunchOptions(isDemo: true, initialTab: .lift, liftSegment: .history, opening: .importNotes)
         ),
         (
             ["Lift", "-demo", "-tab", "exercises", "-open", "exercise"],
-            LaunchOptions(isDemo: true, initialTab: .exercises, opening: .exercise)
+            LaunchOptions(isDemo: true, initialTab: .lift, liftSegment: .exercises, opening: .exercise)
         ),
     ])
     func parsesArguments(arguments: [String], expected: LaunchOptions) {
@@ -58,15 +67,15 @@ import Testing
     @Test func openExerciseInDemoModePushesBackSquatOnExercises() {
         let options = LaunchOptions(arguments: ["Lift", "-demo", "-open", "exercise"])
         #expect(options.initialRoute(upcomingSessionID: nil) == .exercise(ExerciseLibrary.seedID(1)))
-        #expect(options.opening?.tab == .exercises)
+        #expect(options.opening?.tab == .lift)
         #expect(LaunchOptions(opening: .exercise).initialRoute(upcomingSessionID: nil) == nil)
     }
 
     @Test func eachOpeningPushesOnItsTab() {
         #expect(LaunchOptions.Opening.workout.tab == .week)
-        #expect(LaunchOptions.Opening.exercise.tab == .exercises)
-        #expect(LaunchOptions.Opening.importNotes.tab == .history)
-        #expect(LaunchOptions.Opening.catalog.tab == .exercises)
+        #expect(LaunchOptions.Opening.exercise.tab == .lift)
+        #expect(LaunchOptions.Opening.importNotes.tab == .lift)
+        #expect(LaunchOptions.Opening.catalog.tab == .lift)
     }
 
     @Test func openCatalogInDemoModePushesTheBrowseOnExercises() {
@@ -101,8 +110,8 @@ import Testing
         let summary = LaunchOptions(arguments: ["-demo", "-open", "summary"])
         #expect(summary.initialRoute(upcomingSessionID: nil, loggedSessionID: sessionID) == .workoutSummary(sessionID))
         #expect(LaunchOptions(opening: .templates).initialRoute(upcomingSessionID: nil) == nil)
-        #expect(LaunchOptions.Opening.templates.tab == .exercises)
-        #expect(LaunchOptions.Opening.template.tab == .exercises)
+        #expect(LaunchOptions.Opening.templates.tab == .lift)
+        #expect(LaunchOptions.Opening.template.tab == .lift)
         #expect(LaunchOptions.Opening.summary.tab == .week)
     }
 

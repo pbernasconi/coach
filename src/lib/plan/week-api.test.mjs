@@ -70,8 +70,8 @@ test('a done ride: compliance, done minutes and TSS from the matched activity, k
   );
   assert.equal(item.compliance, 'good');
   assert.equal(item.stateLabel, 'On target');
-  assert.deepEqual(item.done, { source: 'strava', name: 'Morning Ride', minutes: 62, tss: 70, text: '62 min · 70 TSS / 60 min · 45 TSS' });
-  assert.deepEqual(item.keyTargets, ['6 × 5:00 at 294–308 W']);
+  assert.deepEqual(item.done, { source: 'strava', activityId: '9', name: 'Morning Ride', minutes: 62, tss: 70, text: '62 min · 70 TSS / 60 min · 45 TSS' });
+  assert.deepEqual(item.keyTargets, ['6 × 5:00 at 278–292 W']);
   assert.equal(item.steps.length, 1);
 });
 
@@ -81,7 +81,7 @@ test('a done lift takes its minutes from the Lift session; a rest day has no com
       compliance: { level: 'done', label: 'Done', ratio: null, basis: null } }),
     sports
   );
-  assert.deepEqual(lift.done, { source: 'lift', name: 'Heavy', minutes: 55, tss: null, text: '55 min / 60 min · 45 TSS' });
+  assert.deepEqual(lift.done, { source: 'lift', activityId: null, name: 'Heavy', minutes: 55, tss: null, text: '55 min / 60 min · 45 TSS' });
   assert.equal(lift.compliance, null);
   const rest = weekItem(workout({ title: 'Rest day', sport: 'rest', duration: null, tss: null, state: 'done', compliance: { level: 'rest', label: 'Rest', ratio: null, basis: null } }), sports);
   assert.equal(rest.done, null);

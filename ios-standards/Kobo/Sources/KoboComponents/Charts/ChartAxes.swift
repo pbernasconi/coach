@@ -39,6 +39,7 @@ struct ChartAxes<X: KoboChartX>: ViewModifier {
                 Text(verbatim: xText(x))
                     .font(theme.font(.caption))
                     .foregroundStyle(theme.palette.textSecondary)
+                    .fixedSize()  // the last label may run past the plot rather than truncate
             }
         }
     }

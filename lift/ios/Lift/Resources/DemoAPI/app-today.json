@@ -1,0 +1,1567 @@
+{
+ "generatedAt": "2026-10-20T21:02:24.435Z",
+ "timeZone": "America/Los_Angeles",
+ "today": "2026-10-20",
+ "dateText": "Tuesday, October 20",
+ "header": {
+  "ok": true,
+  "chips": [
+   {
+    "key": "readiness",
+    "label": "Readiness",
+    "value": 56,
+    "valueText": "56 · Moderate",
+    "tone": "good"
+   },
+   {
+    "key": "sleep",
+    "label": "Sleep",
+    "value": 442,
+    "valueText": "7:22",
+    "tone": "warn"
+   },
+   {
+    "key": "hrv",
+    "label": "HRV",
+    "value": "Balanced",
+    "valueText": "Balanced",
+    "tone": "good"
+   },
+   {
+    "key": "fitness",
+    "label": "Fit / Fat",
+    "value": 72,
+    "valueText": "72 / 77",
+    "tone": "neutral"
+   },
+   {
+    "key": "form",
+    "label": "Form",
+    "value": -4,
+    "valueText": "-4",
+    "tone": "neutral"
+   }
+  ],
+  "emptyText": null
+ },
+ "stale": {
+  "ok": true,
+  "text": null
+ },
+ "todayLine": {
+  "ok": true,
+  "items": [
+   {
+    "id": "ylfw7n0i8xabidggyzmge38q",
+    "title": "Heavy barbell lift",
+    "sport": "strength",
+    "state": "today",
+    "text": "10:30 · 1:15",
+    "liftSessionId": "ca4f651b-98c7-4765-83a9-07ab74435d69"
+   },
+   {
+    "id": "demo-spin",
+    "title": "Easy spin",
+    "sport": "ride",
+    "state": "planned",
+    "text": "18:00 · 45m",
+    "liftSessionId": null
+   }
+  ],
+  "emptyText": null,
+  "cue": "Readiness moderate: hold back about 10%"
+ },
+ "fitness": {
+  "ok": true,
+  "today": "2026-10-20",
+  "days": [
+   {
+    "date": "2026-06-22",
+    "ctl": 57.9,
+    "atl": 59.3,
+    "tsb": -1.4,
+    "tss": 55,
+    "projected": false
+   },
+   {
+    "date": "2026-06-23",
+    "ctl": 58.6,
+    "atl": 63.0,
+    "tsb": -4.4,
+    "tss": 85,
+    "projected": false
+   },
+   {
+    "date": "2026-06-24",
+    "ctl": 58.7,
+    "atl": 63.3,
+    "tsb": -4.5,
+    "tss": 65,
+    "projected": false
+   },
+   {
+    "date": "2026-06-25",
+    "ctl": 59.5,
+    "atl": 67.1,
+    "tsb": -7.6,
+    "tss": 90,
+    "projected": false
+   },
+   {
+    "date": "2026-06-26",
+    "ctl": 59.2,
+    "atl": 64.6,
+    "tsb": -5.4,
+    "tss": 50,
+    "projected": false
+   },
+   {
+    "date": "2026-06-27",
+    "ctl": 60.5,
+    "atl": 71.1,
+    "tsb": -10.7,
+    "tss": 110,
+    "projected": false
+   },
+   {
+    "date": "2026-06-28",
+    "ctl": 61.3,
+    "atl": 74.5,
+    "tsb": -13.3,
+    "tss": 95,
+    "projected": false
+   },
+   {
+    "date": "2026-06-29",
+    "ctl": 61.1,
+    "atl": 71.7,
+    "tsb": -10.6,
+    "tss": 55,
+    "projected": false
+   },
+   {
+    "date": "2026-06-30",
+    "ctl": 61.7,
+    "atl": 73.6,
+    "tsb": -11.9,
+    "tss": 85,
+    "projected": false
+   },
+   {
+    "date": "2026-07-01",
+    "ctl": 61.8,
+    "atl": 72.4,
+    "tsb": -10.6,
+    "tss": 65,
+    "projected": false
+   },
+   {
+    "date": "2026-07-02",
+    "ctl": 62.4,
+    "atl": 74.9,
+    "tsb": -12.5,
+    "tss": 90,
+    "projected": false
+   },
+   {
+    "date": "2026-07-03",
+    "ctl": 62.1,
+    "atl": 71.4,
+    "tsb": -9.2,
+    "tss": 50,
+    "projected": false
+   },
+   {
+    "date": "2026-07-04",
+    "ctl": 63.3,
+    "atl": 76.9,
+    "tsb": -13.6,
+    "tss": 110,
+    "projected": false
+   },
+   {
+    "date": "2026-07-05",
+    "ctl": 64.0,
+    "atl": 79.5,
+    "tsb": -15.4,
+    "tss": 95,
+    "projected": false
+   },
+   {
+    "date": "2026-07-06",
+    "ctl": 63.8,
+    "atl": 76.0,
+    "tsb": -12.1,
+    "tss": 55,
+    "projected": false
+   },
+   {
+    "date": "2026-07-07",
+    "ctl": 64.3,
+    "atl": 77.3,
+    "tsb": -12.9,
+    "tss": 85,
+    "projected": false
+   },
+   {
+    "date": "2026-07-08",
+    "ctl": 64.3,
+    "atl": 75.5,
+    "tsb": -11.2,
+    "tss": 65,
+    "projected": false
+   },
+   {
+    "date": "2026-07-09",
+    "ctl": 65.0,
+    "atl": 77.6,
+    "tsb": -12.6,
+    "tss": 90,
+    "projected": false
+   },
+   {
+    "date": "2026-07-10",
+    "ctl": 64.6,
+    "atl": 73.6,
+    "tsb": -9.0,
+    "tss": 50,
+    "projected": false
+   },
+   {
+    "date": "2026-07-11",
+    "ctl": 65.7,
+    "atl": 78.8,
+    "tsb": -13.1,
+    "tss": 110,
+    "projected": false
+   },
+   {
+    "date": "2026-07-12",
+    "ctl": 66.4,
+    "atl": 81.1,
+    "tsb": -14.8,
+    "tss": 95,
+    "projected": false
+   },
+   {
+    "date": "2026-07-13",
+    "ctl": 66.1,
+    "atl": 77.4,
+    "tsb": -11.3,
+    "tss": 55,
+    "projected": false
+   },
+   {
+    "date": "2026-07-14",
+    "ctl": 66.6,
+    "atl": 78.5,
+    "tsb": -11.9,
+    "tss": 85,
+    "projected": false
+   },
+   {
+    "date": "2026-07-15",
+    "ctl": 66.5,
+    "atl": 76.6,
+    "tsb": -10.0,
+    "tss": 65,
+    "projected": false
+   },
+   {
+    "date": "2026-07-16",
+    "ctl": 67.1,
+    "atl": 78.5,
+    "tsb": -11.4,
+    "tss": 90,
+    "projected": false
+   },
+   {
+    "date": "2026-07-17",
+    "ctl": 66.7,
+    "atl": 74.4,
+    "tsb": -7.7,
+    "tss": 50,
+    "projected": false
+   },
+   {
+    "date": "2026-07-18",
+    "ctl": 67.7,
+    "atl": 79.5,
+    "tsb": -11.8,
+    "tss": 110,
+    "projected": false
+   },
+   {
+    "date": "2026-07-19",
+    "ctl": 68.4,
+    "atl": 81.7,
+    "tsb": -13.4,
+    "tss": 95,
+    "projected": false
+   },
+   {
+    "date": "2026-07-20",
+    "ctl": 68.0,
+    "atl": 77.9,
+    "tsb": -9.9,
+    "tss": 55,
+    "projected": false
+   },
+   {
+    "date": "2026-07-21",
+    "ctl": 68.4,
+    "atl": 78.9,
+    "tsb": -10.5,
+    "tss": 85,
+    "projected": false
+   },
+   {
+    "date": "2026-07-22",
+    "ctl": 68.4,
+    "atl": 76.9,
+    "tsb": -8.6,
+    "tss": 65,
+    "projected": false
+   },
+   {
+    "date": "2026-07-23",
+    "ctl": 68.9,
+    "atl": 78.8,
+    "tsb": -9.9,
+    "tss": 90,
+    "projected": false
+   },
+   {
+    "date": "2026-07-24",
+    "ctl": 68.4,
+    "atl": 74.7,
+    "tsb": -6.3,
+    "tss": 50,
+    "projected": false
+   },
+   {
+    "date": "2026-07-25",
+    "ctl": 69.4,
+    "atl": 79.7,
+    "tsb": -10.3,
+    "tss": 110,
+    "projected": false
+   },
+   {
+    "date": "2026-07-26",
+    "ctl": 70.0,
+    "atl": 81.9,
+    "tsb": -11.9,
+    "tss": 95,
+    "projected": false
+   },
+   {
+    "date": "2026-07-27",
+    "ctl": 69.7,
+    "atl": 78.1,
+    "tsb": -8.4,
+    "tss": 55,
+    "projected": false
+   },
+   {
+    "date": "2026-07-28",
+    "ctl": 70.0,
+    "atl": 79.1,
+    "tsb": -9.0,
+    "tss": 85,
+    "projected": false
+   },
+   {
+    "date": "2026-07-29",
+    "ctl": 69.9,
+    "atl": 77.0,
+    "tsb": -7.1,
+    "tss": 65,
+    "projected": false
+   },
+   {
+    "date": "2026-07-30",
+    "ctl": 70.4,
+    "atl": 78.9,
+    "tsb": -8.5,
+    "tss": 90,
+    "projected": false
+   },
+   {
+    "date": "2026-07-31",
+    "ctl": 69.9,
+    "atl": 74.8,
+    "tsb": -4.9,
+    "tss": 50,
+    "projected": false
+   },
+   {
+    "date": "2026-08-01",
+    "ctl": 70.9,
+    "atl": 79.8,
+    "tsb": -8.9,
+    "tss": 110,
+    "projected": false
+   },
+   {
+    "date": "2026-08-02",
+    "ctl": 71.4,
+    "atl": 82.0,
+    "tsb": -10.5,
+    "tss": 95,
+    "projected": false
+   },
+   {
+    "date": "2026-08-03",
+    "ctl": 71.0,
+    "atl": 78.1,
+    "tsb": -7.1,
+    "tss": 55,
+    "projected": false
+   },
+   {
+    "date": "2026-08-04",
+    "ctl": 71.4,
+    "atl": 79.1,
+    "tsb": -7.7,
+    "tss": 85,
+    "projected": false
+   },
+   {
+    "date": "2026-08-05",
+    "ctl": 71.2,
+    "atl": 77.1,
+    "tsb": -5.9,
+    "tss": 65,
+    "projected": false
+   },
+   {
+    "date": "2026-08-06",
+    "ctl": 71.7,
+    "atl": 78.9,
+    "tsb": -7.3,
+    "tss": 90,
+    "projected": false
+   },
+   {
+    "date": "2026-08-07",
+    "ctl": 71.2,
+    "atl": 74.8,
+    "tsb": -3.6,
+    "tss": 50,
+    "projected": false
+   },
+   {
+    "date": "2026-08-08",
+    "ctl": 72.1,
+    "atl": 79.8,
+    "tsb": -7.7,
+    "tss": 110,
+    "projected": false
+   },
+   {
+    "date": "2026-08-09",
+    "ctl": 72.6,
+    "atl": 82.0,
+    "tsb": -9.4,
+    "tss": 95,
+    "projected": false
+   },
+   {
+    "date": "2026-08-10",
+    "ctl": 72.2,
+    "atl": 78.1,
+    "tsb": -5.9,
+    "tss": 55,
+    "projected": false
+   },
+   {
+    "date": "2026-08-11",
+    "ctl": 72.5,
+    "atl": 79.1,
+    "tsb": -6.6,
+    "tss": 85,
+    "projected": false
+   },
+   {
+    "date": "2026-08-12",
+    "ctl": 72.3,
+    "atl": 77.1,
+    "tsb": -4.8,
+    "tss": 65,
+    "projected": false
+   },
+   {
+    "date": "2026-08-13",
+    "ctl": 72.8,
+    "atl": 78.9,
+    "tsb": -6.2,
+    "tss": 90,
+    "projected": false
+   },
+   {
+    "date": "2026-08-14",
+    "ctl": 72.2,
+    "atl": 74.8,
+    "tsb": -2.6,
+    "tss": 50,
+    "projected": false
+   },
+   {
+    "date": "2026-08-15",
+    "ctl": 73.1,
+    "atl": 79.8,
+    "tsb": -6.7,
+    "tss": 110,
+    "projected": false
+   },
+   {
+    "date": "2026-08-16",
+    "ctl": 73.6,
+    "atl": 82.0,
+    "tsb": -8.4,
+    "tss": 95,
+    "projected": false
+   },
+   {
+    "date": "2026-08-17",
+    "ctl": 73.2,
+    "atl": 78.1,
+    "tsb": -5.0,
+    "tss": 55,
+    "projected": false
+   },
+   {
+    "date": "2026-08-18",
+    "ctl": 73.5,
+    "atl": 79.1,
+    "tsb": -5.7,
+    "tss": 85,
+    "projected": false
+   },
+   {
+    "date": "2026-08-19",
+    "ctl": 73.3,
+    "atl": 77.1,
+    "tsb": -3.8,
+    "tss": 65,
+    "projected": false
+   },
+   {
+    "date": "2026-08-20",
+    "ctl": 73.7,
+    "atl": 78.9,
+    "tsb": -5.3,
+    "tss": 90,
+    "projected": false
+   },
+   {
+    "date": "2026-08-21",
+    "ctl": 73.1,
+    "atl": 74.8,
+    "tsb": -1.7,
+    "tss": 50,
+    "projected": false
+   },
+   {
+    "date": "2026-08-22",
+    "ctl": 74.0,
+    "atl": 79.8,
+    "tsb": -5.9,
+    "tss": 110,
+    "projected": false
+   },
+   {
+    "date": "2026-08-23",
+    "ctl": 74.5,
+    "atl": 82.0,
+    "tsb": -7.5,
+    "tss": 95,
+    "projected": false
+   },
+   {
+    "date": "2026-08-24",
+    "ctl": 74.0,
+    "atl": 78.1,
+    "tsb": -4.1,
+    "tss": 55,
+    "projected": false
+   },
+   {
+    "date": "2026-08-25",
+    "ctl": 74.3,
+    "atl": 79.1,
+    "tsb": -4.8,
+    "tss": 85,
+    "projected": false
+   },
+   {
+    "date": "2026-08-26",
+    "ctl": 74.1,
+    "atl": 77.1,
+    "tsb": -3.0,
+    "tss": 65,
+    "projected": false
+   },
+   {
+    "date": "2026-08-27",
+    "ctl": 74.4,
+    "atl": 79.0,
+    "tsb": -4.5,
+    "tss": 90,
+    "projected": false
+   },
+   {
+    "date": "2026-08-28",
+    "ctl": 73.9,
+    "atl": 74.8,
+    "tsb": -1.0,
+    "tss": 50,
+    "projected": false
+   },
+   {
+    "date": "2026-08-29",
+    "ctl": 74.7,
+    "atl": 79.8,
+    "tsb": -5.1,
+    "tss": 110,
+    "projected": false
+   },
+   {
+    "date": "2026-08-30",
+    "ctl": 75.2,
+    "atl": 82.0,
+    "tsb": -6.8,
+    "tss": 95,
+    "projected": false
+   },
+   {
+    "date": "2026-08-31",
+    "ctl": 74.7,
+    "atl": 78.1,
+    "tsb": -3.4,
+    "tss": 55,
+    "projected": false
+   },
+   {
+    "date": "2026-09-01",
+    "ctl": 75.0,
+    "atl": 79.1,
+    "tsb": -4.2,
+    "tss": 85,
+    "projected": false
+   },
+   {
+    "date": "2026-09-02",
+    "ctl": 74.7,
+    "atl": 77.1,
+    "tsb": -2.4,
+    "tss": 65,
+    "projected": false
+   },
+   {
+    "date": "2026-09-03",
+    "ctl": 75.1,
+    "atl": 79.0,
+    "tsb": -3.9,
+    "tss": 90,
+    "projected": false
+   },
+   {
+    "date": "2026-09-04",
+    "ctl": 74.5,
+    "atl": 74.8,
+    "tsb": -0.3,
+    "tss": 50,
+    "projected": false
+   },
+   {
+    "date": "2026-09-05",
+    "ctl": 75.3,
+    "atl": 79.8,
+    "tsb": -4.5,
+    "tss": 110,
+    "projected": false
+   },
+   {
+    "date": "2026-09-06",
+    "ctl": 75.8,
+    "atl": 82.0,
+    "tsb": -6.2,
+    "tss": 95,
+    "projected": false
+   },
+   {
+    "date": "2026-09-07",
+    "ctl": 75.3,
+    "atl": 78.1,
+    "tsb": -2.8,
+    "tss": 55,
+    "projected": false
+   },
+   {
+    "date": "2026-09-08",
+    "ctl": 75.5,
+    "atl": 79.1,
+    "tsb": -3.6,
+    "tss": 85,
+    "projected": false
+   },
+   {
+    "date": "2026-09-09",
+    "ctl": 75.3,
+    "atl": 77.1,
+    "tsb": -1.8,
+    "tss": 65,
+    "projected": false
+   },
+   {
+    "date": "2026-09-10",
+    "ctl": 75.6,
+    "atl": 79.0,
+    "tsb": -3.3,
+    "tss": 90,
+    "projected": false
+   },
+   {
+    "date": "2026-09-11",
+    "ctl": 75.0,
+    "atl": 74.8,
+    "tsb": 0.2,
+    "tss": 50,
+    "projected": false
+   },
+   {
+    "date": "2026-09-12",
+    "ctl": 75.9,
+    "atl": 79.8,
+    "tsb": -4.0,
+    "tss": 110,
+    "projected": false
+   },
+   {
+    "date": "2026-09-13",
+    "ctl": 76.3,
+    "atl": 82.0,
+    "tsb": -5.7,
+    "tss": 95,
+    "projected": false
+   },
+   {
+    "date": "2026-09-14",
+    "ctl": 75.8,
+    "atl": 78.1,
+    "tsb": -2.3,
+    "tss": 55,
+    "projected": false
+   },
+   {
+    "date": "2026-09-15",
+    "ctl": 76.0,
+    "atl": 79.1,
+    "tsb": -3.1,
+    "tss": 85,
+    "projected": false
+   },
+   {
+    "date": "2026-09-16",
+    "ctl": 75.8,
+    "atl": 77.1,
+    "tsb": -1.3,
+    "tss": 65,
+    "projected": false
+   },
+   {
+    "date": "2026-09-17",
+    "ctl": 76.1,
+    "atl": 79.0,
+    "tsb": -2.8,
+    "tss": 90,
+    "projected": false
+   },
+   {
+    "date": "2026-09-18",
+    "ctl": 75.5,
+    "atl": 74.8,
+    "tsb": 0.7,
+    "tss": 50,
+    "projected": false
+   },
+   {
+    "date": "2026-09-19",
+    "ctl": 76.3,
+    "atl": 79.8,
+    "tsb": -3.5,
+    "tss": 110,
+    "projected": false
+   },
+   {
+    "date": "2026-09-20",
+    "ctl": 76.8,
+    "atl": 82.0,
+    "tsb": -5.3,
+    "tss": 95,
+    "projected": false
+   },
+   {
+    "date": "2026-09-21",
+    "ctl": 75.5,
+    "atl": 73.8,
+    "tsb": 1.7,
+    "tss": 25,
+    "projected": false
+   },
+   {
+    "date": "2026-09-22",
+    "ctl": 74.6,
+    "atl": 68.7,
+    "tsb": 5.9,
+    "tss": 38,
+    "projected": false
+   },
+   {
+    "date": "2026-09-23",
+    "ctl": 73.5,
+    "atl": 63.1,
+    "tsb": 10.4,
+    "tss": 29,
+    "projected": false
+   },
+   {
+    "date": "2026-09-24",
+    "ctl": 72.8,
+    "atl": 59.9,
+    "tsb": 12.9,
+    "tss": 40,
+    "projected": false
+   },
+   {
+    "date": "2026-09-25",
+    "ctl": 71.6,
+    "atl": 54.5,
+    "tsb": 17.0,
+    "tss": 22,
+    "projected": false
+   },
+   {
+    "date": "2026-09-26",
+    "ctl": 71.0,
+    "atl": 53.8,
+    "tsb": 17.2,
+    "tss": 50,
+    "projected": false
+   },
+   {
+    "date": "2026-09-27",
+    "ctl": 70.4,
+    "atl": 52.2,
+    "tsb": 18.1,
+    "tss": 43,
+    "projected": false
+   },
+   {
+    "date": "2026-09-28",
+    "ctl": 69.3,
+    "atl": 48.3,
+    "tsb": 21.0,
+    "tss": 25,
+    "projected": false
+   },
+   {
+    "date": "2026-09-29",
+    "ctl": 68.5,
+    "atl": 46.9,
+    "tsb": 21.7,
+    "tss": 38,
+    "projected": false
+   },
+   {
+    "date": "2026-09-30",
+    "ctl": 68.5,
+    "atl": 49.5,
+    "tsb": 19.0,
+    "tss": 65,
+    "projected": false
+   },
+   {
+    "date": "2026-10-01",
+    "ctl": 69.0,
+    "atl": 55.3,
+    "tsb": 13.7,
+    "tss": 90,
+    "projected": false
+   },
+   {
+    "date": "2026-10-02",
+    "ctl": 68.5,
+    "atl": 54.5,
+    "tsb": 14.0,
+    "tss": 50,
+    "projected": false
+   },
+   {
+    "date": "2026-10-03",
+    "ctl": 69.5,
+    "atl": 62.4,
+    "tsb": 7.1,
+    "tss": 110,
+    "projected": false
+   },
+   {
+    "date": "2026-10-04",
+    "ctl": 70.1,
+    "atl": 67.1,
+    "tsb": 3.0,
+    "tss": 95,
+    "projected": false
+   },
+   {
+    "date": "2026-10-05",
+    "ctl": 69.8,
+    "atl": 65.4,
+    "tsb": 4.4,
+    "tss": 55,
+    "projected": false
+   },
+   {
+    "date": "2026-10-06",
+    "ctl": 70.1,
+    "atl": 68.2,
+    "tsb": 2.0,
+    "tss": 85,
+    "projected": false
+   },
+   {
+    "date": "2026-10-07",
+    "ctl": 70.0,
+    "atl": 67.7,
+    "tsb": 2.3,
+    "tss": 65,
+    "projected": false
+   },
+   {
+    "date": "2026-10-08",
+    "ctl": 70.5,
+    "atl": 70.9,
+    "tsb": -0.4,
+    "tss": 90,
+    "projected": false
+   },
+   {
+    "date": "2026-10-09",
+    "ctl": 70.0,
+    "atl": 67.9,
+    "tsb": 2.1,
+    "tss": 50,
+    "projected": false
+   },
+   {
+    "date": "2026-10-10",
+    "ctl": 70.9,
+    "atl": 73.9,
+    "tsb": -3.0,
+    "tss": 110,
+    "projected": false
+   },
+   {
+    "date": "2026-10-11",
+    "ctl": 71.5,
+    "atl": 76.9,
+    "tsb": -5.4,
+    "tss": 95,
+    "projected": false
+   },
+   {
+    "date": "2026-10-12",
+    "ctl": 71.1,
+    "atl": 73.8,
+    "tsb": -2.7,
+    "tss": 55,
+    "projected": false
+   },
+   {
+    "date": "2026-10-13",
+    "ctl": 71.4,
+    "atl": 75.4,
+    "tsb": -4.0,
+    "tss": 85,
+    "projected": false
+   },
+   {
+    "date": "2026-10-14",
+    "ctl": 71.3,
+    "atl": 73.9,
+    "tsb": -2.6,
+    "tss": 65,
+    "projected": false
+   },
+   {
+    "date": "2026-10-15",
+    "ctl": 71.7,
+    "atl": 76.2,
+    "tsb": -4.5,
+    "tss": 90,
+    "projected": false
+   },
+   {
+    "date": "2026-10-16",
+    "ctl": 71.2,
+    "atl": 72.5,
+    "tsb": -1.2,
+    "tss": 50,
+    "projected": false
+   },
+   {
+    "date": "2026-10-17",
+    "ctl": 72.1,
+    "atl": 77.8,
+    "tsb": -5.7,
+    "tss": 110,
+    "projected": false
+   },
+   {
+    "date": "2026-10-18",
+    "ctl": 72.7,
+    "atl": 80.3,
+    "tsb": -7.6,
+    "tss": 95,
+    "projected": false
+   },
+   {
+    "date": "2026-10-19",
+    "ctl": 72.3,
+    "atl": 76.7,
+    "tsb": -4.4,
+    "tss": 55,
+    "projected": false
+   },
+   {
+    "date": "2026-10-20",
+    "ctl": 72.8,
+    "atl": 79.1,
+    "tsb": -6.3,
+    "tss": 94,
+    "projected": true
+   },
+   {
+    "date": "2026-10-21",
+    "ctl": 72.7,
+    "atl": 78.0,
+    "tsb": -5.3,
+    "tss": 72,
+    "projected": true
+   },
+   {
+    "date": "2026-10-22",
+    "ctl": 73.4,
+    "atl": 81.0,
+    "tsb": -7.6,
+    "tss": 99,
+    "projected": true
+   },
+   {
+    "date": "2026-10-23",
+    "ctl": 72.9,
+    "atl": 77.3,
+    "tsb": -4.4,
+    "tss": 55,
+    "projected": true
+   },
+   {
+    "date": "2026-10-24",
+    "ctl": 74.1,
+    "atl": 83.5,
+    "tsb": -9.5,
+    "tss": 121,
+    "projected": true
+   },
+   {
+    "date": "2026-10-25",
+    "ctl": 74.8,
+    "atl": 86.5,
+    "tsb": -11.7,
+    "tss": 105,
+    "projected": true
+   },
+   {
+    "date": "2026-10-26",
+    "ctl": 74.5,
+    "atl": 82.8,
+    "tsb": -8.3,
+    "tss": 61,
+    "projected": true
+   },
+   {
+    "date": "2026-10-27",
+    "ctl": 74.9,
+    "atl": 84.3,
+    "tsb": -9.4,
+    "tss": 94,
+    "projected": true
+   },
+   {
+    "date": "2026-10-28",
+    "ctl": 74.8,
+    "atl": 82.5,
+    "tsb": -7.7,
+    "tss": 72,
+    "projected": true
+   },
+   {
+    "date": "2026-10-29",
+    "ctl": 75.4,
+    "atl": 84.9,
+    "tsb": -9.5,
+    "tss": 99,
+    "projected": true
+   },
+   {
+    "date": "2026-10-30",
+    "ctl": 74.2,
+    "atl": 76.3,
+    "tsb": -2.1,
+    "tss": 25,
+    "projected": true
+   },
+   {
+    "date": "2026-10-31",
+    "ctl": 73.7,
+    "atl": 73.3,
+    "tsb": 0.5,
+    "tss": 55,
+    "projected": true
+   },
+   {
+    "date": "2026-11-01",
+    "ctl": 73.1,
+    "atl": 69.6,
+    "tsb": 3.5,
+    "tss": 48,
+    "projected": true
+   },
+   {
+    "date": "2026-11-02",
+    "ctl": 72.0,
+    "atl": 63.6,
+    "tsb": 8.5,
+    "tss": 28,
+    "projected": true
+   },
+   {
+    "date": "2026-11-03",
+    "ctl": 71.3,
+    "atl": 60.6,
+    "tsb": 10.8,
+    "tss": 42,
+    "projected": true
+   }
+  ],
+  "zones": [
+   {
+    "label": "Fresh",
+    "from": 5,
+    "to": null,
+    "shade": true
+   },
+   {
+    "label": "Neutral",
+    "from": -10,
+    "to": 5,
+    "shade": false
+   },
+   {
+    "label": "Productive",
+    "from": -30,
+    "to": -10,
+    "shade": true
+   },
+   {
+    "label": "Overreaching",
+    "from": null,
+    "to": -30,
+    "shade": false
+   }
+  ],
+  "events": [
+   {
+    "id": "12",
+    "name": "Haute Route",
+    "date": "2026-11-01",
+    "priority": "A"
+   },
+   {
+    "id": "13",
+    "name": "Club TT",
+    "date": "2026-10-28",
+    "priority": "C"
+   }
+  ],
+  "now": {
+   "date": "2026-10-19",
+   "ctl": 72.3,
+   "atl": 76.7,
+   "tsb": -4.4,
+   "zone": "Neutral"
+  },
+  "caption": "Projection to 2026-11-03: 1210 planned TSS, fitness 71, form +11."
+ },
+ "last4Weeks": {
+  "ok": true,
+  "tiles": [
+   {
+    "key": "time",
+    "label": "Time · 4 weeks",
+    "valueText": "26:36 h",
+    "noteText": "6.6 h a week",
+    "sport": null
+   },
+   {
+    "key": "run",
+    "label": "Run",
+    "valueText": "72 km",
+    "noteText": "5:35 /km",
+    "sport": "run"
+   },
+   {
+    "key": "ride",
+    "label": "Ride",
+    "valueText": "313 km",
+    "noteText": "14:14 h",
+    "sport": "ride"
+   },
+   {
+    "key": "strength",
+    "label": "Strength",
+    "valueText": "2 of 8",
+    "noteText": "sessions",
+    "sport": "strength"
+   }
+  ]
+ },
+ "body": {
+  "ok": true,
+  "weight": {
+   "date": "2026-10-19",
+   "kg": 78.4,
+   "text": "78.4",
+   "unit": "kg",
+   "change4w": -1.2,
+   "changeText": "▼ 1.2 kg",
+   "changeTone": "good",
+   "noteText": "in 4 weeks · -0.30 kg a week"
+  },
+  "series": [
+   {
+    "date": "2026-07-28",
+    "kg": 79.8
+   },
+   {
+    "date": "2026-08-04",
+    "kg": 79.9
+   },
+   {
+    "date": "2026-08-11",
+    "kg": 79.8
+   },
+   {
+    "date": "2026-08-18",
+    "kg": 79.5
+   },
+   {
+    "date": "2026-08-25",
+    "kg": 79.1
+   },
+   {
+    "date": "2026-09-01",
+    "kg": 78.9
+   },
+   {
+    "date": "2026-09-08",
+    "kg": 79.0
+   },
+   {
+    "date": "2026-09-15",
+    "kg": 79.2
+   },
+   {
+    "date": "2026-09-22",
+    "kg": 79.1
+   },
+   {
+    "date": "2026-09-29",
+    "kg": 78.8
+   },
+   {
+    "date": "2026-10-06",
+    "kg": 78.4
+   },
+   {
+    "date": "2026-10-13",
+    "kg": 78.2
+   },
+   {
+    "date": "2026-10-20",
+    "kg": 78.2
+   }
+  ],
+  "bodyFat": 14.3,
+  "bodyFatText": "14.3 %",
+  "emptyText": null
+ },
+ "lift": {
+  "ok": true,
+  "unit": "lb",
+  "hasData": true,
+  "arms": {
+   "band": {
+    "min": 10,
+    "max": 20
+   },
+   "bandText": "target 10–20",
+   "rows": [
+    {
+     "muscle": "biceps",
+     "sets": 12,
+     "setsText": "12"
+    },
+    {
+     "muscle": "triceps",
+     "sets": 7.5,
+     "setsText": "7.5"
+    }
+   ]
+  },
+  "mainLifts": [
+   {
+    "exerciseKey": "id-demo-squat",
+    "name": "Back squat",
+    "points": [
+     {
+      "day": "2026-08-11",
+      "e1rm": 300.0
+     },
+     {
+      "day": "2026-08-18",
+      "e1rm": 304.7
+     },
+     {
+      "day": "2026-08-25",
+      "e1rm": 307.8
+     },
+     {
+      "day": "2026-09-01",
+      "e1rm": 309.3
+     },
+     {
+      "day": "2026-09-08",
+      "e1rm": 310.5
+     },
+     {
+      "day": "2026-09-15",
+      "e1rm": 313.1
+     },
+     {
+      "day": "2026-09-22",
+      "e1rm": 317.4
+     },
+     {
+      "day": "2026-09-29",
+      "e1rm": 322.3
+     },
+     {
+      "day": "2026-10-06",
+      "e1rm": 326.0
+     }
+    ],
+    "latest": 323,
+    "latestText": "323 lb",
+    "change": 0.041,
+    "changeText": "+4%",
+    "tone": "good",
+    "sparkText": null
+   },
+   {
+    "exerciseKey": "id-demo-bench",
+    "name": "Bench press",
+    "points": [
+     {
+      "day": "2026-08-11",
+      "e1rm": 205.0
+     },
+     {
+      "day": "2026-08-18",
+      "e1rm": 206.2
+     },
+     {
+      "day": "2026-08-25",
+      "e1rm": 207.4
+     },
+     {
+      "day": "2026-09-01",
+      "e1rm": 208.6
+     },
+     {
+      "day": "2026-09-08",
+      "e1rm": 209.8
+     },
+     {
+      "day": "2026-09-15",
+      "e1rm": 211.0
+     },
+     {
+      "day": "2026-09-22",
+      "e1rm": 212.2
+     },
+     {
+      "day": "2026-09-29",
+      "e1rm": 213.4
+     },
+     {
+      "day": "2026-10-06",
+      "e1rm": 214.6
+     }
+    ],
+    "latest": 215,
+    "latestText": "215 lb",
+    "change": 0.02,
+    "changeText": "+2%",
+    "tone": "good",
+    "sparkText": null
+   },
+   {
+    "exerciseKey": "id-demo-rdl",
+    "name": "Romanian deadlift",
+    "points": [
+     {
+      "day": "2026-08-21",
+      "e1rm": 260.0
+     },
+     {
+      "day": "2026-08-31",
+      "e1rm": 258.5
+     },
+     {
+      "day": "2026-09-10",
+      "e1rm": 257.0
+     },
+     {
+      "day": "2026-09-20",
+      "e1rm": 255.5
+     },
+     {
+      "day": "2026-09-30",
+      "e1rm": 254.0
+     },
+     {
+      "day": "2026-10-10",
+      "e1rm": 252.5
+     }
+    ],
+    "latest": 252,
+    "latestText": "252 lb",
+    "change": -0.03,
+    "changeText": "-3%",
+    "tone": "bad",
+    "sparkText": null
+   },
+   {
+    "exerciseKey": "name-pull-up",
+    "name": "Pull-up",
+    "points": [
+     {
+      "day": "2026-10-06",
+      "e1rm": 40
+     }
+    ],
+    "latest": 40,
+    "latestText": "40 lb",
+    "change": null,
+    "changeText": null,
+    "tone": null,
+    "sparkText": "1 session"
+   }
+  ],
+  "mainLiftsEmptyText": null,
+  "strength": {
+   "done": 0,
+   "target": 2,
+   "text": "0 / 2 this week"
+  },
+  "last": {
+   "sessionId": "d5a25b33-32e0-5bcd-bc53-5f17cb084120",
+   "day": "2026-09-29",
+   "daysSince": 21,
+   "whenText": "21 days ago",
+   "late": true,
+   "title": "Workout C",
+   "prs": 0,
+   "text": "Workout C"
+  },
+  "next": {
+   "sessionId": "ca4f651b-98c7-4765-83a9-07ab74435d69",
+   "day": "2026-10-20",
+   "dateText": "Oct 20",
+   "title": "Heavy barbell"
+  },
+  "nextEmptyText": null
+ },
+ "goals": {
+  "ok": true,
+  "items": [
+   {
+    "id": "run-10k-4min",
+    "kind": "run_10k_pace",
+    "title": "Run 10k at 4:00/km",
+    "status": "open",
+    "statusText": "open",
+    "current": 297.51,
+    "currentText": "4:58/km",
+    "target": 240,
+    "targetText": "4:00/km",
+    "deadline": "2027-06-01",
+    "daysLeft": 224,
+    "timeText": "224 days left · 2027-06-01",
+    "progress": 0.01,
+    "detail": [
+     "Best 10k+ run in 12 months: 4:58/km (Morning Run, 2025-11-13)",
+     "Garmin 10k prediction: 4:49/km"
+    ]
+   },
+   {
+    "id": "ride-ftp",
+    "kind": "ftp",
+    "title": "FTP 300 W",
+    "status": "on_track",
+    "statusText": "on track",
+    "current": 284,
+    "currentText": "284 W",
+    "target": 300,
+    "targetText": "300 W",
+    "deadline": "2027-03-01",
+    "daysLeft": 132,
+    "timeText": "132 days left · 2027-03-01",
+    "progress": 0.62,
+    "detail": [
+     "Last test: 284 W on 2026-09-30"
+    ]
+   },
+   {
+    "id": "weight",
+    "kind": "weight",
+    "title": "Weigh 76 kg",
+    "status": "behind",
+    "statusText": "behind",
+    "current": 78.4,
+    "currentText": "78.4 kg",
+    "target": 76,
+    "targetText": "76 kg",
+    "deadline": "2026-12-01",
+    "daysLeft": 42,
+    "timeText": "42 days left · 2026-12-01",
+    "progress": 0.35,
+    "detail": []
+   }
+  ],
+  "emptyText": null
+ }
+}

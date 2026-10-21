@@ -18,6 +18,8 @@ import SwiftUI
 public struct KoboLineChart<X: KoboChartX>: View {
     @Environment(\.koboTheme) var theme
     @ScaledMetric(relativeTo: .caption) private var scale = 1
+    /// One row of marker labels: the caption line and its chip padding.
+    @ScaledMetric(relativeTo: .caption) var markerRow = Space.xl
     @State private var ownSelection: X?
     let series: [ChartSeries<X>]
     let bands: [ChartBand]
@@ -109,8 +111,8 @@ public struct KoboLineChart<X: KoboChartX>: View {
         }
         .modifier(ChartXScale(domain: xDomain, isLogarithmic: isLogarithmic))
         .chartYScale(domain: yScaleDomain)
-        .chartForegroundStyleScale(domain: series.map(\.name), range: series.indices.map(color(at:)))
-        .chartLegend(series.count > 1 ? .visible : .hidden)
+        .chartForegroundStyleScale(domain: legend.map(\.name), range: legend.map(\.color))
+        .chartLegend(legend.count > 1 ? .visible : .hidden)
         .chartLegend(position: .top, alignment: .leading)
         .chartAxes(xTicks: xTicks, xText: xText, yText: yText, showsXLabels: showsXLabels)
         .chartXSelection(value: selection)
@@ -142,6 +144,12 @@ public struct KoboLineChart<X: KoboChartX>: View {
         if let yDomainOverride { return yDomainOverride }
         let values = series.flatMap { $0.points.map(\.y) } + references.map(\.y) + markers.compactMap(\.y)
         return ChartMath.domain(values)
+    }
+
+    /// One legend entry per name, in order, in the colour of the first series with that name: a measured line and its
+    /// dashed projection share a name and read as one item.
+    var legend: [(name: String, color: Color)] {
+        ChartMath.firstIndices(of: series.map(\.name)).map { (series[$0].name, color(at: $0)) }
     }
 
     func color(at index: Int) -> Color {

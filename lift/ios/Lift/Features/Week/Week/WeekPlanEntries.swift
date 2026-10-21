@@ -52,6 +52,10 @@ nonisolated struct WeekPlanItem: Equatable, Sendable, Identifiable {
     let steps: [CoachStep]
     /// The matched activity against the plan, "62 min · 70 TSS / 60 min · 45 TSS"; nil until done.
     let doneText: String?
+    /// The Strava activity that completed the item, to open on Training.
+    let doneActivityId: String?
+    /// The Lift session the item plans (lower case), for its read-only session page.
+    let liftSessionId: String?
     /// "Tuesday, 20 October": the sheet's subtitle.
     let dayTitle: String
 
@@ -68,6 +72,8 @@ nonisolated struct WeekPlanItem: Equatable, Sendable, Identifiable {
         keyTargets = item.keyTargets
         steps = item.steps
         doneText = item.done?.text.flatMap { $0.isEmpty ? nil : $0 }
+        doneActivityId = item.done?.activityId
+        liftSessionId = item.liftSessionId
         self.dayTitle = dayTitle
     }
 
@@ -88,4 +94,18 @@ nonisolated struct WeekPlanHeader: Equatable, Sendable {
     /// "Updated 1:05 PM", or "Offline · updated 1:05 PM".
     let freshness: String?
     let isOffline: Bool
+}
+
+/// Where a tap on a Week row goes (lift/APP-API.md, "Links"). A plan item that names a Lift session opens the coach's
+/// session page; any other item its detail sheet. A Lift session opens its workout, or, once finished and the coach is
+/// connected, the coach's read-only session page.
+nonisolated enum WeekLinks {
+    static func session(_ summary: SessionSummary?, id: UUID, coachIsOn: Bool) -> AppRoute {
+        guard coachIsOn, summary?.isDone == true else { return .workout(id) }
+        return .liftSession(id.uuidString.lowercased())
+    }
+
+    static func planItem(_ item: WeekPlanItem) -> AppRoute? {
+        item.liftSessionId.map(AppRoute.liftSession)
+    }
 }

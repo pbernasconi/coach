@@ -1,6 +1,7 @@
 import Foundation
 import LiftCore
 import LiftStore
+import LiftSync
 import Observation
 
 @Observable
@@ -10,24 +11,33 @@ final class ExerciseDetailViewModel {
 
     private(set) var state = ExerciseDetailState()
 
-    private let exerciseID: UUID
+    /// The library exercise; nil for an exercise the coach knows only by name (a `name-…` key).
+    private let exerciseID: UUID?
     private let exercises: any ExerciseRepository
     private let history: any ExerciseHistoryRepository
     private let catalog: any ExerciseCatalogProviding
     private let days: DayCalendar
     private let now: @Sendable () -> Date
+    private let router: any Navigating
+    /// The coach's numbers for the exercise key.
+    private let server: AppResource<LiftExerciseStats>
     @ObservationIgnored private var serial = 0
+    @ObservationIgnored private var isLoadingServer = false
     /// Every charted session, the range and the touched session behind `state.progress`.
     @ObservationIgnored private var progress: ExerciseProgressTracker
     /// The catalog entry the media and library steps come from.
     @ObservationIgnored private var entry: CatalogExercise?
 
     /// Protocols only, no defaults, no work (SCR-3).
+    /// - Parameter exerciseKey: the coach's key (`id-<uuid>` or `name-<name>`), for `/api/app/lift/exercises/{key}`.
     init(
-        exerciseID: UUID,
+        exerciseID: UUID?,
+        exerciseKey: String,
         exercises: any ExerciseRepository,
         history: any ExerciseHistoryRepository,
         catalog: any ExerciseCatalogProviding,
+        data: any AppDataSource,
+        router: any Navigating,
         now: @escaping @Sendable () -> Date,
         calendar: Calendar,
         unit: WeightUnit
@@ -40,13 +50,23 @@ final class ExerciseDetailViewModel {
         let days = DayCalendar(calendar: calendar)
         self.days = days
         self.progress = ExerciseProgressTracker(days: days, unit: unit)
+        self.router = router
+        self.server = AppResource(path: "api/app/lift/exercises/\(exerciseKey)", source: data, now: now, days: days)
     }
 
-    /// Observes the exercise and its history; started by the Screen's `.task` (SCR-4).
+    /// Observes the exercise and its history, and loads the coach's numbers; started by the Screen's `.task` (SCR-4).
+    /// An exercise known only by name has no library entry and no local history.
     func run() async {
-        async let library: Void = observeExercise()
-        async let past: Void = observeHistory()
-        _ = await (library, past)
+        guard let exerciseID else {
+            state.exercise = .empty
+            state.history = .empty
+            await loadServer()
+            return
+        }
+        async let library: Void = observeExercise(exerciseID)
+        async let past: Void = observeHistory(exerciseID)
+        async let coach: Void = loadServer()
+        _ = await (library, past, coach)
     }
 
     @discardableResult
@@ -64,8 +84,32 @@ final class ExerciseDetailViewModel {
         case .progressSelectionChanged(let date):
             progress.select(date: date, today: today)
             state.progress = progress.state
+        case .serverChartSelectionChanged(let date):
+            guard let date else { return nil }
+            state.serverPoint = ExerciseServerPoint.nearest(to: date, in: state.serverChart)
+        case .serverSessionsExpandedChanged(let isExpanded):
+            state.isServerSessionsExpanded = isExpanded
+        case .sessionTapped(let sessionID):
+            router.open(LiftLinks.session(sessionID))
+        case .refreshPulled:
+            return Task { await loadServer() }
+        case .retryTapped:
+            state.server.content = .loading
+            return Task { await loadServer() }
         }
         return nil
+    }
+
+    /// Loads the coach's numbers and the chart points behind them. One load at a time.
+    private func loadServer() async {
+        guard !isLoadingServer else { return }
+        isLoadingServer = true
+        defer { isLoadingServer = false }
+        await server.load(current: state.server) { loaded in
+            state.server = loaded
+            state.serverChart = ExerciseServerPoint.points(loaded.content.value?.chart.value?.points ?? [], days: days)
+            if let point = state.serverPoint, !state.serverChart.contains(point) { state.serverPoint = nil }
+        }
     }
 
     /// Loads the animation for `state.media`; the Screen restarts it whenever the media changes
@@ -78,7 +122,7 @@ final class ExerciseDetailViewModel {
         state.animation = image
     }
 
-    private func observeExercise() async {
+    private func observeExercise(_ exerciseID: UUID) async {
         for await library in exercises.observeExercises() {
             if let exercise = library.first(where: { $0.id == exerciseID }) {
                 state.exercise = .loaded(ExerciseDetailItem(exercise: exercise))
@@ -99,7 +143,7 @@ final class ExerciseDetailViewModel {
     }
 
     /// One read for both the chart (every session) and "Your history" (the latest `historyLimit`).
-    private func observeHistory() async {
+    private func observeHistory(_ exerciseID: UUID) async {
         let stream = history.observeHistory(exerciseID: exerciseID, limit: ExerciseProgressTracker.sessionLimit)
         for await entries in stream {
             let rows = entries.prefix(Self.historyLimit).map { ExerciseHistoryRow(entry: $0, days: days) }

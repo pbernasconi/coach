@@ -12,7 +12,8 @@ const isPublicRoute = createRouteMatcher([
   '/api/lift/sync/pull',
   '/api/lift/week',
   // Read-only JSON for the Lift app (same LIFT_SYNC_TOKEN bearer): lift/APP-API.md.
-  '/api/app(.*)',
+  '/api/app',
+  '/api/app/(.*)',
   // Vercel cron (CRON_SECRET bearer) and the start-page summary (HOME_TOKEN bearer).
   '/api/cron(.*)',
   '/api/home',
@@ -66,8 +67,8 @@ export default function middleware(request: NextRequest, event: NextFetchEvent) 
 export const config = {
   matcher: [
     // Skip Next.js internals, machine routes and all static files, unless found in search params
-    '/((?!_next|api/home|api/health|api/lift/sync|api/lift/week|api/lift/enroll|api/app|api/vitals/sync|api/vitals/garmin|api/cron|api/webhooks/strava|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    '/((?!_next|api/home|api/health|api/lift/sync|api/lift/week|api/lift/enroll|api/app/|api/vitals/sync|api/vitals/garmin|api/cron|api/webhooks/strava|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
     // Always run for the other API routes
-    '/(api(?!/home|/health|/lift/sync|/lift/week|/lift/enroll|/app|/vitals/sync|/vitals/garmin|/cron|/webhooks/strava)|trpc)(.*)',
+    '/(api(?!/home|/health|/lift/sync|/lift/week|/lift/enroll|/app/|/vitals/sync|/vitals/garmin|/cron|/webhooks/strava)|trpc)(.*)',
   ],
 };

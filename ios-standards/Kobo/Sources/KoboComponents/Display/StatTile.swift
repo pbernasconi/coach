@@ -2,11 +2,13 @@ import Foundation
 import KoboTokens
 import SwiftUI
 
-/// A change shown under a stat ("+5 km"), toned and always with a glyph, so it never reads by colour alone.
+/// A change shown under a stat ("+5 km"), toned and with a glyph, so it never reads by colour alone. The glyph is an
+/// SF Symbol, or the text's own arrow ("▼ 7%", `textOnly`).
 public struct StatDelta {
     public let text: Text
     public let tone: Tone
-    public let symbol: String
+    /// `nil` when the text carries its own arrow.
+    public let symbol: String?
 
     /// A delta with localized text ("on track", "+\(change)%").
     ///
@@ -22,6 +24,18 @@ public struct StatDelta {
         self.text = Text(verbatim: text)
         self.tone = tone
         self.symbol = symbol ?? tone.feedbackSymbol
+    }
+
+    private init(text: Text, tone: Tone) {
+        self.text = text
+        self.tone = tone
+        self.symbol = nil
+    }
+
+    /// A delta whose text already carries its arrow ("▼ 7%", "▲ 3 km"): coloured by `tone`, with no icon, so a fall
+    /// does not read as an error.
+    public static func textOnly(verbatim text: String, tone: Tone) -> StatDelta {
+        StatDelta(text: Text(verbatim: text), tone: tone)
     }
 }
 
@@ -69,7 +83,7 @@ public struct StatTile<Value: View, Footer: View>: View {
                 Label {
                     delta.text
                 } icon: {
-                    Image(systemName: delta.symbol).accessibilityHidden(true)
+                    if let symbol = delta.symbol { Image(systemName: symbol).accessibilityHidden(true) }
                 }
                 .font(theme.font(.caption).weight(.semibold))
                 .foregroundStyle(theme.palette.status(delta.tone).ink)
@@ -77,7 +91,8 @@ public struct StatTile<Value: View, Footer: View>: View {
             footer
         }
         .fixedSize(horizontal: false, vertical: true)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        // Fills the height it is offered, top-aligned, so tiles in a `Grid` row are all as tall as the tallest.
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(.horizontal, Space.md)
         .padding(.vertical, Space.rowVertical)
         .background(theme.palette.surface, in: RoundedRectangle(cornerRadius: Radius.lg, style: .continuous))

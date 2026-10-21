@@ -124,13 +124,17 @@ export async function runChecks(now = new Date(), { migrations = true }: { migra
       for (const e of exerciseList(model, unit)) exerciseDetail(model, e.key, unit);
     }),
     // GET /api/app/lift… (the Lift app's Lift tab): every section of the overview and the weekly table, and every
-    // session and exercise screen. A route hides a failed section from the phone; this check fails on it.
+    // exercise screen, and the newest sessions. A route hides a failed section from the phone; this check fails on it.
     check('app lift', async () => {
       const tz = 'America/Los_Angeles';
       const bad = failedSections(await loadAppLift(userId, today, tz, now)).map((s) => `overview ${s}`);
       const { model, unit } = await loadLiftModel();
       bad.push(...failedSections(weeklyResponse({ weeks: weeklyVolume(model, unit), unit, now })).map((s) => `weekly ${s}`));
-      for (const s of sessionSummaries(model, unit, { planned: true })) {
+      // The newest 20 logged sessions and every planned one: each screen reads all sets, so all sessions would make
+      // the check grow with the history; the shape is the same for every session.
+      const summaries = sessionSummaries(model, unit, { planned: true });
+      const logged = summaries.filter((s) => s.setsLogged > 0).slice(0, 20);
+      for (const s of [...logged, ...summaries.filter((x) => x.setsLogged === 0)]) {
         const session = richSession(model, s.id, unit);
         if (session) bad.push(...failedSections(sessionResponse({ session, timeZone: tz, now })).map((x) => `session ${s.id} ${x}`));
       }

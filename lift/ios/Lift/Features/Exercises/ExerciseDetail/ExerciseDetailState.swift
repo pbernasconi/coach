@@ -1,5 +1,6 @@
 import Foundation
 import LiftCore
+import LiftSync
 
 /// Everything the exercise detail screen renders. Exclusive states are enums (SCR-6).
 nonisolated struct ExerciseDetailState: Equatable, Sendable {
@@ -19,6 +20,33 @@ nonisolated struct ExerciseDetailState: Equatable, Sendable {
     var isLibraryStepsExpanded = false
     /// The latest page to open (technique videos).
     var link: LinkRequest?
+    /// The coach's numbers for this exercise (`/api/app/lift/exercises/{key}`).
+    var server = AppResourceState<LiftExerciseStats>()
+    /// The coach's e1RM per session as chart points, oldest first.
+    var serverChart: [ExerciseServerPoint] = []
+    /// The last touched point of the coach's chart; its label and a link to its session show under the chart.
+    var serverPoint: ExerciseServerPoint?
+    /// Whether the coach's sessions after the first `ExerciseServerSections.shownSessions` are open.
+    var isServerSessionsExpanded = false
+
+    /// The coach's numbers once they loaded with their chart. They are the source of truth then: the local progress
+    /// chart and history hide, so there are never two competing charts. Nil while loading, offline with nothing kept,
+    /// not connected, or when the chart part failed; the local sections show then.
+    var serverStats: LiftExerciseStats? {
+        guard let stats = server.content.value, stats.chart.value != nil else { return nil }
+        return stats
+    }
+}
+
+/// One session on the coach's e1RM chart.
+nonisolated struct ExerciseServerPoint: Equatable, Sendable, Identifiable {
+    var date: Date
+    var e1rm: Double
+    var sessionID: String
+    /// "Tue, Sep 29, 2026: 60 lb est. 1RM (45 lb x 10)".
+    var label: String
+
+    var id: Date { date }
 }
 
 /// The exercise as the detail screen shows it.

@@ -11,4 +11,14 @@ nonisolated enum ExerciseDetailAction: Equatable, Sendable {
     case progressRangeChanged(ProgressRange)
     /// The chart was touched at a day (nil once it is let go).
     case progressSelectionChanged(Date?)
+    /// The coach's e1RM chart was touched at a session's day; nil once it is let go (the last touched point stays).
+    case serverChartSelectionChanged(Date?)
+    /// "All sessions": shows or hides the coach's sessions after the first few.
+    case serverSessionsExpandedChanged(Bool)
+    /// A session row, a best set or the touched chart point: opens that session.
+    case sessionTapped(String)
+    /// Pull to refresh: fetches the coach's numbers again.
+    case refreshPulled
+    /// "Try again" after the coach's numbers failed to load.
+    case retryTapped
 }

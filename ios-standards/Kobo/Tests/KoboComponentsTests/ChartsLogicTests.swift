@@ -81,6 +81,11 @@ import Testing
         #expect(ChartMath.strideIndices(count: 0, maxCount: 3).isEmpty)
     }
 
+    @Test func firstIndicesKeepTheFirstOfEachName() {
+        #expect(ChartMath.firstIndices(of: ["Fitness", "Fatigue", "Fitness", "Form"]) == [0, 1, 3])
+        #expect(ChartMath.firstIndices(of: []).isEmpty)
+    }
+
     @Test func spansTreatNonFiniteWidthsAsZero() {
         #expect(ChartMath.spans(widths: [1, .nan, .infinity, 2]) == [0..<1, 1..<1, 1..<1, 1..<3])
     }

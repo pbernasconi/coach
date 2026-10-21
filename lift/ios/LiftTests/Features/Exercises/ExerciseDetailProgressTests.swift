@@ -15,9 +15,12 @@ import Testing
     func makeViewModel(_ entries: [ExerciseHistoryEntry]) -> ExerciseDetailViewModel {
         ExerciseDetailViewModel(
             exerciseID: squatID,
+            exerciseKey: LiftLinks.key(forLibraryID: squatID),
             exercises: FakeExerciseRepository(emissions: [ExerciseLibrary.seed]),
             history: FakeExerciseHistoryRepository(emissions: [entries]),
             catalog: FakeExerciseCatalog(),
+            data: DisabledAppData(),
+            router: RecordingNavigator(),
             now: SessionBuilder.now,
             calendar: SessionBuilder.calendar,
             unit: .kg

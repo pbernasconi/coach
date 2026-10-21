@@ -84,6 +84,12 @@ nonisolated enum ChartMath {
         return Array(stride(from: count - 1, through: 0, by: -step).reversed())
     }
 
+    /// The index of the first occurrence of each distinct key, in order: `["a", "b", "a"]` gives `[0, 1]`.
+    static func firstIndices(of keys: [String]) -> [Int] {
+        var seen = Set<String>()
+        return keys.indices.filter { seen.insert(keys[$0]).inserted }
+    }
+
     /// Each width laid end to end from zero: `[2, 3]` becomes `[0..<2, 2..<5]`. Negative and non-finite widths count
     /// as zero.
     static func spans(widths: [Double]) -> [Range<Double>] {

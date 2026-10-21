@@ -7,7 +7,8 @@ import LiftCore
 ///     -fresh                                  in-memory database as a first launch leaves it: the exercise library
 ///                                             and nothing else (no sessions, no templates); wins over -demo, so
 ///                                             the screenshot script's empty states (`-demo -fresh`) work
-///     -tab week|history|exercises|settings    the tab to open first
+///     -tab today|week|training|lift|settings  the tab to open first (Today without it); history and exercises
+///                                             open the Lift tab on that segment
 ///     -appearance dark|light                  forces an appearance (CI usually sets it with simctl)
 ///     -open workout                           with -demo: pushes today's or the next planned session on Week
 ///     -open exercise                          with -demo: pushes the Back squat detail on Exercises
@@ -19,6 +20,9 @@ import LiftCore
 ///     -open summary                           with -demo: pushes the latest logged session's summary on Week
 ///     -open progress                          with -demo: opens History on Progress (hard sets per muscle)
 ///     -open plates                            with -demo: pushes Plates and bars on Settings
+///     -open activity|ride|activity-pending   with -demo: pushes a made-up activity on Training (DemoActivities)
+///     -open trends                            with -demo: opens Training on Trends
+///     -open today-fitness|today-end           with -demo: Today scrolled to its fitness chart or its end
 ///     -open template-link                     with -demo: opens the template link review over Exercises with the
 ///                                             made-up `TemplateLinkSample`
 ///     -open-url lift://…                      opens that Lift link once the data is ready, through the same router
@@ -46,20 +50,35 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
         case plates
         /// The template link review: a sheet over Exercises rather than a pushed route.
         case templateLink = "template-link"
+        /// Training: a made-up run's activity page.
+        case activity
+        /// Training: a made-up ride with power.
+        case ride
+        /// Training: an activity Strava is still sending.
+        case activityPending = "activity-pending"
+        /// Training on its Trends segment: a segment rather than a pushed route.
+        case trends
+        /// Today scrolled to its fitness chart, for screenshots.
+        case todayFitness = "today-fitness"
+        /// Today scrolled to its end (lift and goals), for screenshots.
+        case todayEnd = "today-end"
 
         /// The tab whose stack the screen is pushed on.
         var tab: AppTab {
             switch self {
             case .workout, .summary: .week
-            case .exercise, .catalog, .templates, .template, .templateLink: .exercises
-            case .importNotes, .progress: .history
+            case .exercise, .catalog, .templates, .template, .templateLink, .importNotes, .progress: .lift
             case .plates: .settings
+            case .activity, .ride, .activityPending, .trends: .training
+            case .todayFitness, .todayEnd: .today
             }
         }
     }
 
     var isDemo = false
-    var initialTab = AppTab.week
+    var initialTab = AppTab.today
+    /// The Lift tab's first segment: `-tab history` and `-tab exercises` open it there (they were tabs before).
+    var liftSegment = LiftSegment.overview
     var appearance: Appearance?
     var opening: Opening?
     /// `-fresh`: an empty in-memory database that never syncs or touches Apple Health, for the empty states.
@@ -69,13 +88,15 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
 
     init(
         isDemo: Bool = false,
-        initialTab: AppTab = .week,
+        initialTab: AppTab = .today,
+        liftSegment: LiftSegment = .overview,
         appearance: Appearance? = nil,
         opening: Opening? = nil,
         isFresh: Bool = false
     ) {
         self.isDemo = isDemo
         self.initialTab = initialTab
+        self.liftSegment = liftSegment
         self.appearance = appearance
         self.opening = opening
         self.isFresh = isFresh
@@ -92,7 +113,11 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
         self.init()
         isFresh = arguments.contains("-fresh")
         isDemo = !isFresh && (arguments.contains("-demo") || arguments.contains("--demo"))
-        if let tab = Self.value(after: "-tab", in: arguments).flatMap(AppTab.init(rawValue:)) {
+        let tab = Self.value(after: "-tab", in: arguments)
+        if let segment = tab.flatMap(LiftSegment.init(rawValue:)), segment != .overview {
+            initialTab = .lift
+            liftSegment = segment
+        } else if let tab = tab.flatMap(AppTab.init(rawValue:)) {
             initialTab = tab
         }
         appearance = Self.value(after: "-appearance", in: arguments).flatMap(Appearance.init(rawValue:))
@@ -118,15 +143,33 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
         case .exercise: return .exercise(ExerciseLibrary.seedID(1))
         case .catalog: return .catalog
         case .plates: return .plates
+        case .activity: return .activity(DemoActivities.run)
+        case .ride: return .activity(DemoActivities.ride)
+        case .activityPending: return .activity(DemoActivities.pending)
         // A modal page (`opensImportSample`), a sheet (`opensTemplateLinkSample`), or a segment of History
         // (`historySegment`).
-        case .importNotes, .templateLink, .progress: return nil
+        case .importNotes, .templateLink, .progress, .trends, .todayFitness, .todayEnd: return nil
         }
     }
 
     /// The History tab's first view: Progress for `-open progress` in demo mode, Sessions otherwise.
     var historySegment: HistorySegment {
         isDemo && opening == .progress ? .progress : .sessions
+    }
+
+    /// Where Today starts scrolled to: `-open today-fitness` or `-open today-end` in demo mode, else the top.
+    var todayAnchor: TodayAnchor? {
+        guard isDemo else { return nil }
+        switch opening {
+        case .todayFitness: return .fitness
+        case .todayEnd: return .end
+        default: return nil
+        }
+    }
+
+    /// The Training tab's first segment: Trends for `-open trends` in demo mode, Activities otherwise.
+    var trainingSegment: TrainingSegment {
+        isDemo && opening == .trends ? .trends : .activities
     }
 
     /// `-open import` in demo mode: the shell opens the import flow with the made-up sample note already read.
@@ -139,4 +182,11 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
         guard let index = arguments.firstIndex(of: flag), arguments.indices.contains(index + 1) else { return nil }
         return arguments[index + 1].lowercased()
     }
+}
+
+/// The ids of the made-up activities in the Training demo bodies (`Resources/DemoAPI/app-activities-*.json`).
+nonisolated enum DemoActivities {
+    static let run = "9000000102"
+    static let ride = "9000000103"
+    static let pending = "9000000104"
 }

@@ -24,7 +24,6 @@ private struct AppShell: View {
     private let dependencies: AppDependencies
     private let options: LaunchOptions
     @Environment(\.scenePhase) private var scenePhase
-    @State private var tab: AppTab
     @State private var isReady = false
     /// Syncs after launch, on returning to the foreground and after local writes.
     @State private var syncCoordinator: SyncCoordinator
@@ -35,7 +34,6 @@ private struct AppShell: View {
     init(dependencies: AppDependencies, options: LaunchOptions) {
         self.dependencies = dependencies
         self.options = options
-        _tab = State(initialValue: options.initialTab)
         _syncCoordinator = State(
             initialValue: SyncCoordinator(sync: dependencies.sync, outbox: dependencies.outbox)
         )
@@ -44,12 +42,12 @@ private struct AppShell: View {
     var body: some View {
         Group {
             if isReady {
-                TabShell(tabs: tabs, selection: $tab) { tab in
+                TabShell(tabs: tabs, selection: tabSelection) { tab in
                     TabStack(
                         tab: tab,
                         dependencies: dependencies,
                         initialPath: initialPath(for: tab),
-                        historySegment: options.historySegment
+                        options: options
                     )
                 }
                 .koboModalPage(item: importRequest, style: .sheet) { request in
@@ -66,6 +64,7 @@ private struct AppShell: View {
         }
         .environment(\.calendar, dependencies.calendar)
         .task {
+            dependencies.tabs.show(options.initialTab)  // before the tabs show; AppShell's init may run again
             await dependencies.prepare()
             openedRoute = await dependencies.openingRoute(for: options)
             if options.opensImportSample {
@@ -92,7 +91,13 @@ private struct AppShell: View {
     /// Routes a `lift://` link. After a sync link, Settings shows, where the Sync row says how the first sync went.
     private func open(_ url: URL) {
         guard dependencies.incomingNotes.open(url), case .syncCode? = AppLink(url: url) else { return }
-        tab = .settings
+        dependencies.tabs.show(.settings)
+    }
+
+    /// The tab bar's selection: the shared `TabSwitcher`, so screens can switch tabs too.
+    private var tabSelection: Binding<AppTab> {
+        let tabs = dependencies.tabs
+        return .action(tabs.selected) { tabs.barPicked($0) }
     }
 
     /// Import from Notes, shown over the tabs while the presenter holds a request.
@@ -108,9 +113,10 @@ private struct AppShell: View {
 
     private var tabs: [KoboTab<AppTab>] {
         [
+            KoboTab("Today", systemImage: AppTab.today.systemImage, value: .today),
             KoboTab("Week", systemImage: AppTab.week.systemImage, value: .week),
-            KoboTab("History", systemImage: AppTab.history.systemImage, value: .history),
-            KoboTab("Exercises", systemImage: AppTab.exercises.systemImage, value: .exercises),
+            KoboTab("Training", systemImage: AppTab.training.systemImage, value: .training),
+            KoboTab("Lift", systemImage: AppTab.lift.systemImage, value: .lift),
             KoboTab("Settings", systemImage: AppTab.settings.systemImage, value: .settings),
         ]
     }
@@ -124,24 +130,31 @@ private struct TabStack: View {
     @State private var router: TabRouter
     @State private var toasts = ToastCenter()
 
-    /// The History tab's first view: Sessions, or Progress for `-open progress`.
-    let historySegment: HistorySegment
+    /// Where each root screen starts (segments, Today's scroll position), from the launch arguments.
+    let options: LaunchOptions
 
-    init(tab: AppTab, dependencies: AppDependencies, initialPath: [AppRoute], historySegment: HistorySegment) {
+    init(tab: AppTab, dependencies: AppDependencies, initialPath: [AppRoute], options: LaunchOptions) {
         self.tab = tab
         self.dependencies = dependencies
-        self.historySegment = historySegment
+        self.options = options
         _router = State(initialValue: TabRouter(path: initialPath))
     }
 
     var body: some View {
+        let rootRequests = dependencies.tabs.rootRequests[tab, default: 0]
         NavigationStack(path: $router.path) {
-            TabRootScreen(tab: tab, dependencies: dependencies, router: router, historySegment: historySegment)
-                .navigationDestination(for: AppRoute.self) { route in
-                    RouteScreen(route: route, dependencies: dependencies, router: router, toasts: toasts)
-                }
+            TabRootScreen(
+                tab: tab,
+                dependencies: dependencies,
+                router: router,
+                options: options
+            )
+            .navigationDestination(for: AppRoute.self) { route in
+                RouteScreen(route: route, dependencies: dependencies, router: router, toasts: toasts)
+            }
         }
         .toastHost(toasts)
+        .onChange(of: rootRequests) { router.path.removeAll() }  // a re-tap of the tab goes back to its root
     }
 }
 
@@ -150,10 +163,40 @@ private struct TabRootScreen: View {
     let tab: AppTab
     let dependencies: AppDependencies
     let router: any Navigating
-    let historySegment: HistorySegment
+    let options: LaunchOptions
 
     var body: some View {
         switch tab {
+        case .today:
+            TodayScreen(
+                viewModel: TodayViewModel(
+                    data: dependencies.appData,
+                    coachPlan: dependencies.coachPlan,
+                    router: router,
+                    tabs: dependencies.tabs,
+                    now: dependencies.now,
+                    calendar: dependencies.calendar,
+                    anchor: options.todayAnchor
+                )
+            )
+        case .training:
+            TrainingScreen(
+                viewModel: TrainingViewModel(
+                    data: dependencies.appData,
+                    router: router,
+                    tabs: dependencies.tabs,
+                    now: dependencies.now,
+                    calendar: dependencies.calendar,
+                    segment: options.trainingSegment
+                )
+            )
+        case .lift:
+            LiftTabScreen(
+                dependencies: dependencies,
+                router: router,
+                historySegment: options.historySegment,
+                initialSegment: options.liftSegment
+            )
         case .week:
             WeekScreen(
                 viewModel: WeekViewModel(
@@ -165,26 +208,6 @@ private struct TabRootScreen: View {
                     calendar: dependencies.calendar,
                     units: dependencies.units,
                     coachPlan: dependencies.coachPlan
-                )
-            )
-        case .history:
-            HistoryScreen(
-                viewModel: HistoryViewModel(
-                    sessions: dependencies.sessions,
-                    exercises: dependencies.exercises,
-                    router: router,
-                    importFlow: dependencies.importFlow,
-                    now: dependencies.now,
-                    calendar: dependencies.calendar,
-                    segment: historySegment
-                )
-            )
-        case .exercises:
-            ExercisesScreen(
-                viewModel: ExercisesViewModel(
-                    exercises: dependencies.exercises,
-                    catalog: dependencies.catalog,
-                    router: router
                 )
             )
         case .settings:

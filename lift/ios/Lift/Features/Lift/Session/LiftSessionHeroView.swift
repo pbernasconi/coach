@@ -1,0 +1,137 @@
+import KoboComponents
+import KoboTokens
+import SwiftUI
+
+/// The session's hero: day and start, title, state, note, the five stats, the sets ring and the muscles worked. Every
+/// text is the server's.
+struct LiftSessionHeroView: View {
+    @Environment(\.koboTheme) private var theme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    let hero: LiftSessionHero
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Space.lg) {
+            VStack(alignment: .leading, spacing: Space.xs) {
+                Text(verbatim: hero.kicker)
+                    .font(theme.font(.subheadline).weight(.semibold))
+                    .foregroundStyle(theme.palette.accentText)
+                Text(verbatim: hero.title)
+                    .font(theme.font(.title2))
+                    .foregroundStyle(theme.palette.textPrimary)
+                    .accessibilityAddTraits(.isHeader)
+                StatusPill(verbatim: hero.stateLabel, tone: Self.tone(hero.state), symbol: Self.symbol(hero.state))
+                if let note = hero.note {
+                    Text(verbatim: note)
+                        .font(theme.font(.subheadline))
+                        .foregroundStyle(theme.palette.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            ringAndMuscles
+            LazyVGrid(columns: columns, alignment: .leading, spacing: Space.sm) {
+                ForEach(hero.stats) { stat in
+                    StatTile(verbatim: stat.label, value: stat.value) {
+                        if let detail = stat.detail {
+                            Text(verbatim: detail)
+                                .font(theme.font(.caption))
+                                .foregroundStyle(theme.palette.textSecondary)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// The ring beside the muscle bars; stacked at accessibility sizes.
+    @ViewBuilder private var ringAndMuscles: some View {
+        let layout =
+            dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: Space.lg))
+            : AnyLayout(HStackLayout(alignment: .top, spacing: Space.lg))
+        layout {
+            LiftSessionRing(ring: hero.ring)
+            if !hero.muscles.isEmpty {
+                LiftSessionMuscleBars(muscles: hero.muscles)
+            }
+        }
+        .koboCard()
+    }
+
+    private var columns: [GridItem] {
+        let count = dynamicTypeSize.isAccessibilitySize ? 1 : 2
+        return Array(repeating: GridItem(.flexible(), spacing: Space.sm, alignment: .top), count: count)
+    }
+
+    /// Done green, in progress accent, planned neutral; the pill always carries the label too.
+    static func tone(_ state: String) -> Tone {
+        switch state {
+        case "done": .success
+        case "inProgress": .accent
+        default: .neutral
+        }
+    }
+
+    static func symbol(_ state: String) -> String {
+        switch state {
+        case "done": "checkmark.circle.fill"
+        case "inProgress": "play.circle.fill"
+        default: "calendar"
+        }
+    }
+}
+
+/// Sets logged against sets planned, with the server's "11/12" in the middle and its caption under the ring.
+private struct LiftSessionRing: View {
+    @Environment(\.koboTheme) private var theme
+    @ScaledMetric(relativeTo: .headline) private var side = Size.thumbnail * 1.6
+    let ring: LiftRing
+
+    var body: some View {
+        VStack(spacing: Space.xs) {
+            ProgressRing(
+                progress: ring.progress,
+                tone: ring.progress >= 1 ? .success : .accent,
+                verbatimAccessibilityLabel: "\(ring.text) \(ring.caption)"
+            ) {
+                Text(verbatim: ring.text)
+                    .font(theme.font(.headline).monospacedDigit())
+                    .foregroundStyle(theme.palette.textPrimary)
+                    .minimumScaleFactor(0.6)
+            }
+            .frame(width: side, height: side)
+            Text(verbatim: ring.caption)
+                .font(theme.font(.caption))
+                .foregroundStyle(theme.palette.textSecondary)
+        }
+    }
+}
+
+/// Hard sets per muscle in this session, the biggest first, each as a bar against the first.
+private struct LiftSessionMuscleBars: View {
+    @Environment(\.koboTheme) private var theme
+    let muscles: [LiftSessionMuscle]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Space.sm) {
+            ForEach(muscles) { muscle in
+                VStack(alignment: .leading, spacing: Space.xxs) {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(verbatim: muscle.name)
+                            .foregroundStyle(theme.palette.textPrimary)
+                        Spacer(minLength: Space.sm)
+                        Text(verbatim: muscle.setsText)
+                            .monospacedDigit()
+                            .foregroundStyle(theme.palette.textSecondary)
+                    }
+                    .font(theme.font(.footnote))
+                    InlineProgress(value: muscle.relative, accessibilityLabel: "Sets")
+                        .accessibilityHidden(true)
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(Text(verbatim: muscle.name))
+                .accessibilityValue(Text("\(muscle.setsText) sets"))
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}

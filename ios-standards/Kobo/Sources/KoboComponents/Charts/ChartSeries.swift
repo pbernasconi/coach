@@ -25,7 +25,8 @@ public struct ChartSeries<X: KoboChartX>: Identifiable, Hashable, Sendable {
     public let showsPoints: Bool
 
     /// - Parameters:
-    ///   - name: shown as is in the legend, the callout and the VoiceOver summary.
+    ///   - name: shown as is in the legend, the callout and the VoiceOver summary. Series with the same name are one
+    ///     legend item and draw their line in the first one's colour (a measured line and its dashed projection).
     ///   - points: sorted by x here, so callers can pass them in any order. Non-finite values are dropped.
     ///   - color: the line colour; the theme's `chartColor` for the series' position when `nil`.
     ///   - fillsArea: a soft fill under the line.

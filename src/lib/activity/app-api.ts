@@ -1,25 +1,32 @@
 import { after } from 'next/server';
 import { sql } from '@/db';
-import { isAuthorized } from '@/lib/lift-sync/auth.mjs';
-import { ownerId } from '@/lib/plan/queries';
+import { appRoute } from '@/lib/app-api/route';
 import { fetchActivityParts } from './fetch.mjs';
 import { load, safe } from '@/lib/safe';
 import { loadRange } from '@/lib/plan/month';
-import { mondayOf } from '@/lib/plan/week.mjs';
+import { addDays, mondayOf } from '@/lib/plan/week.mjs';
 import { stravaTypeLabel } from '@/lib/sports';
 import { loadActivity, loadActivityContext } from './queries';
 import { detailResponse, listResponse, parseDetailQuery } from './app-api.mjs';
 
 type Row = Record<string, unknown>;
 
-/** The plan workouts that matched these activities (the plan's own matching, as the web calendar): Strava id → title. */
+// The most plan weeks one page reads: a page that spans a long break would otherwise load every week between.
+const PLANNED_WEEKS = 8;
+
+/**
+ * The plan workouts that matched these activities (the plan's own matching, as the web calendar): Strava id → title.
+ * Only the newest PLANNED_WEEKS weeks of the page: older activities get no title.
+ */
 async function plannedTitles(userId: string, rows: Row[], today: string) {
   const days = rows.map((r) => String(r.start_local ?? '').slice(0, 10)).filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d)).sort();
   if (!days.length) return { ok: true, titles: new Map<string, string>() };
   return safe(
     'app activities: planned titles',
     async () => {
-      const range = await loadRange(userId, mondayOf(days[0]), mondayOf(days[days.length - 1]), today);
+      const last = mondayOf(days[days.length - 1]);
+      const first = mondayOf(days[0]) > addDays(last, -7 * (PLANNED_WEEKS - 1)) ? mondayOf(days[0]) : addDays(last, -7 * (PLANNED_WEEKS - 1));
+      const range = await loadRange(userId, first, last, today);
       const titles = new Map<string, string>();
       for (const w of range.workouts) if (w.match?.source === 'strava' && w.state === 'done') titles.set(String(w.match.id), w.title);
       return { ok: true, titles };
@@ -95,32 +102,26 @@ function fetchAfterResponse(rowId: string) {
   }
 }
 
-const NO_STORE = { 'Cache-Control': 'no-store' };
-
 /**
- * The handler of GET /api/app/activities/:id. `fetchMissing`: start the Strava fetch for missing parts. The route
- * passes true; the health check passes false, so a check never calls Strava or after().
+ * The handler of GET /api/app/activities/:id, through the shared appRoute (token, owner, tz, errors). `fetchMissing`:
+ * start the Strava fetch for missing parts. The route passes true; the health check passes false, so a check never
+ * calls Strava or after().
  */
 export async function appActivityResponse(request: Request, rawId: string, { fetchMissing }: { fetchMissing: boolean }) {
-  if (!isAuthorized(request.headers.get('authorization'), process.env.LIFT_SYNC_TOKEN)) {
-    return Response.json({ error: 'unauthorized' }, { status: 401, headers: NO_STORE });
-  }
-  let query: ReturnType<typeof parseDetailQuery>;
+  let id: string | null = null;
   try {
-    query = parseDetailQuery(rawId, new URL(request.url).searchParams);
-  } catch {
-    query = { error: 'id must be a Strava id, a row id or latest' };
-  }
-  if ('error' in query) return Response.json({ error: query.error }, { status: 400, headers: NO_STORE });
-  try {
-    const userId = await ownerId();
-    if (!userId) return Response.json({ error: 'no user' }, { status: 404, headers: NO_STORE });
-    const loaded = await loadAppActivity(userId, query.id, query.today, query.timeZone);
-    if (!loaded) return Response.json({ error: 'not found' }, { status: 404, headers: NO_STORE });
-    if (fetchMissing && loaded.fetchNeeded) fetchAfterResponse(loaded.rowId);
-    return Response.json(loaded.body, { headers: NO_STORE });
-  } catch (error) {
-    console.error('App activity failed:', error);
-    return Response.json({ error: 'internal error' }, { status: 500, headers: NO_STORE });
-  }
+    const q = parseDetailQuery(rawId, new URLSearchParams());
+    if (!('error' in q)) id = q.id;
+  } catch {}
+  return appRoute(
+    request,
+    'activity',
+    async ({ userId, today, timeZone }) => {
+      const loaded = await loadAppActivity(userId, id!, today, timeZone);
+      if (!loaded) return null;
+      if (fetchMissing && loaded.fetchNeeded) fetchAfterResponse(loaded.rowId);
+      return loaded.body;
+    },
+    id ? null : 'id must be a Strava id, a row id or latest'
+  );
 }

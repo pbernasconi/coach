@@ -17,9 +17,17 @@ extension KoboLineChart {
                 .foregroundStyle(theme.palette.status(band.tone).soft.opacity(0.6))
                 .annotation(position: .overlay, alignment: .topLeading, spacing: Space.xxs) {
                     if !band.label.isEmpty {
+                        // On a chip, so a line that crosses the band never runs through the text.
                         Text(verbatim: band.label)
                             .font(theme.font(.caption))
                             .foregroundStyle(theme.palette.status(band.tone).ink)
+                            .padding(.horizontal, Space.xs)
+                            .padding(.vertical, Space.xxs / 2)
+                            .background(
+                                theme.palette.surface.opacity(0.9),
+                                in: RoundedRectangle(cornerRadius: Radius.xs)
+                            )
+                            .fixedSize()
                             .padding(.leading, Space.xs)
                     }
                 }
@@ -69,18 +77,32 @@ extension KoboLineChart {
     }
 
     @ChartContentBuilder var markerMarks: some ChartContent {
-        ForEach(Array(markers.enumerated()), id: \.offset) { _, marker in
+        ForEach(Array(markers.enumerated()), id: \.offset) { index, marker in
             if let y = marker.y {
                 PointMark(x: .value("X", marker.x), y: .value("Y", y))
                     .foregroundStyle(theme.palette.status(marker.tone).ink)
                     .symbolSize(Space.xxxl * 2)
-                    .annotation(position: .top, spacing: Space.xxs) { markerLabel(marker) }
+                    .annotation(
+                        position: .top,
+                        spacing: Space.xxs,
+                        overflowResolution: .init(x: .fit(to: .plot), y: .fit(to: .plot))
+                    ) {
+                        // Every other rule's label one row lower, so two close events both stay readable.
+                        markerLabel(marker).padding(.top, index.isMultiple(of: 2) ? 0 : markerRow)
+                    }
             } else {
+                // The label sits inside the plot at the rule's top, so it never shares a row with the legend.
                 RuleMark(x: .value("X", marker.x))
                     .foregroundStyle(theme.palette.status(marker.tone).ink)
                     .lineStyle(StrokeStyle(lineWidth: Size.hairline * 2, dash: [Space.xxs, Space.xxs]))
-                    .annotation(position: .top, spacing: Space.xxs, overflowResolution: .init(x: .fit, y: .disabled)) {
-                        markerLabel(marker)
+                    .annotation(
+                        position: .overlay,
+                        alignment: .top,
+                        spacing: 0,
+                        overflowResolution: .init(x: .fit(to: .plot), y: .fit(to: .plot))
+                    ) {
+                        // Every other rule's label one row lower, so two close events both stay readable.
+                        markerLabel(marker).padding(.top, index.isMultiple(of: 2) ? 0 : markerRow)
                     }
             }
         }
@@ -133,9 +155,14 @@ extension KoboLineChart {
     /// Where filled areas start: the bottom of the plot (the top when the y axis runs down).
     private var areaBase: Double { yDirection == .up ? yDomain.lowerBound : yDomain.upperBound }
 
+    /// A marker's name on a small surface chip, so it reads over the lines behind it.
     private func markerLabel(_ marker: ChartMarker<X>) -> some View {
         Text(verbatim: marker.label)
             .font(theme.font(.caption).weight(.semibold))
             .foregroundStyle(theme.palette.status(marker.tone).ink)
+            .padding(.horizontal, Space.xs)
+            .padding(.vertical, Space.xxs / 2)
+            .background(theme.palette.surface.opacity(0.9), in: RoundedRectangle(cornerRadius: Radius.xs))
+            .fixedSize()  // an overlay on a rule is offered the rule's hairline width
     }
 }

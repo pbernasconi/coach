@@ -544,7 +544,7 @@ parts (a POST); the detail route starts the same fetch itself (see `header.fetch
 #### List: `GET /api/app/activities?before=<activityId>&limit=30&tz=`
 
 - `limit`: 1–100, default 30. `before`: the `nextCursor` of the page before (an `activityId`); missing: the newest.
-  A malformed `limit` or `before`: `400`. A `before` that is not one of the owner's activities: `400 {"error":"unknown cursor"}`.
+  A malformed `limit` or `before`: `400`. A `before` that is not one of the owner's activities: `404 {"error":"not found"}`.
 - Newest first (`start_date`, then row id). `nextCursor`: `null` on the last page.
 
 ```json

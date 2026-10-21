@@ -15,12 +15,19 @@ struct ExerciseDetailContent: View {
                 LoadingState()
                     .pageGutter()
             case .empty:
-                EmptyState(
-                    symbol: "dumbbell",
-                    title: "Exercise not found",
-                    message: "It may have been removed."
-                )
-                .pageGutter()
+                if let stats = state.server.content.value {
+                    ExerciseServerOnlyBody(stats: stats, state: state, send: send)
+                } else if state.server.content == .loading {
+                    LoadingState()
+                        .pageGutter()
+                } else {
+                    EmptyState(
+                        symbol: "dumbbell",
+                        title: "Exercise not found",
+                        message: "It may have been removed."
+                    )
+                    .pageGutter()
+                }
             case .failed:
                 ErrorState(title: "Exercise could not be loaded")
                     .pageGutter()
@@ -33,16 +40,16 @@ struct ExerciseDetailContent: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 
-    /// The exercise's name as the inline title every pushed screen uses.
+    /// The exercise's name as the inline title every pushed screen uses: the library's, else the coach's.
     private var title: String {
-        guard case .loaded(let item) = state.exercise else { return "" }
-        return item.name
+        if case .loaded(let item) = state.exercise { return item.name }
+        return state.server.content.value?.name ?? ""
     }
 }
 
-/// The loaded exercise, top to bottom: the animation beside its muscles and equipment, the progress chart (once there
-/// is a session to chart), recent history in compact rows, then how to do it (with the technique videos link in its header), which is the longest part. The name is the bar
-/// title.
+/// The loaded exercise, top to bottom: the animation beside its muscles and equipment; the coach's numbers when they
+/// loaded, else the local progress chart and recent history (never both); then how to do it (with the technique
+/// videos link in its header), which is the longest part. The name is the bar title.
 private struct ExerciseDetailBody: View {
     let item: ExerciseDetailItem
     let state: ExerciseDetailState
@@ -51,13 +58,24 @@ private struct ExerciseDetailBody: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Space.section) {
             ExerciseMediaView(item: item, media: state.media, animation: state.animation)
-            ExerciseProgressSection(
-                progress: state.progress,
-                rangeChanged: { send(.progressRangeChanged($0)) },
-                selectionChanged: { send(.progressSelectionChanged($0)) }
-            )
-            ExerciseHistorySection(history: state.history)
-                .listRowDensity(.compact)
+            if let stats = state.serverStats {
+                ExerciseServerSections(
+                    stats: stats,
+                    freshness: state.server.freshness,
+                    chart: state.serverChart,
+                    point: state.serverPoint,
+                    isSessionsExpanded: state.isServerSessionsExpanded,
+                    send: send
+                )
+            } else {
+                ExerciseProgressSection(
+                    progress: state.progress,
+                    rangeChanged: { send(.progressRangeChanged($0)) },
+                    selectionChanged: { send(.progressSelectionChanged($0)) }
+                )
+                ExerciseHistorySection(history: state.history)
+                    .listRowDensity(.compact)
+            }
             if let guide = item.guide {
                 HowToSection(send: send) { ExerciseGuideSections(guide: guide) }
             } else if !state.librarySteps.isEmpty {
@@ -99,5 +117,27 @@ private struct HowToSection<Content: View>: View {
                 .accessibilityLabel(Text("Watch technique videos"))
                 .accessibilityHint(Text("Opens a YouTube search."))
         }
+    }
+}
+
+/// An exercise the coach knows but this iPhone's library does not (a `name-…` key, or a removed exercise): the coach's
+/// numbers alone, or the page failure when they did not load.
+private struct ExerciseServerOnlyBody: View {
+    let stats: LiftExerciseStats
+    let state: ExerciseDetailState
+    let send: (ExerciseDetailAction) -> Void
+
+    var body: some View {
+        ExerciseServerSections(
+            stats: stats,
+            freshness: state.server.freshness,
+            chart: state.serverChart,
+            point: state.serverPoint,
+            isSessionsExpanded: state.isServerSessionsExpanded,
+            send: send
+        )
+        .pageColumn()
+        .padding(.top, Space.sm)
+        .padding(.bottom, Space.xxl)
     }
 }
