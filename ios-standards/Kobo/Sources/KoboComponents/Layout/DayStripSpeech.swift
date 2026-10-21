@@ -11,6 +11,7 @@ nonisolated enum DayStripSpeech {
             var style = Date.FormatStyle.dateTime.weekday(.wide).month(.wide).day()
             style.calendar = calendar
             style.timeZone = calendar.timeZone
+            style = style.locale(calendar.locale ?? .autoupdatingCurrent)
             parts = [day.date.formatted(style)]
             switch day.marker {
             case .none: break
