@@ -130,8 +130,12 @@ export const changeText = (change) => (change === null ? null : `${change >= 0 ?
 /** "Last 100 kg × 5 · Oct 20". @param {{ weight: number, reps: number, day: string } | null} p @param {string} unit */
 export const liftLastText = (p, unit) => `Last ${p ? `${weight(p.weight, unit)} × ${p.reps} · ${fmtDay(p.day)}` : '–'}`;
 
-/** "Best 123 · Oct 20". @param {{ e1rm: number, day: string } | null} p */
-export const liftBestText = (p) => `Best ${p ? `${Math.round(p.e1rm)} · ${fmtDay(p.day)}` : '–'}`;
+/**
+ * "Best 123 · Oct 20"; "Best 239 · Nov 19 '25" when the best is from another year than `year`.
+ * @param {{ e1rm: number, day: string } | null} p @param {string} [year]
+ */
+export const liftBestText = (p, year) =>
+  `Best ${p ? `${Math.round(p.e1rm)} · ${fmtDay(p.day)}${year && p.day.slice(0, 4) !== year ? ` '${p.day.slice(2, 4)}` : ''}` : '–'}`;
 
 export const MUSCLE_BAND = { min: 10, max: 20 };
 /** Major muscles the web always lists, even with no sets. */

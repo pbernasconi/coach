@@ -17,9 +17,14 @@ import CoachTips from './CoachTips';
 import Consistency from './Consistency';
 import Records from './Records';
 import ExerciseIndex from './ExerciseIndex';
+import RecentLifts from './RecentLifts';
+import { exerciseMedia } from '@/lib/lift/catalog';
+import { richSession, type RichSession } from '@/lib/lift/session';
 import type { Overview } from './types';
 
 export const dynamic = 'force-dynamic';
+
+const RECENT = 3;
 
 /**
  * Lift overview: this week against the strength target and what is next, then the progress that matters for the
@@ -36,7 +41,18 @@ export default async function LiftOverviewPage() {
   const loaded = await load('Lift', async () => {
     const { model, unit } = await loadLiftModel();
     const overview = liftOverview(model, unit, today, { strengthTarget: targets.strength, weightKg: body?.weight?.value ?? null }) as Overview;
-    return { overview, exercises: exerciseList(model, unit) };
+    // Catalog pictures (the iPhone app's own), for the lift cards and the records.
+    for (const l of overview.lifts) {
+      const m = exerciseMedia(l.catalogId);
+      l.image = m?.image ?? null;
+      l.gif = m?.gif ?? null;
+    }
+    for (const r of overview.prs) r.image = exerciseMedia(r.catalogId)?.image ?? null;
+    const recent = overview.sessions
+      .slice(0, RECENT)
+      .map((s) => richSession(model, s.id, unit))
+      .filter((d): d is RichSession => d !== null);
+    return { overview, recent, exercises: exerciseList(model, unit) };
   });
 
   if (!loaded.ok) {
@@ -46,7 +62,9 @@ export default async function LiftOverviewPage() {
       </div>
     );
   }
-  const { overview: o, exercises } = loaded.value;
+  const { overview: o, recent, exercises } = loaded.value;
+  const tz = await cookieTimeZone();
+  const prsBySession = new Map(o.sessions.map((s) => [s.id, s.prs]));
 
   if (o.totals.sessions === 0) {
     return (
@@ -64,6 +82,7 @@ export default async function LiftOverviewPage() {
         <div className="min-w-0 space-y-5">
           {/* On a phone the notes come first; from lg they sit at the top of the right column. */}
           <div className="lg:hidden"><CoachTips tips={o.tips} /></div>
+          <RecentLifts sessions={recent} prs={prsBySession} tz={tz} />
           <MainLifts lifts={o.lifts} unit={o.unit} today={o.today} />
           <MuscleBars rows={o.muscles} />
           <SessionList sessions={o.sessions} upcoming={o.upcoming} unit={o.unit} today={o.today} />
