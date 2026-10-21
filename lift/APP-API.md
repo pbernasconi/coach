@@ -8,7 +8,7 @@ its own contract: `WEEK-API.md`.
 ## Shared rules
 
 - Prefix `/api/app/…`, `GET` only. Auth: `Authorization: Bearer <LIFT_SYNC_TOKEN>` with `isAuthorized` from
-  `src/lib/lift-sync/auth.mjs`; wrong or missing token `401 {"error":"unauthorized"}`. The middleware already treats
+  `src/lib/lift-sync/auth.mjs`; wrong or missing token `401 {"error":"unauthorized"}`. The proxy (`src/proxy.ts`) already treats
   `/api/app/*` as machine routes (no Clerk). The owner is `ownerId()` (`src/lib/plan/queries.ts`).
 - `?tz=` IANA zone (invalid or missing: `America/Los_Angeles`) decides "today". Days are plain `YYYY-MM-DD`.
   Instants are ISO 8601 with `Z`. Database times only through `src/lib/db-time.mjs` (RELIABILITY.md).

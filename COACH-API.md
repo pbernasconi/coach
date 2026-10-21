@@ -168,7 +168,7 @@ The tokens are the same as for POST. `since` is optional. When it is given, only
 A client starts each metric again from its `latestDate`, and includes that day, because the newest day is often incomplete.
 When `latestDate` is `null`, the client uses its own first-sync window (for example 120 days back).
 
-The middleware lets `/api/vitals/sync` through without Clerk, the same as the other routes with a bearer token.
+The proxy (`src/proxy.ts`) lets `/api/vitals/sync` through without Clerk, the same as the other routes with a bearer token.
 
 ### Lab results
 
