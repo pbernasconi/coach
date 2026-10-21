@@ -8,6 +8,8 @@ description: Mid-week training check-in. Compares planned vs actual, asks how th
 - Personal Gmail calendar, purple events
 - 2 strength/wk, ≥1 above-threshold quality/wk
 - The Lift templates (in the profile) are authoritative for lifts; "Lift sessions" in the profile shows each set logged
+- "Notes from Lift" in the profile are what Paolo wrote on an exercise or a workout ("Achilles sore", "go up 5 lb"):
+  bring them up in Step 3 and adjust the next days for them, the same way as /plan
 - Celsius / km / min/km
 - All scripts via `node --env-file=.env.local`
 

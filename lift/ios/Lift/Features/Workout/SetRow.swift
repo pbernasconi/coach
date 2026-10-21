@@ -20,7 +20,7 @@ nonisolated enum RestingRow {
 }
 
 /// One set in the grid: its badge, the same set last time, weight and reps pills that open the editor (which never
-/// logs), and a check that logs it in one tap (or un-logs it). Skip and Remove sit in the context menu. At accessibility
+/// logs), and a check that logs it in one tap (or un-logs it). Skip and Remove sit in the context menu (Remove is also in the editor). At accessibility
 /// sizes the row stacks, so nothing is cut off.
 struct SetRow: View {
     @Environment(\.koboTheme) private var theme
