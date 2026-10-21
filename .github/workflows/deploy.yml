@@ -4,6 +4,10 @@
 #   3. check the build on the real data, then promote it (an alias swap: production serves it in seconds);
 #   4. render every page on coach.paolobernasconi.com; on a failure, promote the build before it again and open
 #      an "outage" issue.
+# Each deploy counts toward the Hobby plan's 100 deployments a day (a rolling 24 hours), so:
+#   - merges a few minutes apart deploy once: each merge waits 4 minutes, and a newer merge cancels the wait;
+#   - when that limit stops a deploy, production does not change and the hourly run deploys main again
+#     once Vercel has room (no outage issue: nothing is broken).
 # Secrets: VERCEL_TOKEN, HEALTH_TOKEN, VERCEL_BYPASS_SECRET, PROD_DATABASE_URL.
 name: Deploy
 
@@ -21,14 +25,13 @@ on:
       - "!.github/**"
       - ".github/workflows/deploy.yml"
   workflow_dispatch: # redeploys main
+  schedule:
+    - cron: "17 * * * *" # catch up after the daily limit stopped a deploy
 
 permissions:
   contents: read
   issues: write
-
-concurrency:
-  group: deploy-production
-  cancel-in-progress: false
+  actions: write
 
 env:
   PRODUCTION_URL: https://coach.paolobernasconi.com
@@ -38,9 +41,51 @@ env:
   VERCEL_CLI: vercel@64.7.0
 
 jobs:
+  # A merge waits a few minutes; a newer merge cancels this wait, so a burst of merges deploys only the last one.
+  settle:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: deploy-settle
+      cancel-in-progress: true
+    steps:
+      - run: sleep 240
+
+  # Hourly: when the last deploy stopped at Vercel's daily limit, deploy main again.
+  catch-up:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - run: |
+          runs=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/deploy.yml/runs?branch=main&per_page=20" \
+            --jq '[.workflow_runs[] | select(.event != "schedule")]')
+          if [ "$(jq '[.[] | select(.status != "completed")] | length' <<<"$runs")" -gt 0 ]; then
+            echo "A deploy is running or waiting: nothing to do."
+            exit 0
+          fi
+          run=$(jq -r '.[0].id // empty' <<<"$runs")
+          [ -n "$run" ] || exit 0
+          limited=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run/jobs" \
+            --jq '[.jobs[].steps[] | select(.name == "Vercel daily limit" and .conclusion == "failure")] | length')
+          if [ "$limited" -gt 0 ]; then
+            echo "Run $run stopped at the daily limit: deploying main again."
+            gh workflow run deploy.yml --repo "$GITHUB_REPOSITORY" --ref main
+          else
+            echo "Run $run did not stop at the daily limit: nothing to do."
+          fi
+
   deploy:
+    needs: settle
+    if: ${{ !cancelled() && github.event_name != 'schedule' && (needs.settle.result == 'success' || needs.settle.result == 'skipped') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       HEALTH_TOKEN: ${{ secrets.HEALTH_TOKEN }}
@@ -93,13 +138,21 @@ jobs:
             --meta builtSha="$GITHUB_SHA" 2>&1); then
             echo "$out"
             if grep -qE 'api-deployments-free-per-day|api-upload-free|Resource is limited' <<<"$out"; then
-              echo "::error::A Vercel daily limit is reached. Production did not change. Rerun this workflow later."
+              echo "limited=true" >> "$GITHUB_OUTPUT"
+              exit 0
             fi
             exit 1
           fi
           url=$(grep -oE 'https://[a-z0-9-]+\.vercel\.app' <<<"$out" | head -1)
           id=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" "$VERCEL_API/v13/deployments/${url#https://}?teamId=$VERCEL_ORG_ID" | jq -r .id)
           echo "id=$id" >> "$GITHUB_OUTPUT"
+
+      # Its own step, so the hourly catch-up can find it by name.
+      - name: Vercel daily limit
+        if: steps.build.outputs.limited == 'true'
+        run: |
+          echo "::error::A Vercel daily limit is reached. Production did not change. The hourly run deploys main again once there is room."
+          exit 1
 
       - name: Check the build before it goes live
         id: target
@@ -133,7 +186,7 @@ jobs:
           echo "to=$live" >> "$GITHUB_OUTPUT"
 
       - name: Open or update the outage issue
-        if: failure()
+        if: failure() && steps.build.outputs.limited != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           ROLLED_BACK_TO: ${{ steps.rollback.outputs.to }}

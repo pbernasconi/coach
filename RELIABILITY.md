@@ -36,23 +36,24 @@ below them:
 
 - **100 deployments a day.** Only a merge that changes the web app makes one (`deploy.yml` has the same paths filter
   as "web build": not `lift/`, Markdown, or other workflows). Pull requests upload nothing, except with the label
-  `preview`.
+  `preview`. The limit is a rolling 24 hours and counts every project on the Vercel account.
 - **5,000 file uploads a day.** Every `vercel deploy` passes `--archive=tgz`: a build (about 630 files, 16 MB) is a
   few archive files, not each changed file.
 
-A merge goes live in about 3 to 4 minutes, and only after a check on the production data:
+A merge goes live in about 7 to 8 minutes, and only after a check on the production data:
 
 1. **On the pull request**, "web build" builds the production output (`vercel build --prod`, the PR merged into
    main), so a build that Vercel would reject fails the pull request. It uploads nothing.
 2. **At the merge**, `deploy.yml` builds it as a production deployment with no domain. It applies new migrations, checks the build on the production data (`/api/health` and `/sign-in`), and only then
-   promotes it (an alias swap). A failed check stops the deploy: production does not change. Merges in quick
-   succession share one deploy (the concurrency group keeps one run waiting, the newest).
+   promotes it (an alias swap). A failed check stops the deploy: production does not change. Each merge first
+   waits 4 minutes ("settle"); a newer merge cancels that wait, so merges minutes apart share one deploy.
 3. Then it renders every page in `PAGES` on coach.paolobernasconi.com as the owner. On a failure it promotes the
    build before it again and opens an `outage` issue assigned to the owner. The next merge deploys as usual;
    nothing stays pinned.
 
-At a daily limit the deploy stops before the promote, production stays on the build before it, and the `outage`
-issue says so. To redeploy main by hand, run the Deploy workflow (Actions → Deploy → Run workflow).
+At a daily limit the deploy stops before the promote (the step "Vercel daily limit" fails), production stays on
+the build before it, and no `outage` issue opens. Every hour, `deploy.yml` checks the last deploy and, if that
+step stopped it, deploys main again, until Vercel has room. To redeploy main by hand, run the Deploy workflow (Actions → Deploy → Run workflow).
 
 There is no staging before the merge (removed 2026-10-20): the check before the promote is the gate, and each staged
 build used one of the 100 deployments a day. **Page speed** is a manual run on production (Actions → Perf).
