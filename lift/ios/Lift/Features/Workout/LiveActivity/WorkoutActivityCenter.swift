@@ -80,6 +80,19 @@ final class WorkoutActivityCenter: RestActivityController {
         rest
     }
 
+    /// Stops following the workout and removes its Live Activity, before Lift opens other data (practice mode).
+    func stop() async {
+        observation?.cancel()
+        sessionID = nil
+        detail = nil
+        isLoaded = false
+        rest = nil
+        focus = nil
+        isShown = false
+        await publishing?.value
+        await presenter.end()
+    }
+
     // MARK: The Live Activity's buttons
 
     /// Done: logs the set the Live Activity shows (`logSet(_:in:)`).

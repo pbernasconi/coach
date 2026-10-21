@@ -10,7 +10,7 @@ struct SettingsSyncSection: View {
     var body: some View {
         switch section {
         case .demo:
-            ListSection("Sync", footer: "Demo data is never synced.") {
+            ListSection("Sync", footer: "Demo and practice data are never synced.") {
                 ListRow("Status", value: String(localized: "Off"))
             }
         case .unavailable:

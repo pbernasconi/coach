@@ -26,7 +26,7 @@ struct SettingsHealthSection: View {
 
     private var footer: LocalizedStringKey {
         status == .notSaved
-            ? "Demo data is never saved to Apple Health."
+            ? "Demo and practice data are never saved to Apple Health."
             : "Each finished workout is saved as strength training, with its start, end and title."
     }
 }

@@ -25,6 +25,8 @@
             sync: .available(SyncSummary(status: "Synced 3 h ago", isSyncing: false, hasToken: true))
         )
         static let fixtureDemo = SettingsState(unit: .kg, version: "0.1.0 (1)", dataSource: .demo, sync: .demo)
+        /// Practice mode on: sample workouts in their own database.
+        static let fixturePractice = SettingsState(unit: .lb, version: "0.1.0 (1)", dataSource: .practice, sync: .demo)
         static let fixtureSyncing = SettingsState(
             unit: .kg,
             version: "0.1.0 (1)",
