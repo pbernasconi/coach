@@ -71,7 +71,8 @@ export function coverageOf(rows, days, syncedThrough) {
   const out = {};
   for (const d of days) {
     const e = by.get(d);
-    if (e?.wear != null) out[d] = e.wear <= 0 ? (e.sign ? 'partial' : 'off') : e.wear < FULL_DAY_MIN ? 'partial' : 'worn';
+    // wear_min alone decides: on a day without the watch Garmin still sends the phone's steps.
+    if (e?.wear != null) out[d] = e.wear <= 0 ? 'off' : e.wear < FULL_DAY_MIN ? 'partial' : 'worn';
     else if (e?.sign) out[d] = 'worn';
     else out[d] = !through || d > through ? 'pending' : 'off';
   }

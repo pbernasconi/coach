@@ -9,6 +9,7 @@ test('coverage: wear_min wins, other values mean worn, nothing after the sync is
   const rows = [
     row('2026-10-17', 'resting_hr_bpm', 42), // before wear_min existed
     row('2026-10-18', 'wear_min', 0), // synced, not worn
+    row('2026-10-18', 'steps', 2300), // from the phone
     row('2026-10-19', 'wear_min', 600),
     row('2026-10-19', 'resting_hr_bpm', 44),
     row('2026-10-20', 'wear_min', 1400),
