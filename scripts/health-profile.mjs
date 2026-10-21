@@ -10,6 +10,7 @@
 import { pathToFileURL } from 'node:url';
 import { addDays, fmtDuration, hrvMetricOf, readinessFrom } from '../src/lib/vitals/readiness.mjs';
 import { untrusted } from './untrusted.mjs';
+import { dexaTrends, fullScan } from '../src/lib/vitals/dexa.mjs';
 
 const r0 = (n) => (n === null || n === undefined ? '-' : String(Math.round(n)));
 const r1 = (n) => (n === null || n === undefined ? '-' : (Math.round(n * 10) / 10).toFixed(1));
@@ -22,7 +23,7 @@ const VERDICT = { good: '🟢 ready', ok: '🟡 one flag', low: '🔴 low — pr
  * @returns {Promise<string>} Markdown, starting with "## Health"
  */
 export async function healthProfileMarkdown({ sql, userId, today }) {
-  const [rows, labs] = await Promise.all([
+  const [rows, labs, dexaRows] = await Promise.all([
     sql`
       SELECT to_char(date, 'YYYY-MM-DD') AS date, metric, value
       FROM health_samples
@@ -33,6 +34,9 @@ export async function healthProfileMarkdown({ sql, userId, today }) {
              value::float8 AS value, value_text, unit, ref_low::float8 AS ref_low, ref_high::float8 AS ref_high, status
       FROM lab_results WHERE user_id = ${userId}
       ORDER BY biomarker, collected_on DESC`,
+    sql`
+      SELECT result_id, to_char(scan_date, 'YYYY-MM-DD') AS scan_date, location, scanner, age_years, height_cm, raw
+      FROM dexa_scans WHERE user_id = ${userId} ORDER BY scan_date`,
   ]);
   const md = ['## Health (Garmin Connect / Apple Health, Function Health labs)'];
   const r = readinessFrom(rows, today);
@@ -90,8 +94,30 @@ export async function healthProfileMarkdown({ sql, userId, today }) {
       md.push(`  - ${untrusted(l.biomarker, 80)}: ${untrusted(l.value_text ?? l.value, 20)} ${untrusted(l.unit ?? '', 20)} (range ${range}; ${l.collected_on}${l.category ? `; ${untrusted(l.category, 40)}` : ''})`);
     }
   }
-  md.push('');
+  md.push('', ...dexaLines(dexaRows), '');
   return md.join('\n');
+}
+
+/**
+ * The DEXA lines: the latest scan, its change since the scan before and the first, and where the full reports are.
+ * @param {Record<string, any>[]} dexaRows dexa_scans rows, oldest first
+ */
+export function dexaLines(dexaRows) {
+  const scans = dexaRows.map((r) => fullScan({ resultId: r.result_id, scanDate: r.scan_date, location: r.location, scanner: r.scanner, ageYears: r.age_years, heightCm: r.height_cm, raw: r.raw }));
+  const t = dexaTrends(scans);
+  if (!t.latest) return ['- **DEXA**: no scans (connect BodySpec in Settings).'];
+  const pick = ['fatPct', 'vatKg', 'leanKg', 'armsLeanKg', 'almi', 'totalKg'];
+  const fmt = (v, d) => (v === null ? '-' : v.toFixed(d));
+  const parts = t.measures
+    .filter((m) => pick.includes(m.key) && m.value !== null)
+    .map((m) => {
+      const ch = [m.sincePrevious !== null && `${signed(m.sincePrevious, (x) => x.toFixed(m.digits))} since last`, m.sinceFirst !== null && `${signed(m.sinceFirst, (x) => x.toFixed(m.digits))} since first`].filter(Boolean);
+      return `${m.label} ${fmt(m.value, m.digits)}${m.unit ? ` ${m.unit}` : ''}${ch.length ? ` (${ch.join(', ')})` : ''}`;
+    });
+  return [
+    `- **DEXA (BodySpec)**: ${t.scans.length} scans, latest ${t.latest.scanDate}${t.first ? `, first ${t.first.scanDate}` : ''}. ${parts.join('; ')}.`,
+    '  Every region, bone site and percentile: `node --env-file=.env.local scripts/dexa-report.mjs`, or `dexa_scans.report_md` per scan.',
+  ];
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {

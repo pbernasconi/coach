@@ -11,6 +11,7 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:
 import { sql } from '@/db';
 import { toDate, toIso } from '@/lib/db-time.mjs';
 import { SECTIONS, toScanRow } from './bodyspec.mjs';
+import { rebuildReports } from './dexa-store';
 
 const AUTH = 'https://auth.bodyspec.com/realms/bodyspec';
 const API = 'https://app.bodyspec.com';
@@ -218,8 +219,11 @@ export async function syncBodyspec(userId: string): Promise<SyncResult> {
       if (known && stored.get(summary.result_id) === (summary.update_time ?? null)) continue;
       const id = encodeURIComponent(summary.result_id);
       const fetched = await Promise.all(SECTIONS.map(async (s) => [s, await api<unknown>(token, `/api/v1/users/me/results/${id}/dexa/${s}`)] as const));
-      const sections = Object.fromEntries(fetched.filter(([, v]) => v !== null));
+      const sections: Record<string, unknown> = Object.fromEntries(fetched.filter(([, v]) => v !== null));
       if (!sections.composition) continue;
+      // The result's own record (service, sections BodySpec has, create and update times), kept with the sections.
+      const detail = await api<unknown>(token, `/api/v1/users/me/results/${id}`);
+      if (detail) sections.result = detail;
       const row = toScanRow(userId, summary, sections);
       await sql`
         INSERT INTO dexa_scans (result_id, user_id, scanned_at, scan_date, location, scanner, age_years, height_cm, total_mass_kg, fat_mass_kg,
@@ -240,6 +244,8 @@ export async function syncBodyspec(userId: string): Promise<SyncResult> {
       if (known) updated++;
       else added++;
     }
+    // Each scan's report and derived values; all of them when one changed (the next scan's "change since" too).
+    await rebuildReports(userId, added + updated > 0);
     const [summary] = (await sql`SELECT count(*)::int AS n, max(scan_date)::text AS newest FROM dexa_scans WHERE user_id = ${userId}`) as { n: number; newest: string | null }[];
     await sql`UPDATE bodyspec_connections SET last_success_at = now(), status = 'ok', last_error = null WHERE user_id = ${userId}`;
     return { scans: summary?.n ?? 0, added, updated, newest: summary?.newest ?? null };

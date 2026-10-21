@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { bigint, boolean, check, date, doublePrecision, index, integer, jsonb, numeric, pgTable, primaryKey, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
+import { bigint, boolean, check, customType, date, doublePrecision, index, integer, jsonb, numeric, pgTable, primaryKey, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
 
 /**
  * Health storage (drizzle/0015_health.sql, COACH-API.md Health).
@@ -257,10 +257,44 @@ export const dexaScans = pgTable(
     boneRegions: jsonb('bone_regions').$type<Record<string, Record<string, number | null>>>(),
     percentiles: jsonb('percentiles').$type<Record<string, { value: number; percentile: number }>>(),
     raw: jsonb('raw').$type<Record<string, unknown>>(),
+    /** Measures computed from `raw` (FFMI, ALMI, left/right lean balance…): `storedDerived` in src/lib/vitals/dexa.mjs. */
+    derived: jsonb('derived').$type<Record<string, number | null>>(),
+    /** The scan as Markdown, every number plus the change since the scan before (`scanReport`), for AI questions. */
+    reportMd: text('report_md'),
+    /** `REPORT_VERSION` that wrote `derived` and `report_md`; the sync rebuilds older ones from `raw`. */
+    reportVersion: integer('report_version'),
     resultUpdatedAt: text('result_updated_at'),
     syncedAt: timestamp('synced_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
   },
   (t) => [index('dexa_scans_user_date_idx').on(t.userId, t.scanDate)]
+);
+
+/** Postgres bytea. The code reads it as base64 (`encode(data, 'base64')`), the same text with either driver. */
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({ dataType: () => 'bytea' });
+
+/**
+ * `dexa_files`: scan reports (PDF) and images uploaded on /health/dexa. BodySpec's API has no images or PDFs for
+ * users (only its partner export), so they come from BodySpec's report builder by hand. `data` is the file (at
+ * most 4 MB, Vercel's request limit); `text` is the PDF's text, for AI questions. `result_id` links the scan when
+ * one is chosen.
+ */
+export const dexaFiles = pgTable(
+  'dexa_files',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id').notNull(),
+    resultId: text('result_id'),
+    kind: text('kind').$type<'report' | 'image' | 'other'>().notNull(),
+    name: text('name').notNull(),
+    contentType: text('content_type').notNull(),
+    sizeBytes: integer('size_bytes').notNull(),
+    sha256: text('sha256').notNull(),
+    data: bytea('data').notNull(),
+    text: text('text'),
+    note: text('note'),
+    uploadedAt: timestamp('uploaded_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+  },
+  (t) => [index('dexa_files_user_idx').on(t.userId, t.uploadedAt), uniqueIndex('dexa_files_user_sha_idx').on(t.userId, t.sha256)]
 );
 
 export type HealthSampleRow = typeof healthSamples.$inferSelect;
@@ -268,3 +302,4 @@ export type LabResultRow = typeof labResults.$inferSelect;
 export type GarminConnectionRow = typeof garminConnections.$inferSelect;
 export type GarminRawRow = typeof garminRaw.$inferSelect;
 export type DexaScanRow = typeof dexaScans.$inferSelect;
+export type DexaFileRow = typeof dexaFiles.$inferSelect;

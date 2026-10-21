@@ -252,7 +252,27 @@ tables are `bodyspec_connections` and `dexa_scans` (`drizzle/0009_bodyspec_dexa.
   Sync now. It fetches only new or changed results (`update_time`) and answers counts and dates only. The daily
   refresh keeps the sign-in alive; a refused refresh token sets `status = 'auth_failed'` and Settings asks to
   reconnect.
-- **Shown**: /health → Body composition (latest values, change since the last and first scan, every scan).
+- **Stored**: `raw` keeps every section BodySpec sends (scan info, composition per region, visceral fat, bone
+  density per site, percentiles with their reference group, RMR per formula) and the result's own record
+  (`raw.result`). From it the sync writes `derived` (FFMI, ALMI, FMI, left/right lean balance…) and `report_md`, the
+  scan as Markdown with the change since the scan before (`src/lib/vitals/dexa.mjs`). A new `REPORT_VERSION`
+  rebuilds them on the next sync without calling BodySpec.
+- **Files**: BodySpec's API has no scan images or PDF reports for users (only its partner export). Upload them on
+  /health/dexa (`POST /api/dexa/files`, Clerk session, PDF or PNG/JPEG/WebP up to 4 MB). They go to `dexa_files`
+  (bytes, and a PDF's text for AI questions); a date in the file name links the scan. `GET /api/dexa/files/{id}`
+  serves one to the owner.
+- **Shown**: /health → Body composition (latest values and every scan), and /health/dexa: a body map (fat % by
+  region, lean change), trends, fat/lean/bone per scan, percentiles, regions, left/right balance, the scans and the
+  files. /health/dexa/{date} is one scan in full (also `latest` or a result id).
+
+#### `GET /api/vitals/dexa`
+
+Bearer `CRON_SECRET`. Every scan in full for AI questions: `{ scans: [FullScan & { reportMd }], files: [{ id,
+resultId, scanDate, kind, name, contentType, sizeBytes, url, text }] }` (`FullScan` is in `dexa.mjs`).
+`?format=md` answers one Markdown document instead: a table of the scans, each scan's report and the PDFs' text.
+`GET /api/vitals/dexa/files/{id}` (same bearer) is one file. Locally, `node --env-file=.env.local
+scripts/dexa-report.mjs` prints the same Markdown from the database, and profile.md (for /plan and /check-in) has a
+DEXA line.
 
 ## `POST /api/plan/proposals`
 

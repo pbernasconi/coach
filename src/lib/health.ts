@@ -16,6 +16,7 @@ import { liftOverview } from '@/lib/lift-dashboard/overview.mjs';
 import { loadPerformance } from '@/lib/performance/queries';
 import { loadWeek, ownerId } from '@/lib/plan/queries';
 import { loadDexa } from '@/lib/vitals/dexa-queries';
+import { loadDexaPage } from '@/lib/vitals/dexa-store';
 import { loadBodyspecStatus } from '@/lib/vitals/bodyspec-api';
 import { addDays, mondayOf, todayIn } from '@/lib/plan/week.mjs';
 import { loadCoachingNotes, loadStatus, loadTargets } from '@/lib/status';
@@ -75,6 +76,7 @@ export async function runChecks(now = new Date(), { migrations = true }: { migra
     check('health', () => loadHealth(userId, today)),
     check('clinician notes', () => loadClinicianNotes(userId)),
     check('body composition', () => loadDexa(userId)),
+    check('dexa page', () => loadDexaPage(userId)),
     check('bodyspec status', () => loadBodyspecStatus(userId)),
     check('garmin', () => loadGarminStatus(userId, now.getTime())),
     check('health day', () => loadDay(userId, today)),
