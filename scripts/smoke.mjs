@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Smoke check of a deployed Coach: the loaders on the real data (/api/health), the sign-in page, and with --pages
 // the dashboard pages rendered as the owner. Exit code 1 when anything fails. The Deploy workflow runs it on each
-// staged build and after each promote (it rolls back on a failure); the deploy check runs it on previews and on a
+// build before the promote and after it (it rolls back on a failure); the deploy check runs it on previews and on a
 // schedule.
 //
 //   HEALTH_TOKEN=… node scripts/smoke.mjs https://coach.paolobernasconi.com --pages [--expect-deployment <id>]

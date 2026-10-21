@@ -19,6 +19,15 @@ if (!secret) {
   process.exit(3);
 }
 
+// The agent's own words (AGENT_OUTPUT, a file outside the public log): the end of it goes into a failure, so the
+// Plan page says why. The repository is public, so plan.yml never prints it.
+function agentTail() {
+  const f = process.env.AGENT_OUTPUT;
+  if (!f || !existsSync(f)) return '';
+  const t = readFileSync(f, 'utf8').trim();
+  return t ? ` The agent said: …${t.slice(-300)}` : '';
+}
+
 async function post(body) {
   const res = await fetch(`${coach}/api/plan/proposals`, {
     method: 'POST',
@@ -40,7 +49,7 @@ if (cmd === 'claim') {
 } else if (cmd === 'submit') {
   const file = `plans/${arg}.json`;
   if (!existsSync(file)) {
-    await post({ action: 'fail', id, error: `The agent wrote no ${file}.` });
+    await post({ action: 'fail', id, error: `The agent wrote no ${file}.${agentTail()}` });
     console.error(`No ${file}.`);
     process.exit(1);
   }
@@ -56,7 +65,7 @@ if (cmd === 'claim') {
   const r = await post({ action: 'submit', id, plan, summary });
   console.log(`Proposal ${id}: ${r.events} events, ${r.tss} TSS planned. Review it on the Plan page.`);
 } else if (cmd === 'fail') {
-  await post({ action: 'fail', id, error: String(arg ?? 'The plan job failed.').slice(0, 300) });
+  await post({ action: 'fail', id, error: `${String(arg ?? 'The plan job failed.').slice(0, 180)}${agentTail()}` });
   console.log(`Proposal ${id} marked as failed.`);
 } else {
   console.error('Usage: client.mjs claim [id] | submit <id> <weekStart> | fail <id> "<text>"');

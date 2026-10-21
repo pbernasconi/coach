@@ -125,6 +125,7 @@ nonisolated public enum CatalogComponent: String, CaseIterable, Identifiable, Se
     case sheetHeader = "SheetHeader"
     case dayStrip = "DayStrip"
     case segmentedProgress = "SegmentedProgress"
+    case tileGrid = "TileGrid"
     case miniPlayerBar = "MiniPlayerBar"
     // Navigation
     case appHeader = "AppHeader"

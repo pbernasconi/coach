@@ -104,6 +104,13 @@ import Testing
         #expect(await first(plan)?.status == .ready)
     }
 
+    @Test func aRefusedTokenTurnsThePlanOff() async {
+        let client = FakeCoachPlanClient(error: .unauthorized)
+        let plan = makePlan(client: client, cache: InMemoryCoachPlanCache([monday: body(monday)]))
+        await plan.refresh()
+        #expect(await first(plan)?.status == .off)
+    }
+
     @Test func aNewerResponseReplacesTheKeptWeek() async {
         let newer = CoachPlanSamples.body(start: monday, items: [], generatedAt: "2026-03-02T14:00:00.000Z")
         let client = FakeCoachPlanClient(responses: [monday: newer])

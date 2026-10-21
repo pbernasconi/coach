@@ -41,6 +41,8 @@ nonisolated enum WeekAction: Equatable, Sendable {
     case newTemplateTapped
     /// A coach plan item tapped: opens its read-only detail sheet.
     case planItemTapped(String)
+    /// "Open activity" in a plan item's sheet: the matched Strava activity on Training.
+    case planActivityTapped(String)
     /// The list pulled down: fetches the visible week's plan again.
     case refreshPulled
 }

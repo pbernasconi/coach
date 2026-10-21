@@ -1,0 +1,370 @@
+{
+ "generatedAt": "2026-10-21T16:00:00.000Z",
+ "timeZone": "Europe/Zurich",
+ "id": "de300000-0000-4000-8000-000000000100",
+ "unit": "kg",
+ "olderId": "de300000-0000-4000-8000-000000000101",
+ "newerId": "de300000-0000-4000-8000-000000000001",
+ "hero": {
+  "ok": true,
+  "kicker": "Strength · Mon, Oct 19, 2026 · 7:05",
+  "date": "2026-10-19",
+  "dateText": "Mon, Oct 19, 2026",
+  "startText": "7:05",
+  "title": "Lower A",
+  "note": "Felt strong. Belt on the top set.",
+  "state": "done",
+  "stateLabel": "Done",
+  "stats": [
+   {
+    "id": "exercises",
+    "label": "Exercises",
+    "value": "3",
+    "detail": null
+   },
+   {
+    "id": "sets",
+    "label": "Sets",
+    "value": "11 / 12",
+    "detail": "logged"
+   },
+   {
+    "id": "plannedVolume",
+    "label": "Planned volume",
+    "value": "7,300 kg",
+    "detail": null
+   },
+   {
+    "id": "volume",
+    "label": "Logged volume",
+    "value": "7,140 kg",
+    "detail": "warm-ups excluded"
+   },
+   {
+    "id": "duration",
+    "label": "Duration",
+    "value": "54 min",
+    "detail": null
+   }
+  ],
+  "ring": {
+   "logged": 11,
+   "total": 12,
+   "progress": 0.917,
+   "text": "11/12",
+   "caption": "sets logged"
+  },
+  "muscles": [
+   {
+    "muscle": "quads",
+    "name": "Quads",
+    "sets": 6,
+    "setsText": "6",
+    "relative": 1
+   },
+   {
+    "muscle": "glutes",
+    "name": "Glutes",
+    "sets": 5.5,
+    "setsText": "5.5",
+    "relative": 0.917
+   },
+   {
+    "muscle": "hamstrings",
+    "name": "Hamstrings",
+    "sets": 4,
+    "setsText": "4",
+    "relative": 0.667
+   },
+   {
+    "muscle": "core",
+    "name": "Core",
+    "sets": 1.5,
+    "setsText": "1.5",
+    "relative": 0.25
+   }
+  ]
+ },
+ "exercises": {
+  "ok": true,
+  "emptyText": "This session has no exercises.",
+  "items": [
+   {
+    "id": "5e100000-0000-4000-8000-000000000001",
+    "exerciseKey": "id-4c494654-0000-4000-8000-000000000001",
+    "indexText": "Exercise 1",
+    "name": "Back squat",
+    "setsText": "4/4 sets",
+    "complete": true,
+    "muscles": [
+     "Quads",
+     "Glutes"
+    ],
+    "secondaryMuscles": [
+     "Hamstrings",
+     "Core"
+    ],
+    "equipment": "Barbell",
+    "loadNote": null,
+    "restText": "3:00 rest",
+    "note": "Brace, then break at the hips and knees together.",
+    "sets": [
+     {
+      "id": "5e700000-0000-4000-8000-000000000001",
+      "label": "Warm-up",
+      "kind": "warmup",
+      "status": "done",
+      "text": "60 kg × 5",
+      "targetText": null,
+      "beatTarget": false,
+      "rpe": null,
+      "rpeText": null,
+      "note": null
+     },
+     {
+      "id": "5e700000-0000-4000-8000-000000000002",
+      "label": "Set 1",
+      "kind": "working",
+      "status": "done",
+      "text": "120 kg × 5",
+      "targetText": "target 120 kg × 5",
+      "beatTarget": false,
+      "rpe": 7.5,
+      "rpeText": "RPE 7.5",
+      "note": null
+     },
+     {
+      "id": "5e700000-0000-4000-8000-000000000003",
+      "label": "Set 2",
+      "kind": "working",
+      "status": "done",
+      "text": "122.5 kg × 5",
+      "targetText": "target 120 kg × 5",
+      "beatTarget": true,
+      "rpe": 8.5,
+      "rpeText": "RPE 8.5",
+      "note": "Belt on"
+     },
+     {
+      "id": "5e700000-0000-4000-8000-000000000004",
+      "label": "Set 3",
+      "kind": "working",
+      "status": "done",
+      "text": "120 kg × 6",
+      "targetText": "target 120 kg × 5",
+      "beatTarget": false,
+      "rpe": 9,
+      "rpeText": "RPE 9",
+      "note": null
+     }
+    ],
+    "lastTime": {
+     "sessionId": "de300000-0000-4000-8000-000000000102",
+     "date": "2026-10-12",
+     "title": "Last time · Oct 12",
+     "delta": 2.5,
+     "deltaText": "+2.5 kg vs last",
+     "sets": [
+      "117.5 kg × 5",
+      "117.5 kg × 5",
+      "117.5 kg × 5"
+     ]
+    },
+    "lastTimeEmptyText": null,
+    "best": {
+     "e1rm": 143.9,
+     "text": "144 kg",
+     "date": "2026-10-19",
+     "dateText": "Oct 19"
+    },
+    "trend": {
+     "values": [
+      128,
+      130,
+      131,
+      129,
+      134,
+      136,
+      138,
+      137,
+      141.9,
+      143.9
+     ],
+     "caption": "e1RM · last 10 sessions"
+    },
+    "steps": [
+     "Stand with your feet shoulder-width apart, toes slightly turned out.",
+     "Brace, then sit down between your heels.",
+     "Drive up through the whole foot."
+    ],
+    "media": {
+     "image": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/7455efae/images/0043-qXTaZnJ.jpg",
+     "gif": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/7455efae/videos/0043-qXTaZnJ.gif"
+    }
+   },
+   {
+    "id": "5e100000-0000-4000-8000-000000000002",
+    "exerciseKey": "id-4c494654-0000-4000-8000-000000000003",
+    "indexText": "Exercise 2",
+    "name": "Romanian deadlift",
+    "setsText": "3/3 sets",
+    "complete": true,
+    "muscles": [
+     "Hamstrings",
+     "Glutes"
+    ],
+    "secondaryMuscles": [
+     "Back"
+    ],
+    "equipment": "Barbell",
+    "loadNote": null,
+    "restText": "2:30 rest",
+    "note": null,
+    "sets": [
+     {
+      "id": "5e700000-0000-4000-8000-000000000005",
+      "label": "Set 1",
+      "kind": "working",
+      "status": "done",
+      "text": "90 kg × 8",
+      "targetText": "target 90 kg × 8",
+      "beatTarget": false,
+      "rpe": null,
+      "rpeText": null,
+      "note": null
+     },
+     {
+      "id": "5e700000-0000-4000-8000-000000000006",
+      "label": "Set 2",
+      "kind": "working",
+      "status": "done",
+      "text": "90 kg × 8",
+      "targetText": "target 90 kg × 8",
+      "beatTarget": false,
+      "rpe": 8,
+      "rpeText": "RPE 8",
+      "note": null
+     },
+     {
+      "id": "5e700000-0000-4000-8000-000000000007",
+      "label": "Set 3",
+      "kind": "working",
+      "status": "done",
+      "text": "90 kg × 7",
+      "targetText": "target 90 kg × 8",
+      "beatTarget": false,
+      "rpe": 9.5,
+      "rpeText": "RPE 9.5",
+      "note": null
+     }
+    ],
+    "lastTime": {
+     "sessionId": "de300000-0000-4000-8000-000000000102",
+     "date": "2026-10-12",
+     "title": "Last time · Oct 12",
+     "delta": 0,
+     "deltaText": null,
+     "sets": [
+      "90 kg × 8",
+      "90 kg × 8",
+      "90 kg × 8"
+     ]
+    },
+    "lastTimeEmptyText": null,
+    "best": {
+     "e1rm": 116,
+     "text": "116 kg",
+     "date": "2026-09-28",
+     "dateText": "Sep 28"
+    },
+    "trend": {
+     "values": [
+      108,
+      110,
+      112,
+      113,
+      112,
+      114,
+      116,
+      114
+     ],
+     "caption": "e1RM · last 8 sessions"
+    },
+    "steps": [],
+    "media": null
+   },
+   {
+    "id": "5e100000-0000-4000-8000-000000000003",
+    "exerciseKey": "name-hanging leg raise",
+    "indexText": "Exercise 3",
+    "name": "Hanging leg raise",
+    "setsText": "3/4 sets",
+    "complete": false,
+    "muscles": [
+     "Core"
+    ],
+    "secondaryMuscles": [],
+    "equipment": null,
+    "loadNote": null,
+    "restText": null,
+    "note": null,
+    "sets": [
+     {
+      "id": "5e700000-0000-4000-8000-000000000008",
+      "label": "Set 1",
+      "kind": "working",
+      "status": "done",
+      "text": "BW × 12",
+      "targetText": "target BW × 12",
+      "beatTarget": false,
+      "rpe": null,
+      "rpeText": null,
+      "note": null
+     },
+     {
+      "id": "5e700000-0000-4000-8000-000000000009",
+      "label": "Set 2",
+      "kind": "working",
+      "status": "done",
+      "text": "BW × 10",
+      "targetText": "target BW × 12",
+      "beatTarget": false,
+      "rpe": null,
+      "rpeText": null,
+      "note": null
+     },
+     {
+      "id": "5e700000-0000-4000-8000-000000000010",
+      "label": "Set 3",
+      "kind": "working",
+      "status": "done",
+      "text": "BW × 10",
+      "targetText": "target BW × 12",
+      "beatTarget": false,
+      "rpe": null,
+      "rpeText": null,
+      "note": null
+     },
+     {
+      "id": "5e700000-0000-4000-8000-000000000011",
+      "label": "Set 4",
+      "kind": "working",
+      "status": "skipped",
+      "text": "BW × 12",
+      "targetText": null,
+      "beatTarget": false,
+      "rpe": null,
+      "rpeText": null,
+      "note": null
+     }
+    ],
+    "lastTime": null,
+    "lastTimeEmptyText": "First time.",
+    "best": null,
+    "trend": null,
+    "steps": [],
+    "media": null
+   }
+  ]
+ }
+}

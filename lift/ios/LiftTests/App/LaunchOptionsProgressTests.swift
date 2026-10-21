@@ -8,7 +8,7 @@ import Testing
     @Test func openProgressPicksHistoryOnProgress() {
         let options = LaunchOptions(arguments: ["Lift", "-demo", "-tab", "history", "-open", "progress"])
         #expect(options.opening == .progress)
-        #expect(options.opening?.tab == .history)
+        #expect(options.opening?.tab == .lift)
         #expect(options.historySegment == .progress)
         #expect(options.initialRoute(upcomingSessionID: nil) == nil)
     }

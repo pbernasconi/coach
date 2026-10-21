@@ -26,6 +26,7 @@ permissions:
 
 env:
   COACH_URL: https://coach.paolobernasconi.com
+  AGENT_OUTPUT: /tmp/coach-agent-output.txt # the agent's answer, kept out of the public log
 
 jobs:
   plan:
@@ -81,7 +82,9 @@ jobs:
             --tools Read Glob Grep Write \
             --allowedTools Read Glob Grep "Edit(plans/**)" \
             --permission-mode dontAsk \
-            --output-format text
+            --output-format text > "$AGENT_OUTPUT"
+          # The repository is public: the agent's answer (health data, calendar) stays out of this log.
+          echo "The agent finished ($(wc -c < "$AGENT_OUTPUT") bytes of output, not printed)."
 
       - name: Send the plan to Coach
         if: steps.claim.outputs.id

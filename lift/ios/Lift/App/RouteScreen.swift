@@ -32,16 +32,10 @@ struct RouteScreen: View {
             )
             .id(route)
         case .exercise(let exerciseID):
-            ExerciseDetailScreen(
-                viewModel: ExerciseDetailViewModel(
-                    exerciseID: exerciseID,
-                    exercises: dependencies.exercises,
-                    history: dependencies.history,
-                    catalog: dependencies.catalog,
-                    now: dependencies.now,
-                    calendar: dependencies.calendar,
-                    unit: dependencies.info.unit
-                )
+            LiftExerciseRoute(
+                exerciseKey: LiftLinks.key(forLibraryID: exerciseID),
+                dependencies: dependencies,
+                router: router
             )
             .id(route)
         case .catalog:
@@ -73,6 +67,8 @@ struct RouteScreen: View {
                 viewModel: PlatesViewModel(gym: dependencies.gym, unit: dependencies.info.unit),
                 toasts: toasts
             )
+        case .activity, .liftSession, .liftExercise, .liftWeekly:
+            AppAPIRouteScreen(route: route, dependencies: dependencies, router: router, toasts: toasts)
         case .templates, .template, .exercisePicker, .workoutSummary:
             PlanRouteScreen(route: route, dependencies: dependencies, router: router)
         }

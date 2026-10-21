@@ -100,17 +100,7 @@ public struct DayStrip: View {
     }
 
     private func accessibilityText(for day: DayItem, isToday: Bool) -> String {
-        var style = Date.FormatStyle.dateTime.weekday(.wide).month(.wide).day()
-        style.calendar = calendar
-        style.timeZone = calendar.timeZone
-        var parts = [day.date.formatted(style)]
-        if isToday { parts.append(String(localized: "Today", bundle: .module)) }
-        switch day.marker {
-        case .none: break
-        case .planned: parts.append(String(localized: "Planned", bundle: .module))
-        case .done: parts.append(String(localized: "Done", bundle: .module))
-        }
-        return parts.joined(separator: ", ")
+        DayStripSpeech.text(for: day, isToday: isToday, calendar: calendar)
     }
 }
 

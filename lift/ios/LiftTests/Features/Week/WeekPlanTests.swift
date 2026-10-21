@@ -182,6 +182,37 @@ import Testing
         #expect(vm.state.destination == nil)
     }
 
+    @Test func aFinishedSessionOpensTheCoachsSessionPageWhenTheCoachIsOn() async throws {
+        let done = SessionBuilder.session(id: 1, on: monday, done: 3, planned: 0)
+        let (vm, _) = await loaded([done, friday], plan: [try snapshot([])])
+        vm.send(.sessionTapped(done.id))
+        vm.send(.sessionTapped(friday.id))
+        #expect(router.opened == [.liftSession(done.id.uuidString.lowercased()), .workout(friday.id)])
+
+        let (off, _) = await loaded([done], plan: [.off])
+        off.send(.sessionTapped(done.id))
+        #expect(router.opened.last == .workout(done.id))
+    }
+
+    @Test func anItemNamingASessionThisPhoneLacksOpensTheCoachsSessionPage() async throws {
+        let missing = "00000000-0000-4000-8000-0000000000ff"
+        let lift = CoachPlanSamples.item("lift", on: monday, sport: "strength", session: missing)
+        let (vm, _) = await loaded([], plan: [try snapshot([(monday, lift)])])
+        vm.send(.planItemTapped("lift"))
+        #expect(router.opened == [.liftSession(missing)])
+        #expect(vm.state.destination == nil)
+    }
+
+    @Test func planActivityTappedOpensTheMatchedActivity() async throws {
+        let ride = CoachPlanSamples.item("ride", on: monday.adding(days: 1))
+        let (vm, _) = await loaded([], plan: [try snapshot([(monday.adding(days: 1), ride)])])
+        vm.send(.planItemTapped("ride"))
+        #expect(vm.state.planItemTarget?.doneActivityId == "8001")
+        vm.send(.planActivityTapped("8001"))
+        #expect(vm.state.destination == nil)
+        #expect(router.opened == [.activity("8001")])
+    }
+
     @Test func refreshPulledFetchesThePlanAgain() async {
         let (vm, plan) = await loaded([], plan: [.off])
         await vm.send(.refreshPulled)?.value

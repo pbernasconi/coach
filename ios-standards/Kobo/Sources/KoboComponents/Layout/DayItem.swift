@@ -12,18 +12,23 @@ public nonisolated enum DayMarker: Hashable, Sendable {
     case done(Tone)
 }
 
-/// One day of a `DayStrip`: a date and its marker.
+/// One day of a `DayStrip`: a date, its marker, and optionally what VoiceOver reads for it.
 ///
 ///     DayItem(date: monday, marker: .done(.accent))
+///     DayItem(date: tuesday, marker: .planned(.accent), accessibilityLabel: "Tuesday: Long walk planned")
 public nonisolated struct DayItem: Identifiable, Hashable, Sendable {
     public var date: Date
     public var marker: DayMarker
+    /// Read instead of the strip's own "Tuesday, October 20, Planned" (a server's ready-made text, or one that names
+    /// what is planned). "Today" is still added on today.
+    public var accessibilityLabel: String?
 
     public var id: Date { date }
 
-    public init(date: Date, marker: DayMarker = .none) {
+    public init(date: Date, marker: DayMarker = .none, accessibilityLabel: String? = nil) {
         self.date = date
         self.marker = marker
+        self.accessibilityLabel = accessibilityLabel
     }
 
     /// True when the item falls on the same calendar day as the injected `today`.
