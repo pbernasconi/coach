@@ -1,7 +1,7 @@
 # Web app checks on every pull request and on main. Branch protection requires "web checks", "web build"
 # and "web integration" before a merge (the iOS jobs in ios.yml do not check the web app). The three jobs run
 # in parallel; each restores node_modules from a cache keyed by package-lock.json and runs npm ci only on a miss.
-# "web build" builds the production output; it uploads nothing (stage.yml stages a build on demand, RELIABILITY.md).
+# "web build" builds the production output; it uploads nothing (RELIABILITY.md "Deploys").
 name: Web
 
 on:
@@ -56,8 +56,8 @@ jobs:
 
   build:
     # On a pull request that changes the web app: the production output (vercel build --prod), so a build that
-    # Vercel would reject fails here. It uploads nothing: the merge builds once (deploy.yml), and the label "stage"
-    # stages a build before the merge (stage.yml). Otherwise (main, iOS-only pull requests, drafts): next build.
+    # Vercel would reject fails here. It uploads nothing: the merge builds once (deploy.yml). Otherwise (main,
+    # iOS-only pull requests, drafts): next build.
     name: web build
     runs-on: ubuntu-latest
     timeout-minutes: 15
