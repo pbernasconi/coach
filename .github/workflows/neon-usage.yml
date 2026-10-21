@@ -1,0 +1,55 @@
+# Neon usage against the hard quotas (scripts/neon-usage.mjs). At a quota Neon stops production until the next
+# month. Every day it opens or updates a "neon-usage" issue at 50% and at 80% of a quota, or when the month's pace
+# would pass one; it closes the issue when usage is low again (a new month). It reads only the Neon API, so it does
+# not wake the database.
+# Secrets: NEON_API_KEY (a key for this Neon project only, "coach-usage-check").
+name: Neon usage
+
+on:
+  schedule:
+    - cron: "30 16 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  usage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+        with:
+          sparse-checkout: scripts
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
+        with:
+          node-version: 22
+      - name: Read usage
+        id: usage
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          REPORT_FILE: /tmp/neon-report.md
+        run: node scripts/neon-usage.mjs
+      - name: Open, update or close the issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LEVEL: ${{ steps.usage.outputs.level }}
+          TITLE: ${{ steps.usage.outputs.title }}
+        run: |
+          gh label create neon-usage --color D93F0B --description "Neon usage near a quota" 2>/dev/null || true
+          existing=$(gh issue list --label neon-usage --state open --json number,title --jq '.[0] // empty | "\(.number)\t\(.title)"')
+          number=${existing%%$'\t'*}
+          old_title=${existing#*$'\t'}
+          if [ "$LEVEL" = "0" ]; then
+            [ -n "$number" ] && gh issue close "$number" --comment "Usage is below 50% again: $(cat /tmp/neon-report.md | head -c 2000)"
+            exit 0
+          fi
+          body="$(printf '%s\n\nAt a quota Neon stops production until the next month. RELIABILITY.md "Neon compute" lists what uses it. Raise a quota in the Neon console only on purpose.\n\nRun: %s' \
+            "$(cat /tmp/neon-report.md)" "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID")"
+          if [ -z "$number" ]; then
+            gh issue create --title "$TITLE" --label neon-usage --body "$body" --assignee "$GITHUB_REPOSITORY_OWNER"
+          elif [ "$old_title" != "$TITLE" ]; then
+            gh issue edit "$number" --title "$TITLE"
+            gh issue comment "$number" --body "$body"
+          fi

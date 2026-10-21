@@ -32,7 +32,7 @@ async function ownerRow(now: number): Promise<Owner | null> {
 export const ownerForSignedInUser = cache(async (): Promise<string | null> => {
   if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || !process.env.CLERK_SECRET_KEY) return null;
   const now = Date.now();
-  // The deploy check (GET only: middleware.ts removes the header from other methods) renders pages as the owner.
+  // The deploy check (GET only: proxy.ts removes the header from other methods) renders pages as the owner.
   const health = (await headers()).get(HEALTH_HEADER);
   if (health && isAuthorized(`Bearer ${health}`, process.env.HEALTH_TOKEN)) return (await ownerRow(now))?.id ?? null;
   const { userId } = await auth();

@@ -51,7 +51,8 @@ export function cached<A extends unknown[], R>(
 export function clearCache(tag: CacheTag) {
   if (!inNext()) return;
   try {
-    revalidateTag(tag);
+    // expire: 0 drops the entry now, so the next read is fresh (as revalidateTag did before Next.js 16).
+    revalidateTag(tag, { expire: 0 });
   } catch (error) {
     console.error(`[cache] revalidateTag(${tag}) failed:`, error);
   }

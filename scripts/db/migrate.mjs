@@ -12,8 +12,8 @@ import pg from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 
-// SKIP_DB_MIGRATE=1: a staged production build (web.yml) builds before the merge; the Deploy workflow migrates at
-// the merge, before it promotes the build.
+// SKIP_DB_MIGRATE=1: a build in CI (web.yml, deploy.yml) does not migrate; the Deploy workflow migrates in its own
+// step, before it promotes the build.
 const skipped = process.env.SKIP_DB_MIGRATE === '1';
 const run = (process.env.VERCEL_ENV === 'production' && !skipped) || process.argv.includes('--yes');
 if (!run) {

@@ -32,7 +32,7 @@ async function sha256(text: string) {
   return new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)));
 }
 
-/** Constant-time check of the health header (Web Crypto: middleware runs on the edge runtime). */
+/** Constant-time check of the health header (Web Crypto). */
 async function healthHeaderValid(req: NextRequest) {
   const expected = process.env.HEALTH_TOKEN;
   const presented = req.headers.get(HEALTH_HEADER);
@@ -46,7 +46,7 @@ async function healthHeaderValid(req: NextRequest) {
 // Created on first use: clerkMiddleware() throws "Missing publishableKey" when Clerk has no keys.
 let withClerk: NextMiddleware | null = null;
 
-export default function middleware(request: NextRequest, event: NextFetchEvent) {
+export default function proxy(request: NextRequest, event: NextFetchEvent) {
   if (isMachineRoute(request.nextUrl.pathname)) return NextResponse.next();
   // Without Clerk keys the root layout shows a setup notice instead of the pages (see src/app/layout.tsx).
   if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || !process.env.CLERK_SECRET_KEY) return NextResponse.next();
