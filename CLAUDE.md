@@ -18,7 +18,7 @@ pages and loaders). It plans endurance and strength training and shows what was 
 https://coach.paolobernasconi.com (Vercel Hobby, Neon Postgres with hard monthly quotas, Clerk sign-in).
 
 - **Pages** (`src/app/(dashboard)/`): Performance (`/`), Plan (`/plan`, the month calendar), Lift, Goals, Health
-  (vitals, labs), Settings, and an activity page (`/activities/[id]`).
+  (vitals, labs, DEXA at `/health/dexa`), Settings, and an activity page (`/activities/[id]`).
 - **Data in**: Strava (webhook and `sync.yml`), Garmin (`garmin.yml`, a Python job), the Lift iPhone app
   (`lift/`, its own sync), Google Calendar, Function Health (`function.yml`, by hand), the bathroom scale
   (`devices/scale-bridge/`, an ESP32), BodySpec DEXA scans (OAuth from Settings, daily in `sync.yml`). COACH-API.md has every

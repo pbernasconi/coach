@@ -22,7 +22,7 @@ const isPublicRoute = createRouteMatcher([
 // Routes with their own bearer token. They never run Clerk, so they work even when Clerk is down or not
 // configured. Vercel can run middleware for paths the matcher skips, so the code checks them too.
 const isMachineRoute = (path: string) =>
-  /^\/api\/(home|health|lift\/sync|lift\/week|lift\/enroll|app|vitals\/sync|vitals\/garmin|vitals\/function|plan\/proposals|workouts\/garmin|cron|webhooks\/strava)(\/|$)/.test(path);
+  /^\/api\/(home|health|lift\/sync|lift\/week|lift\/enroll|app|vitals\/sync|vitals\/garmin|vitals\/function|vitals\/dexa|plan\/proposals|workouts\/garmin|cron|webhooks\/strava)(\/|$)/.test(path);
 
 // The deploy check renders the real pages as the owner with this header (src/lib/owner.ts reads it). Only GET and
 // HEAD: on any other method the header is removed, so a server action never runs on it.

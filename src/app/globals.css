@@ -170,6 +170,19 @@
   --viz-down: #e66767;
 }
 
+/* DEXA (/health/dexa): fat, lean and bone mass. Fat is the violet slot (not a status hue: amber and red mean
+   status), lean the blue of the chart palette, bone a neutral. The body map shades fat % from --viz-band to --dexa-fat. */
+:root {
+  --dexa-fat: #8a5cd6;
+  --dexa-lean: #2a78d6;
+  --dexa-bone: #c3c2b7;
+}
+.dark {
+  --dexa-fat: #a184ec;
+  --dexa-lean: #3987e5;
+  --dexa-bone: #5b5a55;
+}
+
 /* Activity page streams (/activities/[id]): one stream per small-multiple panel, so each hue only names its panel.
    Categorical slots 8 (red), 7 (violet), 5 (magenta) and 4 (yellow) of the dataviz palette. Elevation is a neutral
    area. HR and power zones are ordinal steps of the blue ramp (light to dark = low to high; reversed on dark). */

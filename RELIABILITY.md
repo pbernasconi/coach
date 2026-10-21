@@ -98,6 +98,7 @@ also does not wake the database, so cached pages are faster.
 | `vitals` | `health_samples`, `garmin_raw` | The vitals push, the Garmin raw push |
 | `labs` | `lab_biomarkers`, `lab_categories`, `lab_results`, `lab_planned_draws`, `clinician_notes` | `POST /api/vitals/function` (the Function sync) and `POST /api/cron/cache?tag=labs` |
 | `status` | The banner's connection status (`loadStatusCached`, 5 minutes) | Saves in Settings |
+| `dexa` | `dexa_scans` with `raw` (the /health/dexa pages, `GET /api/vitals/dexa`) | The BodySpec sync, DEXA file uploads, moves and deletes |
 
 A write that clears no tag (a script on the database) shows within an hour. `/api/health` reads through the same
 cache as the pages: the data it checks is the data the pages show. The cache key holds the loader's code, so a

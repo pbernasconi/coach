@@ -26,6 +26,8 @@ const PAGES = [
   ['/health/training', 'health-training'],
   ['/health/labs', 'health-labs'],
   ['/health/labs/glucose', 'health-lab'],
+  ['/health/dexa', 'health-dexa'],
+  ['/health/dexa/latest', 'health-dexa-scan'],
   ['/health/day/today', 'health-day'],
   [`/health/day/${new Date(Date.now() - 864e5).toISOString().slice(0, 10)}`, 'health-day'],
   ['/activities/latest', 'activity'],

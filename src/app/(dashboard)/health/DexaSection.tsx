@@ -59,7 +59,16 @@ export default function DexaSection({ dexa }: { dexa: DexaView }) {
   return (
     <section className="space-y-3" data-dexa>
       <div>
-        <h2 className="text-xl font-semibold tracking-tight">Body composition</h2>
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 className="text-xl font-semibold tracking-tight">
+            <Link href="/health/dexa" className="hover:underline">Body composition</Link>
+          </h2>
+          {latest && (
+            <Link href="/health/dexa" className="text-sm text-muted-foreground hover:text-foreground">
+              Body map, regions and every scan →
+            </Link>
+          )}
+        </div>
         <p className="text-sm text-muted-foreground">
           {latest
             ? `DEXA scans from BodySpec. ${scans.length} ${scans.length === 1 ? 'scan' : 'scans'}; latest ${fmtDate(latest.scanDate)}${latest.location ? ` at ${latest.location}` : ''}.`
@@ -80,7 +89,8 @@ export default function DexaSection({ dexa }: { dexa: DexaView }) {
             {measures
               .filter((m) => m.value !== null)
               .map((m) => (
-                <li key={m.key} className="space-y-1 rounded-lg border bg-[var(--viz-surface)] p-3">
+                <li key={m.key} className="relative space-y-1 rounded-lg border bg-[var(--viz-surface)] p-3 hover:border-[var(--viz-axis)]">
+                  <Link href="/health/dexa" className="absolute inset-0" aria-label={`${m.label}: body composition page`} />
                   <div className="text-xs text-[var(--viz-muted)]">{m.label}</div>
                   <div className="text-lg font-semibold tabular-nums text-[var(--viz-ink)]">
                     {fmt(m.value, m.digits)}
@@ -109,8 +119,10 @@ export default function DexaSection({ dexa }: { dexa: DexaView }) {
               </thead>
               <tbody>
                 {[...scans].reverse().map((s, i) => (
-                  <tr key={s.resultId} className="border-b last:border-0">
-                    <td className="whitespace-nowrap px-3 py-2 text-[var(--viz-ink)]">{fmtDate(s.scanDate)}</td>
+                  <tr key={s.resultId} className="border-b last:border-0 hover:bg-[var(--viz-band)]">
+                    <td className="whitespace-nowrap px-3 py-2 text-[var(--viz-ink)]">
+                      <Link href={`/health/dexa/${s.scanDate}`} className="underline-offset-4 hover:underline">{fmtDate(s.scanDate)}</Link>
+                    </td>
                     {measures.map((m) => {
                       const v = m.series[scans.length - 1 - i]?.value ?? null;
                       return (

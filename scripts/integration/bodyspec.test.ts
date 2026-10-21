@@ -6,6 +6,8 @@ import assert from 'node:assert/strict';
 import { sql } from '@/db';
 import { loadBodyspecStatus, openToken, sealToken, syncBodyspec } from '@/lib/vitals/bodyspec-api';
 import { loadDexa } from '@/lib/vitals/dexa-queries';
+import { loadDexaPage } from '@/lib/vitals/dexa-store';
+import { REPORT_VERSION } from '@/lib/vitals/dexa.mjs';
 
 const user = 'user_bodyspec';
 const region = (fat: number, lean: number) => ({ fat_mass_kg: fat, lean_mass_kg: lean, bone_mass_kg: 0.2, total_mass_kg: fat + lean + 0.2, region_fat_pct: 20, tissue_fat_pct: 21 });
@@ -89,6 +91,24 @@ test('the BodySpec sync stores new and changed scans and refreshes the token', a
   assert.ok(Math.abs(vat.sincePrevious! + 0.1) < 1e-9);
   assert.ok(Math.abs(vat.sinceFirst! + 0.35) < 1e-9);
   assert.equal(view.measures.find((m) => m.key === 'armsLeanKg')!.value, 8.2);
+
+  // Each scan has its Markdown report and derived values, and a changed scan rewrote the next one's "change since".
+  const reports = await sql`SELECT result_id, report_md, report_version, derived FROM dexa_scans WHERE user_id = ${user} ORDER BY scan_date`;
+  assert.ok(reports.every((r) => r.report_version === REPORT_VERSION && String(r.report_md).startsWith('# DEXA scan')));
+  assert.match(String(reports[2].report_md), /Change since the scan before \(2026-04-10\)/);
+  assert.match(String(reports[2].report_md), /Visceral fat: 0\.65 → 0\.55 kg/);
+  assert.equal(reports[0].derived.armsLeanKg, 8.2);
+  const page = await loadDexaPage(user);
+  assert.equal(page.trends.latest?.scanDate, '2026-09-20');
+  assert.equal(page.trends.measures.find((m) => m.key === 'vatKg')!.value, 0.55);
+
+  // A stale report version is rebuilt from raw on the next sync, without fetching the scans again.
+  await sql`UPDATE dexa_scans SET report_version = 0, report_md = NULL WHERE user_id = ${user}`;
+  calls.length = 0;
+  await syncBodyspec(user);
+  assert.equal(calls.filter((c) => c.includes('/dexa/')).length, 0);
+  const [rebuilt] = await sql`SELECT count(*)::int AS n FROM dexa_scans WHERE user_id = ${user} AND report_version = ${REPORT_VERSION} AND report_md IS NOT NULL`;
+  assert.equal(rebuilt.n, 3);
 
   const status = await loadBodyspecStatus(user);
   assert.equal(status.connected, true);
