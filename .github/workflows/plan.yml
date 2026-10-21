@@ -97,4 +97,5 @@ jobs:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           ID: ${{ steps.claim.outputs.id }}
           RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: node scripts/plan-cloud/client.mjs fail "$ID" "The plan job failed: $RUN"
+        run: |
+          node scripts/plan-cloud/client.mjs fail "$ID" "The plan job failed: $RUN"
