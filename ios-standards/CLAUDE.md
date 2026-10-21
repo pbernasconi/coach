@@ -14,7 +14,14 @@ ios/scripts/install-tools.sh # once per machine: pinned lint tools into ios/.too
 ios/scripts/test.sh          # Core package tests (macOS/Linux), then app tests on a simulator
 ios/scripts/test.sh --ui     # demo-mode UI smoke test with screenshots
 (cd ios/Packages/*Kit && swift test)   # Core logic only; works without Xcode
+ios/scripts/ios-run.sh doctor          # check Xcode, XcodeGen, simulators, devices and signing
+ios/scripts/ios-run.sh sim run         # build, install and launch on the configured simulator (-n: dry run)
+ios/scripts/ios-run.sh device run      # the same on a paired iPhone over USB or Wi-Fi
 ```
+
+Running the app: read `RUNNING.md`. Use your own simulator (`IOS_RUN_SIM_NAME`, `IOS_RUN_SIM_OS`) and never drive
+a simulator that a person or another agent uses. After you add, remove or rename a file, the build runs XcodeGen
+again; a stale project gives "file not found" errors.
 
 Run `lint-all.sh` and `test.sh` before saying anything is done. On Linux, run the package tests and say
 plainly that the simulator tests were not run.
