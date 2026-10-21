@@ -7,6 +7,8 @@ import { refreshAccessToken } from './sync.mjs';
 export const HOME_TZ = 'America/Los_Angeles';
 const COLOR_ID = '3'; // Grape (purple)
 const API = 'https://www.googleapis.com/calendar/v3/calendars/primary/events';
+// Always the live app, even from a local run: the link lands on the real calendar.
+export const COACH_URL = 'https://coach.paolobernasconi.com';
 
 const addDays = (key, n) => new Date(Date.parse(`${key}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
 const day = (v) => (v instanceof Date ? v.toISOString().slice(0, 10) : String(v).slice(0, 10));
@@ -19,12 +21,17 @@ function addMinutes(date, time, minutes) {
   return { date: addDays(date, nextDay), time: `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}` };
 }
 
+/** The workout's page in Coach: its week on the Plan page, with the workout open. */
+export const workoutUrl = (id, weekStart) => `${COACH_URL}/plan?week=${weekStart}&open=${encodeURIComponent(`w-${id}`)}`;
+
 /** The Google Calendar event body for a workout row (training_plan_activities). Pure; tested. */
 export function eventFor(w, weekStart) {
   const date = day(w.scheduled_date);
+  const url = workoutUrl(w.id, weekStart);
   const body = {
     summary: w.title,
-    description: [w.description, w.why ? `Why: ${w.why}` : null].filter(Boolean).join('\n\n'),
+    description: [w.description, w.why ? `Why: ${w.why}` : null, `Open in Coach: ${url}`].filter(Boolean).join('\n\n'),
+    source: { title: 'Coach', url },
     colorId: COLOR_ID,
     reminders: { useDefault: true },
     extendedProperties: {
