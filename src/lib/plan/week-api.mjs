@@ -115,6 +115,8 @@ export function weekItem(w, sports) {
     done: match
       ? {
           source: match.source,
+          // The Strava activity id (GET /api/app/activities/:id takes it); null for a Lift session.
+          activityId: match.source === 'strava' && match.id != null ? String(match.id) : null,
           name: match.name ?? null,
           minutes: doneMinutes,
           tss: doneTss,
