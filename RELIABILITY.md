@@ -31,34 +31,44 @@ noticed. These guards exist so a bad value, a bad deploy or a bad migration cann
 
 ## Deploys
 
-Vercel builds nothing from Git (`vercel.json`): the Hobby plan allows 100 deployments a day, so each pull request
-push makes one (its staged build) and a merge makes none. A production deploy is a promote of a build that already
-exists, so a merge is live in seconds:
+Vercel builds nothing from Git (`vercel.json`). The Hobby plan has two daily limits, and the workflows stay far
+below them:
+
+- **100 deployments a day.** Only a merge that changes the web app makes one (`deploy.yml` has the same paths filter
+  as "web build": not `lift/`, Markdown, or other workflows). Pull requests upload nothing unless labelled.
+- **5,000 file uploads a day.** Every `vercel deploy` passes `--archive=tgz`: a build (about 630 files, 16 MB) is a
+  few archive files, not each changed file.
+
+A merge goes live in about 3 to 4 minutes, and only after a check on the production data:
 
 1. **On the pull request**, "web build" builds the production output (`vercel build --prod`, the PR merged into
-   main), uploads it as a staged production deployment with no domain, and checks it on the production data
-   (`/api/health?skip=migrations`). A pull request with new migrations skips that check: its loaders read tables
-   production does not have yet, so the check runs at the merge, after the migrations. The job summary links
-   the build.
-2. **At the merge**, `deploy.yml` finds the staged build whose tree equals the merge commit's tree (when main moved
-   since, it builds one), applies new migrations, checks the build again, and promotes it (an alias swap).
+   main), so a build that Vercel would reject fails the pull request. It uploads nothing.
+2. **At the merge**, `deploy.yml` finds a staged build whose tree equals the merge commit's tree, or builds one. It
+   applies new migrations, checks the build on the production data (`/api/health` and `/sign-in`), and only then
+   promotes it (an alias swap). A failed check stops the deploy: production does not change. Merges in quick
+   succession share one deploy (the concurrency group keeps one run waiting, the newest).
 3. Then it renders every page in `PAGES` on coach.paolobernasconi.com as the owner. On a failure it promotes the
    build before it again and opens an `outage` issue assigned to the owner. The next merge deploys as usual;
    nothing stays pinned.
 
-To redeploy main by hand, run the Deploy workflow (Actions → Deploy → Run workflow).
+At a daily limit the deploy stops before the promote, production stays on the build before it, and the `outage`
+issue says so. To redeploy main by hand, run the Deploy workflow (Actions → Deploy → Run workflow).
+
+**Staging is on demand:** add the label `stage` (or `perf`) to a pull request. `stage.yml` uploads its production
+build with no domain and checks it on the production data before the merge (a pull request with new migrations
+skips that check until the merge). If the merge commit has the same tree, `deploy.yml` promotes that build in
+seconds. Use it for a risky change; each later push to that pull request stages it again.
 
 **Previews are on demand:** add the label `preview` to a pull request. `preview.yml` deploys it with the Preview
 environment (the Neon development branch, Clerk's development sign-in), checks it, and comments the link; each
-later push to that pull request redeploys it. At the daily limit, staging is skipped with a warning and the merge
-builds instead.
+later push to that pull request redeploys it.
 
 ## The checks
 
 `scripts/smoke.mjs` calls `/api/health` (Bearer `HEALTH_TOKEN`: every loader, `/api/home`, and the migrations)
 and renders each page in `PAGES` as the owner. The `x-coach-health` header grants that, for GET only.
 
-- **Staged build, and before a promote**: `/api/health` and `/sign-in` on the deployment URL.
+- **Before a promote, and on a staged build** (`stage.yml`): `/api/health` and `/sign-in` on the deployment URL.
 - **After a promote**: every page on production (`--pages --expect-deployment <id>`).
 - **Preview deploy**: `/api/health` and `/sign-in` on the preview URL (`preview.yml`).
 - **Every hour, after the Sync workflow** (`workflow_run`, while the database is awake): production, every page. A failure here opens an issue and does not roll back: without a
