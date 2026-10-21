@@ -43,7 +43,8 @@ The local `/plan` and `/check-in` below still work, for a conversation about the
 3. Asks 3 quick questions (how you feel · this week's focus · anything to lock).
 4. Drafts a 7-day plan honoring your goals, natural rhythm, weather, and calendar.
 5. Confirms with you, then writes `plans/YYYY-MM-DD.{md,json}`.
-6. Auto-pushes events to your personal Google Calendar (purple, idempotent re-runs).
+6. Auto-pushes events to your personal Google Calendar (purple, idempotent re-runs). Each event links to its
+   workout in Coach (`/plan?week=…&open=w-<id>`).
 
 ## What `/check-in` does
 
@@ -61,7 +62,7 @@ Stored in `~/.claude/projects/-Users-paolo-work-personal-coach/memory/`. The com
 - **Units**: Celsius, km, min/km
 - **Goals**: milestones with a target and a deadline, in Coach → Settings → Goals (10k at 4:00/km, 3 × 4000 m ski peaks, VO2 max 52, 6,000 km of riding in 2027). Performance shows the progress.
 - **Strength**: 2 sessions/wk — heavy barbell + dumbbell
-- **Calendar**: personal Gmail, purple events
+- **Calendar**: personal Gmail, purple events, each with an "Open in Coach" link to the workout
 - **Templates**: the Lift app's templates (Heavy barbell, Upper (dumbbells), Hotel gym (dumbbells)) are authoritative for
   lift programming. `scripts/lift-plan.mjs` plans each strength workout as a Lift session, so every rep and load is logged
 

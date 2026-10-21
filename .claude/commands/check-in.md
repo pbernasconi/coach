@@ -81,5 +81,6 @@ Brief output:
 
 - Be surgical. Don't rewrite the whole plan.
 - Don't ever delete past-day annotations — they're history.
-- Future event changes always re-push the whole week's calendar (idempotent by design).
+- Future event changes always re-push the whole week's calendar (idempotent by design). Each event links to its
+  workout in Coach; change workouts through `plan-edit.mjs`, never by editing calendar events directly.
 - If the user's check-in reveals major life event (sick, injured, travel surprise), suggest re-running `/plan` for the next week.
