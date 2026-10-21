@@ -15,6 +15,8 @@ import { exerciseDetail, exerciseList, muscleSets, sessionDetail, sessionSummari
 import { liftOverview } from '@/lib/lift-dashboard/overview.mjs';
 import { loadPerformance } from '@/lib/performance/queries';
 import { loadWeek, ownerId } from '@/lib/plan/queries';
+import { loadDexa } from '@/lib/vitals/dexa-queries';
+import { loadBodyspecStatus } from '@/lib/vitals/bodyspec-api';
 import { addDays, mondayOf, todayIn } from '@/lib/plan/week.mjs';
 import { loadCoachingNotes, loadStatus, loadTargets } from '@/lib/status';
 import { loadLibrary, loadMonth, loadRange } from '@/lib/plan/month';
@@ -72,6 +74,8 @@ export async function runChecks(now = new Date(), { migrations = true }: { migra
     check('events', () => loadEventsWithCountdown(userId, today)),
     check('health', () => loadHealth(userId, today)),
     check('clinician notes', () => loadClinicianNotes(userId)),
+    check('body composition', () => loadDexa(userId)),
+    check('bodyspec status', () => loadBodyspecStatus(userId)),
     check('garmin', () => loadGarminStatus(userId, now.getTime())),
     check('health day', () => loadDay(userId, today)),
     check('health day (yesterday)', () => loadDay(userId, addDays(today, -1))),

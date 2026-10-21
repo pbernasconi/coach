@@ -204,7 +204,67 @@ export const labPlannedDraws = pgTable(
   (t) => [primaryKey({ name: 'lab_planned_draws_pk', columns: [t.userId, t.source, t.key] })]
 );
 
+/**
+ * `bodyspec_connections`: the BodySpec account (DEXA scans) of a user, connected with OAuth from Settings
+ * (src/lib/vitals/bodyspec-api.ts). BodySpec's sign-in server registers Coach as a public client on the first
+ * connect (`client_id`, for `redirect_uri`); the tokens come from the code exchange with PKCE and are stored
+ * encrypted (AES-256-GCM, `sealToken`). `last_error` is a short
+ * line without secrets or health values.
+ */
+export const bodyspecConnections = pgTable('bodyspec_connections', {
+  userId: text('user_id').primaryKey(),
+  clientId: text('client_id').notNull(),
+  redirectUri: text('redirect_uri').notNull(),
+  accessToken: text('access_token'),
+  refreshToken: text('refresh_token'),
+  expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }),
+  scope: text('scope'),
+  status: text('status').$type<'ok' | 'auth_failed' | 'error'>().notNull().default('ok'),
+  connectedAt: timestamp('connected_at', { withTimezone: true, mode: 'date' }),
+  lastAttemptAt: timestamp('last_attempt_at', { withTimezone: true, mode: 'date' }),
+  lastSuccessAt: timestamp('last_success_at', { withTimezone: true, mode: 'date' }),
+  lastError: text('last_error'),
+  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+});
+
+/**
+ * `dexa_scans`: one row per BodySpec DEXA result (src/lib/vitals/bodyspec.mjs maps the API's sections). The totals
+ * are columns; `regions` (arms, legs, trunk, android, gynoid: fat, lean and bone kg), `bone_regions` and
+ * `percentiles` keep the detail. `raw` is every section as BodySpec sent it.
+ */
+export const dexaScans = pgTable(
+  'dexa_scans',
+  {
+    resultId: text('result_id').primaryKey(),
+    userId: text('user_id').notNull(),
+    scannedAt: timestamp('scanned_at', { withTimezone: true, mode: 'date' }).notNull(),
+    scanDate: date('scan_date', { mode: 'string' }).notNull(),
+    location: text('location'),
+    scanner: text('scanner'),
+    ageYears: doublePrecision('age_years'),
+    heightCm: doublePrecision('height_cm'),
+    totalMassKg: doublePrecision('total_mass_kg'),
+    fatMassKg: doublePrecision('fat_mass_kg'),
+    leanMassKg: doublePrecision('lean_mass_kg'),
+    boneMassKg: doublePrecision('bone_mass_kg'),
+    bodyFatPct: doublePrecision('body_fat_pct'),
+    vatMassKg: doublePrecision('vat_mass_kg'),
+    vatVolumeCm3: doublePrecision('vat_volume_cm3'),
+    androidGynoidRatio: doublePrecision('android_gynoid_ratio'),
+    boneDensity: doublePrecision('bone_density'),
+    rmrKcal: doublePrecision('rmr_kcal'),
+    regions: jsonb('regions').$type<Record<string, Record<string, number>>>(),
+    boneRegions: jsonb('bone_regions').$type<Record<string, Record<string, number | null>>>(),
+    percentiles: jsonb('percentiles').$type<Record<string, { value: number; percentile: number }>>(),
+    raw: jsonb('raw').$type<Record<string, unknown>>(),
+    resultUpdatedAt: text('result_updated_at'),
+    syncedAt: timestamp('synced_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+  },
+  (t) => [index('dexa_scans_user_date_idx').on(t.userId, t.scanDate)]
+);
+
 export type HealthSampleRow = typeof healthSamples.$inferSelect;
 export type LabResultRow = typeof labResults.$inferSelect;
 export type GarminConnectionRow = typeof garminConnections.$inferSelect;
 export type GarminRawRow = typeof garminRaw.$inferSelect;
+export type DexaScanRow = typeof dexaScans.$inferSelect;

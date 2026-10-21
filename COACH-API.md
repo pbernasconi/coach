@@ -73,6 +73,7 @@ Daily vitals and lab results. They are shown on `/health`, and `scripts/health-p
 - **Lab results**: they come from Function Health. The "Function Health sync" workflow (by hand, after new results)
   runs `scripts/function-sync.mjs`, which posts to `POST /api/vitals/function`. `/labs` (`scripts/labs-import.mjs`)
   still imports a PDF.
+- **DEXA scans**: from BodySpec, see "BodySpec (DEXA)" below.
 
 The code is in `src/lib/vitals/` and the tables are in `drizzle/0015_health.sql` (`health_samples`, `lab_results`). A server-side job
 can skip HTTP and call `upsertVitals(sql, userId, samples)` from `src/lib/vitals/sync.mjs`. It applies the same
@@ -235,6 +236,23 @@ The job stores new tokens at once when Garmin refreshes them (before the next da
 - One-time setup: `scripts/garmin/.venv/bin/python scripts/garmin/login.py --new-key`. The next run moves the tokens from `GARMIN_TOKENS` into Coach, so a new Garmin login is not needed.
 - Backfill: `gh workflow run garmin.yml -f since=2025-04-20` (about 550 days and 6,600 calls; about 2.5 hours). If the run stops, the scheduled runs continue it, or you can run the same command again.
 - When the banner says the Garmin login has expired, run `login.py` (without `--new-key`). See `scripts/garmin/README.md`.
+
+### BodySpec (DEXA)
+
+BodySpec's API (https://app.bodyspec.com/docs, early access) gives each scan's composition (total and per region:
+arms, legs, trunk, android, gynoid), visceral fat, bone density, percentiles and resting metabolic rate. The code
+is `src/lib/vitals/bodyspec-api.ts` (OAuth, API, sync) and `bodyspec.mjs` (the mapping and the /health view); the
+tables are `bodyspec_connections` and `dexa_scans` (`drizzle/0009_bodyspec_dexa.sql`).
+
+- **Connect**: Settings → BodySpec → Connect (`/api/auth/bodyspec/start`). BodySpec's sign-in (Keycloak at
+  auth.bodyspec.com, Google login there) has no app keys to set up: Coach registers itself as a public client for
+  its callback URL on the first connect (dynamic client registration) and uses PKCE. The callback stores the tokens
+  (encrypted with AES-256-GCM; key `BODYSPEC_TOKEN_KEY`, else derived from `CRON_SECRET`) and pulls every scan.
+- **Sync**: `GET /api/cron/bodyspec` (Bearer `CRON_SECRET`), daily from `sync.yml` at 16:17 UTC (an hour without the Strava step), and Settings →
+  Sync now. It fetches only new or changed results (`update_time`) and answers counts and dates only. The daily
+  refresh keeps the sign-in alive; a refused refresh token sets `status = 'auth_failed'` and Settings asks to
+  reconnect.
+- **Shown**: /health → Body composition (latest values, change since the last and first scan, every scan).
 
 ## `POST /api/plan/proposals`
 

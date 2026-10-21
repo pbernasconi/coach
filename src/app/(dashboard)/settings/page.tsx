@@ -13,8 +13,10 @@ import { FlaskConical } from 'lucide-react';
 import { loadThresholdSources } from '@/lib/strava-sync/thresholds.mjs';
 import { resolveThresholds } from '@/lib/strava-sync/tss.mjs';
 import SectionError from '@/components/SectionError';
-import { CoachingNotesForm, LocationForm, StravaSyncButton, TargetsForm, ThresholdsForm, type ThresholdView } from './SettingsControls';
-import { GarminLogo, GoogleCalendarLogo, LiftLogo, StravaLogo } from './BrandLogos';
+import { InlineNotice } from '@kobo/web';
+import { loadBodyspecStatus } from '@/lib/vitals/bodyspec-api';
+import { BodyspecSyncButton, CoachingNotesForm, LocationForm, StravaSyncButton, TargetsForm, ThresholdsForm, type ThresholdView } from './SettingsControls';
+import { BodyspecLogo, GarminLogo, GoogleCalendarLogo, LiftLogo, StravaLogo } from './BrandLogos';
 import ConnectLift from './ConnectLift';
 import EventsEditor from './EventsEditor';
 import GoalsForm from './GoalsForm';
@@ -70,7 +72,7 @@ function Connection({
   level: Level;
   summary: React.ReactNode;
   actions?: React.ReactNode;
-  notes: Warning[];
+  notes: Pick<Warning, 'level' | 'text'>[];
   details: [string, React.ReactNode][];
   children?: React.ReactNode;
 }) {
@@ -149,17 +151,30 @@ const SECTIONS = [
   { id: 'location', label: 'Weather location' },
 ];
 
-export default async function SettingsPage() {
+/** The notice after an OAuth redirect back to Settings (?success= or ?error=). */
+function redirectNotice(q: { success?: string; error?: string; scans?: string }) {
+  if (q.error) return { tone: 'danger' as const, title: q.error.slice(0, 200) };
+  if (q.success === 'bodyspec_connected') {
+    const n = Number(q.scans);
+    return { tone: 'success' as const, title: `BodySpec is connected${Number.isFinite(n) ? `: ${n} ${n === 1 ? 'scan' : 'scans'} on /health` : ''}.` };
+  }
+  if (q.success === 'strava_connected') return { tone: 'success' as const, title: 'Strava is connected.' };
+  return null;
+}
+
+export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ success?: string; error?: string; scans?: string }> }) {
   const userId = await ownerForSignedInUser();
   if (!userId) return <p data-smoke="settings" className="text-sm text-muted-foreground">This account has no Coach data.</p>;
   const today = todayIn(zone((await cookies()).get('tz')?.value));
-  const [status, targets, coachingNotes, goals, events, thresholds] = await Promise.all([
+  const notice = redirectNotice(await searchParams);
+  const [status, targets, coachingNotes, goals, events, thresholds, bodyspec] = await Promise.all([
     loadStatus(userId),
     loadTargets(userId),
     loadCoachingNotes(userId),
     load('Goals', () => loadGoals(sql, userId)),
     load('Events', () => loadEventsWithCountdown(userId, today)),
     load('Thresholds', () => loadThresholdSources(sql, userId)),
+    load('BodySpec', () => loadBodyspecStatus(userId)),
   ]);
 
   const levelOf = (source: Warning['source']): Level =>
@@ -192,8 +207,12 @@ export default async function SettingsPage() {
   const garminOk = garmin.connected && garmin.status !== 'auth_failed';
   const liftConnected = Boolean(status.lift.lastChangeAt);
   const newestCalendarSync = status.calendars.map((c) => c.lastSyncedAt).filter(Boolean).sort().at(-1) ?? null;
-  const connected = { strava: status.strava.connected, lift: liftConnected, calendar: status.calendars.length > 0, garmin: garminOk };
-  const attention = (['strava', 'lift', 'calendar', 'garmin'] as const).filter((s) => !connected[s] || ['warn', 'error'].includes(levelOf(s))).length;
+  const bs = bodyspec.ok ? bodyspec.value : null;
+  const bodyspecLevel: Level = !bs || bs.status === 'auth_failed' || bs.status === 'error' ? 'error' : 'ok';
+  const connected = { strava: status.strava.connected, lift: liftConnected, calendar: status.calendars.length > 0, garmin: garminOk, bodyspec: Boolean(bs?.connected) };
+  const attention =
+    (['strava', 'lift', 'calendar', 'garmin'] as const).filter((s) => !connected[s] || ['warn', 'error'].includes(levelOf(s))).length +
+    (connected.bodyspec && bodyspecLevel === 'ok' ? 0 : 1);
   const button = 'inline-flex h-10 items-center rounded-md border px-3 text-xs font-medium shadow-sm hover:bg-accent md:h-8';
 
   return (
@@ -208,9 +227,11 @@ export default async function SettingsPage() {
           </div>
           <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs ${attention ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground'}`}>
             <span className={`h-1.5 w-1.5 rounded-full ${attention ? 'bg-amber-500' : 'bg-emerald-500'}`} aria-hidden />
-            {attention ? `${attention} of 4 connections need attention` : 'All 4 connections are healthy'}
+            {attention ? `${attention} of 5 connections need attention` : 'All 5 connections are healthy'}
           </span>
         </div>
+
+        {notice && <InlineNotice tone={notice.tone} title={notice.title} />}
 
         <Group id="connections" title="Connections" description="Where Coach gets your activities, workouts, sleep and calendar.">
           <ul className="divide-y rounded-lg border bg-card">
@@ -296,6 +317,37 @@ export default async function SettingsPage() {
                 ['Last success', when(fn.lastSuccessAt)],
                 ['Last run', when(fn.lastAttemptAt)],
                 ['Sync', 'By hand: Actions → Function Health sync → Run workflow, or gh workflow run function.yml'],
+              ]}
+            />
+            <Connection
+              logo={<BodyspecLogo />}
+              name="BodySpec (DEXA)"
+              connected={connected.bodyspec}
+              level={bodyspecLevel}
+              summary={
+                !bs
+                  ? 'The BodySpec status did not load.'
+                  : bs.connected
+                    ? `${bs.scans} ${bs.scans === 1 ? 'scan' : 'scans'} · newest ${bs.newest ?? '-'} · synced ${when(bs.lastSuccessAt)}`
+                    : 'Connect BodySpec to bring your DEXA scans to /health.'
+              }
+              actions={
+                <>
+                  {bs?.connected && <BodyspecSyncButton />}
+                  <a className={button} href="/api/auth/bodyspec/start">{bs?.connected ? 'Reconnect' : 'Connect BodySpec'}</a>
+                </>
+              }
+              notes={
+                bs?.lastError
+                  ? [{ level: bs.status === 'auth_failed' ? 'error' : 'warn', text: bs.status === 'auth_failed' ? `${bs.lastError}. Reconnect to sign in again.` : bs.lastError }]
+                  : []
+              }
+              details={[
+                ['Scans', bs?.scans ?? '-'],
+                ['Newest scan', bs?.newest ?? '-'],
+                ['Last success', when(bs?.lastSuccessAt ?? null)],
+                ['Last run', when(bs?.lastAttemptAt ?? null)],
+                ['Auto sync', 'Daily (GitHub Actions), and when you connect'],
               ]}
             />
           </ul>

@@ -6,6 +6,7 @@ import { sql } from '@/db';
 import { ownerForSignedInUser } from '@/lib/owner';
 import { saveCoachingNotes, saveTargets, type Targets } from '@/lib/status';
 import { syncStrava } from '@/lib/strava-sync/sync.mjs';
+import { syncBodyspec } from '@/lib/vitals/bodyspec-api';
 import { locationFrom } from '@/lib/plan/calendar.mjs';
 import { geocodeUrl, placesFrom } from '@/lib/plan/places.mjs';
 import { DEFAULT_PLACE, type Place } from '@/lib/plan/weather';
@@ -25,6 +26,19 @@ export async function syncStravaNow(): Promise<string> {
     clearCache('status');
   revalidatePath('/', 'layout');
     return `Synced ${r.upserted} ${r.upserted === 1 ? 'activity' : 'activities'}.`;
+  } catch (e) {
+    return `Sync failed: ${(e as Error).message}`;
+  }
+}
+
+/** Pulls new BodySpec DEXA scans now. Returns a short result line. */
+export async function syncBodyspecNow(): Promise<string> {
+  const userId = await owner();
+  try {
+    const r = await syncBodyspec(userId);
+    revalidatePath('/', 'layout');
+    const changed = r.added + r.updated;
+    return changed ? `${changed} ${changed === 1 ? 'scan' : 'scans'} synced; ${r.scans} in total.` : `No new scans; ${r.scans} in total.`;
   } catch (e) {
     return `Sync failed: ${(e as Error).message}`;
   }
