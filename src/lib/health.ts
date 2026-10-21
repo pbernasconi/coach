@@ -23,7 +23,7 @@ import { loadPmc } from '@/lib/performance/projection';
 import { loadPeakPerformances, loadRecentPeaks } from '@/lib/performance/peaks';
 import { loadEventsWithCountdown } from '@/lib/performance/events';
 import { loadClinicianNotes, loadGarminStatus, loadHealth } from '@/lib/vitals/queries';
-import { loadBody, loadDay, loadGarminSections, loadRecoveryToday, loadTraining } from '@/lib/vitals/garmin-pages';
+import { loadBoard, loadBody, loadDay, loadRecoveryToday, loadTraining } from '@/lib/vitals/garmin-pages';
 import { loadBiomarker, loadLabsIndex } from '@/lib/vitals/labs-pages';
 import { loadActivity, loadActivityContext } from '@/lib/activity/queries';
 import { appActivityResponse, loadAppActivities, loadAppActivity } from '@/lib/activity/app-api';
@@ -83,7 +83,7 @@ export async function runChecks(now = new Date(), { migrations = true }: { migra
       const slugs = [...new Set(index.sections.flatMap((s) => s.items.map((i) => i.slug)))];
       for (const slug of slugs) if (!(await loadBiomarker(userId, slug))) throw new Error(`no page for ${slug}`);
     }),
-    check('health garmin sections', () => loadGarminSections(userId, today)),
+    check('health board', () => loadBoard(userId, today, 90, null)),
     check('recovery today', () => loadRecoveryToday(userId, today)),
     check('body', () => loadBody(userId, today)),
     check('home week', () => loadRange(userId, monday, monday, today)),

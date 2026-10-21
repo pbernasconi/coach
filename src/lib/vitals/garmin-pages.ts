@@ -3,13 +3,14 @@ import { toDay } from '@/lib/db-time.mjs';
 import { cached } from '@/lib/data-cache';
 import { parseDay } from './garmin-day.mjs';
 import {
-  hrvNights, intensityWeeks, latestWithChange, parseEnduranceScore, parseHillScore, parsePersonalRecords, parseTrainingStatus,
-  series, sleepNights, trainingStatusOf, type SampleRow,
+  latestWithChange, parseEnduranceScore, parseHillScore, parsePersonalRecords, parseTrainingStatus,
+  series, trainingStatusOf, type SampleRow,
 } from './garmin-training.mjs';
 import { addDays } from './readiness.mjs';
+import { BOARD_METRICS, NORMAL_DAYS, boardOf } from './board.mjs';
 
 /**
- * Loaders for the Garmin views: /health/day/[date], /health/training, the Garmin sections of /health, and the
+ * Loaders for the Garmin views: /health/day/[date], /health/training, the /health board, and the
  * "Recovery today" card on the home page. Owner-scoped. Raw payloads come from garmin_raw; daily values from
  * health_samples. All parsing is in garmin-day.mjs and garmin-training.mjs.
  */
@@ -133,25 +134,14 @@ export async function loadTraining(userId: string, today: string) {
 }
 export type TrainingView = Awaited<ReturnType<typeof loadTraining>>;
 
-// ---- /health sections ----
+// ---- /health board ----
 
-const SECTION_METRICS = [
-  'sleep_deep_min', 'sleep_core_min', 'sleep_rem_min', 'sleep_awake_min', 'sleep_total_min', 'sleep_score',
-  'hrv_night_avg_ms', 'hrv_baseline_low_ms', 'hrv_baseline_high_ms', 'hrv_status', 'resting_hr_bpm',
-  'intensity_minutes_moderate', 'intensity_minutes_vigorous',
-];
-
-export async function loadGarminSections(userId: string, today: string) {
-  const rows = await samples(userId, addDays(today, -89), today, SECTION_METRICS);
-  return {
-    today,
-    nights: sleepNights(rows, today, 30),
-    hrv: hrvNights(rows),
-    restingHr: series(rows, 'resting_hr_bpm'),
-    intensity: intensityWeeks(rows, today, 12),
-  };
+/** The /health board for the last `days` days (30 or 90): daily series, watch coverage and normal ranges (board.mjs). */
+export async function loadBoard(userId: string, today: string, days: number, syncedThrough: string | null) {
+  const rows = await samples(userId, addDays(today, -(days + NORMAL_DAYS)), today, Object.keys(BOARD_METRICS));
+  return boardOf(rows, { today, days, syncedThrough });
 }
-export type GarminSections = Awaited<ReturnType<typeof loadGarminSections>>;
+export type Board = Awaited<ReturnType<typeof loadBoard>>;
 
 // ---- Home: Recovery today ----
 
