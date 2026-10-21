@@ -11,9 +11,15 @@ nonisolated struct AppInfo: Equatable, Sendable {
         case demo
         /// An empty database in memory, as a first launch leaves it (`-fresh`); nothing is saved.
         case fresh
+        /// Practice mode (Settings): sample workouts in their own database on this iPhone, apart from the log.
+        case practice
 
-        /// Whether the data is kept on this iPhone. Data that is not is never synced or saved to Apple Health.
+        /// Whether this is the person's own log on this iPhone. Any other data is never synced or saved to Apple
+        /// Health, and never changes the saved unit or gym.
         var isSaved: Bool { self == .device }
+
+        /// Made-up sessions and the made-up coach plan: demo data and practice mode.
+        var isSample: Bool { self == .demo || self == .practice }
     }
 
     var version: String

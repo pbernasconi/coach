@@ -11,33 +11,58 @@ enum CompositionRoot {
         case failed
     }
 
-    /// Opens `Application Support/lift.sqlite`, or an in-memory database for `-demo` and `-fresh`, and wires the live
-    /// repositories.
-    static func launch(options: LaunchOptions) -> Launch {
+    /// Opens `Application Support/lift.sqlite`, `lift-practice.sqlite` in practice mode, or an in-memory database for
+    /// `-demo` and `-fresh`, and wires the live repositories.
+    static func launch(source: AppInfo.DataSource, practice: any PracticeModeSwitching) -> Launch {
         do {
-            let source = options.dataSource
-            let database = try openDatabase(isSaved: source.isSaved)
-            return .ready(dependencies(database: database, source: source))
+            var isNew = false
+            if source == .practice {
+                isNew = try !FileManager.default.fileExists(atPath: practiceFile().path)
+            }
+            let database = try openDatabase(source: source)
+            let seedsDemo = source == .demo || isNew  // practice data is seeded once, when its file is made
+            return .ready(dependencies(database: database, source: source, seedsDemo: seedsDemo, practice: practice))
         } catch {
             AppLog.launch.fault("Opening the database failed: \(String(describing: error), privacy: .private)")
             return .failed
         }
     }
 
-    private static func openDatabase(isSaved: Bool) throws -> LiftDatabase {
-        if !isSaved {
-            return try LiftDatabase.inMemory()
+    /// Deletes the practice database, so practice mode starts over with new sample workouts.
+    static func removePracticeData() {
+        guard let file = try? practiceFile() else { return }
+        for suffix in ["", "-wal", "-shm"] {
+            try? FileManager.default.removeItem(atPath: file.path + suffix)  // a missing file is fine
         }
-        let folder = try FileManager.default.url(
+    }
+
+    private static func openDatabase(source: AppInfo.DataSource) throws -> LiftDatabase {
+        switch source {
+        case .demo, .fresh: try LiftDatabase.inMemory()
+        case .device: try LiftDatabase.onDisk(at: supportFolder().appending(path: "lift.sqlite"))
+        case .practice: try LiftDatabase.onDisk(at: practiceFile())
+        }
+    }
+
+    private static func practiceFile() throws -> URL {
+        try supportFolder().appending(path: "lift-practice.sqlite")
+    }
+
+    private static func supportFolder() throws -> URL {
+        try FileManager.default.url(
             for: .applicationSupportDirectory,
             in: .userDomainMask,
             appropriateFor: nil,
             create: true
         )
-        return try LiftDatabase.onDisk(at: folder.appending(path: "lift.sqlite"))
     }
 
-    private static func dependencies(database: LiftDatabase, source: AppInfo.DataSource) -> AppDependencies {
+    private static func dependencies(
+        database: LiftDatabase,
+        source: AppInfo.DataSource,
+        seedsDemo: Bool,
+        practice: any PracticeModeSwitching
+    ) -> AppDependencies {
         let now: @Sendable () -> Date = { Date() }
         let makeID: @Sendable () -> UUID = { UUID() }
         let sessions = LiveSessionRepository(database: database, now: now, makeID: makeID)
@@ -73,7 +98,9 @@ enum CompositionRoot {
             sync: sync,
             health: makeHealth(sessions: sessions, isSaved: source.isSaved),
             coachPlan: makeCoachPlan(source: source, sessions: sessions, sync: sync, now: now, calendar: appCalendar),
-            appData: makeAppData(source: source, sync: sync, now: now)
+            appData: makeAppData(source: source, sync: sync, now: now),
+            seedsDemo: seedsDemo,
+            practice: practice
         )
     }
 
@@ -103,16 +130,23 @@ enum CompositionRoot {
     }
 
     /// The saved unit preference on this iPhone (the locale's until one is picked); kg in memory for demo data, which is
-    /// logged in kg.
+    /// logged in kg. Practice mode starts from the saved unit, in memory, so changing it there leaves the saved one.
     private static func units(source: AppInfo.DataSource) -> any UnitPreference {
-        guard source.isSaved else { return InMemoryUnitSettings(.kg) }
-        return UserDefaultsUnitSettings.standard(fallback: localUnit)
+        switch source {
+        case .device: UserDefaultsUnitSettings.standard(fallback: localUnit)
+        case .practice: InMemoryUnitSettings(UserDefaultsUnitSettings.standard(fallback: localUnit).unit)
+        case .demo, .fresh: InMemoryUnitSettings(.kg)
+        }
     }
 
-    /// The saved bars and plates on this iPhone (the defaults until changed); the defaults in memory for demo data.
+    /// The saved bars and plates on this iPhone (the defaults until changed); the defaults in memory for demo data, and
+    /// a copy of the saved ones in memory in practice mode.
     private static func gym(source: AppInfo.DataSource) -> any GymPreference {
-        guard source.isSaved else { return InMemoryGymSettings(.standard) }
-        return UserDefaultsGymSettings.standard()
+        switch source {
+        case .device: UserDefaultsGymSettings.standard()
+        case .practice: InMemoryGymSettings(UserDefaultsGymSettings.standard().setup)
+        case .demo, .fresh: InMemoryGymSettings(.standard)
+        }
     }
 
     /// The app's one calendar: the person's, following their locale and time zone, with weeks starting on Monday
@@ -135,7 +169,7 @@ enum CompositionRoot {
         return AppInfo(
             version: version ?? "0",
             build: build ?? "0",
-            unit: source.isSaved ? localUnit : .kg,  // replaced by the `units` preference in AppDependencies.info
+            unit: source == .demo || source == .fresh ? .kg : localUnit,  // replaced by the `units` preference in AppDependencies.info
             dataSource: source
         )
     }

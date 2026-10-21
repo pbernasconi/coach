@@ -2,15 +2,17 @@ import KoboComponents
 import KoboTokens
 import SwiftUI
 
-/// The app shell: the tab bar once the data is ready, or an error when the database could not be opened.
+/// The app shell: the tab bar once the data is ready, or an error when the database could not be opened. Turning
+/// practice mode on or off opens other data, and the shell starts over on it.
 struct RootView: View {
-    let launch: CompositionRoot.Launch
+    let launcher: AppLauncher
     let options: LaunchOptions
 
     var body: some View {
-        switch launch {
+        switch launcher.launch {
         case .ready(let dependencies):
             AppShell(dependencies: dependencies, options: options)
+                .id(launcher.generation)
         case .failed:
             ErrorState(title: "Lift could not open its data", message: "Close Lift and open it again.")
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -54,6 +56,9 @@ private struct AppShell: View {
                     ImportFlowPage(request: request, dependencies: dependencies)
                 }
                 .templateLinkFlow(dependencies)
+                .practiceBanner(isOn: dependencies.info.dataSource == .practice) {
+                    dependencies.practice.setPracticeMode(false)
+                }
                 .task { await syncCoordinator.watchOutbox() }
                 .task { await dependencies.coachPlan.watchSync() }  // the Week plan refreshes after each sync run
             } else {
@@ -217,6 +222,7 @@ private struct TabRootScreen: View {
                     sync: dependencies.sync,
                     health: dependencies.health,
                     units: dependencies.units,
+                    practice: dependencies.practice,
                     now: dependencies.now,
                     router: router
                 )

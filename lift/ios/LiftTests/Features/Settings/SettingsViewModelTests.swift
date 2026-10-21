@@ -23,6 +23,7 @@ import Testing
             sync: sync,
             health: health,
             units: units,
+            practice: RecordingPracticeModeSwitch(),
             now: { now() },
             router: router
         )

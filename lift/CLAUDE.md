@@ -71,6 +71,12 @@ Exercises with a made-up link, `-open progress` opens History on its Progress vi
 (hard sets per muscle and per week), `-open plates` pushes Plates and bars onto the Settings tab, and `-open import` opens Import from Notes over
 History with a made-up note already read to the review step (for screenshots). Without `-demo` the app uses `Application Support/lift.sqlite`.
 
+Practice mode (Settings → Practice, `AppLauncher`, `PracticeModeSettings.swift`): a switch in the app itself, so a
+TestFlight build can be tried without touching the log. It opens `Application Support/lift-practice.sqlite`, seeded by
+`DemoSeeder` when the file is made, with the made-up coach plan; it never syncs, never touches Apple Health and keeps the
+saved unit and gym unchanged. A banner shows over every tab while it is on. Switching ends the workout Live Activity and
+starts the shell over on the other data; turning it on again deletes the practice file and starts over.
+
 Note: the app target defaults to MainActor isolation, so screen value types (`State`, `Action`, row items)
 are declared `nonisolated`; otherwise their `Equatable` conformance is main-actor-isolated and cannot be
 used inside `Loadable`.

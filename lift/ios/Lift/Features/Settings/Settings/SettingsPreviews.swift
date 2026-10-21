@@ -25,6 +25,12 @@
         SettingsPreview(state: .fixtureDemo)
             .dynamicTypeSize(.accessibility3)
     }
+    #Preview("Practice") { SettingsPreview(state: .fixturePractice) }
+    #Preview("Practice, dark, AX3") {
+        SettingsPreview(state: .fixturePractice)
+            .preferredColorScheme(.dark)
+            .dynamicTypeSize(.accessibility3)
+    }
     #Preview("Syncing") { SettingsPreview(state: .fixtureSyncing) }
     #Preview("Not set up") { SettingsPreview(state: .fixtureNotSetUp) }
     #Preview("Token rejected, dark") {
