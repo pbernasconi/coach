@@ -2,7 +2,8 @@ import Foundation
 import LiftSync
 
 /// Made-up App API bodies for demo data (TEST-8), so `-demo` screenshots show full screens. Each path reads a bundled
-/// JSON file named after it (`resourceNames(for:query:)`); `<parent>-id.json` can stand for every id. Add a screen's demo body as `Resources/DemoAPI/<name>.json`.
+/// JSON file named after it (`resourceNames(for:query:)`); `<parent>-id.json` can stand for every id. Add a screen's
+/// demo body as `Resources/DemoAPI/<name>.json`.
 final class DemoAppData: AppDataSource {
     let isConnected = true
     private let bundle: Bundle
@@ -15,15 +16,24 @@ final class DemoAppData: AppDataSource {
 
     func kept(_: String) async -> AppAPIKept? { nil }
 
-    /// The query is ignored: one made-up body per path.
-    /// One made-up body per path; a `before` cursor names a later page.
+    /// One made-up body per path; a `before` cursor names a later page. The bundle is read off the main actor, like the
+    /// live cache; `AppResource` decodes off it too.
     func fetch(_ path: String, query: [URLQueryItem]) async throws -> AppAPIKept {
-        for name in Self.resourceNames(for: path, query: query) {
+        guard let data = await Self.read(Self.resourceNames(for: path, query: query), in: bundle) else {
+            throw SyncTransportError.rejected(status: 404)
+        }
+        return AppAPIKept(data: data, fetchedAt: now())
+    }
+
+    /// The first of `names` the bundle has, read from disk.
+    @concurrent
+    nonisolated static func read(_ names: [String], in bundle: Bundle) async -> Data? {
+        for name in names {
             if let url = bundle.url(forResource: name, withExtension: "json"), let data = try? Data(contentsOf: url) {
-                return AppAPIKept(data: data, fetchedAt: now())
+                return data
             }
         }
-        throw SyncTransportError.rejected(status: 404)
+        return nil
     }
 
     /// The file names to try, most specific first. "api/app/activities/123" → `app-activities-123`, then

@@ -166,4 +166,46 @@ import Testing
         #expect(vm.state.ready == nil)
         #expect(!restActivity.calls.contains { if case .start = $0 { true } else { false } })
     }
+
+    // MARK: The whole-workout Live Activity
+
+    /// A center over `emissions` with a recording presenter, settled.
+    func activityCalls(_ emissions: [SessionDetail?]) async -> [RecordingWorkoutActivityPresenter.Call] {
+        let presenter = RecordingWorkoutActivityPresenter()
+        let center = WorkoutActivityCenter(
+            sessions: FakeSessionDetailRepository(emissions: emissions),
+            sets: RecordingSetRepository(result: planned.items[0].sets[0]),
+            presenter: presenter,
+            gym: InMemoryGymSettings(.standard),
+            calendar: SessionBuilder.calendar,
+            now: SessionBuilder.now
+        )
+        center.showWorkout(planned.id)
+        await center.settle()
+        return presenter.calls
+    }
+
+    @Test func startShowsTheWorkoutActivityBeforeAnySetIsLogged() async {
+        var started = planned
+        started.session.startedAt = ManualNow.start
+
+        let calls = await activityCalls([planned, started])
+
+        #expect(calls.count == 1)
+        guard case .show? = calls.first else {
+            Issue.record("no workout activity shown")
+            return
+        }
+    }
+
+    @Test func finishEndsTheWorkoutActivityOfAStartedWorkout() async {
+        var started = planned
+        started.session.startedAt = ManualNow.start
+        var finished = started
+        finished.session.finishedAt = ManualNow.start.addingTimeInterval(3_000)
+
+        let calls = await activityCalls([started, finished])
+
+        #expect(calls.last == .end)
+    }
 }

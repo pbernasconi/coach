@@ -56,9 +56,11 @@ public struct ChartSeries<X: KoboChartX>: Identifiable, Hashable, Sendable {
         }
     }
 
-    /// The points to draw: at most `ChartSeries.maxPlotted`, picked evenly with both ends kept, so a long stream stays
-    /// smooth to draw and to touch. Summaries still read every point.
-    var plotted: [ChartPoint<X>] { ChartMath.thinned(points, to: Self.maxPlotted) }
+    /// The points to draw: at most `ChartSeries.maxPlotted`, keeping both ends and each stretch's lowest and highest
+    /// point, so a long stream stays smooth to draw and to touch without losing its peaks. Summaries read every point.
+    var plotted: [ChartPoint<X>] {
+        ChartMath.extremaIndices(points.map(\.y), maxCount: Self.maxPlotted).map { points[$0] }
+    }
 
     /// The most points a line draws.
     static var maxPlotted: Int { 1_000 }

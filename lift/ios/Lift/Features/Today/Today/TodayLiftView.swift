@@ -75,7 +75,7 @@ private struct TodayArmsView: View {
                     BandBar(
                         value: row.sets,
                         scaleMax: max(arms.band.max * 1.25, row.sets),
-                        band: arms.band.min...arms.band.max,
+                        band: min(arms.band.min, arms.band.max)...max(arms.band.min, arms.band.max),
                         valueText: row.setsText,
                         verbatimAccessibilityLabel: row.muscle.capitalized
                     )

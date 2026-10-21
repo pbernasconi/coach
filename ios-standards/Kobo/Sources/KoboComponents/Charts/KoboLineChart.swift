@@ -152,11 +152,19 @@ public struct KoboLineChart<X: KoboChartX>: View {
         ChartMath.firstIndices(of: series.map(\.name)).map { (series[$0].name, color(at: $0)) }
     }
 
+    /// The colour of the series at `index`: that of the first series with its name, so a line and its same-name
+    /// projection share one colour everywhere (line, fill, points, selection dot and callout).
     func color(at index: Int) -> Color {
-        series[index].color ?? theme.palette.chartColor(index)
+        let first = series.firstIndex { $0.name == series[index].name } ?? index
+        return series[first].color ?? theme.palette.chartColor(first)
     }
 
+    /// One sentence per name: a line and its same-name projection read as one series.
     var summary: String {
-        ChartSpeech.lines(series.map { ($0.name, $0.points.map(\.y)) }, format: yText)
+        let names = ChartMath.firstIndices(of: series.map(\.name)).map { series[$0].name }
+        let grouped = names.map { name in
+            (name, series.filter { $0.name == name }.flatMap { $0.points.map(\.y) })
+        }
+        return ChartSpeech.lines(grouped, format: yText)
     }
 }

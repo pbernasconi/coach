@@ -46,7 +46,8 @@ nonisolated struct ExerciseServerPoint: Equatable, Sendable, Identifiable {
     /// "Tue, Sep 29, 2026: 60 lb est. 1RM (45 lb x 10)".
     var label: String
 
-    var id: Date { date }
+    /// The session, since two sessions can fall on one day.
+    var id: String { sessionID }
 }
 
 /// The exercise as the detail screen shows it.

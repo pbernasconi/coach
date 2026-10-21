@@ -18,6 +18,9 @@ public protocol AppAPIStoring: Sendable {
     func load(_ path: String) -> AppAPIKept?
     /// Keeps `kept` for `path`, replacing the one kept before.
     func save(_ kept: AppAPIKept, for path: String) throws
+    /// Keeps only the `count` most recently fetched bodies whose path starts with `prefix` ("api/app/activities/"), so
+    /// pages opened by id do not pile up.
+    func prune(prefix: String, keeping count: Int)
 }
 
 /// One file per path in a folder (Application Support/AppAPI in the app); the file's date is when it was fetched.
@@ -41,6 +44,23 @@ public struct FileAppAPICache: AppAPIStoring {
         let url = file(path)
         try kept.data.write(to: url, options: .atomic)
         try FileManager.default.setAttributes([.modificationDate: kept.fetchedAt], ofItemAtPath: url.path)
+    }
+
+    public func prune(prefix: String, keeping count: Int) {
+        let start = Self.fileName(prefix).dropLast(".json".count)
+        let urls =
+            (try? FileManager.default.contentsOfDirectory(
+                at: directory,
+                includingPropertiesForKeys: [.contentModificationDateKey]
+            )) ?? []
+        let family = urls.filter { $0.lastPathComponent.hasPrefix(start) }
+        guard family.count > count else { return }
+        let date = { (url: URL) in
+            (try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+        }
+        for url in family.sorted(by: { date($0) > date($1) }).dropFirst(max(count, 0)) {
+            try? FileManager.default.removeItem(at: url)
+        }
     }
 
     /// "api/app/lift/sessions/ab-12" → "api_app_lift_sessions_ab-12.json": letters, digits, "-" and "." kept.

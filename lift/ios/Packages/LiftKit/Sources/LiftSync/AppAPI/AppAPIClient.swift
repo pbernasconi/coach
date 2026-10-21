@@ -66,12 +66,21 @@ public struct URLSessionAppAPIClient: AppAPIFetching {
 
 /// Builds an App API request. Pure, so tests check the URL and headers without a network.
 public enum AppAPIRequest {
-    /// `path` is relative to the origin ("api/app/lift/sessions/latest"); a path segment is not encoded again.
+    /// `path` is relative to the origin ("api/app/lift/sessions/latest") and already percent-encoded: a segment such as
+    /// "name-push%2Fpull" goes out as it is. (`URL.appending(path:)` would encode its "%" again, to "%252F".)
     public static func make(baseURL: URL, path: String, query: [URLQueryItem], timeZone: String, token: String)
         -> URLRequest
     {
         let items = query + [URLQueryItem(name: "tz", value: timeZone)]
-        var request = URLRequest(url: baseURL.appending(path: path).appending(queryItems: items))
+        var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false) ?? URLComponents()
+        let base =
+            components.percentEncodedPath.hasSuffix("/")
+            ? String(components.percentEncodedPath.dropLast()) : components.percentEncodedPath
+        components.percentEncodedPath = base + "/" + path
+        components.queryItems = items
+        // URLComponents leaves "+" as is, and the server reads it as a space ("Etc/GMT+8").
+        components.percentEncodedQuery = components.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
+        var request = URLRequest(url: components.url ?? baseURL.appending(path: path).appending(queryItems: items))
         request.httpMethod = "GET"
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Accept")

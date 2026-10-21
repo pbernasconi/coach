@@ -77,6 +77,7 @@ extension KoboLineChart {
     }
 
     @ChartContentBuilder var markerMarks: some ChartContent {
+        let lowered = loweredRuleLabels
         ForEach(Array(markers.enumerated()), id: \.offset) { index, marker in
             if let y = marker.y {
                 PointMark(x: .value("X", marker.x), y: .value("Y", y))
@@ -86,10 +87,7 @@ extension KoboLineChart {
                         position: .top,
                         spacing: Space.xxs,
                         overflowResolution: .init(x: .fit(to: .plot), y: .fit(to: .plot))
-                    ) {
-                        // Every other rule's label one row lower, so two close events both stay readable.
-                        markerLabel(marker).padding(.top, index.isMultiple(of: 2) ? 0 : markerRow)
-                    }
+                    ) { markerLabel(marker) }
             } else {
                 // The label sits inside the plot at the rule's top, so it never shares a row with the legend.
                 RuleMark(x: .value("X", marker.x))
@@ -101,8 +99,8 @@ extension KoboLineChart {
                         spacing: 0,
                         overflowResolution: .init(x: .fit(to: .plot), y: .fit(to: .plot))
                     ) {
-                        // Every other rule's label one row lower, so two close events both stay readable.
-                        markerLabel(marker).padding(.top, index.isMultiple(of: 2) ? 0 : markerRow)
+                        // Every other rule's label, in x order, one row lower, so two close events both stay readable.
+                        markerLabel(marker).padding(.top, lowered.contains(index) ? markerRow : 0)
                     }
             }
         }
@@ -136,11 +134,20 @@ extension KoboLineChart {
         return ChartMath.nearestIndex(in: xs.map(\.chartPosition), to: x.chartPosition).map { xs[$0] }
     }
 
+    /// One row per name: the first series with that name that covers `x` (a line, or its projection beyond it).
     func calloutRows(at x: X) -> [ChartCallout.Row] {
-        series.enumerated().compactMap { index, line in
-            guard let point = line.point(covering: x) else { return nil }
+        var named = Set<String>()
+        return series.enumerated().compactMap { index, line in
+            guard !named.contains(line.name), let point = line.point(covering: x) else { return nil }
+            named.insert(line.name)
             return ChartCallout.Row(name: line.name, value: yText(point.y), color: color(at: index))
         }
+    }
+
+    /// The rule markers whose label goes one row lower: every other one in x order.
+    private var loweredRuleLabels: Set<Int> {
+        let rules = markers.indices.filter { markers[$0].y == nil }.sorted { markers[$0].x < markers[$1].x }
+        return Set(rules.enumerated().filter { !$0.offset.isMultiple(of: 2) }.map(\.element))
     }
 
     /// The bands cut to the plotted y range, so a band never spills past the plot; bands fully outside are dropped.

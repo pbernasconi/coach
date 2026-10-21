@@ -12,12 +12,18 @@ protocol AppDataSource: AnyObject {
     /// The body kept for `path` ("api/app/today"), or nil. Reads the disk off the main actor.
     func kept(_ path: String) async -> AppAPIKept?
 
-    /// Fetches `path` with `query` now and keeps the body under the path and query. Throws `SyncTransportError`
-    /// (`missingToken` when not connected yet).
+    /// Fetches `path` with `query` now. Throws `SyncTransportError` (`missingToken` when not connected yet). Nothing is
+    /// kept: the caller keeps a body with `keep` once it decoded, so a body Lift cannot read never replaces a good one.
     func fetch(_ path: String, query: [URLQueryItem]) async throws -> AppAPIKept
+
+    /// Keeps `kept` as the body of `path`, for the next launch and for offline.
+    func keep(_ kept: AppAPIKept, for path: String) async
 }
 
 extension AppDataSource {
+    /// Nothing to keep (demo data, sync off, test fakes).
+    func keep(_: AppAPIKept, for _: String) async {}
+
     /// Fetches `path` with no query.
     func fetch(_ path: String) async throws -> AppAPIKept {
         try await fetch(path, query: [])
@@ -48,10 +54,16 @@ final class LiveAppData: AppDataSource {
     }
 
     func fetch(_ path: String, query: [URLQueryItem]) async throws -> AppAPIKept {
-        let kept = AppAPIKept(data: try await client.get(path, query: query), fetchedAt: now())
-        await Self.save(kept, for: appCacheKey(path, query), in: cache)
-        return kept
+        AppAPIKept(data: try await client.get(path, query: query), fetchedAt: now())
     }
+
+    func keep(_ kept: AppAPIKept, for path: String) async {
+        await Self.save(kept, for: path, in: cache)
+    }
+
+    /// Paths opened by id, each family capped at `keptPerFamily` bodies (the most recently fetched stay).
+    nonisolated static let idFamilies = ["api/app/activities/", "api/app/lift/sessions/", "api/app/lift/exercises/"]
+    nonisolated static let keptPerFamily = 40
 
     /// Disk reads and writes run off the main actor.
     @concurrent
@@ -63,6 +75,9 @@ final class LiveAppData: AppDataSource {
     private nonisolated static func save(_ kept: AppAPIKept, for key: String, in cache: any AppAPIStoring) async {
         do {
             try cache.save(kept, for: key)
+            for family in idFamilies where key.hasPrefix(family) {
+                cache.prune(prefix: family, keeping: keptPerFamily)
+            }
         } catch {
             AppLog.sync.error("App API body not kept: \(String(describing: error), privacy: .public)")
         }

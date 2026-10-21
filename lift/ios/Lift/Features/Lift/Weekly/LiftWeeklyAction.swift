@@ -6,4 +6,6 @@ nonisolated enum LiftWeeklyAction: Equatable, Sendable {
     case refreshPulled
     /// "Try again" after a failed load.
     case retryTapped
+    /// "Open Settings" under "not connected".
+    case connectTapped
 }

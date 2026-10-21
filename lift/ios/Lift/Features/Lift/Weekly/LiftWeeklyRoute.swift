@@ -9,6 +9,7 @@ struct LiftWeeklyRoute: View {
         LiftWeeklyScreen(
             viewModel: LiftWeeklyViewModel(
                 data: dependencies.appData,
+                tabs: dependencies.tabs,
                 now: dependencies.now,
                 calendar: dependencies.calendar
             )

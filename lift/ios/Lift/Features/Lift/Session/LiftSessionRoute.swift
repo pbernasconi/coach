@@ -3,10 +3,11 @@ import LiftStore
 import SwiftUI
 
 /// Where a session link leads (lift/APP-API.md, "Links"): the local workout for a session this iPhone has that is not
-/// finished, otherwise the coach's read-only page.
+/// finished, otherwise the coach's read-only page. `local` is this iPhone's finished copy, which the page falls back to
+/// when the coach cannot show it.
 nonisolated enum LiftSessionDestination: Equatable, Sendable {
     case workout(UUID)
-    case coach
+    case coach(local: UUID?)
 }
 
 /// Decides `LiftSessionDestination` from the local store: one read of the session, nothing else.
@@ -14,12 +15,12 @@ nonisolated struct LiftSessionResolver: Sendable {
     let sessions: any SessionRepository
 
     func destination(for sessionID: String) async -> LiftSessionDestination {
-        guard let id = UUID(uuidString: sessionID) else { return .coach }
+        guard let id = UUID(uuidString: sessionID) else { return .coach(local: nil) }
         for await detail in sessions.observeSession(id: id) {
-            guard let detail else { return .coach }
-            return detail.session.finishedAt == nil ? .workout(id) : .coach
+            guard let detail else { return .coach(local: nil) }
+            return detail.session.finishedAt == nil ? .workout(id) : .coach(local: id)
         }
-        return .coach
+        return .coach(local: nil)
     }
 }
 
@@ -64,16 +65,19 @@ struct LiftSessionRoute: View {
                 ),
                 toasts: toasts
             )
-        case .coach:
+        case .coach(let local):
             LiftSessionScreen(
                 viewModel: LiftSessionViewModel(
                     sessionID: sessionID,
+                    localSessionID: local,
                     data: dependencies.appData,
                     mediaLoader: dependencies.mediaLoader,
                     router: router,
+                    tabs: dependencies.tabs,
                     now: dependencies.now,
                     calendar: dependencies.calendar
-                )
+                ),
+                showLocal: { destination = .workout($0) }
             )
         }
     }

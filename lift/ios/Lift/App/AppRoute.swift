@@ -56,6 +56,7 @@ final class TabRouter: Navigating {
     }
 
     func open(_ route: AppRoute) {
+        guard path.last != route else { return }  // a double tap on a row pushes its screen once
         path.append(route)
     }
 

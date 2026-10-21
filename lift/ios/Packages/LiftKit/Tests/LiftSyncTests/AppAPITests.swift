@@ -21,7 +21,25 @@ import Testing
                 == "https://coach.test/api/app/lift/sessions/latest?weeks=2&tz=America/Los_Angeles"
         )
         #expect(request.httpMethod == "GET")
+        let encoded = AppAPIRequest.make(
+            baseURL: try #require(URL(string: "https://coach.test/")),
+            path: "api/app/lift/exercises/name-push%2Fpull%20row",
+            query: [],
+            timeZone: "UTC",
+            token: "secret"
+        )
+        #expect(
+            encoded.url?.absoluteString == "https://coach.test/api/app/lift/exercises/name-push%2Fpull%20row?tz=UTC"
+        )
         #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer secret")
+        let plus = AppAPIRequest.make(
+            baseURL: try #require(URL(string: "https://coach.test")),
+            path: "api/app/today",
+            query: [],
+            timeZone: "Etc/GMT+8",
+            token: "secret"
+        )
+        #expect(plus.url?.query == "tz=Etc/GMT%2B8", "a server reads a bare + as a space")
     }
 
     @Test func clientSendsNothingWithoutAToken() async throws {
@@ -121,5 +139,22 @@ import Testing
         #expect(
             [today.stale.value == nil, today.fitness.value == nil, today.goals.value == nil] == [true, true, true]
         )
+    }
+
+    @Test func pruneKeepsTheNewestBodiesOfAFamilyOnly() throws {
+        let folder = FileManager.default.temporaryDirectory.appending(path: "AppAPIPrune-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let cache = FileAppAPICache(directory: folder)
+        for index in 0..<5 {
+            let kept = AppAPIKept(
+                data: Data("\(index)".utf8),
+                fetchedAt: Date(timeIntervalSince1970: Double(index) * 60)
+            )
+            try cache.save(kept, for: "api/app/activities/\(index)")
+        }
+        try cache.save(AppAPIKept(data: Data("t".utf8), fetchedAt: .distantPast), for: "api/app/today")
+        cache.prune(prefix: "api/app/activities/", keeping: 2)
+        #expect((0..<5).map { cache.load("api/app/activities/\($0)") != nil } == [false, false, false, true, true])
+        #expect(cache.load("api/app/today") != nil)
     }
 }

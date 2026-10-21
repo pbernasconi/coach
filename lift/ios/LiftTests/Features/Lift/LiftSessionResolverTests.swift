@@ -21,21 +21,26 @@ import Testing
         #expect(result == .workout(open.id))
     }
 
-    @Test func aLocalFinishedSessionOpensTheCoachPage() async {
+    @Test func aLocalFinishedSessionOpensTheCoachPageWithItsLocalCopy() async {
         var finished = SessionBuilder.session(id: 2, on: Fixtures.monday, done: 3, planned: 0)
         finished.session.finishedAt = ManualNow.start
 
         let result = await destination(finished.id.uuidString.lowercased(), store: [finished])
 
-        #expect(result == .coach)
+        #expect(result == .coach(local: finished.id))
     }
 
     @Test func aSessionThisIPhoneDoesNotHaveOpensTheCoachPage() async {
-        #expect(await destination(IDSequence.id(9, prefix: 0xEE).uuidString.lowercased(), store: [nil]) == .coach)
-        #expect(await destination(IDSequence.id(8, prefix: 0xEE).uuidString.lowercased(), store: []) == .coach)
+        #expect(
+            await destination(IDSequence.id(9, prefix: 0xEE).uuidString.lowercased(), store: [nil])
+                == .coach(local: nil)
+        )
+        #expect(
+            await destination(IDSequence.id(8, prefix: 0xEE).uuidString.lowercased(), store: []) == .coach(local: nil)
+        )
     }
 
     @Test func anIDThatIsNotAUUIDOpensTheCoachPage() async {
-        #expect(await destination("latest", store: []) == .coach)
+        #expect(await destination("latest", store: []) == .coach(local: nil))
     }
 }

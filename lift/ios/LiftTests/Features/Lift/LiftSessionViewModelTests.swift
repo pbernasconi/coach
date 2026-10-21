@@ -11,17 +11,21 @@ import Testing
 @MainActor
 @Suite struct LiftSessionViewModelTests {
     let router = RecordingNavigator()
+    let tabs = RecordingTabs()
     let sessionID = "ca4f651b-98c7-4765-83a9-07ab74435d69"
 
     func makeViewModel(
         _ data: FakeAppData,
-        media: LiftSessionMediaLoader = LiftSessionMediaLoader()
+        media: LiftSessionMediaLoader = LiftSessionMediaLoader(),
+        local: UUID? = nil
     ) -> LiftSessionViewModel {
         LiftSessionViewModel(
             sessionID: sessionID,
+            localSessionID: local,
             data: data,
             mediaLoader: media,
             router: router,
+            tabs: tabs,
             now: SessionBuilder.now,
             calendar: SessionBuilder.calendar
         )
@@ -43,6 +47,7 @@ import Testing
         let hero = try #require(detail.hero.value)
         #expect(hero.state == "planned")
         #expect(hero.stats.count == 5)
+        #expect(hero.shownStats.map(\.id) == ["exercises", "plannedVolume", "volume", "duration"])
         #expect(hero.ring.text == "0/25")
         #expect(hero.muscles.map(\.name) == ["Back", "Glutes"])
         let squat = try #require(detail.exercises.value?.items.first)
@@ -93,6 +98,43 @@ import Testing
 
         #expect(vm.state.detail.content == .empty)
         #expect(data.fetched.isEmpty)
+    }
+
+    @Test func aSessionTheCoachCannotShowFallsBackToTheLocalCopy() async {
+        let local = IDSequence.id(5, prefix: 0xEE)
+        let notSynced = makeViewModel(FakeAppData([.failure(.rejected(status: 404))]), local: local)
+        await notSynced.run()
+        #expect(notSynced.state.localFallback == local)
+
+        let noToken = makeViewModel(FakeAppData([.failure(.missingToken)]), local: local)
+        await noToken.run()
+        #expect(noToken.state.localFallback == local)
+
+        let notOnThisPhone = makeViewModel(FakeAppData([.failure(.rejected(status: 404))]))
+        await notOnThisPhone.run()
+        #expect(notOnThisPhone.state.localFallback == nil)
+    }
+
+    @Test func aLoadedSessionKeepsTheCoachPage() async {
+        let vm = makeViewModel(FakeAppData([.success(contract)]), local: IDSequence.id(5, prefix: 0xEE))
+        await vm.run()
+        #expect(vm.state.localFallback == nil)
+    }
+
+    @Test func comingBackWithinAMinuteDoesNotFetchAgain() async {
+        let data = FakeAppData([.success(contract), .success(contract)])
+        let vm = makeViewModel(data)
+        await vm.run()
+        await vm.run()
+        #expect(data.fetched.count == 1)
+        await vm.send(.refreshPulled)?.value
+        #expect(data.fetched.count == 2)
+    }
+
+    @Test func connectTappedShowsSettings() async {
+        let vm = await loaded()
+        vm.send(.connectTapped)
+        #expect(tabs.shown == [.settings])
     }
 
     @Test func retryTappedLoadsAgainAfterAFailure() async {

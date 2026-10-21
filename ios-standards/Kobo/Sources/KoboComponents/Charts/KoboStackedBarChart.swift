@@ -168,7 +168,9 @@ public struct KoboStackedBarChart<X: KoboChartX>: View {
     }
 
     private var summary: String {
-        ChartSpeech.bars(totals: groups.map(\.total), labels: groups.map { xText($0.x) }, format: yText)
+        // The partial period is left out, as it is from the average line.
+        let whole = groups.filter { !$0.isPartial }
+        return ChartSpeech.bars(totals: whole.map(\.total), labels: whole.map { xText($0.x) }, format: yText)
     }
 
     /// Selection snapped to the nearest bar.

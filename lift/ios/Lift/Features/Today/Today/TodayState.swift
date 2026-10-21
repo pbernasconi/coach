@@ -5,6 +5,8 @@ import LiftSync
 /// are enums (SCR-6).
 nonisolated struct TodayState: Equatable, Sendable {
     var today = AppResourceState<AppToday>()
+    /// The fitness chart's data, worked out once per body; nil without a fitness section.
+    var fitness: TodayFitnessChart?
     var destination: Destination?
     /// A section to scroll to once the page shows (screenshots); nil for the top.
     var anchor: TodayAnchor?

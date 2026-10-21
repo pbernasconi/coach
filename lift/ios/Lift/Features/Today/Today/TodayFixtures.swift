@@ -1,6 +1,7 @@
 #if DEBUG
     import Foundation
     import KoboPatterns
+    import LiftCore
     import LiftSync
 
     /// Named states for previews and snapshots, from the bundled made-up Today body (TEST-8).
@@ -14,8 +15,11 @@
         }
 
         private static func loaded(_ freshness: AppFreshness) -> TodayState {
-            TodayState(
-                today: AppResourceState(content: fixtureToday.map { .loaded($0) } ?? .loading, freshness: freshness)
+            let today = fixtureToday
+            let calendar = Calendar.autoupdatingCurrent.startingWeeksOnMonday()  // as CompositionRoot
+            return TodayState(
+                today: AppResourceState(content: today.map { .loaded($0) } ?? .loading, freshness: freshness),
+                fitness: today?.fitness.value.map { TodayFitnessChart($0, calendar: calendar) }
             )
         }
 

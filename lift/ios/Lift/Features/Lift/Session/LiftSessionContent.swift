@@ -11,7 +11,8 @@ struct LiftSessionContent: View {
 
     var body: some View {
         ScrollView {
-            AppResourcePage(state.detail, onRetry: { send(.retryTapped) }) { detail in
+            AppResourcePage(state.detail, onRetry: { send(.retryTapped) }, onConnect: { send(.connectTapped) }) {
+                detail in
                 LiftSessionSections(detail: detail, state: state, send: send)
             }
             .pageColumn()
@@ -19,7 +20,7 @@ struct LiftSessionContent: View {
             .padding(.bottom, Space.xxl)
         }
         .screenCanvas()
-        .navigationTitle(Text(verbatim: title))
+        .navigationTitle(Text(verbatim: ""))  // the hero names the session; the bar keeps only older and newer
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             if let detail = state.detail.content.value {
@@ -31,10 +32,6 @@ struct LiftSessionContent: View {
                 }
             }
         }
-    }
-
-    private var title: String {
-        state.detail.content.value?.hero.value?.title ?? String(localized: "Session")
     }
 }
 

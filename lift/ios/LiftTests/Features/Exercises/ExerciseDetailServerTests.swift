@@ -94,7 +94,7 @@ import Testing
         let vm = await loaded(source, exerciseID: nil, key: "name-hanging leg raise", entries: [])
         #expect(vm.state.exercise == .empty)
         #expect(vm.state.history == .empty)
-        #expect(source.fetched == ["api/app/lift/exercises/name-hanging leg raise"])
+        #expect(source.fetched == ["api/app/lift/exercises/name-hanging%20leg%20raise"])
         #expect(vm.state.server.content.value?.name == "Overhead triceps extension")
     }
 

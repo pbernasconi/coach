@@ -3,7 +3,7 @@ import KoboTokens
 import SwiftUI
 
 /// The lines under a stacked bar chart that name its marks: the dashed reference ("avg 4:40") and the dot under marked
-/// bars ("Strength days"). Decorative for VoiceOver: the chart's summary reads the numbers.
+/// bars ("Long outing"). Decorative for VoiceOver: the chart's summary reads the numbers.
 struct StackedBarLegend: View {
     @Environment(\.koboTheme) private var theme
     let reference: String?

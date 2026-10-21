@@ -162,7 +162,7 @@ nonisolated struct DemoCoachWeeks {
         let labels: [CoachItemState: String] = [
             .today: "Today", .planned: "Planned", .done: "Done", .skipped: "Skipped", .missed: "Missed",
         ]
-        return CoachItem(
+        var item = CoachItem(
             id: id,
             date: day,
             title: title,
@@ -172,5 +172,17 @@ nonisolated struct DemoCoachWeeks {
             stateLabel: sport == .rest ? "Rest" : labels[state] ?? "",
             liftSessionId: session?.uuidString.lowercased()
         )
+        if item.state == .done && sport != .strength {
+            // A made-up Strava match, so the sheet's "Open activity" opens the demo run (`DemoActivities.run`).
+            item.done = CoachDone(
+                source: "strava",
+                name: title,
+                minutes: nil,
+                tss: nil,
+                text: subtitle,
+                activityId: DemoActivities.run
+            )
+        }
+        return item
     }
 }

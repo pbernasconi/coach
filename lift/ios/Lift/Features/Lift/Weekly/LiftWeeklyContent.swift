@@ -10,7 +10,8 @@ struct LiftWeeklyContent: View {
 
     var body: some View {
         ScrollView {
-            AppResourcePage(state.weekly, onRetry: { send(.retryTapped) }) { weekly in
+            AppResourcePage(state.weekly, onRetry: { send(.retryTapped) }, onConnect: { send(.connectTapped) }) {
+                weekly in
                 AppSectionView(nil, section: weekly.weeks) { weeks in
                     LiftWeeklyWeeksView(weeks: weeks)
                 }

@@ -21,5 +21,6 @@ struct TileGrid<Item, Tile: View>: View {
                 }
             }
         }
+        .statTileRow()
     }
 }

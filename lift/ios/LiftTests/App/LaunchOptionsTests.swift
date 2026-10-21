@@ -28,8 +28,8 @@ import Testing
         (["Lift", "-tab", "lift"], LaunchOptions(initialTab: .lift)),
         (["Lift", "-tab", "today"], LaunchOptions(initialTab: .today)),
         (["Lift", "-tab", "training"], LaunchOptions(initialTab: .training)),
-        (["Lift", "-demo", "-open", "workout"], LaunchOptions(isDemo: true, opening: .workout)),
-        (["Lift", "-open", "Workout"], LaunchOptions(opening: .workout)),
+        (["Lift", "-demo", "-open", "workout"], LaunchOptions(isDemo: true, initialTab: .week, opening: .workout)),
+        (["Lift", "-open", "Workout"], LaunchOptions(initialTab: .week, opening: .workout)),
         (["Lift", "-open", "nope"], LaunchOptions()),
         (["Lift", "-open"], LaunchOptions()),
         (
@@ -120,5 +120,16 @@ import Testing
         #expect(options.openURL == URL(string: "lift://sync?code=AbC123"))
         #expect(LaunchOptions(arguments: ["Lift", "-open-url", "https://example.com"]).openURL == nil)
         #expect(LaunchOptions(arguments: ["Lift", "-open-url"]).openURL == nil)
+    }
+
+    @Test func openAloneSelectsTheTabAndSegmentOfItsScreen() {
+        let exercise = LaunchOptions(arguments: ["Lift", "-demo", "-open", "exercise"])
+        #expect(exercise.initialTab == .lift && exercise.liftSegment == .exercises)
+        let progress = LaunchOptions(arguments: ["Lift", "-demo", "-open", "progress"])
+        #expect(progress.initialTab == .lift && progress.liftSegment == .history)
+        let workout = LaunchOptions(arguments: ["Lift", "-demo", "-open", "workout"])
+        #expect(workout.initialTab == .week && workout.liftSegment == .overview)
+        let explicit = LaunchOptions(arguments: ["Lift", "-demo", "-tab", "settings", "-open", "exercise"])
+        #expect(explicit.initialTab == .settings)
     }
 }

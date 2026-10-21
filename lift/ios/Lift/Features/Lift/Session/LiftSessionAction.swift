@@ -5,6 +5,8 @@ nonisolated enum LiftSessionAction: Equatable, Sendable {
     /// "Try again" after a failed load with nothing kept.
     case retryTapped
     case refreshPulled
+    /// "Open Settings" under "not connected".
+    case connectTapped
     /// The older or newer session: replaces this page, so Back still leads where the session was opened from.
     case olderTapped
     case newerTapped

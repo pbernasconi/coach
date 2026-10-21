@@ -15,19 +15,12 @@ struct ExerciseDetailContent: View {
                 LoadingState()
                     .pageGutter()
             case .empty:
-                if let stats = state.server.content.value {
+                // No library exercise (a `name-…` key, or a removed one): the coach's page alone, with its loading,
+                // retry, "not connected" and "Coach has nothing here" states.
+                AppResourcePage(state.server, onRetry: { send(.retryTapped) }) { stats in
                     ExerciseServerOnlyBody(stats: stats, state: state, send: send)
-                } else if state.server.content == .loading {
-                    LoadingState()
-                        .pageGutter()
-                } else {
-                    EmptyState(
-                        symbol: "dumbbell",
-                        title: "Exercise not found",
-                        message: "It may have been removed."
-                    )
-                    .pageGutter()
                 }
+                .pageGutter()
             case .failed:
                 ErrorState(title: "Exercise could not be loaded")
                     .pageGutter()
@@ -130,13 +123,12 @@ private struct ExerciseServerOnlyBody: View {
     var body: some View {
         ExerciseServerSections(
             stats: stats,
-            freshness: state.server.freshness,
+            freshness: nil,  // `AppResourcePage` shows it above
             chart: state.serverChart,
             point: state.serverPoint,
             isSessionsExpanded: state.isServerSessionsExpanded,
             send: send
         )
-        .pageColumn()
         .padding(.top, Space.sm)
         .padding(.bottom, Space.xxl)
     }

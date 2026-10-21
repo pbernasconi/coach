@@ -72,7 +72,9 @@ private struct ActivityList: View {
                         ActivityRow(activity: row) { send(.activityTapped(row.id)) }
                     }
                 }
-                LoadMoreFooter(footer, trigger: .automatic) { send(.loadMoreTapped) }
+                // A button, not `.automatic`: the footer sits in one lazy child with the whole list, so its onAppear fires once
+                // at insertion, not on scroll, and paging would stop after the second page.
+                LoadMoreFooter(footer, trigger: .button) { send(.loadMoreTapped) }
             }
         }
     }

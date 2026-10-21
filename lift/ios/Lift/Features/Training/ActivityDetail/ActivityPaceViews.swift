@@ -35,8 +35,8 @@ struct ActivityPaceBarsView: View {
                 bars: mode.bars.enumerated().map { index, bar in
                     WidthBar(
                         id: "\(index)",
-                        width: bar.width,
-                        value: bar.value,
+                        width: bar.width ?? 0,  // the chart leaves out a part with no width
+                        value: bar.value ?? 0,
                         label: "\(bar.label) · \(bar.valueText)"
                     )
                 },

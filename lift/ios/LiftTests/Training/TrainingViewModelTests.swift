@@ -93,12 +93,44 @@ import Testing
         #expect(vm.state.footer.phase == .exhausted)
     }
 
+    @Test func aReturnToTheTabKeepsTheLoadedPages() async {
+        let vm = await loaded()
+        await vm.send(.loadMoreTapped)?.value
+        await vm.run()  // the Screen's .task runs again after a pop or a tab switch
+        #expect(vm.state.rows.count == 40)
+        #expect(vm.state.footer.phase == .exhausted)
+    }
+
+    @Test func aPageFromBeforeARefreshIsDropped() async {
+        let data = makeData()
+        let vm = await loaded(data)
+        let more = vm.send(.loadMoreTapped)
+        await vm.send(.refreshPulled)?.value
+        await more?.value
+        // Either order keeps the list whole: page 2 lands only while its cursor is still the list's cursor.
+        #expect(Set(vm.state.rows.map(\.id)).count == vm.state.rows.count)
+    }
+
     @Test func refreshPulledStartsThePagingAgain() async {
         let vm = await loaded()
         await vm.send(.loadMoreTapped)?.value
         await vm.send(.refreshPulled)?.value
         #expect(vm.state.rows.count == 30)
         #expect(vm.state.nextCursor == "9000000075")
+    }
+
+    @Test func aPageThatLandsAfterARefreshIsDropped() async {
+        let data = makeData()
+        data.hold(Self.page2Key)
+        let vm = await loaded(data)
+        let more = vm.send(.loadMoreTapped)
+        while !data.fetched.contains(Self.page2Key) { await Task.yield() }
+        await vm.send(.refreshPulled)?.value
+        data.release(Self.page2Key)
+        await more?.value
+        #expect(vm.state.rows.count == 30, "the old page 2 is not added to the fresh list")
+        #expect(vm.state.nextCursor == "9000000075")
+        #expect(vm.state.footer.phase == .idle)
     }
 
     @Test func activitiesRetryTappedLoadsAfterAFailure() async {

@@ -38,6 +38,7 @@ struct AppResource<Value: Decodable & Equatable & Sendable> {
         do {
             let fetched = try await source.fetch(path)
             guard let value = await Self.decode(fetched.data) else { throw SyncTransportError.invalidResponse }
+            await source.keep(fetched, for: path)
             update(AppResourceState(content: .loaded(value), freshness: freshness(fetched.fetchedAt, offline: false)))
         } catch is CancellationError {
             return
@@ -54,7 +55,12 @@ struct AppResource<Value: Decodable & Equatable & Sendable> {
     /// Decodes off the main actor: a Today body is about 20 KB, a Lift overview about 66 KB.
     @concurrent
     nonisolated static func decode(_ data: Data) async -> Value? {
-        try? JSONDecoder().decode(Value.self, from: data)
+        do {
+            return try JSONDecoder().decode(Value.self, from: data)
+        } catch {
+            AppLog.sync.error("App API body not read as \(Value.self): \(String(describing: error), privacy: .public)")
+            return nil
+        }
     }
 
     /// The kept content with an offline line, or a failure message when nothing is kept.

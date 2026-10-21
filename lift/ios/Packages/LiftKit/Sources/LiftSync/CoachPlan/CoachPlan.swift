@@ -130,12 +130,20 @@ public struct CoachDone: Decodable, Equatable, Sendable {
     /// The matched Strava activity, for `/api/app/activities/{id}`; nil for a Lift session or when unknown.
     public var activityId: String?
 
-    public init(source: String, name: String?, minutes: Double?, tss: Double?, text: String? = nil) {
+    public init(
+        source: String,
+        name: String?,
+        minutes: Double?,
+        tss: Double?,
+        text: String? = nil,
+        activityId: String? = nil
+    ) {
         self.source = source
         self.name = name
         self.minutes = minutes
         self.tss = tss
         self.text = text
+        self.activityId = activityId
     }
 }
 

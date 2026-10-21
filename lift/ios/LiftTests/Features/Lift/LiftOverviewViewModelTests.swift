@@ -10,6 +10,7 @@ import Testing
 @MainActor
 @Suite struct LiftOverviewViewModelTests {
     let router = RecordingNavigator()
+    let tabs = RecordingTabs()
 
     /// The contract example with three more tips: a section link, a Week tab link and no link.
     private var body: Data {
@@ -27,6 +28,7 @@ import Testing
         let vm = LiftOverviewViewModel(
             data: data,
             router: router,
+            tabs: tabs,
             now: SessionBuilder.now,
             calendar: SessionBuilder.calendar
         )
@@ -48,6 +50,7 @@ import Testing
         let vm = LiftOverviewViewModel(
             data: data,
             router: router,
+            tabs: tabs,
             now: SessionBuilder.now,
             calendar: SessionBuilder.calendar
         )
@@ -139,16 +142,33 @@ import Testing
         #expect(router.opened.isEmpty)
     }
 
-    @Test func tipTappedWithAWeekLinkOrNoLinkDoesNothing() async {
+    @Test func tipTappedWithAWeekLinkShowsTheWeekTab() async {
         let (vm, _) = await loaded([.success(body)])
 
         vm.send(.tipTapped("plan"))
+
+        #expect(tabs.shown == [.week])
+        #expect(router.opened.isEmpty)
+        #expect(LiftTipsView.opens(.week) && LiftTipsView.opens(.section("records")))
+    }
+
+    @Test func tipTappedWithNoLinkDoesNothing() async {
+        let (vm, _) = await loaded([.success(body)])
+
         vm.send(.tipTapped("protein"))
         vm.send(.tipTapped("unknown"))
 
-        #expect(router.opened.isEmpty)
+        #expect(router.opened.isEmpty && tabs.shown.isEmpty)
         #expect(vm.state.scrollTarget == nil)
-        #expect(!LiftTipsView.opens(.week) && !LiftTipsView.opens(nil) && LiftTipsView.opens(.section("records")))
+        #expect(!LiftTipsView.opens(nil))
+    }
+
+    @Test func connectTappedShowsSettings() async {
+        let (vm, _) = await loaded()
+
+        vm.send(.connectTapped)
+
+        #expect(tabs.shown == [.settings])
     }
 
     @Test func olderSessionsExpandedChangedFoldsAndUnfolds() async {

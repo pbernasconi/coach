@@ -11,6 +11,8 @@ struct LiftTabScreen: View {
     /// History's first view: Sessions, or Progress for `-open progress`.
     let historySegment: HistorySegment
     @State private var segment: LiftSegment
+    /// The overview's ViewModel, kept across segment switches (no refetch, folded sections kept).
+    @State private var overview: LiftOverviewViewModel
 
     init(
         dependencies: AppDependencies,
@@ -22,6 +24,7 @@ struct LiftTabScreen: View {
         self.router = router
         self.historySegment = historySegment
         _segment = State(initialValue: initialSegment)
+        _overview = State(initialValue: LiftOverviewRoute.makeViewModel(dependencies: dependencies, router: router))
     }
 
     var body: some View {
@@ -43,7 +46,7 @@ struct LiftTabScreen: View {
     @ViewBuilder private var content: some View {
         switch segment {
         case .overview:
-            LiftOverviewSlot(dependencies: dependencies, router: router)
+            LiftOverviewScreen(viewModel: overview)
         case .history:
             HistoryScreen(
                 viewModel: HistoryViewModel(
@@ -54,7 +57,7 @@ struct LiftTabScreen: View {
                     now: dependencies.now,
                     calendar: dependencies.calendar,
                     segment: historySegment,
-                    opensCoachSessions: dependencies.appData.isConnected
+                    opensCoachSessions: dependencies.appData is LiveAppData
                 )
             )
         case .exercises:
@@ -66,15 +69,5 @@ struct LiftTabScreen: View {
                 )
             )
         }
-    }
-}
-
-/// The Lift overview segment (`/api/app/lift`): the Lift dashboard.
-struct LiftOverviewSlot: View {
-    let dependencies: AppDependencies
-    let router: any Navigating
-
-    var body: some View {
-        LiftOverviewRoute(dependencies: dependencies, router: router)
     }
 }

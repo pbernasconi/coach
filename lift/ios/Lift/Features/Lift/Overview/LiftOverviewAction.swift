@@ -12,6 +12,8 @@ nonisolated enum LiftOverviewAction: Equatable, Sendable {
     case exerciseTapped(String)
     /// A coach tip, by its `id`: opens its link, or scrolls to the section it names.
     case tipTapped(String)
+    /// "Open Settings" under "not connected": the Settings tab, where Sync connects Lift to the coach.
+    case connectTapped
     /// "Weekly volume" under the sessions.
     case weeklyTapped
     /// "Older sessions": shows or hides the logged sessions after the first `shown`.

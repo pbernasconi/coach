@@ -21,6 +21,8 @@ final class ExerciseDetailViewModel {
     private let router: any Navigating
     /// The coach's numbers for the exercise key.
     private let server: AppResource<LiftExerciseStats>
+    /// When the coach's numbers last came fresh; a return within `LiftRefresh.interval` keeps them.
+    @ObservationIgnored private var serverFetchedAt: Date?
     @ObservationIgnored private var serial = 0
     @ObservationIgnored private var isLoadingServer = false
     /// Every charted session, the range and the touched session behind `state.progress`.
@@ -51,7 +53,7 @@ final class ExerciseDetailViewModel {
         self.days = days
         self.progress = ExerciseProgressTracker(days: days, unit: unit)
         self.router = router
-        self.server = AppResource(path: "api/app/lift/exercises/\(exerciseKey)", source: data, now: now, days: days)
+        self.server = AppResource(path: LiftLinks.exercisePath(exerciseKey), source: data, now: now, days: days)
     }
 
     /// Observes the exercise and its history, and loads the coach's numbers; started by the Screen's `.task` (SCR-4).
@@ -60,12 +62,12 @@ final class ExerciseDetailViewModel {
         guard let exerciseID else {
             state.exercise = .empty
             state.history = .empty
-            await loadServer()
+            await loadServerUnlessFresh()
             return
         }
         async let library: Void = observeExercise(exerciseID)
         async let past: Void = observeHistory(exerciseID)
-        async let coach: Void = loadServer()
+        async let coach: Void = loadServerUnlessFresh()
         _ = await (library, past, coach)
     }
 
@@ -110,6 +112,12 @@ final class ExerciseDetailViewModel {
             state.serverChart = ExerciseServerPoint.points(loaded.content.value?.chart.value?.points ?? [], days: days)
             if let point = state.serverPoint, !state.serverChart.contains(point) { state.serverPoint = nil }
         }
+        if state.server.content.value != nil, state.server.freshness?.isOffline == false { serverFetchedAt = now() }
+    }
+
+    private func loadServerUnlessFresh() async {
+        guard !LiftRefresh.isFresh(serverFetchedAt, now: now()) else { return }
+        await loadServer()
     }
 
     /// Loads the animation for `state.media`; the Screen restarts it whenever the media changes

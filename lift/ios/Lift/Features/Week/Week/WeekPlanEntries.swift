@@ -106,6 +106,6 @@ nonisolated enum WeekLinks {
     }
 
     static func planItem(_ item: WeekPlanItem) -> AppRoute? {
-        item.liftSessionId.map(AppRoute.liftSession)
+        item.liftSessionId.map(LiftLinks.session)
     }
 }

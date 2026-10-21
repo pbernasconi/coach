@@ -10,7 +10,8 @@ import SwiftUI
 struct TodayFitnessView: View {
     @Environment(\.koboTheme) private var theme
     @Environment(\.calendar) private var calendar
-    let fitness: TodayFitness
+    /// Worked out once per body (`TodayFitnessChart`), so a drag redoes no date maths.
+    let chart: TodayFitnessChart
     /// The touched day, shared by both charts. Presentation state only.
     @State private var selection: Date?
 
@@ -18,27 +19,26 @@ struct TodayFitnessView: View {
         VStack(alignment: .leading, spacing: Space.md) {
             if let shown = shownDay { TodayFitnessNow(day: shown) }
             KoboLineChart(
-                series: [
-                    line("ctl", String(localized: "Fitness"), \.ctl, color: theme.palette.chartColor(0)),
-                    line("atl", String(localized: "Fatigue"), \.atl, color: theme.palette.chartColor(1)),
-                ].flatMap(\.self),
-                markers: eventMarkers,
+                series: line("ctl", String(localized: "Fitness"), \.ctl, color: theme.palette.chartColor(0))
+                    + line("atl", String(localized: "Fatigue"), \.atl, color: theme.palette.chartColor(1)),
+                markers: chart.events.map { ChartMarker(x: $0.date, label: $0.label, tone: .info) },
                 height: .regular,
                 selection: $selection,
                 xText: dayText,
                 accessibilityLabel: "Fitness and fatigue"
             )
-            .yDomain(domain(fitness.days.flatMap { [$0.ctl, $0.atl] }))
+            .yDomain(chart.upperDomain)
             KoboLineChart(
                 series: line("tsb", String(localized: "Form"), \.tsb, color: theme.palette.chartColor(2)),
                 bands: bands,
-                markers: todayMarker,
+                markers: chart.today.map { [ChartMarker(x: $0, label: String(localized: "Today"), tone: .accent)] }
+                    ?? [],
                 height: .compact,
                 selection: $selection,
                 xText: dayText,
                 accessibilityLabel: "Form"
             )
-            .yDomain(domain(fitness.days.map(\.tsb)))
+            .yDomain(chart.formDomain)
             if let caption {
                 Text(verbatim: caption)
                     .font(theme.font(.caption))
@@ -49,89 +49,59 @@ struct TodayFitnessView: View {
         .koboCard()
     }
 
-    private var todayLabel: String { String(localized: "Today") }
-
     /// "Dashed lines are the plan." when there is a projection, then the server's caption.
     private var caption: String? {
-        let dashed = fitness.days.contains(where: \.projected) ? String(localized: "Dashed lines are the plan.") : nil
-        let text = [dashed, fitness.caption].compactMap(\.self).joined(separator: " ")
+        let dashed = chart.projected.isEmpty ? nil : String(localized: "Dashed lines are the plan.")
+        let text = [dashed, chart.caption].compactMap(\.self).joined(separator: " ")
         return text.isEmpty ? nil : text
     }
 
     /// The header's day: the touched day, or the last measured day (`now`) when nothing is touched.
     private var shownDay: TodayFitnessDay? {
-        if let selection, let touched = nearestDay(to: selection) {
+        if let selection, let touched = chart.nearest(to: selection) {
             let plan = touched.projected ? " · " + String(localized: "plan") : ""
             return TodayFitnessDay(
                 ctl: touched.ctl,
                 atl: touched.atl,
                 tsb: touched.tsb,
                 zone: nil,
-                label: (date(touched.date).map(dayText) ?? "") + plan
+                label: dayText(touched.date) + plan
             )
         }
-        return fitness.now.map { now in
+        return chart.now.map { now in
             TodayFitnessDay(ctl: now.ctl, atl: now.atl, tsb: now.tsb, zone: now.zone, label: nil)
         }
     }
-
-    private func nearestDay(to target: Date) -> FitnessDay? {
-        fitness.days.min { lhs, rhs in
-            abs((date(lhs.date) ?? .distantPast).timeIntervalSince(target))
-                < abs((date(rhs.date) ?? .distantPast).timeIntervalSince(target))
-        }
-    }
-
-    /// The data's range with a little room above and below, so no line is clipped.
-    private func domain(_ values: [Double]) -> ClosedRange<Double> {
-        guard let low = values.min(), let high = values.max() else { return 0...1 }
-        let pad = max((high - low) * 0.08, 1)
-        return (low - pad)...(high + pad)
-    }
-
-    private func date(_ day: PlainDay) -> Date? { day.day.startDate(in: calendar) }
 
     private func dayText(_ date: Date) -> String {
         date.formatted(Date.FormatStyle(calendar: calendar, timeZone: calendar.timeZone).month(.abbreviated).day())
     }
 
-    /// The measured line and, when the plan projects ahead, its dashed continuation from the last measured day.
-    private func line(_ id: String, _ name: String, _ value: KeyPath<FitnessDay, Double>, color: Color)
+    /// The measured line and, when the plan projects ahead, its dashed continuation (same name: one legend item).
+    private func line(_ id: String, _ name: String, _ value: KeyPath<TodayFitnessChart.Day, Double>, color: Color)
         -> [ChartSeries<Date>]
     {
-        let points = { (days: [FitnessDay]) in
-            days.compactMap { day in date(day.date).map { ChartPoint(x: $0, y: day[keyPath: value]) } }
-        }
-        let measured = fitness.days.filter { !$0.projected }
-        let projected = (measured.last.map { [$0] } ?? []) + fitness.days.filter(\.projected)
-        var series = [ChartSeries(id: id, name: name, points: points(measured), color: color)]
-        if projected.count > 1 {
-            // The same name: one legend item per metric; the caption says dashed lines are the plan.
+        let points = { (days: [TodayFitnessChart.Day]) in days.map { ChartPoint(x: $0.date, y: $0[keyPath: value]) } }
+        var series = [ChartSeries(id: id, name: name, points: points(chart.measured), color: color)]
+        if !chart.projected.isEmpty {
             series.append(
-                ChartSeries(id: "\(id)-plan", name: name, points: points(projected), color: color, stroke: .dashed)
+                ChartSeries(
+                    id: "\(id)-plan",
+                    name: name,
+                    points: points(chart.projected),
+                    color: color,
+                    stroke: .dashed
+                )
             )
         }
         return series
     }
 
-    /// Each event on the upper chart: A events named, B and C a quiet rule. Labels sit apart from Today's on the
-    /// lower chart, so they never overlap.
-    private var eventMarkers: [ChartMarker<Date>] {
-        fitness.events.compactMap { event in
-            date(event.date).map { ChartMarker(x: $0, label: event.priority == "A" ? event.name : "", tone: .info) }
-        }
-    }
-
-    private var todayMarker: [ChartMarker<Date>] {
-        date(fitness.today).map { [ChartMarker(x: $0, label: todayLabel, tone: .accent)] } ?? []
-    }
-
-    /// The shaded form zones; an open end stops just past the data.
+    /// The shaded form zones; an open end stops at the edge of the form range.
     private var bands: [ChartBand] {
-        let values = fitness.days.map(\.tsb)
-        let low = (values.min() ?? -30) - 5
-        let high = (values.max() ?? 20) + 5
-        return fitness.zones.filter(\.shade).map { zone in
+        let low = chart.formDomain.lowerBound
+        let high = chart.formDomain.upperBound
+        return chart.zones.filter(\.shade).map { zone in
             let from = zone.from ?? min(low, (zone.to ?? low) - 1)
             let to = zone.to ?? max(high, from + 1)
             return ChartBand(from...max(to, from), label: zone.label, tone: .info)
@@ -153,11 +123,17 @@ struct TodayFitnessDay: Equatable {
 /// Fitness, fatigue and form for the touched day, or for the last measured day with its form zone.
 private struct TodayFitnessNow: View {
     @Environment(\.koboTheme) private var theme
+    @Environment(\.dynamicTypeSize) private var typeSize
     let day: TodayFitnessDay
 
     var body: some View {
         VStack(alignment: .leading, spacing: Space.xs) {
-            HStack(spacing: Space.lg) {
+            // Three numbers and a pill do not fit one line at accessibility sizes: they stack there.
+            let row =
+                typeSize.isAccessibilitySize
+                ? AnyLayout(VStackLayout(alignment: .leading, spacing: Space.sm))
+                : AnyLayout(HStackLayout(spacing: Space.lg))
+            row {
                 value(String(localized: "Fitness"), day.ctl, signed: false)
                 value(String(localized: "Fatigue"), day.atl, signed: false)
                 value(String(localized: "Form"), day.tsb, signed: true)

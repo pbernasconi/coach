@@ -56,10 +56,10 @@ nonisolated struct ActivityAnalysis: Decodable, Equatable, Sendable {
 nonisolated struct ActivityPaceBars: Decodable, Equatable, Sendable {
     nonisolated struct Bar: Decodable, Equatable, Sendable {
         var label: String
-        /// Meters (seconds for a lap without distance).
-        var width: Double
-        /// m/s: faster is taller.
-        var value: Double
+        /// Meters (seconds for a lap without distance); nil when the lap has neither.
+        var width: Double?
+        /// m/s: faster is taller; nil for a part with no speed (a lap without `average_speed`, a split not moving).
+        var value: Double?
         var valueText: String
         var gap: Double?
         var gapText: String?

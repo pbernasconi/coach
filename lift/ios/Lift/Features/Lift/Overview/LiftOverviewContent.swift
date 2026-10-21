@@ -13,7 +13,8 @@ struct LiftOverviewContent: View {
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                AppResourcePage(state.overview, onRetry: { send(.retryTapped) }) { overview in
+                AppResourcePage(state.overview, onRetry: { send(.retryTapped) }, onConnect: { send(.connectTapped) }) {
+                    overview in
                     LiftOverviewSections(overview: overview, state: state, send: send)
                 }
                 .pageColumn()

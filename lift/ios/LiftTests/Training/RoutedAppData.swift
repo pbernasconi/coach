@@ -10,6 +10,9 @@ final class RoutedAppData: AppDataSource {
     var isConnected = true
     var answers: [String: Result<Data, SyncTransportError>]
     private(set) var fetched: [String] = []
+    /// Keys whose fetch waits until `release(_:)`, so a test can order two requests.
+    private var held: [String: [CheckedContinuation<Void, Never>]] = [:]
+    private var holding: Set<String> = []
 
     init(_ answers: [String: Result<Data, SyncTransportError>]) {
         self.answers = answers
@@ -20,11 +23,25 @@ final class RoutedAppData: AppDataSource {
     func fetch(_ path: String, query: [URLQueryItem]) async throws -> AppAPIKept {
         let key = appCacheKey(path, query)
         fetched.append(key)
+        if holding.contains(key) {
+            await withCheckedContinuation { held[key, default: []].append($0) }
+        }
         switch answers[key] {
         case .success(let data): return AppAPIKept(data: data, fetchedAt: Date(timeIntervalSince1970: 1_772_456_700))
         case .failure(let error): throw error
         case nil: throw SyncTransportError.retryable(status: nil)
         }
+    }
+
+    /// Makes the fetch of `key` wait until `release(key)`.
+    func hold(_ key: String) {
+        holding.insert(key)
+    }
+
+    /// Lets every waiting fetch of `key` go on; later ones run at once.
+    func release(_ key: String) {
+        holding.remove(key)
+        held.removeValue(forKey: key)?.forEach { $0.resume() }
     }
 
     /// A bundled demo body (`Resources/DemoAPI`) as a fetch answer.

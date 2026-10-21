@@ -13,12 +13,19 @@ final class FakeAppData: AppDataSource {
     /// When each fetch is made.
     var fetchedAt = Date(timeIntervalSince1970: 1_772_456_700)  // 2026-03-02 13:05 UTC
     private(set) var fetched: [String] = []
+    /// The paths of the bodies kept with `keep`.
+    private(set) var keptPaths: [String] = []
 
     init(_ results: [Result<Data, SyncTransportError>] = []) {
         self.results = results
     }
 
     func kept(_ path: String) async -> AppAPIKept? { keptBodies[path] }
+
+    func keep(_ kept: AppAPIKept, for path: String) async {
+        keptPaths.append(path)
+        keptBodies[path] = kept
+    }
 
     func fetch(_ path: String, query: [URLQueryItem]) async throws -> AppAPIKept {
         fetched.append(appCacheKey(path, query))

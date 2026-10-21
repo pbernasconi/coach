@@ -12,14 +12,22 @@ final class LiftSessionViewModel {
     private let resource: AppResource<LiftSessionDetail>
     private let mediaLoader: any ExerciseMediaLoader
     private let router: any Navigating
+    private let tabs: any TabSwitching
+    private let now: @Sendable () -> Date
+    /// The local copy of a finished session, shown when the coach cannot show it; nil when this iPhone has none.
+    private let localSessionID: UUID?
     @ObservationIgnored private var isLoading = false
+    /// When the body last came fresh from the coach; a return to the page within `LiftRefresh.interval` keeps it.
+    @ObservationIgnored private var fetchedAt: Date?
 
     /// Protocols only, no defaults, no work (SCR-3).
     init(
         sessionID: String,
+        localSessionID: UUID?,
         data: any AppDataSource,
         mediaLoader: any ExerciseMediaLoader,
         router: any Navigating,
+        tabs: any TabSwitching,
         now: @escaping @Sendable () -> Date,
         calendar: Calendar
     ) {
@@ -32,10 +40,14 @@ final class LiftSessionViewModel {
         )
         self.mediaLoader = mediaLoader
         self.router = router
+        self.tabs = tabs
+        self.now = now
+        self.localSessionID = localSessionID
     }
 
     /// Started by the Screen's `.task`; cancelled when the view goes away (SCR-4).
     func run() async {
+        guard !LiftRefresh.isFresh(fetchedAt, now: now()) else { return }
         await load()
     }
 
@@ -48,6 +60,8 @@ final class LiftSessionViewModel {
             return Task { await load() }
         case .refreshPulled:
             return Task { await load() }
+        case .connectTapped:
+            tabs.show(.settings)
         case .olderTapped:
             replace(with: session?.olderId)
         case .newerTapped:
@@ -92,5 +106,10 @@ final class LiftSessionViewModel {
         isLoading = true
         defer { isLoading = false }
         await resource.load(current: state.detail) { state.detail = $0 }
+        if state.detail.content.value != nil, state.detail.freshness?.isOffline == false { fetchedAt = now() }
+        switch state.detail.content {
+        case .empty, .failed: state.localFallback = localSessionID
+        default: break
+        }
     }
 }

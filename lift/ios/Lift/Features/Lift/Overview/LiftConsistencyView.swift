@@ -7,12 +7,13 @@ import SwiftUI
 struct LiftConsistencyView: View {
     @Environment(\.koboTheme) private var theme
     @Environment(\.calendar) private var calendar
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let consistency: LiftConsistency
 
     var body: some View {
         VStack(alignment: .leading, spacing: Space.md) {
             LiftCaption(text: consistency.caption)
-            HStack(spacing: Space.sm) {
+            statsLayout {  // side by side; stacked at accessibility sizes, so the values never squeeze
                 ForEach(consistency.stats) { stat in
                     StatTile(verbatim: stat.label, value: stat.value)
                 }
@@ -30,6 +31,12 @@ struct LiftConsistencyView: View {
             }
             weekBars
         }
+    }
+
+    private var statsLayout: AnyLayout {
+        dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: Space.sm))
+            : AnyLayout(HStackLayout(spacing: Space.sm))
     }
 
     /// Each day's server level (0–4) as its value, so the four shades are the server's.

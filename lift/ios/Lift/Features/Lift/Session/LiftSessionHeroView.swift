@@ -2,8 +2,8 @@ import KoboComponents
 import KoboTokens
 import SwiftUI
 
-/// The session's hero: day and start, title, state, note, the five stats, the sets ring and the muscles worked. Every
-/// text is the server's.
+/// The session's hero: day and start, title, state, note, the sets ring and the muscles worked, then the stats. The
+/// "Sets" stat is left out, because the ring already shows sets logged against planned. Every text is the server's.
 struct LiftSessionHeroView: View {
     @Environment(\.koboTheme) private var theme
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -29,7 +29,7 @@ struct LiftSessionHeroView: View {
             }
             ringAndMuscles
             LazyVGrid(columns: columns, alignment: .leading, spacing: Space.sm) {
-                ForEach(hero.stats) { stat in
+                ForEach(hero.shownStats) { stat in
                     StatTile(verbatim: stat.label, value: stat.value) {
                         if let detail = stat.detail {
                             Text(verbatim: detail)
@@ -133,5 +133,12 @@ private struct LiftSessionMuscleBars: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+extension LiftSessionHero {
+    /// The stats under the ring: every stat but "Sets", which the ring shows.
+    var shownStats: [LiftStat] {
+        stats.filter { $0.id != "sets" }
     }
 }

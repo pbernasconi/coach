@@ -27,7 +27,7 @@ struct TrendsLiftSection: View {
     }
 
     private func muscleRows(_ muscles: TrendsLift.Muscles) -> some View {
-        let band = muscles.band.min...muscles.band.max
+        let band = min(muscles.band.min, muscles.band.max)...max(muscles.band.min, muscles.band.max)
         let scale = max(muscles.band.max * 1.25, muscles.rows.map { max($0.week, $0.avg) }.max() ?? 0)
         return VStack(alignment: .leading, spacing: Space.md) {
             ForEach(muscles.rows, id: \.muscle) { row in

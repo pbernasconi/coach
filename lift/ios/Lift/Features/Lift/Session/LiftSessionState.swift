@@ -11,11 +11,14 @@ nonisolated struct LiftSessionState: Equatable, Sendable {
     var media: [String: MediaImage] = [:]
     /// The exercises whose "How to" steps are open, by exercise item id.
     var expandedSteps: Set<String> = []
+    /// The coach could not show this session (not synced yet, no token, offline with nothing kept), and this iPhone has
+    /// it: the route shows the local workout instead.
+    var localFallback: UUID?
 }
 
 extension LiftSessionDetail {
     /// The App API path of one session (lift/APP-API.md, "Session").
     static func path(_ sessionID: String) -> String {
-        "api/app/lift/sessions/\(sessionID)"
+        LiftLinks.sessionPath(sessionID)
     }
 }

@@ -9,10 +9,16 @@ import Testing
 /// The weekly volume screen: the contract decodes, each Action, and `run()` (TEST-2). No sleeps (TEST-3).
 @MainActor
 @Suite struct LiftWeeklyTests {
+    let tabs = RecordingTabs()
     let body = Data(AppAPISamples.liftWeeklyContract.utf8)
 
     func loaded(_ source: FakeAppData) async -> LiftWeeklyViewModel {
-        let vm = LiftWeeklyViewModel(data: source, now: SessionBuilder.now, calendar: SessionBuilder.calendar)
+        let vm = LiftWeeklyViewModel(
+            data: source,
+            tabs: tabs,
+            now: SessionBuilder.now,
+            calendar: SessionBuilder.calendar
+        )
         await vm.run()
         return vm
     }
@@ -50,6 +56,12 @@ import Testing
         source.isConnected = false
         let vm = await loaded(source)
         #expect(vm.state.weekly.content == .empty)
+    }
+
+    @Test func connectTappedShowsSettings() async {
+        let vm = await loaded(FakeAppData([.success(body)]))
+        vm.send(.connectTapped)
+        #expect(tabs.shown == [.settings])
     }
 
     @Test func refreshPulledKeepsTheWeeksOfflineWhenTheFetchFails() async {

@@ -71,7 +71,27 @@ nonisolated struct LiftTip: Decodable, Equatable, Sendable, Identifiable {
     var tone: AppTone
     var title: String
     var body: String
+    /// Nil for no link, and for a link kind this app does not know (the tip still shows, without a link).
     var link: LiftLink?
+
+    private enum Key: String, CodingKey { case id, tone, title, body, link }
+
+    init(id: String, tone: AppTone, title: String, body: String, link: LiftLink?) {
+        self.id = id
+        self.tone = tone
+        self.title = title
+        self.body = body
+        self.link = link
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: Key.self)
+        id = try container.decode(String.self, forKey: .id)
+        tone = try container.decode(AppTone.self, forKey: .tone)
+        title = try container.decode(String.self, forKey: .title)
+        body = try container.decode(String.self, forKey: .body)
+        link = (try? container.decodeIfPresent(LiftLink.self, forKey: .link)) ?? nil
+    }
 }
 
 /// The main lifts of 12 weeks, each with its e1RM per session.

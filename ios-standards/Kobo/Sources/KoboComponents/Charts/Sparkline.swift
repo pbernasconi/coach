@@ -21,7 +21,10 @@ public struct Sparkline: View {
 
     @Environment(\.koboTheme) private var theme
     @ScaledMetric(relativeTo: .caption) private var height = Size.minTouch * 0.75
+    /// What is drawn: at most 500 values that keep the peaks.
     private let values: [Double]
+    /// Every finite value, for the spoken summary.
+    private let allValues: [Double]
     private let style: Style
     private let reference: Double?
     private let showsLastPoint: Bool
@@ -69,7 +72,9 @@ public struct Sparkline: View {
         _ format: @escaping (Double) -> String,
         _ label: Text
     ) {
-        self.values = ChartMath.thinned(values.filter(\.isFinite), to: 500)
+        let finite = values.filter(\.isFinite)
+        self.allValues = finite
+        self.values = ChartMath.extremaIndices(finite, maxCount: 500).map { finite[$0] }
         self.style = style
         self.reference = reference
         self.showsLastPoint = showsLastPoint
@@ -116,7 +121,7 @@ public struct Sparkline: View {
         .koboAnimation(.state, value: values)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(label)
-        .accessibilityValue(Text(verbatim: ChartSpeech.series(values, format: format)))
+        .accessibilityValue(Text(verbatim: ChartSpeech.series(allValues, format: format)))
     }
 
     private var lineColor: Color { color ?? theme.palette.accent }

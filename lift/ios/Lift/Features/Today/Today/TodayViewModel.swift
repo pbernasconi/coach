@@ -51,7 +51,14 @@ final class TodayViewModel {
         guard !isLoading else { return }
         isLoading = true
         defer { isLoading = false }
-        await resource.load(current: state.today) { state.today = $0 }
+        let calendar = days.calendar
+        await resource.load(current: state.today) { new in
+            let fitness = new.content.value?.fitness.value
+            if fitness != state.today.content.value?.fitness.value || (fitness != nil && state.fitness == nil) {
+                state.fitness = fitness.map { TodayFitnessChart($0, calendar: calendar) }
+            }
+            state.today = new
+        }
     }
 
     @discardableResult
@@ -65,7 +72,7 @@ final class TodayViewModel {
         case .mainLiftTapped(let key):
             router.open(.liftExercise(key))
         case .liftSessionTapped(let id):
-            router.open(.liftSession(id))
+            router.open(LiftLinks.session(id))
         case .planActivityTapped(let id):
             state.destination = nil
             router.open(.activity(id))
@@ -81,7 +88,7 @@ final class TodayViewModel {
     private func openLineItem(_ id: String) {
         let item = state.today.content.value?.todayLine.value?.items.first { $0.id == id }
         if let session = item?.liftSessionId {
-            router.open(.liftSession(session))
+            router.open(LiftLinks.session(session))
             return
         }
         for week in plan.shownBook?.weeks.values.map(\.self) ?? [] {

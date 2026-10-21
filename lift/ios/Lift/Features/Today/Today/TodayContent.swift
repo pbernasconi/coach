@@ -13,7 +13,7 @@ struct TodayContent: View {
             ScrollView {
                 AppResourcePage(state.today, onRetry: { send(.retryTapped) }, onConnect: { send(.connectTapped) }) {
                     today in
-                    TodaySections(today: today, send: send)
+                    TodaySections(today: today, fitness: state.fitness, send: send)
                 }
                 .pageColumn()
                 .padding(.top, Space.sm)
@@ -35,14 +35,18 @@ struct TodayContent: View {
 /// The page's sections in the web's order. Each `{ok}` section fails alone.
 struct TodaySections: View {
     let today: AppToday
+    /// The fitness chart's data, worked out once per body.
+    let fitness: TodayFitnessChart?
     let send: (TodayAction) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: Space.section) {
             TodayHeaderView(dateText: today.dateText, header: today.header, stale: today.stale)
             AppSectionView("Planned today", section: today.todayLine) { line in TodayLineView(line: line, send: send) }
-            AppSectionView("Fitness", section: today.fitness) { fitness in TodayFitnessView(fitness: fitness) }
-                .id(TodayAnchor.fitness)
+            AppSectionView("Fitness", section: today.fitness) { _ in
+                if let fitness { TodayFitnessView(chart: fitness) }
+            }
+            .id(TodayAnchor.fitness)
             AppSectionView("Last 4 weeks", section: today.last4Weeks) { tiles in TodayTilesView(tiles: tiles.tiles) }
             AppSectionView("Body", section: today.body) { body in TodayBodyView(reading: body) }
             AppSectionView("Lift", section: today.lift) { lift in TodayLiftView(lift: lift, send: send) }

@@ -26,11 +26,12 @@ struct LiftTipsView: View {
         }
     }
 
-    /// Session, exercise and section links open here; the Week tab link and no link do not.
+    /// Session, exercise, section and Week tab links open; a tip with no link does not.
     static func opens(_ link: LiftLink?) -> Bool {
         switch link {
-        case .session, .exercise, .section: true
-        case .week, nil: false
+        case .session, .exercise, .week: true
+        case .section(let name): LiftOverviewSection(rawValue: name) != nil
+        case nil: false
         }
     }
 }

@@ -39,6 +39,20 @@ import Testing
         #expect(source.fetched == [AppToday.path])
     }
 
+    @Test func onlyABodyThatDecodesIsKept() async {
+        let good = FakeAppData([.success(body)])
+        _ = await run(good)
+        #expect(good.keptPaths == [AppToday.path])
+
+        let bad = FakeAppData([.success(Data("{\"new\":\"shape\"}".utf8))])
+        let keptAt = Date(timeIntervalSince1970: 1_772_442_000)
+        bad.keptBodies[AppToday.path] = AppAPIKept(data: body, fetchedAt: keptAt)
+        let last = await run(bad).last
+        #expect(bad.keptPaths.isEmpty, "a body Lift cannot read never replaces the kept one")
+        #expect(last?.content.value != nil)
+        #expect(last?.freshness?.isOffline == true)
+    }
+
     @Test func aFailedFetchKeepsTheKeptBodyAndSaysOffline() async {
         let source = FakeAppData([.failure(.retryable(status: nil))])
         let keptAt = Date(timeIntervalSince1970: 1_772_442_000)
@@ -104,5 +118,20 @@ import Testing
                 "app-activities-before-9", "app-activities",
             ]
         )
+    }
+}
+
+/// The demo source reads its bundled bodies off the main actor and answers 404 for a path it has no file for.
+@MainActor
+@Suite struct DemoAppDataReadTests {
+    @Test func readsTheFirstBundledNameItHas() async throws {
+        let data = await DemoAppData.read(["app-nope", "app-today"], in: .main)
+        #expect(try JSONDecoder().decode(AppToday.self, from: try #require(data)).dateText.isEmpty == false)
+        #expect(await DemoAppData.read(["app-nope"], in: .main) == nil)
+    }
+
+    @Test func aPathWithNoFileIs404() async {
+        let demo = DemoAppData(bundle: .main, now: SessionBuilder.now)
+        await #expect(throws: SyncTransportError.rejected(status: 404)) { try await demo.fetch("api/app/nothing-here") }
     }
 }

@@ -63,6 +63,15 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
         /// Today scrolled to its end (lift and goals), for screenshots.
         case todayEnd = "today-end"
 
+        /// The Lift segment the screen belongs to; nil outside the Lift tab.
+        var liftSegment: LiftSegment? {
+            switch self {
+            case .exercise, .catalog, .templates, .template, .templateLink: .exercises
+            case .importNotes, .progress: .history
+            default: nil
+            }
+        }
+
         /// The tab whose stack the screen is pushed on.
         var tab: AppTab {
             switch self {
@@ -122,6 +131,10 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
         }
         appearance = Self.value(after: "-appearance", in: arguments).flatMap(Appearance.init(rawValue:))
         opening = Self.value(after: "-open", in: arguments).flatMap(Opening.init(rawValue:))
+        if tab == nil, let opening {  // `-open` alone selects the tab (and Lift segment) its screen is pushed on
+            initialTab = opening.tab
+            liftSegment = opening.liftSegment ?? liftSegment
+        }
         if let index = arguments.firstIndex(of: "-open-url"), arguments.indices.contains(index + 1),
             let url = URL(string: arguments[index + 1]), url.scheme?.lowercased() == AppLink.scheme
         {

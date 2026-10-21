@@ -8,6 +8,10 @@ final class LiftOverviewViewModel {
 
     private let resource: AppResource<LiftOverview>
     private let router: any Navigating
+    private let tabs: any TabSwitching
+    private let now: @Sendable () -> Date
+    /// When the body last came fresh from the coach; a return within `LiftRefresh.interval` keeps it.
+    @ObservationIgnored private var fetchedAt: Date?
     @ObservationIgnored private var isLoading = false
     @ObservationIgnored private var serial = 0
 
@@ -15,6 +19,7 @@ final class LiftOverviewViewModel {
     init(
         data: any AppDataSource,
         router: any Navigating,
+        tabs: any TabSwitching,
         now: @escaping @Sendable () -> Date,
         calendar: Calendar
     ) {
@@ -25,10 +30,13 @@ final class LiftOverviewViewModel {
             days: DayCalendar(calendar: calendar)
         )
         self.router = router
+        self.tabs = tabs
+        self.now = now
     }
 
     /// Loads the page; started by the Screen's `.task` (SCR-4).
     func run() async {
+        guard !LiftRefresh.isFresh(fetchedAt, now: now()) else { return }
         await load()
     }
 
@@ -37,6 +45,7 @@ final class LiftOverviewViewModel {
         isLoading = true
         defer { isLoading = false }
         await resource.load(current: state.overview) { state.overview = $0 }
+        if state.overview.content.value != nil, state.overview.freshness?.isOffline == false { fetchedAt = now() }
     }
 
     @discardableResult
@@ -51,6 +60,8 @@ final class LiftOverviewViewModel {
             router.open(LiftLinks.exercise(key))
         case .tipTapped(let id):
             openTip(id)
+        case .connectTapped:
+            tabs.show(.settings)
         case .weeklyTapped:
             router.open(.liftWeekly)
         case .olderSessionsExpandedChanged(let isExpanded):
@@ -61,13 +72,14 @@ final class LiftOverviewViewModel {
         return nil
     }
 
-    /// A tip's session or exercise opens it; a section link scrolls there. A link to the Week tab has no action here
-    /// (the overview shows such a tip without a chevron).
+    /// A tip's session or exercise opens it, a Week link shows the Week tab, and a section link scrolls there.
     private func openTip(_ id: String) {
         let tip = state.overview.content.value?.tips.value?.items.first { $0.id == id }
         guard let link = tip?.link else { return }
         if let route = LiftLinks.route(for: link) {
             router.open(route)
+        } else if link == .week {
+            tabs.show(.week)
         } else if case .section(let name) = link, let section = LiftOverviewSection(rawValue: name) {
             serial += 1
             state.scrollTarget = LiftOverviewScroll(section: section, serial: serial)

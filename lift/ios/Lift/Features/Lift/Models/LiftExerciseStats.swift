@@ -43,7 +43,21 @@ nonisolated struct LiftExerciseSession: Decodable, Equatable, Sendable, Identifi
 nonisolated struct LiftBestSets: Decodable, Equatable, Sendable {
     var title: String
     var caption: String
+    /// Ranked by e1RM; each carries its rank, since straight sets (3 × 60 × 8) repeat every other field.
     var items: [LiftBestSet]
+
+    private enum Key: String, CodingKey { case title, caption, items }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: Key.self)
+        title = try container.decode(String.self, forKey: .title)
+        caption = try container.decode(String.self, forKey: .caption)
+        items = try container.decode([LiftBestSet].self, forKey: .items).enumerated().map { rank, set in
+            var ranked = set
+            ranked.rank = rank
+            return ranked
+        }
+    }
 }
 
 nonisolated struct LiftBestSet: Decodable, Equatable, Sendable, Identifiable {
@@ -53,6 +67,10 @@ nonisolated struct LiftBestSet: Decodable, Equatable, Sendable, Identifiable {
     var weightText: String
     var repsText: String
     var e1rmText: String
+    /// The set's place in the list, from 0; set by `LiftBestSets`.
+    var rank = 0
 
-    var id: String { "\(sessionId)-\(weightText)-\(repsText)" }
+    private enum CodingKeys: String, CodingKey { case date, dateText, sessionId, weightText, repsText, e1rmText }
+
+    var id: Int { rank }
 }
