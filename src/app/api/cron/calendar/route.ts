@@ -1,5 +1,5 @@
 /**
- * Calendar sync, called every 30 minutes by .github/workflows/sync.yml (Vercel Hobby crons run only once
+ * Calendar sync, called every hour (at :17) by .github/workflows/sync.yml (Vercel Hobby crons run only once
  * a day). Authenticated by `Authorization: Bearer $CRON_SECRET`. Public to Clerk (/api/cron).
  *
  * After the pull, it pushes this week and next to Google Calendar. That push copies workouts moved on the calendar

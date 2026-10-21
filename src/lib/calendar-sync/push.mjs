@@ -3,7 +3,7 @@
 // pushWeek. Each event carries the workout id, so a re-push updates, creates and deletes only what changed.
 // A workout moved on the calendar (another time or day) keeps that move: the push copies it into the database
 // first (adoptMove). Each event records the time Coach last wrote (coachTime), so a push can tell a move on the
-// calendar from a change in Coach. The calendar sync (/api/cron/calendar) runs the push every 30 minutes, so a
+// calendar from a change in Coach. The calendar sync (/api/cron/calendar) runs the push every hour, so a
 // move reaches Coach, Zwift and the watch soon after.
 
 import { refreshAccessToken } from './sync.mjs';
