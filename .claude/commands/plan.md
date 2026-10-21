@@ -217,5 +217,5 @@ If `$ARGUMENTS` contains `--two-weeks` (or `--weeks 2`):
 - Be brief in user-facing output. The user doesn't see profile.md — only what you write. Surface only decision-relevant info.
 - If the user already did some sessions for the week (Strava shows them), put those in `completed[]` with actual values, then schedule only the remaining days.
 - The milestone goals (Coach → Settings → Goals, in profile.md) override the inferred goals. The old user_goals table is not used.
-- **Every workout event links to Coach.** Only the calendar push (`pushWeek` in `src/lib/calendar-sync/push.mjs`) writes workout events, and it adds the link. Never create or edit a workout event by hand or through a calendar MCP tool: it would have no link, and the next push replaces it anyway.
+- **Every workout event links to Coach.** Only the calendar push (`pushWeek` in `src/lib/calendar-sync/push.mjs`) writes workout events, and it adds the link. Never create or edit a workout event through a calendar MCP tool: it would have no link. Paolo moves workouts on the calendar on purpose: a push copies a new time or day from the calendar into Coach first (other edits on the calendar, like the title, are replaced).
 - **Don't re-query Google Calendar via MCP.** `coach-profile.mjs --weeks N` already has it. If something's missing, fix the script rather than working around it.
