@@ -25,6 +25,21 @@ test('cellItems hides a Lift session matched to a plan workout', () => {
   assert.deepEqual(items.map((i) => i.key), ['w-w']);
 });
 
+test('cellItems shows a strength workout once when Lift and the watch both logged it', () => {
+  const planned = [{ id: 'w', sortOrder: 0, startTime: null, match: { source: 'lift', id: 'l1', activityId: 'g1' } }];
+  const items = cellItems(planned, [{ id: 'g1', sport: 'strength' }, { id: 'r1', sport: 'run' }], [{ id: 'l1' }]);
+  assert.deepEqual(items.map((i) => i.key), ['w-w', 'a-r1']);
+  assert.deepEqual(items[0].actual, { id: 'g1', sport: 'strength' });
+});
+
+test('cellItems pairs an unplanned Lift session with the watch strength activity of the day', () => {
+  const items = cellItems([], [{ id: 'g1', sport: 'strength' }, { id: 'r1', sport: 'run' }], [{ id: 'l1' }]);
+  assert.deepEqual(items.map((i) => i.key), ['a-r1', 'l-l1']);
+  assert.deepEqual(items[1].a, { id: 'g1', sport: 'strength' });
+  // Without a strength activity the Lift session stands alone.
+  assert.equal(cellItems([], [{ id: 'r1', sport: 'run' }], [{ id: 'l1' }])[1].a, null);
+});
+
 test('visibleChips keeps the row height', () => {
   assert.deepEqual(visibleChips([1, 2, 3]), { shown: [1, 2, 3], more: 0 });
   assert.deepEqual(visibleChips([1, 2, 3, 4, 5]), { shown: [1, 2], more: 3 });

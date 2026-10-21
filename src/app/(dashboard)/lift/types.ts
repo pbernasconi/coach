@@ -6,6 +6,9 @@ export type LiftPoint = { day: string; sessionId: string; e1rm: number; reps: nu
 export type MainLift = {
   key: string;
   name: string;
+  catalogId?: string | null;
+  image?: string | null;
+  gif?: string | null;
   sessions: number;
   points: LiftPoint[];
   latest: LiftPoint | null;
@@ -26,7 +29,7 @@ export type SessionRow = {
   prs: string[];
 };
 export type Upcoming = { id: string; day: string; title: string; exercises: number; sets: number };
-export type Record = LiftPoint & { key: string; name: string; previous: number };
+export type Record = LiftPoint & { key: string; name: string; previous: number; catalogId?: string | null; image?: string | null };
 export type Week = { week: string; sessions: number; sets: number; volume: number };
 export type CalendarDay = { day: string; future: boolean; sets: number; sessionId: string | null; title: string | null };
 export type { Tip };

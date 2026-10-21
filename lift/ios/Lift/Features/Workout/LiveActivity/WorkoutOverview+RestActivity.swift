@@ -14,6 +14,14 @@ extension WorkoutState {
         guard case .loaded(let overview) = workout else { return nil }
         return overview.restActivity(afterLogging: setID)
     }
+
+    /// A rest that Done on the Lock Screen started (`outside`, for its set) shows in the app too, from full for that set
+    /// as a tick here does, with the time it has left at `now`. Nothing happens without one.
+    mutating func adoptRest(_ outside: RestSnapshot?, at now: Date) {
+        guard let outside, let setID = outside.setID else { return }
+        beginRest(seconds: outside.totalSeconds, setID: setID)
+        rest = rest?.capped(at: outside.secondsLeft(at: now))
+    }
 }
 
 extension WorkoutOverview {

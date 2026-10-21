@@ -26,6 +26,7 @@ import { resolve } from 'node:path';
 import { resolveTravel, dateKeysBetween, HOME_TZ } from './travel.mjs';
 import { label, loadRotation } from './rotation.mjs';
 import { untrusted } from './untrusted.mjs';
+import { noteLines, noteText, setExtras } from './lift-notes.mjs';
 import { healthProfileMarkdown } from './health-profile.mjs';
 
 const sql = connect();
@@ -316,7 +317,7 @@ try {
 } catch (e) { console.error('lift templates fail:', e.message); }
 
 // Lift sessions: the latest logged ones (what was really lifted, set by set) and the planned ones from today on.
-const liftSessions = { logged: [], planned: [] };
+const liftSessions = { logged: [], planned: [], notes: [] };
 try {
   const rows = await sql`
     SELECT s.id, s.payload->>'day' AS d, s.payload->>'title' AS title, s.payload->>'startedAt' AS started,
@@ -324,7 +325,8 @@ try {
       st.payload->>'kind' AS kind, st.payload->>'status' AS status, (st.payload->>'position')::int AS spos,
       st.payload->>'actualReps' AS ar, st.payload->>'actualWeight' AS aw,
       coalesce(st.payload->>'targetReps', st.payload->>'targetRepMin') AS tr, st.payload->>'targetWeight' AS tw,
-      st.payload->>'unit' AS unit
+      st.payload->>'unit' AS unit, s.payload->>'note' AS snote, se.payload->>'note' AS enote,
+      st.payload->>'note' AS stnote, st.payload->>'rpe' AS rpe
     FROM lift_rows s
     JOIN lift_rows se ON se.entity = 'sessionExercise' AND se.deleted_at IS NULL AND lower(se.payload->>'sessionID') = s.id::text
     JOIN lift_rows st ON st.entity = 'set' AND st.deleted_at IS NULL AND lower(st.payload->>'sessionExerciseID') = se.id::text
@@ -340,9 +342,9 @@ try {
     ORDER BY d, s.id, pos, spos`;
   const bySession = new Map();
   for (const r of rows) {
-    if (!bySession.has(r.id)) bySession.set(r.id, { day: r.d, title: r.title, exercises: new Map() });
+    if (!bySession.has(r.id)) bySession.set(r.id, { day: r.d, title: r.title, note: r.snote, exercises: new Map() });
     const ses = bySession.get(r.id);
-    if (!ses.exercises.has(r.pos)) ses.exercises.set(r.pos, { name: r.ex, loadMode: r.lm, sets: [] });
+    if (!ses.exercises.has(r.pos)) ses.exercises.set(r.pos, { name: r.ex, loadMode: r.lm, note: r.enote, sets: [] });
     ses.exercises.get(r.pos).sets.push(r);
   }
   const wt = (w, lm) => (w == null ? (lm === 'bodyweight' ? 'bw' : '-') : `${lm === 'bodyweight' ? '+' : ''}${Number(w)}`);
@@ -350,14 +352,21 @@ try {
     const lines = [...ses.exercises.values()].map((e) => {
       const work = e.sets.filter((x) => x.kind !== 'warmUp');
       const sets = ses.day < todayLocal
-        ? work.filter((x) => x.status === 'done').map((x) => `${x.ar ?? '?'}×${wt(x.aw, e.loadMode)}`)
+        ? work.filter((x) => x.status === 'done').map((x) => {
+          const extras = setExtras(x.rpe, x.stnote);
+          return `${x.ar ?? '?'}×${wt(x.aw, e.loadMode)}${extras ? ` (${extras})` : ''}`;
+        })
         : work.map((x) => `${x.tr ?? '?'}×${wt(x.tw, e.loadMode)}`);
       const unit = e.sets.find((x) => x.unit)?.unit ?? 'lb';
-      return `${e.name}${e.loadMode === 'perHand' ? ' (each hand)' : ''}: ${sets.join(', ') || 'nothing logged'} ${unit}`;
+      const note = noteText(e.note);
+      return `${e.name}${e.loadMode === 'perHand' ? ' (each hand)' : ''}: ${sets.join(', ') || 'nothing logged'} ${unit}${note ? ` — note: ${note}` : ''}`;
     });
-    (ses.day < todayLocal ? liftSessions.logged : liftSessions.planned).push({ day: ses.day, title: ses.title, lines });
+    const exercises = [...ses.exercises.values()].map((e) => ({ name: e.name, note: e.note }));
+    (ses.day < todayLocal ? liftSessions.logged : liftSessions.planned)
+      .push({ day: ses.day, title: ses.title, note: noteText(ses.note), exercises, lines });
   }
   liftSessions.logged.reverse();
+  liftSessions.notes = noteLines(liftSessions.logged);
 } catch (e) { console.error('lift sessions fail:', e.message); }
 
 // ===== 8b. Quality rotation state (from prior plans in the database, not vibes) =====
@@ -522,10 +531,14 @@ for (const t of liftTemplates) {
 md.push('');
 md.push(`## Lift sessions (reps × load per set, from Lift)`);
 md.push('A strength workout names its template in `liftTemplate`; scripts/lift-plan.mjs plans the Lift session, and Lift sets each target from the template and these logs (about 90% of the last load after 14 days off).');
+md.push('### Notes from Lift (Paolo wrote these during his workouts; adapt the next sessions to them)');
+md.push('A note such as "felt heavy", "Achilles sore" or "go up 5 lb" is how Paolo tells the coach what to change next time. Pain or a niggle: lighten or swap what loads it, and keep it easy for a day or two. Heavy or a missed rep: hold the load. "Go up": raise it.');
+if (liftSessions.notes.length === 0) md.push('_(none in the last logged sessions)_');
+for (const line of liftSessions.notes) md.push(`- ${line}`);
 md.push('### Last logged');
 if (liftSessions.logged.length === 0) md.push('_(none)_');
 for (const ses of liftSessions.logged) {
-  md.push(`- **${ses.day} ${ses.title}**`);
+  md.push(`- **${ses.day} ${ses.title}**${ses.note ? ` — note: ${ses.note}` : ''}`);
   for (const l of ses.lines) md.push(`  - ${l}`);
 }
 md.push('### Planned in Lift (targets)');

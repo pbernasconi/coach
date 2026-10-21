@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { adaptForFeel, addDays, isHard, matchWeek, mondayOf, sportOf, sportOfStrava, undoAdapts } from './week.mjs';
+import { adaptForFeel, addDays, isHard, matchActivityId, matchWeek, mondayOf, sportOf, sportOfStrava, undoAdapts } from './week.mjs';
 
 const MON = '2026-10-19';
 const day = (n) => addDays(MON, n);
@@ -68,6 +68,42 @@ test('matchWeek: a Lift session with nothing logged is not a done lift', () => {
   const result = matchWeek(week(), [], [{ id: 'l1', date: day(0), name: 'Heavy', setsLogged: 0 }], day(2));
   assert.equal(result.get('lift').match, null);
   assert.equal(result.get('lift').status, 'missed');
+});
+
+test('matchWeek: a strength workout claims the Lift session and the watch activity of the same day', () => {
+  const result = matchWeek(
+    week(),
+    [{ id: 'g1', date: day(0), sport: 'strength', name: 'Afternoon Weight Training' }],
+    [{ id: 'l1', date: day(0), name: 'Heavy', setsLogged: 20 }],
+    day(2)
+  );
+  const m = result.get('lift');
+  assert.equal(m.status, 'done');
+  assert.deepEqual(m.match, { source: 'lift', id: 'l1', name: 'Heavy', activityId: 'g1' });
+  assert.equal(matchActivityId(m.match), 'g1');
+});
+
+test('matchWeek: a strength workout with only a watch activity matches it as before', () => {
+  const result = matchWeek(week(), [{ id: 'g1', date: day(0), sport: 'strength', name: 'Weights' }], [], day(2));
+  assert.deepEqual(result.get('lift').match, { source: 'strava', id: 'g1', name: 'Weights' });
+  assert.equal(matchActivityId(result.get('lift').match), 'g1');
+  assert.equal(matchActivityId(null), null);
+});
+
+test('matchWeek: two strength workouts on a day each get their own Lift session and activity', () => {
+  const ws = [
+    w('a', 0, 'Heavy barbell lift', { workoutType: 'strength-heavy', sortOrder: 0 }),
+    w('b', 0, 'Upper (dumbbells)', { workoutType: 'strength-dumbbell', sortOrder: 1 }),
+  ];
+  const result = matchWeek(
+    ws,
+    [{ id: 'g1', date: day(0), sport: 'strength', name: 'W1' }, { id: 'g2', date: day(0), sport: 'strength', name: 'W2' }],
+    [{ id: 'l1', date: day(0), name: 'Heavy' }, { id: 'l2', date: day(0), name: 'Upper' }],
+    day(2)
+  );
+  assert.equal(result.get('a').match.activityId, 'g1');
+  assert.equal(result.get('b').match.id, 'l2');
+  assert.equal(result.get('b').match.activityId, 'g2');
 });
 
 test('tired on a quality day swaps it with a later easy day not next to another quality day', () => {

@@ -14,7 +14,7 @@ already done around it. The build keeps going around these; nothing here blocks 
     Connect API and says whether the app record exists. Use an API key with the **Admin** role for this.
   - By hand instead, in the developer portal (Certificates, Identifiers & Profiles), with `<id>` your `LIFT_BUNDLE_ID`:
     1. Identifiers → App Groups → register `group.<id>` (e.g. `group.com.yourname.lift`).
-    2. Identifiers → App IDs → register three explicit App IDs: `<id>` (the app), `<id>.widgets` (the rest Live
+    2. Identifiers → App IDs → register three explicit App IDs: `<id>` (the app), `<id>.widgets` (the workout Live
        Activity) and `<id>.share` (the Share extension). On each, turn on **App Groups** and assign `group.<id>`.
        Live Activities need no capability of their own.
     3. On the app's App ID (`<id>` only, not the extensions), also turn on **HealthKit** (no clinical records, no
@@ -22,8 +22,8 @@ already done around it. The build keeps going around these; nothing here blocks 
        without the capability the archive fails to sign. CI's simulator builds are unsigned and do not need it.
     Automatic signing (`CODE_SIGN_STYLE=Automatic` with the API key) then makes the three profiles. It can usually
     register missing App IDs itself, but registering the App Group and assigning it by hand avoids a failed first
-    archive. Without the group, the Lock Screen +30s and Skip still work but the Share extension cannot hand notes
-    to the app.
+    archive. Without the group, the workout Live Activity's buttons still work (they run in the app) but the Share
+    extension cannot hand notes to the app.
   - Secrets: `ASC_KEY_ID`, `ASC_ISSUER_ID` and `ASC_KEY_P8` (the contents of the `.p8`), from App Store Connect →
     Users and Access → Integrations → App Store Connect API, role App Manager.
   - Create the app record in App Store Connect with that bundle ID.
@@ -37,12 +37,12 @@ already done around it. The build keeps going around these; nothing here blocks 
   those builds.
 - **App Group (sharing from Apple Notes).** The first TestFlight builds ship without the App Group entitlement, because
   `group.com.pbernasconi.lift` is not yet registered and assigned. Everything works except handing a shared note from the
-  Share extension to the app (the Lock Screen +30s and Skip still work). To turn it on: developer.apple.com →
+  Share extension to the app (the workout Live Activity's buttons still work). To turn it on: developer.apple.com →
   Identifiers → + → App Groups → `group.com.pbernasconi.lift`; then on each of the three App IDs, App Groups →
   Configure → tick it → Save. Then restore the three `com.apple.security.application-groups: [$(LIFT_APP_GROUP)]`
   entitlement lines in `ios/project.yml`.
 - **Real-device check.** Haptics (`.sensoryFeedback` was silent on an iOS 26 device in an earlier app), Liquid
-  Glass rendering, the rest-timer Live Activity with its +30s and Skip buttons, and sharing a note from Apple Notes
+  Glass rendering, the workout Live Activity with its Done, Next, +30s and Skip buttons, and sharing a note from Apple Notes
   to Lift can only be confirmed on your iPhone (CI builds them for the simulator without signing, so the App Group
   is not provisioned there).
 

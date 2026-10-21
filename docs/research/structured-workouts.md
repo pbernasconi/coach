@@ -199,7 +199,7 @@ Zwift has no public spec. The best reference is [h4l/zwift-workout-file-referenc
 
 ## 7. Step data model
 
-Coach stores the steps as written ("% of LTHR", "Z4 top"). Each writer resolves the targets with the anchors from `src/lib/plan/zones.mjs` (FTP 280 W, LTHR 168) at sync time. The writer stores the anchors that it used, so a later change to FTP or LTHR shows which workouts are stale.
+Coach stores the steps as written ("% of LTHR", "Z4 top"). Each writer resolves the targets with the anchors from `src/lib/plan/zones.mjs` (FTP 265 W, LTHR 168) at sync time. The writer stores the anchors that it used, so a later change to FTP or LTHR shows which workouts are stale.
 
 ```jsonc
 {
@@ -296,7 +296,7 @@ Coach stores the steps as written ("% of LTHR", "Z4 top"). Each writer resolves 
 3. Which watch model do you use? Do you also use a Garmin Edge for outdoor rides?
 4. For runs, do you want HR targets only (as in `PLAN-STRUCTURE.md`), or HR plus a pace range?
 5. Do you accept a third party (intervals.icu) that holds your Garmin and Zwift links?
-6. Is the FTP in Zwift 280 W now?
+6. Is the FTP in Zwift 265 W now?
 7. How should HR-only ride steps work in Zwift: map them to power, or use free ride with a text cue?
 
 ## Sources

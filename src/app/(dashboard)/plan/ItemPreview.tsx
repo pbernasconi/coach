@@ -12,7 +12,7 @@ import type { CalendarActivity, CalendarLift, CalendarWorkout } from '@/lib/plan
 export type Item =
   | { kind: 'planned'; key: string; w: CalendarWorkout; actual: CalendarActivity | null }
   | { kind: 'activity'; key: string; a: CalendarActivity }
-  | { kind: 'lift'; key: string; l: CalendarLift };
+  | { kind: 'lift'; key: string; l: CalendarLift; a: CalendarActivity | null };
 
 /** What the preview shows: one calendar item, or all the items of a day ("+N more"). */
 export type PreviewTarget = { kind: 'item'; key: string } | { kind: 'day'; date: string };
@@ -142,7 +142,7 @@ const itemSport = (item: Item) => (item.kind === 'planned' ? item.w.sport : item
 const itemName = (item: Item) =>
   item.kind === 'planned' ? plainTitle(item.w.title) : item.kind === 'activity' ? item.a.name || sport(item.a.sport).label : item.l.name;
 const itemLine = (item: Item) => {
-  if (item.kind === 'lift') return `${item.l.setsLogged} sets`;
+  if (item.kind === 'lift') return [item.a && dur(item.a.min), `${item.l.setsLogged} sets`].filter(Boolean).join(' · ');
   if (item.kind === 'activity') return dur(item.a.min);
   return item.w.duration ? dur(item.w.duration) : '';
 };

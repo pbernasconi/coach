@@ -108,6 +108,11 @@ final class WeekViewModel {
             return reschedule(id, .remove, message: String(localized: "Removed \(title)"))
         case .destinationDismissed:
             state.destination = nil
+        case .planItemTapped(let id):
+            state.destination = merge?.item(id).map { .planItem($0) }
+        case .refreshPulled:
+            let coachPlan = coachPlan
+            return Task { await coachPlan.refresh() }
         default:
             return sendPlanning(action)
         }

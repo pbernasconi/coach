@@ -79,7 +79,7 @@ jobs:
           npx -y @anthropic-ai/claude-code@2.1.304 -p "$(cat scripts/plan-cloud/PROMPT.md)" \
             --model claude-opus-5-5 \
             --tools Read Glob Grep Write \
-            --allowedTools Read Glob Grep "Write(plans/**)" \
+            --allowedTools Read Glob Grep "Edit(plans/**)" \
             --permission-mode dontAsk \
             --output-format text
 
@@ -97,4 +97,5 @@ jobs:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           ID: ${{ steps.claim.outputs.id }}
           RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: node scripts/plan-cloud/client.mjs fail "$ID" "The plan job failed: $RUN"
+        run: |
+          node scripts/plan-cloud/client.mjs fail "$ID" "The plan job failed: $RUN"

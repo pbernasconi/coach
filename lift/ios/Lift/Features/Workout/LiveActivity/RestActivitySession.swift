@@ -16,9 +16,18 @@ final class RestActivitySession {
         self.now = now
     }
 
-    /// The owner went away (the workout was left): its rest ends outside the app too.
-    isolated deinit {
-        end()
+    /// The Workout screen shows `sessionID`; the Lock Screen follows that workout from its first logged set, and leaving
+    /// the screen keeps it there, with its rest, until the workout is finished. Returns a rest that Done on the Lock
+    /// Screen started for a set other than `setID` (the set the in-app rest follows), which becomes this rest; nil when
+    /// there is none.
+    func follow(workout sessionID: UUID, restingAfter setID: UUID?) -> RestSnapshot? {
+        controller.showWorkout(sessionID)
+        guard let outside = controller.currentRest(), let outsideSet = outside.setID, outsideSet != setID,
+            outside.secondsLeft(at: now()) > 0
+        else { return nil }
+        rest = outside
+        isShownOutside = true
+        return outside
     }
 
     /// A rest of `seconds` from now. Shows the Live Activity when the logged set is known.

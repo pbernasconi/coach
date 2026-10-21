@@ -15,7 +15,7 @@ import { sport } from '@/lib/sports';
 type Item =
   | { kind: 'planned'; key: string; w: CalendarWorkout; actual: CalendarActivity | null }
   | { kind: 'activity'; key: string; a: CalendarActivity }
-  | { kind: 'lift'; key: string; l: CalendarLift };
+  | { kind: 'lift'; key: string; l: CalendarLift; a: CalendarActivity | null };
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const hm = (min: number) => `${Math.floor(min / 60)}:${String(Math.round(min % 60)).padStart(2, '0')}`;
@@ -73,7 +73,9 @@ function Chip({ item, href }: { item: Item; href: string }) {
         <Dumbbell aria-hidden className="h-3 w-3 shrink-0" style={{ color: sport('strength').color }} />
         <span className="min-w-0 flex-1 truncate font-medium text-[var(--viz-ink)]">{l.name}</span>
       </span>
-      <span className="block tabular-nums text-[var(--viz-ink-2)]">{l.setsLogged} sets · Lift</span>
+      <span className="block truncate tabular-nums text-[var(--viz-ink-2)]">
+        {item.a ? [dur(item.a.min), item.a.tss ? `${Math.round(item.a.tss)} TSS` : null, `${l.setsLogged} sets`].filter(Boolean).join(' · ') : `${l.setsLogged} sets · Lift`}
+      </span>
     </Link>
   );
 }

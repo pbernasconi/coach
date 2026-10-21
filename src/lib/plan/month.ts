@@ -7,7 +7,7 @@ import { followWorkoutInLift, removeFromLift } from '@/lib/lift/edit-store';
 import type { Workout } from './queries';
 import { complianceOf } from './compliance.mjs';
 import { libraryFrom, monthWeeks, weekSummary } from './calendar.mjs';
-import { addDays, matchWeek, mondayOf, sportOf, sportOfStrava } from './week.mjs';
+import { addDays, matchActivityId, matchWeek, mondayOf, sportOf, sportOfStrava } from './week.mjs';
 
 export type Compliance = { level: string; label: string; ratio: number | null; basis: 'duration' | 'tss' | null };
 
@@ -166,7 +166,8 @@ export async function loadRange(userId: string, fromMonday: string, toMonday: st
   const workouts: CalendarWorkout[] = base.map((w) => {
     const m = matched.get(w.id)!;
     const liftDetail = liftOf(linked.get(w.id) ?? (m.match?.source === 'lift' ? m.match.id : null));
-    const act = m.match?.source === 'strava' ? byStrava.get(m.match.id) : null;
+    const actId = matchActivityId(m.match);
+    const act = actId ? byStrava.get(actId) : null;
     const actual = m.match ? { min: act?.min ?? null, tss: act?.tss ?? null } : null;
     const compliance = complianceOf(w, m.status, actual, { rest: sportOf(w) === 'rest' }) as Compliance;
     return { ...w, state: m.status, match: m.match, actual, compliance, imported: imported.has(w.id), lift: liftDetail, liftSessionId: linked.get(w.id) ?? null, syncs: syncOf.get(w.id) ?? {} };

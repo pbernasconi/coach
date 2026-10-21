@@ -56,7 +56,7 @@ export default function SessionList({ sessions, upcoming, unit, today }: { sessi
   return (
     <section id="sessions" className="scroll-mt-20 overflow-hidden rounded-xl border bg-card" aria-labelledby="sessions-h">
       <div className="flex flex-wrap items-baseline justify-between gap-2 border-b px-4 py-3">
-        <h2 id="sessions-h" className="font-semibold">Sessions</h2>
+        <h2 id="sessions-h" className="font-semibold">All sessions</h2>
         <span className="text-xs text-[var(--viz-muted)]">{sessions.length} logged · volume = reps × weight, warm-ups out</span>
       </div>
       {upcoming.length > 0 && (
