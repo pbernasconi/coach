@@ -68,6 +68,8 @@ Daily vitals and lab results. They are shown on `/health`, and `scripts/health-p
 - **Garmin Connect**: a Python job in GitHub Actions (the `garminconnect` library) pushes one value per day and
   metric with `source: "garmin"`.
 - **Apple Health**: the Lift app can push in the same way later.
+- **Bathroom scale**: an ESP32 bridge (`devices/scale-bridge/`) reads the Renpho Elis 1 over Bluetooth and posts
+  `weight_kg` and `body_fat_pct` with the Lift token and `source: "Renpho Elis 1 (scale bridge)"`.
 - **Lab results**: they come from Function Health. The "Function Health sync" workflow (by hand, after new results)
   runs `scripts/function-sync.mjs`, which posts to `POST /api/vitals/function`. `/labs` (`scripts/labs-import.mjs`)
   still imports a PDF.
@@ -80,7 +82,7 @@ validation and returns `{ accepted, rejected }`.
 
 `Authorization: Bearer <token>`. Two tokens are accepted, and both are compared in constant time:
 - `CRON_SECRET`: the Garmin job.
-- `LIFT_SYNC_TOKEN`: the Lift app (the token that `/api/lift/enroll` gives).
+- `LIFT_SYNC_TOKEN`: the Lift app (the token that `/api/lift/enroll` gives), and the scale bridge.
 
 Both tokens write to the owner's data (the first row in `users`, the rule in `src/lib/owner.ts`).
 

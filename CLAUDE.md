@@ -20,7 +20,7 @@ https://coach.paolobernasconi.com (Vercel Hobby, Neon Postgres with hard monthly
 - **Pages** (`src/app/(dashboard)/`): Performance (`/`), Plan (`/plan`, the month calendar), Lift, Goals, Health
   (vitals, labs), Settings, and an activity page (`/activities/[id]`).
 - **Data in**: Strava (webhook and `sync.yml`), Garmin (`garmin.yml`, a Python job), the Lift iPhone app
-  (`lift/`, its own sync), Google Calendar, Function Health (`function.yml`, by hand). COACH-API.md has every
+  (`lift/`, its own sync), Google Calendar, Function Health (`function.yml`, by hand), the bathroom scale (`devices/scale-bridge/`, an ESP32). COACH-API.md has every
   route and source.
 - **Planning**: the `/plan` and `/check-in` commands in `.claude/commands/` (COACH.md).
 
@@ -35,6 +35,7 @@ https://coach.paolobernasconi.com (Vercel Hobby, Neon Postgres with hard monthly
 | `src/lib/vitals/` | Garmin and Function Health data, readiness |
 | `src/lib/lift-sync/`, `src/lib/lift-dashboard/` | Lift's sync protocol and the web Lift pages |
 | `src/db/` | Drizzle schemas (DATABASE.md) |
+| `devices/scale-bridge/` | ESP32 firmware that posts Renpho scale weigh-ins to Coach (PlatformIO, its README) |
 | `scripts/` | CLI jobs and the integration tests (`scripts/README.md`) |
 
 Pure logic is in `.mjs` files with a `*.test.mjs` next to them (`npm test`, no database). The core maths files
