@@ -13,7 +13,15 @@ final class RecordingRestActivityController: RestActivityController {
     }
 
     private(set) var calls: [Call] = []
+    /// Every workout the screen showed, in order (kept apart from the rest calls).
+    private(set) var shownWorkouts: [UUID] = []
     private var rest: RestSnapshot?
+
+    func showWorkout(_ sessionID: UUID) {
+        shownWorkouts.append(sessionID)
+    }
+
+    func resume() {}
 
     func start(_ attributes: RestActivityAttributes, state: RestActivityAttributes.ContentState) {
         calls.append(.start(attributes, state))
@@ -37,6 +45,11 @@ final class RecordingRestActivityController: RestActivityController {
     /// +30s on the Lock Screen at `now`.
     func lockScreenExtend(at now: Date) {
         rest = rest?.extended(by: RestSnapshot.extensionSeconds, at: now)
+    }
+
+    /// Done on the Lock Screen at `now`: a new rest of `seconds` for `setID`.
+    func lockScreenDone(_ setID: UUID, seconds: Int, at now: Date) {
+        rest = RestSnapshot(endsAt: now.addingTimeInterval(TimeInterval(seconds)), totalSeconds: seconds, setID: setID)
     }
 
     /// Skip on the Lock Screen.

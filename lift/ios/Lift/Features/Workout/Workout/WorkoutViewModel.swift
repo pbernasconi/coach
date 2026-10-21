@@ -69,8 +69,7 @@ final class WorkoutViewModel {
         self.now = now
     }
 
-    /// Observes the session; started by the Screen's `.task` (SCR-4). The first time the session loads, it also reads
-    /// each exercise's sets last time, once.
+    /// Observes the session (started by the Screen's `.task`, SCR-4); the first time, also each exercise's last sets.
     func run() async {
         var hasReadPrevious = false
         for await detail in sessions.observeSession(id: sessionID) {
@@ -96,6 +95,7 @@ final class WorkoutViewModel {
         state.workout = .loaded(
             WorkoutOverview(detail: detail, days: days, previous: state.previous, gym: gym.setup, today: today)
         )
+        state.adoptRest(restActivity.follow(workout: detail.id, restingAfter: state.rest?.setID), at: now())
     }
 
     /// Counts the rest down once a second on the injected clock; the Screen restarts it for each new rest. Each tick

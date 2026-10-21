@@ -17,8 +17,10 @@ final class AppDependencies {
     let now: @Sendable () -> Date
     /// Drives countdowns such as the rest timer; tests and previews pass their own.
     let clock: any Clock<Duration>
-    /// The rest countdown on the Lock Screen and in the Dynamic Island.
-    let restActivity: any RestActivityController
+    /// The workout and its rest on the Lock Screen and in the Dynamic Island; the Live Activity's buttons reach it too.
+    let workoutActivity: WorkoutActivityCenter
+    /// The same, as the Workout screen drives it.
+    var restActivity: any RestActivityController { workoutActivity }
     /// Downloads and caches the catalog's media (© Gym visual) from the pinned dataset commit.
     let mediaLoader: any ExerciseMediaLoader
     /// The bundled exercise catalog and its media.
@@ -63,7 +65,7 @@ final class AppDependencies {
         history: any ExerciseHistoryRepository,
         now: @escaping @Sendable () -> Date,
         clock: any Clock<Duration>,
-        restActivity: any RestActivityController,
+        workoutActivity: WorkoutActivityCenter,
         mediaLoader: any ExerciseMediaLoader,
         catalog: any ExerciseCatalogProviding,
         calendar: Calendar,
@@ -84,7 +86,7 @@ final class AppDependencies {
         self.history = history
         self.now = now
         self.clock = clock
-        self.restActivity = restActivity
+        self.workoutActivity = workoutActivity
         self.mediaLoader = mediaLoader
         self.catalog = catalog
         self.calendar = calendar
@@ -110,11 +112,11 @@ final class AppDependencies {
 
     /// Work that finishes before the tabs show: the seed exercise library on this iPhone (and in `-fresh`), or the
     /// fabricated demo sessions in demo mode. Runs once; a failure is logged and the app opens with what the database
-    /// holds. A rest Live Activity left over from a previous launch is ended first.
+    /// holds. A workout Live Activity left from a previous launch is picked up first, or ended when its workout is over.
     func prepare() async {
         guard !isPrepared else { return }
         isPrepared = true
-        restActivity.end()
+        workoutActivity.resume()
         do {
             switch info.dataSource {
             case .device, .fresh:

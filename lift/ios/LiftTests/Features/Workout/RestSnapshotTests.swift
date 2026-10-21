@@ -3,7 +3,7 @@ import Testing
 
 @testable import Lift
 
-/// The rest shared with the Live Activity's +30s and Skip: its rules, the App Group store and what the buttons do.
+/// The rest shared with the Live Activity's +30s and Skip: its rules, and how the in-app countdown follows it.
 /// A made-up wall clock only (TEST-3).
 @Suite struct RestSnapshotTests {
     private static let start = Date(timeIntervalSince1970: 1_772_442_000)
@@ -21,41 +21,6 @@ import Testing
     @Test(arguments: [(0.0, 90), (0.5, 90), (89.2, 1), (90.0, 0), (200.0, 0)])
     func secondsLeftRoundUpAndNeverGoBelowZero(elapsed: Double, left: Int) {
         #expect(Self.rest.secondsLeft(at: Self.start.addingTimeInterval(elapsed)) == left)
-    }
-
-    @Test func theAddButtonSavesTheLongerRest() {
-        let store = InMemoryRestSnapshotStore(Self.rest)
-        let next = RestButtonAction.extend(store, at: Self.start)
-        #expect(next?.totalSeconds == 120)
-        #expect(store.load() == next)
-    }
-
-    @Test func theAddButtonClearsARestThatIsOver() {
-        let store = InMemoryRestSnapshotStore(Self.rest)
-        #expect(RestButtonAction.extend(store, at: Self.start.addingTimeInterval(95)) == nil)
-        #expect(store.load() == nil)
-    }
-
-    @Test func theAddButtonWithoutARestDoesNothing() {
-        let store = InMemoryRestSnapshotStore()
-        #expect(RestButtonAction.extend(store, at: Self.start) == nil)
-        #expect(store.load() == nil)
-    }
-
-    @Test func theSkipButtonClearsTheRest() {
-        let store = InMemoryRestSnapshotStore(Self.rest)
-        RestButtonAction.skip(store)
-        #expect(store.load() == nil)
-    }
-
-    @Test func theAppGroupStoreKeepsAndClearsTheRest() {
-        let store = AppGroupRestSnapshotStore(suiteName: "lift.tests.rest.\(UUID().uuidString)")
-        #expect(store.load() == nil)
-        store.save(Self.rest)
-        #expect(store.load() == Self.rest)
-        #expect(AppGroupRestSnapshotStore(suiteName: store.suiteName).load() == Self.rest)
-        store.save(nil)
-        #expect(store.load() == nil)
     }
 
     @Test func aTickTakesInTimeAddedOnTheLockScreen() {
