@@ -15,6 +15,7 @@ final class LiveCoachPlan: CoachPlanProviding {
     private let days: DayCalendar
     private var snapshot = CoachPlanSnapshot(status: .ready, book: CoachPlanBook())
     private var hasLoadedCache = false
+    private var isLoadingCache = false
     /// The shown week's first day; this week until the Week screen says otherwise.
     private var shownWeek: LocalDay?
     /// Start weeks with a request in flight, so a second trigger does not ask twice.
@@ -39,8 +40,8 @@ final class LiveCoachPlan: CoachPlanProviding {
         self.days = DayCalendar(calendar: calendar)
     }
 
+    /// The first value comes once the kept plan is read from disk (off the main actor).
     func snapshots() -> AsyncStream<CoachPlanSnapshot> {
-        loadCacheOnce()
         let (stream, continuation) = AsyncStream.makeStream(
             of: CoachPlanSnapshot.self,
             bufferingPolicy: .bufferingNewest(1)
@@ -48,7 +49,11 @@ final class LiveCoachPlan: CoachPlanProviding {
         let id = nextSubscriber
         nextSubscriber += 1
         subscribers[id] = continuation
-        continuation.yield(snapshot)
+        if hasLoadedCache {
+            continuation.yield(snapshot)
+        } else {
+            Task { await loadCacheOnce() }
+        }
         continuation.onTermination = { [weak self] _ in
             Task { @MainActor in self?.subscribers.removeValue(forKey: id) }
         }
@@ -56,14 +61,14 @@ final class LiveCoachPlan: CoachPlanProviding {
     }
 
     func show(weekStart: LocalDay) async {
-        loadCacheOnce()
+        await loadCacheOnce()
         shownWeek = weekStart
         guard snapshot.status != .off, !snapshot.book.holds(Self.weeks(from: weekStart)) else { return }
         await fetch(from: weekStart)
     }
 
     func refresh() async {
-        loadCacheOnce()
+        await loadCacheOnce()
         await fetch(from: shownWeek ?? thisWeek)
     }
 
@@ -103,7 +108,7 @@ final class LiveCoachPlan: CoachPlanProviding {
                 count: Self.weeksPerFetch,
                 timeZone: days.calendar.timeZone.identifier
             )
-            keep(response, start: start)
+            await keep(response, start: start)
             snapshot.book.add(response.plan)
             snapshot.status = .ready
         } catch SyncTransportError.missingToken {
@@ -117,26 +122,47 @@ final class LiveCoachPlan: CoachPlanProviding {
         publish()
     }
 
-    /// Writes the body to disk and drops bodies for weeks the strip can no longer show.
-    private func keep(_ response: CoachPlanResponse, start: LocalDay) {
+    /// Writes the body to disk and drops bodies for weeks the strip can no longer show, off the main actor.
+    private func keep(_ response: CoachPlanResponse, start: LocalDay) async {
+        let week = thisWeek
+        let range =
+            week.adding(
+                days: 7 * WeekState.weeks.lowerBound
+            )...week.adding(
+                days: 7 * (WeekState.weeks.upperBound + 1)
+            )
+        await Self.write(response.data, start: start, keeping: range, in: cache)
+    }
+
+    @concurrent
+    private nonisolated static func write(
+        _ data: Data,
+        start: LocalDay,
+        keeping range: ClosedRange<LocalDay>,
+        in cache: any CoachPlanStoring
+    ) async {
         do {
-            try cache.save(response.data, start: start)
+            try cache.save(data, start: start)
         } catch {
             AppLog.sync.error("Week plan not kept: \(String(describing: error), privacy: .public)")
         }
-        let week = thisWeek
-        cache.prune(
-            keeping: week.adding(
-                days: 7 * WeekState.weeks.lowerBound
-            )...week.adding(days: 7 * (WeekState.weeks.upperBound + 1))
-        )
+        cache.prune(keeping: range)
     }
 
-    private func loadCacheOnce() {
-        guard !hasLoadedCache else { return }
+    /// Reads and decodes the kept bodies once, off the main actor, then tells every subscriber.
+    private func loadCacheOnce() async {
+        guard !hasLoadedCache, !isLoadingCache else { return }
+        isLoadingCache = true
+        let plans = await Self.read(cache)
+        for plan in plans { snapshot.book.add(plan) }  // a fetch that finished first stays when it is newer
         hasLoadedCache = true
-        let plans = cache.load().compactMap { try? CoachPlanResponse(data: $0).plan }
-        snapshot.book = CoachPlanBook(plans)
+        isLoadingCache = false
+        publish()
+    }
+
+    @concurrent
+    private nonisolated static func read(_ cache: any CoachPlanStoring) async -> [CoachPlan] {
+        cache.load().compactMap { try? CoachPlanResponse(data: $0).plan }
     }
 
     private func publish() {

@@ -4,7 +4,8 @@ import KoboTokens
 import SwiftUI
 
 /// Bars stacked by category over evenly spaced periods (hours per activity per week): a colour per category with a
-/// legend, an optional dashed average line, a faded partial period, and a dot row under marked bars. Touching a bar
+/// legend, an optional dashed average line (named in the legend under the chart, never over the bars), a faded partial
+/// period, and a dot row under marked bars. Touching a bar
 /// shows its categories and total. VoiceOver reads the label and "8 bars, average 5.2, highest 9 on Mar 4".
 ///
 ///     KoboStackedBarChart(
@@ -85,16 +86,11 @@ public struct KoboStackedBarChart<X: KoboChartX>: View {
         } else {
             VStack(alignment: .leading, spacing: Space.xs) {
                 chart
-                if let markLabel, groups.contains(where: \.isMarked) {
-                    Label {
-                        Text(verbatim: markLabel)
-                    } icon: {
-                        Circle().fill(theme.palette.textPrimary).frame(width: dot, height: dot)
-                    }
-                    .font(theme.font(.caption))
-                    .foregroundStyle(theme.palette.textSecondary)
-                    .accessibilityHidden(true)
-                }
+                StackedBarLegend(
+                    reference: reference?.label,
+                    markLabel: groups.contains(where: \.isMarked) ? markLabel : nil,
+                    dot: dot
+                )
             }
         }
     }
@@ -125,7 +121,7 @@ public struct KoboStackedBarChart<X: KoboChartX>: View {
     }
 
     private func bar(index: Int, group: BarGroup<X>, category: Int, span: Range<Double>) -> some ChartContent {
-        let faded = group.isPartial || (selected != nil && selected != index)
+        let faded = group.isPartial || (selected != nil && selected != index)  // the period still filling
         let center = Double(index)
         return RectangleMark(
             xStart: .value("Start", center - 0.36),
@@ -134,7 +130,7 @@ public struct KoboStackedBarChart<X: KoboChartX>: View {
             yEnd: .value("High", span.upperBound)
         )
         .foregroundStyle(by: .value("Category", categories[category].name))
-        .opacity(faded ? 0.45 : 1)
+        .opacity(faded ? 0.35 : 1)
     }
 
     @ChartContentBuilder private var referenceMark: some ChartContent {
@@ -142,13 +138,6 @@ public struct KoboStackedBarChart<X: KoboChartX>: View {
             RuleMark(y: .value("Reference", reference.y))
                 .foregroundStyle(theme.palette.textSecondary)
                 .lineStyle(StrokeStyle(lineWidth: Size.hairline * 2, dash: [Space.xs, Space.xs]))
-                .annotation(position: .top, alignment: .leading, spacing: Space.xxs) {
-                    Text(verbatim: reference.label)
-                        .font(theme.font(.caption).weight(.semibold))
-                        .foregroundStyle(theme.palette.textSecondary)
-                        .padding(.horizontal, Space.xxs)
-                        .background(theme.palette.surface.opacity(0.9), in: RoundedRectangle(cornerRadius: Radius.xs))
-                }
         }
     }
 
@@ -179,7 +168,9 @@ public struct KoboStackedBarChart<X: KoboChartX>: View {
     }
 
     private var summary: String {
-        ChartSpeech.bars(totals: groups.map(\.total), labels: groups.map { xText($0.x) }, format: yText)
+        // The partial period is left out, as it is from the average line.
+        let whole = groups.filter { !$0.isPartial }
+        return ChartSpeech.bars(totals: whole.map(\.total), labels: whole.map { xText($0.x) }, format: yText)
     }
 
     /// Selection snapped to the nearest bar.
@@ -210,6 +201,7 @@ public struct KoboStackedBarChart<X: KoboChartX>: View {
             Text(verbatim: xText(group.x))
                 .font(theme.font(.caption))
                 .foregroundStyle(theme.palette.textSecondary)
+                .fixedSize()  // the last bar's label may run past the plot rather than truncate
         }
     }
 

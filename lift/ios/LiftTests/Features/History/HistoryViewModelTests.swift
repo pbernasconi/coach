@@ -17,7 +17,8 @@ import Testing
     func makeViewModel(
         _ repository: FakeSessionRepository,
         library: [Exercise] = ExerciseLibrary.seed,
-        segment: HistorySegment = .sessions
+        segment: HistorySegment = .sessions,
+        opensCoachSessions: Bool = false
     ) -> HistoryViewModel {
         HistoryViewModel(
             sessions: repository,
@@ -26,7 +27,8 @@ import Testing
             importFlow: importFlow,
             now: SessionBuilder.now,
             calendar: SessionBuilder.calendar,
-            segment: segment
+            segment: segment,
+            opensCoachSessions: opensCoachSessions
         )
     }
 
@@ -88,6 +90,30 @@ import Testing
         #expect(task == nil)
         #expect(vm.state == before)
         #expect(router.opened == [.workout(friday.id)])
+    }
+
+    @Test func sessionTappedOpensTheCoachPageForAFinishedSessionWhenConnected() async {
+        var finished = SessionBuilder.session(id: 1, on: monday.adding(days: -3), done: 3, planned: 0)
+        finished.session.finishedAt = ManualNow.start
+        let open = SessionBuilder.session(id: 2, on: monday.adding(days: -2), done: 1, planned: 2)
+        let vm = makeViewModel(FakeSessionRepository(emissions: [[finished, open]]), opensCoachSessions: true)
+        await vm.run()
+
+        vm.send(.sessionTapped(finished.id))
+        vm.send(.sessionTapped(open.id))
+
+        #expect(router.opened == [.liftSession(finished.id.uuidString.lowercased()), .workout(open.id)])
+    }
+
+    @Test func sessionTappedOpensTheWorkoutForAFinishedSessionWhenNotConnected() async {
+        var finished = SessionBuilder.session(id: 1, on: monday.adding(days: -3), done: 3, planned: 0)
+        finished.session.finishedAt = ManualNow.start
+        let vm = makeViewModel(FakeSessionRepository(emissions: [[finished]]), opensCoachSessions: false)
+        await vm.run()
+
+        vm.send(.sessionTapped(finished.id))
+
+        #expect(router.opened == [.workout(finished.id)])
     }
 
     @Test func importTappedOpensTheImportFlow() {

@@ -54,8 +54,33 @@ import Testing
 
     @Test func longSeriesAreThinnedForDrawing() {
         let series = ChartSeries(id: "a", name: "A", points: (0..<5_000).map { ChartPoint(x: Double($0), y: 1) })
-        #expect(series.plotted.count == ChartSeries<Double>.maxPlotted)
+        #expect(series.plotted.count <= ChartSeries<Double>.maxPlotted)
         #expect(series.plotted.last?.x == 4_999)
+    }
+
+    @Test func sameNameSeriesReadAsOne() {
+        let chart = KoboLineChart(
+            series: [
+                ChartSeries(id: "a", name: "Score", points: [1.0, 2].map { ChartPoint(x: $0, y: $0 * 10) }),
+                ChartSeries(
+                    id: "b",
+                    name: "Score",
+                    points: [2.0, 3].map { ChartPoint(x: $0, y: $0 * 10) },
+                    stroke: .dashed
+                ),
+            ],
+            xText: { "\($0)" },
+            yText: { "\(Int($0))" },
+            accessibilityLabel: "Score"
+        )
+        #expect(chart.summary == "Score: From 10 to 30, low 10, high 30")
+        #expect(chart.legend.map(\.name) == ["Score"])
+    }
+
+    @Test func peaksSurviveDrawing() {
+        let points = (0..<5_000).map { ChartPoint(x: Double($0), y: $0 == 2_500 ? 999 : 1) }
+        let series = ChartSeries(id: "a", name: "A", points: points)
+        #expect(series.plotted.contains { $0.y == 999 })
     }
 
     @Test func chartColorsCycleAndAcceptAnyIndex() {

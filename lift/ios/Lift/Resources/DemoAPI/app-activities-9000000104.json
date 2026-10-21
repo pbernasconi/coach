@@ -1,0 +1,143 @@
+{
+ "generatedAt": "2026-10-20T20:30:00.000Z",
+ "timeZone": "America/Los_Angeles",
+ "today": "2026-10-20",
+ "activityId": "9000000104",
+ "header": {
+  "ok": true,
+  "activityId": "9000000104",
+  "name": "Lunch walk",
+  "sport": "walk",
+  "sportType": "Walk",
+  "typeText": "Walk",
+  "startLocal": "2026-10-17T07:15:00",
+  "day": "2026-10-17",
+  "whenText": "Saturday, October 17, 2026 at 7:15 AM",
+  "place": "Seaview, Atlantis",
+  "indoor": false,
+  "commute": false,
+  "subtitle": "Saturday, October 17, 2026 at 7:15 AM · Seaview, Atlantis · Walk",
+  "description": "Easy miles along the water.\nLegs felt fresh.",
+  "prevId": "9000000103",
+  "nextId": null,
+  "stravaUrl": "https://www.strava.com/activities/9000000104",
+  "fetch": {
+   "pending": true,
+   "note": "Loading details from Strava. Pull to refresh in a minute."
+  }
+ },
+ "overview": {
+  "ok": true,
+  "big": [
+   {
+    "label": "Distance",
+    "valueText": "9.64",
+    "unit": "km"
+   },
+   {
+    "label": "Moving Time",
+    "valueText": "52:50"
+   },
+   {
+    "label": "Pace",
+    "valueText": "5:29",
+    "unit": "/km"
+   },
+   {
+    "label": "Relative Effort",
+    "valueText": "42"
+   },
+   {
+    "label": "Coach TSS",
+    "valueText": "71"
+   }
+  ],
+  "small": [
+   {
+    "label": "Elevation",
+    "valueText": "64",
+    "unit": "m"
+   },
+   {
+    "label": "Elapsed Time",
+    "valueText": "54:20"
+   },
+   {
+    "label": "Calories",
+    "valueText": "690"
+   },
+   {
+    "label": "GAP",
+    "valueText": "5:24",
+    "unit": "/km"
+   },
+   {
+    "label": "Avg Heart Rate",
+    "valueText": "146",
+    "unit": "bpm"
+   },
+   {
+    "label": "Max Heart Rate",
+    "valueText": "166",
+    "unit": "bpm"
+   },
+   {
+    "label": "Cadence",
+    "valueText": "170",
+    "unit": "spm"
+   }
+  ],
+  "achievementsText": "1 PR · 3 achievements · 4 kudos"
+ },
+ "weather": null,
+ "equipment": null,
+ "splits": null,
+ "route": null,
+ "sameRoute": {
+  "ok": false
+ },
+ "coach": {
+  "ok": false
+ },
+ "analysis": {
+  "ok": true,
+  "points": 0,
+  "smoothingS": 30,
+  "x": null,
+  "streams": [],
+  "note": null,
+  "emptyText": "The streams are loading from Strava."
+ },
+ "paceBars": null,
+ "paceHistogram": null,
+ "relativeEffort": {
+  "ok": true,
+  "sufferScore": 42,
+  "trimp": 96,
+  "tss": 71,
+  "stats": [
+   {
+    "label": "Relative Effort (Strava)",
+    "valueText": "42"
+   },
+   {
+    "label": "TRIMP (from HR)",
+    "valueText": "96"
+   },
+   {
+    "label": "Coach TSS",
+    "valueText": "71"
+   },
+   {
+    "label": "TSS per hour",
+    "valueText": "81"
+   }
+  ],
+  "note": null
+ },
+ "heartRate": null,
+ "power": null,
+ "laps": null,
+ "bestEfforts": null,
+ "segments": null
+}

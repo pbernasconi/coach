@@ -127,13 +127,23 @@ public struct CoachDone: Decodable, Equatable, Sendable {
     public var tss: Double?
     /// Done against planned, display-ready: "62 min · 70 TSS / 60 min · 45 TSS".
     public var text: String?
+    /// The matched Strava activity, for `/api/app/activities/{id}`; nil for a Lift session or when unknown.
+    public var activityId: String?
 
-    public init(source: String, name: String?, minutes: Double?, tss: Double?, text: String? = nil) {
+    public init(
+        source: String,
+        name: String?,
+        minutes: Double?,
+        tss: Double?,
+        text: String? = nil,
+        activityId: String? = nil
+    ) {
         self.source = source
         self.name = name
         self.minutes = minutes
         self.tss = tss
         self.text = text
+        self.activityId = activityId
     }
 }
 

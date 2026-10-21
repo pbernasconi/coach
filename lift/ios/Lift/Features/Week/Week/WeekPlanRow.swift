@@ -21,6 +21,14 @@ struct WeekPlanRow<Leading: View>: View {
         )
         .strikethrough(item.state == .skipped)
         .listRowEmphasis(isQuiet ? .quiet : .standard)
+        // One element: "Ride: Sweet spot 3 × 12", then "07:00 · 60 min · 70 TSS, Today". The icon alone is hidden.
+        .accessibilityLabel(Text(verbatim: "\(item.sport.label): \(item.title)"))
+        .accessibilityValue(
+            Text(verbatim: [item.rowSubtitle, item.stateLabel].compactMap(\.self).joined(separator: ", "))
+        )
+        .accessibilityHint(
+            item.liftSessionId == nil ? Text("Shows the workout's details") : Text("Opens the Lift session")
+        )
     }
 
     private var isQuiet: Bool {
