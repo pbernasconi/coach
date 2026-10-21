@@ -3,7 +3,7 @@ import { Check, History, Timer, Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { RichExercise, RichSet } from '@/lib/lift/session';
 import ExerciseThumb from './ExerciseThumb';
-import Sparkline from './Sparkline';
+import MiniTrend from '@/components/charts/MiniTrend';
 import { deltaText, exerciseChips, lastTimeDelta, setTile } from '@/lib/lift-dashboard/text.mjs';
 import { loadModeNote, loadText, muscleLabel, num, restText } from './format';
 
@@ -136,8 +136,15 @@ export default function ExerciseCard({ e, unit, index }: { e: RichExercise; unit
               )}
             </div>
             {showE1rm && h.trend.length >= 2 && (
-              <Link href={`/lift/exercises/${encodeURIComponent(e.key)}`} className="flex flex-col items-start gap-0.5 sm:items-end" title="Estimated 1RM per session">
-                <Sparkline values={h.trend.map((p) => p.e1rm)} label={`Estimated 1RM over the last ${h.trend.length} sessions`} />
+              <Link href={`/lift/exercises/${encodeURIComponent(e.key)}`} className="flex flex-col items-start gap-0.5 sm:items-end">
+                <MiniTrend
+                  points={h.trend.map((p) => ({ value: p.e1rm, label: shortDay(p.day), text: `${num(p.e1rm, 0)} ${unit}` }))}
+                  color="var(--sport-strength)"
+                  height={32}
+                  lastDot
+                  label={`Estimated 1RM over the last ${h.trend.length} sessions`}
+                  className="w-[120px]"
+                />
                 <span className="text-[10px] text-[var(--viz-muted)]">e1RM · last {h.trend.length} sessions</span>
               </Link>
             )}

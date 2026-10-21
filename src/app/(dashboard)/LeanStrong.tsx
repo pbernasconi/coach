@@ -1,9 +1,10 @@
 import Link from 'next/link';
+import MiniTrend from '@/components/charts/MiniTrend';
 import type { Body } from '@/lib/vitals/garmin-pages';
 import { MUSCLE_TARGET, daysAgoText, e1rmText, liftChangeText, setsText, shortDate, weightChange } from '@/lib/performance/display.mjs';
 
 type MuscleRow = { muscle: string; sets: number; status: string };
-type TopLift = { key: string; name: string; points: { e1rm: number }[]; latest: number | null; change: number | null };
+type TopLift = { key: string; name: string; points: { day: string; e1rm: number }[]; latest: number | null; change: number | null };
 type SessionRef = { id: string; day: string; title: string };
 export type LiftSummary = {
   thisWeek: MuscleRow[];
@@ -19,38 +20,6 @@ export type LiftSummary = {
 const BAND = MUSCLE_TARGET; // weekly hard sets per muscle
 const BAR_MAX = 25;
 const ARMS = ['biceps', 'triceps'];
-
-/** A small trend line scaled to its own range (a weight series sits far from zero). */
-function Trend({ values, color, height = 56, label }: { values: number[]; color: string; height?: number; label: string }) {
-  if (values.length < 2) return null;
-  const W = 300;
-  const lo = Math.min(...values);
-  const hi = Math.max(...values);
-  const pts = values.map((v, i) => [(i / (values.length - 1)) * W, height - 4 - ((v - lo) / (hi - lo || 1)) * (height - 8)] as const);
-  const d = pts.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`).join('');
-  const [lx, ly] = pts.at(-1)!;
-  return (
-    <svg viewBox={`0 0 ${W} ${height}`} preserveAspectRatio="none" className="w-full" style={{ height }} role="img" aria-label={label}>
-      <path d={d} fill="none" stroke={color} strokeWidth="2" vectorEffect="non-scaling-stroke" />
-      <circle cx={lx} cy={ly} r="3" fill={color} />
-    </svg>
-  );
-}
-
-function Spark({ points }: { points: { e1rm: number }[] }) {
-  if (points.length < 2) return <span className="w-16 text-right text-[11px] text-[var(--viz-muted)]">1 session</span>;
-  const W = 64;
-  const H = 20;
-  const vals = points.map((p) => p.e1rm);
-  const lo = Math.min(...vals);
-  const hi = Math.max(...vals);
-  const d = vals.map((v, i) => `${i ? 'L' : 'M'}${((i / (vals.length - 1)) * W).toFixed(1)},${(H - 2 - ((v - lo) / (hi - lo || 1)) * (H - 4)).toFixed(1)}`).join('');
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="h-5 w-16 shrink-0" aria-hidden>
-      <path d={d} fill="none" stroke="var(--sport-strength)" strokeWidth="1.75" />
-    </svg>
-  );
-}
 
 function SetsBar({ name, sets }: { name: string; sets: number }) {
   const pct = (v: number) => `${(Math.min(v, BAR_MAX) / BAR_MAX) * 100}%`;
@@ -104,7 +73,13 @@ export default function LeanStrong({
                 `as of ${shortDate(body.weight.date)}`
               )}
             </span>
-            <Trend values={body.series.map((p) => p.value)} color="var(--viz-ink)" label="Weight, last 12 weeks" />
+            <MiniTrend
+              points={body.series.map((p) => ({ value: p.value, label: shortDate(p.date), text: `${p.value.toFixed(1)} kg` }))}
+              color="var(--viz-ink)"
+              height={56}
+              lastDot
+              label="Weight, last 12 weeks"
+            />
             <span className="flex justify-between text-xs">
               <span className="text-[var(--viz-muted)]">Body fat</span>
               <b className="tabular-nums">{body.bodyFat ? `${body.bodyFat.value.toFixed(1)} %` : '–'}</b>
@@ -132,7 +107,17 @@ export default function LeanStrong({
           lift.top.map((l) => (
             <Link key={l.key} href={`/lift/exercises/${encodeURIComponent(l.key)}`} className="flex min-h-9 items-center gap-2 text-sm hover:bg-muted/40">
               <span className="min-w-0 flex-1 truncate">{l.name}</span>
-              <Spark points={l.points} />
+              {l.points.length < 2 ? (
+                <span className="w-16 text-right text-[11px] text-[var(--viz-muted)]">1 session</span>
+              ) : (
+                <MiniTrend
+                  points={l.points.map((p) => ({ value: p.e1rm, label: shortDate(p.day), text: e1rmText(p.e1rm, lift.unit) }))}
+                  color="var(--sport-strength)"
+                  height={20}
+                  label={`${l.name}, estimated 1RM`}
+                  className="w-16 shrink-0"
+                />
+              )}
               <span className="w-16 text-right font-semibold tabular-nums">{e1rmText(l.latest, lift.unit)}</span>
               <span className={`w-10 text-right text-xs tabular-nums ${l.change == null ? 'text-[var(--viz-muted)]' : l.change >= 0 ? 'text-[var(--viz-good)]' : 'text-[var(--viz-down)]'}`}>
                 {liftChangeText(l.change)}

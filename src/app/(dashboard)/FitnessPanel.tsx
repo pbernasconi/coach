@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Bike, Footprints, Info as InfoIcon } from 'lucide-react';
 import { HelpTooltip } from '@kobo/web';
+import MiniTrend from '@/components/charts/MiniTrend';
 import { RUN_DISTANCES } from '@/lib/performance/peaks.mjs';
 import { loadTiles, peakText, rampTiles, recoveryRows, shortDate } from '@/lib/performance/display.mjs';
 import type { Pmc } from '@/lib/performance/projection';
@@ -50,24 +51,6 @@ export function RecoveryCard({ recovery, today }: { recovery: RecoveryToday | nu
   );
 }
 
-/** CTL over one window as a filled area, scaled to the window's own range so small changes show. */
-function MiniArea({ values, label }: { values: number[]; label: string }) {
-  if (values.length < 2) return <div className="h-14 rounded-sm bg-[var(--viz-band)]" aria-hidden />;
-  const W = 200;
-  const H = 56;
-  const lo = Math.min(...values);
-  const hi = Math.max(...values);
-  const pad = (hi - lo || 1) * 0.15;
-  const y = (v: number) => H - ((v - (lo - pad)) / (hi - lo + 2 * pad || 1)) * H;
-  const pts = values.map((v, i) => `${((i / (values.length - 1)) * W).toFixed(1)},${y(v).toFixed(1)}`);
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="h-14 w-full" role="img" aria-label={label}>
-      <path d={`M0,${H}L${pts.join('L')}L${W},${H}Z`} fill="var(--viz-ctl)" opacity={0.18} />
-      <path d={`M${pts.join('L')}`} fill="none" stroke="var(--viz-ctl)" strokeWidth={1.5} vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
 const MEDAL = { 1: '#c9a227', 2: '#9a9993', 3: '#b0713d' } as Record<number, string>;
 
 function Medal({ rank }: { rank: number }) {
@@ -97,7 +80,7 @@ export default function FitnessPanel({ pmc, peaks }: { pmc: Pmc | null; peaks: R
   const last = pmc?.days.filter((d) => !d.projected).at(-1) ?? null;
   const tiles = loadTiles(last);
   const ramps = pmc ? rampTiles(pmc.ramp) : [];
-  const ctl = pmc?.fitness.map((d) => d.ctl) ?? [];
+  const ctl = (pmc?.fitness ?? []).map((d) => ({ value: d.ctl, label: shortDate(d.date), text: `Fitness ${Math.round(d.ctl)}` }));
   const byDate = new Map<string, RecentPeak[]>();
   for (const p of peaks ?? []) byDate.set(p.date, [...(byDate.get(p.date) ?? []), p]);
 
@@ -160,7 +143,7 @@ export default function FitnessPanel({ pmc, peaks }: { pmc: Pmc | null; peaks: R
                   </span>
                   <span className="truncate text-[11px] text-[var(--viz-muted)]">{r.title}</span>
                 </div>
-                <MiniArea values={ctl.slice(-(r.days + 1))} label={`Fitness over the ${r.title.toLowerCase()}: ${r.changeText}`} />
+                <MiniTrend points={ctl.slice(-(r.days + 1))} color="var(--viz-ctl)" area height={56} label={`Fitness over the ${r.title.toLowerCase()}: ${r.changeText}`} />
               </div>
             ))}
           </div>
