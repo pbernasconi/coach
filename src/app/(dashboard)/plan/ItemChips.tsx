@@ -17,7 +17,7 @@ export function Chip({ item, h, roomy = false }: { item: Item; h: Handlers; room
   const open = (e: React.MouseEvent<HTMLElement>) => h.open({ kind: 'item', key: item.key }, e.currentTarget);
   if (item.kind === 'planned') return <PlannedChip w={item.w} actual={item.actual} roomy={roomy} onOpen={open} />;
   if (item.kind === 'activity') return <ActivityChip a={item.a} roomy={roomy} onOpen={open} />;
-  return <LiftChip l={item.l} roomy={roomy} onOpen={open} />;
+  return <LiftChip l={item.l} a={item.a} roomy={roomy} onOpen={open} />;
 }
 
 const chipBase = 'group/chip relative flex min-w-0 flex-col justify-center rounded-[5px] border border-l-[3px] px-1.5 text-[11px] leading-[15px] transition-shadow';
@@ -99,7 +99,9 @@ function ActivityChip({ a, roomy, onOpen }: { a: CalendarActivity; roomy: boolea
   );
 }
 
-function LiftChip({ l, roomy, onOpen }: { l: CalendarLift; roomy: boolean; onOpen: OnOpen }) {
+function LiftChip({ l, a, roomy, onOpen }: { l: CalendarLift; a: CalendarActivity | null; roomy: boolean; onOpen: OnOpen }) {
+  // `a`: the watch recorded the same lift; its time and TSS go on the one chip.
+  const watch = a ? loadText(a.min, a.tss, dur) : '';
   return (
     <button
       type="button"
@@ -112,7 +114,7 @@ function LiftChip({ l, roomy, onOpen }: { l: CalendarLift; roomy: boolean; onOpe
         <Dumbbell aria-hidden className="h-3 w-3 shrink-0" style={{ color: sport('strength').color }} />
         <span className="min-w-0 flex-1 truncate font-medium text-[var(--viz-ink)]">{l.name}</span>
       </span>
-      <span className="block tabular-nums text-[var(--viz-ink-2)]">{l.setsLogged} sets · Lift</span>
+      <span className="block truncate tabular-nums text-[var(--viz-ink-2)]">{watch ? `${watch} · ${l.setsLogged} sets` : `${l.setsLogged} sets · Lift`}</span>
     </button>
   );
 }

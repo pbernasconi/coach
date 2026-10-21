@@ -2,7 +2,7 @@
 // can keep their old objects (so memoized rows do not re-render). No framework or database imports, so node --test
 // can run it (cells.test.mjs).
 
-import { addDays, mondayOf } from './week.mjs';
+import { addDays, matchActivityId, mondayOf } from './week.mjs';
 
 /** Chips that fit in one grid day cell (the row height is fixed). With more items, the cell shows MAX - 1 and "+N more". */
 export const MAX_CHIPS = 3;
@@ -17,20 +17,27 @@ export function dur(min) {
 /**
  * The items of one day, in display order: planned workouts (by sort order, then start time), then completed
  * activities and Lift sessions that no planned workout matched. A planned workout carries its matched Strava
- * activity as `actual`.
+ * activity as `actual` (for a strength workout, the watch activity next to its Lift session). An unplanned Lift
+ * session takes the day's unmatched Strava strength activity as `a`, so one lift logged in Lift and on the watch
+ * shows once.
  *
- * @param {Array<{ id: string, sortOrder: number, startTime: string | null, match: { source: string, id: string } | null }>} planned
- * @param {Array<{ id: string }>} activities  the day's Strava activities
+ * @param {Array<{ id: string, sortOrder: number, startTime: string | null, match: { source: string, id: string, activityId?: string | null } | null }>} planned
+ * @param {Array<{ id: string, sport?: string }>} activities  the day's Strava activities
  * @param {Array<{ id: string }>} lifts  the day's Lift sessions
  */
 export function cellItems(planned, activities, lifts) {
   const sorted = [...planned].sort((a, b) => a.sortOrder - b.sortOrder || (a.startTime ?? '99').localeCompare(b.startTime ?? '99'));
-  const matched = new Set(sorted.map((w) => w.match?.id).filter(Boolean));
+  const matched = new Set(sorted.flatMap((w) => [w.match?.id, w.match?.activityId]).filter(Boolean));
   const byId = new Map(activities.map((a) => [a.id, a]));
+  const looseLifts = lifts.filter((l) => !matched.has(l.id)).map((l) => {
+    const a = activities.find((x) => x.sport === 'strength' && !matched.has(x.id)) ?? null;
+    if (a) matched.add(a.id);
+    return { kind: 'lift', key: `l-${l.id}`, l, a };
+  });
   return [
-    ...sorted.map((w) => ({ kind: 'planned', key: `w-${w.id}`, w, actual: w.match?.source === 'strava' ? byId.get(w.match.id) ?? null : null })),
+    ...sorted.map((w) => ({ kind: 'planned', key: `w-${w.id}`, w, actual: byId.get(matchActivityId(w.match)) ?? null })),
     ...activities.filter((a) => !matched.has(a.id)).map((a) => ({ kind: 'activity', key: `a-${a.id}`, a })),
-    ...lifts.filter((l) => !matched.has(l.id)).map((l) => ({ kind: 'lift', key: `l-${l.id}`, l })),
+    ...looseLifts,
   ];
 }
 
