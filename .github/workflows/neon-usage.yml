@@ -38,7 +38,7 @@ jobs:
           TITLE: ${{ steps.usage.outputs.title }}
         run: |
           gh label create neon-usage --color D93F0B --description "Neon usage near a quota" 2>/dev/null || true
-          existing=$(gh issue list --label neon-usage --state open --json number,title --jq '.[0] | "\(.number)\t\(.title)"')
+          existing=$(gh issue list --label neon-usage --state open --json number,title --jq '.[0] // empty | "\(.number)\t\(.title)"')
           number=${existing%%$'\t'*}
           old_title=${existing#*$'\t'}
           if [ "$LEVEL" = "0" ]; then
