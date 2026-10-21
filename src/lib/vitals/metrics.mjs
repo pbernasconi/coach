@@ -3,7 +3,7 @@
 // and a plausible range. A sample outside the range is rejected, so a unit mistake (pounds sent as kg, a 0-1
 // fraction sent as a percent) cannot reach the database.
 
-/** @typedef {'hrv_night_avg_ms' | 'hrv_weekly_avg_ms' | 'hrv_status' | 'hrv_sdnn_ms' | 'resting_hr_bpm' | 'resting_hr_7d_avg_bpm' | 'sleep_total_min' | 'sleep_deep_min' | 'sleep_rem_min' | 'sleep_core_min' | 'sleep_awake_min' | 'sleep_score' | 'body_battery_high' | 'body_battery_low' | 'stress_avg' | 'training_readiness' | 'steps' | 'active_energy_kcal' | 'weight_kg' | 'body_fat_pct' | 'vo2max' | 'respiratory_rate' | 'spo2_pct' | 'wrist_temp_delta_c' | 'sleep_avg_hr_bpm' | 'sleep_avg_stress' | 'sleep_awake_count' | 'hrv_baseline_low_ms' | 'hrv_baseline_high_ms' | 'readiness_sleep_factor' | 'readiness_hrv_factor' | 'readiness_recovery_time_h' | 'readiness_acute_load' | 'intensity_minutes_moderate' | 'intensity_minutes_vigorous' | 'floors_climbed' | 'training_load_acute' | 'training_load_chronic' | 'training_load_ratio' | 'load_focus_anaerobic' | 'load_focus_high_aerobic' | 'load_focus_low_aerobic' | 'training_status' | 'endurance_score' | 'hill_score' | 'race_pred_5k_s' | 'race_pred_10k_s' | 'race_pred_half_s' | 'race_pred_marathon_s' | 'lactate_threshold_hr_bpm' | 'lactate_threshold_pace_s_per_km' | 'cycling_ftp_w' | 'fitness_age' | 'vo2max_cycling'} VitalMetric */
+/** @typedef {'hrv_night_avg_ms' | 'hrv_weekly_avg_ms' | 'hrv_status' | 'hrv_sdnn_ms' | 'resting_hr_bpm' | 'resting_hr_7d_avg_bpm' | 'sleep_total_min' | 'sleep_deep_min' | 'sleep_rem_min' | 'sleep_core_min' | 'sleep_awake_min' | 'sleep_score' | 'body_battery_high' | 'body_battery_low' | 'stress_avg' | 'training_readiness' | 'steps' | 'active_energy_kcal' | 'weight_kg' | 'body_fat_pct' | 'vo2max' | 'respiratory_rate' | 'spo2_pct' | 'wrist_temp_delta_c' | 'sleep_avg_hr_bpm' | 'sleep_avg_stress' | 'sleep_awake_count' | 'hrv_baseline_low_ms' | 'hrv_baseline_high_ms' | 'readiness_sleep_factor' | 'readiness_hrv_factor' | 'readiness_recovery_time_h' | 'readiness_acute_load' | 'intensity_minutes_moderate' | 'intensity_minutes_vigorous' | 'floors_climbed' | 'training_load_acute' | 'training_load_chronic' | 'training_load_ratio' | 'load_focus_anaerobic' | 'load_focus_high_aerobic' | 'load_focus_low_aerobic' | 'training_status' | 'endurance_score' | 'hill_score' | 'race_pred_5k_s' | 'race_pred_10k_s' | 'race_pred_half_s' | 'race_pred_marathon_s' | 'lactate_threshold_hr_bpm' | 'lactate_threshold_pace_s_per_km' | 'cycling_ftp_w' | 'fitness_age' | 'vo2max_cycling' | 'wear_min'} VitalMetric */
 
 /** @type {Record<VitalMetric, { unit: string, min: number, max: number, label: string, integer?: boolean }>} */
 export const METRICS = {
@@ -66,6 +66,8 @@ export const METRICS = {
   lactate_threshold_pace_s_per_km: { unit: 's/km', min: 120, max: 900, label: 'Lactate threshold pace' },
   cycling_ftp_w: { unit: 'W', min: 20, max: 700, label: 'Cycling FTP' },
   fitness_age: { unit: 'years', min: 10, max: 120, label: 'Fitness age' },
+  // Minutes the watch recorded heart rate. 0: synced, not worn. No row: not synced.
+  wear_min: { unit: 'min', min: 0, max: 1440, integer: true, label: 'Watch worn' },
 };
 
 /** @type {VitalMetric[]} */

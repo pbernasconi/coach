@@ -108,9 +108,9 @@ Perf runs on demand only: add the label `perf` to a pull request.
 
 Neon suspends the database after 5 idle minutes, and each wake-up costs at least those 5 minutes at 0.25 CU. Four
 wake-ups an hour (the old schedules) were about 70 of the 100 CU-hours a month. So only one schedule touches the
-database each hour: `sync.yml` at :00. The deploy check and the Garmin workout push start when it ends
-(`workflow_run`), while the database is still awake. The Garmin data sync runs at 11:00 and 17:00 UTC, at the same
-minute. A new scheduled job that reads the database must also start from Sync, not from its own cron.
+database each hour: `sync.yml` at :17 (GitHub delays runs at :00 the most). The deploy check and the Garmin job start
+when it ends (`workflow_run`), while the database is still awake; the Garmin job syncs the data when it is 2 hours
+old, else only the workouts. Its backstop crons (11:17, 14:17, 17:17 UTC) use the same minute. A new scheduled job that reads the database must also start from Sync, not from its own cron.
 
 The quotas are hard: 100 CU-hours and 20 GB of transfer a month (Launch plan). At one, Neon stops production until
 the next month. `neon-usage.yml` reads the usage from the Neon API every day (it does not wake the database) and

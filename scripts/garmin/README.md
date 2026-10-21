@@ -7,7 +7,7 @@ Pulls data from Garmin Connect (the health pages and the performance pages) and 
 
 The job uses the unofficial Garmin Connect API through the [`garminconnect`](https://github.com/cyberjunky/python-garminconnect) library (pinned in `requirements.txt`). Garmin can change or block this API at any time. When it breaks, the job fails, Coach keeps the data it already has, and the app shows a warning.
 
-The workflow `.github/workflows/garmin.yml` runs at 11:00 and 17:00 UTC (after Paolo wakes up in California, so the night's sleep and HRV are in Garmin Connect). You can also start it by hand with a `days` input.
+The workflow `.github/workflows/garmin.yml` syncs the data after each hourly Sync run once the last data sync is 2 hours old (`--fresh-hours 2`), and on a backstop schedule at 11:17, 14:17 and 17:17 UTC. GitHub starts scheduled runs hours late or skips them (the 11:00 run started at 15:44 on 2026-10-21), so no single run is relied on. You can also start it by hand with a `days` input.
 
 ## How it works
 
@@ -77,7 +77,7 @@ update or delete). The job does it with `upload_workout`, `update_workout`, `sch
 (the library once stored heart rate as power without an error), then reports (`POST /api/workouts/garmin`, table
 `workout_syncs`). A workout made in Garmin Connect by hand is never touched; Coach's are named `Coach · …`.
 
-It runs after each data sync, and alone every hour (`sync.py --workouts-only`, the `30 * * * *` schedule). `/plan`
+It runs after each data sync, and after each hourly Sync run. `/plan`
 and `/check-in` start it at once: `gh workflow run garmin.yml --repo pbernasconi/coach -f workouts_only=true`. A
 local run: `COACH_URL=… CRON_SECRET=… .venv/bin/python sync.py --workouts-only [--dry-run]`.
 
@@ -117,6 +117,7 @@ local run: `COACH_URL=… CRON_SECRET=… .venv/bin/python sync.py --workouts-on
 | `lactate_threshold_hr_bpm`, `lactate_threshold_pace_s_per_km` | `speed_and_heart_rate.heartRate`, `speed` | Garmin's speed is in units of 10 m/s: pace = 1000 / (speed × 10). |
 | `cycling_ftp_w` | `functionalThresholdPower` | |
 | `fitness_age` | `fitnessAge` | |
+| `wear_min` | `get_heart_rates` → `heartRateValues` | Minutes with a heart rate (points × their 2-minute spacing). 0 when the day has none: the watch was not worn. Garmin still sends `includesWellnessData: true` and phone steps on such days, so only the heart rate tells. No row: the day was not synced. |
 
 Garmin files a night of sleep and HRV under the date you wake up. The job uses the date of your Garmin profile time zone for "today". The mapping is in `mapping.py`. It is a pure function with tests in `test_mapping.py`.
 
