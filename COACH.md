@@ -63,7 +63,7 @@ Stored in `~/.claude/projects/-Users-paolo-work-personal-coach/memory/`. The com
 - **Goals**: milestones with a target and a deadline, in Coach → Settings → Goals (10k at 4:00/km, 3 × 4000 m ski peaks, VO2 max 52, 6,000 km of riding in 2027). Performance shows the progress.
 - **Strength**: 2 sessions/wk — heavy barbell + dumbbell
 - **Calendar**: personal Gmail, purple events, each with an "Open in Coach" link to the workout. Moving an event on
-  the calendar moves the workout in Coach (within 30 minutes)
+  the calendar moves the workout in Coach (within the hour)
 - **Templates**: the Lift app's templates (Heavy barbell, Upper (dumbbells), Hotel gym (dumbbells)) are authoritative for
   lift programming. `scripts/lift-plan.mjs` plans each strength workout as a Lift session, so every rep and load is logged
 
