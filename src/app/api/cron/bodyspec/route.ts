@@ -1,5 +1,5 @@
 /**
- * Daily BodySpec sync (sync.yml): new DEXA scans, and a token refresh that keeps the sign-in alive. Bearer
+ * Daily BodySpec sync (sync.yml, 16:17 UTC): new DEXA scans, and a token refresh that keeps the sign-in alive. Bearer
  * CRON_SECRET. The answer has counts and dates only, since the GitHub log is public.
  */
 

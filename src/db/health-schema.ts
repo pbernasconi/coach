@@ -207,7 +207,8 @@ export const labPlannedDraws = pgTable(
 /**
  * `bodyspec_connections`: the BodySpec account (DEXA scans) of a user, connected with OAuth from Settings
  * (src/lib/vitals/bodyspec-api.ts). BodySpec's sign-in server registers Coach as a public client on the first
- * connect (`client_id`, for `redirect_uri`); the tokens come from the code exchange with PKCE. `last_error` is a short
+ * connect (`client_id`, for `redirect_uri`); the tokens come from the code exchange with PKCE and are stored
+ * encrypted (AES-256-GCM, `sealToken`). `last_error` is a short
  * line without secrets or health values.
  */
 export const bodyspecConnections = pgTable('bodyspec_connections', {

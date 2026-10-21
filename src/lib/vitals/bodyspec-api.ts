@@ -7,7 +7,7 @@
  * gives a refresh token that lasts while it is used, and the daily sync uses it.
  */
 
-import { createHash, randomBytes } from 'node:crypto';
+import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto';
 import { sql } from '@/db';
 import { toDate, toIso } from '@/lib/db-time.mjs';
 import { SECTIONS, toScanRow } from './bodyspec.mjs';
@@ -24,6 +24,41 @@ const timeout = () => AbortSignal.timeout(20_000);
 export class BodyspecError extends Error {
   constructor(message: string, readonly authFailed = false) {
     super(message);
+  }
+}
+
+// --- Tokens at rest -------------------------------------------------------------------------------------------
+
+/**
+ * The tokens are stored encrypted (AES-256-GCM), so a copy of the database (the Neon development branch, a backup)
+ * cannot read the scans. The key is BODYSPEC_TOKEN_KEY, or one derived from CRON_SECRET when that is not set: both
+ * live only in Vercel. A changed key makes the stored tokens unreadable, and Settings asks to reconnect.
+ */
+function tokenKey(): Buffer {
+  const secret = process.env.BODYSPEC_TOKEN_KEY || process.env.CRON_SECRET;
+  if (!secret) throw new BodyspecError('BodySpec token key is not set (BODYSPEC_TOKEN_KEY or CRON_SECRET)');
+  return createHash('sha256').update(`coach/bodyspec-tokens:${secret}`).digest();
+}
+
+/** A token as 'v1.' + base64url(iv | tag | ciphertext). */
+export function sealToken(plain: string): string {
+  const iv = randomBytes(12);
+  const c = createCipheriv('aes-256-gcm', tokenKey(), iv);
+  const body = Buffer.concat([c.update(plain, 'utf8'), c.final()]);
+  return `v1.${Buffer.concat([iv, c.getAuthTag(), body]).toString('base64url')}`;
+}
+
+/** The token from sealToken; throws an auth error when it was sealed with another key or changed. */
+export function openToken(sealed: string): string {
+  try {
+    if (!sealed.startsWith('v1.')) throw new Error('unknown format');
+    const raw = Buffer.from(sealed.slice(3), 'base64url');
+    const d = createDecipheriv('aes-256-gcm', tokenKey(), raw.subarray(0, 12));
+    d.setAuthTag(raw.subarray(12, 28));
+    return Buffer.concat([d.update(raw.subarray(28)), d.final()]).toString('utf8');
+  } catch (e) {
+    if (e instanceof BodyspecError) throw e;
+    throw new BodyspecError('The stored BodySpec sign-in cannot be read', true);
   }
 }
 
@@ -112,7 +147,7 @@ export async function finishAuthorization(userId: string, p: Pending, code: stri
   const expires = new Date(Date.now() + (t.expires_in ?? 300) * 1000);
   await sql`
     INSERT INTO bodyspec_connections (user_id, client_id, redirect_uri, access_token, refresh_token, expires_at, scope, status, connected_at, last_error, updated_at)
-    VALUES (${userId}, ${p.clientId}, ${p.redirectUri}, ${t.access_token}, ${t.refresh_token ?? null}, ${expires}, ${t.scope ?? SCOPE}, 'ok', now(), null, now())
+    VALUES (${userId}, ${p.clientId}, ${p.redirectUri}, ${sealToken(t.access_token)}, ${t.refresh_token ? sealToken(t.refresh_token) : null}, ${expires}, ${t.scope ?? SCOPE}, 'ok', now(), null, now())
     ON CONFLICT (user_id) DO UPDATE SET
       client_id = EXCLUDED.client_id, redirect_uri = EXCLUDED.redirect_uri, access_token = EXCLUDED.access_token,
       refresh_token = EXCLUDED.refresh_token, expires_at = EXCLUDED.expires_at, scope = EXCLUDED.scope, status = 'ok',
@@ -124,12 +159,12 @@ type Connection = { client_id: string; access_token: string | null; refresh_toke
 /** A valid access token: the stored one, or a refreshed one (BodySpec rotates the refresh token, so both are saved). */
 async function accessToken(userId: string, c: Connection): Promise<string> {
   const expires = toDate(c.expires_at);
-  if (c.access_token && expires && expires.getTime() - Date.now() > 60_000) return c.access_token;
+  if (c.access_token && expires && expires.getTime() - Date.now() > 60_000) return openToken(c.access_token);
   if (!c.refresh_token) throw new BodyspecError('BodySpec is not connected', true);
-  const t = await tokenRequest({ grant_type: 'refresh_token', refresh_token: c.refresh_token, client_id: c.client_id });
+  const t = await tokenRequest({ grant_type: 'refresh_token', refresh_token: openToken(c.refresh_token), client_id: c.client_id });
   const next = new Date(Date.now() + (t.expires_in ?? 300) * 1000);
   await sql`
-    UPDATE bodyspec_connections SET access_token = ${t.access_token}, refresh_token = ${t.refresh_token ?? c.refresh_token},
+    UPDATE bodyspec_connections SET access_token = ${sealToken(t.access_token)}, refresh_token = ${t.refresh_token ? sealToken(t.refresh_token) : c.refresh_token},
       expires_at = ${next}, updated_at = now()
     WHERE user_id = ${userId}`;
   return t.access_token;

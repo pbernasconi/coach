@@ -245,8 +245,8 @@ tables are `bodyspec_connections` and `dexa_scans` (`drizzle/0009_bodyspec_dexa.
 - **Connect**: Settings → BodySpec → Connect (`/api/auth/bodyspec/start`). BodySpec's sign-in (Keycloak at
   auth.bodyspec.com, Google login there) has no app keys to set up: Coach registers itself as a public client for
   its callback URL on the first connect (dynamic client registration) and uses PKCE. The callback stores the tokens
-  and pulls every scan.
-- **Sync**: `GET /api/cron/bodyspec` (Bearer `CRON_SECRET`), daily from `sync.yml` at 15:17 UTC, and Settings →
+  (encrypted with AES-256-GCM; key `BODYSPEC_TOKEN_KEY`, else derived from `CRON_SECRET`) and pulls every scan.
+- **Sync**: `GET /api/cron/bodyspec` (Bearer `CRON_SECRET`), daily from `sync.yml` at 16:17 UTC (an hour without the Strava step), and Settings →
   Sync now. It fetches only new or changed results (`update_time`) and answers counts and dates only. The daily
   refresh keeps the sign-in alive; a refused refresh token sets `status = 'auth_failed'` and Settings asks to
   reconnect.

@@ -4,7 +4,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { sql } from '@/db';
-import { loadBodyspecStatus, syncBodyspec } from '@/lib/vitals/bodyspec-api';
+import { loadBodyspecStatus, openToken, sealToken, syncBodyspec } from '@/lib/vitals/bodyspec-api';
 import { loadDexa } from '@/lib/vitals/dexa-queries';
 
 const user = 'user_bodyspec';
@@ -47,6 +47,8 @@ function fakeFetch(input: string | URL | Request, init?: RequestInit) {
   return Promise.resolve(m[2] in section ? json(section[m[2]]) : json({ detail: 'Not Found' }, 404));
 }
 
+process.env.BODYSPEC_TOKEN_KEY = 'integration-test-key';
+
 test('the BodySpec sync stores new and changed scans and refreshes the token', async (t) => {
   globalThis.fetch = fakeFetch as typeof fetch;
   t.after(() => { globalThis.fetch = realFetch; });
@@ -54,7 +56,8 @@ test('the BodySpec sync stores new and changed scans and refreshes the token', a
   await sql`DELETE FROM bodyspec_connections WHERE user_id = ${user}`;
   await sql`
     INSERT INTO bodyspec_connections (user_id, client_id, redirect_uri, access_token, refresh_token, expires_at, status, connected_at)
-    VALUES (${user}, 'client-1', 'https://coach.example/api/auth/bodyspec/callback', 'access-1', 'refresh-1', now() - interval '1 minute', 'ok', now())`;
+    VALUES (${user}, 'client-1', 'https://coach.example/api/auth/bodyspec/callback', ${sealToken('access-1')}, ${sealToken('refresh-1')},
+      now() - interval '1 minute', 'ok', now())`;
 
   results = [
     { id: 'r1', date: '2025-11-02', updated: '2025-11-02T10:00:00', fatPct: 21, vat: 0.9, lean: 62 },
@@ -63,8 +66,9 @@ test('the BodySpec sync stores new and changed scans and refreshes the token', a
   const first = await syncBodyspec(user);
   assert.deepEqual(first, { scans: 2, added: 2, updated: 0, newest: '2026-04-10' });
   const [conn] = await sql`SELECT access_token, refresh_token, status, last_success_at FROM bodyspec_connections WHERE user_id = ${user}`;
-  assert.equal(conn.access_token, 'access-2');
-  assert.equal(conn.refresh_token, 'refresh-2', 'the rotated refresh token is kept');
+  assert.ok(!String(conn.refresh_token).includes('refresh-2'), 'the tokens are stored encrypted');
+  assert.equal(openToken(conn.access_token), 'access-2');
+  assert.equal(openToken(conn.refresh_token), 'refresh-2', 'the rotated refresh token is kept');
   assert.ok(conn.last_success_at);
 
   calls.length = 0;
@@ -98,6 +102,11 @@ test('the BodySpec sync stores new and changed scans and refreshes the token', a
   const failed = await loadBodyspecStatus(user);
   assert.equal(failed.status, 'auth_failed');
   assert.match(failed.lastError ?? '', /invalid_grant/);
+
+  // A token sealed with another key is refused the same way.
+  process.env.BODYSPEC_TOKEN_KEY = 'another-key';
+  assert.throws(() => openToken(conn.refresh_token), /cannot be read/);
+  process.env.BODYSPEC_TOKEN_KEY = 'integration-test-key';
 
   await sql`DELETE FROM dexa_scans WHERE user_id = ${user}`;
   await sql`DELETE FROM bodyspec_connections WHERE user_id = ${user}`;
