@@ -31,7 +31,6 @@ on:
 permissions:
   contents: read
   issues: write
-  actions: write
 
 env:
   PRODUCTION_URL: https://coach.paolobernasconi.com
@@ -55,6 +54,8 @@ jobs:
   # Hourly: when the last deploy stopped at Vercel's daily limit, deploy main again.
   catch-up:
     if: github.event_name == 'schedule'
+    permissions:
+      actions: write # dispatches deploy.yml
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
