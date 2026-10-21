@@ -27,7 +27,7 @@ export type DayChartProps = {
   color?: string;
   pointColor?: (i: number) => string | null; // line: a coloured dot per day
   band?: { low: V[] | number; high: V[] | number } | null; // shaded normal range (one value or one per day)
-  goal?: number; // bar: a dashed line
+  goal?: { value: number; label: string }; // a dashed target line, labelled at its right end
   yFloor?: number; // the axis starts here (bars start at 0)
   yCeil?: number;
   tickFormat?: (v: number) => string;
@@ -63,7 +63,7 @@ export default function DayChart(p: DayChartProps) {
   else (p.values ?? []).forEach(push);
   (p.low ?? []).forEach(push);
   if (p.band) p.days.forEach((_, i) => { push(at(p.band!.low, i)); push(at(p.band!.high, i)); });
-  if (p.goal) push(p.goal);
+  if (p.goal) push(p.goal.value);
   const hasData = p.kind === 'stack' ? all.length > 0 : (p.values ?? []).some((v) => v !== null);
   const bars = p.kind !== 'line';
   const lo0 = Math.min(...all);
@@ -180,7 +180,6 @@ export default function DayChart(p: DayChartProps) {
           {!hasData && (
             <text x={M.left + plotW / 2} y={M.top + plotH / 2} textAnchor="middle" dy="0.32em" className="fill-[var(--viz-muted)] text-[11px]">No data</text>
           )}
-          {p.goal !== undefined && <line x1={M.left} x2={M.left + plotW} y1={y(p.goal)} y2={y(p.goal)} stroke="var(--viz-ink-2)" strokeDasharray="3 3" opacity={0.6} />}
           {p.kind === 'line' &&
             segs.map((s) =>
               s.length > 1 ? (
@@ -231,6 +230,20 @@ export default function DayChart(p: DayChartProps) {
                 </g>
               );
             })}
+          {p.goal && (
+            <g pointerEvents="none">
+              <line x1={M.left} x2={M.left + plotW} y1={y(p.goal.value)} y2={y(p.goal.value)} stroke="var(--viz-ink)" strokeWidth={1} strokeDasharray="4 3" opacity={0.7} />
+              <text
+                x={M.left + plotW - 2}
+                y={y(p.goal.value) - 3}
+                textAnchor="end"
+                className="fill-[var(--viz-ink)] text-[10px] font-medium"
+                style={{ paintOrder: 'stroke', stroke: 'var(--viz-surface)', strokeWidth: 3 }}
+              >
+                {p.goal.label}
+              </text>
+            </g>
+          )}
           {p.hover !== null && (
             <line x1={cx(p.hover)} x2={cx(p.hover)} y1={M.top} y2={M.top + plotH} stroke="var(--viz-ink-2)" strokeWidth={1} opacity={0.45} pointerEvents="none" />
           )}
