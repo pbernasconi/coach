@@ -16,9 +16,8 @@ import Testing
     let now = ManualNow()
     let clock = ImmediateClock()
 
-    /// A view model that has logged the first set, so a 90 s rest is running.
-    func resting() async -> WorkoutViewModel {
-        let vm = WorkoutViewModel(
+    func makeViewModel() -> WorkoutViewModel {
+        WorkoutViewModel(
             sessionID: planned.id,
             sessions: FakeSessionDetailRepository(emissions: [planned]),
             sets: RecordingSetRepository(result: planned.items[0].sets[0]),
@@ -33,6 +32,11 @@ import Testing
             now: { [now] in now() },
             calendar: SessionBuilder.calendar
         )
+    }
+
+    /// A view model that has logged the first set, so a 90 s rest is running.
+    func resting() async -> WorkoutViewModel {
+        let vm = makeViewModel()
         await vm.run()
         await vm.send(.setLogTapped(planned.items[0].sets[0].id))?.value
         return vm
@@ -79,5 +83,28 @@ import Testing
 
         #expect(vm.state.rest?.total == 90)
         #expect(activity.calls.count == 1)  // only the start
+    }
+
+    @Test func doneOnTheLockScreenStartsTheRestInTheApp() async {
+        let setID = planned.items[0].sets[0].id
+        activity.lockScreenDone(setID, seconds: 90, at: now())
+        now.advance(seconds: 20)
+        let vm = makeViewModel()
+
+        await vm.run()
+
+        #expect(vm.state.rest?.setID == setID)
+        #expect(vm.state.rest?.total == 90)
+        #expect(vm.state.rest?.remaining == 70)
+        #expect(activity.calls.isEmpty)  // the rest was already on the Lock Screen
+    }
+
+    @Test func aRestTheAppStartedIsNotStartedAgain() async {
+        let vm = await resting()
+        let run = vm.state.rest?.run
+
+        await vm.run()
+
+        #expect(vm.state.rest?.run == run)
     }
 }
