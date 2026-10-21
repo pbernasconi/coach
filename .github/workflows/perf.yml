@@ -1,4 +1,4 @@
-# Page speed (scripts/perf.mjs): production, and on a pull request also its staged build side by side (both read
+# Page speed (scripts/perf.mjs): production, and on a pull request also its staged build (stage.yml) side by side (both read
 # the production data). On demand: add the label "perf" to a pull request (each later push measures again), or
 # run it by hand for production alone (Actions → Perf → Run workflow). One run renders about 220 pages, about
 # 170 MB from Neon before the data cache (src/lib/data-cache.ts); on every pull request that was most of the
