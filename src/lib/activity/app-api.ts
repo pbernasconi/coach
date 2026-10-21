@@ -4,7 +4,7 @@ import { appRoute } from '@/lib/app-api/route';
 import { fetchActivityParts } from './fetch.mjs';
 import { load, safe } from '@/lib/safe';
 import { loadRange } from '@/lib/plan/month';
-import { addDays, mondayOf } from '@/lib/plan/week.mjs';
+import { addDays, matchActivityId, mondayOf } from '@/lib/plan/week.mjs';
 import { stravaTypeLabel } from '@/lib/sports';
 import { loadActivity, loadActivityContext } from './queries';
 import { detailResponse, listResponse, parseDetailQuery } from './app-api.mjs';
@@ -28,7 +28,10 @@ async function plannedTitles(userId: string, rows: Row[], today: string) {
       const first = mondayOf(days[0]) > addDays(last, -7 * (PLANNED_WEEKS - 1)) ? mondayOf(days[0]) : addDays(last, -7 * (PLANNED_WEEKS - 1));
       const range = await loadRange(userId, first, last, today);
       const titles = new Map<string, string>();
-      for (const w of range.workouts) if (w.match?.source === 'strava' && w.state === 'done') titles.set(String(w.match.id), w.title);
+      for (const w of range.workouts) {
+        const id = matchActivityId(w.match);
+        if (id && w.state === 'done') titles.set(String(id), w.title);
+      }
       return { ok: true, titles };
     },
     { ok: false, titles: new Map<string, string>() }
