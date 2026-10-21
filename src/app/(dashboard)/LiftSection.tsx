@@ -1,27 +1,12 @@
 import Link from 'next/link';
+import MiniTrend from '@/components/charts/MiniTrend';
 import MuscleSetsChart from '@/components/charts/MuscleSetsChart';
-import { e1rmText, liftChangeText, muscleRows } from '@/lib/performance/display.mjs';
+import { e1rmText, liftChangeText, muscleRows, shortDate } from '@/lib/performance/display.mjs';
 
 type MuscleRow = { muscle: string; sets: number; status: string };
 type TopLift = { key: string; name: string; sessions: number; points: { day: string; e1rm: number }[]; latest: number | null; change: number | null };
 
 
-function Sparkline({ points }: { points: { e1rm: number }[] }) {
-  if (points.length < 2) return <span className="text-xs text-muted-foreground">1 session</span>;
-  const W = 120;
-  const H = 28;
-  const vals = points.map((p) => p.e1rm);
-  const lo = Math.min(...vals);
-  const hi = Math.max(...vals);
-  const d = vals
-    .map((v, i) => `${i ? 'L' : 'M'}${((i / (vals.length - 1)) * W).toFixed(1)},${(H - ((v - lo) / (hi - lo || 1)) * (H - 4) - 2).toFixed(1)}`)
-    .join('');
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="h-7 w-16 shrink-0 sm:w-28" aria-hidden>
-      <path d={d} fill="none" className="stroke-primary" strokeWidth="1.5" />
-    </svg>
-  );
-}
 
 /**
  * Lift data on Performance: hard sets per muscle this week against the 10-20 band (as in the Lift app),
@@ -57,7 +42,17 @@ export default function LiftSection({
           {top.map((l) => (
             <Link key={l.key} href={`/lift/exercises/${encodeURIComponent(l.key)}`} className="flex min-h-10 items-center justify-between gap-2 py-2 text-sm hover:bg-muted/40 sm:gap-3">
               <span className="line-clamp-2 min-w-0 flex-1 sm:line-clamp-none sm:truncate">{l.name}</span>
-              <Sparkline points={l.points} />
+              {l.points.length < 2 ? (
+                <span className="text-xs text-muted-foreground">1 session</span>
+              ) : (
+                <MiniTrend
+                  points={l.points.map((p) => ({ value: p.e1rm, label: shortDate(p.day), text: e1rmText(p.e1rm, unit, '-') }))}
+                  color="var(--sport-strength)"
+                  height={28}
+                  label={`${l.name}, estimated 1RM`}
+                  className="w-16 shrink-0 sm:w-28"
+                />
+              )}
               <span className="w-16 shrink-0 text-right tabular-nums sm:w-20">{e1rmText(l.latest, unit, '-')}</span>
               <span className={`w-10 shrink-0 text-right text-xs tabular-nums sm:w-14 ${l.change == null ? 'text-muted-foreground' : l.change >= 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
                 {liftChangeText(l.change)}
