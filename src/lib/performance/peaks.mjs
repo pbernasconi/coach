@@ -211,3 +211,35 @@ export function formatPace(meters, seconds) {
   if (!(meters > 0) || !(seconds > 0)) return '-';
   return formatDuration((seconds * 1000) / meters);
 }
+
+/** The windows a recent peak can rank in, best first. */
+export const RECENT_PEAK_WINDOWS = ['all', 'year', 'd90'];
+
+/**
+ * Recent peak performances for the home page, as on Intervals.icu: each peak from the last few weeks that is in
+ * the top 3 of a window (all time, this year, the last 90 days), with the widest such window. Newest first, then
+ * the better medal; at most `limit`.
+ * @param {{ metric: 'power' | 'run', span: number, value: number, date: string, activityId: string, name?: string | null,
+ *   rankAll: number, rankYear: number, rank90: number }[]} rows  ranks from 1 (the loader counts better values)
+ * @param {string} today  'YYYY-MM-DD'
+ * @returns {{ metric: 'power' | 'run', span: number, value: number, date: string, activityId: string, name: string | null,
+ *   rank: number, window: 'all' | 'year' | 'd90', windowLabel: string }[]}
+ */
+export function recentPeaks(rows, today, { limit = 6 } = {}) {
+  const year = today.slice(0, 4);
+  const label = { all: 'All time', year, d90: 'Last 90 days' };
+  const order = { all: 0, year: 1, d90: 2 };
+  const out = [];
+  for (const r of rows) {
+    if (r.date > today) continue;
+    const ranks = { all: r.rankAll, year: r.date.startsWith(year) ? r.rankYear : Infinity, d90: r.rank90 };
+    const window = RECENT_PEAK_WINDOWS.find((w) => ranks[w] >= 1 && ranks[w] <= 3);
+    if (!window) continue;
+    out.push({
+      metric: r.metric, span: r.span, value: r.value, date: r.date, activityId: r.activityId, name: r.name ?? null,
+      rank: ranks[window], window, windowLabel: label[window],
+    });
+  }
+  out.sort((a, b) => b.date.localeCompare(a.date) || order[a.window] - order[b.window] || a.rank - b.rank || a.span - b.span);
+  return out.slice(0, limit);
+}

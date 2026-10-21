@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { Info } from 'lucide-react';
+import { HelpTooltip } from '@kobo/web';
 import { ChartTooltip, LegendItem } from './ChartTooltip';
 import { niceTicks, useMeasure } from './useMeasure';
 import { FORM_ZONES as ZONES, zoneOf } from '@/lib/performance/form';
@@ -18,7 +20,7 @@ const DASH = '5 4';
  * scale, form (TSB) in its own panel under it. Days after today are dashed on a shaded background; a line marks
  * today, and thin vertical lines mark events (A events are labeled). One crosshair runs through both panels.
  */
-export default function PmcChart({ days, today, events = [] }: { days: PmcChartDay[]; today: string; events?: PmcChartEvent[] }) {
+export default function PmcChart({ days, today, events = [], note }: { days: PmcChartDay[]; today: string; events?: PmcChartEvent[]; note?: string | null }) {
   const [ref, width] = useMeasure<HTMLDivElement>();
   const [hover, setHover] = useState<number | null>(null);
   if (days.length < 2) return null;
@@ -88,12 +90,13 @@ export default function PmcChart({ days, today, events = [] }: { days: PmcChartD
   return (
     <div className="rounded-lg border bg-[var(--viz-surface)] p-4">
       <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-        <div>
-          <h2 className="font-semibold text-[var(--viz-ink)]">Fitness, fatigue and form</h2>
-          <p className="text-xs text-[var(--viz-muted)]">
+        <h2 className="inline-flex items-center gap-1.5 font-semibold text-[var(--viz-ink)]">
+          Fitness, fatigue and form
+          <HelpTooltip label="About this chart" icon={<Info aria-hidden />}>
             Daily training load from Strava. {future.length ? 'Dashed: projected from the planned workouts. ' : ''}Form = fitness − fatigue.
-          </p>
-        </div>
+            {note ? ` ${note}` : ''}
+          </HelpTooltip>
+        </h2>
         <div className="flex flex-wrap gap-3">
           <LegendItem color="var(--viz-ctl)" label="Fitness (CTL)" shape="line" />
           <LegendItem color="var(--viz-atl)" label="Fatigue (ATL)" shape="line" />

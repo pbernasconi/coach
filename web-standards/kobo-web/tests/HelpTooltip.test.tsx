@@ -29,4 +29,9 @@ describe('HelpTooltip', () => {
     await user.hover(screen.getByRole('button', { name: 'What is a tag?' }))
     expect(await screen.findByRole('tooltip')).toHaveTextContent('Tags group notes across folders.')
   })
+
+  it('shows a custom icon in place of the "?"', () => {
+    render(<HelpTooltip icon={<svg data-testid="info-icon" aria-hidden="true" />}>Some help</HelpTooltip>)
+    expect(screen.getByRole('button', { name: 'More info' })).toContainElement(screen.getByTestId('info-icon'))
+  })
 })

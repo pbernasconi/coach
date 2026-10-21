@@ -16,6 +16,7 @@ export type Pmc = {
   today: string;
   days: PmcDay[]; // `pastDays` before today, then the projection
   ramp: RampRate[]; // 7, 28, 90, 365 days, as of today (actual days only)
+  fitness: { date: string; ctl: number }[]; // the last 366 actual days, for the ramp-rate mini charts
   events: PmcEvent[]; // events inside the chart's range
   plannedTss: number; // planned TSS in the projection
   estimatedWorkouts: number; // planned workouts with no TSS in the plan
@@ -64,10 +65,12 @@ export async function loadPmc(userId: string, today: string, { pastDays = 120, m
   const series = projectLoad(history, planned, { today, until }) as PmcDay[];
   const first = addDays(today, -pastDays);
   const days = series.filter((d) => d.date >= first);
+  const actual = series.filter((d) => !d.projected);
   return {
     today,
     days,
-    ramp: rampRates(series.filter((d) => !d.projected), undefined, RAMP_WINDOWS),
+    ramp: rampRates(actual, undefined, RAMP_WINDOWS),
+    fitness: actual.slice(-366).map((d) => ({ date: d.date, ctl: d.ctl })),
     events: events.filter((e) => e.date <= until).map(({ id, name, date, priority }) => ({ id, name, date, priority })),
     plannedTss: Math.round(days.filter((d) => d.projected).reduce((n, d) => n + d.tss, 0)),
     estimatedWorkouts,

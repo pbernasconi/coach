@@ -1,3 +1,5 @@
+import { Info } from 'lucide-react';
+import { HelpTooltip } from '@kobo/web';
 import Link from 'next/link';
 import type { GoalProgress } from '@/lib/goals/goals.mjs';
 import { goalView } from '@/lib/performance/display.mjs';
@@ -24,7 +26,14 @@ export default function GoalsCard({ goals }: { goals: GoalProgress[] }) {
         {goals.map(goalView).map((g) => (
           <div key={g.id} className="space-y-2 rounded-md bg-muted/40 p-3">
             <div className="flex items-start justify-between gap-2">
-              <span className="font-medium">{g.title}</span>
+              <span className="inline-flex items-center gap-1.5 font-medium">
+                {g.title}
+                {g.detail.length > 0 && (
+                  <HelpTooltip label={`About ${g.title}`} icon={<Info aria-hidden />}>
+                    {g.detail.join('. ')}.
+                  </HelpTooltip>
+                )}
+              </span>
               <span className={`shrink-0 rounded px-1.5 py-0.5 text-xs ${BADGE[g.status]}`}>{g.statusText}</span>
             </div>
             <div className="flex items-baseline justify-between text-sm">
@@ -36,9 +45,6 @@ export default function GoalsCard({ goals }: { goals: GoalProgress[] }) {
             <div className="h-1.5 overflow-hidden rounded-full bg-muted">
               <div className={`h-full rounded-full ${g.status === 'done' ? 'bg-emerald-500' : 'bg-primary'}`} style={{ width: `${Math.round(g.progress * 100)}%` }} />
             </div>
-            <ul className="space-y-0.5 text-xs text-muted-foreground">
-              {g.detail.map((d) => <li key={d}>{d}</li>)}
-            </ul>
           </div>
         ))}
       </div>
