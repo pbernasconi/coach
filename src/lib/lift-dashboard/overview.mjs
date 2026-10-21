@@ -49,7 +49,7 @@ export function personalRecords(model, unit) {
     let best = null;
     for (const s of ordered) {
       // Half a unit of noise is not a record (a rounding of the same set).
-      if (best !== null && s.e1rm > best + 0.5) records.push({ ...s, previous: best });
+      if (best !== null && s.e1rm > best + 0.5) records.push({ ...s, previous: best, catalogId: model.library.get(s.key)?.catalogId ?? null });
       best = best === null ? s.e1rm : Math.max(best, s.e1rm);
     }
   }
@@ -200,6 +200,7 @@ export function liftOverview(model, unit, today, { strengthTarget = 2, weightKg 
       return {
         key: e.key,
         name: e.name,
+        catalogId: model.library.get(e.key)?.catalogId ?? null,
         sessions: recent.length,
         points: points.slice(-16),
         latest,
