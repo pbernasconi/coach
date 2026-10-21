@@ -48,7 +48,7 @@ jobs:
         run: |
           npx -y "$VERCEL_CLI" pull --yes --environment=preview --token "$VERCEL_TOKEN" >/dev/null
           npx -y "$VERCEL_CLI" build --token "$VERCEL_TOKEN"
-          out=$(npx -y "$VERCEL_CLI" deploy --prebuilt --token "$VERCEL_TOKEN" --meta previewPr="${{ github.event.pull_request.number }}" 2>&1) || { echo "$out"; exit 1; }
+          out=$(npx -y "$VERCEL_CLI" deploy --prebuilt --archive=tgz --token "$VERCEL_TOKEN" --meta previewPr="${{ github.event.pull_request.number }}" 2>&1) || { echo "$out"; exit 1; }
           url=$(grep -oE 'https://[a-z0-9-]+\.vercel\.app' <<<"$out" | head -1)
           echo "url=$url" >> "$GITHUB_OUTPUT"
           node scripts/smoke.mjs "$url"
