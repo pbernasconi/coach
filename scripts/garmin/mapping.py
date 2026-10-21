@@ -70,6 +70,7 @@ METRIC_UNITS: dict[str, str] = {
     "cycling_ftp_w": "W",
     "fitness_age": "years",
     "vo2max_cycling": "mL/kg/min",
+    "wear_min": "min",
 }
 
 # Metrics that the server stores as integers (metrics.mjs `integer: true`). The contract test checks this list.
@@ -82,6 +83,7 @@ INTEGER_METRICS: frozenset[str] = frozenset(
         "training_status",
         "endurance_score",
         "hill_score",
+        "wear_min",
     }
 )
 
@@ -389,6 +391,27 @@ def split_body_composition(body: Any) -> dict[str, dict[str, Any]]:
     return out
 
 
+def wear_minutes(heart_rates: Any, summary: Any) -> float | None:
+    """Minutes the watch recorded heart rate that day: 0 means synced but not worn, None means unknown.
+
+    Garmin sends all-day heart rate as [timestamp ms, bpm or null] every 2 minutes. Without a heart rate response,
+    a summary with includesWellnessData false still says the watch recorded nothing.
+    """
+    values = _get(heart_rates, "heartRateValues")
+    if isinstance(heart_rates, dict) and heart_rates.get("privacyProtected") is not True:
+        rows = [r for r in values if isinstance(r, list) and len(r) >= 2] if isinstance(values, list) else []
+        stamps = sorted(t for t, v in ((_num(r[0]), _num(r[1])) for r in rows) if t is not None and v is not None and v > 0)
+        if not stamps:
+            return 0
+        gaps = sorted(b - a for a, b in zip(stamps, stamps[1:]) if b > a)
+        step_min = gaps[len(gaps) // 2] / 60000 if gaps else 2
+        step_min = min(max(step_min, 1), 15)
+        return min(len(stamps) * step_min, 1440)
+    if isinstance(summary, dict) and summary.get("includesWellnessData") is False:
+        return 0
+    return None
+
+
 def map_day(date: str, raw: dict[str, Any]) -> list[dict[str, Any]]:
     """Map the raw responses for one calendar date. Missing keys are fine."""
     c = _Collector(date)
@@ -401,6 +424,7 @@ def map_day(date: str, raw: dict[str, Any]) -> list[dict[str, Any]]:
     map_training_status(c, raw.get("training_status"))
     map_scores(c, raw.get("endurance_score"), raw.get("hill_score"))
     map_race_predictions(c, raw.get("race_predictions"))
+    c.add("wear_min", wear_minutes(raw.get("heart_rates"), raw.get("summary")), minimum=0, maximum=1440, digits=0)
     return c.samples
 
 

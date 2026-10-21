@@ -276,6 +276,22 @@ class FakeCoach:
         return sorted({s["date"] for s in self.posted if s["metric"] == metric})
 
 
+class SyncedRecentlyTest(unittest.TestCase):
+    def test_rule(self):
+        from datetime import datetime, timezone
+
+        import sync
+
+        now = datetime(2030, 1, 16, 12, 0, tzinfo=timezone.utc)
+        self.assertTrue(sync.synced_recently({"last_success_at": "2030-01-16T10:30:00Z"}, 2, now))
+        self.assertTrue(sync.synced_recently({"last_success_at": "2030-01-16T10:30:00.123+00:00"}, 2, now))
+        self.assertFalse(sync.synced_recently({"last_success_at": "2030-01-16T09:59:00Z"}, 2, now))
+        self.assertFalse(sync.synced_recently({"last_success_at": "2030-01-16T10:30:00Z"}, None, now))
+        self.assertFalse(sync.synced_recently({"last_success_at": None}, 2, now))
+        self.assertFalse(sync.synced_recently({"last_success_at": "nope"}, 2, now))
+        self.assertFalse(sync.synced_recently({"last_success_at": "2030-01-16T13:00:00Z"}, 2, now), "a clock in the future is not fresh")
+
+
 class FakeClient:
     def __init__(self, tokens):
         self.tokens = tokens
@@ -371,7 +387,7 @@ class FlowTest(unittest.TestCase):
     def ct(self, tokens):
         return self.tc.encrypt(self.key, tokens)
 
-    def run_sync(self, coach, garmin_for, argv=(), env=None, today=TODAY, clock=None):
+    def run_sync(self, coach, garmin_for, argv=(), env=None, today=TODAY, clock=None, now=None):
         """garmin_for(tokens) returns a FakeGarmin, or raises AuthFailed."""
 
         def login(tokens):
@@ -381,7 +397,8 @@ class FlowTest(unittest.TestCase):
 
         env = {"GARMIN_TOKEN_KEY": KEY_B64, **(env or {})}
         args = self.sync.parse_args(list(argv))
-        run = self.sync.Run(args, env, coach, login=login, today=lambda api: today, sleep=lambda s: None, clock=clock or (lambda: 0.0))
+        extra = {"now": now} if now else {}
+        run = self.sync.Run(args, env, coach, login=login, today=lambda api: today, sleep=lambda s: None, clock=clock or (lambda: 0.0), **extra)
         with self.assertLogs("garmin-sync", level="INFO") as logs:
             code = run.execute()
         self.logs = "\n".join(logs.output)
@@ -412,6 +429,24 @@ class FlowTest(unittest.TestCase):
         self.assertEqual(self.decrypted(final), TOKENS_A)
         self.assertEqual(len({s["date"] for s in coach.posted if s["metric"] == "steps"}), 3)
         self.assert_no_secrets_in_logs()
+
+    def test_fresh_hours_skips_the_data_after_a_recent_sync(self):
+        from datetime import datetime, timezone
+
+        now = lambda: datetime(2030, 1, 16, 12, 0, tzinfo=timezone.utc)
+        recent = {"tokens_ciphertext": self.ct(TOKENS_A), "synced_through": "2030-01-16", "last_success_at": "2030-01-16T11:00:00.000Z"}
+        coach = FakeCoach(self.events, recent)
+        self.run_sync(coach, lambda t: FakeGarmin(self.events, t), argv=["--fresh-hours", "2"], now=now)
+        self.assertEqual([e for e in self.events if e == ("garmin", "summary")], [], "no daily data calls")
+        self.assertIn("only the workouts", self.logs)
+
+        self.events.clear()
+        stale = dict(recent, last_success_at="2030-01-16T09:30:00Z")
+        coach = FakeCoach(self.events, stale)
+        code = self.run_sync(coach, lambda t: FakeGarmin(self.events, t), argv=["--fresh-hours", "2"], now=now)
+        self.assertEqual(code, 0)
+        self.assertIn(("garmin", "summary"), self.events)
+        self.assertEqual(coach.puts[-1]["synced_through"], "2030-01-16")
 
     def test_stored_tokens_are_used_and_not_stored_again_before_data(self):
         coach = FakeCoach(self.events, {"tokens_ciphertext": self.ct(TOKENS_A), "synced_through": "2030-01-15", "status": "ok"})

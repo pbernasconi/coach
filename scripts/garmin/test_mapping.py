@@ -20,6 +20,35 @@ def as_dict(samples):
     return {(s["date"], s["metric"]): s["value"] for s in samples}
 
 
+class WearTest(unittest.TestCase):
+    T = 1894633200000
+
+    def hr(self, values):
+        return {"heartRateValues": values}
+
+    def test_worn_minutes_from_two_minute_points(self):
+        rows = [[self.T + i * 120000, 50] for i in range(30)] + [[self.T + 31 * 120000, None]]
+        self.assertEqual(mapping.wear_minutes(self.hr(rows), {}), 60)
+
+    def test_no_points_means_not_worn(self):
+        # A day without the watch: Garmin still says includesWellnessData true, with no heart rate.
+        self.assertEqual(mapping.wear_minutes(self.hr([]), {"includesWellnessData": True}), 0)
+        self.assertEqual(mapping.wear_minutes(self.hr(None), {}), 0)
+        self.assertEqual(mapping.wear_minutes(self.hr([[self.T, None], [self.T + 120000, 0]]), {}), 0)
+
+    def test_without_heart_rate_the_summary_decides(self):
+        self.assertEqual(mapping.wear_minutes(None, {"includesWellnessData": False}), 0)
+        self.assertIsNone(mapping.wear_minutes(None, {"includesWellnessData": True}))
+        self.assertIsNone(mapping.wear_minutes(None, None))
+
+    def test_fixture_and_map_day(self):
+        hr = load("raw_heart_rates.json")
+        got = as_dict(mapping.map_day("2030-01-15", {"heart_rates": hr}))
+        n = sum(1 for r in hr["heartRateValues"] if r[1])
+        self.assertEqual(got[("2030-01-15", "wear_min")], min(n * 2, 1440))
+        self.assertEqual(as_dict(mapping.map_day("2030-01-15", {"heart_rates": {"heartRateValues": []}})), {("2030-01-15", "wear_min"): 0})
+
+
 class MapDayTest(unittest.TestCase):
     def setUp(self):
         self.raw = {
@@ -86,8 +115,8 @@ class MapDayTest(unittest.TestCase):
             "max_metrics": [],
         }
         got = as_dict(mapping.map_day("2030-01-15", raw))
-        # Only the 7-day RHR is set; stress -1 means "not enough data".
-        self.assertEqual(got, {("2030-01-15", "resting_hr_7d_avg_bpm"): 39})
+        # Only the 7-day RHR is set; stress -1 means "not enough data". No wellness data: the watch was not worn.
+        self.assertEqual(got, {("2030-01-15", "resting_hr_7d_avg_bpm"): 39, ("2030-01-15", "wear_min"): 0})
 
     def test_all_missing(self):
         self.assertEqual(mapping.map_day("2030-01-15", {}), [])

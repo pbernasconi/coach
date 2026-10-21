@@ -1,16 +1,21 @@
-# Also puts Coach's planned runs on the Garmin calendar as structured workouts (workouts.py): after each data sync,
-# and after each hourly Sync run (sync.yml), while the database is awake. Pulls Garmin Connect data (HRV, sleep, Body Battery, readiness, training status, race predictions ...)
+# Also puts Coach's planned runs on the Garmin calendar as structured workouts (workouts.py).
+# Pulls Garmin Connect data (HRV, sleep, Body Battery, readiness, training status, race predictions ...)
 # with the unofficial Garmin Connect API. It posts daily metrics to /api/vitals/sync and every raw response to /api/vitals/garmin/raw.
 # The Garmin tokens live in Coach, encrypted with GARMIN_TOKEN_KEY (only GitHub and Paolo's Mac have it).
 # Each run catches up from the last synced day, so missed runs fill in. A backfill (input `since`) is resumable:
 # Coach records its progress, and every run continues it until it is done. Setup: scripts/garmin/README.md.
+#
+# When: after each hourly Sync run (sync.yml), while the database is awake, the data too once the last data sync is
+# 2 hours old (--fresh-hours), else only the workouts. GitHub starts scheduled runs late (3 to 5 hours on 2026-10-20
+# and 21) or skips them, so the data does not wait for one fixed run; the crons below are a backstop, off the hour,
+# when GitHub is less busy.
 name: Garmin
 
 on:
   schedule:
-    - cron: "0 11 * * *" # 04:00 PDT / 03:00 PST: last night's sleep and HRV are in Garmin Connect
-    - cron: "0 17 * * *" # 10:00 PDT: the morning, in case the watch synced late
-  # Hourly, after Sync: only Coach's planned runs onto the Garmin calendar (workouts.py).
+    - cron: "17 11 * * *" # 04:17 PDT / 03:17 PST; :17 is the minute of Sync (sync.yml), so one database wake-up
+    - cron: "17 14 * * *" # 07:17 PDT: last night's sleep, once the watch has synced
+    - cron: "17 17 * * *" # 10:17 PDT
   workflow_run:
     workflows: [Sync]
     types: [completed]
@@ -70,8 +75,12 @@ jobs:
           WORKOUTS_ONLY: ${{ inputs.workouts_only }}
         run: |
           args=()
-          if [ "$EVENT" = "workflow_run" ] || [ "$WORKOUTS_ONLY" = "true" ]; then
+          if [ "$WORKOUTS_ONLY" = "true" ]; then
             python sync.py --workouts-only
+            exit $?
+          fi
+          if [ "$EVENT" = "workflow_run" ]; then
+            python sync.py --fresh-hours 2 --max-minutes 10
             exit $?
           fi
           if [ -n "$DAYS" ]; then args+=(--days "$DAYS"); fi

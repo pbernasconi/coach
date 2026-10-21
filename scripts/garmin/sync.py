@@ -5,6 +5,7 @@ Usage:
   python sync.py                       # catch-up window (at least 3 days, see below)
   python sync.py --since 2025-04-20    # backfill from that day; resumable
   python sync.py --days 60             # a bigger window this run only (not resumable)
+  python sync.py --fresh-hours 2       # the data only when the last data sync is 2 hours old or more
   python sync.py --dry-run             # fetch and map; print counts and sizes; post nothing
   python sync.py --dry-run --local-tokens   # the same with ~/.garminconnect, no Coach at all
 
@@ -402,6 +403,22 @@ def backfill_days(state: dict[str, Any], window_start: date) -> list[str]:
     return day_range(first, last) if first <= last else []
 
 
+def synced_recently(state: dict[str, Any], hours: float | None, now: datetime) -> bool:
+    """True when the last successful data sync is less than `hours` old (never when hours is None)."""
+    if not hours:
+        return False
+    value = state.get("last_success_at")
+    if not isinstance(value, str):
+        return False
+    try:
+        at = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return False
+    if at.tzinfo is None:
+        at = at.replace(tzinfo=timezone.utc)
+    return timedelta(0) <= now - at < timedelta(hours=hours)
+
+
 def garmin_today(api: Any) -> date:
     """Garmin files data under the profile's local date, not the runner's UTC date."""
     tz_name = None
@@ -463,6 +480,7 @@ class Run:
         today: Callable[[Any], date] = garmin_today,
         sleep: Callable[[float], None] = time.sleep,
         clock: Callable[[], float] = time.monotonic,
+        now: Callable[[], datetime] = lambda: datetime.now(timezone.utc),
     ) -> None:
         self.args = args
         self.env = env
@@ -471,6 +489,7 @@ class Run:
         self.today = today
         self.sleep = sleep
         self.clock = clock
+        self.now = now
         self.started = clock()
         self.totals = Totals()
 
@@ -544,6 +563,10 @@ class Run:
         except CoachError as e:
             log.error("%s", e)
             return EXIT_FAILED
+
+        if not self.args.workouts_only and synced_recently(state, self.args.fresh_hours, self.now()):
+            log.info("data synced in the last %g hours; only the workouts this run", self.args.fresh_hours)
+            self.args.workouts_only = True
 
         tokens, origin = self.tokens_from_coach(state, key)
         if tokens is None:
@@ -794,6 +817,12 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     p.add_argument("--max-minutes", type=float, default=DEFAULT_MAX_MINUTES, help="stop starting backfill chunks after this")
     p.add_argument("--dry-run", action="store_true", help="fetch and map; print counts and sizes; post nothing")
     p.add_argument("--workouts-only", action="store_true", help="only put Coach's planned runs on the Garmin calendar")
+    p.add_argument(
+        "--fresh-hours",
+        type=float,
+        default=None,
+        help="only the workouts when the last data sync is newer than this (the hourly run after Sync)",
+    )
     p.add_argument("--delay", type=float, default=DEFAULT_DELAY_S, help="seconds between Garmin calls")
     p.add_argument("--key-file", default=None, help="key file if GARMIN_TOKEN_KEY is unset (default ~/.garminconnect/token_key)")
     p.add_argument(
