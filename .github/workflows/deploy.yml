@@ -86,7 +86,7 @@ jobs:
         run: |
           npx -y "$VERCEL_CLI" pull --yes --environment=production --token "$VERCEL_TOKEN" >/dev/null
           DATABASE_URL=postgresql://build:build@localhost:5432/build npx -y "$VERCEL_CLI" build --prod --token "$VERCEL_TOKEN"
-          out=$(npx -y "$VERCEL_CLI" deploy --prebuilt --prod --skip-domain --token "$VERCEL_TOKEN" \
+          out=$(npx -y "$VERCEL_CLI" deploy --prebuilt --archive=tgz --prod --skip-domain --token "$VERCEL_TOKEN" \
             --meta stagedTree="$(git rev-parse 'HEAD^{tree}')" --meta stagedSha="$GITHUB_SHA")
           url=$(grep -oE 'https://[a-z0-9-]+\.vercel\.app' <<<"$out" | head -1)
           id=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" "$VERCEL_API/v13/deployments/${url#https://}?teamId=$VERCEL_ORG_ID" | jq -r .id)

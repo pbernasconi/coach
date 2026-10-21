@@ -121,12 +121,17 @@ jobs:
         run: |
           # The tree of the pull request merged into main: equal to the merge commit's tree when main does not move.
           tree=$(git rev-parse 'HEAD^{tree}')
-          if ! out=$(npx -y "$VERCEL_CLI" deploy --prebuilt --prod --skip-domain --token "$VERCEL_TOKEN" \
+          if ! out=$(npx -y "$VERCEL_CLI" deploy --prebuilt --archive=tgz --prod --skip-domain --token "$VERCEL_TOKEN" \
             --meta stagedTree="$tree" --meta stagedPr="$PR" --meta stagedSha="$GITHUB_SHA" 2>&1); then
             # The Hobby plan allows 100 deployments a day. At the limit this pull request is not staged, and the
             # merge builds it instead (deploy.yml); the build above already proved it builds.
             if grep -qE 'api-deployments-free-per-day|Resource is limited' <<<"$out"; then
               echo "::warning::Vercel's daily deployment limit is reached: not staged. The merge builds it (deploy.yml)."
+              exit 0
+            fi
+            # The free plan also limits uploads a day (5000; --archive=tgz makes each deploy one upload).
+            if grep -q 'api-upload-free' <<<"$out"; then
+              echo "::warning::Vercel's daily upload limit is reached: not staged. The merge builds it (deploy.yml)."
               exit 0
             fi
             echo "$out"

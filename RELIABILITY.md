@@ -46,6 +46,10 @@ exists, so a merge is live in seconds:
    build before it again and opens an `outage` issue assigned to the owner. The next merge deploys as usual;
    nothing stays pinned.
 
+Every `vercel deploy` uploads the build as one archive (`--archive=tgz`): the free plan also allows 5000 file
+uploads a day, and uploading each file of a build used them up on 2026-10-20. At either limit a pull request is not
+staged (a warning) and the merge builds it.
+
 To redeploy main by hand, run the Deploy workflow (Actions → Deploy → Run workflow).
 
 **Previews are on demand:** add the label `preview` to a pull request. `preview.yml` deploys it with the Preview
