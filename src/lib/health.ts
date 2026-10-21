@@ -20,7 +20,7 @@ import { loadCoachingNotes, loadStatus, loadTargets } from '@/lib/status';
 import { loadLibrary, loadMonth, loadRange } from '@/lib/plan/month';
 import { loadLiftWeeks } from '@/lib/plan/week-api';
 import { loadPmc } from '@/lib/performance/projection';
-import { loadPeakPerformances } from '@/lib/performance/peaks';
+import { loadPeakPerformances, loadRecentPeaks } from '@/lib/performance/peaks';
 import { loadEventsWithCountdown } from '@/lib/performance/events';
 import { loadClinicianNotes, loadGarminStatus, loadHealth } from '@/lib/vitals/queries';
 import { loadBody, loadDay, loadGarminSections, loadRecoveryToday, loadTraining } from '@/lib/vitals/garmin-pages';
@@ -68,6 +68,7 @@ export async function runChecks(now = new Date(), { migrations = true }: { migra
     check('plan proposal', () => openProposal(userId)),
     check('fitness projection', () => loadPmc(userId, today)),
     check('peak performances', () => loadPeakPerformances(userId, today)),
+    check('recent peaks', () => loadRecentPeaks(userId, today)),
     check('events', () => loadEventsWithCountdown(userId, today)),
     check('health', () => loadHealth(userId, today)),
     check('clinician notes', () => loadClinicianNotes(userId)),

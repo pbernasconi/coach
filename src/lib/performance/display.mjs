@@ -341,3 +341,78 @@ export function todayWorkouts(range) {
 
 /** A workout on the Today line: "13:30 · 1:00 · done". */
 export const todayItemText = (w) => [w.startTime, w.duration ? dur(w.duration) : null].filter(Boolean).join(' · ') + (w.state === 'done' ? ' · done' : '');
+
+// ---- Today: the Fitness panel (right column) ----
+
+/** What each form zone means for training, in plain words. Keys: FORM_ZONES labels (form.mjs). */
+const FORM_MEANING = {
+  Fresh: 'rested, good for a race or a hard day',
+  Neutral: 'balanced, holding fitness',
+  Productive: 'tired in a good way, building fitness',
+  Overreaching: 'very tired, ease off soon',
+};
+
+/**
+ * The three tiles at the top of the Fitness panel: fatigue (ATL), fitness (CTL) and form (TSB), with form's zone
+ * and what it means. Null without a PMC day.
+ * @param {{ ctl: number, atl: number, tsb: number } | null} load  the last actual PMC day
+ */
+export function loadTiles(load) {
+  if (!load) return null;
+  const zone = zoneOf(load.tsb);
+  return [
+    { key: 'fatigue', label: 'Fatigue', valueText: String(Math.round(load.atl)), zone: null, meaning: null },
+    { key: 'fitness', label: 'Fitness', valueText: String(Math.round(load.ctl)), zone: null, meaning: null },
+    { key: 'form', label: 'Form', valueText: signed(load.tsb).replace('-', '\u2212'), zone: zone || null, meaning: FORM_MEANING[zone] ?? null },
+  ];
+}
+
+/**
+ * The "Recovery today" rows (the header chips before 2026-10-21): readiness, HRV status and sleep from Garmin,
+ * each with a plain-language line on what it means. A row is left out when its value is missing.
+ * @param {{ readiness?: { value: number } | null, sleepMin?: { value: number } | null, sleepScore?: { value: number } | null, hrvStatus?: { value: number } | null } | null} recovery
+ * @returns {{ key: string, label: string, valueText: string, tone: Tone, note: string }[]}
+ */
+export function recoveryRows(recovery) {
+  const r = recovery;
+  const rows = [];
+  if (r?.readiness) {
+    const v = Math.round(r.readiness.value);
+    const cue = readinessCue(v)?.split(': ')[1] ?? '';
+    rows.push({
+      key: 'readiness', label: 'Readiness', valueText: `${v} · ${readinessBand(v)}`,
+      tone: v < 25 ? 'bad' : v < 50 ? 'warn' : 'good',
+      note: `Garmin's 0–100 score for training today. ${cue.charAt(0).toUpperCase()}${cue.slice(1)}.`,
+    });
+  }
+  const hrv = hrvStatusLabel(r?.hrvStatus?.value ?? null);
+  if (hrv && hrv !== 'No status') {
+    const note = hrv === 'Balanced'
+      ? 'Overnight heart rate variability is in your normal range: recovering well.'
+      : hrv === 'Unbalanced'
+        ? 'Overnight heart rate variability is outside your normal range: stress or fatigue.'
+        : 'Overnight heart rate variability is well below normal: recovery is lagging.';
+    rows.push({ key: 'hrv', label: 'HRV', valueText: hrv, tone: hrv === 'Balanced' ? 'good' : hrv === 'Unbalanced' ? 'warn' : 'bad', note });
+  }
+  if (r?.sleepMin) {
+    const s = r.sleepScore?.value;
+    rows.push({
+      key: 'sleep', label: 'Sleep', valueText: minutesText(r.sleepMin.value) + (s == null ? '' : ` · ${Math.round(s)}`),
+      tone: s == null ? 'neutral' : s < 60 ? 'bad' : s < 80 ? 'warn' : 'good',
+      note: s == null ? 'Time asleep last night.' : 'Time asleep last night, and Garmin’s sleep score (out of 100).',
+    });
+  }
+  return rows;
+}
+
+/**
+ * Ramp-rate cells for the panel's mini charts: "Last 7 days" and so on, with the change in whole CTL points.
+ * @param {({ days: number, from: number, to: number, change: number, perWeek: number } | null)[]} ramp
+ */
+export function rampTiles(ramp) {
+  return ramp.map((r, k) => {
+    const c = rampCell(r, k);
+    // A true minus sign: a hyphen is narrower than the digits.
+    return { ...c, title: `Last ${c.days} days`, changeText: r ? signed(r.change).replace('-', '\u2212') : '–' };
+  });
+}

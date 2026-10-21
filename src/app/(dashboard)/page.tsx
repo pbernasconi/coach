@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { ownerForSignedInUser } from '@/lib/owner';
 import { loadPerformance } from '@/lib/performance/queries';
-import { headerChips, last4Tiles, lastWeeks, longDate, staleText } from '@/lib/performance/display.mjs';
+import { last4Tiles, lastWeeks, longDate, staleText } from '@/lib/performance/display.mjs';
 import { loadLiftModel } from '@/lib/lift-dashboard/queries';
 import { muscleSets, topLifts } from '@/lib/lift-dashboard/stats.mjs';
 import { liftOverview } from '@/lib/lift-dashboard/overview.mjs';
@@ -14,10 +14,12 @@ import SectionError from '@/components/SectionError';
 import { load, safe } from '@/lib/safe';
 import { DEFAULT_TARGETS, loadTargets } from '@/lib/status';
 import { loadPmc } from '@/lib/performance/projection';
+import { loadRecentPeaks } from '@/lib/performance/peaks';
 import { loadBody, loadRecoveryToday } from '@/lib/vitals/garmin-pages';
 import PmcSection from '@/components/performance/PmcSection';
 import { sql } from '@/db';
 import { loadGoals, measureGoals } from '@/lib/goals/goals.mjs';
+import FitnessPanel, { RecoveryCard } from './FitnessPanel';
 import GoalsCard from './GoalsCard';
 import HomeWeek from './HomeWeek';
 import LeanStrong from './LeanStrong';
@@ -36,21 +38,10 @@ function zone(tz: string | undefined) {
   return 'America/Los_Angeles';
 }
 
-const TONE = { good: 'var(--viz-good)', warn: 'var(--color-amber-500)', bad: 'var(--viz-down)', neutral: 'var(--viz-muted)' } as const;
-
-function Chip({ label, value, tone }: { label: string; value: string; tone: keyof typeof TONE }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border bg-card px-3 py-1.5 text-sm">
-      <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: TONE[tone] }} aria-hidden />
-      <span className="text-[var(--viz-muted)]">{label}</span>
-      <b className="tabular-nums">{value}</b>
-    </span>
-  );
-}
-
 /**
- * Home ("Today"): readiness in the header, this week as in Plan, fitness and form, the last 4 weeks, the
- * "Lean and strong" rail (weight, arms, main lifts), and the goals. The deep dives are on /trends.
+ * Home ("Today"): this week as in Plan, the fitness chart and the last 4 weeks; a right rail with recovery today,
+ * the fitness panel (fatigue, fitness, form, ramp rates, recent peaks) and "Lean and strong" (weight, arms, main
+ * lifts); then the goals. The deep dives are on /trends.
  */
 export default async function HomePage() {
   const userId = await ownerForSignedInUser();
@@ -59,7 +50,7 @@ export default async function HomePage() {
   const today = todayIn(timeZone);
   const monday = mondayOf(today);
   // Each section loads on its own: a failure shows SectionError for that section and leaves the others.
-  const [perf, week, weather, targets, lift, pmc, recovery, body, goals] = await Promise.all([
+  const [perf, week, weather, targets, lift, pmc, recovery, body, goals, peaks] = await Promise.all([
     load('Performance', () => loadPerformance(userId, today)),
     load('This week', () => loadRange(userId, monday, monday, today)),
     safe('weather', async () => loadForecast(placeFrom(await userSettings(userId)), timeZone), {}),
@@ -86,11 +77,10 @@ export default async function HomePage() {
     safe('recovery today', () => loadRecoveryToday(userId, today), null),
     safe('body', () => loadBody(userId, today), null),
     load('Goals', async () => measureGoals(sql, userId, await loadGoals(sql, userId), today)),
+    safe('recent peaks', () => loadRecentPeaks(userId, today), null),
   ]);
 
   const r = recovery?.hasData ? recovery : null;
-  const load_ = pmc.ok ? pmc.value.days.filter((d) => !d.projected).at(-1) ?? null : null;
-  const chips = headerChips(r, load_);
   const weeks = perf.ok ? perf.value.weeks : [];
   const { last4 } = lastWeeks(weeks, monday);
   const thisWeek = weeks.find((w) => w.week === monday);
@@ -99,15 +89,9 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-5" data-smoke="performance">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-[var(--viz-muted)]">{dateLabel}</p>
-          <h1 className="text-2xl font-semibold tracking-tight">Today</h1>
-        </div>
-        <Link href={`/health/day/${today}`} className="flex flex-wrap gap-2" aria-label="Recovery today. Open today's health details.">
-          {chips.map((c) => <Chip key={c.key} label={c.label} value={c.valueText} tone={c.tone} />)}
-          {!r && !load_ && <span className="text-sm text-[var(--viz-muted)]">No Garmin data today.</span>}
-        </Link>
+      <div>
+        <p className="text-xs font-medium uppercase tracking-wide text-[var(--viz-muted)]">{dateLabel}</p>
+        <h1 className="text-2xl font-semibold tracking-tight">Today</h1>
       </div>
 
       {stale && <div className="rounded-lg border border-amber-500/50 bg-amber-500/10 p-3 text-sm">{stale}</div>}
@@ -137,7 +121,11 @@ export default async function HomePage() {
             </section>
           )}
         </div>
-        <LeanStrong body={body} lift={lift} strength={{ done: thisWeek?.strength ?? 0, target: targets.strength }} />
+        <div className="min-w-0 space-y-5">
+          <RecoveryCard recovery={r} today={today} />
+          <FitnessPanel pmc={pmc.ok ? pmc.value : null} peaks={peaks} />
+          <LeanStrong body={body} lift={lift} strength={{ done: thisWeek?.strength ?? 0, target: targets.strength }} />
+        </div>
       </div>
 
       {goals.ok ? <GoalsCard goals={goals.value} /> : <SectionError label="Goals" />}

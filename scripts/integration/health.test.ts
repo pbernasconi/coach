@@ -40,6 +40,12 @@ async function seed() {
        VALUES ($1, 'user_owner', 'conn', $2, 'Workout', $3, now() - ($4 || ' days')::interval, (now() - ($4 || ' days')::interval)::timestamp, 10000, 3600, 50)`,
       [id(), String(i), types[i % types.length], String(i * 1.4)]
     );
+    // Peaks for the rides and runs, so the peak loaders rank real rows.
+    const t = types[i % types.length];
+    if (t === 'Ride' || t === 'Run') {
+      const [metric, span, value] = t === 'Ride' ? ['power', 300, 250 + (i % 7) * 5] : ['run', 5000, 1500 + (i % 5) * 20];
+      await q(`INSERT INTO activity_peaks (user_id, strava_activity_id, metric, span, value) VALUES ('user_owner', $1, $2, $3, $4)`, [String(i), metric, span, value]);
+    }
   }
   for (let i = 0; i < 90; i++) {
     await q(`INSERT INTO daily_training_load (id, user_id, date, ctl, atl, tsb, tss) VALUES ($1, 'user_owner', $2, 60, 55, 5, 70)`, [id(), addDays(today, -i)]);

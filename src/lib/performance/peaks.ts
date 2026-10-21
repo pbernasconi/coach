@@ -1,5 +1,6 @@
 import { sql } from '@/db';
-import { bestByWindow, PEAK_WINDOWS, POWER_DURATIONS, RUN_DISTANCES } from './peaks.mjs';
+import { addDays } from '@/lib/plan/week.mjs';
+import { bestByWindow, PEAK_WINDOWS, POWER_DURATIONS, RUN_DISTANCES, recentPeaks } from './peaks.mjs';
 
 export type PeakCell = { value: number; date: string; activityId: string; name?: string } | null;
 export type PeakWindowKey = 'all' | 'd90' | 'd28';
@@ -47,4 +48,61 @@ export async function loadPeakPerformances(userId: string, today: string): Promi
     scanned: Number(counts[0]?.scanned ?? 0),
     pending: Number(counts[0]?.pending ?? 0),
   };
+}
+
+export type RecentPeak = {
+  metric: 'power' | 'run';
+  span: number;
+  value: number;
+  date: string;
+  activityId: string;
+  name: string | null;
+  rank: number; // 1 to 3
+  window: 'all' | 'year' | 'd90';
+  windowLabel: string; // "All time", "2026", "Last 90 days"
+};
+
+/**
+ * The home page's recent peaks: peaks from the last `days` days that rank in the top 3 all time, this year or in
+ * the last 90 days. Postgres counts the better values, so only the recent rows (a few dozen) leave the database.
+ */
+export async function loadRecentPeaks(userId: string, today: string, { days = 28, limit = 6 } = {}): Promise<RecentPeak[]> {
+  const since = addDays(today, -(days - 1));
+  const d90 = addDays(today, -89);
+  const year = `${today.slice(0, 4)}-01-01`;
+  const rows = (await sql`
+    WITH p AS (
+      SELECT p.metric, p.span, p.value, p.strava_activity_id, a.name, a.start_date_local::date AS day
+      FROM activity_peaks p
+      JOIN strava_activities a ON a.user_id = p.user_id AND a.strava_activity_id = p.strava_activity_id
+      WHERE p.user_id = ${userId} AND a.start_date_local::date <= ${today}::date
+    )
+    SELECT r.metric, r.span, r.value, r.strava_activity_id, r.name, to_char(r.day, 'YYYY-MM-DD') AS day,
+           c.all_better::int AS all_better, c.year_better::int AS year_better, c.d90_better::int AS d90_better
+    FROM p r
+    CROSS JOIN LATERAL (
+      SELECT COUNT(*) AS all_better,
+             COUNT(*) FILTER (WHERE o.day >= ${year}::date) AS year_better,
+             COUNT(*) FILTER (WHERE o.day >= ${d90}::date) AS d90_better
+      FROM p o
+      WHERE o.metric = r.metric AND o.span = r.span
+        AND CASE WHEN r.metric = 'power' THEN o.value > r.value ELSE o.value < r.value END
+    ) c
+    WHERE r.day >= ${since}::date
+    ORDER BY r.day DESC`) as Row[];
+  return recentPeaks(
+    rows.map((r) => ({
+      metric: String(r.metric) as 'power' | 'run',
+      span: Number(r.span),
+      value: Number(r.value),
+      date: String(r.day),
+      activityId: String(r.strava_activity_id),
+      name: (r.name as string) ?? null,
+      rankAll: Number(r.all_better) + 1,
+      rankYear: Number(r.year_better) + 1,
+      rank90: Number(r.d90_better) + 1,
+    })),
+    today,
+    { limit },
+  ) as RecentPeak[];
 }

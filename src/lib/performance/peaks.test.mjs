@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   bestByWindow, bestEfforts, countRequest, rollUsage, bestPower, extractPeaks, formatDuration, formatPace, msToNextWindow, peakSportOf,
-  powerPerSecond, rateDecision, rateUsage,
+  powerPerSecond, rateDecision, rateUsage, recentPeaks,
 } from './peaks.mjs';
 
 const range = (n, f) => Array.from({ length: n }, (_, i) => f(i));
@@ -177,4 +177,26 @@ test('roll usage into a new window', () => {
   assert.equal(rollUsage(u, Date.UTC(2026, 9, 19, 10, 16)).short, 0);
   assert.equal(rollUsage(u, Date.UTC(2026, 9, 19, 10, 16)).daily, 500);
   assert.equal(rollUsage(null), null);
+});
+
+test('recent peaks: widest top-3 window, newest first, at most the limit', () => {
+  const row = (o) => ({ metric: 'run', span: 5000, value: 1570, activityId: 'a', name: 'Run', rankAll: 9, rankYear: 9, rank90: 9, ...o });
+  const out = recentPeaks(
+    [
+      row({ date: '2026-10-14', activityId: 'r1', rankAll: 5, rankYear: 2, rank90: 1 }),
+      row({ date: '2026-10-14', activityId: 'r1', span: 10000, value: 3162, rankAll: 1, rankYear: 1, rank90: 1 }),
+      row({ date: '2026-10-07', activityId: 'b1', metric: 'power', span: 300, value: 300, rankAll: 8, rankYear: 4, rank90: 2 }),
+      row({ date: '2026-10-05', activityId: 'x', rankAll: 4, rankYear: 4, rank90: 4 }), // no medal
+      row({ date: '2026-10-30', activityId: 'future', rankAll: 1, rankYear: 1, rank90: 1 }), // after today
+    ],
+    '2026-10-21',
+  );
+  assert.deepEqual(out.map((p) => [p.activityId, p.span, p.window, p.rank, p.windowLabel]), [
+    ['r1', 10000, 'all', 1, 'All time'],
+    ['r1', 5000, 'year', 2, '2026'],
+    ['b1', 300, 'd90', 2, 'Last 90 days'],
+  ]);
+  assert.equal(recentPeaks([row({ date: '2026-10-14', rank90: 1 }), row({ date: '2026-10-13', rank90: 1 })], '2026-10-21', { limit: 1 }).length, 1);
+  // A peak from last year cannot be ranked "this year".
+  assert.equal(recentPeaks([row({ date: '2025-12-30', rankYear: 1 })], '2026-01-05').length, 0);
 });

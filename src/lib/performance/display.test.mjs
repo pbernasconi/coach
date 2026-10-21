@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  daysAgoText, decimalText, delta, e1rmText, goalView, headerChips, hoursSeries, hoursText, last4Tiles, liftChangeText,
+  daysAgoText, loadTiles, rampTiles, recoveryRows, decimalText, delta, e1rmText, goalView, headerChips, hoursSeries, hoursText, last4Tiles, liftChangeText,
   longDate, minutesText, muscleRows, paceText, peakText, performanceTiles, projectionCaption, rampCell, readinessBand,
   readinessCue, setsText, signed, sportDetail, staleText, todayItemText, todayWorkouts, weekRow, weightChange,
 } from './display.mjs';
@@ -139,4 +139,26 @@ test('goals and the today line', () => {
   assert.equal(todayWorkouts({ today: '2026-10-20', workouts: [] }).emptyText, 'No plan this week. Run /plan in Claude Code to make one.');
   assert.equal(todayItemText(w({})), '13:30 · 1:00');
   assert.equal(todayItemText(w({ startTime: null, duration: 45, state: 'done' })), '45m · done');
+});
+
+test('fitness panel: load tiles, recovery rows and ramp tiles', () => {
+  assert.equal(loadTiles(null), null);
+  const t = loadTiles({ ctl: 69.6, atl: 52.6, tsb: 10.2 });
+  assert.deepEqual(t.map((x) => x.valueText), ['53', '70', '+10']);
+  assert.equal(t[2].zone, 'Fresh');
+  assert.match(t[2].meaning, /^rested/);
+  assert.equal(loadTiles({ ctl: 60, atl: 95, tsb: -35 })[2].zone, 'Overreaching');
+
+  const rows = recoveryRows({ readiness: { value: 56 }, hrvStatus: { value: 4 }, sleepMin: { value: 425 }, sleepScore: { value: 82 } });
+  assert.deepEqual(rows.map((r) => [r.key, r.valueText, r.tone]), [
+    ['readiness', '56 · Moderate', 'good'],
+    ['hrv', 'Balanced', 'good'],
+    ['sleep', '7:05 · 82', 'good'],
+  ]);
+  assert.match(rows[0].note, /Hold back about 10%\.$/);
+  assert.deepEqual(recoveryRows({ hrvStatus: { value: 0 } }), []);
+  assert.deepEqual(recoveryRows(null), []);
+
+  const r = rampTiles([{ days: 7, from: 76, to: 70, change: -6.2, perWeek: -6.2 }, null, null, { days: 365, from: 88, to: 70, change: -18, perWeek: -0.3 }]);
+  assert.deepEqual(r.map((x) => [x.title, x.changeText]), [['Last 7 days', '\u22126'], ['Last 28 days', '–'], ['Last 90 days', '–'], ['Last 365 days', '\u221218']]);
 });
