@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import type { Targets } from '@/lib/status';
 import type { Place } from '@/lib/plan/weather';
 import {
-  loadLocationAction, saveCoachingNotesAction, saveLocationAction, saveTargetsAction, saveThresholdsAction, searchPlacesAction, syncStravaNow,
+  loadLocationAction, saveCoachingNotesAction, saveLocationAction, saveTargetsAction, saveThresholdsAction, searchPlacesAction, syncBodyspecNow, syncStravaNow,
   type PlaceHit, type ThresholdInput,
 } from './actions';
 
@@ -20,6 +20,25 @@ export function StravaSyncButton() {
       disabled={pending}
       onClick={() => start(async () => {
         const msg = await syncStravaNow();
+        if (msg.startsWith('Sync failed')) toast.error(msg);
+        else toast.success(msg);
+      })}
+    >
+      {pending ? 'Syncing…' : 'Sync now'}
+    </Button>
+  );
+}
+
+/** Pulls new BodySpec scans now, with the result as a toast. */
+export function BodyspecSyncButton() {
+  const [pending, start] = useTransition();
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      disabled={pending}
+      onClick={() => start(async () => {
+        const msg = await syncBodyspecNow();
         if (msg.startsWith('Sync failed')) toast.error(msg);
         else toast.success(msg);
       })}

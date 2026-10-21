@@ -40,3 +40,15 @@ jobs:
             exit 0
           fi
           curl -fsS --max-time 300 -H "Authorization: Bearer $CRON_SECRET" https://coach.paolobernasconi.com/api/cron/strava
+      - name: BodySpec DEXA scans
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          # Once a day: new scans are rare, and a daily token refresh keeps the BodySpec sign-in alive.
+          # The answer has counts and dates only (this log is public).
+          if [ "$EVENT" != "workflow_dispatch" ] && [ "$(date -u +%H)" != "15" ]; then
+            echo "BodySpec runs once a day (15:17 UTC); not this hour."
+            exit 0
+          fi
+          curl -fsS --max-time 120 -H "Authorization: Bearer $CRON_SECRET" https://coach.paolobernasconi.com/api/cron/bodyspec

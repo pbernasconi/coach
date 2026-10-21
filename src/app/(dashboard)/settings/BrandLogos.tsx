@@ -1,4 +1,4 @@
-import { Dumbbell } from 'lucide-react';
+import { Dumbbell, ScanLine } from 'lucide-react';
 
 // Brand marks for the Connections list. Paths from Simple Icons (CC0, simpleicons.org).
 const STRAVA = 'M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169';
@@ -36,6 +36,15 @@ export function LiftLogo() {
   return (
     <span className={`${tile} bg-[#FFC21A] text-black`} aria-hidden>
       <Dumbbell className="h-5 w-5 rotate-45" strokeWidth={2.5} />
+    </span>
+  );
+}
+
+/** BodySpec (DEXA scans): no brand mark here, so a scan icon on BodySpec's green. */
+export function BodyspecLogo() {
+  return (
+    <span className={`${tile} bg-[#1F3D2B] text-[#C8F169]`} aria-hidden>
+      <ScanLine className="h-5 w-5" strokeWidth={2.25} />
     </span>
   );
 }

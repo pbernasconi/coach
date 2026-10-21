@@ -12,6 +12,8 @@ import HealthBoard from '@/components/vitals/HealthBoard';
 import VitalsSummary from '@/components/vitals/VitalsSummary';
 import { todayIn } from '@/lib/plan/week.mjs';
 import LabsSection from './LabsSection';
+import DexaSection from './DexaSection';
+import { loadDexa } from '@/lib/vitals/dexa-queries';
 
 export const metadata: Metadata = { title: 'Health' };
 
@@ -36,11 +38,12 @@ export default async function HealthPage({ searchParams }: { searchParams: Promi
   const days = (await searchParams).days === '90' ? 90 : 30;
   // The Garmin line is optional: the page still renders when it fails.
   const garminP = safe('garmin status', () => loadGarminStatus(userId), null);
-  const [{ readiness, labs }, garmin, board, notes] = await Promise.all([
+  const [{ readiness, labs }, garmin, board, notes, dexa] = await Promise.all([
     loadHealth(userId, today),
     garminP,
     garminP.then((g) => load('Health board', () => loadBoard(userId, today, days, g?.syncedThrough ?? null))),
     load('Clinician notes', () => loadClinicianNotes(userId)),
+    load('Body composition', () => loadDexa(userId)),
   ]);
   const now = Date.now();
   const hasSamples = readiness.lastSampleDate !== null || (board.ok && board.value.counts.worn + board.value.counts.partial > 0);
@@ -88,6 +91,7 @@ export default async function HealthPage({ searchParams }: { searchParams: Promi
         </div>
       )}
 
+      {dexa.ok ? <DexaSection dexa={dexa.value} /> : <SectionError label="Body composition" />}
       <LabsSection categories={labs.categories} draws={labs.draws} />
       {notes.ok ? <ClinicianNotes groups={notes.value} /> : <SectionError label="Clinician notes" />}
     </div>
