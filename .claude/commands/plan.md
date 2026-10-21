@@ -31,6 +31,10 @@ it belongs in Coach → Settings, and offer to update it there; do not keep it i
 - **Lift templates** (in the profile) are the strength programming. Don't invent new lifts. Each strength workout names
   its template in `liftTemplate`; Lift plans the sets and loads (from the template and the logged sessions in the
   profile), so the description holds only the coach's note.
+- **Lift notes** (the profile's "Notes from Lift") are Paolo's own words from his last workouts: "Achilles sore", "felt
+  heavy", "go up 5 lb". Act on each one in the next days and say how in the strength workout's note: pain or a niggle
+  means lighter or swapped work for what it loads (and easy running around it), heavy means hold the load, "go up"
+  means raise it. Name the note you are answering, so he sees it was read.
 
 ## Workflow
 

@@ -49,6 +49,55 @@ struct WorkoutSessionNotes: View {
     }
 }
 
+/// What was written about one exercise, under its header: last time's note first ("Last time: felt heavy"), so this
+/// session can act on it, then this session's note. Tapping the note edits it; without one, "Add note" opens the editor.
+struct WorkoutExerciseNotes: View {
+    @Environment(\.koboTheme) private var theme
+    @ScaledMetric(relativeTo: .footnote) private var iconWidth = Size.iconSm
+    let name: String
+    let note: String?
+    let lastNote: String?
+    let onEdit: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Space.xxs) {
+            if let lastNote {
+                line(String(localized: "Last time: \(lastNote)"), symbol: "clock.arrow.circlepath")
+                    .accessibilityElement(children: .combine)
+            }
+            if let note {
+                Button(action: onEdit) {
+                    line(note, symbol: "quote.bubble")
+                        .frame(maxWidth: .infinity, minHeight: Size.minTouch, alignment: .leading)
+                        .contentShape(.rect)
+                }
+                .buttonStyle(.pressFeedback)
+                .accessibilityLabel(Text("Note on \(name): \(note)"))
+                .accessibilityHint(Text("Edits the note"))
+            } else {
+                Button("Add note", systemImage: "square.and.pencil", action: onEdit)
+                    .buttonStyle(.kobo(.plain, size: .compact, width: .inline))
+                    .accessibilityLabel(Text("Add note on \(name)"))
+            }
+        }
+        .font(theme.font(.footnote))
+        .foregroundStyle(theme.palette.textSecondary)
+    }
+
+    private func line(_ text: String, symbol: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: Space.xs) {
+            Image(systemName: symbol)
+                .symbolVariant(.fill)
+                .imageScale(.small)
+                .frame(width: iconWidth)
+                .accessibilityHidden(true)
+            Text(verbatim: text)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
 /// A set's RPE and note under its row in the set grid ("RPE 8 · paused"), lined up with the Previous column.
 struct SetNoteLine: View {
     @Environment(\.koboTheme) private var theme

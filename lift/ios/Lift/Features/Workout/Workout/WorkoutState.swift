@@ -70,6 +70,9 @@ nonisolated struct WorkoutExercise: Equatable, Sendable, Identifiable {
     var unit: WeightUnit = .kg
     /// What was written about the exercise ("Elbows in"), without a next-time line `progression` already shows.
     var note: String?
+    /// What was written about it last time ("Felt heavy"), so this session can act on it; nil when nothing was, or when
+    /// it is the same text as `note` (a template cue both sessions started with).
+    var lastNote: String?
 }
 
 /// One set row.
