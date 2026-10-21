@@ -36,6 +36,15 @@
     }
     #Preview("Lift sheet") { WeekPreview(state: .fixtureOptions) }
     #Preview("Lift sheet, dark") { WeekPreview(state: .fixtureOptions).preferredColorScheme(.dark) }
+    #Preview("Plan") { WeekPreview(state: .fixturePlan) }
+    #Preview("Plan, dark") { WeekPreview(state: .fixturePlan).preferredColorScheme(.dark) }
+    #Preview("Plan, AX3") {
+        WeekPreview(state: .fixturePlan)
+            .dynamicTypeSize(.accessibility3)
+    }
+    #Preview("Plan, offline") { WeekPreview(state: .fixturePlanOffline) }
+    #Preview("Plan item") { WeekPreview(state: .fixturePlanItem) }
+    #Preview("Plan item, dark") { WeekPreview(state: .fixturePlanItem).preferredColorScheme(.dark) }
     #Preview("Move, AX3") {
         WeekPreview(state: .fixtureMove)
             .dynamicTypeSize(.accessibility3)

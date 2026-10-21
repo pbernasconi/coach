@@ -4,25 +4,16 @@ import { cn } from '@/lib/utils';
 import type { RichExercise, RichSet } from '@/lib/lift/session';
 import ExerciseThumb from './ExerciseThumb';
 import Sparkline from './Sparkline';
-import { loadModeNote, loadText, muscleLabel, num, repsText, restText } from './format';
+import { deltaText, exerciseChips, lastTimeDelta, setTile } from '@/lib/lift-dashboard/text.mjs';
+import { loadModeNote, loadText, muscleLabel, num, restText } from './format';
 
 const shortDay = (d: string) =>
   new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
 
-/** The heaviest target load of the working sets, to compare with last time. */
-function topTarget(e: RichExercise) {
-  const loads = e.sets.filter((s) => s.kind !== 'warmUp' && s.target.weight != null).map((s) => s.target.weight as number);
-  return loads.length ? Math.max(...loads) : null;
-}
-
 function SetTile({ s, loadMode, unit }: { s: RichSet; loadMode: string | null; unit: string }) {
-  const reps = repsText(s.target);
-  const load = loadText(s.target.weight, loadMode, unit);
-  const target = [load, reps && `× ${reps}`].filter(Boolean).join(' ') || '–';
+  const { target, logged, beatTarget } = setTile(s, loadMode, unit);
   const done = s.status === 'done';
   const skipped = s.status === 'skipped';
-  const loggedLoad = loadText(s.weight, loadMode, unit);
-  const beatTarget = done && s.weight != null && s.target.weight != null && s.weight > s.target.weight;
   return (
     <li
       className={cn(
@@ -40,7 +31,7 @@ function SetTile({ s, loadMode, unit }: { s: RichSet; loadMode: string | null; u
       {done ? (
         <>
           <span className="truncate text-sm font-semibold text-[var(--viz-ink)]">
-            {[loggedLoad, `× ${s.reps ?? '?'}`].filter(Boolean).join(' ')}
+            {logged}
             {beatTarget && <span className="ml-1 text-xs font-medium text-[var(--viz-up)]">↑</span>}
           </span>
           <span className="truncate text-[11px] text-[var(--viz-muted)]">target {target}</span>
@@ -59,13 +50,10 @@ function SetTile({ s, loadMode, unit }: { s: RichSet; loadMode: string | null; u
  */
 export default function ExerciseCard({ e, unit, index }: { e: RichExercise; unit: string; index: number }) {
   const h = e.history;
-  const top = topTarget(e);
-  const lastTop = h.last ? Math.max(...h.last.sets.map((s) => s.weight ?? 0)) : null;
-  const delta = top != null && lastTop ? top - lastTop : null;
+  const delta = lastTimeDelta(e);
   const working = e.sets.filter((s) => s.kind !== 'warmUp');
   const media = e.media;
-  const muscles = [...new Set([...(e.primary.length ? e.primary : media?.target ? [media.target] : [])])];
-  const secondary = e.secondary.length ? e.secondary : (media?.secondary ?? []);
+  const { primary: muscles, secondary, equipment } = exerciseChips(e);
   const rest = restText(e.restSeconds);
   // An estimated 1RM from the added load alone (weighted pull-ups) means nothing, so bodyweight work shows none.
   const showE1rm = e.loadMode !== 'bodyweight';
@@ -96,9 +84,7 @@ export default function ExerciseCard({ e, unit, index }: { e: RichExercise; unit
                 {muscleLabel(m)}
               </span>
             ))}
-            {(e.equipment ?? media?.equipment) && (
-              <span className="rounded-full bg-muted px-2 py-0.5 text-[var(--viz-ink-2)]">{muscleLabel(String(e.equipment ?? media?.equipment))}</span>
-            )}
+            {equipment && <span className="rounded-full bg-muted px-2 py-0.5 text-[var(--viz-ink-2)]">{equipment}</span>}
             {loadModeNote(e.loadMode) && <span className="rounded-full bg-muted px-2 py-0.5 text-[var(--viz-ink-2)]">Load {loadModeNote(e.loadMode)}</span>}
             {rest && (
               <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[var(--viz-ink-2)]">
@@ -124,7 +110,7 @@ export default function ExerciseCard({ e, unit, index }: { e: RichExercise; unit
                     Last time · <Link href={`/lift/sessions/${h.last.sessionId}`} className="hover:underline">{shortDay(h.last.day)}</Link>
                     {delta != null && delta !== 0 && (
                       <span className={cn('ml-1 rounded px-1.5 py-0.5 text-[10px] font-semibold tabular-nums', delta > 0 ? 'bg-[color-mix(in_oklab,var(--viz-up)_12%,transparent)] text-[var(--viz-up)]' : 'bg-muted text-[var(--viz-ink-2)]')}>
-                        {delta > 0 ? '+' : '−'}{num(Math.abs(delta))} {unit} vs last
+                        {deltaText(delta, unit)}
                       </span>
                     )}
                   </>

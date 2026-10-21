@@ -7,6 +7,7 @@ import { bestPower } from '@/lib/performance/peaks.mjs';
 import type { SportId } from '@/lib/sports';
 import { HR_ZONE_NAMES, POWER_ZONE_NAMES } from './format.mjs';
 import { missingParts } from './fetch.mjs';
+import { layoutOf as layoutOfSport } from './view.mjs';
 import {
   BEST_EFFORT_DISTANCES, CURVE_DURATIONS, bestEffortsFromStreams, bucketMean, buckets, decodePolyline, gapSpeeds, haversine,
   meanBetween, paceHistogram, splitsFromStreams, trimp, zoneTimes,
@@ -25,7 +26,7 @@ const arr = (v: unknown) => (Array.isArray(v) ? (v as (number | null)[]) : null)
 
 /** How the page lays out a sport: pace for foot sports, speed and power for rides, a reduced page for the rest. */
 export type Layout = 'run' | 'ride' | 'basic';
-export const layoutOf = (sport: SportId): Layout => (sport === 'run' || sport === 'hike' || sport === 'walk' ? 'run' : sport === 'ride' ? 'ride' : 'basic');
+export const layoutOf = (sport: SportId): Layout => layoutOfSport(sport) as Layout;
 
 export type Zone = { zone: number; name: string; min: number; max: number; seconds: number };
 export type Split = { index: number; distance: number; moving: number; elapsed: number; speed: number | null; gapSpeed: number | null; elevDiff: number | null; hr: number | null };

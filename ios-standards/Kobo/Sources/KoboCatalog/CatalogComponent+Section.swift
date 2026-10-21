@@ -31,6 +31,9 @@ extension CatalogComponent {
             .status
         case .progressRing, .countdownRing, .animatedNumber, .statTile, .avatar, .thumbnail:
             .display
+        case .sparkline, .lineChart, .linePanels, .stackedBarChart, .histogram, .variableWidthBarChart, .bandBar,
+            .zoneBars, .heatmap, .dataTable, .routeMap:
+            .charts
         case .card, .listRow, .listSection, .keyValueList, .sectionHeader, .separator, .collapsible,
             .pinnedFooter,
             .sheetHeader, .dayStrip, .segmentedProgress, .miniPlayerBar:

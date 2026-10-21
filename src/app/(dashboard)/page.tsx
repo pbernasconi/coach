@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { ownerForSignedInUser } from '@/lib/owner';
-import { loadPerformance, type WeekStats } from '@/lib/performance/queries';
+import { loadPerformance } from '@/lib/performance/queries';
+import { headerChips, last4Tiles, lastWeeks, longDate, staleText } from '@/lib/performance/display.mjs';
 import { loadLiftModel } from '@/lib/lift-dashboard/queries';
 import { muscleSets, topLifts } from '@/lib/lift-dashboard/stats.mjs';
 import { liftOverview } from '@/lib/lift-dashboard/overview.mjs';
@@ -14,7 +15,6 @@ import { load, safe } from '@/lib/safe';
 import { DEFAULT_TARGETS, loadTargets } from '@/lib/status';
 import { loadPmc } from '@/lib/performance/projection';
 import { loadBody, loadRecoveryToday } from '@/lib/vitals/garmin-pages';
-import { hrvStatusLabel } from '@/lib/vitals/garmin-training.mjs';
 import PmcSection from '@/components/performance/PmcSection';
 import { sql } from '@/db';
 import { loadGoals, measureGoals } from '@/lib/goals/goals.mjs';
@@ -36,17 +36,6 @@ function zone(tz: string | undefined) {
   return 'America/Los_Angeles';
 }
 
-const hm = (h: number) => `${Math.floor(h)}:${String(Math.round((h % 1) * 60)).padStart(2, '0')}`;
-const minutes = (m: number) => `${Math.floor(Math.round(m) / 60)}:${String(Math.round(m) % 60).padStart(2, '0')}`;
-const signed = (n: number) => `${n > 0 ? '+' : ''}${Math.round(n)}`;
-const sum = (ws: WeekStats[], key: keyof WeekStats) => ws.reduce((n, w) => n + Number(w[key]), 0);
-function pace(min: number, km: number) {
-  if (!km) return null;
-  const s = Math.round((min * 60) / km);
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')} /km`;
-}
-const READINESS: [number, string][] = [[95, 'Prime'], [75, 'High'], [50, 'Moderate'], [25, 'Low'], [0, 'Poor']];
-const band = (v: number) => READINESS.find(([min]) => v >= min)?.[1] ?? '';
 const TONE = { good: 'var(--viz-good)', warn: 'var(--color-amber-500)', bad: 'var(--viz-down)', neutral: 'var(--viz-muted)' } as const;
 
 function Chip({ label, value, tone }: { label: string; value: string; tone: keyof typeof TONE }) {
@@ -101,12 +90,12 @@ export default async function HomePage() {
 
   const r = recovery?.hasData ? recovery : null;
   const load_ = pmc.ok ? pmc.value.days.filter((d) => !d.projected).at(-1) ?? null : null;
-  const hrv = hrvStatusLabel(r?.hrvStatus?.value ?? null) as string | null;
+  const chips = headerChips(r, load_);
   const weeks = perf.ok ? perf.value.weeks : [];
-  const last4 = weeks.filter((w) => w.week !== monday).slice(-4);
+  const { last4 } = lastWeeks(weeks, monday);
   const thisWeek = weeks.find((w) => w.week === monday);
-  const daysSince = perf.ok && perf.value.latestActivity ? Math.round((Date.parse(today) - Date.parse(perf.value.latestActivity)) / 864e5) : null;
-  const dateLabel = new Date(`${today}T12:00:00Z`).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: 'UTC' });
+  const stale = perf.ok ? staleText(perf.value.latestActivity, today) : null;
+  const dateLabel = longDate(today);
 
   return (
     <div className="space-y-5" data-smoke="performance">
@@ -116,20 +105,12 @@ export default async function HomePage() {
           <h1 className="text-2xl font-semibold tracking-tight">Today</h1>
         </div>
         <Link href={`/health/day/${today}`} className="flex flex-wrap gap-2" aria-label="Recovery today. Open today's health details.">
-          {r?.readiness && <Chip label="Readiness" value={`${Math.round(r.readiness.value)} · ${band(r.readiness.value)}`} tone={r.readiness.value < 25 ? 'bad' : r.readiness.value < 50 ? 'warn' : 'good'} />}
-          {r?.sleepMin && <Chip label="Sleep" value={minutes(r.sleepMin.value)} tone={!r.sleepScore ? 'neutral' : r.sleepScore.value < 60 ? 'bad' : r.sleepScore.value < 80 ? 'warn' : 'good'} />}
-          {hrv && <Chip label="HRV" value={hrv} tone={hrv === 'Balanced' ? 'good' : hrv === 'Unbalanced' ? 'warn' : 'bad'} />}
-          {load_ && <Chip label="Fit / Fat" value={`${Math.round(load_.ctl)} / ${Math.round(load_.atl)}`} tone="neutral" />}
-          {load_ && <Chip label="Form" value={signed(load_.tsb)} tone={load_.tsb < -30 ? 'bad' : load_.tsb < -10 ? 'warn' : 'good'} />}
+          {chips.map((c) => <Chip key={c.key} label={c.label} value={c.valueText} tone={c.tone} />)}
           {!r && !load_ && <span className="text-sm text-[var(--viz-muted)]">No Garmin data today.</span>}
         </Link>
       </div>
 
-      {daysSince !== null && daysSince > 7 && (
-        <div className="rounded-lg border border-amber-500/50 bg-amber-500/10 p-3 text-sm">
-          The newest Strava activity is from {perf.ok && perf.value.latestActivity}.
-        </div>
-      )}
+      {stale && <div className="rounded-lg border border-amber-500/50 bg-amber-500/10 p-3 text-sm">{stale}</div>}
 
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <div className="min-w-0 space-y-5">
@@ -143,15 +124,10 @@ export default async function HomePage() {
           </div>
           {perf.ok && last4.length > 0 && (
             <section className="grid grid-cols-2 gap-y-4 rounded-lg border bg-[var(--viz-surface)] py-4 sm:grid-cols-4" aria-label="Last 4 weeks">
-              {[
-                ['Time · 4 weeks', `${hm(sum(last4, 'hours'))} h`, `${(sum(last4, 'hours') / 4).toFixed(1)} h a week`, 'var(--viz-ink)'],
-                ['Run', `${Math.round(sum(last4, 'runKm'))} km`, pace(sum(last4, 'runMin'), sum(last4, 'runKm')) ?? 'no runs', 'var(--viz-run)'],
-                ['Ride', `${Math.round(sum(last4, 'rideKm'))} km`, `${hm(sum(last4, 'rideHours'))} h`, 'var(--viz-ride)'],
-                ['Strength', `${sum(last4, 'strength')} of ${targets.strength * 4}`, 'sessions', 'var(--sport-strength)'],
-              ].map(([label, value, note, color], i) => (
+              {last4Tiles(last4, targets.strength).map(({ label, valueText: value, noteText: note, sport }, i) => (
                 <div key={label} className={`min-w-0 px-4 ${i % 2 ? 'border-l' : ''} ${i === 2 ? 'sm:border-l' : ''}`}>
                   <div className="flex items-center gap-1.5 text-xs text-[var(--viz-muted)]">
-                    <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: color }} aria-hidden />
+                    <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: sport === 'strength' ? 'var(--sport-strength)' : sport ? `var(--viz-${sport})` : 'var(--viz-ink)' }} aria-hidden />
                     {label}
                   </div>
                   <div className="text-2xl font-semibold tabular-nums tracking-tight text-[var(--viz-ink)]">{value}</div>

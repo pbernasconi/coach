@@ -21,7 +21,7 @@ final class WorkoutViewModel {
     /// The gym's bars and plates, for plates per side, warm-ups and the weight step; read each time the session shows.
     private let gym: any GymPreference
     private let days: DayCalendar
-    private let now: @Sendable () -> Date  // when a rest ran out
+    private let now: @Sendable () -> Date  // today, and when a rest ran out
     /// The latest session from the store; the source for the editor, Add set and rest times.
     @ObservationIgnored private(set) var detail: SessionDetail?
     /// Add, move and remove exercises, finish, discard and Save as template (`WorkoutViewModel+Session`).
@@ -91,13 +91,15 @@ final class WorkoutViewModel {
     }
 
     private func show(_ detail: SessionDetail) {
-        state.workout = .loaded(WorkoutOverview(detail: detail, days: days, previous: state.previous, gym: gym.setup))
+        let today = days.day(of: now())
+        state.workout = .loaded(
+            WorkoutOverview(detail: detail, days: days, previous: state.previous, gym: gym.setup, today: today)
+        )
         state.adoptRest(restActivity.follow(workout: detail.id, restingAfter: state.rest?.setID), at: now())
     }
 
-    /// Counts the rest down once a second on the injected clock. The Screen restarts it for each new rest
-    /// (`.task(id: state.rest?.run)`), and cancelling it stops the countdown. Each tick also follows the Live Activity
-    /// (the wall clock, and its +30s and Skip while the app was in the background). Reaching zero ends the rest.
+    /// Counts the rest down once a second on the injected clock; the Screen restarts it for each new rest. Each tick
+    /// follows the Live Activity (the wall clock, and its +30s and Skip from the background). Zero ends the rest.
     func runRestTimer() async {
         while let rest = state.rest {
             do {
@@ -149,10 +151,10 @@ final class WorkoutViewModel {
 
     /// One tap logs a planned set; a logged or skipped set goes back to planned.
     private func toggleLog(_ id: UUID) -> Task<Void, Never>? {
-        guard case (let item, let set)? = detail?.find(setID: id), !inFlight.contains(id) else { return nil }
+        guard let detail, case (_, let set)? = detail.find(setID: id), !inFlight.contains(id) else { return nil }
         inFlight.insert(id)
         let isPlanned = set.status == .planned
-        let restSeconds = item.exercise.restSeconds ?? RestTimer.defaultSeconds
+        let restSeconds = detail.restSeconds(afterLogging: id)
         let activity = isPlanned ? state.restActivity(afterLogging: id) : nil
         return Task {
             defer { inFlight.remove(id) }
@@ -160,6 +162,7 @@ final class WorkoutViewModel {
                 if isPlanned {
                     _ = try await sets.log(setID: id)
                     startRest(seconds: restSeconds, activity: activity, setID: id)
+                    await startIfNeeded()
                 } else {
                     _ = try await sets.unlog(setID: id)
                 }
@@ -185,13 +188,9 @@ final class WorkoutViewModel {
     private func remove(_ id: UUID) -> Task<Void, Never>? {
         guard detail?.find(setID: id) != nil else { return nil }
         if state.editor?.id == id { state.editor = nil }
-        return Task {
-            do {
-                try await sets.remove(setID: id)
-                showToast(.removed(setID: id))
-            } catch {
-                showToast(.failed)
-            }
+        return write { sets in
+            try await sets.remove(setID: id)
+            self.showToast(.removed(setID: id))
         }
     }
 

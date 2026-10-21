@@ -6,8 +6,8 @@ import Synchronization
 
 /// A `SessionRepository` whose `observeSession` yields the given values, then finishes, so `await vm.run()`
 /// returns. Records each requested id. Day ranges yield nothing. The Workout screen's writes (notes, remove, restore
-/// and reorder exercises, finish, discard and its undo) are recorded, then throw `writeError` when one is given; the
-/// others are not used by the Workout screen and throw.
+/// and reorder exercises, finish, start, discard and its undo) are recorded, then throw `writeError` when one is
+/// given; the others are not used by the Workout screen and throw.
 nonisolated final class FakeSessionDetailRepository: SessionRepository {
     enum Call: Equatable, Sendable {
         case saveNote(UUID, String?)
@@ -16,6 +16,7 @@ nonisolated final class FakeSessionDetailRepository: SessionRepository {
         case restoreExercise(UUID)
         case reorder(UUID, [UUID])
         case finish(UUID)
+        case start(UUID)
         case reschedule(UUID, RescheduleAction)
         case undo(RescheduleUndo)
     }
@@ -86,6 +87,15 @@ nonisolated final class FakeSessionDetailRepository: SessionRepository {
             throw AppError(.notFound)
         }
         session.finishedAt = ManualNow.start
+        return session
+    }
+
+    func start(sessionID: UUID) async throws -> SessionRecord {
+        try record(.start(sessionID))
+        guard var session = emissions.compactMap(\.self).last(where: { $0.id == sessionID })?.session else {
+            throw AppError(.notFound)
+        }
+        session.startedAt = session.startedAt ?? ManualNow.start
         return session
     }
 
