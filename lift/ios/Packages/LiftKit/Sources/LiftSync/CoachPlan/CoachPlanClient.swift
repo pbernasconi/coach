@@ -48,7 +48,7 @@ public struct URLSessionCoachPlanClient: CoachPlanFetching {
     /// Runs off the caller's actor: the request and the decoding never block the main actor.
     @concurrent
     public func weeks(from start: LocalDay, count: Int, timeZone: String) async throws -> CoachPlanResponse {
-        guard let token = try await tokens.token(), !token.isEmpty else { throw SyncTransportError.missingToken }
+        guard let token = try await TokenRead.token(from: tokens) else { throw SyncTransportError.missingToken }
         let request = CoachPlanRequest.make(
             baseURL: baseURL,
             start: start,
