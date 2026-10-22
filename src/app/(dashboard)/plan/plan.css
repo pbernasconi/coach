@@ -26,7 +26,7 @@
   scroll-snap-align: start;
   scroll-margin-top: var(--plan-head, 2rem); /* snap under the sticky weekday header, not behind it */
   content-visibility: auto;
-  contain-intrinsic-size: auto var(--plan-row, 9.5rem);
+  contain-intrinsic-size: auto var(--plan-row, 13.5rem);
 }
 .plan-agenda-week {
   scroll-snap-align: start;
@@ -44,3 +44,16 @@
 .plan-dragging {
   opacity: 0.4;
 }
+
+/* The RPE slider in the item modal (EffortLog.tsx): a gradient track and a white thumb; faded until logged. */
+.rpe-range { -webkit-appearance: none; appearance: none; height: 1.25rem; background: transparent; cursor: pointer; }
+.rpe-range::-webkit-slider-runnable-track { height: 6px; border-radius: 9999px; background: var(--rpe-track); }
+.rpe-range::-moz-range-track { height: 6px; border-radius: 9999px; background: var(--rpe-track); }
+.rpe-range::-webkit-slider-thumb { -webkit-appearance: none; margin-top: -7px; width: 20px; height: 20px; border-radius: 9999px; background: #fff; border: 1px solid rgb(0 0 0 / 0.15); box-shadow: 0 1px 3px rgb(0 0 0 / 0.3); }
+.rpe-range::-moz-range-thumb { width: 20px; height: 20px; border-radius: 9999px; background: #fff; border: 1px solid rgb(0 0 0 / 0.15); box-shadow: 0 1px 3px rgb(0 0 0 / 0.3); }
+.rpe-range:focus-visible { outline: none; }
+.rpe-range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px var(--ring, #3b82f6); }
+.rpe-unset::-webkit-slider-runnable-track { opacity: 0.35; }
+.rpe-unset::-moz-range-track { opacity: 0.35; }
+.rpe-unset::-webkit-slider-thumb { opacity: 0.6; }
+.rpe-unset::-moz-range-thumb { opacity: 0.6; }

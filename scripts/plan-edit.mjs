@@ -22,6 +22,7 @@ import { connect } from '../src/db/neon.mjs';
 import { pushWeek } from '../src/lib/calendar-sync/push.mjs';
 import { followWorkout } from '../src/lib/lift/follow-plan.mjs';
 import { SKIP_REASONS, cleanReason } from '../src/lib/plan/skip.mjs';
+import { feedbackLine } from '../src/lib/plan/feedback.mjs';
 
 const [cmd, a, b, ...rest] = process.argv.slice(2).filter((x) => x !== '--no-calendar' && x !== '--push-lift');
 const noCalendar = process.argv.includes('--no-calendar');
@@ -118,6 +119,11 @@ if (cmd === 'show') {
     const flags = [r.status === 'skipped' && `SKIPPED${r.skip_reason ? ` (${r.skip_reason})` : ''}`, r.edited_at && 'changed on the web/CLI', r.adapted_from && `adapted, before: ${JSON.stringify(r.adapted_from)}`].filter(Boolean).join('; ');
     console.log(`${r.id}  ${day(r.scheduled_date)} ${r.start_time ?? '--:--'}  ${r.title} (${r.intensity ?? '-'}, ${r.duration ?? '?'} min, ${r.tss ?? '?'} TSS)${flags ? `  [${flags}]` : ''}`);
   }
+  // How the week's workouts felt, as Paolo logged them in the workout window (feel 1–5, RPE 1–10, comment).
+  const felt = await sql`SELECT date, title, item, feel, rpe, comment FROM workout_feedback
+    WHERE user_id = ${user.id} AND date >= ${week}::date AND date < ${week}::date + 7 ORDER BY date`.catch(() => []);
+  if (felt.length) console.log('How it went:');
+  for (const f of felt) console.log(`  ${day(f.date)}  ${f.title ?? f.item}: ${feedbackLine(f)}`);
 } else if (cmd === 'move') {
   if (!a || !DATE.test(b ?? '')) fail('move <workoutId> YYYY-MM-DD');
   const w = await workout(a);

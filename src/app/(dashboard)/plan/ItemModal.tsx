@@ -8,7 +8,6 @@ import type { Item } from './ItemPreview';
 import ActivityModal from './ActivityModal';
 import LiftModal from './LiftModal';
 import PlannedModal from './PlannedModal';
-import { StepContext } from './ModalParts';
 
 type Props = {
   item: Item;
@@ -31,7 +30,7 @@ type Props = {
 /**
  * The calendar's item modal, in a Strava style with the TrainingPeaks data: the main numbers, planned against
  * completed, the load change, zones and peak curves, laps and the stream charts. A done item links to its full
- * page. ← and → step to the previous and next item.
+ * page. The ← and → keys step to the previous and next item.
  */
 export default function ItemModal({ item, onClose, onStep, canStep, onCopy, weather, onLiftChanged, onEdited, onSkip }: Props) {
   useEffect(() => {
@@ -66,7 +65,6 @@ export default function ItemModal({ item, onClose, onStep, canStep, onCopy, weat
           }}
           className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-background shadow-2xl outline-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-[0.98] sm:inset-auto sm:left-1/2 sm:top-1/2 sm:h-[min(52rem,calc(100dvh-3rem))] sm:w-[min(76rem,calc(100vw-3rem))] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:border"
         >
-          <StepContext.Provider value={{ onStep, prev: canStep.prev, next: canStep.next }}>
           {activityId ? (
             <ActivityModal key={`a-${activityId}`} id={activityId} planned={planned} onClose={onClose} />
           ) : liftId ? (
@@ -74,7 +72,6 @@ export default function ItemModal({ item, onClose, onStep, canStep, onCopy, weat
           ) : planned ? (
             <PlannedModal key={planned.id} w={planned} onClose={onClose} onCopy={onCopy} wx={weather?.[planned.date]} onLiftChanged={onLiftChanged} onEdited={onEdited} onSkip={onSkip} />
           ) : null}
-          </StepContext.Provider>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

@@ -2,6 +2,7 @@
 
 import { Dumbbell } from 'lucide-react';
 import SportIcon from '@/components/SportIcon';
+import { MiniWorkoutChart } from '@/components/workouts/WorkoutChart';
 import ComplianceMark, { levelStyle } from '@/components/plan/ComplianceMark';
 import { cn } from '@/lib/utils';
 import { sport } from '@/lib/sports';
@@ -53,7 +54,7 @@ function PlannedChip({ w, actual, roomy, onOpen }: { w: CalendarWorkout; actual:
       onDragEnd={(e) => e.currentTarget.classList.remove('plan-dragging')}
       className={cn(
         chipBase,
-        roomy ? 'py-1.5' : 'h-[34px] shrink-0',
+        roomy ? 'py-1.5' : w.steps ? 'h-[60px] shrink-0' : 'h-[40px] shrink-0',
         filled ? 'plan-done shadow-sm' : 'border-dashed border-[var(--viz-axis)] bg-transparent',
         draggable && 'cursor-grab hover:shadow-md active:cursor-grabbing'
       )}
@@ -80,6 +81,7 @@ function PlannedChip({ w, actual, roomy, onOpen }: { w: CalendarWorkout; actual:
             plannedText || sport(w.sport).label
           )}
         </span>
+        {w.steps && <MiniWorkoutChart workout={w.steps} className={cn('mt-1 block w-full text-[var(--viz-ink-2)]', roomy ? 'h-6' : 'h-5')} />}
       </button>
     </div>
   );
@@ -92,7 +94,7 @@ function ActivityChip({ a, roomy, onOpen }: { a: CalendarActivity; roomy: boolea
       type="button"
       onClick={onOpen}
       title={`${a.name}\n${text}\nCompleted, not planned.`}
-      className={cn(chipBase, 'text-left', roomy ? 'py-1.5' : 'h-[34px] shrink-0', 'plan-done shadow-sm hover:shadow-md', chipFocus, 'rounded-[5px]')}
+      className={cn(chipBase, 'text-left', roomy ? 'py-1.5' : 'h-[40px] shrink-0', 'plan-done shadow-sm hover:shadow-md', chipFocus, 'rounded-[5px]')}
       style={{ borderLeftColor: sport(a.sport).color, '--chip-tint': 'var(--plan-good)' } as React.CSSProperties}
     >
       <span className="flex min-w-0 items-center gap-1">
@@ -113,7 +115,7 @@ function LiftChip({ l, a, roomy, onOpen }: { l: CalendarLift; a: CalendarActivit
       type="button"
       onClick={onOpen}
       title={`${l.name}\n${l.setsLogged} sets logged in Lift`}
-      className={cn(chipBase, 'text-left', roomy ? 'py-1.5' : 'h-[34px] shrink-0', 'plan-done shadow-sm hover:shadow-md', chipFocus, 'rounded-[5px]')}
+      className={cn(chipBase, 'text-left', roomy ? 'py-1.5' : 'h-[40px] shrink-0', 'plan-done shadow-sm hover:shadow-md', chipFocus, 'rounded-[5px]')}
       style={{ borderLeftColor: sport('strength').color, '--chip-tint': 'var(--plan-good)' } as React.CSSProperties}
     >
       <span className="flex min-w-0 items-center gap-1">

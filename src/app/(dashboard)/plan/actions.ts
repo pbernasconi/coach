@@ -13,6 +13,8 @@ import { cookieTimeZone } from '@/lib/plan/timezone';
 import { todayIn } from '@/lib/plan/week.mjs';
 import { weeksAfterRemove } from '@/lib/plan/remove.mjs';
 import { cleanNewWorkout } from '@/lib/plan/create.mjs';
+import { cleanFeedback } from '@/lib/plan/feedback.mjs';
+import { loadFeedback, saveFeedback, type Feedback } from '@/lib/plan/feedback';
 import { loadActivity, loadActivityContext, type ActivityContext, type ActivityView } from '@/lib/activity/queries';
 import { loadLiftModel } from '@/lib/lift-dashboard/queries';
 import { sessionDetail } from '@/lib/lift-dashboard/stats.mjs';
@@ -187,4 +189,17 @@ export async function liftLibraryAction() {
 export async function loadHealthGlance(date: string): Promise<DayGlance | null> {
   if (!DATE.test(date)) return null;
   return dayGlance(await loadDay(await user(), date));
+}
+
+/** How a workout felt, for the item modal: the item's own row, else one logged on its planned workout. */
+export async function loadFeedbackAction(items: string[], planActivityId: string | null): Promise<Feedback | null> {
+  const userId = await user();
+  return loadFeedback(userId, items.map(String).slice(0, 3), planActivityId ? String(planActivityId) : null);
+}
+
+export async function saveFeedbackAction(input: Record<string, unknown>): Promise<Feedback | { error: string }> {
+  const userId = await user();
+  const f = cleanFeedback(input);
+  if ('error' in f) return { error: String(f.error) };
+  return saveFeedback(userId, f as Parameters<typeof saveFeedback>[1]);
 }

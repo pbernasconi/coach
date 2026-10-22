@@ -12,14 +12,18 @@ import { LIFT_MARKER } from '@/lib/plan/lift-plan.mjs';
 import { zonesFor } from '@/lib/plan/zones.mjs';
 import type { CalendarWorkout } from '@/lib/plan/month';
 import type { DayWeather } from '@/lib/plan/weather';
-import { Card as PCard, Forecast, KeyTargets, Structure, ZoneTime } from './PlannedDetails';
+import { Card as PCard, Forecast, Structure, ZoneTime } from './PlannedDetails';
 import LiftView, { liftStats } from './LiftView';
 import { liftHref } from './ItemPreview';
-import DevicesPanel from './DevicesPanel';
+import SyncStatus from './SyncStatus';
+import EffortLog from './EffortLog';
 import { Description, Header, Hero, StatusChip, longDay, type HeroStat } from './ModalParts';
 import { EditWorkout } from './CreateWorkout';
 import SkipWorkout from './SkipWorkout';
 import { SKIP_LABEL } from '@/lib/plan/skip.mjs';
+
+/** Today on this device, as YYYY-MM-DD. */
+const todayLocal = () => new Date().toLocaleDateString('en-CA');
 
 // ---------------------------------------------------------------------------------------------------------------
 // A planned workout that is not done yet
@@ -40,6 +44,8 @@ export default function PlannedModal({ w, onClose, onCopy, wx, onLiftChanged, on
   // With the Lift session shown set by set, the text copy of the sets (scripts/lift-plan.mjs) is left out.
   const text = w.lift && w.description ? w.description.split(LIFT_MARKER)[0].trim() : w.description;
   const plan = w.steps ? totals(w.steps as never) : null;
+  // How it went: for any workout from today back (a future one has nothing to log yet).
+  const effort = w.date <= todayLocal() && <EffortLog item={`plan:${w.id}`} date={w.date} title={plainTitle(w.title)} planActivityId={w.id} />;
   return (
     <>
       <Header
@@ -54,6 +60,7 @@ export default function PlannedModal({ w, onClose, onCopy, wx, onLiftChanged, on
               <span className="hidden text-xs text-[var(--viz-ink-2)] sm:inline">{(SKIP_LABEL as Record<string, string>)[w.skipReason] ?? w.skipReason}</span>
             )}
             {onSkip && <SkipWorkout w={w} onSkip={onSkip} />}
+            <SyncStatus w={w} />
             {onEdited && (
               <button
                 type="button"
@@ -101,11 +108,7 @@ export default function PlannedModal({ w, onClose, onCopy, wx, onLiftChanged, on
             onChanged={onLiftChanged ? () => onLiftChanged(w.date) : undefined}
             extra={
               <>
-                {w.why && (
-                  <PCard title="Why">
-                    <p className="text-sm leading-relaxed text-[var(--viz-ink-2)]">{w.why}</p>
-                  </PCard>
-                )}
+                {effort}
                 {text && <Description title="Notes" text={text} />}
                 <Link href={liftHref(w.lift.id)} className="block rounded-xl border px-4 py-3 text-sm font-medium text-[var(--viz-ink)] hover:bg-accent/50">
                   Open the session in full →
@@ -116,12 +119,11 @@ export default function PlannedModal({ w, onClose, onCopy, wx, onLiftChanged, on
         ) : (
         <div className="grid gap-4 p-4 sm:p-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
           <div className="space-y-4">
-            {w.steps && <Structure workout={w.steps} />}
-            {text ? <Description title={w.steps ? 'Notes' : 'The workout'} text={text} /> : !w.steps && <p className="text-sm text-muted-foreground">No description.</p>}
+            {w.steps ? <Structure workout={w.steps} notes={text} /> : text ? <Description title="The workout" text={text} /> : <p className="text-sm text-muted-foreground">No description.</p>}
           </div>
           <div className="space-y-4">
-            {w.steps && <KeyTargets workout={w.steps} />}
             {w.steps && <ZoneTime workout={w.steps} />}
+            {effort}
             {!w.steps && w.intensity && !w.lift && (
               <PCard title="Intensity">
                 <p className="text-sm text-[var(--viz-ink)]">{w.intensity}</p>
@@ -140,13 +142,7 @@ export default function PlannedModal({ w, onClose, onCopy, wx, onLiftChanged, on
                 </ul>
               </PCard>
             )}
-            {w.why && (
-              <PCard title="Why">
-                <p className="text-sm leading-relaxed text-[var(--viz-ink-2)]">{w.why}</p>
-              </PCard>
-            )}
             {wx && <Forecast w={wx} sport={w.sport} />}
-            {w.steps && <DevicesPanel w={w} />}
           </div>
         </div>
         )}

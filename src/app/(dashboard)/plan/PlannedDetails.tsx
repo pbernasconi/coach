@@ -1,7 +1,8 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { CloudRain, Target, Thermometer, Wind } from 'lucide-react';
+import { ChevronRight, CloudRain, Thermometer, Wind } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@kobo/web';
 import WorkoutChart, { ZONE_COLOR } from '@/components/workouts/WorkoutChart';
 import WorkoutSteps from '@/components/workouts/WorkoutSteps';
 import { cn } from '@/lib/utils';
@@ -9,8 +10,8 @@ import { clock, flatten, keyTargets, stepSeconds, stepZone, totals } from '@/lib
 import type { StructuredWorkout } from '@/lib/plan/queries';
 import type { DayWeather } from '@/lib/plan/weather';
 
-// Parts of the item modal for a planned workout: the structure with a time axis, the time in each zone, the main
-// targets, and the forecast for the day.
+// Parts of the item modal for a planned workout: the workout (main targets, chart, steps, notes), the time in each
+// zone, and the forecast for the day.
 
 type Step = { kind: string; count?: number; steps?: Step[]; duration: { type: string; s?: number; m?: number }; target: { type: string; low?: number; high?: number }; notes?: string };
 
@@ -28,24 +29,33 @@ export function Card({ title, note, children, className }: { title: ReactNode; n
 
 const zoneOfStep = (s: Step, sport: string) => stepZone(s as never, sport) as string;
 
-/** The interval chart with a time axis under it, then the steps. */
-export function Structure({ workout }: { workout: StructuredWorkout }) {
+/**
+ * The workout in one card: the main work in a line each, the interval chart (watts or beats up the side, time along
+ * the bottom), every step, and the coach's notes folded away under them.
+ */
+export function Structure({ workout, notes }: { workout: StructuredWorkout; notes?: string | null }) {
   const t = totals(workout as never) as { seconds: number; minutes: number; tss: number; if: number };
   const total = t.seconds || 1;
   const every = total > 3 * 3600 ? 3600 : total > 5400 ? 1800 : 900;
   const ticks = Array.from({ length: Math.floor(total / every) + 1 }, (_, i) => i * every).filter((s) => s <= total);
+  const lines = keyTargets(workout as never) as { text: string; zone: string }[];
   return (
-    <Card title="Structure" note={`${clock(t.seconds)} · ${t.tss} TSS · IF ${t.if.toFixed(2)}`}>
-      <div className="rounded-lg bg-muted/40 px-3 pb-1 pt-3">
-        <div className="relative">
-          <WorkoutChart workout={workout} />
-          <span className="absolute right-0 top-0 rounded bg-background/80 px-1 text-[10px] text-[var(--viz-muted)]">
-            {workout.sport === 'ride' ? 'FTP' : 'LTHR'}
-          </span>
-        </div>
-        <div className="relative mt-1 h-4 text-[10px] tabular-nums text-[var(--viz-muted)]">
+    <Card title="Workout" note={`${clock(t.seconds)} · ${t.tss} TSS · IF ${t.if.toFixed(2)}`}>
+      {lines.length > 0 && (
+        <ul className="mb-3 space-y-1.5">
+          {lines.map((l, i) => (
+            <li key={i} className="flex gap-2.5 text-sm">
+              <span className="mt-1 h-3 w-1.5 shrink-0 rounded-full" style={{ background: ZONE_COLOR[l.zone] }} aria-hidden />
+              <span className="font-medium tabular-nums text-[var(--viz-ink)]">{l.text}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="rounded-lg bg-muted/40 px-3 pb-1 pt-5">
+        <WorkoutChart workout={workout} />
+        <div className="relative ml-10 mt-1 h-4 text-[10px] tabular-nums text-[var(--viz-muted)]">
           {ticks.map((s) => (
-            <span key={s} className="absolute -translate-x-1/2 first:translate-x-0" style={{ left: `${(s / total) * 100}%` }}>
+            <span key={s} className="absolute -translate-x-1/2 first:translate-x-0 last:-translate-x-full" style={{ left: `${(s / total) * 100}%` }}>
               {s === 0 ? '0' : clock(s).replace(/:00$/, '')}
             </span>
           ))}
@@ -54,6 +64,15 @@ export function Structure({ workout }: { workout: StructuredWorkout }) {
       <div className="mt-3">
         <WorkoutSteps workout={workout} />
       </div>
+      {notes && (
+        <Collapsible className="mt-3 border-t pt-2">
+          <CollapsibleTrigger className="group flex w-full items-center gap-1 rounded py-1 text-xs font-medium text-[var(--viz-muted)] hover:text-[var(--viz-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <ChevronRight aria-hidden className="h-3.5 w-3.5 transition-transform group-data-[state=open]:rotate-90" />
+            Coach notes
+          </CollapsibleTrigger>
+          <CollapsibleContent className="whitespace-pre-wrap pb-1 pl-[1.125rem] pt-1 text-[13px] leading-relaxed text-[var(--viz-ink-2)]">{notes}</CollapsibleContent>
+        </Collapsible>
+      )}
     </Card>
   );
 }
@@ -80,24 +99,6 @@ export function ZoneTime({ workout }: { workout: StructuredWorkout }) {
             </span>
             <span className="block font-semibold tabular-nums text-[var(--viz-ink)]">{by[z] ? clock(by[z]).replace(/:00$/, '') : '–'}</span>
             <span className="block tabular-nums text-[var(--viz-muted)]">{Math.round((by[z] / total) * 100)}%</span>
-          </li>
-        ))}
-      </ul>
-    </Card>
-  );
-}
-
-/** The work of the workout in one line each: "6 × 5:00 at 269–291 W, 2:00 easy". */
-export function KeyTargets({ workout }: { workout: StructuredWorkout }) {
-  const lines = keyTargets(workout as never) as { text: string; zone: string }[];
-  if (!lines.length) return null;
-  return (
-    <Card title={<><Target aria-hidden className="h-4 w-4" /> The work</>}>
-      <ul className="space-y-2">
-        {lines.map((l, i) => (
-          <li key={i} className="flex gap-2.5 text-sm">
-            <span className="mt-1 h-3 w-1.5 shrink-0 rounded-full" style={{ background: ZONE_COLOR[l.zone] }} aria-hidden />
-            <span className="tabular-nums text-[var(--viz-ink)]">{l.text}</span>
           </li>
         ))}
       </ul>

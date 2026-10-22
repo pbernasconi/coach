@@ -21,6 +21,7 @@ import { loadBodyspecStatus } from '@/lib/vitals/bodyspec-api';
 import { addDays, mondayOf, todayIn } from '@/lib/plan/week.mjs';
 import { loadCoachingNotes, loadStatus, loadTargets } from '@/lib/status';
 import { loadLibrary, loadMonth, loadRange } from '@/lib/plan/month';
+import { loadFeedback } from '@/lib/plan/feedback';
 import { loadLiftWeeks } from '@/lib/plan/week-api';
 import { loadPmc } from '@/lib/performance/projection';
 import { loadPeakPerformances, loadRecentPeaks } from '@/lib/performance/peaks';
@@ -69,6 +70,7 @@ export async function runChecks(now = new Date(), { migrations = true }: { migra
     check('week (next)', () => loadWeek(userId, addDays(monday, 7), today)),
     check('month', () => loadMonth(userId, today.slice(0, 7), today)),
     check('workout library', () => loadLibrary(userId)),
+    check('workout feedback', () => loadFeedback(userId, ['plan:health-check'], 'health-check')),
     check('plan proposal', () => openProposal(userId)),
     check('fitness projection', () => loadPmc(userId, today)),
     check('peak performances', () => loadPeakPerformances(userId, today)),
