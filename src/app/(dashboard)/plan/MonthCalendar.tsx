@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-import { Check, ChevronDown, ChevronUp, Library, Minus, X } from 'lucide-react';
+import { Check, ChevronDown, ChevronUp, Library, X } from 'lucide-react';
 import LegendPopover from '@/components/plan/LegendPopover';
 import { useHotkeys } from '@/components/hotkeys/HotkeysProvider';
 import { Button } from '@/components/ui/button';
@@ -303,26 +303,22 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <h1 className="min-w-[10.5rem] text-2xl font-semibold tracking-tight text-[var(--viz-ink)]" aria-live="polite">{monthTitle(month)}</h1>
         <span className="hidden items-center gap-3 text-xs text-[var(--viz-muted)] xl:flex">
-          <span className="inline-flex items-center gap-1.5">
-            <span className="inline-flex h-3.5 w-6 items-center justify-end rounded-[4px] border bg-card pr-0.5 shadow-sm">
-              <Check aria-hidden className="h-2.5 w-2.5 text-[var(--plan-good)]" strokeWidth={3} />
+          {(
+            [
+              ['var(--plan-good)', Check, 'Done'],
+              ['var(--plan-partial)', Check, 'Partly done'],
+              ['var(--plan-missed)', X, 'Not done'],
+            ] as const
+          ).map(([tint, Icon, label]) => (
+            <span key={label} className="inline-flex items-center gap-1.5">
+              <span className="plan-done inline-flex h-3.5 w-6 items-center justify-end rounded-[4px] border pr-0.5" style={{ '--chip-tint': tint } as React.CSSProperties}>
+                <Icon aria-hidden className="h-2.5 w-2.5" style={{ color: tint }} strokeWidth={3} />
+              </span>
+              {label}
             </span>
-            Completed
-          </span>
+          ))}
           <span className="inline-flex items-center gap-1.5">
             <span className="h-3.5 w-6 rounded-[4px] border border-dashed border-[var(--viz-axis)]" /> Planned
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="inline-flex h-3.5 w-6 items-center justify-end rounded-[4px] border border-dashed border-[var(--plan-missed)]/60 pr-0.5">
-              <X aria-hidden className="h-2.5 w-2.5 text-[var(--plan-missed)]" strokeWidth={3} />
-            </span>
-            Missed
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="inline-flex h-3.5 w-6 items-center justify-end rounded-[4px] border border-dashed border-[var(--viz-axis)] pr-0.5 opacity-60">
-              <Minus aria-hidden className="h-2.5 w-2.5 text-[var(--plan-idle)]" strokeWidth={3} />
-            </span>
-            Skipped
           </span>
         </span>
         <div className="ml-auto flex items-center gap-1.5">

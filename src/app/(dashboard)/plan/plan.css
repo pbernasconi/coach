@@ -35,14 +35,11 @@
   contain-intrinsic-size: auto 16rem;
 }
 /* Completed chips are filled cards; planned, missed and skipped ones are outlines only (ItemChips.tsx).
-   A done planned workout is tinted by its compliance colour, in light and dark. */
+   Done is light green, partly done light yellow, not done (missed or skipped) light red; planned is a dashed
+   outline. In light and dark. */
 .plan-done {
   background: color-mix(in srgb, var(--chip-tint, transparent) 16%, hsl(var(--card)));
   border-color: color-mix(in srgb, var(--chip-tint, transparent) 45%, transparent);
-}
-.plan-filled {
-  background: hsl(var(--card));
-  border-color: hsl(var(--border));
 }
 .plan-dragging {
   opacity: 0.4;

@@ -7,10 +7,8 @@ import { levelStyle } from './ComplianceMark';
 
 const LEVELS: [string, string][] = [
   ['good', '80–120 % of the planned time'],
-  ['partial', '50–80 % or 120–150 %'],
-  ['off', 'Under 50 % or over 150 %'],
-  ['missed', 'A past day, not done'],
-  ['skipped', 'Skipped on purpose, with why'],
+  ['partial', 'Under 80 % or over 120 %'],
+  ['missed', 'Missed or skipped (with why)'],
   ['planned', 'Still to do'],
 ];
 
@@ -49,11 +47,11 @@ export default function LegendPopover({ placeName }: { placeName: string }) {
             <h3 className="font-semibold text-[var(--viz-ink)]">Chips</h3>
             <div className="flex items-center gap-2">
               <span className="h-5 w-10 rounded-[5px] border border-dashed border-[var(--viz-axis)] [border-left:3px_solid_var(--sport-ride)]" />
-              <span className="text-[var(--viz-ink-2)]">Planned, missed or skipped (outline)</span>
+              <span className="text-[var(--viz-ink-2)]">Planned, still to do (dashed outline)</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="h-5 w-10 rounded-[5px] border bg-card shadow-sm [border-left:3px_solid_var(--sport-ride)]" />
-              <span className="text-[var(--viz-ink-2)]">Completed (filled, ✓). The edge is the sport colour.</span>
+              <span className="plan-done h-5 w-10 rounded-[5px] border shadow-sm [border-left:3px_solid_var(--sport-ride)]" style={{ '--chip-tint': 'var(--plan-good)' } as React.CSSProperties} />
+              <span className="text-[var(--viz-ink-2)]">Done, partly done or not done (filled in its status colour). The edge is the sport colour.</span>
             </div>
           </section>
           <section className="space-y-1">

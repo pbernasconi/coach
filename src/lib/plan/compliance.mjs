@@ -3,22 +3,23 @@
 //
 // The ratio is completed / planned. Duration comes first (as TrainingPeaks), TSS when a duration is missing on
 // either side.
-//   good    80–120 %                 (green)
-//   partial 50–80 % or 120–150 %     (yellow)
-//   off     under 50 % or over 150 % (orange)
+//   good    80–120 %                 (green, "Done")
+//   partial 50–80 % or 120–150 %     (yellow, "Partly done")
+//   off     under 50 % or over 150 % (yellow, "Partly done": still a session done)
 //   done    done, but nothing to compare (green, no ratio)
-//   missed  a past day with no match (red)
-//   skipped, rest, today, planned    (grey)
+//   missed  a past day with no match (red, "Not done")
+//   skipped skipped on purpose       (red, "Not done"; the reason is kept, src/lib/plan/skip.mjs)
+//   rest, today, planned             (grey)
 
 export const LEVELS = ['good', 'partial', 'off', 'done', 'missed', 'skipped', 'rest', 'today', 'planned'];
 
 export const LEVEL_LABEL = {
-  good: 'On target',
-  partial: 'Partly on target',
-  off: 'Far off target',
+  good: 'Done',
+  partial: 'Partly done',
+  off: 'Partly done',
   done: 'Done',
-  missed: 'Missed',
-  skipped: 'Skipped',
+  missed: 'Not done',
+  skipped: 'Not done',
   rest: 'Rest',
   today: 'Today',
   planned: 'Planned',

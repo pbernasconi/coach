@@ -132,5 +132,5 @@ test('a rest day reads "Rest" in every state but skipped', () => {
     assert.equal(item.stateLabel, 'Rest');
     assert.equal(item.compliance, null);
   }
-  assert.equal(weekItem(workout({ sport: 'rest', state: 'skipped', compliance: complianceOf({}, 'skipped', null, { rest: true }) }), sports).stateLabel, 'Skipped');
+  assert.equal(weekItem(workout({ sport: 'rest', state: 'skipped', compliance: complianceOf({}, 'skipped', null, { rest: true }) }), sports).stateLabel, 'Not done');
 });
