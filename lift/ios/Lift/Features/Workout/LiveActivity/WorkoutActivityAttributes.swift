@@ -52,6 +52,18 @@ nonisolated struct WorkoutActivitySet: Codable, Hashable, Sendable {
     var reps: String?
 }
 
+extension WorkoutActivitySet {
+    /// "100 kg × 5", "12 reps" without a weight, "100 kg" without reps; the set's title with neither.
+    var loadText: String {
+        switch (weight, reps) {
+        case (let weight?, let reps?): "\(weight) \(unit) × \(reps)"
+        case (let weight?, nil): "\(weight) \(unit)"
+        case (nil, let reps?): String(localized: "\(reps) reps")
+        case (nil, nil): title
+        }
+    }
+}
+
 /// A set's dot in the current exercise's row.
 nonisolated enum WorkoutActivityDot: String, Codable, Hashable, Sendable {
     case planned

@@ -2,10 +2,10 @@ import KoboComponents
 import KoboTokens
 import SwiftUI
 
-/// Dumb view: the session header with its clock, one section per exercise, the rest bar and the set editor (SCR-2).
-/// Ticking a set brings that set into view, clear of the rest bar, and tapping the rest bar's clock goes back to it.
-/// When the rest runs out the bar turns to the next set and brings that one into view instead. Haptics: a tap for each
-/// of the last three seconds, then a success.
+/// Dumb view: the session header, one section per exercise, the dock pinned at the bottom (Start, then the clock, the set
+/// to do now and the rest) and the set editor (SCR-2). Ticking a set brings that set into view, clear of the dock, and
+/// tapping the dock's set goes back to it. When the rest runs out the dock turns to the next set and brings it into
+/// view. Haptics: a tap for each of the last three seconds, then a success.
 struct WorkoutContent: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let state: WorkoutState
@@ -57,32 +57,16 @@ struct WorkoutContent: View {
         .navigationTitle(Text(verbatim: title))
         .navigationBarTitleDisplayMode(.inline)
         .workoutOptions(state: state, send: send)
-        // Glass style: no bar material behind it. The rest bar brings its own opaque panel.
-        .pinnedFooter(style: .glass, isPresented: state.rest != nil || ready != nil) { restBar(proxy) }
+        // Glass style: no bar material behind it. The dock brings its own opaque panel.
+        .pinnedFooter(style: .glass, isPresented: state.dock != nil) {
+            if let dock = state.dock {
+                WorkoutDock(phase: dock, send: send) { focus($0, proxy) }
+            }
+        }
         .modifier(WorkoutEditorSheets(state: state, send: send))
     }
 
-    @ViewBuilder
-    private func restBar(_ proxy: ScrollViewProxy) -> some View {
-        if let rest = state.rest {
-            RestBar(
-                rest: rest,
-                setLabel: restLabel(rest),
-                onFocus: { focus(rest.setID, proxy) },
-                onExtend: { send(.restExtendTapped) },
-                onSkip: { send(.restSkipTapped) }
-            )
-        } else if let ready {
-            RestReadyBar(
-                ready: ready,
-                onFocus: { focus(ready.setID, proxy) },
-                onLog: { send(.setLogTapped(ready.setID)) },
-                onDismiss: { send(.restReadyDismissed) }
-            )
-        }
-    }
-
-    /// The "rest over" bar, while its set is still planned (not logged, skipped or removed some other way).
+    /// The "rest over" state, while its set is still planned (not logged, skipped or removed some other way).
     private var ready: RestReady? {
         guard let ready = state.ready, case .loaded(let workout) = state.workout, workout.isPlanned(ready.setID)
         else { return nil }
@@ -93,11 +77,6 @@ struct WorkoutContent: View {
     private func focus(_ setID: UUID?, _ proxy: ScrollViewProxy) {
         guard let setID else { return }
         withAnimation(reduceMotion ? nil : .snappy) { proxy.scrollTo(setID, anchor: Self.focusAnchor) }
-    }
-
-    private func restLabel(_ rest: RestTimer) -> String? {
-        guard case .loaded(let workout) = state.workout, let setID = rest.setID else { return nil }
-        return workout.restLabel(for: setID)
     }
 
     /// The session title in the inline navigation bar, which keeps the page compact.
@@ -166,7 +145,6 @@ private struct WorkoutBody: View {
                     }
                 }
                 SegmentedProgress(done: workout.loggedSets, goal: workout.totalSets, accessibilityLabel: "Sets logged")
-                WorkoutClockRow(workout: workout, send: send)
                 WorkoutSessionNotes(note: workout.note, warmUpNote: workout.warmUpNote) { send(.sessionNoteTapped) }
             }
             ForEach(workout.exercises) { exercise in
