@@ -21,15 +21,20 @@ export default function HealthBoard({ b }: { b: Board }) {
   const [hover, setHover] = useState<number | null>(null);
   const s = b.series;
   const common = { days: b.days, coverage: b.coverage, hover, onHover: setHover };
-  const avg = (v: (number | null)[]) => {
-    const xs = v.filter((x): x is number => x !== null);
-    return xs.length ? xs.reduce((a, c) => a + c, 0) / xs.length : null;
-  };
-  const sleepAvg = avg(s.sleep);
   const rhrNormal = b.stats.rhr.normal;
-  const steps = avg(s.steps);
   const sleepTop = Math.max(8, ...s.sleep.map((v, i) => Math.ceil(((v ?? 0) + (s.awake[i] ?? 0)) / 240) * 4));
   const sleepTicks = Array.from({ length: sleepTop / 4 + 1 }, (_, i) => i * 240);
+  // Days that can have a value: the window minus the days not synced yet.
+  const synced = b.days.filter((d) => b.coverage[d] !== 'pending').length;
+  const recorded = (v: (number | null)[], noun = 'days') => `${v.filter((x) => x !== null).length}/${synced} ${noun}`;
+  const foot = (v: (number | null)[], key: keyof Board['trend'], fmt: (x: number) => string, noun?: string) => {
+    const t = b.trend[key];
+    return {
+      recorded: recorded(v, noun),
+      compare: t && t.avg30 !== null && t.avg90 !== null ? `30d ${fmt(t.avg30)} · 90d ${fmt(t.avg90)}` : null,
+    };
+  };
+  const r0 = (x: number) => String(Math.round(x));
   const soft = (c: string) => `color-mix(in oklab, ${c} 72%, var(--viz-surface))`;
 
   return (
@@ -39,18 +44,19 @@ export default function HealthBoard({ b }: { b: Board }) {
         <DayChart
           {...common}
           title="Sleep"
+          foot={foot(s.sleep, 'sleep', hm, 'nights')}
           goal={{ value: GOALS.sleepMin, label: 'goal 7:30' }}
           info={<>Time asleep, filed under the morning you wake up. Stacked: {(['deep', 'light', 'rem', 'awake'] as const).map((k) => STAGE_STYLE[k].label).join(', ')}.</>}
           kind="stack"
           stack={(['deep', 'light', 'rem', 'awake'] as const).map((k) => ({ values: s[k], color: STAGE_STYLE[k].color, label: k }))}
           readout={(i) => (s.sleep[i] === null ? null : `${hm(s.sleep[i] as number)} h`)}
-          aside={sleepAvg === null ? undefined : `avg ${hm(sleepAvg)}`}
           tickFormat={(v) => `${Math.round(v / 60)}h`}
           ticks={sleepTicks}
         />
         <DayChart
           {...common}
           title="HRV"
+          foot={foot(s.hrv, 'hrv', r0, 'nights')}
           info="Overnight average (RMSSD, ms). Shaded: Garmin's balanced range for you. Amber and red dots: unbalanced or low nights."
           kind="line"
           values={s.hrv}
@@ -61,6 +67,7 @@ export default function HealthBoard({ b }: { b: Board }) {
         <DayChart
           {...common}
           title="Resting HR"
+          foot={foot(s.rhr, 'rhr', r0)}
           info={rhrNormal ? `Beats per minute. Shaded: your normal, ${Math.round(rhrNormal.low)}–${Math.round(rhrNormal.high)} bpm (60 days).` : 'Beats per minute.'}
           kind="line"
           values={s.rhr}
@@ -71,6 +78,7 @@ export default function HealthBoard({ b }: { b: Board }) {
         <DayChart
           {...common}
           title="Sleep score"
+          foot={foot(s.sleepScore, 'sleepScore', r0, 'nights')}
           goal={{ value: GOALS.sleepScore, label: 'good 80' }}
           info="Garmin's 0–100 score for the night. 80+ good, 60–79 fair, under 60 poor."
           kind="bar"
@@ -83,6 +91,7 @@ export default function HealthBoard({ b }: { b: Board }) {
         <DayChart
           {...common}
           title="Body Battery"
+          foot={foot(s.bbHigh, 'bbHigh', r0)}
           goal={{ value: GOALS.bodyBattery, label: 'charged 75' }}
           info="Each bar runs from the day's lowest to its highest Body Battery (0–100)."
           kind="range"
@@ -96,6 +105,7 @@ export default function HealthBoard({ b }: { b: Board }) {
         <DayChart
           {...common}
           title="Training readiness"
+          foot={foot(s.readiness, 'readiness', r0)}
           goal={{ value: GOALS.readiness, label: 'high 75' }}
           info="Garmin's morning score (0–100): 75+ high, 50–74 moderate, 25–49 low."
           kind="bar"
@@ -108,6 +118,7 @@ export default function HealthBoard({ b }: { b: Board }) {
         <DayChart
           {...common}
           title="Stress"
+          foot={foot(s.stress, 'stress', r0)}
           goal={{ value: GOALS.stress, label: 'rest < 25' }}
           info="Garmin's all-day average stress (0–100). Under 25 is rest."
           kind="bar"
@@ -119,6 +130,7 @@ export default function HealthBoard({ b }: { b: Board }) {
         <DayChart
           {...common}
           title="Respiration"
+          foot={foot(s.respiration, 'respiration', (x) => x.toFixed(1), 'nights')}
           info="Average breaths per minute while asleep."
           kind="line"
           values={s.respiration}
@@ -128,6 +140,7 @@ export default function HealthBoard({ b }: { b: Board }) {
         <DayChart
           {...common}
           title="Intensity minutes"
+          foot={foot(s.intensity, 'intensity', r0)}
           goal={{ value: GOALS.intensityPerDay, label: '150/wk pace' }}
           info="Moderate minutes plus vigorous minutes counted twice, as Garmin does. The weekly goal is 150."
           kind="bar"
@@ -140,6 +153,7 @@ export default function HealthBoard({ b }: { b: Board }) {
         <DayChart
           {...common}
           title="Steps"
+          foot={foot(s.steps, 'steps', (x) => `${(Math.round(x / 100) / 10).toFixed(1)}k`)}
           goal={{ value: GOALS.steps, label: '10k' }}
           kind="bar"
           values={s.steps}
@@ -147,7 +161,6 @@ export default function HealthBoard({ b }: { b: Board }) {
           color="var(--viz-axis)"
           tickFormat={(v) => (v >= 1000 ? `${v / 1000}k` : String(v))}
           readout={(i) => (s.steps[i] === null ? null : Math.round(s.steps[i] as number).toLocaleString('en-US'))}
-          aside={steps === null ? undefined : `avg ${Math.round(steps / 100) / 10}k`}
         />
         <DayChart
           {...common}

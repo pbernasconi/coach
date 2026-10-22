@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { boardOf, coverageOf, statOf } from './board.mjs';
+import { boardOf, coverageOf, lastNightOf, statOf, trendOf } from './board.mjs';
 
 const row = (date, metric, value) => ({ date, metric, value });
 const days = ['2026-10-17', '2026-10-18', '2026-10-19', '2026-10-20', '2026-10-21'];
@@ -57,4 +57,38 @@ test('boardOf: one slot per day, empty days null, intensity counts vigorous twic
   assert.equal(b.stats.hrv.latest.value, 99);
   assert.equal(b.stats.weight.change28, -1.5);
   assert.deepEqual(b.counts, { worn: 3, partial: 0, off: 2, pending: 0 });
+});
+
+test('trendOf: the last 30 and 90 days, today included, with counts', () => {
+  const pts = [
+    { date: '2026-07-24', value: 100 }, // 90 days back from 2026-10-21, inside
+    { date: '2026-07-23', value: 1000 }, // 91 days back, outside
+    { date: '2026-09-22', value: 40 }, // inside the 30 days
+    { date: '2026-10-21', value: 50 },
+  ];
+  assert.deepEqual(trendOf(pts, '2026-10-21'), { avg30: 45, n30: 2, avg90: (100 + 40 + 50) / 3, n90: 3 });
+  assert.deepEqual(trendOf([], '2026-10-21'), { avg30: null, n30: 0, avg90: null, n90: 0 });
+});
+
+test('lastNightOf: in, not worn, or waiting', () => {
+  assert.deepEqual(lastNightOf(452, 'worn'), { status: 'in', sleepMin: 452 });
+  assert.equal(lastNightOf(null, 'off').status, 'off');
+  assert.equal(lastNightOf(null, 'pending').status, 'waiting');
+  assert.equal(lastNightOf(null, 'partial').status, 'waiting');
+});
+
+test('boardOf: trends read beyond a 5-day window; intensity counts vigorous twice', () => {
+  const rows = [
+    row('2026-08-01', 'resting_hr_bpm', 50),
+    row('2026-10-20', 'resting_hr_bpm', 44),
+    row('2026-10-21', 'resting_hr_bpm', 42),
+    row('2026-08-01', 'intensity_minutes_vigorous', 10),
+    row('2026-10-21', 'intensity_minutes_moderate', 30),
+    row('2026-10-21', 'sleep_total_min', 450),
+  ];
+  const b = boardOf(rows, { today: '2026-10-21', days: 5, syncedThrough: '2026-10-21' });
+  assert.equal(b.trend.rhr.avg30, 43);
+  assert.equal(b.trend.rhr.n90, 3);
+  assert.equal(b.trend.intensity.avg90, 25);
+  assert.deepEqual(b.lastNight, { status: 'in', sleepMin: 450 });
 });
