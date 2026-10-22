@@ -53,6 +53,7 @@ test('a planned lift: plain title, subtitle, notes above the marker, lower-case 
   assert.equal(item.done, null);
   assert.deepEqual(item.keyTargets, []);
   assert.deepEqual(item.steps, []);
+  assert.deepEqual(item.profile, []);
 });
 
 test('a done ride: compliance, done minutes and TSS from the matched activity, key targets from steps', () => {
@@ -73,6 +74,8 @@ test('a done ride: compliance, done minutes and TSS from the matched activity, k
   assert.deepEqual(item.done, { source: 'strava', activityId: '9', name: 'Morning Ride', minutes: 62, tss: 70, text: '62 min · 70 TSS / 60 min · 45 TSS' });
   assert.deepEqual(item.keyTargets, ['6 × 5:00 at 278–292 W']);
   assert.equal(item.steps.length, 1);
+  assert.equal(item.profile.length, 6);
+  assert.deepEqual(item.profile[0], { seconds: 300, from: 1.08, to: 1.08, zone: 'Z5' });
 });
 
 test('a done lift takes its minutes from the Lift session; a rest day has no compliance', () => {

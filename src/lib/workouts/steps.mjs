@@ -143,6 +143,28 @@ export function zoneOf(t, sport) {
   return 'Z1';
 }
 
+/**
+ * The workout as bars for a small interval chart, as WorkoutChart draws it: one bar per step in order (repeats
+ * expanded), with its seconds (a lap step counts 5:00), its height as a fraction of the anchor (1 = FTP or LTHR; the
+ * start and end of a ramp) and its zone. An open work step reads as Z5, any other open step as Z1 at 0.5.
+ * @returns {{ seconds: number, from: number, to: number, zone: string }[]}
+ */
+export function profileBars(w) {
+  return flatten(w.steps).map((s) => {
+    const seconds = Math.max(stepSeconds(s), s.duration.type === 'lap' ? 300 : 0);
+    const open = s.target.type === 'open' || s.target.type === 'pace';
+    const round = (f) => Math.round(f * 100) / 100;
+    if (open) {
+      const f = s.kind === 'work' ? 1.1 : 0.5;
+      return { seconds, from: f, to: f, zone: s.kind === 'work' ? 'Z5' : 'Z1' };
+    }
+    const mid = intensity(s.target) ?? 0.5;
+    const from = s.ramp ? s.target.low / 100 : mid;
+    const to = s.ramp ? s.target.high / 100 : mid;
+    return { seconds, from: round(from), to: round(to), zone: zoneOf(s.target, w.sport) };
+  });
+}
+
 export function pace(sPerKm) {
   const s = Math.round(sPerKm);
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;

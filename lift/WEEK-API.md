@@ -62,6 +62,10 @@ not port plan logic. Change this file first, then both sides.
                 { "label": "Warm-up", "detail": "10:00 · 157–210 W" },
                 { "label": "6 ×", "detail": "5:00 Work 294–308 W, 3:00 Recovery 126–154 W" }
               ],
+              "profile": [
+                { "seconds": 600, "from": 0.68, "to": 0.68, "zone": "Z2" },
+                { "seconds": 300, "from": 1.13, "to": 1.13, "zone": "Z5" }
+              ],
               "liftSessionId": "ca4f651b-98c7-4765-83a9-07ab74435d69",
               "done": { "source": "strava", "activityId": "16234567890", "name": "Morning Ride", "minutes": 62, "tss": 70, "text": "62 min · 70 TSS / 60 min · 45 TSS" }
             }
@@ -85,7 +89,11 @@ Field rules:
   a done item "On target", "Partly on target", "Far off target" or "Done".
 - `compliance`: `good | partial | off | null` (from `complianceOf`), only for done items.
 - `startTime`, `endTime`, `durationMinutes`, `tss`, `intensity`, `why`, `notes`, `workoutType`, `liftSessionId`,
-  `done`: `null` when unknown. `keyTargets` and `steps`: `[]` when the workout has no structured steps.
+  `done`: `null` when unknown. `keyTargets`, `steps` and `profile`: `[]` when the workout has no structured steps.
+- `profile`: the workout as bars for the row's small interval chart, the web's `WorkoutChart` rules
+  (`profileBars` in `src/lib/workouts/steps.mjs`): one bar per step in order with repeats expanded, `seconds` (a lap
+  step counts 300), `from`/`to` the height as a fraction of FTP or LTHR (equal unless the step is a ramp) and `zone`
+  `Z1`–`Z5` for its colour. `[]` without structured steps (lifts, rest). Builds before it ignore the key.
 - `subtitle`, `stateLabel`, `totals.text`, `keyTargets`, `steps[].label/detail`, `done.text`: display-ready text. The
   phone shows them as they are. Targets are in watts or beats with the athlete's anchors, as on the web.
 - `subtitle`: start time, planned minutes and TSS; the sport label when all three are unknown.

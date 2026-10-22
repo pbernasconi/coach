@@ -7,7 +7,7 @@ import { plainTitle } from './calendar.mjs';
 import { weekColumnMode } from './cells.mjs';
 import { LIFT_MARKER } from './lift-plan.mjs';
 import { addDays, mondayOf, sportOf, todayIn } from './week.mjs';
-import { keyTargets, stepLines } from '../workouts/steps.mjs';
+import { keyTargets, profileBars, stepLines } from '../workouts/steps.mjs';
 
 export const DEFAULT_ZONE = 'America/Los_Angeles';
 export const MAX_WEEKS = 4;
@@ -111,6 +111,7 @@ export function weekItem(w, sports) {
     notes: notesOf(w.description),
     keyTargets: steps ? keyTargets(steps).map((l) => l.text) : [],
     steps: steps ? stepLines(steps) : [],
+    profile: steps ? profileBars(steps) : [],
     liftSessionId: w.liftSessionId ? String(w.liftSessionId).toLowerCase() : null,
     done: match
       ? {
