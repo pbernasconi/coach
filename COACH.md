@@ -20,10 +20,14 @@ Coach plans in a GitHub job (`.github/workflows/plan.yml`) with Claude Code, by 
 (`scripts/plan-cloud/PROMPT.md` points the agent at `.claude/commands/plan.md`):
 
 - **Every Sunday at 08:00 PDT** it plans next week from the data alone.
-- **Any time**, Plan page → **Plan with Coach**: pick next week or the rest of this week (a check-in), and say how you
-  feel, the focus and what to lock. The job starts at once and takes a few minutes.
+- **Any time**, Plan page → **Plan with Coach**: pick next week or the rest of this week (a check-in). The dialog
+  shows what Coach sees (fitness, form, recent weeks, readiness, how sessions felt, skips, the next event, the week's
+  calendar and weather) and asks how you feel (pre-filled from the data), time available, days off, gym sessions,
+  the focus and notes. The job starts at once and takes a few minutes.
 
-The plan comes back as a proposal on the Plan page: **Review** shows the week and the coach's summary. **Accept**
+The plan comes back as a proposal on the Plan page: **Review** shows the week as a /plan week row (weather, the
+same cards, the projected end-of-week fitness), each session's reason, the key decisions and their trade-offs, and
+what to watch (the plan JSON's `review`, `src/lib/plan/review.mjs`). **Accept**
 writes it into Coach (the same import as `/plan`; workouts you changed on the web stay) and onto Google Calendar,
 then `plan-apply.yml` plans the Lift sessions and puts the runs on Garmin. **Reject** changes nothing. Nothing reaches
 your calendar before Accept: the profile holds calendar text from other people, and the review is the gate.
