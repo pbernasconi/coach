@@ -36,32 +36,41 @@ All files are in the current directory (the repository):
      the plan in Coach).
 5. Stop. Do not edit any other file.
 
+## Weather
+
+`profile.md` has the forecast per day and place (it follows travel). Use it like a coach:
+
+- Outdoor long rides and runs go on the best days of the week; move them rather than ride in rain or strong wind.
+- Rain, wind over ~25 km/h, smoke or heat: swap a ride to Zwift or a run to the treadmill, or move it a day.
+- Heat (over ~28 °C) is extra load: shorten or go early, and count it in the week's TSS budget.
+- When the weather moved or changed a session, say so in that session's `why` or in a decision.
+
 ## The review Paolo reads
 
-Paolo reviews the week on a calendar. Write like a coach talking to his athlete: short, specific, numbers from the
-profile, no filler ("It's important to…", "This week we will…"), no restating the calendar. Coach shows fitness,
-form and TSS itself, so don't list them; use them only as reasons.
+Paolo reviews the week on his calendar view. He wants it terse: a coach's notes, not an essay. Numbers from the
+profile, no filler ("It's important to…", "This week we will…"), no restating what the calendar already shows.
+Coach shows time, TSS, fitness and form itself, so don't list them.
 
-- Each event's `why`: at most 90 characters, the reason for this session on this day, tied to the data or the
-  week's shape. Not a description of the session. Good: "Opener 2 days before the test; legs were heavy Tue (RPE 8)."
+- Each event's `why`: at most 60 characters, the reason for this session on this day. Good: "Opener 2 days out from
+  the test." "Dry and calm: best day for the long ride."
 - `review`:
 
 ```json
 {
-  "headline": "≤120 chars: the week in one line. e.g. 10k test week: fresh legs Friday, volume on the weekend.",
-  "reasoning": ["2–4 bullets, ≤200 chars each: what the data says and what you did about it. Cite the numbers: CTL trend, form, the last weeks' TSS, how sessions felt (RPE/feel), sleep and readiness, skips, the next event."],
+  "headline": "≤80 chars: the week in one line. e.g. 10k test Friday; volume on the weekend.",
+  "reasoning": ["2–3 bullets, ≤120 chars each: what the data says and what you did about it, with the numbers (CTL trend, form, how sessions felt, sleep, skips, the next event, the weather)."],
   "decisions": [
-    { "title": "≤80 chars, the choice: Test on Friday, not Saturday",
-      "why": "≤200 chars: why this over the alternative",
-      "tradeoff": "≤200 chars: what it costs or what was given up. e.g. Threshold B slips a week." }
+    { "title": "≤50 chars: Test Friday, not Saturday",
+      "why": "≤100 chars: why this over the alternative",
+      "tradeoff": "≤90 chars: what it costs. e.g. Threshold B slips a week." }
   ],
-  "watch": ["0–3 items, ≤160 chars: what could change the plan this week and what to do then. e.g. Sleep under 6 h by Thu → drop Thursday's spin."]
+  "watch": ["0–2 items, ≤90 chars: a trigger and what to do. e.g. Sleep < 6 h by Thu → drop Thursday's spin."]
 }
 ```
 
-Give 2 to 4 decisions: the real choices this week (what was cut, moved, held back or pushed, the order of hard
-days, strength vs endurance, a test or event, Paolo's answers). A decision with no trade-off is not a decision;
-leave it out.
+Give 2 or 3 decisions: the real choices this week (what was cut, moved, held back or pushed, the order of hard
+days, strength vs endurance, a test or event, the weather, Paolo's answers). A decision with no trade-off is not a
+decision; leave it out.
 
 ## Safety
 

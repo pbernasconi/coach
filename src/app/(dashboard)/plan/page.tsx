@@ -51,7 +51,7 @@ export default async function PlanPage({ searchParams }: { searchParams: Promise
   const openAt = weekAnchor ?? (monthParam && MONTH.test(monthParam) ? anchor : topWeekFor(anchor, bounds.earliest));
   return (
     <div data-smoke="plan">
-      <CoachPlanner initial={proposal} thisWeek={mondayOf(today)} nextWeek={addDays(mondayOf(today), 7)} today={today} outlook={outlook} />
+      <CoachPlanner initial={proposal} thisWeek={mondayOf(today)} nextWeek={addDays(mondayOf(today), 7)} today={today} outlook={outlook} weather={weather} />
       <MonthCalendar
         anchor={anchor}
         openAt={openAt}

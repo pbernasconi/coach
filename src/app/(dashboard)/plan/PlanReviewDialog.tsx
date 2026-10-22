@@ -2,28 +2,30 @@
 
 import { useEffect, useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeftRight, ArrowRight, Eye, Moon } from 'lucide-react';
+import { ArrowLeftRight, Eye, Moon } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import CalendarCard from '@/components/plan/CalendarCard';
+import { AgendaDayLabel, CalendarDayHead, dayCellClass } from '@/components/plan/CalendarDay';
 import SportIcon from '@/components/SportIcon';
+import WeatherBadge from '@/components/plan/WeatherBadge';
 import WorkoutChart from '@/components/workouts/WorkoutChart';
 import { cn } from '@/lib/utils';
 import { dur } from '@/lib/plan/cells.mjs';
 import { plainTitle } from '@/lib/plan/calendar.mjs';
-import { formWord } from '@/lib/plan/planning-context.mjs';
 import { summaryBlocks } from '@/lib/plan/review.mjs';
 import { addDays } from '@/lib/plan/week.mjs';
-import type { CalendarWorkout } from '@/lib/plan/month';
+import type { CalendarWorkout, WeekSummary } from '@/lib/plan/month';
 import type { WeekOutlook } from '@/lib/plan/planning-context';
 import type { Proposal, ProposalRow } from '@/lib/plan/proposals';
+import type { DayWeather } from '@/lib/plan/weather';
+import { COLS } from './calendarShared';
 import CoachDialog, { SectionTitle } from './CoachDialog';
+import { WeekColumn, WeekTotals } from './WeekColumn';
 import { acceptProposalAction, proposalOutlookAction, rejectProposalAction } from './coachActions';
 
 const weekTitle = (monday: string) =>
   `Week of ${new Date(`${monday}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })}`;
-const DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const signed = (n: number) => (n > 0 ? `+${Math.round(n)}` : `${Math.round(n)}`);
 
 /** A proposal row as a calendar workout, so the shared CalendarCard draws it as on /plan (upcoming, grey chart). */
 function asWorkout(r: ProposalRow, i: number): CalendarWorkout {
@@ -36,17 +38,24 @@ function asWorkout(r: ProposalRow, i: number): CalendarWorkout {
   };
 }
 
+type ReviewDay = { date: string; sessions: CalendarWorkout[]; rest: CalendarWorkout | null };
+
 /**
- * The review of the coach's plan: the week as a calendar with each session's reason, the load it adds (from Coach's
- * own numbers), the key decisions and their trade-offs, and what to watch. Accept writes it; Reject changes nothing.
+ * The review of the coach's plan: the week as a /plan week row (day heads with the weather, the same cards, the
+ * week column with the end-of-week fitness Coach projects), each session's reason, the key decisions and their
+ * trade-offs, and what to watch. Accept writes it; Reject changes nothing.
  */
 export default function PlanReviewDialog({
   proposal,
+  today,
+  weather,
   outlook: preloaded = null,
   onClose,
   onDecided,
 }: {
   proposal: Proposal;
+  today: string;
+  weather: Record<string, DayWeather>;
   /** Loaded with the page; without it the dialog asks for it. */
   outlook?: WeekOutlook | null;
   onClose: () => void;
@@ -67,19 +76,37 @@ export default function PlanReviewDialog({
     };
   }, [proposal.id, preloaded]);
 
-  const days = useMemo(() => {
+  const days: ReviewDay[] = useMemo(() => {
     const workouts = proposal.rows.map(asWorkout);
     return Array.from({ length: 7 }, (_, i) => {
       const date = addDays(proposal.weekStart, i);
       const all = workouts.filter((w) => w.date === date);
-      const rest = all.find((w) => w.sport === 'rest') ?? null;
       const sessions = all.filter((w) => w.sport !== 'rest').sort((a, b) => (a.startTime ?? '99').localeCompare(b.startTime ?? '99'));
-      return { date, dow: DOW[i], sessions, rest, tss: Math.round(sessions.reduce((n, w) => n + (w.tss ?? 0), 0)) };
+      return { date, sessions, rest: all.find((w) => w.sport === 'rest') ?? null };
     });
   }, [proposal]);
+  const summary: WeekSummary = useMemo(() => {
+    const sessions = proposal.rows.filter((r) => r.activityType !== 'rest');
+    const weekEnd = addDays(proposal.weekStart, 6);
+    return {
+      monday: proposal.weekStart,
+      done: { min: 0, km: 0, tss: 0, count: 0, liftSessions: 0, bySport: {} },
+      planned: {
+        min: sessions.reduce((n, r) => n + (r.duration ?? 0), 0),
+        tss: outlook?.plannedTss ?? Math.round(sessions.reduce((n, r) => n + (r.tss ?? 0), 0)),
+        count: sessions.length,
+        done: 0,
+        missed: 0,
+      },
+      fitness: outlook?.end ? { date: weekEnd, ...outlook.end } : null,
+    };
+  }, [proposal, outlook]);
+
   const selected = proposal.rows.find((r) => r.id === open) ?? null;
+  const toggle = (id: string) => setOpen((o) => (o === id ? null : id));
   const review = proposal.review;
   const legacy = review ? [] : summaryBlocks(proposal.summary);
+  const wx = (d: string) => (d >= today ? weather[d] : undefined);
 
   const accept = () =>
     start(async () => {
@@ -103,48 +130,45 @@ export default function PlanReviewDialog({
   return (
     <CoachDialog
       wide
-      title={`Coach's plan · ${weekTitle(proposal.weekStart)}`}
+      title={weekTitle(proposal.weekStart)}
       subtitle={review?.headline ?? undefined}
       onClose={onClose}
       footer={
         <>
-          <span className="mr-auto hidden text-xs text-[var(--viz-muted)] sm:block">
-            Accept adds it to Coach, your calendar, Lift and Garmin. Workouts you changed on the web stay.
-          </span>
           <Button variant="outline" disabled={pending} onClick={reject}>Reject</Button>
-          <Button disabled={pending} onClick={accept} className="bg-[#fc4c02] text-white hover:opacity-90">{pending ? 'Saving…' : 'Accept'}</Button>
+          <Button disabled={pending} onClick={accept} title="Adds it to Coach, your calendar, Lift and Garmin" className="bg-[#fc4c02] text-white hover:opacity-90">
+            {pending ? 'Saving…' : 'Accept'}
+          </Button>
         </>
       }
     >
-      <Outlook outlook={outlook} rows={proposal.rows} />
-
       <section>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-7 sm:gap-0 sm:overflow-hidden sm:rounded-lg sm:border">
-          {days.map((d, i) => (
-            <div key={d.date} className={cn('flex min-w-0 flex-col gap-1.5 rounded-lg border p-2 sm:rounded-none sm:border-0', i > 0 && 'sm:border-l')}>
-              <div className="flex items-baseline justify-between text-[11px]">
-                <span className="font-semibold uppercase tracking-wide text-[var(--viz-muted)]">
-                  {d.dow} <span className="text-[var(--viz-ink-2)]">{Number(d.date.slice(8))}</span>
-                </span>
-                {d.tss > 0 && <span className="tabular-nums text-[var(--viz-muted)]">{d.tss} TSS</span>}
-              </div>
-              {d.sessions.map((w) => (
-                <div key={w.id} className="min-w-0">
-                  <CalendarCard
-                    item={{ kind: 'planned', key: w.id, w, actual: null }}
-                    action={{ onClick: () => setOpen(open === w.id ? null : w.id) }}
-                  />
-                  {w.why && <p className="mt-1 line-clamp-4 px-0.5 text-[11px] leading-[15px] text-[var(--viz-ink-2)]">{w.why}</p>}
-                </div>
-              ))}
-              {!d.sessions.length && (
-                <div className="flex items-start gap-1 px-0.5 text-[11px] leading-[15px] text-[var(--viz-muted)]">
-                  <Moon aria-hidden className="mt-px h-3 w-3 shrink-0" />
-                  <span>Rest{d.rest?.why ? ` · ${d.rest.why}` : ''}</span>
-                </div>
-              )}
+        {/* Tablet and desktop: one /plan week row. */}
+        <div className={cn(COLS, 'hidden overflow-hidden rounded-lg border sm:grid')}>
+          {days.map((d) => (
+            <div key={d.date} className={cn(dayCellClass(d.date, today), 'gap-1 pb-1.5')}>
+              <CalendarDayHead date={d.date} today={today} weather={wx(d.date)} weekdayLabel />
+              {d.sessions.map((w) => <Session key={w.id} w={w} open={open === w.id} onOpen={toggle} />)}
+              {!d.sessions.length && <RestNote rest={d.rest} />}
             </div>
           ))}
+          <WeekColumn s={summary} monday={proposal.weekStart} today={today} />
+        </div>
+        {/* Phone: the agenda. */}
+        <div className="overflow-hidden rounded-lg border sm:hidden">
+          <header className="border-b bg-[var(--viz-surface)] px-3 py-2"><WeekTotals s={summary} plannedOnly /></header>
+          <ul className="divide-y">
+            {days.map((d) => (
+              <li key={d.date} className="flex gap-3 px-3 py-2">
+                <AgendaDayLabel date={d.date} today={today} />
+                <div className="min-w-0 flex-1 space-y-1.5">
+                  {wx(d.date) && <div className="flex justify-end"><WeatherBadge w={wx(d.date)!} date={d.date} /></div>}
+                  {d.sessions.map((w) => <Session key={w.id} w={w} open={open === w.id} onOpen={toggle} roomy />)}
+                  {!d.sessions.length && <RestNote rest={d.rest} />}
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
         {selected && <SessionDetail row={selected} onClose={() => setOpen(null)} />}
       </section>
@@ -154,13 +178,13 @@ export default function PlanReviewDialog({
           <SectionTitle>Key decisions &amp; trade-offs</SectionTitle>
           <div className="grid gap-2 md:grid-cols-2">
             {review.decisions.map((d, i) => (
-              <div key={i} className="rounded-lg border bg-card p-3">
+              <div key={i} className="rounded-lg border bg-card px-3 py-2.5">
                 <div className="text-sm font-semibold text-[var(--viz-ink)]">{d.title}</div>
-                {d.why && <p className="mt-1 text-sm leading-snug text-[var(--viz-ink-2)]">{d.why}</p>}
+                {d.why && <p className="mt-0.5 text-[13px] leading-snug text-[var(--viz-ink-2)]">{d.why}</p>}
                 {d.tradeoff && (
-                  <p className="mt-2 flex gap-1.5 border-t pt-2 text-xs leading-snug text-[var(--viz-ink-2)]">
-                    <ArrowLeftRight aria-hidden className="mt-0.5 h-3 w-3 shrink-0 text-[#fc4c02]" />
-                    <span><span className="font-medium text-[var(--viz-ink)]">Trade-off:</span> {d.tradeoff}</span>
+                  <p className="mt-1.5 flex gap-1.5 text-xs leading-snug text-[var(--viz-ink-2)]">
+                    <ArrowLeftRight aria-label="Trade-off" className="mt-0.5 h-3 w-3 shrink-0 text-[#fc4c02]" />
+                    {d.tradeoff}
                   </p>
                 )}
               </div>
@@ -170,11 +194,11 @@ export default function PlanReviewDialog({
       )}
 
       {review && (review.reasoning.length > 0 || review.watch.length > 0) && (
-        <div className="grid gap-6 md:grid-cols-[3fr_2fr]">
+        <div className="grid gap-5 md:grid-cols-2">
           {review.reasoning.length > 0 && (
             <section>
-              <SectionTitle>Why this week</SectionTitle>
-              <ul className="space-y-1.5 text-sm leading-snug text-[var(--viz-ink-2)]">
+              <SectionTitle>Why</SectionTitle>
+              <ul className="space-y-1 text-[13px] leading-snug text-[var(--viz-ink-2)]">
                 {review.reasoning.map((r, i) => (
                   <li key={i} className="flex gap-2"><span aria-hidden className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-[var(--viz-muted)]" />{r}</li>
                 ))}
@@ -183,8 +207,8 @@ export default function PlanReviewDialog({
           )}
           {review.watch.length > 0 && (
             <section>
-              <SectionTitle>Watch for</SectionTitle>
-              <ul className="space-y-1.5 text-sm leading-snug text-[var(--viz-ink-2)]">
+              <SectionTitle>Watch</SectionTitle>
+              <ul className="space-y-1 text-[13px] leading-snug text-[var(--viz-ink-2)]">
                 {review.watch.map((w, i) => (
                   <li key={i} className="flex gap-2"><Eye aria-hidden className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />{w}</li>
                 ))}
@@ -197,7 +221,7 @@ export default function PlanReviewDialog({
       {legacy.length > 0 && (
         <section>
           <SectionTitle>Coach&apos;s notes</SectionTitle>
-          <dl className="divide-y rounded-lg border text-sm">
+          <dl className="divide-y rounded-lg border text-[13px]">
             {legacy.map((b, i) => (
               <div key={i} className="grid gap-1 px-3 py-2 sm:grid-cols-[9rem_1fr] sm:gap-3">
                 <dt className="font-medium text-[var(--viz-ink)]">{b.title ?? 'Summary'}</dt>
@@ -211,54 +235,26 @@ export default function PlanReviewDialog({
   );
 }
 
-/** The week's load against the last 4 weeks, and fitness and form going in and coming out. */
-function Outlook({ outlook, rows }: { outlook: WeekOutlook | null | undefined; rows: ProposalRow[] }) {
-  const sessions = rows.filter((r) => r.activityType !== 'rest');
-  const min = sessions.reduce((n, r) => n + (r.duration ?? 0), 0);
-  const tss = outlook?.plannedTss ?? Math.round(sessions.reduce((n, r) => n + (r.tss ?? 0), 0));
-  const vsAvg = outlook?.avgTss ? Math.round(((tss - outlook.avgTss) / outlook.avgTss) * 100) : null;
-  const cells: { label: string; value: React.ReactNode; note: React.ReactNode }[] = [
-    {
-      label: 'Load',
-      value: <>{tss} <span className="text-xs font-normal text-[var(--viz-muted)]">TSS</span></>,
-      note: outlook?.avgTss ? `${vsAvg != null && vsAvg >= 0 ? '+' : ''}${vsAvg} % vs ${outlook.avgTss}/wk avg` : outlook === undefined ? '…' : 'No recent weeks',
-    },
-    { label: 'Time', value: dur(min) || '0:00', note: `${sessions.length} sessions` },
-    {
-      label: 'Fitness',
-      value: outlook?.start && outlook.end ? <Arrow from={Math.round(outlook.start.ctl)} to={Math.round(outlook.end.ctl)} /> : '–',
-      note: outlook?.start && outlook.end ? `CTL ${signed(outlook.end.ctl - outlook.start.ctl)} by Sunday` : outlook === undefined ? '…' : 'No load history',
-    },
-    {
-      label: 'Form',
-      value: outlook?.start && outlook.end ? <Arrow from={signed(outlook.start.tsb)} to={signed(outlook.end.tsb)} /> : '–',
-      note: outlook?.end ? `${formWord(outlook.end.tsb)} on Sunday` : outlook === undefined ? '…' : '',
-    },
-  ];
+/** A planned session: the /plan card, with the coach's reason under it (two lines; the detail has it all). */
+function Session({ w, open, onOpen, roomy = false }: { w: CalendarWorkout; open: boolean; onOpen: (id: string) => void; roomy?: boolean }) {
   return (
-    <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border sm:grid-cols-4">
-      {cells.map((c) => (
-        <div key={c.label} className="min-w-0 bg-card px-3 py-2.5">
-          <div className="text-[11px] text-[var(--viz-muted)]">{c.label}</div>
-          <div className="text-lg font-semibold leading-7 tabular-nums text-[var(--viz-ink)]">{c.value}</div>
-          <div className="truncate text-xs text-[var(--viz-ink-2)]">{c.note}</div>
-        </div>
-      ))}
+    <div className={cn('min-w-0 rounded-[6px]', open && 'ring-2 ring-[#fc4c02]/60')}>
+      <CalendarCard item={{ kind: 'planned', key: w.id, w, actual: null }} roomy={roomy} action={{ onClick: () => onOpen(w.id) }} />
+      {w.why && <p className="mt-0.5 line-clamp-2 px-0.5 text-[11px] leading-[14px] text-[var(--viz-muted)]">{w.why}</p>}
     </div>
   );
 }
 
-function Arrow({ from, to }: { from: React.ReactNode; to: React.ReactNode }) {
+function RestNote({ rest }: { rest: CalendarWorkout | null }) {
   return (
-    <span className="inline-flex items-center gap-1">
-      <span className="text-[var(--viz-muted)]">{from}</span>
-      <ArrowRight aria-label="to" className="h-3.5 w-3.5 text-[var(--viz-muted)]" />
-      {to}
-    </span>
+    <div className="flex items-start gap-1 px-0.5 text-[11px] leading-[14px] text-[var(--viz-muted)]" title={rest?.why ?? undefined}>
+      <Moon aria-hidden className="mt-px h-3 w-3 shrink-0" />
+      <span className="line-clamp-2">Rest{rest?.why ? ` · ${rest.why}` : ''}</span>
+    </div>
   );
 }
 
-/** The picked session: time, load, the reason and the full coach's description, with its chart. */
+/** The picked session: time, load, the reason and the coach's full description, with its chart. */
 function SessionDetail({ row, onClose }: { row: ProposalRow; onClose: () => void }) {
   const day = new Date(`${row.date}T12:00:00Z`).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', timeZone: 'UTC' });
   return (
@@ -273,9 +269,9 @@ function SessionDetail({ row, onClose }: { row: ProposalRow; onClose: () => void
         </div>
         <button type="button" onClick={onClose} className="rounded-md px-2 py-1 text-xs text-[var(--viz-muted)] hover:bg-accent">Close</button>
       </div>
-      {row.intensity && <p className="mt-2 text-sm text-[var(--viz-ink)]">{row.intensity}</p>}
+      {row.why && <p className="mt-2 text-[13px] text-[var(--viz-ink)]">{row.why}</p>}
       {row.steps && <WorkoutChart workout={row.steps} height={96} className="mt-2" />}
-      {row.description && <p className="mt-2 whitespace-pre-wrap text-sm leading-snug text-[var(--viz-ink-2)]">{row.description}</p>}
+      {row.description && <p className="mt-2 whitespace-pre-wrap text-[13px] leading-snug text-[var(--viz-ink-2)]">{row.description}</p>}
     </div>
   );
 }

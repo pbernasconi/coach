@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import type { Proposal } from '@/lib/plan/proposals';
 import type { WeekOutlook } from '@/lib/plan/planning-context';
+import type { DayWeather } from '@/lib/plan/weather';
 import { openProposalAction, rejectProposalAction } from './coachActions';
 import PlanRequestDialog from './PlanRequestDialog';
 import PlanReviewDialog from './PlanReviewDialog';
@@ -25,6 +26,7 @@ export default function CoachPlanner({
   nextWeek,
   today,
   outlook = null,
+  weather,
 }: {
   initial: Proposal | null;
   thisWeek: string;
@@ -32,6 +34,8 @@ export default function CoachPlanner({
   today: string;
   /** The initial proposal's load outlook, loaded with the page. */
   outlook?: WeekOutlook | null;
+  /** The forecast by day (/plan's), for the day heads. */
+  weather: Record<string, DayWeather>;
 }) {
   const [proposal, setProposal] = useState(initial);
   const [asking, setAsking] = useState(false);
@@ -78,6 +82,7 @@ export default function CoachPlanner({
           thisWeek={thisWeek}
           nextWeek={nextWeek}
           today={today}
+          weather={weather}
           onClose={() => setAsking(false)}
           onSent={(p) => {
             setAsking(false);
@@ -86,7 +91,7 @@ export default function CoachPlanner({
         />
       )}
       {reviewing && proposal?.status === 'proposed' && (
-        <PlanReviewDialog proposal={proposal} outlook={proposal.id === initial?.id ? outlook : null} onClose={() => setReviewing(false)} onDecided={() => { setReviewing(false); setProposal(null); }} />
+        <PlanReviewDialog proposal={proposal} today={today} weather={weather} outlook={proposal.id === initial?.id ? outlook : null} onClose={() => setReviewing(false)} onDecided={() => { setReviewing(false); setProposal(null); }} />
       )}
     </div>
   );

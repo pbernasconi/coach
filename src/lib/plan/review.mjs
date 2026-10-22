@@ -15,12 +15,12 @@ const list = (v, max) => (Array.isArray(v) ? v.slice(0, max) : []);
  */
 export function cleanReview(input) {
   if (!input || typeof input !== 'object') return null;
-  const reasoning = list(input.reasoning, 5).map((s) => clip(s, 240)).filter(Boolean);
-  const decisions = list(input.decisions, 5)
-    .map((d) => ({ title: clip(d?.title, 100), why: clip(d?.why, 240), tradeoff: clip(d?.tradeoff, 240) }))
+  const reasoning = list(input.reasoning, 4).map((s) => clip(s, 200)).filter(Boolean);
+  const decisions = list(input.decisions, 4)
+    .map((d) => ({ title: clip(d?.title, 80), why: clip(d?.why, 200), tradeoff: clip(d?.tradeoff, 200) }))
     .filter((d) => d.title);
-  const watch = list(input.watch, 5).map((s) => clip(s, 200)).filter(Boolean);
-  const headline = clip(input.headline, 160);
+  const watch = list(input.watch, 3).map((s) => clip(s, 160)).filter(Boolean);
+  const headline = clip(input.headline, 120);
   if (!headline && !reasoning.length && !decisions.length && !watch.length) return null;
   return { headline, reasoning, decisions, watch };
 }

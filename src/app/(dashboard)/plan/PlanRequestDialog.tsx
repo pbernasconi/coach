@@ -7,6 +7,8 @@ import { cn } from '@/lib/utils';
 import { addDays } from '@/lib/plan/week.mjs';
 import type { PlanningContext, PlanningFact } from '@/lib/plan/planning-context';
 import type { Proposal } from '@/lib/plan/proposals';
+import type { DayWeather } from '@/lib/plan/weather';
+import { WeatherIcon } from '@/components/plan/WeatherBadge';
 import CoachDialog, { Choice, SectionTitle } from './CoachDialog';
 import { openProposalAction, planningContextAction, requestPlanAction } from './coachActions';
 
@@ -46,6 +48,7 @@ export default function PlanRequestDialog({
   thisWeek,
   nextWeek,
   today,
+  weather,
   onClose,
   onSent,
   preload,
@@ -55,6 +58,7 @@ export default function PlanRequestDialog({
   thisWeek: string;
   nextWeek: string;
   today: string;
+  weather: Record<string, DayWeather>;
   onClose: () => void;
   onSent: (p: Proposal | null) => void;
 }) {
@@ -113,7 +117,6 @@ export default function PlanRequestDialog({
   return (
     <CoachDialog
       title="Plan with Coach"
-      subtitle="Coach plans from your data. Answer only what it can't know."
       onClose={onClose}
       footer={
         <>
@@ -173,7 +176,7 @@ export default function PlanRequestDialog({
         <SectionTitle>Your week</SectionTitle>
         <Choice
           label="How do you feel?"
-          hint={!feelTouched && suggestedFeel ? `From your data${data?.suggested.feelWhy ? `: ${data.suggested.feelWhy}` : ''}` : undefined}
+          hint={!feelTouched && data?.suggested.feelWhy ? data.suggested.feelWhy : undefined}
           options={FEELS.map((f) => ({ id: f.id, label: <><span aria-hidden className={cn('h-2 w-2 rounded-full', f.dot)} />{f.label}</> }))}
           value={shownFeel}
           onChange={(v) => {
@@ -183,21 +186,20 @@ export default function PlanRequestDialog({
         />
         <Choice
           label="Time available"
-          hint={data?.suggested.hours ? `You've averaged ${data.suggested.hours} h a week` : 'Empty: Coach decides'}
           options={HOURS.map((h) => ({ id: h, label: `${h} h`, badge: data?.suggested.hours && h === nearest(data.suggested.hours) ? 'avg' : undefined }))}
           value={hours}
           onChange={setHours}
         />
         <fieldset className="space-y-1.5">
           <legend className="flex flex-wrap items-baseline gap-x-2 text-sm font-medium text-[var(--viz-ink)]">
-            Days you can&apos;t train
-            <span className="text-xs font-normal text-[var(--viz-muted)]">Tap to mark. Your calendar is shown under each day.</span>
+            Days off
           </legend>
           <div className="grid grid-cols-7 gap-1">
             {days.map((d, i) => {
               const off = daysOff.includes(d);
               const past = d < today;
               const note = data?.days[d];
+              const wx = d >= today ? weather[d] : undefined;
               return (
                 <button
                   key={d}
@@ -211,10 +213,12 @@ export default function PlanRequestDialog({
                     off ? 'border-rose-300 bg-rose-50 dark:border-rose-900 dark:bg-rose-950/40' : 'hover:bg-accent'
                   )}
                 >
-                  <span className={cn('text-[10px] font-semibold uppercase tracking-wide text-[var(--viz-muted)]', off && 'text-rose-700 line-through dark:text-rose-300')}>
-                    {DOW[i]}
+                  <span className="flex w-full items-center justify-between gap-1">
+                    <span className={cn('text-[10px] font-semibold uppercase tracking-wide text-[var(--viz-muted)]', off && 'text-rose-700 line-through dark:text-rose-300')}>
+                      {DOW[i]} <span className="text-[var(--viz-ink)]">{Number(d.slice(8))}</span>
+                    </span>
+                    {wx && <WeatherIcon w={wx} />}
                   </span>
-                  <span className={cn('text-sm font-medium tabular-nums', off && 'text-rose-700 line-through dark:text-rose-300')}>{Number(d.slice(8))}</span>
                   <span className="w-full truncate text-[10px] text-[var(--viz-muted)]">{off ? 'Off' : note ?? ' '}</span>
                 </button>
               );
@@ -223,10 +227,10 @@ export default function PlanRequestDialog({
         </fieldset>
         <div className="grid gap-4 sm:grid-cols-[auto_1fr]">
           <Choice label="Gym sessions" options={GYM.map((g) => ({ id: g, label: String(g) }))} value={gym} onChange={setGym} />
-          <Choice label="Priority" options={FOCUSES} value={focus} onChange={setFocus} />
+          <Choice label="Focus" options={FOCUSES} value={focus} onChange={setFocus} />
         </div>
         <label className="block space-y-1.5">
-          <span className="block text-sm font-medium text-[var(--viz-ink)]">Anything else?</span>
+          <span className="block text-sm font-medium text-[var(--viz-ink)]">Notes</span>
           <textarea
             value={lock}
             onChange={(e) => setLock(e.target.value)}

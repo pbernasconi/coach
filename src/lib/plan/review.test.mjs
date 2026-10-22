@@ -12,7 +12,7 @@ test('the review is cleaned: decisions need a title, long text is clipped, an em
   assert.equal(r.headline, 'Test week: fresh legs Friday');
   assert.deepEqual(r.reasoning, ['CTL −2/wk']);
   assert.equal(r.decisions.length, 1);
-  assert.equal(r.watch[0].length, 200);
+  assert.equal(r.watch[0].length, 160);
   assert.equal(cleanReview({}), null);
   assert.equal(cleanReview(null), null);
 });

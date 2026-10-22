@@ -3,13 +3,15 @@
 import { memo } from 'react';
 import { Plus } from 'lucide-react';
 import WeatherBadge from '@/components/plan/WeatherBadge';
+import { AgendaDayLabel } from '@/components/plan/CalendarDay';
 import { cn } from '@/lib/utils';
 import { weekColumnMode } from '@/lib/plan/cells.mjs';
 import { addDays } from '@/lib/plan/week.mjs';
 import type { DayWeather } from '@/lib/plan/weather';
-import { hm, longDate, shortDate, weekday, type Handlers, type WeekRow } from './calendarShared';
+import { longDate, shortDate, type Handlers, type WeekRow } from './calendarShared';
 import { DayMenu } from './DayMenu';
 import { Chip } from './ItemChips';
+import { WeekTotals } from './WeekColumn';
 
 // ---------------------------------------------------------------------------------------------------------------
 // Agenda (phones)
@@ -31,18 +33,7 @@ export const AgendaWeek = memo(function AgendaWeek({
       <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b bg-[var(--viz-surface)] px-3 py-2">
         <span className="text-sm font-semibold text-[var(--viz-ink)]">Week of {shortDate(week.monday)}</span>
         {s && weekColumnMode(s, today) === 'empty' && week.monday > today && <span className="text-[11px] text-[var(--viz-muted)]">No plan</span>}
-        {s && weekColumnMode(s, today) !== 'empty' && (
-          <span className="flex flex-wrap gap-x-3 text-[11px] tabular-nums">
-            <span><span className="text-[var(--viz-muted)]">Time </span><span className="text-[var(--viz-ink)]">{hm(s.done.min)}{s.planned.min ? ` / ${hm(s.planned.min)}` : ''}</span></span>
-            <span><span className="text-[var(--viz-muted)]">TSS </span><span className="text-[var(--viz-ink)]">{s.done.tss}{s.planned.tss ? ` / ${s.planned.tss}` : ''}</span></span>
-            {s.fitness && (
-              <span title="Form (TSB) at the end of the week">
-                <span className="text-[var(--viz-muted)]">Form </span>
-                <span className="text-[var(--viz-ink)]">{s.fitness.tsb > 0 ? '+' : ''}{Math.round(s.fitness.tsb)}</span>
-              </span>
-            )}
-          </span>
-        )}
+        {s && weekColumnMode(s, today) !== 'empty' && <WeekTotals s={s} />}
       </header>
       {days.length === 0 ? (
         <p className="px-3 py-3 text-xs text-[var(--viz-muted)]">Nothing this week.</p>
@@ -55,19 +46,7 @@ export const AgendaWeek = memo(function AgendaWeek({
             const wx = d >= today && d <= weatherUntil ? weather[d] : undefined;
             return (
               <li key={d} className={cn('flex gap-3 px-3 py-2', past && 'bg-muted/30', isToday && 'bg-primary/[0.05]')}>
-                <div className="w-9 shrink-0 text-center">
-                  <span className={cn('block text-[10px] font-semibold uppercase tracking-wide', isToday ? 'text-primary' : 'text-[var(--viz-muted)]')}>
-                    {isToday ? 'Today' : weekday(d)}
-                  </span>
-                  <span
-                    className={cn(
-                      'mx-auto grid h-7 w-7 place-items-center rounded-full text-sm font-semibold tabular-nums',
-                      isToday ? 'bg-primary text-primary-foreground' : past ? 'text-[var(--viz-muted)]' : 'text-[var(--viz-ink)]'
-                    )}
-                  >
-                    {Number(d.slice(8))}
-                  </span>
-                </div>
+                <AgendaDayLabel date={d} today={today} />
                 <div className="min-w-0 flex-1 space-y-1.5">
                   <div className="group/day flex items-center justify-end gap-1">
                     {wx && <WeatherBadge w={wx} date={d} />}

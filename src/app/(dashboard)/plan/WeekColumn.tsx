@@ -20,6 +20,8 @@ export function WeekColumn({ s, monday, today }: { s: WeekSummary | null; monday
   if (mode === 'planned') {
     return (
       <div className="flex min-w-0 flex-col gap-1.5 overflow-hidden border-l bg-[var(--viz-surface)] px-2 py-1.5 text-[11px] leading-4" aria-label={`Week of ${shortDate(monday)}, planned`}>
+        {/* A projection (the plan review): fitness, fatigue and form at the end of the week if done as planned. */}
+        {s.fitness && <LoadGrid f={s.fitness} title="End of week, if done as planned" />}
         <div className="text-[9px] font-semibold uppercase tracking-wider text-[var(--viz-muted)]">Planned</div>
         <dl className="grid grid-cols-[auto_1fr] gap-x-2 tabular-nums">
           <dt className="text-[var(--viz-muted)]">Time</dt>
@@ -33,11 +35,6 @@ export function WeekColumn({ s, monday, today }: { s: WeekSummary | null; monday
   }
   const f = s.fitness;
   const sports = Object.entries(s.done.bySport).filter(([, m]) => m > 0).sort((a, b) => b[1] - a[1]);
-  const load: [string, string, string, string][] = [
-    ['Fitness (CTL)', 'Fit', f ? String(Math.round(f.ctl)) : '–', 'var(--viz-ctl)'],
-    ['Fatigue (ATL)', 'Fat', f ? String(Math.round(f.atl)) : '–', 'var(--viz-atl)'],
-    ['Form (TSB)', 'Form', f ? `${f.tsb > 0 ? '+' : ''}${Math.round(f.tsb)}` : '–', 'var(--viz-tsb)'],
-  ];
   const row = (label: string, value: string, planned?: string | null) => (
     <>
       <dt className="text-[var(--viz-muted)]">{label}</dt>
@@ -49,17 +46,7 @@ export function WeekColumn({ s, monday, today }: { s: WeekSummary | null; monday
   );
   return (
     <div className="flex min-w-0 flex-col gap-1.5 overflow-hidden border-l bg-[var(--viz-surface)] px-2 py-1.5 text-[11px] leading-4" aria-label={`Week of ${shortDate(monday)}`}>
-      {f && <div className="grid grid-cols-3 gap-1" title={`On ${shortDate(f.date)}`}>
-        {load.map(([full, short, value, color]) => (
-          <div key={short} title={full} className="min-w-0">
-            <div className="flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-[var(--viz-muted)]">
-              <span className="h-0.5 w-2 shrink-0 rounded-full" style={{ background: color }} />
-              {short}
-            </div>
-            <div className="font-semibold tabular-nums text-[var(--viz-ink)]">{value}</div>
-          </div>
-        ))}
-      </div>}
+      {f && <LoadGrid f={f} title={`On ${shortDate(f.date)}`} />}
       <dl className="grid grid-cols-[auto_1fr] gap-x-2 tabular-nums" title="Done / planned">
         {row('Time', hm(s.done.min), s.planned.min ? hm(s.planned.min) : null)}
         {row('TSS', String(s.done.tss), s.planned.tss ? String(s.planned.tss) : null)}
@@ -84,5 +71,43 @@ export function WeekColumn({ s, monday, today }: { s: WeekSummary | null; monday
         </ul>
       )}
     </div>
+  );
+}
+
+/** Fitness, fatigue and form, each with its chart colour. */
+function LoadGrid({ f, title }: { f: { ctl: number; atl: number; tsb: number }; title: string }) {
+  const load: [string, string, string, string][] = [
+    ['Fitness (CTL)', 'Fit', String(Math.round(f.ctl)), 'var(--viz-ctl)'],
+    ['Fatigue (ATL)', 'Fat', String(Math.round(f.atl)), 'var(--viz-atl)'],
+    ['Form (TSB)', 'Form', `${f.tsb > 0 ? '+' : ''}${Math.round(f.tsb)}`, 'var(--viz-tsb)'],
+  ];
+  return (
+    <div className="grid grid-cols-3 gap-1" title={title}>
+      {load.map(([full, short, value, color]) => (
+        <div key={short} title={full} className="min-w-0">
+          <div className="flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-[var(--viz-muted)]">
+            <span className="h-0.5 w-2 shrink-0 rounded-full" style={{ background: color }} />
+            {short}
+          </div>
+          <div className="font-semibold tabular-nums text-[var(--viz-ink)]">{value}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** The week's totals on one line, done / planned (the phone agenda's week header; the plan review shows `plannedOnly`). */
+export function WeekTotals({ s, plannedOnly = false }: { s: WeekSummary; plannedOnly?: boolean }) {
+  return (
+    <span className="flex flex-wrap gap-x-3 text-[11px] tabular-nums">
+      <span><span className="text-[var(--viz-muted)]">Time </span><span className="text-[var(--viz-ink)]">{plannedOnly ? hm(s.planned.min) : `${hm(s.done.min)}${s.planned.min ? ` / ${hm(s.planned.min)}` : ''}`}</span></span>
+      <span><span className="text-[var(--viz-muted)]">TSS </span><span className="text-[var(--viz-ink)]">{plannedOnly ? s.planned.tss : `${s.done.tss}${s.planned.tss ? ` / ${s.planned.tss}` : ''}`}</span></span>
+      {s.fitness && (
+        <span title="Form (TSB) at the end of the week">
+          <span className="text-[var(--viz-muted)]">Form </span>
+          <span className="text-[var(--viz-ink)]">{s.fitness.tsb > 0 ? '+' : ''}{Math.round(s.fitness.tsb)}</span>
+        </span>
+      )}
+    </span>
   );
 }
