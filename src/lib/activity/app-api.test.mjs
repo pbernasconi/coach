@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  isOutdoor, overviewGrid,
   CHART_POINTS, chartSeries, curveLabel, detailResponse, listResponse, listRow, parseDetailQuery, parseListQuery, percents, shortWhenText,
   simplifyRoute,
 } from './app-api.mjs';
@@ -191,6 +192,10 @@ test('detailResponse: every section in the web order, with display text', () => 
     { label: 'Distance', valueText: '10.23', unit: 'km' }, { label: 'Moving Time', valueText: '52:10' }, { label: 'Pace', valueText: '5:06', unit: '/km' },
   ]);
   assert.equal(r.overview.achievementsText, '1 PR · 2 achievements · 3 kudos');
+  assert.equal(r.overview.grid.length, 6);
+  assert.deepEqual(r.overview.grid.slice(0, 3).map((x) => x.label), ['Distance', 'Pace', 'Moving Time']);
+  assert.equal(r.overview.grid.length + r.overview.more.length, r.overview.big.length + r.overview.small.length);
+  assert.equal(r.header.outdoor, true);
   assert.equal(r.weather.headline, 'Partly cloudy, 14 °C');
   assert.deepEqual(r.equipment.gear, { label: 'Shoes', name: 'Pegasus 41', distanceText: '(412 km)' });
   assert.deepEqual(r.splits.rows.map((x) => x.label), ['1', '0.2']);
@@ -263,4 +268,30 @@ test('detailResponse: a ride with power has the curve, FTP and power zones; a ba
   assert.equal(r.paceHistogram, null);
   assert.deepEqual(r.segments, { ok: false });
   assert.equal(r.header.ok, true);
+});
+
+test('overviewGrid: the sport order first, Relative Effort only in more, six at most', () => {
+  const big = [
+    { label: 'Distance', valueText: '40.1', unit: 'km' }, { label: 'Moving Time', valueText: '1:20:00' },
+    { label: 'Avg Speed', valueText: '30.1', unit: 'km/h' }, { label: 'Relative Effort', valueText: '40' },
+    { label: 'Coach TSS', valueText: '80' },
+  ];
+  const small = [
+    { label: 'Elapsed Time', valueText: '1:22:00' }, { label: 'Avg Power', valueText: '200', unit: 'W' },
+    { label: 'Weighted Avg Power', valueText: '214', unit: 'W' }, { label: 'Calories', valueText: '900' },
+  ];
+  const r = overviewGrid({ big, small }, 'ride');
+  assert.deepEqual(r.grid.map((s) => s.label), ['Distance', 'Moving Time', 'Avg Speed', 'Weighted Avg Power', 'Coach TSS', 'Elapsed Time']);
+  assert.deepEqual(r.more.map((s) => s.label), ['Relative Effort', 'Avg Power', 'Calories']);
+  const few = overviewGrid({ big: [{ label: 'Moving Time', valueText: '30:00' }, { label: 'Relative Effort', valueText: '5' }], small: [] }, 'basic');
+  assert.deepEqual(few.grid.map((s) => s.label), ['Moving Time']);
+  assert.deepEqual(few.more.map((s) => s.label), ['Relative Effort']);
+});
+
+test('isOutdoor: a real track only', () => {
+  const route = [[1, 2], [1.1, 2.1]];
+  assert.equal(isOutdoor({ trainer: false, sportType: 'Ride', route }), true);
+  assert.equal(isOutdoor({ trainer: true, sportType: 'Ride', route }), false);
+  assert.equal(isOutdoor({ trainer: false, sportType: 'VirtualRide', route }), false);
+  assert.equal(isOutdoor({ trainer: false, sportType: 'Run', route: [] }), false);
 });
