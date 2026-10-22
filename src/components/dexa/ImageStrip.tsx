@@ -10,17 +10,18 @@ export type StripImage = { id: string; resultId: string | null; view: ImageView 
 const monthYY = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', year: '2-digit', timeZone: 'UTC' }).replace(' ', " '");
 
 /**
- * Every scan's image side by side, one view at a time (fat by default, where change shows best). A scan without that
- * image shows an empty slot; each image links to its scan.
+ * Every scan's image side by side, one view at a time (fat by default, where change shows best; tabs only for views
+ * that have images). A scan without that image shows an empty slot; each image links to its scan.
  */
 export default function ImageStrip({ scans, images }: { scans: StripScan[]; images: StripImage[] }) {
-  const has = (v: ImageView) => images.some((i) => i.view === v);
-  const [view, setView] = useState<ImageView>(has('fat') ? 'fat' : (IMAGE_VIEWS.find(has) ?? 'fat'));
+  const views = IMAGE_VIEWS.filter((v) => images.some((i) => i.view === v));
+  const [view, setView] = useState<ImageView>(views.includes('fat') ? 'fat' : (views[0] ?? 'composite'));
   const byScan = new Map(images.filter((i) => i.view === view && i.resultId).map((i) => [i.resultId!, i.id]));
   return (
     <div className="space-y-3">
+      {views.length > 1 && (
       <div role="tablist" aria-label="Image" className="flex flex-wrap gap-1.5">
-        {IMAGE_VIEWS.map((v) => (
+        {views.map((v) => (
           <button
             key={v}
             type="button"
@@ -33,6 +34,7 @@ export default function ImageStrip({ scans, images }: { scans: StripScan[]; imag
           </button>
         ))}
       </div>
+      )}
       <ul className="grid grid-cols-3 gap-2.5 sm:grid-cols-6">
         {scans.map((s) => {
           const id = byScan.get(s.resultId);
@@ -41,9 +43,9 @@ export default function ImageStrip({ scans, images }: { scans: StripScan[]; imag
               <Link href={`/health/dexa/${s.scanDate}`} className="group block space-y-1.5">
                 {id ? (
                   // eslint-disable-next-line @next/next/no-img-element -- a private file behind the owner's session; next/image cannot fetch it
-                  <img src={`/api/dexa/files/${id}`} alt={`${IMAGE_VIEW_LABELS[view]} image, ${s.scanDate}`} loading="lazy" className="aspect-[9/16] w-full rounded-xl bg-black object-contain transition-opacity group-hover:opacity-90" />
+                  <img src={`/api/dexa/files/${id}`} alt={`${IMAGE_VIEW_LABELS[view]} image, ${s.scanDate}`} loading="lazy" className="aspect-[1/2.6] w-full rounded-xl bg-white object-contain ring-1 ring-[var(--viz-grid)] transition-opacity group-hover:opacity-90" />
                 ) : (
-                  <span className="flex aspect-[9/16] w-full items-center justify-center rounded-xl border border-dashed border-[var(--viz-axis)] text-xs text-[var(--viz-muted)]">No image</span>
+                  <span className="flex aspect-[1/2.6] w-full items-center justify-center rounded-xl border border-dashed border-[var(--viz-axis)] text-xs text-[var(--viz-muted)]">No image</span>
                 )}
                 <span className="block text-center text-xs tabular-nums text-[var(--viz-ink-2)]">
                   {monthYY(s.scanDate)}

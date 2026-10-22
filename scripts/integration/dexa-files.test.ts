@@ -1,5 +1,5 @@
 // Uploaded DEXA files (src/lib/vitals/dexa-store.ts) on a real Postgres: a PDF with its text, the same bytes again,
-// an image, reading the bytes back, a wrong type, moving and deleting.
+// an image, reading the bytes back, a wrong type, moving and deleting, and the scan image inside a BodySpec report.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { sql } from '@/db';
@@ -7,17 +7,24 @@ import { UploadError, deleteFile, linkFile, loadFiles, readFile, saveFile, scanF
 
 const user = 'user_dexa_files';
 
-/** A one-page PDF whose text is "Body fat 18.1%". */
-function tinyPdf(): Uint8Array {
-  const objs = [
+/** A one-page PDF with lines of text and, optionally, an RGB image of `image.width` × `image.height`. */
+function tinyPdf(lines: string[] = ['Body fat 18.1%'], image?: { width: number; height: number }): Uint8Array {
+  const xobject = image ? ' /XObject << /Im1 6 0 R >>' : '';
+  const objs: string[] = [
     '<< /Type /Catalog /Pages 2 0 R >>',
     '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
-    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 144] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>',
-    null,
+    `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 400 600] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >>${xobject} >> >>`,
+    '',
     '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
   ];
-  const stream = 'BT /F1 18 Tf 20 60 Td (Body fat 18.1%) Tj ET';
+  const text = lines.map((l, i) => `BT /F1 12 Tf 20 ${560 - i * 20} Td (${l}) Tj ET`).join('\n');
+  const stream = image ? `${text}\nq ${image.width} 0 0 ${image.height} 20 20 cm /Im1 Do Q` : text;
   objs[3] = `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`;
+  if (image) {
+    // Grey pixels, written as hex so the file stays plain text.
+    const hex = '80'.repeat(image.width * image.height * 3);
+    objs.push(`<< /Type /XObject /Subtype /Image /Width ${image.width} /Height ${image.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /ASCIIHexDecode /Length ${hex.length + 1} >>\nstream\n${hex}>\nendstream`);
+  }
   let out = '%PDF-1.4\n';
   const offsets: number[] = [];
   objs.forEach((o, i) => {
@@ -92,6 +99,31 @@ test('scan images take a view from the form or the file name, and a new image ta
   await setFileView(user, named.id, 'bone');
   assert.equal(await view(named.id), 'bone');
   assert.equal(await view(loose.id), null);
+
+  await sql`DELETE FROM dexa_files WHERE user_id = ${user}`;
+  await sql`DELETE FROM dexa_scans WHERE user_id = ${user}`;
+});
+
+test('a BodySpec report PDF files itself under its scan by the date inside it, and gives that scan its composite image', async () => {
+  await sql`DELETE FROM dexa_files WHERE user_id = ${user}`;
+  await sql`DELETE FROM dexa_scans WHERE user_id = ${user}`;
+  await sql`INSERT INTO dexa_scans (result_id, user_id, scanned_at, scan_date) VALUES ('files-r3', ${user}, now(), '2025-04-07'), ('files-r4', ${user}, now(), '2025-08-08')`;
+  const pdf = tinyPdf(['Client Sex Birth Date Intake Height Intake Weight Measured Date', 'Doe, Sam Male 7/22/1993 70.0 in. 187.0 lbs. 4/7/2025'], { width: 90, height: 261 });
+
+  const saved = await saveFile(user, { name: 'report.pdf', contentType: 'application/pdf', data: pdf, resultId: null, note: null });
+  const files = await loadFiles(user);
+  assert.equal(files.find((f) => f.id === saved.id)!.resultId, 'files-r3');
+  const composite = files.find((f) => f.view === 'composite')!;
+  assert.equal(composite.resultId, 'files-r3');
+  assert.equal(composite.contentType, 'image/png');
+  const back = await readFile(user, composite.id);
+  assert.deepEqual([...back!.data.subarray(0, 4)], [0x89, 0x50, 0x4e, 0x47]);
+  assert.equal(back!.data.readUInt32BE(16), 90, 'PNG width');
+  assert.equal(back!.data.readUInt32BE(20), 261, 'PNG height');
+
+  const again = await saveFile(user, { name: 'report.pdf', contentType: 'application/pdf', data: pdf, resultId: null, note: null });
+  assert.equal(again.duplicate, true);
+  assert.equal((await loadFiles(user)).length, 2, 'the same report again adds nothing');
 
   await sql`DELETE FROM dexa_files WHERE user_id = ${user}`;
   await sql`DELETE FROM dexa_scans WHERE user_id = ${user}`;

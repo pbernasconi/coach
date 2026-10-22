@@ -76,6 +76,7 @@ function Scan({ scan, page }: { scan: FullScan; page: DexaPage }) {
   const { index, previous, next } = neighbours(scans, scan.resultId);
   const files = page.files.filter((x) => x.resultId === scan.resultId);
   const otherFiles = files.filter((x) => !(x.kind === 'image' && x.view));
+  const hasImages = files.some((x) => x.kind === 'image' && x.view);
   const d = scan.derived;
   const facts = [
     scan.location?.replace(/^BodySpec\s*-\s*/, ''),
@@ -125,11 +126,14 @@ function Scan({ scan, page }: { scan: FullScan; page: DexaPage }) {
         </div>
       </div>
 
-      <section aria-label="Scan images" className={card}>
-        <ScanImages resultId={scan.resultId} files={files} />
-      </section>
+      {!hasImages && (
+        <section aria-label="Scan images" className={card}>
+          <ScanImages resultId={scan.resultId} files={files} />
+        </section>
+      )}
 
-      <section className={`${card} grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]`}>
+      <section className={`${card} grid gap-6 ${hasImages ? 'lg:grid-cols-[auto_minmax(0,1fr)_minmax(0,1.3fr)]' : 'lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]'}`}>
+        {hasImages && <ScanImages resultId={scan.resultId} files={files} />}
         <HeadlineTiles scan={scan} previous={previous} first={first !== scan ? first : null} />
         <div className="space-y-3">
           <h2 className="font-semibold">Healthy for your age and height</h2>
