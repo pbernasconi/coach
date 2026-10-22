@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   chunkAfter, chunkBefore, chunkToReach, earliestBound, firstWeekOfMonth, initialRange, mergeRange, monthEdges, monthOfWeek,
-  spanWeeks, startWeek,
+  openWeek, spanWeeks, startWeek,
 } from './scroll.mjs';
 
 test('monthOfWeek uses the Thursday', () => {
@@ -18,6 +18,15 @@ test('firstWeekOfMonth and startWeek', () => {
   assert.equal(startWeek('2026-11', '2026-10-21'), '2026-11-02');
   assert.equal(startWeek(undefined, '2026-10-21'), '2026-10-19');
   assert.equal(startWeek('2026-13', '2026-10-21'), '2026-10-19');
+  assert.equal(startWeek('2026-10', '2026-10-22'), '2026-10-19'); // the current month centres on today
+});
+
+test('openWeek: another month opens at its first week, the current month or none at today (one week above)', () => {
+  assert.equal(openWeek('2026-08', '2026-10-22'), '2026-08-03');
+  assert.equal(openWeek('2026-10', '2026-10-22'), '2026-10-12');
+  assert.equal(openWeek(undefined, '2026-10-22'), '2026-10-12');
+  assert.equal(openWeek('bad', '2026-10-22'), '2026-10-12');
+  assert.equal(openWeek(undefined, '2026-10-22', '2026-10-20'), '2026-10-19'); // not above the earliest data
 });
 
 test('earliestBound is the Monday of the first data day', () => {

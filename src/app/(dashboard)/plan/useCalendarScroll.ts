@@ -37,8 +37,9 @@ export function useCalendarScroll({ openAt, range, bounds }: { openAt: string; r
   dataRef.current = data;
   const loadingRef = useRef(false);
   const monthRef = useRef(month);
-  // The first loaded week and its position, to keep the view still when weeks are added above it.
-  const firstRow = useRef<{ monday: string; top: number } | null>(null);
+  // The week at the top of the view and its distance from the scroll top, taken just before a load or a refresh
+  // changes the weeks, so the view can be put back exactly where it was.
+  const anchor = useRef<{ monday: string; offset: number } | null>(null);
   // A week to scroll to once it is on the page (the first render, the arrows, Today).
   const scrollTarget = useRef<{ monday: string; smooth: boolean } | null>({ monday: openAt, smooth: false });
   const failedRef = useRef(failed);
@@ -47,17 +48,30 @@ export function useCalendarScroll({ openAt, range, bounds }: { openAt: string; r
   const snapTimer = useRef(0);
   const first = data.weeks[0];
 
-  // A server refresh (revalidatePath after an action) sends fresh first weeks: merge them in.
-  useEffect(() => {
-    setData((d) => mergeRange(d, range));
-  }, [range]);
-
   /** The rows of the view that shows (grid on tablets and up, agenda on phones). */
   const rows = useCallback((): HTMLElement[] => {
     const view = gridRef.current?.offsetParent ? gridRef.current : agendaRef.current;
     return view ? [...view.querySelectorAll<HTMLElement>('[data-week]')] : [];
   }, []);
   const rowOf = useCallback((monday: string) => rows().find((r) => r.dataset.week === monday) ?? null, [rows]);
+
+  /**
+   * Remembers the week at the top of the view before the weeks change. A pending jump (the first render, Today)
+   * has its own target, so it needs none.
+   */
+  const keepView = useCallback(() => {
+    const el = scrollerRef.current;
+    if (!el || scrollTarget.current) return;
+    const line = el.scrollTop + HEAD_PX;
+    const row = rows().find((r) => r.offsetTop + r.offsetHeight > line);
+    anchor.current = row?.dataset.week ? { monday: row.dataset.week, offset: row.offsetTop - el.scrollTop } : null;
+  }, [rows]);
+
+  // A server refresh (revalidatePath after an action) sends fresh first weeks: merge them in.
+  useEffect(() => {
+    keepView();
+    setData((d) => mergeRange(d, range));
+  }, [range, keepView]);
 
   // Snap is off while the calendar moves the view itself (a jump or a prepend), so the two never fight.
   const resumeSnap = useCallback((after: 'frame' | 'scrollend') => {
@@ -107,28 +121,27 @@ export function useCalendarScroll({ openAt, range, bounds }: { openAt: string; r
     return () => window.removeEventListener('resize', measure);
   }, []);
 
-  // After each data change, before paint: keep the view still when weeks came in above, then do a pending scroll.
+  // After each data change, before paint: put the week that was at the top back in the same place (weeks may have
+  // come in above it), then do a pending scroll. The position is set, not shifted: the browser may already have
+  // moved the view itself (it keeps a snapped row in place), and a shift on top of that pushed the view weeks down.
   useLayoutEffect(() => {
     const el = scrollerRef.current;
     if (!el) return;
-    const prev = firstRow.current;
-    if (prev && prev.monday !== first) {
-      const row = rowOf(prev.monday);
-      if (row) {
-        el.style.scrollSnapType = 'none';
-        el.scrollTop += row.offsetTop - prev.top;
-        resumeSnap('frame');
-      }
+    const kept = anchor.current;
+    anchor.current = null;
+    const keptRow = kept && rowOf(kept.monday);
+    if (kept && keptRow) {
+      el.style.scrollSnapType = 'none';
+      el.scrollTop = keptRow.offsetTop - kept.offset;
+      resumeSnap('frame');
     }
-    const firstEl = rowOf(first);
-    firstRow.current = firstEl ? { monday: first, top: firstEl.offsetTop } : null;
     const target = scrollTarget.current;
     const row = target && rowOf(target.monday);
     if (target && row) {
       scrollTarget.current = null;
       scrollToRow(row, target.smooth);
     }
-  }, [data, first, rowOf, scrollToRow, resumeSnap]);
+  }, [data, rowOf, scrollToRow, resumeSnap]);
 
   const loadChunk = useCallback(async (chunk: { from: string; to: string } | null, side: 'before' | 'after') => {
     if (!chunk || loadingRef.current) return false;
@@ -137,6 +150,7 @@ export function useCalendarScroll({ openAt, range, bounds }: { openAt: string; r
     try {
       const fresh = await fetchWeeks(chunk.from, chunk.to);
       setFailed((f) => ({ ...f, [side]: null }));
+      keepView();
       setData((d) => mergeRange(d, fresh));
       return true;
     } catch (error) {
@@ -147,7 +161,7 @@ export function useCalendarScroll({ openAt, range, bounds }: { openAt: string; r
       loadingRef.current = false;
       setLoading(null);
     }
-  }, []);
+  }, [keepView]);
 
   /** Loads the next chunk when the view is near the top or the bottom of the loaded weeks. */
   const checkEdges = useCallback(() => {

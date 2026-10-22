@@ -28,6 +28,34 @@ export const ROUTE_POINTS = 500;
 export const TOP_SEGMENTS = 15;
 const ID = /^[A-Za-z0-9_-]{1,40}$/;
 
+/** The phone's six headline numbers in order (a list: the first that the activity has); other stats fill the rest. */
+const GRID_ORDER = {
+  run: ['Distance', 'Pace', 'Moving Time', 'Elevation', 'Avg Heart Rate', 'Coach TSS'],
+  ride: ['Distance', 'Moving Time', 'Avg Speed', 'Elevation', ['Weighted Avg Power', 'Avg Power', 'Est. Avg Power'], 'Coach TSS'],
+  basic: ['Moving Time', 'Coach TSS', 'Avg Heart Rate', 'Distance', 'Calories', 'Max Heart Rate'],
+};
+export const GRID_SIZE = 6;
+
+/**
+ * The phone's stat grid: six headline stats in the sport's order (`grid`), and every other stat (`more`), from the
+ * web's tiles (`overviewStats`). Strava's Relative Effort stays in `more`: Coach TSS is the load number.
+ * @param {{ big: Array<{label: string}>, small: Array<{label: string}> }} stats
+ * @param {string} layout  'run' | 'ride' | 'basic'
+ */
+export function overviewGrid({ big, small }, layout) {
+  const all = [...big, ...small];
+  const order = GRID_ORDER[layout] ?? GRID_ORDER.basic;
+  const picked = order.map((want) => [want].flat().map((label) => all.find((s) => s.label === label)).find(Boolean)).filter(Boolean);
+  const fill = all.filter((s) => !picked.includes(s) && s.label !== 'Relative Effort');
+  const grid = [...picked, ...fill].slice(0, GRID_SIZE);
+  return { grid, more: all.filter((s) => !grid.includes(s)) };
+}
+
+/** Outdoors with a real track: the phone leads the page with the map. Not trainer rides and not Zwift's made-up maps. */
+export function isOutdoor(v) {
+  return !v.trainer && !/^Virtual/i.test(String(v.sportType ?? '')) && v.route.length > 1;
+}
+
 export const NOT_LOADED_NOTE = 'Loading details from Strava. Pull to refresh in a minute.';
 
 // ===== Queries =====
@@ -359,6 +387,7 @@ export function detailResponse({ v, context, timeZone, today, now, typeLabel }) 
       place: v.place,
       indoor: v.trainer,
       commute: v.commute,
+      outdoor: isOutdoor(v),
       subtitle: `${when}${v.place ? ` · ${v.place}` : ''} · ${typeText}${v.trainer ? ' · indoor' : ''}${v.commute ? ' · commute' : ''}`,
       description: v.description,
       prevId: v.prevId,
@@ -366,7 +395,10 @@ export function detailResponse({ v, context, timeZone, today, now, typeLabel }) 
       stravaUrl: `https://www.strava.com/activities/${v.stravaId}`,
       fetch: { pending: Boolean(v.fetch.needed), note: v.fetch.note ?? (v.fetch.needed ? NOT_LOADED_NOTE : null) },
     })),
-    overview: section('overview', () => ({ ...overviewStats(v), achievementsText: achievementsText(st) })),
+    overview: section('overview', () => {
+      const stats = overviewStats(v);
+      return { ...stats, ...overviewGrid(stats, v.layout), achievementsText: achievementsText(st) };
+    }),
     weather: section('weather', () => (v.weather ? weatherView(v.weather) : null)),
     equipment: section('equipment', () => (v.device || v.gear ? { device: v.device, gear: gearView(v) } : null)),
     splits: section('splits', () =>

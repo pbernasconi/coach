@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { ownerForSignedInUser } from '@/lib/owner';
 import { safe } from '@/lib/safe';
 import { dataBounds, loadLibrary, loadRange, userSettings } from '@/lib/plan/month';
-import { initialRange, startWeek, topWeekFor } from '@/lib/plan/scroll.mjs';
+import { initialRange, openWeek, startWeek } from '@/lib/plan/scroll.mjs';
 import { cookieTimeZone } from '@/lib/plan/timezone';
 import { loadForecast, placeFrom } from '@/lib/plan/weather';
 import { addDays, mondayOf, todayIn } from '@/lib/plan/week.mjs';
@@ -18,13 +18,12 @@ export const dynamic = 'force-dynamic';
 
 type Search = { week?: string; month?: string; open?: string };
 
-const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 const ITEM = /^[wal]-\S{1,200}$/;
 
 /**
- * The Plan page: one continuous month calendar. It opens at ?month (its first week), at the week of ?week (old
- * week-view links), or around this week. ±4 weeks load here; the client loads more as it scrolls.
+ * The Plan page: one continuous month calendar. It opens at ?month (its first week; the current month opens at
+ * today), at the week of ?week (old week-view links), or around this week. ±4 weeks load here; the client loads more as it scrolls.
  */
 export default async function PlanPage({ searchParams }: { searchParams: Promise<Search> }) {
   const userId = await ownerForSignedInUser();
@@ -48,7 +47,7 @@ export default async function PlanPage({ searchParams }: { searchParams: Promise
   ]);
   // A plan waiting for review: its load outlook now, so the review opens complete.
   const outlook = proposal?.status === 'proposed' ? await safe('plan outlook', () => loadOutlook(userId, proposal), null) : null;
-  const openAt = weekAnchor ?? (monthParam && MONTH.test(monthParam) ? anchor : topWeekFor(anchor, bounds.earliest));
+  const openAt = weekAnchor ?? openWeek(monthParam, today, bounds.earliest);
   return (
     <div data-smoke="plan">
       <CoachPlanner initial={proposal} thisWeek={mondayOf(today)} nextWeek={addDays(mondayOf(today), 7)} today={today} outlook={outlook} weather={weather} />

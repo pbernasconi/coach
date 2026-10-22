@@ -594,7 +594,7 @@ Trimmed response (a run; arrays cut):
   "header": {
     "ok": true, "activityId": "20614350022", "name": "Morning Run", "sport": "run", "sportType": "Run", "typeText": "Run",
     "startLocal": "2026-10-17T07:15:54", "day": "2026-10-17", "whenText": "Saturday, October 17, 2026 at 7:15 AM",
-    "place": "Kyoto, Japan", "indoor": false, "commute": false,
+    "place": "Kyoto, Japan", "indoor": false, "commute": false, "outdoor": true,
     "subtitle": "Saturday, October 17, 2026 at 7:15 AM · Kyoto, Japan · Run",
     "description": null, "prevId": "20577277152", "nextId": "20655239904",
     "stravaUrl": "https://www.strava.com/activities/20614350022",
@@ -604,6 +604,8 @@ Trimmed response (a run; arrays cut):
     "ok": true,
     "big": [{ "label": "Distance", "valueText": "12.01", "unit": "km" }, { "label": "Moving Time", "valueText": "1:07:18" }, { "label": "Pace", "valueText": "5:36", "unit": "/km" }],
     "small": [{ "label": "Elevation", "valueText": "56", "unit": "m" }, { "label": "Calories", "valueText": "920" }],
+    "grid": [{ "label": "Distance", "valueText": "12.01", "unit": "km" }, { "label": "Pace", "valueText": "5:36", "unit": "/km" }],
+    "more": [{ "label": "Elapsed Time", "valueText": "1:09:02" }, { "label": "Calories", "valueText": "920" }],
     "achievementsText": "7 PRs · 7 achievements · 4 kudos"
   },
   "weather": { "ok": true, "headline": "Clear, 16 °C", "rows": [{ "label": "Wind", "valueText": "3.9 km/h NNW" }], "source": "Open-Meteo, the hour nearest the start" },
@@ -683,6 +685,11 @@ Field rules:
 - `header.prevId`/`nextId`: the older and newer activity (`activityId`), `null` at the ends. `stravaUrl` is the only
   URL: the "Open on Strava" button. `description`: Strava's text, line breaks kept.
 - `overview.big`/`small`: `{ label, valueText, unit? }`, shown as they are, in this order (the web's stat tiles).
+  `overview.grid`: the phone's headline stats, at most 6, in the sport's order (run: distance, pace, moving time,
+  elevation, average heart rate, Coach TSS; ride: distance, moving time, speed, elevation, power, Coach TSS), filled
+  with other stats when one is missing. `overview.more`: every other stat of `big` and `small`, in their order.
+- `header.outdoor`: the activity has a real track (not a trainer ride, not a `Virtual…` sport): the phone leads the
+  page with the route map.
   `achievementsText`: `null` without PRs, achievements or kudos.
 - `weather`, `equipment` (`device` and `gear` are each `null` when unknown), `splits` (foot sports only), `route`
   (at least 2 points), `sameRoute` (other activities of the same sport on the route; the row with `isThis` is this
