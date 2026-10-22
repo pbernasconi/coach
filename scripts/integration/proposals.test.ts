@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { sql } from '@/db';
 import { acceptProposal, claimRequest, createRequest, openProposal, submitPlan } from '@/lib/plan/proposals';
+import { loadOutlook, loadPlanningContext } from '@/lib/plan/planning-context';
 
 const user = 'user_proposals';
 const week = '2026-11-02';
@@ -31,11 +32,17 @@ test('request, claim, check, propose and accept a cloud plan', async () => {
     const [failed] = await sql`SELECT status, error FROM plan_proposals WHERE id = ${badRun!.id}`;
     assert.equal(failed.status, 'failed');
 
-    const ok = await submitPlan(user, id, plan, 'Fresh: two quality days.');
+    const review = { headline: 'Two quality days.', decisions: [{ title: 'Threshold first', tradeoff: 'No VO2 this week' }] };
+    const ok = await submitPlan(user, id, { ...plan, review }, 'Fresh: two quality days.');
     assert.ok('events' in ok && ok.events === 2, JSON.stringify(ok));
     const open = await openProposal(user);
     assert.equal(open?.id, id, 'the newest open one is the proposed plan, not the older failure');
     assert.equal(open?.rows.length, 2);
+    assert.equal(open?.review?.headline, 'Two quality days.');
+    assert.equal(open?.review?.decisions[0].tradeoff, 'No VO2 this week');
+    assert.equal((await loadOutlook(user, open!)).plannedTss > 0, true);
+    const ctx = await loadPlanningContext(user, week, { strict: true });
+    assert.ok(Array.isArray(ctx.facts) && ctx.suggested.feel);
 
     const accepted = await acceptProposal(user, id);
     assert.ok('counts' in accepted && accepted.counts.inserted === 2, JSON.stringify(accepted));

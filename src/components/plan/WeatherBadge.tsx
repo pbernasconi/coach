@@ -217,3 +217,14 @@ function clock(hhmm: string) {
 function longDay(date: string) {
   return new Date(`${date}T12:00:00Z`).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', timeZone: 'UTC' });
 }
+
+/** The forecast as a plain icon and high, for inside another control (no card: a button can't hold a button). */
+export function WeatherIcon({ w }: { w: DayWeather }) {
+  const Icon = ICONS[weatherOf(w.code).icon] ?? Cloud;
+  return (
+    <span className="inline-flex items-center gap-0.5 text-[10px] tabular-nums text-[var(--viz-ink-2)]" title={`${w.text}, ${w.max}°/${w.min}°C${w.rain != null ? `, ${w.rain}% rain` : ''}`}>
+      <Icon aria-hidden className="h-3 w-3 shrink-0 text-[var(--viz-muted)]" />
+      {w.max}°
+    </span>
+  );
+}
