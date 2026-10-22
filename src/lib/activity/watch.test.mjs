@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseActivityPush, watchStats, watchValues } from './watch.mjs';
+import { parseActivityPush, watchFeedback, watchStats, watchValues } from './watch.mjs';
 
 test('parseActivityPush: keeps valid activities, rejects bad ones', () => {
   const r = parseActivityPush({
@@ -41,4 +41,14 @@ test('watchStats: running dynamics for runs only; power only when Strava has non
   assert.equal(run[2].valueText, '9');
   const ride = watchStats(w, { foot: false, stravaPower: false });
   assert.deepEqual(ride.map((r) => r.label), ['Training Effect', 'Avg Power', 'Body Battery Used']);
+});
+
+test('watchFeedback: Garmin feel 0–100 to 1–5, RPE 10–100 to 1–10', () => {
+  assert.deepEqual(watchFeedback({ detail: { summaryDTO: { directWorkoutFeel: 75, directWorkoutRpe: 30 } } }), { feel: 4, rpe: 3 });
+  assert.deepEqual(watchFeedback({ summary: { directWorkoutFeel: 0, directWorkoutRpe: 100 } }), { feel: 1, rpe: 10 });
+  assert.deepEqual(watchFeedback({ detail: { summaryDTO: { directWorkoutFeel: 100 } } }), { feel: 5, rpe: null });
+  assert.deepEqual(watchFeedback({ detail: { summaryDTO: { directWorkoutRpe: 70 } } }), { feel: null, rpe: 7 });
+  assert.equal(watchFeedback({ summary: { aerobicTrainingEffect: 3 } }), null);
+  assert.equal(watchFeedback({ detail: { summaryDTO: { directWorkoutFeel: 400, directWorkoutRpe: 0 } } }), null);
+  assert.equal(watchFeedback(null), null);
 });

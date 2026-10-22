@@ -11,6 +11,7 @@ import { isAuthorized } from '@/lib/lift-sync/auth.mjs';
 import { syncStrava } from '@/lib/strava-sync/sync.mjs';
 import { fillMissingParts } from '@/lib/activity/fetch.mjs';
 import { clearCache } from '@/lib/data-cache';
+import { prefillWatchFeedback } from '@/lib/activity/watch-feedback.mjs';
 import { syncActivityPeaks } from '@/lib/performance/peaks-sync.mjs';
 import { notifyStravaWorkouts } from '@/lib/notifications';
 
@@ -30,8 +31,10 @@ export async function GET(request: Request) {
     const peaks = await syncActivityPeaks(sql, { limit: 30 }).catch((e: unknown) => ({ error: String(e) }));
     // Older activities without their detail, streams or weather: a few per run, newest first.
     const filled = await fillMissingParts(sql, { limit: 15 }).catch((e: unknown) => ({ error: String(e) }));
+    // The watch's feel and RPE for a Garmin activity that arrived before its Strava activity.
+    const feedback = await prefillWatchFeedback(sql).catch((e: unknown) => ({ error: String(e) }));
     clearCache('activities');
-    return Response.json({ ...result, created: result.created.length, peaks, filled });
+    return Response.json({ ...result, created: result.created.length, peaks, filled, feedback });
   } catch (error) {
     console.error('Strava cron sync failed:', error);
     return Response.json({ error: String((error as Error).message ?? error) }, { status: 500 });

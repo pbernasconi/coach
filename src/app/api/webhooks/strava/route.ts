@@ -16,6 +16,7 @@ import { sql } from '@/db';
 import { deleteStravaActivity } from '@/lib/strava-sync/sync.mjs';
 import { ingestActivity } from '@/lib/strava-sync/ingest.mjs';
 import { clearCache } from '@/lib/data-cache';
+import { prefillWatchFeedback } from '@/lib/activity/watch-feedback.mjs';
 import { notifyStravaWorkouts } from '@/lib/notifications';
 import { dispatchWorkflow } from '@/lib/plan/proposals';
 
@@ -70,6 +71,8 @@ export async function POST(request: Request) {
         console.log(`Strava ${event.aspect_type} ${event.object_id}: ${r.skipped ?? r.parts.join(', ')} in ${r.ms} ms`);
         // A new activity that just ended: "Run completed!" with a link to it (src/lib/notifications).
         if (r.created && r.rowId) await notifyStravaWorkouts([{ id: r.rowId }]);
+        // The watch's feel and RPE, when Garmin's record of the workout came first.
+        if (r.created) await prefillWatchFeedback(sql).catch((e: unknown) => console.error('Watch feedback failed:', e instanceof Error ? e.name : e));
         // The watch's own numbers (training effect, running dynamics): garmin.yml fetches them from Garmin Connect
         // in about a minute (scripts/garmin/activities.py).
         if (create && process.env.VERCEL_ENV === 'production') {

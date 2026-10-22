@@ -19,11 +19,13 @@ type Value = { feel: number | null; rpe: number | null; comment: string };
 /**
  * How the workout went: the feel (five faces), the perceived effort (RPE 1–10) and a comment. Saves as it changes.
  * `item` is 'plan:<id>', 'strava:<id>' or 'lift:<id>'; a row logged on the same planned workout from another view
- * is shown and updated in place.
+ * is shown and updated in place. The feel and RPE logged on the Garmin watch arrive here on their own
+ * (src/lib/activity/watch-feedback.mjs), marked "From your watch" until changed.
  */
 export default function EffortLog({ item, date, title, planActivityId, className }: { item: string; date: string; title: string; planActivityId: string | null; className?: string }) {
   const [v, setV] = useState<Value>({ feel: null, rpe: null, comment: '' });
   const [key, setKey] = useState(item);
+  const [fromWatch, setFromWatch] = useState(false);
   const [state, setState] = useState<'loading' | 'idle' | 'saving' | 'saved' | 'error'>('loading');
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -35,9 +37,11 @@ export default function EffortLog({ item, date, title, planActivityId, className
         if (f) {
           setV({ feel: f.feel, rpe: f.rpe, comment: f.comment ?? '' });
           setKey(f.item);
+          setFromWatch(f.fromWatch);
         } else {
           setV({ feel: null, rpe: null, comment: '' });
           setKey(item);
+          setFromWatch(false);
         }
         setState('idle');
       },
@@ -50,6 +54,7 @@ export default function EffortLog({ item, date, title, planActivityId, className
 
   const save = (next: Value, delay = 0) => {
     setV(next);
+    setFromWatch(false);
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(async () => {
       setState('saving');
@@ -66,7 +71,7 @@ export default function EffortLog({ item, date, title, planActivityId, className
   }, []);
 
   const rpe = v.rpe ? RPE_SCALE[v.rpe - 1] : null;
-  const note = state === 'saving' ? 'Saving…' : state === 'saved' ? 'Saved' : state === 'error' ? <span className="text-[var(--viz-down)]">Not saved</span> : null;
+  const note = state === 'saving' ? 'Saving…' : state === 'saved' ? 'Saved' : state === 'error' ? <span className="text-[var(--viz-down)]">Not saved</span> : fromWatch ? 'From your watch' : null;
 
   return (
     <Card title="How did it go?" note={note} className={className}>

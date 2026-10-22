@@ -223,8 +223,9 @@ The job keeps its state in Coach, in `garmin_connections` (one row for the owner
 `Authorization: Bearer <CRON_SECRET>`. The watch's own record of each workout, in `garmin_activities` (`scripts/garmin/activities.py`). The Strava webhook starts `garmin.yml` with `activities` after a new activity, so it arrives about a minute after the workout; every Garmin run also catches up on the last 48 hours.
 
 - `GET ?since=<ISO>`: `{ "ids": [...] }`, the Garmin activity ids Coach has that started from then on (the job skips them).
-- `POST { "activities": [{ "id", "startUtc", "type", "summary", "detail", "series" }] }`, at most 20 and 4 MB: `summary` is Garmin's list item, `detail` the activity's summary page, `series` `{ t: seconds[], <Garmin metric key>: values[] }` at up to 600 points. Account ids, names and emails are removed by the job. Upserted by id; clears the `activities` cache. Response `{ "accepted", "rejected": [{ "index", "reason" }] }`.
+- `POST { "activities": [{ "id", "startUtc", "type", "summary", "detail", "series" }] }`, at most 20 and 4 MB: `summary` is Garmin's list item, `detail` the activity's summary page, `series` `{ t: seconds[], <Garmin metric key>: values[] }` at up to 600 points. Account ids, names and emails are removed by the job. Upserted by id; clears the `activities` cache. Response `{ "accepted", "rejected": [{ "index", "reason" }], "feedback" }`.
 - The activity page and `/api/app/activities/:id` match a Strava activity to the Garmin one that starts within 2 minutes (`src/lib/activity/watch.mjs`) and add the watch's stats after Strava's: training effect, Garmin load, performance condition, VO2max, running dynamics (runs), power (when Strava has none), respiration, stamina, Body Battery.
+- The feel and RPE logged on the watch after a workout (`summaryDTO.directWorkoutFeel` 0–100, `directWorkoutRpe` 10–100) become that Strava activity's "How did it go?" (`workout_feedback`, `source = 'watch'`, `src/lib/activity/watch-feedback.mjs`): once per Garmin activity (`feedback_at`), never over feedback logged in Coach. It runs after this POST, after the Strava webhook and in the Strava cron.
 
 #### `GET /api/vitals/garmin`
 
