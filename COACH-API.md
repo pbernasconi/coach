@@ -218,6 +218,14 @@ The job keeps its state in Coach, in `garmin_connections` (one row for the owner
 
 `health_samples` keeps the mapped metrics that the pages use. `garmin_raw` lets Coach map more later without fetching from Garmin again. The fixtures `scripts/garmin/fixtures/raw_<kind>.json` show each shape (redacted, lists cut to 60 items).
 
+#### `GET/POST /api/vitals/garmin/activities`
+
+`Authorization: Bearer <CRON_SECRET>`. The watch's own record of each workout, in `garmin_activities` (`scripts/garmin/activities.py`). The Strava webhook starts `garmin.yml` with `activities` after a new activity, so it arrives about a minute after the workout; every Garmin run also catches up on the last 48 hours.
+
+- `GET ?since=<ISO>`: `{ "ids": [...] }`, the Garmin activity ids Coach has that started from then on (the job skips them).
+- `POST { "activities": [{ "id", "startUtc", "type", "summary", "detail", "series" }] }`, at most 20 and 4 MB: `summary` is Garmin's list item, `detail` the activity's summary page, `series` `{ t: seconds[], <Garmin metric key>: values[] }` at up to 600 points. Account ids, names and emails are removed by the job. Upserted by id; clears the `activities` cache. Response `{ "accepted", "rejected": [{ "index", "reason" }] }`.
+- The activity page and `/api/app/activities/:id` match a Strava activity to the Garmin one that starts within 2 minutes (`src/lib/activity/watch.mjs`) and add the watch's stats after Strava's: training effect, Garmin load, performance condition, VO2max, running dynamics (runs), power (when Strava has none), respiration, stamina, Body Battery.
+
 #### `GET /api/vitals/garmin`
 
 `Authorization: Bearer <CRON_SECRET>` (constant-time). Returns `{ "tokens_ciphertext", "synced_through", "last_success_at", "status", "backfill_from", "backfill_through" }`. Each is `null` before the job stores a row.

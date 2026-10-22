@@ -81,6 +81,15 @@ It runs after each data sync, and after each hourly Sync run. `/plan`
 and `/check-in` start it at once: `gh workflow run garmin.yml --repo pbernasconi/coach -f workouts_only=true`. A
 local run: `COACH_URL=… CRON_SECRET=… .venv/bin/python sync.py --workouts-only [--dry-run]`.
 
+## Activities from the watch
+
+`activities.py` stores the watch's own record of the last 48 hours of workouts in Coach (`garmin_activities`):
+the list item, the activity's summary page and a few of its time series (heart rate, running dynamics, power,
+respiration, performance condition, stamina, Body Battery) at 600 points. That is 1 call for the list and 2 per new
+activity. The Strava webhook starts a run with `activities` (`python sync.py --activities`) right after a workout,
+in its own concurrency group, and every other run catches up after the workouts. Coach shows the values on the
+activity page (`src/lib/activity/watch.mjs`).
+
 ## Metrics
 
 | Coach metric | Garmin source | Notes |

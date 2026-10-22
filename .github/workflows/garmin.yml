@@ -1,4 +1,6 @@
-# Also puts Coach's planned runs on the Garmin calendar as structured workouts (workouts.py).
+# Also puts Coach's planned runs on the Garmin calendar as structured workouts (workouts.py), and stores the watch's
+# recent activities (activities.py: training effect, running dynamics, stamina). The Strava webhook starts a run
+# with `activities` a few seconds after each workout, so the watch's numbers are in Coach about a minute later.
 # Pulls Garmin Connect data (HRV, sleep, Body Battery, readiness, training status, race predictions ...)
 # with the unofficial Garmin Connect API. It posts daily metrics to /api/vitals/sync and every raw response to /api/vitals/garmin/raw.
 # The Garmin tokens live in Coach, encrypted with GARMIN_TOKEN_KEY (only GitHub and Paolo's Mac have it).
@@ -34,12 +36,19 @@ on:
         type: boolean
         required: false
         default: false
+      activities:
+        description: Only the watch's recent activities (what the Strava webhook starts after a workout)
+        type: boolean
+        required: false
+        default: false
 
 permissions: {}
 
-# One run at a time: two runs could both refresh the Garmin tokens. A new run waits for the old one.
+# One run at a time: two runs could both refresh the Garmin tokens. A new run waits for the old one. The
+# post-workout run has its own group, so it never waits behind a long backfill or is dropped as a second pending
+# run; a token clash is handled by the job (it retries with the newer tokens Coach has).
 concurrency:
-  group: garmin
+  group: ${{ inputs.activities && 'garmin-activities' || 'garmin' }}
   cancel-in-progress: false
 
 jobs:
@@ -73,8 +82,13 @@ jobs:
           SINCE: ${{ inputs.since }}
           EVENT: ${{ github.event_name }}
           WORKOUTS_ONLY: ${{ inputs.workouts_only }}
+          ACTIVITIES: ${{ inputs.activities }}
         run: |
           args=()
+          if [ "$ACTIVITIES" = "true" ]; then
+            python sync.py --activities --delay 0.3
+            exit $?
+          fi
           if [ "$WORKOUTS_ONLY" = "true" ]; then
             python sync.py --workouts-only
             exit $?

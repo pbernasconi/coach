@@ -7,6 +7,7 @@ import assert from 'node:assert/strict';
 import { sql } from '@/db';
 import { ingestActivity } from '@/lib/strava-sync/ingest.mjs';
 import { fillMissingParts, missingParts } from '@/lib/activity/fetch.mjs';
+import { loadActivity } from '@/lib/activity/queries';
 
 const user = 'user_ingest';
 const n = 1800;
@@ -67,6 +68,14 @@ test('a webhook event stores the whole activity; an edit makes one call; the fil
     const [load] = await sql`SELECT tss FROM daily_training_load WHERE user_id = ${user} AND date = '2026-10-22'`;
     assert.equal(Number(load.tss), Number(a.tss), 'the training load has it');
 
+    // The watch's record of the same run (garmin.yml, a minute later) shows on the page: matched by start time.
+    assert.equal((await loadActivity(user, '901'))?.watch, null);
+    await sql`INSERT INTO garmin_activities (garmin_activity_id, user_id, start_utc, activity_type, summary)
+              VALUES ('g901', ${user}, '2026-10-22T18:45:20Z', 'running', '{"aerobicTrainingEffect": 3.1, "avgGroundContactTime": 251}'::jsonb)`;
+    const v = await loadActivity(user, '901');
+    assert.equal(v?.watch?.aerobicTe, 3.1);
+    assert.equal(v?.watch?.gctMs, 251);
+
     // An edit (a rename): one Strava call, no second row, no new streams or weather.
     calls.length = 0;
     name = 'Lunch Run (easy)';
@@ -91,6 +100,7 @@ test('a webhook event stores the whole activity; an edit makes one call; the fil
     await sql`DELETE FROM strava_activities WHERE user_id = ${user}`;
     await sql`DELETE FROM daily_training_load WHERE user_id = ${user}`;
     await sql`DELETE FROM activity_peaks WHERE user_id = ${user}`;
+    await sql`DELETE FROM garmin_activities WHERE user_id = ${user}`;
     await sql`DELETE FROM activity_peak_scans WHERE user_id = ${user}`;
     await sql`DELETE FROM strava_connections WHERE id = 'conn_ingest'`;
     await sql`DELETE FROM users WHERE id = ${user}`;

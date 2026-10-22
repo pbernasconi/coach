@@ -7,6 +7,7 @@ import { zoneOf } from '../performance/form.mjs';
 import { tssMethodLabel } from '../strava-sync/tss.mjs';
 import { duration, int, km, kmh, pace, paceOfSeconds, signed, zoneRange } from './format.mjs';
 import { compass, weatherLabel } from './weather.mjs';
+import { watchStats } from './watch.mjs';
 
 
 /** Under the header of an older activity whose details or streams are not stored yet (fillMissingParts adds them). */
@@ -58,6 +59,8 @@ export function overviewStats(v) {
     !foot && st.maxSpeed && st.distance > 0 && { label: 'Max Speed', valueText: kmh(st.maxSpeed), unit: 'km/h' },
     st.avgTemp != null && { label: 'Device Temp', valueText: String(Math.round(st.avgTemp)), unit: '°C' },
     st.perceivedExertion != null && { label: 'Perceived Exertion', valueText: `${st.perceivedExertion}/10` },
+    // The watch's own numbers (Garmin Connect), when the Garmin job has the activity.
+    ...watchStats(v.watch ?? null, { foot, stravaPower: Boolean(st.avgWatts) }),
   ]);
   return { big, small };
 }

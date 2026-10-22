@@ -7,7 +7,8 @@
  * fetch from Strava, and a delete is applied only when Strava itself no longer has the activity.
  *
  * A new activity is stored in full here (ingestActivity: detail, streams, weather, TSS, load, peaks), in a few
- * seconds, and only then does the "workout completed" notice go out, so the page it opens is complete.
+ * seconds, and only then does the "workout completed" notice go out, so the page it opens is complete. Then it
+ * starts garmin.yml for the watch's own numbers, which arrive about a minute later.
  */
 
 import { after } from 'next/server';
@@ -16,6 +17,7 @@ import { deleteStravaActivity } from '@/lib/strava-sync/sync.mjs';
 import { ingestActivity } from '@/lib/strava-sync/ingest.mjs';
 import { clearCache } from '@/lib/data-cache';
 import { notifyStravaWorkouts } from '@/lib/notifications';
+import { dispatchWorkflow } from '@/lib/plan/proposals';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -68,6 +70,12 @@ export async function POST(request: Request) {
         console.log(`Strava ${event.aspect_type} ${event.object_id}: ${r.skipped ?? r.parts.join(', ')} in ${r.ms} ms`);
         // A new activity that just ended: "Run completed!" with a link to it (src/lib/notifications).
         if (r.created && r.rowId) await notifyStravaWorkouts([{ id: r.rowId }]);
+        // The watch's own numbers (training effect, running dynamics): garmin.yml fetches them from Garmin Connect
+        // in about a minute (scripts/garmin/activities.py).
+        if (create && process.env.VERCEL_ENV === 'production') {
+          const d = await dispatchWorkflow('garmin.yml', { activities: 'true' });
+          if ('error' in d) console.error('Garmin activities job not started:', d.error);
+        }
       }
     } catch (error) {
       console.error('Strava webhook sync failed:', error);

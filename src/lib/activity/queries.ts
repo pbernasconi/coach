@@ -9,6 +9,7 @@ import type { SportId } from '@/lib/sports';
 import { HR_ZONE_NAMES, POWER_ZONE_NAMES } from './format.mjs';
 import { missingParts } from './fetch.mjs';
 import { layoutOf as layoutOfSport } from './view.mjs';
+import { MATCH_SECONDS, watchValues } from './watch.mjs';
 import {
   BEST_EFFORT_DISTANCES, CURVE_DURATIONS, bestEffortsFromStreams, bucketMean, buckets, decodePolyline, gapSpeeds, haversine,
   meanBetween, paceHistogram, splitsFromStreams, trimp, zoneTimes,
@@ -94,6 +95,8 @@ export type ActivityView = {
   prevId: string | null;
   nextId: string | null;
   fetch: { needed: boolean; note: string | null };
+  /** The watch's own numbers from Garmin Connect (watch.mjs), null until the Garmin job has the activity. */
+  watch: ReturnType<typeof watchValues>;
 };
 
 const ACTIVITY_COLUMNS = `
@@ -147,7 +150,7 @@ async function readActivity(userId: string, id: string): Promise<ActivityView | 
   const a = await activityRow(userId, id);
   if (!a) return null;
   const rowId = String(a.id);
-  const [details, gear, laps, splits, streamRows, profile, need] = await Promise.all([
+  const [details, gear, laps, splits, streamRows, profile, need, garmin] = await Promise.all([
     sql`SELECT * FROM strava_activity_details WHERE activity_id = ${rowId}` as Promise<Row[]>,
     a.gear_id ? (sql`SELECT name, distance FROM strava_gear WHERE id = ${String(a.gear_id)}` as Promise<Row[]>) : Promise.resolve([] as Row[]),
     sql`SELECT * FROM strava_activity_laps WHERE activity_id = ${rowId} ORDER BY lap_index` as Promise<Row[]>,
@@ -155,6 +158,14 @@ async function readActivity(userId: string, id: string): Promise<ActivityView | 
     sql`SELECT stream_type, data FROM strava_activity_streams WHERE activity_id = ${rowId}` as Promise<Row[]>,
     sql`SELECT hr_zones, power_zones, ftp, sex FROM strava_athlete_profile WHERE user_id = ${userId} LIMIT 1` as Promise<Row[]>,
     missingParts(sql, rowId),
+    a.start_utc
+      ? (sql`
+          SELECT garmin_activity_id, summary, detail, series FROM garmin_activities
+           WHERE user_id = ${userId}
+             AND start_utc BETWEEN ${String(a.start_utc)}::timestamptz - make_interval(secs => ${MATCH_SECONDS})
+                               AND ${String(a.start_utc)}::timestamptz + make_interval(secs => ${MATCH_SECONDS})
+           ORDER BY abs(extract(epoch FROM start_utc - ${String(a.start_utc)}::timestamptz)) LIMIT 1` as Promise<Row[]>)
+      : Promise.resolve([] as Row[]),
   ]);
   const d = details[0] ?? null;
   const p = profile[0] ?? null;
@@ -334,6 +345,7 @@ async function readActivity(userId: string, id: string): Promise<ActivityView | 
     prevId: neighbours.prev,
     nextId: neighbours.next,
     fetch: { needed, note },
+    watch: watchValues((garmin[0] as Parameters<typeof watchValues>[0]) ?? null),
   };
 }
 
