@@ -11,11 +11,11 @@
   content-visibility: auto;
   contain-intrinsic-size: auto var(--plan-row, 13.5rem);
 }
+/* Agenda weeks have no content-visibility: their heights vary, and a guessed height that changes once a week
+   renders moved the view (phones opened weeks above today). */
 .plan-agenda-week {
   scroll-snap-align: start;
   scroll-margin-top: var(--plan-head, 2rem);
-  content-visibility: auto;
-  contain-intrinsic-size: auto 16rem;
 }
 /* The day's "+" add button stays hidden while a workout card in that day is hovered (MonthGrid.tsx). */
 .plan-day:has(.plan-chip:hover) .plan-day-add {

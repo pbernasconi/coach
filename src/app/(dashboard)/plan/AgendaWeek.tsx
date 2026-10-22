@@ -54,7 +54,7 @@ export const AgendaWeek = memo(function AgendaWeek({
             const isToday = d === today;
             const wx = d >= today && d <= weatherUntil ? weather[d] : undefined;
             return (
-              <li key={d} className={cn('flex gap-3 px-3 py-2', past && 'bg-muted/30', isToday && 'bg-primary/[0.05]')}>
+              <li key={d} data-day={d} className={cn('flex gap-3 px-3 py-2', past && 'bg-muted/30', isToday && 'bg-primary/[0.05]')}>
                 <div className="w-9 shrink-0 text-center">
                   <span className={cn('block text-[10px] font-semibold uppercase tracking-wide', isToday ? 'text-primary' : 'text-[var(--viz-muted)]')}>
                     {isToday ? 'Today' : weekday(d)}

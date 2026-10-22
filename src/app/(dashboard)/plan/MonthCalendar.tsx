@@ -53,12 +53,12 @@ type Props = {
  *
  * Week rows have a fixed height and are memoized: a scroll, a load or an edit re-renders only the weeks it changed.
  */
-export default function MonthCalendar({ openAt, range, bounds, weather, placeName, library, timeZone, openItem }: Props) {
+export default function MonthCalendar({ anchor, openAt, range, bounds, weather, placeName, library, timeZone, openItem }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const {
     data, setData, dataRef, loading, month, failed, height, scrollerRef, gridRef, agendaRef, topRef, bottomRef, first, retry, onScroll, goTo,
-  } = useCalendarScroll({ openAt, range, bounds });
+  } = useCalendarScroll({ openAt, phoneAt: anchor, range, bounds });
   const [dragOver, setDragOver] = useState<string | null>(null);
   const [preview, setPreview] = useState<{ date: string; anchor: HTMLElement } | null>(null);
   const [modalKey, setModalKey] = useState<string | null>(openItem ?? null);
@@ -283,7 +283,7 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
   const overIn = (monday: string) => (dragOver && dragOver >= monday && dragOver <= addDays(monday, 6) ? dragOver : null);
   const thisWeek = mondayOf(today);
   useHotkeys([
-    { key: 't', label: 'Today', run: () => goTo(topWeekFor(thisWeek, bounds.earliest)) },
+    { key: 't', label: 'Today', run: () => goTo(topWeekFor(thisWeek, bounds.earliest), true, thisWeek) },
     { key: '[', label: 'Previous month', run: () => goTo(firstWeekOfMonth(addMonths(month, -1))) },
     { key: ']', label: 'Next month', run: () => goTo(firstWeekOfMonth(addMonths(month, 1))) },
     ...(library.length > 0 ? [{ key: 'l', label: 'Workout library', run: () => setLibraryOpen((o) => !o) }] : []),
@@ -330,7 +330,7 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
           <Button variant="outline" size="icon" aria-label="Previous month" onClick={() => goTo(firstWeekOfMonth(addMonths(month, -1)))}>
             <ChevronUp className="h-4 w-4" />
           </Button>
-          <Button variant="outline" onClick={() => goTo(topWeekFor(thisWeek, bounds.earliest))}>Today</Button>
+          <Button variant="outline" onClick={() => goTo(topWeekFor(thisWeek, bounds.earliest), true, thisWeek)}>Today</Button>
           <Button variant="outline" size="icon" aria-label="Next month" onClick={() => goTo(firstWeekOfMonth(addMonths(month, 1)))}>
             <ChevronDown className="h-4 w-4" />
           </Button>
