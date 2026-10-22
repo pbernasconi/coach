@@ -28,11 +28,6 @@ struct WeekCard<Content: View>: View {
                 .padding(.leading, Space.xxs)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background { background }
-                .overlay(alignment: .leading) {
-                    UnevenRoundedRectangle(topLeadingRadius: Radius.md, bottomLeadingRadius: Radius.md, style: .continuous)
-                        .fill(status == .planned ? sport.opacity(0.45) : sport)
-                        .frame(width: Space.xs)
-                }
                 .contentShape(shape)
         }
         .buttonStyle(.pressFeedback(.scale, in: shape))
@@ -40,16 +35,31 @@ struct WeekCard<Content: View>: View {
 
     private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: Radius.md, style: .continuous) }
 
-    @ViewBuilder private var background: some View {
-        if let tone {
-            shape.fill(theme.palette.surface)
-                .overlay { shape.fill(tone.soft) }
-                .overlay { shape.strokeBorder(tone.ink.opacity(0.45), lineWidth: Size.hairline * 2) }
-        } else {
-            shape.strokeBorder(
-                theme.palette.textTertiary,
-                style: StrokeStyle(lineWidth: Size.hairline * 2, dash: [Space.xs, Space.xs])
-            )
+    /// The fill (none while planned) and the sport edge, clipped to the card's shape so the edge follows its corners,
+    /// then the border on top: solid in the status colour, or dashed while planned.
+    private var background: some View {
+        ZStack(alignment: .leading) {
+            if let tone {
+                theme.palette.surface
+                tone.soft
+            } else {
+                Color.clear
+            }
+            Rectangle()
+                .fill(status == .planned ? sport.opacity(0.45) : sport)
+                .frame(width: Space.xs)
+                .frame(maxHeight: .infinity)
+        }
+        .clipShape(shape)
+        .overlay {
+            if let tone {
+                shape.strokeBorder(tone.ink.opacity(0.45), lineWidth: Size.hairline * 2)
+            } else {
+                shape.strokeBorder(
+                    theme.palette.textTertiary,
+                    style: StrokeStyle(lineWidth: Size.hairline * 2, dash: [Space.xs, Space.xs])
+                )
+            }
         }
     }
 

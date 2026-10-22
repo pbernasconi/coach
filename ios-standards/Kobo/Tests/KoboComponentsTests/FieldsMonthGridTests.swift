@@ -26,6 +26,16 @@ import Testing
         #expect(monday.weeks(of: day("2026-09-15")).first?.first == day("2026-08-31"))
     }
 
+    @Test func aFittedGridHasOnlyTheWeeksOfTheMonth() {
+        // October 2026 from Monday: Sep 28 – Nov 1, five weeks; the regular grid adds Nov 2–8.
+        let weeks = monday.weeks(of: day("2026-10-21"), fitted: true)
+        #expect(weeks.count == 5)
+        #expect(weeks.first?.first == day("2026-09-28"))
+        #expect(weeks.last?.last == day("2026-11-01"))
+        // February 2027 from Monday starts on a Monday and has 28 days: four weeks.
+        #expect(monday.weeks(of: day("2027-02-10"), fitted: true).count == 4)
+    }
+
     @Test func aMonthThatStartsOnTheFirstWeekdayHasNoLeadingDays() {
         #expect(sunday.weeks(of: day("2026-11-01")).first?.first == day("2026-11-01"))
         #expect(monday.weeks(of: day("2026-06-10")).first?.first == day("2026-06-01"))

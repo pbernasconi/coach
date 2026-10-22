@@ -6,8 +6,11 @@ import SwiftUI
 /// and struck through, so they never read by colour alone.
 struct KoboCalendarDay: View {
     @Environment(\.koboTheme) private var theme
-    @ScaledMetric(relativeTo: .body) private var diameter = Size.minTouch
+    @ScaledMetric(relativeTo: .body) private var regularDiameter = Size.minTouch
+    @ScaledMetric(relativeTo: .subheadline) private var compactDiameter = Size.iconLg + Space.sm
     @ScaledMetric(relativeTo: .body) private var dotSize = Space.xs + Space.xxs
+    /// Smaller numbers and circles with the dot tucked under them, in a row one touch target high.
+    let isCompact: Bool
     let dayNumber: String
     let marker: DayMarker
     let isToday: Bool
@@ -19,9 +22,9 @@ struct KoboCalendarDay: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: Space.xxs) {
+            VStack(spacing: isCompact ? 0 : Space.xxs) {
                 Text(verbatim: dayNumber)
-                    .font(theme.font(.numeric))
+                    .font(isCompact ? theme.font(.subheadline).monospacedDigit() : theme.font(.numeric))
                     .fontWeight(isSelected || isToday ? .bold : .regular)
                     .strikethrough(isDisabled && isInMonth)
                     .lineLimit(1)
@@ -31,7 +34,7 @@ struct KoboCalendarDay: View {
                     .background { background }
                 Circle()
                     .fill(dotColor)
-                    .frame(width: dotSize, height: dotSize)
+                    .frame(width: isCompact ? Space.xs : dotSize, height: isCompact ? Space.xs : dotSize)
             }
             .frame(maxWidth: .infinity, minHeight: Size.minTouch)
             .contentShape(Rectangle())
@@ -45,6 +48,8 @@ struct KoboCalendarDay: View {
             Text(verbatim: dayNumber)
         }
     }
+
+    private var diameter: CGFloat { isCompact ? compactDiameter : regularDiameter }
 
     @ViewBuilder
     private var background: some View {

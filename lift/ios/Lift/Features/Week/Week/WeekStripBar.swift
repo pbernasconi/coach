@@ -30,6 +30,7 @@ struct WeekStripBar: View {
                     selection: strip.selected,
                     bounds: DateBounds(minDate: strip.range?.lowerBound, maxDate: strip.range?.upperBound),
                     markers: strip.dayItems,
+                    density: .compact,
                     onSelect: { send(.daySelected($0)) }
                 )
                 .pageGutter()
