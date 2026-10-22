@@ -24,7 +24,8 @@
   "fetch": {
    "pending": true,
    "note": "Loading details from Strava. Pull to refresh in a minute."
-  }
+  },
+  "outdoor": false
  },
  "overview": {
   "ok": true,
@@ -87,7 +88,66 @@
     "unit": "spm"
    }
   ],
-  "achievementsText": "1 PR · 3 achievements · 4 kudos"
+  "achievementsText": "1 PR · 3 achievements · 4 kudos",
+  "grid": [
+   {
+    "label": "Distance",
+    "valueText": "9.64",
+    "unit": "km"
+   },
+   {
+    "label": "Pace",
+    "valueText": "5:29",
+    "unit": "/km"
+   },
+   {
+    "label": "Moving Time",
+    "valueText": "52:50"
+   },
+   {
+    "label": "Elevation",
+    "valueText": "64",
+    "unit": "m"
+   },
+   {
+    "label": "Avg Heart Rate",
+    "valueText": "146",
+    "unit": "bpm"
+   },
+   {
+    "label": "Coach TSS",
+    "valueText": "71"
+   }
+  ],
+  "more": [
+   {
+    "label": "Relative Effort",
+    "valueText": "42"
+   },
+   {
+    "label": "Elapsed Time",
+    "valueText": "54:20"
+   },
+   {
+    "label": "Calories",
+    "valueText": "690"
+   },
+   {
+    "label": "GAP",
+    "valueText": "5:24",
+    "unit": "/km"
+   },
+   {
+    "label": "Max Heart Rate",
+    "valueText": "166",
+    "unit": "bpm"
+   },
+   {
+    "label": "Cadence",
+    "valueText": "170",
+    "unit": "spm"
+   }
+  ]
  },
  "weather": null,
  "equipment": null,

@@ -25,17 +25,21 @@ public struct KoboRouteMap: View {
     private let interaction: Interaction
     private let height: ChartHeight
     private let color: Color?
+    private let bleeds: Bool
     private var label: Text
     private let onExpand: (() -> Void)?
 
     /// - Parameters:
     ///   - color: the route line; the theme's accent when `nil`.
     ///   - onExpand: shows an expand button that calls this; no button when `nil`.
+    ///   - bleeds: edge to edge: square corners, and the map fills the frame the caller gives it (`height` is not
+    ///     used). For a map that leads a screen, or one that fills it.
     public init(
         coordinates: [CLLocationCoordinate2D],
         interaction: Interaction = .fixed,
         height: ChartHeight = .regular,
         color: Color? = nil,
+        bleeds: Bool = false,
         accessibilityLabel: LocalizedStringKey,
         onExpand: (() -> Void)? = nil
     ) {
@@ -44,6 +48,7 @@ public struct KoboRouteMap: View {
         self.interaction = interaction
         self.height = height
         self.color = color
+        self.bleeds = bleeds
         self.label = Text(accessibilityLabel)
         self.onExpand = onExpand
     }
@@ -54,6 +59,7 @@ public struct KoboRouteMap: View {
         interaction: Interaction = .fixed,
         height: ChartHeight = .regular,
         color: Color? = nil,
+        bleeds: Bool = false,
         accessibilityLabel: LocalizedStringKey,
         onExpand: (() -> Void)? = nil
     ) {
@@ -62,6 +68,7 @@ public struct KoboRouteMap: View {
             interaction: interaction,
             height: height,
             color: color,
+            bleeds: bleeds,
             accessibilityLabel: accessibilityLabel,
             onExpand: onExpand
         )
@@ -73,6 +80,7 @@ public struct KoboRouteMap: View {
         interaction: Interaction = .fixed,
         height: ChartHeight = .regular,
         color: Color? = nil,
+        bleeds: Bool = false,
         verbatimAccessibilityLabel: String,
         onExpand: (() -> Void)? = nil
     ) {
@@ -81,6 +89,7 @@ public struct KoboRouteMap: View {
             interaction: interaction,
             height: height,
             color: color,
+            bleeds: bleeds,
             accessibilityLabel: "",
             onExpand: onExpand
         )
@@ -90,8 +99,9 @@ public struct KoboRouteMap: View {
     public var body: some View {
         if let bounds = RouteMath.bounds(points) {
             map(bounds)
-                .frame(height: height.points)
-                .clipShape(RoundedRectangle(cornerRadius: Radius.md, style: .continuous))
+                .frame(height: bleeds ? nil : height.points)
+                .frame(maxHeight: bleeds ? .infinity : nil)
+                .clipShape(RoundedRectangle(cornerRadius: bleeds ? 0 : Radius.md, style: .continuous))
                 .overlay(alignment: .topTrailing) {
                     if let onExpand {
                         IconButton(
@@ -150,6 +160,9 @@ private struct KoboRouteMapPreview: View {
         VStack(spacing: Space.lg) {
             KoboRouteMap(points: loop, accessibilityLabel: "Route") {}
             KoboRouteMap(points: [], accessibilityLabel: "No route")
+            KoboRouteMap(points: loop, bleeds: true, accessibilityLabel: "Edge to edge")
+                .frame(height: ChartHeight.tall.points)
+                .padding(.horizontal, -Space.md)
         }
         .padding()
         .background(theme.palette.canvas)

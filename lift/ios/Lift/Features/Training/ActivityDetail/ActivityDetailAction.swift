@@ -13,8 +13,10 @@ nonisolated enum ActivityDetailAction: Equatable, Sendable {
     case axisChanged(AnalysisAxis)
     /// The pace bars' Splits | Laps | Smoothed picker.
     case paceModeChanged(String)
-    /// The map's expand button.
+    /// The map at the top: a tap, or a pull down past the top of the page.
     case mapExpandTapped
+    /// A summary card or a "See all" row: its page of full charts or tables.
+    case panelTapped(ActivityPanel)
     case destinationDismissed
     /// "Open Settings" under the not-connected state.
     case connectTapped

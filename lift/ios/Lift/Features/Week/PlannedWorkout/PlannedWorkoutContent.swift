@@ -15,7 +15,8 @@ struct PlannedWorkoutContent: View {
             AppResourcePage(
                 state.workout,
                 onRetry: { send(.retryTapped) },
-                onConnect: { send(.connectTapped) }
+                onConnect: { send(.connectTapped) },
+                showsFreshness: false
             ) { workout in
                 PlannedWorkoutSections(workout: workout, send: send)
             }
@@ -23,9 +24,8 @@ struct PlannedWorkoutContent: View {
             .padding(.top, Space.sm)
             .padding(.bottom, Space.xxl)
         }
+        .workoutBarTitle(state.workout.content.value?.title)
         .screenCanvas()
-        .navigationTitle(Text(verbatim: state.workout.content.value?.title ?? String(localized: "Workout")))
-        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
@@ -38,9 +38,10 @@ private struct PlannedWorkoutSections: View {
         VStack(alignment: .leading, spacing: Space.section) {
             PlannedWorkoutHeader(workout: workout)
             if !workout.hero.isEmpty {
-                TileGrid(workout.hero, id: \.label) { stat in
-                    StatTile(verbatim: stat.label, value: stat.valueText, unit: stat.unit)
+                WorkoutStatGrid(items: workout.hero, id: \.label) { stat in
+                    WorkoutStatCell(label: stat.label, value: stat.valueText, unit: stat.unit)
                 }
+                .koboCard()
             }
             if let structure = workout.workout {
                 PlannedStructureCard(structure: structure)
