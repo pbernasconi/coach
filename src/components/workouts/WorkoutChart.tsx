@@ -41,7 +41,7 @@ function barsOf(workout: StructuredWorkout) {
   return { bars, total: t || 1, top: Math.max(1.25, ...bars.map((b) => b.hi)) };
 }
 
-function Polygons({ bars, total, top, height, active }: { bars: Bar[]; total: number; top: number; height: number; active?: number | null }) {
+function Polygons({ bars, total, top, height, active, mono }: { bars: Bar[]; total: number; top: number; height: number; active?: number | null; mono?: boolean }) {
   const W = 1000;
   const y = (f: number) => height - (Math.min(f, top) / top) * height;
   return (
@@ -54,7 +54,7 @@ function Polygons({ bars, total, top, height, active }: { bars: Bar[]; total: nu
           ? `${x0 + gap},${height} ${x0 + gap},${y(b.lo)} ${x0 + w - gap},${y(b.hi)} ${x0 + w - gap},${height}`
           : `${x0 + gap},${height} ${x0 + gap},${y(b.mid)} ${x0 + w - gap},${y(b.mid)} ${x0 + w - gap},${height}`;
         const dim = active != null && active !== i;
-        return <polygon key={i} points={points} fill={ZONE_COLOR[b.zone]} opacity={dim ? 0.35 : 0.9} className="transition-opacity duration-100" />;
+        return <polygon key={i} points={points} fill={mono ? 'currentColor' : ZONE_COLOR[b.zone]} opacity={dim ? 0.35 : mono ? 0.45 : 0.9} className="transition-opacity duration-100" />;
       })}
     </>
   );
@@ -176,12 +176,12 @@ function DetailedChart({ workout, height, bars, total, top }: { workout: Structu
   );
 }
 
-/** A small structure chart for a calendar card: the bars only, no axis or hover. */
+/** A small structure chart for a calendar card: grey bars only (the card already carries the sport and status colours). */
 export function MiniWorkoutChart({ workout, className }: { workout: StructuredWorkout; className?: string }) {
   const { bars, total, top } = barsOf(workout);
   return (
     <svg viewBox="0 0 1000 40" preserveAspectRatio="none" className={className} aria-hidden>
-      <Polygons bars={bars} total={total} top={top} height={40} />
+      <Polygons bars={bars} total={total} top={top} height={40} mono />
     </svg>
   );
 }

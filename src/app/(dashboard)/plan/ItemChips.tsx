@@ -52,7 +52,7 @@ function PlannedChip({ w, actual, roomy, onOpen }: { w: CalendarWorkout; actual:
       onDragEnd={(e) => e.currentTarget.classList.remove('plan-dragging')}
       className={cn(
         chipBase,
-        roomy ? 'py-1.5' : w.steps ? 'h-[48px] shrink-0' : 'h-[34px] shrink-0',
+        roomy ? 'py-1.5' : w.steps ? 'h-[60px] shrink-0' : 'h-[40px] shrink-0',
         // Done: a filled card tinted by how close it came to the plan. Not done: an outline only.
         done ? 'plan-done shadow-sm' : 'border-dashed bg-transparent',
         missed && 'border-[var(--plan-missed)]/60',
@@ -83,7 +83,7 @@ function PlannedChip({ w, actual, roomy, onOpen }: { w: CalendarWorkout; actual:
             plannedText || sport(w.sport).label
           )}
         </span>
-        {w.steps && <MiniWorkoutChart workout={w.steps} className={cn('mt-0.5 block w-full', roomy ? 'h-4' : 'h-3')} />}
+        {w.steps && <MiniWorkoutChart workout={w.steps} className={cn('mt-1 block w-full text-[var(--viz-ink-2)]', roomy ? 'h-6' : 'h-5')} />}
       </button>
     </div>
   );
@@ -96,7 +96,7 @@ function ActivityChip({ a, roomy, onOpen }: { a: CalendarActivity; roomy: boolea
       type="button"
       onClick={onOpen}
       title={`${a.name}\n${text}\nCompleted, not planned.`}
-      className={cn(chipBase, 'text-left', roomy ? 'py-1.5' : 'h-[34px] shrink-0', 'plan-filled shadow-sm hover:shadow-md', chipFocus, 'rounded-[5px]')}
+      className={cn(chipBase, 'text-left', roomy ? 'py-1.5' : 'h-[40px] shrink-0', 'plan-filled shadow-sm hover:shadow-md', chipFocus, 'rounded-[5px]')}
       style={{ borderLeftColor: sport(a.sport).color }}
     >
       <span className="flex min-w-0 items-center gap-1">
@@ -117,7 +117,7 @@ function LiftChip({ l, a, roomy, onOpen }: { l: CalendarLift; a: CalendarActivit
       type="button"
       onClick={onOpen}
       title={`${l.name}\n${l.setsLogged} sets logged in Lift`}
-      className={cn(chipBase, 'text-left', roomy ? 'py-1.5' : 'h-[34px] shrink-0', 'plan-filled shadow-sm hover:shadow-md', chipFocus, 'rounded-[5px]')}
+      className={cn(chipBase, 'text-left', roomy ? 'py-1.5' : 'h-[40px] shrink-0', 'plan-filled shadow-sm hover:shadow-md', chipFocus, 'rounded-[5px]')}
       style={{ borderLeftColor: sport('strength').color }}
     >
       <span className="flex min-w-0 items-center gap-1">

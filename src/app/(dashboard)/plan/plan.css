@@ -26,7 +26,7 @@
   scroll-snap-align: start;
   scroll-margin-top: var(--plan-head, 2rem); /* snap under the sticky weekday header, not behind it */
   content-visibility: auto;
-  contain-intrinsic-size: auto var(--plan-row, 11rem);
+  contain-intrinsic-size: auto var(--plan-row, 13.5rem);
 }
 .plan-agenda-week {
   scroll-snap-align: start;
