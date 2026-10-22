@@ -10,17 +10,28 @@ import { toDay, toIso } from '@/lib/db-time.mjs';
 import { HOME_TZ, pushWeek } from '@/lib/calendar-sync/push.mjs';
 import { importPlan } from '@/lib/plan/import.mjs';
 import { checkPlan } from '@/lib/plan/proposal.mjs';
+import { cleanReview } from '@/lib/plan/review.mjs';
+import type { StructuredWorkout } from '@/lib/plan/queries';
 import { addDays, mondayOf, todayIn } from '@/lib/plan/week.mjs';
 
-export type PlanRequest = { kind: 'weekly' | 'checkin'; weekStart: string; feel: string | null; focus: string | null; lock: string | null };
+export type PlanRequest = {
+  kind: 'weekly' | 'checkin'; weekStart: string; feel: string | null; focus: string | null; lock: string | null;
+  hours?: number | null; gym?: number | null; daysOff?: string[];
+};
 export type ProposalStatus = 'requested' | 'running' | 'proposed' | 'accepted' | 'rejected' | 'failed';
 export type ProposalRow = {
   id: string; title: string; date: string; startTime: string | null; duration: number | null; tss: number | null;
-  activityType: string; why: string | null; intensity: string | null;
+  activityType: string; workoutType: string | null; why: string | null; intensity: string | null; description: string | null;
+  steps: StructuredWorkout | null;
+};
+export type ProposalReview = {
+  headline: string | null; reasoning: string[]; decisions: { title: string; why: string | null; tradeoff: string | null }[]; watch: string[];
 };
 export type Proposal = {
   id: string; status: ProposalStatus; request: PlanRequest; weekStart: string; summary: string | null; error: string | null;
   createdAt: string | null; updatedAt: string | null; rows: ProposalRow[];
+  /** The coach's structured review (plan.review), or null for a plan with only the markdown summary. */
+  review: ProposalReview | null;
 };
 
 type Row = Record<string, unknown>;
@@ -40,8 +51,10 @@ function toProposal(r: Row): Proposal {
     rows: rows.map((x: Record<string, unknown>) => ({
       id: String(x.sourceKey), title: String(x.title), date: String(x.date), startTime: (x.startTime as string) ?? null,
       duration: (x.duration as number) ?? null, tss: (x.tss as number) ?? null, activityType: String(x.activityType),
-      why: (x.why as string) ?? null, intensity: (x.intensity as string) ?? null,
+      workoutType: (x.workoutType as string) ?? null, why: (x.why as string) ?? null, intensity: (x.intensity as string) ?? null,
+      description: (x.description as string) ?? null, steps: (x.steps as StructuredWorkout) ?? null,
     })),
+    review: r.plan ? cleanReview((r.plan as { review?: unknown }).review) : null,
   };
 }
 

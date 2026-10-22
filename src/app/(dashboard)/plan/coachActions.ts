@@ -7,8 +7,10 @@ import { pushWeek } from '@/lib/calendar-sync/push.mjs';
 import { ownerForSignedInUser } from '@/lib/owner';
 import { cleanRequest } from '@/lib/plan/proposal.mjs';
 import {
-  acceptProposal, createRequest, dispatchWorkflow, openProposal, rejectProposal, type PlanRequest, type Proposal,
+  acceptProposal, createRequest, dispatchWorkflow, openProposal, proposalById, rejectProposal, type PlanRequest, type Proposal,
 } from '@/lib/plan/proposals';
+import { loadOutlook, loadPlanningContext, type PlanningContext, type WeekOutlook } from '@/lib/plan/planning-context';
+import { mondayOf } from '@/lib/plan/week.mjs';
 
 async function user() {
   const userId = await ownerForSignedInUser();
@@ -30,6 +32,20 @@ export async function requestPlanAction(input: Record<string, unknown>): Promise
   }
   revalidatePath('/plan');
   return { id };
+}
+
+/** What Coach knows before planning the week of `weekStart`, for the "Plan with Coach" form. */
+export async function planningContextAction(weekStart: string): Promise<PlanningContext | null> {
+  const userId = await user();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(weekStart))) return null;
+  return loadPlanningContext(userId, mondayOf(String(weekStart)));
+}
+
+/** The proposal's load outlook (fitness and form in and out, TSS against the last 4 weeks), for the review. */
+export async function proposalOutlookAction(id: string): Promise<WeekOutlook | null> {
+  const userId = await user();
+  const p = await proposalById(userId, String(id));
+  return p ? loadOutlook(userId, p) : null;
 }
 
 /** The open request or proposal, for the Plan page to watch while the job runs. */

@@ -9,6 +9,7 @@ import { addDays, mondayOf, todayIn } from '@/lib/plan/week.mjs';
 import MonthCalendar from './MonthCalendar';
 import CoachPlanner from './CoachPlanner';
 import { openProposal } from '@/lib/plan/proposals';
+import { loadOutlook } from '@/lib/plan/planning-context';
 import './plan.css';
 
 export const metadata: Metadata = { title: 'Plan' };
@@ -45,10 +46,12 @@ export default async function PlanPage({ searchParams }: { searchParams: Promise
     // The cloud coach bar is optional: without it the calendar still renders.
     safe('plan proposal', () => openProposal(userId), null),
   ]);
+  // A plan waiting for review: its load outlook now, so the review opens complete.
+  const outlook = proposal?.status === 'proposed' ? await safe('plan outlook', () => loadOutlook(userId, proposal), null) : null;
   const openAt = weekAnchor ?? (monthParam && MONTH.test(monthParam) ? anchor : topWeekFor(anchor, bounds.earliest));
   return (
     <div data-smoke="plan">
-      <CoachPlanner initial={proposal} thisWeek={mondayOf(today)} nextWeek={addDays(mondayOf(today), 7)} />
+      <CoachPlanner initial={proposal} thisWeek={mondayOf(today)} nextWeek={addDays(mondayOf(today), 7)} today={today} outlook={outlook} />
       <MonthCalendar
         anchor={anchor}
         openAt={openAt}
