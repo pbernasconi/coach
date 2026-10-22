@@ -56,7 +56,8 @@ export function isOutdoor(v) {
   return !v.trainer && !/^Virtual/i.test(String(v.sportType ?? '')) && v.route.length > 1;
 }
 
-export const NOT_LOADED_NOTE = 'Loading details from Strava. Pull to refresh in a minute.';
+export { NOT_LOADED_NOTE } from './view.mjs';
+import { NOT_LOADED_NOTE } from './view.mjs';
 
 // ===== Queries =====
 

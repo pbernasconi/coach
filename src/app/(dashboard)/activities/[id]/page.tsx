@@ -5,12 +5,11 @@ import SectionError from '@/components/SectionError';
 import LinkHotkeys from '@/components/hotkeys/LinkHotkeys';
 import SportIcon from '@/components/SportIcon';
 import { loadActivity, loadActivityContext } from '@/lib/activity/queries';
-import { whenText } from '@/lib/activity/view.mjs';
+import { NOT_LOADED_NOTE, whenText } from '@/lib/activity/view.mjs';
 import { ownerForSignedInUser } from '@/lib/owner';
 import { todayIn } from '@/lib/plan/week.mjs';
 import { load } from '@/lib/safe';
 import { sport, stravaTypeLabel } from '@/lib/sports';
-import ActivityFetcher from './ActivityFetcher';
 import { ActivityHoverProvider } from './ActivityHover';
 import { ActivityBody, sectionsFor } from './Sections';
 
@@ -111,8 +110,9 @@ export default async function ActivityPage({ params }: { params: Promise<{ id: s
                 {v.description && <p className="mt-2 whitespace-pre-wrap text-sm">{v.description}</p>}
               </div>
             </div>
-            {v.fetch.needed && <ActivityFetcher stravaId={v.stravaId} />}
-            {!v.fetch.needed && v.fetch.note && <p className="text-xs text-muted-foreground">{v.fetch.note}</p>}
+            {(v.fetch.note ?? (v.fetch.needed ? NOT_LOADED_NOTE : null)) && (
+              <p role="status" className="text-xs text-muted-foreground">{v.fetch.note ?? NOT_LOADED_NOTE}</p>
+            )}
           </header>
 
           <ActivityBody v={v} context={context.ok ? context.value : null} contextFailed={!context.ok} color={s.color} />

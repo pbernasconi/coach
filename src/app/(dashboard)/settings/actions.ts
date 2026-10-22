@@ -24,7 +24,8 @@ export async function syncStravaNow(): Promise<string> {
   try {
     const r = await syncStrava(sql, { detailed: true, streams: 'new', waitOnRateLimit: false, log: () => {}, warn: () => {} });
     clearCache('status');
-  revalidatePath('/', 'layout');
+    clearCache('activities');
+    revalidatePath('/', 'layout');
     return `Synced ${r.upserted} ${r.upserted === 1 ? 'activity' : 'activities'}.`;
   } catch (e) {
     return `Sync failed: ${(e as Error).message}`;
@@ -144,6 +145,7 @@ export async function saveThresholdsAction(t: ThresholdInput): Promise<string> {
   const { rebuildTrainingLoad } = await import('@/lib/strava-sync/sync.mjs');
   const r = await recomputeAllTss(sql, id);
   if (r.changed) await rebuildTrainingLoad(sql, id, () => {});
+  clearCache('activities');
   revalidatePath('/', 'layout');
   return `Thresholds saved. ${r.changed} of ${r.total} activities have a new TSS.`;
 }

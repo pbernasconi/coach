@@ -8,6 +8,10 @@ import { tssMethodLabel } from '../strava-sync/tss.mjs';
 import { duration, int, km, kmh, pace, paceOfSeconds, signed, zoneRange } from './format.mjs';
 import { compass, weatherLabel } from './weather.mjs';
 
+
+/** Under the header of an older activity whose details or streams are not stored yet (fillMissingParts adds them). */
+export const NOT_LOADED_NOTE = 'The details of this older activity are still being imported.';
+
 /**
  * The entries that are not false, null, undefined, 0 or '' (a typed `filter(Boolean)`).
  * @template T
@@ -163,7 +167,7 @@ export function garminRows(g) {
 
 /** The Analysis card's text when there are no streams. */
 export function noStreamsText(fetch) {
-  return fetch.needed ? 'The streams are loading from Strava.' : fetch.note ? 'The streams did not load from Strava yet.' : 'Strava has no streams for this activity (no GPS or sensor data).';
+  return fetch.needed ? 'The streams of this older activity are still being imported.' : fetch.note ? 'The streams did not load from Strava yet.' : 'Strava has no streams for this activity (no GPS or sensor data).';
 }
 
 /** The Relative Effort card: Strava's score, TRIMP, Coach TSS, TSS per hour, and the note on run power. */

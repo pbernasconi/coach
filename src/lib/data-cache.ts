@@ -16,7 +16,7 @@ import { revalidateTag, unstable_cache } from 'next/cache';
  * the database).
  */
 
-export const TAGS = ['lift', 'labs', 'vitals', 'status', 'dexa'] as const;
+export const TAGS = ['lift', 'labs', 'vitals', 'status', 'dexa', 'activities'] as const;
 export type CacheTag = (typeof TAGS)[number];
 
 const MAX_AGE = 3600; // seconds

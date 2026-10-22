@@ -1,7 +1,5 @@
-import { after } from 'next/server';
 import { sql } from '@/db';
 import { appRoute } from '@/lib/app-api/route';
-import { fetchActivityParts } from './fetch.mjs';
 import { load, safe } from '@/lib/safe';
 import { loadRange } from '@/lib/plan/month';
 import { addDays, matchActivityId, mondayOf } from '@/lib/plan/week.mjs';
@@ -67,50 +65,20 @@ export async function loadAppActivities(userId: string, before: string | null, l
 
 /**
  * GET /api/app/activities/:id (lift/APP-API.md): the web's activity page (loadActivity, and loadActivityContext as an
- * independent section). Null when there is no such activity. `rowId` and `fetchNeeded` tell the route whether to
- * ask Strava for the missing parts; this loader itself only reads.
+ * independent section). Null when there is no such activity.
  */
 export async function loadAppActivity(userId: string, id: string, today: string, timeZone: string, now = new Date()) {
   const v = await loadActivity(userId, id);
   if (!v) return null;
   const context = await load("app activity: coach's view", () => loadActivityContext(userId, v, today));
-  return { body: detailResponse({ v, context, timeZone, today, now, typeLabel: stravaTypeLabel }), rowId: v.id, fetchNeeded: v.fetch.needed };
-}
-
-// One Strava fetch at a time per activity on this instance: the phone can ask again before the first one ends.
-const fetching = new Set<string>();
-
-/**
- * Starts the web page's Strava fetch (fetchActivityParts, as POST /api/activities/[id]/fetch) after the response,
- * so the next request has the details. Never on previews (their database is not the token's owner).
- */
-function fetchAfterResponse(rowId: string) {
-  if (fetching.has(rowId) || process.env.VERCEL_ENV === 'preview') return;
-  fetching.add(rowId);
-  try {
-    after(async () => {
-      try {
-        const result = await fetchActivityParts(sql, rowId);
-        if (result.error) console.error('App activity fetch failed:', result.error);
-      } catch (error) {
-        console.error('App activity fetch failed:', error);
-      } finally {
-        fetching.delete(rowId);
-      }
-    });
-  } catch (error) {
-    // after() outside a request (a script): no fetch.
-    fetching.delete(rowId);
-    console.error('App activity fetch not started:', error);
-  }
+  return { body: detailResponse({ v, context, timeZone, today, now, typeLabel: stravaTypeLabel }), rowId: v.id };
 }
 
 /**
- * The handler of GET /api/app/activities/:id, through the shared appRoute (token, owner, tz, errors). `fetchMissing`:
- * start the Strava fetch for missing parts. The route passes true; the health check passes false, so a check never
- * calls Strava or after().
+ * The handler of GET /api/app/activities/:id, through the shared appRoute (token, owner, tz, errors). It reads the
+ * database only: the Strava webhook stores a new activity in full before the app can open it.
  */
-export async function appActivityResponse(request: Request, rawId: string, { fetchMissing }: { fetchMissing: boolean }) {
+export async function appActivityResponse(request: Request, rawId: string) {
   let id: string | null = null;
   try {
     const q = parseDetailQuery(rawId, new URLSearchParams());
@@ -122,7 +90,6 @@ export async function appActivityResponse(request: Request, rawId: string, { fet
     async ({ userId, today, timeZone }) => {
       const loaded = await loadAppActivity(userId, id!, today, timeZone);
       if (!loaded) return null;
-      if (fetchMissing && loaded.fetchNeeded) fetchAfterResponse(loaded.rowId);
       return loaded.body;
     },
     id ? null : 'id must be a Strava id, a row id or latest'

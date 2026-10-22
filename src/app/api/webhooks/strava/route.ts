@@ -3,19 +3,27 @@
  *
  * GET answers Strava's subscription check with hub.challenge when hub.verify_token matches
  * STRAVA_WEBHOOK_VERIFY_TOKEN. POST gets an event for each new, changed or deleted activity. Strava wants a
- * 200 within 2 s, so the sync runs after the response. Events carry no signature: an event only starts a
- * sync, and a delete is applied only when Strava itself no longer has the activity.
+ * 200 within 2 s, so the work runs after the response. Events carry no signature: an event only starts a
+ * fetch from Strava, and a delete is applied only when Strava itself no longer has the activity.
+ *
+ * A new activity is stored in full here (ingestActivity: detail, streams, weather, TSS, load, peaks), in a few
+ * seconds, and only then does the "workout completed" notice go out, so the page it opens is complete.
  */
 
 import { after } from 'next/server';
 import { sql } from '@/db';
-import { deleteStravaActivity, syncStrava } from '@/lib/strava-sync/sync.mjs';
-import { syncActivityPeaks } from '@/lib/performance/peaks-sync.mjs';
+import { deleteStravaActivity } from '@/lib/strava-sync/sync.mjs';
+import { ingestActivity } from '@/lib/strava-sync/ingest.mjs';
+import { clearCache } from '@/lib/data-cache';
 import { notifyStravaWorkouts } from '@/lib/notifications';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
+
+// An edit that arrives while the activity's create event is still storing it waits this long, so the two do not
+// both insert the row.
+const EDIT_WAIT_MS = 8_000;
 
 type StravaEvent = {
   object_type?: string;
@@ -51,11 +59,15 @@ export async function POST(request: Request) {
         await sql`UPDATE strava_connections SET is_active = false, updated_at = NOW() WHERE athlete_id = ${conn.athlete_id}`;
       } else if (event.object_type === 'activity' && event.aspect_type === 'delete' && event.object_id) {
         await deleteStravaActivity(sql, event.object_id);
-      } else if (event.object_type === 'activity') {
-        const { created } = await syncStrava(sql, { detailed: true, streams: 'new', waitOnRateLimit: false });
+        clearCache('activities');
+      } else if (event.object_type === 'activity' && event.object_id) {
+        const create = event.aspect_type === 'create';
+        if (!create && !(await stored(event.object_id))) await new Promise((r) => setTimeout(r, EDIT_WAIT_MS));
+        const r = await withRetry(() => ingestActivity(sql, event.object_id!, { streams: create ? 'always' : 'missing' }));
+        clearCache('activities');
+        console.log(`Strava ${event.aspect_type} ${event.object_id}: ${r.skipped ?? r.parts.join(', ')} in ${r.ms} ms`);
         // A new activity that just ended: "Run completed!" with a link to it (src/lib/notifications).
-        await notifyStravaWorkouts(created);
-        await syncActivityPeaks(sql, { limit: 5 }).catch((e: unknown) => console.error('Peak scan failed:', e));
+        if (r.created && r.rowId) await notifyStravaWorkouts([{ id: r.rowId }]);
       }
     } catch (error) {
       console.error('Strava webhook sync failed:', error);
@@ -63,4 +75,20 @@ export async function POST(request: Request) {
   });
 
   return Response.json({ ok: true });
+}
+
+async function stored(stravaId: number) {
+  const rows = await sql`SELECT 1 FROM strava_activities WHERE strava_activity_id = ${String(stravaId)} LIMIT 1`;
+  return rows.length > 0;
+}
+
+/** One more try after a short wait: a Strava hiccup should not leave the activity to the 3-hourly sync. */
+async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch (error) {
+    console.error('Strava ingest failed, trying again:', error);
+    await new Promise((r) => setTimeout(r, 4_000));
+    return fn();
+  }
 }

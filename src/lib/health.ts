@@ -201,12 +201,9 @@ export async function runChecks(now = new Date(), { migrations = true }: { migra
         const res = await appActivities(new Request('http://health.local/api/app/activities?limit=30&tz=America/Los_Angeles', auth));
         if (res.status !== 200) throw new Error(`status ${res.status}: ${(await res.text()).slice(0, 200)}`);
       }),
-      // 404 only when there is no activity at all. The route's handler without its Strava fetch: a check never
-      // calls Strava or after().
+      // 404 only when there is no activity at all. The route's handler.
       await check('/api/app/activities/latest', async () => {
-        const res = await appActivityResponse(new Request('http://health.local/api/app/activities/latest?tz=America/Los_Angeles', auth), 'latest', {
-          fetchMissing: false,
-        });
+        const res = await appActivityResponse(new Request('http://health.local/api/app/activities/latest?tz=America/Los_Angeles', auth), 'latest');
         if (res.status !== 200 && res.status !== 404) throw new Error(`status ${res.status}: ${(await res.text()).slice(0, 200)}`);
       })
     );

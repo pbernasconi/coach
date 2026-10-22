@@ -1,7 +1,10 @@
 /**
- * On-demand fetch for the activity page: the detailed activity, the streams and the weather of one activity, stored
- * once so the next view reads only the database. The page calls it (through POST /api/activities/[id]/fetch) when
- * a part is missing.
+ * Stores the parts of one activity that come from outside Coach: Strava's detailed activity, the streams, and the
+ * weather and place at the start. Pages never call this: they read the database only.
+ *
+ * - A new activity gets every part at once from the Strava webhook (src/lib/strava-sync/ingest.mjs).
+ * - Activities stored before that, or whose import failed, are filled in by `fillMissingParts`, a few per Strava
+ *   cron run, newest first.
  *
  * Strava rotates refresh tokens: a refresh from a copy of the production database ends production's token. So a
  * token refresh runs only where `allowTokenRefresh` is true (production, see `refreshAllowed`). Elsewhere the
@@ -48,13 +51,11 @@ export async function missingParts(sql, activityRowId) {
       FROM strava_activities a LEFT JOIN strava_activity_details d ON d.activity_id = a.id
      WHERE a.id = ${activityRowId}`;
   if (!r) return { detail: false, streams: false, weather: false, retryLater: false };
-  const latlng = Array.isArray(r.start_latlng) && r.start_latlng.length === 2;
-  const virtual = Boolean(r.trainer) || /^Virtual/.test(String(r.sport_type ?? ''));
   const failedAt = r.fetch_error ? (toDate(r.updated_at)?.getTime() ?? 0) : 0;
   return {
     detail: !r.detail_fetched_at,
     streams: !r.streams_fetched_at && !r.has_streams,
-    weather: latlng && !virtual && !r.weather_fetched_at,
+    weather: wantsWeather(r) && !r.weather_fetched_at,
     retryLater: Boolean(failedAt && Date.now() - failedAt < RETRY_MS),
   };
 }
@@ -125,8 +126,12 @@ export async function storeDetail(sql, row, d) {
   }
 }
 
-/** Stores the streams (key_by_type response), the HR zone times they give, and the TSS from the samples. */
-export async function storeStreams(sql, row, body, hrZones, { rebuild = true } = {}) {
+/**
+ * Stores the streams (key_by_type response), the HR zone times they give, and the TSS from the samples (`tss`,
+ * on by default with `rebuild`). `rebuild` also rebuilds the training load; a caller that stores many activities
+ * rebuilds once at the end.
+ */
+export async function storeStreams(sql, row, body, hrZones, { rebuild = true, tss = rebuild } = {}) {
   await ensureRow(sql, row.id);
   const keys = Object.keys(body ?? {}).filter((k) => Array.isArray(body[k]?.data));
   if (keys.length) {
@@ -141,10 +146,8 @@ export async function storeStreams(sql, row, body, hrZones, { rebuild = true } =
     if (zt) await sql`UPDATE strava_activities SET zone_times = ${JSON.stringify(zt)} WHERE id = ${row.id}`;
     // The samples give a better TSS than the averages; CTL and ATL follow it.
     const userId = row.user_id ?? (await sql`SELECT user_id FROM strava_activities WHERE id = ${row.id}`)[0]?.user_id;
-    if (userId && rebuild) {
-      await storeActivityTss(sql, row.id, thresholdValues(await loadThresholds(sql, userId)));
-      await rebuildTrainingLoad(sql, userId, () => {});
-    }
+    if (userId && tss) await storeActivityTss(sql, row.id, thresholdValues(await loadThresholds(sql, userId)));
+    if (userId && rebuild) await rebuildTrainingLoad(sql, userId, () => {});
   }
   await sql`UPDATE strava_activity_details SET streams_fetched_at = NOW(), updated_at = NOW() WHERE activity_id = ${row.id}`;
 }
@@ -190,11 +193,36 @@ export async function fetchPlace(lat, lon, fetchImpl = fetch) {
 }
 
 /**
+ * Fetches and stores the weather and place name at an activity's start. Reads the start from the row, so call it
+ * after storeDetail (which corrects the start time).
+ */
+export async function storeWeather(sql, activityRowId, latlng, fetchImpl = fetch) {
+  // As text in SQL: drivers turn a timestamp without zone into a Date in the server's zone.
+  const [a] = await sql`SELECT to_char(start_date, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS start_iso FROM strava_activities WHERE id = ${activityRowId}`;
+  const start = toIso(a?.start_iso);
+  if (!start) throw new Error('activity has no start time');
+  const [lat, lon] = latlng;
+  const [w, place] = await Promise.all([fetchWeather(lat, lon, start, fetchImpl), fetchPlace(lat, lon, fetchImpl).catch(() => null)]);
+  await ensureRow(sql, activityRowId);
+  await sql`UPDATE strava_activity_details SET weather = ${w ? JSON.stringify(w) : null}, place = COALESCE(${place}, place),
+            weather_fetched_at = NOW(), updated_at = NOW()
+            WHERE activity_id = ${activityRowId}`;
+}
+
+/** True when an activity should have weather: an outdoor start position. */
+export function wantsWeather(a) {
+  const latlng = Array.isArray(a.start_latlng) && a.start_latlng.length === 2;
+  const virtual = Boolean(a.trainer) || /^Virtual/.test(String(a.sport_type ?? ''));
+  return latlng && !virtual;
+}
+
+/**
  * Fetches and stores whatever the activity still lacks. Never throws for a Strava or weather failure: the error is
  * stored in fetch_error and returned.
  * @param {import('@neondatabase/serverless').NeonQueryFunction<false, false>} sql
  * @param {string} activityRowId  strava_activities.id
- * @param {{ allowTokenRefresh?: boolean, force?: boolean, env?: Record<string, string | undefined>, fetchImpl?: typeof fetch }} [opts]
+ * @param {{ allowTokenRefresh?: boolean, force?: boolean, rebuild?: boolean, env?: Record<string, string | undefined>, fetchImpl?: typeof fetch }} [opts]
+ *   rebuild: false leaves the training load to the caller (the TSS is still stored).
  * @returns {Promise<{ fetched: string[], skipped: string | null, error: string | null }>}
  */
 export async function fetchActivityParts(sql, activityRowId, opts = {}) {
@@ -231,23 +259,13 @@ export async function fetchActivityParts(sql, activityRowId, opts = {}) {
         if (need.streams) {
           const body = await get(`https://www.strava.com/api/v3/activities/${id}/streams?keys=${STREAM_KEYS.join(',')}&key_by_type=true`);
           const [p] = await sql`SELECT hr_zones FROM strava_athlete_profile WHERE user_id = ${row.user_id} LIMIT 1`;
-          await storeStreams(sql, row, body ?? {}, p?.hr_zones?.zones ?? []);
+          await storeStreams(sql, row, body ?? {}, p?.hr_zones?.zones ?? [], { rebuild: opts.rebuild ?? true, tss: true });
           out.fetched.push('streams');
         }
       }
     }
     if (need.weather) {
-      // Read the start again: storeDetail corrects it.
-      // As text in SQL: drivers turn a timestamp without zone into a Date in the server's zone.
-      const [a] = await sql`SELECT to_char(start_date, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS start_iso FROM strava_activities WHERE id = ${row.id}`;
-      const start = toIso(a?.start_iso);
-      if (!start) throw new Error('activity has no start time');
-      const [lat, lon] = row.start_latlng;
-      const [w, place] = await Promise.all([fetchWeather(lat, lon, start, fetchImpl), fetchPlace(lat, lon, fetchImpl).catch(() => null)]);
-      await ensureRow(sql, row.id);
-      await sql`UPDATE strava_activity_details SET weather = ${w ? JSON.stringify(w) : null}, place = COALESCE(${place}, place),
-                weather_fetched_at = NOW(), updated_at = NOW()
-                WHERE activity_id = ${row.id}`;
+      await storeWeather(sql, row.id, row.start_latlng, fetchImpl);
       out.fetched.push('weather');
     }
   } catch (e) {
@@ -255,5 +273,49 @@ export async function fetchActivityParts(sql, activityRowId, opts = {}) {
     await ensureRow(sql, row.id);
     await sql`UPDATE strava_activity_details SET fetch_error = ${out.error.slice(0, 300)}, updated_at = NOW() WHERE activity_id = ${row.id}`;
   }
+  return out;
+}
+
+/**
+ * Fills in the activities that still lack a part (detail, streams or weather), newest first, at most `limit` per
+ * call: at most 2 Strava calls each, so 15 activities stay far below Strava's 100 reads per 15 minutes. It stops
+ * at Strava's rate limit. One training-load rebuild at the end. A failed activity waits an hour (RETRY_MS).
+ * @returns {Promise<{ filled: number, failed: number, left: number, stopped: string | null }>}
+ */
+export async function fillMissingParts(sql, opts = {}) {
+  const limit = opts.limit ?? 15;
+  const rows = await sql`
+    SELECT a.id, a.user_id FROM strava_activities a
+      LEFT JOIN strava_activity_details d ON d.activity_id = a.id
+     WHERE (d.fetch_error IS NULL OR d.updated_at < NOW() - ${`${RETRY_MS / 1000} seconds`}::interval)
+       AND (
+         d.detail_fetched_at IS NULL
+         OR (d.streams_fetched_at IS NULL
+             AND NOT EXISTS (SELECT 1 FROM strava_activity_streams s WHERE s.activity_id = a.id AND s.stream_type = 'time'))
+         OR (d.weather_fetched_at IS NULL
+             AND NOT COALESCE(a.trainer, false) AND COALESCE(a.sport_type, '') !~ '^Virtual'
+             AND CASE WHEN jsonb_typeof(a.start_latlng) = 'array' THEN jsonb_array_length(a.start_latlng) = 2 ELSE false END)
+       )
+     ORDER BY a.start_date DESC NULLS LAST
+     LIMIT ${limit + 1}`;
+  const out = { filled: 0, failed: 0, left: Math.max(0, rows.length - limit), stopped: null };
+  const users = new Set();
+  for (const r of rows.slice(0, limit)) {
+    const res = await fetchActivityParts(sql, r.id, { ...opts, rebuild: false });
+    if (res.fetched.length) users.add(r.user_id);
+    if (res.error) {
+      out.failed++;
+      if (/ 429 /.test(res.error)) {
+        out.stopped = 'rate_limit';
+        break;
+      }
+    } else if (res.skipped) {
+      out.stopped = res.skipped;
+      if (res.skipped !== 'not found' && res.skipped !== 'retry later') break;
+    } else {
+      out.filled++;
+    }
+  }
+  for (const userId of users) await rebuildTrainingLoad(sql, userId, () => {});
   return out;
 }
