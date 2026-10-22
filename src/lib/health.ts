@@ -6,9 +6,8 @@ import { GET as homeSummary } from '@/app/api/home/route';
 import { GET as liftWeek } from '@/app/api/lift/week/route';
 import { GET as appLiftRoute } from '@/app/api/app/lift/route';
 import { GET as appLiftWeeklyRoute } from '@/app/api/app/lift/weekly/route';
-import { GET as appLiftSessionRoute } from '@/app/api/app/lift/sessions/[id]/route';
 import { GET as appLiftExerciseRoute } from '@/app/api/app/lift/exercises/[key]/route';
-import { loadAppLift } from '@/lib/lift-dashboard/app-api';
+import { appLiftSessionResponse, loadAppLift } from '@/lib/lift-dashboard/app-api';
 import { exerciseResponse, failedSections, sessionResponse, weeklyResponse } from '@/lib/lift-dashboard/app-api.mjs';
 import { richSession } from '@/lib/lift/session';
 import { sql } from '@/db';
@@ -234,7 +233,7 @@ export async function runChecks(now = new Date(), { migrations = true }: { migra
           ['/api/app/lift', () => appLiftRoute(get('/api/app/lift?tz=America/Los_Angeles'))],
           ['/api/app/lift/weekly', () => appLiftWeeklyRoute(get('/api/app/lift/weekly'))],
         ];
-        if (session) calls.push(['/api/app/lift/sessions/:id', () => appLiftSessionRoute(get(`/api/app/lift/sessions/${session}`), { params: Promise.resolve({ id: session }) })]);
+        if (session) calls.push(['/api/app/lift/sessions/:id', () => appLiftSessionResponse(get(`/api/app/lift/sessions/${session}?tz=America/Los_Angeles`), session)]);
         if (exercise) {
           const key = encodeURIComponent(exercise);
           calls.push(['/api/app/lift/exercises/:key', () => appLiftExerciseRoute(get(`/api/app/lift/exercises/${key}`), { params: Promise.resolve({ key }) })]);

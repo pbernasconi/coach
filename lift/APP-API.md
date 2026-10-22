@@ -502,6 +502,44 @@ Field rules:
 - `media`: the catalog picture and animation, full URLs (pinned dataset commit); `null` without a catalog match.
   `steps`: the catalog's how-to, `[]` when none. The catalog itself stays on the server.
 
+The phone's page shows the result and the trend, not plan totals (`stats` keeps the web's five for the web's sake):
+
+```json
+"hero": { "…": "…",
+  "summary": [{ "label": "Duration", "valueText": "52", "unit": "min" }, { "label": "Sets", "valueText": "17/18", "unit": null },
+              { "label": "Avg HR", "valueText": "112", "unit": "bpm" }, { "label": "Calories", "valueText": "310", "unit": null },
+              { "label": "TSS", "valueText": "38", "unit": null }, { "label": "Records", "valueText": "1", "unit": null }],
+  "watchActivityId": "16234567890" },
+"exercises": { "items": [{ "…": "…",
+  "result": { "state": "done", "summaryText": "245 lb × 8, 8, 7", "topSetText": "245 lb × 8", "e1rm": 310.3, "e1rmText": "310 lb",
+              "change": { "value": 12.7, "text": "+13 lb", "tone": "up", "caption": "vs Sep 25" }, "record": true,
+              "progress": { "values": [290, 297.7, 310.3], "caption": "e1RM · last 3 sessions" } } }] },
+"watch": { "ok": true, "activityId": "16234567890", "name": "Strength", "deviceText": "Garmin fēnix 7S Pro",
+           "stats": [{ "label": "Avg Heart Rate", "valueText": "112", "unit": "bpm" }],
+           "heartRate": { "timeS": [0, 12], "values": [88, 95], "avgText": "112", "maxText": "158" },
+           "zones": [{ "zone": 2, "name": "Moderate", "rangeText": "123–153 bpm", "timeText": "21:10", "seconds": 1270, "percent": 41 }],
+           "note": null },
+"feedback": { "item": "lift:…", "date": "2026-10-20", "title": "Heavy barbell", "planActivityId": "…",
+              "feel": 4, "rpe": 7, "comment": null, "fromWatch": false, "feelLabels": ["Very weak", "Weak", "Normal", "Strong", "Very strong"],
+              "rpeScale": [{ "value": 1, "label": "Very easy", "detail": "Barely any effort." }] }
+```
+
+- `hero.summary`: at most 6, `{ label, valueText, unit }` as the activity grid. Done: duration (Lift's, else the watch's
+  moving time), sets (`logged/total` when some were not logged), the watch's average heart rate, calories and Coach
+  TSS, then records; without a watch, exercises take a place. Not done: exercises and sets. No volume: tonnage adds
+  loads of different lifts, so it tells nothing to act on.
+- `result.state`: `done` (a working set logged), `skipped` (every working set skipped) or `planned`. `summaryText`:
+  the done working sets, one load for each run ("225 lb × 8 · 245 lb × 6, 6"), "Skipped", or the plan ("3 × 5 ·
+  230 lb"). Loaded work: `e1rm` is this session's best Epley estimate; `change` compares it with the last session
+  (`tone`: `up | down | same`, under one unit is `same`); `record`: above every earlier session; `progress`: the e1RM
+  of up to 10 sessions ending with this one (`null` under 2). Bodyweight work: no e1RM; `change` compares the most
+  reps in one set ("+2 reps"). `change` is `null` the first time.
+- `watch`: the Strava activity the watch recorded for this lift, paired as the web calendar shows one lift once (the
+  planned workout's `match.activityId`, else the day's strength activity no plan workout took). `null`: none; `{ ok:
+  false }`: it did not load. `heartRate`: `null` until the activity's streams are in Coach (`note` says so). `zones`: as the activity's `heartRate.zones`, or `null`.
+  The phone opens the full activity page with `activityId`.
+- `feedback`: see "Feedback"; `null` when it did not load.
+
 #### Exercise: `GET /api/app/lift/exercises/{key}`
 
 ```json
@@ -730,6 +768,7 @@ Field rules:
   the GAP column when `hasGap` is false.
 - `segments.rows`: the top 15 (PRs and top-10 ranks first, then ride order); `count` is the total. The web's
   "All segments" list is not sent.
+- `feedback`: see "Feedback" (item `strava:<id>`, with the plan workout it completed); `null` when it did not load.
 - Not sent: the web's range highlights (a lap or segment on the charts and the map), the map's crosshair dot, links
   to Strava segments, and the Health day link.
 
@@ -765,6 +804,24 @@ opens it for a planned workout that is not a Lift session. `id` is the Week API 
 - `workout`: `null` without structured steps. `profile` is the Week API's bars; `ticks` place the time labels along
   the chart (0…1). `steps` nest one level for repeats. `zones` is the web's "Time in zones" (`null` with no time).
 - `done.activityId`: the Strava activity to open (`null` for a Lift match); `done` is `null` until done.
+- `feedback`: from the workout's day on (see "Feedback", item `plan:<id>`); `null` before it, or when it did not load.
+
+### Feedback: `PUT /api/app/feedback`
+
+How a done workout felt, in the web's `workout_feedback` table (`src/lib/plan/feedback.ts`, the web's EffortLog): the
+feel (1 very weak … 5 very strong, the five faces), the perceived effort (RPE 1–10, `rpeScale`) and a comment. The
+session, activity and planned workout bodies carry it as `feedback`:
+
+- `item`: what to save under: `lift:<session id>`, `strava:<activity id>` or `plan:<id>`. When the same planned
+  workout already has feedback under another item (logged on the web from another view), `item` is that one, so one
+  workout keeps one row. `planActivityId`: the plan workout, or `null`. Send both back unchanged.
+- `feel`, `rpe`, `comment`: `null` when not logged.
+- `fromWatch`: the values came from the Garmin watch (its feel and effort questions) and were not changed in Coach;
+  the phone says "From your watch". A Lift session also reads the feedback of its watch activity.
+
+Body: `{ "item", "date", "title", "planActivityId", "feel", "rpe", "comment" }` (the three values `null` to clear
+them). It answers with the saved block. Errors: `400 {"error":"…"}` for a bad item, date, feel (1–5 whole) or RPE
+(1–10 whole); a comment is trimmed to 2,000 characters. All three empty deletes the row.
 
 ### Weigh-in: `GET /api/app/weigh-ins/{date | latest}`
 

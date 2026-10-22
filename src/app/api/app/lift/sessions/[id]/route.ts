@@ -6,14 +6,12 @@
  *   GET /api/app/lift/sessions/latest
  */
 
-import { appRoute } from '@/lib/app-api/route';
-import { SESSION_ID, loadAppLiftSession } from '@/lib/lift-dashboard/app-api';
+import { appLiftSessionResponse } from '@/lib/lift-dashboard/app-api';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const invalid = SESSION_ID.test(id) ? null : 'id must be a session id or latest';
-  return appRoute(request, 'lift session', ({ timeZone }) => loadAppLiftSession(id, timeZone), invalid);
+  return appLiftSessionResponse(request, id);
 }

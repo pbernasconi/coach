@@ -4,6 +4,10 @@ import { SPORTS, sport } from '@/lib/sports';
 import { loadRange } from './month';
 import { mondayOf } from './week.mjs';
 import { appWorkout } from './app-workout.mjs';
+import { plainTitle } from './calendar.mjs';
+import { feedbackBlock } from './feedback.mjs';
+import { loadFeedback } from './feedback';
+import { load } from '@/lib/safe';
 
 const sports = { known: new Set<string>(SPORTS.map((s) => s.id)), label: (id: string) => sport(id).label };
 
@@ -24,5 +28,11 @@ export async function loadAppWorkout(userId: string, id: string, today: string) 
   const monday = mondayOf(date);
   const range = await loadRange(userId, monday, monday, today);
   const w = range.workouts.find((x) => String(x.id) === id);
-  return w ? appWorkout(w, sports) : null;
+  if (!w) return null;
+  // "How did it feel" from the workout's day on, as the web's workout window (EffortLog).
+  if (w.date > today) return { ...appWorkout(w, sports), feedback: null };
+  const item = `plan:${w.id}`;
+  const row = await load('app plan: feedback', () => loadFeedback(userId, [item], String(w.id)));
+  const feedback = row.ok ? feedbackBlock({ item, date: w.date, title: plainTitle(w.title), planActivityId: String(w.id), row: row.value }) : null;
+  return { ...appWorkout(w, sports), feedback };
 }

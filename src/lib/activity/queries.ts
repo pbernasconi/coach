@@ -354,7 +354,7 @@ export const loadActivity = cached(readActivity, 'activity-view', 'activities');
 
 /** Coach's view of an activity and the runs on its route: optional parts, loaded apart from the activity. */
 export type ActivityContext = {
-  planned: { title: string; duration: number | null; tss: number | null; date: string; compliance: { level: string; label: string; ratio: number | null; basis: string | null } } | null;
+  planned: { id: string; title: string; duration: number | null; tss: number | null; date: string; compliance: { level: string; label: string; ratio: number | null; basis: string | null } } | null;
   load: { before: { ctl: number; atl: number; tsb: number } | null; after: { ctl: number; atl: number; tsb: number }; dayTss: number } | null;
   garmin: Record<string, number> | null;
   sameRoute: { stravaId: string; day: string; name: string; moving: number; distance: number }[];
@@ -391,7 +391,7 @@ async function plannedFor(userId: string, stravaId: string, day: string, today: 
   const c = complianceOf(w, w.state, { min: moving != null ? Math.round(moving / 60) : null, tss }, { rest: sportOf(w) === 'rest' }) as {
     level: string; label: string; ratio: number | null; basis: string | null;
   };
-  return { title: w.title, duration: w.duration, tss: w.tss, date: w.date, compliance: c };
+  return { id: String(w.id), title: w.title, duration: w.duration, tss: w.tss, date: w.date, compliance: c };
 }
 
 /** Fitness, fatigue and form at the end of the day before and of the activity's day. */
