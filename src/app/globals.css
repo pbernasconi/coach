@@ -1,6 +1,8 @@
 @import "tailwindcss";
 /* Kobo web tokens (web-standards/kobo-web). Before the app rules below, so the app's own base styles win. */
 @import "@kobo/web/tokens.css";
+/* Calendar workout cards and status colours (CalendarCard.tsx), used on /plan and the home page. */
+@import "../components/plan/calendar-card.css";
 @source "../../web-standards/kobo-web/src";
 
 @layer base {
