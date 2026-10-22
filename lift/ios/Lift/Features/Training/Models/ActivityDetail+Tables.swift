@@ -5,6 +5,8 @@ nonisolated struct ActivitySplits: Decodable, Equatable, Sendable {
     nonisolated struct Row: Decodable, Equatable, Sendable {
         var index: Int
         var label: String
+        /// m/s: the bar's length. `nil` without a speed.
+        var speed: Double?
         var paceText: String
         var gapText: String?
         var elevText: String

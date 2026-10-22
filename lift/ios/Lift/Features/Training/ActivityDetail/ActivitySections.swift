@@ -3,40 +3,86 @@ import KoboTokens
 import LiftSync
 import SwiftUI
 
-/// The activity page's sections in the web's order. A section the activity does not have is hidden; one the server
-/// could not load shows its own line, and the rest still show.
+/// The activity page as one summary, Strava's order: the title, the six headline numbers, a card per chart (each
+/// opens its full page), the splits, the load, the best efforts and segments, then the small facts. Every full table
+/// and chart is one tap away on its own page (`ActivityPanelPage`). A section the activity does not have is hidden;
+/// one the server could not load shows its own line.
 struct ActivitySections: View {
     let detail: ActivityDetail
-    let state: ActivityDetailState
     let send: (ActivityDetailAction) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: Space.section) {
-            OptionalSection(nil, detail.header) { ActivityHeaderView(header: $0, send: send) }
-            OptionalSection(nil, detail.overview) { ActivityOverviewView(overview: $0) }
-            OptionalSection("Weather", detail.weather) { ActivityWeatherView(weather: $0) }
-            OptionalSection("Equipment", detail.equipment) { ActivityEquipmentView(equipment: $0) }
-            OptionalSection("Splits", detail.splits) { ActivitySplitsTable(splits: $0) }
-            OptionalSection("Route", detail.route) { route in
-                KoboRouteMap(points: route.coordinates, accessibilityLabel: "Route map") { send(.mapExpandTapped) }
+            OptionalSection(nil, detail.header) { header in
+                ActivityHeaderView(header: header, planned: detail.coach?.value?.planned)
             }
-            OptionalSection(nil, detail.sameRoute) { ActivitySameRouteView(sameRoute: $0, send: send) }
-            OptionalSection("Coach's view", detail.coach) { ActivityCoachView(coach: $0) }
-            OptionalSection("Analysis", detail.analysis) { analysis in
-                ActivityAnalysisView(analysis: analysis, axis: state.axis, send: send)
+            OptionalSection(nil, detail.overview) { overview in
+                ActivityStatGrid(overview: overview) { send(.panelTapped(.stats)) }
             }
-            OptionalSection(nil, detail.paceBars) { bars in
-                ActivityPaceBarsView(bars: bars, mode: state.paceMode, send: send)
+            OptionalSection(nil, detail.analysis) { analysis in
+                ActivityChartCards(analysis: analysis, detail: detail, send: send)
             }
-            OptionalSection("Pace distribution", detail.paceHistogram) { ActivityPaceHistogramView(histogram: $0) }
-            OptionalSection("Relative effort", detail.relativeEffort) { ActivityEffortView(effort: $0) }
-            OptionalSection("Heart rate zones", detail.heartRate) { ActivityZonesView(zones: $0) }
-            OptionalSection("Power", detail.power) { ActivityPowerView(power: $0) }
-            OptionalSection("Laps", detail.laps) { ActivityLapsTable(laps: $0) }
-            OptionalSection("Best efforts", detail.bestEfforts) { ActivityBestEffortsTable(efforts: $0) }
-            OptionalSection("Segments", detail.segments) { ActivitySegmentsTable(segments: $0) }
+            OptionalSection("Splits", detail.splits) { splits in
+                ActivitySplitBars(splits: splits) { send(.panelTapped(.splits)) }
+            }
+            if detail.splits == nil, let laps = detail.laps?.value {
+                ActivitySeeAll(verbatim: String(localized: "Laps"), value: "\(laps.rows.count)") {
+                    send(.panelTapped(.laps))
+                }
+            }
+            OptionalSection("Training load", detail.coach) { ActivityLoadRow(coach: $0) }
+            OptionalSection("Best efforts", detail.bestEfforts) { efforts in
+                ActivityTopRows(
+                    rows: efforts.rows.prefix(Self.topRows).map {
+                        ActivityTopRow(id: $0.label, title: $0.label, value: $0.timeText, isBest: $0.prRank == 1)
+                    },
+                    total: efforts.rows.count
+                ) { send(.panelTapped(.bestEfforts)) }
+            }
+            OptionalSection("Segments", detail.segments) { segments in
+                ActivityTopRows(
+                    rows: segments.rows.prefix(Self.topRows).map {
+                        ActivityTopRow(
+                            id: $0.id,
+                            title: $0.name,
+                            value: $0.timeText,
+                            detail: $0.rankText.isEmpty ? nil : $0.rankText,
+                            isBest: $0.prRank == 1 || $0.komRank != nil
+                        )
+                    },
+                    total: segments.count
+                ) { send(.panelTapped(.segments)) }
+            }
+            OptionalSection(nil, detail.sameRoute) { sameRoute in
+                VStack(alignment: .leading, spacing: Space.sm) {
+                    SectionHeader(verbatim: sameRoute.title)
+                    ActivityTopRows(
+                        rows: sameRoute.rows.prefix(Self.topRows).map {
+                            ActivityTopRow(
+                                id: $0.activityId,
+                                title: $0.name,
+                                value: $0.timeText,
+                                detail: $0.day,
+                                isBest: $0.isThis
+                            )
+                        },
+                        total: sameRoute.rows.count
+                    ) { send(.panelTapped(.sameRoute)) }
+                }
+            }
+            ActivityFacts(detail: detail)
+            if let header = detail.header?.value, let url = URL(string: header.stravaUrl) {
+                Link(destination: url) {
+                    Label("View on Strava", systemImage: "arrow.up.right")
+                }
+                .buttonStyle(.kobo(.plain, size: .compact))
+                .frame(maxWidth: .infinity)
+            }
         }
     }
+
+    /// Rows shown before "See all".
+    static let topRows = 3
 }
 
 /// A section the activity may not have: hidden when `nil`, else `AppSectionView`.
@@ -58,39 +104,6 @@ struct OptionalSection<Value: Decodable & Equatable & Sendable, Content: View>: 
     var body: some View {
         if let section {
             AppSectionView(title, section: section, content: content)
-        }
-    }
-}
-
-/// The stat tiles: the big ones two to a row, then the small ones as a list, then PRs and kudos.
-struct ActivityOverviewView: View {
-    let overview: ActivityOverview
-    @Environment(\.koboTheme) private var theme
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: Space.md) {
-            TileGrid(overview.big, id: \.label) { stat in
-                StatTile(verbatim: stat.label, value: stat.valueText, unit: stat.unit)
-            }
-            if !overview.small.isEmpty {
-                ListSection {
-                    ForEach(overview.small, id: \.label) { stat in
-                        KeyValueRow(
-                            verbatim: stat.label,
-                            value: [stat.valueText, stat.unit].compactMap(\.self).joined(separator: " ")
-                        )
-                    }
-                }
-            }
-            if let achievements = overview.achievementsText {
-                Label {
-                    Text(verbatim: achievements)
-                } icon: {
-                    Image(systemName: "trophy").accessibilityHidden(true)
-                }
-                .font(theme.font(.subheadline))
-                .foregroundStyle(theme.palette.textSecondary)
-            }
         }
     }
 }

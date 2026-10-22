@@ -53,12 +53,13 @@ nonisolated enum WorkoutStatus: Equatable, Sendable {
 
 /// The top of every workout page: the sport's icon with a line of what and when ("Ride · Wednesday, October 21 ·
 /// 07:00"), the title, then the status pill and any tags. `detail` holds what a page adds under it (a place, a note).
+/// A page that shows its status another way passes no `status`, and then no pill shows.
 struct WorkoutHeader<Detail: View>: View {
     @Environment(\.koboTheme) private var theme
     let sport: Sport
     let kicker: String
     let title: String
-    let status: WorkoutStatus
+    let status: WorkoutStatus?
     let statusLabel: String
     var tags: [String] = []
     @ViewBuilder var detail: () -> Detail
@@ -76,13 +77,17 @@ struct WorkoutHeader<Detail: View>: View {
                 .font(theme.font(.title))
                 .foregroundStyle(theme.palette.textPrimary)
                 .accessibilityAddTraits(.isHeader)
-            FlowLayout(spacing: Space.xs) {
-                StatusPill(verbatim: statusLabel, tone: status.tone, symbol: status.symbol)
-                ForEach(tags, id: \.self) { tag in
-                    KoboTag(verbatim: tag, tone: .neutral)
+            if status != nil || !tags.isEmpty {
+                FlowLayout(spacing: Space.xs) {
+                    if let status {
+                        StatusPill(verbatim: statusLabel, tone: status.tone, symbol: status.symbol)
+                    }
+                    ForEach(tags, id: \.self) { tag in
+                        KoboTag(verbatim: tag, tone: .neutral)
+                    }
                 }
+                .padding(.top, Space.xxs)
             }
-            .padding(.top, Space.xxs)
             detail()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -94,7 +99,7 @@ extension WorkoutHeader where Detail == EmptyView {
         sport: Sport,
         kicker: String,
         title: String,
-        status: WorkoutStatus,
+        status: WorkoutStatus?,
         statusLabel: String,
         tags: [String] = []
     ) {
@@ -153,5 +158,47 @@ private struct WorkoutNeighbours: ViewModifier {
                     .tint(theme.palette.textPrimary)
             }
         }
+    }
+}
+
+extension View {
+    /// The bar of a workout page, as Apple's own apps: no title while the page's header shows, then the title fades in
+    /// once the page scrolls `after` points (the header has gone under the bar). Put it on the page's `ScrollView`.
+    func workoutBarTitle(_ title: String?, after: CGFloat = WorkoutBarTitle.defaultReveal) -> some View {
+        modifier(WorkoutBarTitle(title: title, after: after))
+    }
+}
+
+struct WorkoutBarTitle: ViewModifier {
+    /// About the height of the kicker and the title.
+    static let defaultReveal: CGFloat = 90
+
+    @Environment(\.koboTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    let title: String?
+    let after: CGFloat
+    @State private var isShown = false
+
+    func body(content: Content) -> some View {
+        content
+            .navigationBarTitleDisplayMode(.inline)
+            .onScrollGeometryChange(for: Bool.self) { geometry in
+                geometry.contentOffset.y + geometry.contentInsets.top > after
+            } action: { _, shown in
+                withAnimation(Motion.fastSpatial.animation(reduceMotion: reduceMotion)) { isShown = shown }
+            }
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    if let title {
+                        Text(verbatim: title)
+                            .font(theme.font(.headline))
+                            .foregroundStyle(theme.palette.textPrimary)
+                            .lineLimit(1)
+                            .opacity(isShown ? 1 : 0)
+                            .offset(y: isShown ? 0 : Space.sm)
+                            .accessibilityHidden(!isShown)
+                    }
+                }
+            }
     }
 }

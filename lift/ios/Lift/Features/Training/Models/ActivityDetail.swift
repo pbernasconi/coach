@@ -46,6 +46,8 @@ nonisolated struct ActivityHeader: Decodable, Equatable, Sendable {
     /// Strava's trainer flag.
     var indoor: Bool
     var commute: Bool
+    /// A real track outdoors: the page leads with the map. `nil` from a server before this field.
+    var outdoor: Bool?
     var subtitle: String
     var description: String?
     /// The older activity.
@@ -68,8 +70,16 @@ nonisolated struct ActivityOverview: Decodable, Equatable, Sendable {
 
     var big: [Stat]
     var small: [Stat]
+    /// The six headline stats in the sport's order. `nil` from a server before this field: the first six of `big` and
+    /// `small`.
+    var grid: [Stat]?
+    /// Every stat not in `grid`.
+    var more: [Stat]?
     /// "7 PRs · 7 achievements · 4 kudos".
     var achievementsText: String?
+
+    var gridStats: [Stat] { grid ?? Array((big + small).prefix(6)) }
+    var moreStats: [Stat] { more ?? Array((big + small).dropFirst(6)) }
 }
 
 nonisolated struct ActivityWeather: Decodable, Equatable, Sendable {

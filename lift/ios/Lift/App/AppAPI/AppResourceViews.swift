@@ -15,25 +15,33 @@ struct AppResourcePage<Value: Equatable & Sendable, Loaded: View>: View {
     private let state: AppResourceState<Value>
     private let onRetry: () -> Void
     private let onConnect: (() -> Void)?
+    private let showsFreshness: Bool
     private let loaded: (Value) -> Loaded
 
-    /// - Parameter onConnect: "Open Settings" under the not-connected state (switch to Settings → Sync); none when nil.
+    /// - Parameters:
+    ///   - onConnect: "Open Settings" under the not-connected state (switch to Settings → Sync); none when nil.
+    ///   - showsFreshness: the "Updated 1:05 PM" line; a page whose data does not change hides it (the offline line
+    ///     still shows).
     init(
         _ state: AppResourceState<Value>,
         onRetry: @escaping () -> Void,
         onConnect: (() -> Void)? = nil,
+        showsFreshness: Bool = true,
         @ViewBuilder loaded: @escaping (Value) -> Loaded
     ) {
         self.state = state
         self.onRetry = onRetry
         self.onConnect = onConnect
+        self.showsFreshness = showsFreshness
         self.loaded = loaded
     }
 
     var body: some View {
         LoadableView(state.content, onRetry: onRetry) { value in
             VStack(alignment: .leading, spacing: Space.section) {
-                if let freshness = state.freshness { AppFreshnessLine(freshness: freshness) }
+                if let freshness = state.freshness, showsFreshness || freshness.isOffline {
+                    AppFreshnessLine(freshness: freshness)
+                }
                 loaded(value)
             }
         } empty: {

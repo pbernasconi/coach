@@ -90,4 +90,50 @@ import Testing
         vm.send(.destinationDismissed)
         #expect(vm.state.destination == nil)
     }
+
+    @Test func mapExpandTappedDoesNothingOverAPanel() async {
+        let (vm, _) = await loaded()
+        vm.send(.panelTapped(.heartRate))
+        vm.send(.mapExpandTapped)
+        #expect(vm.state.destination == .panel(.heartRate))
+    }
+
+    @Test func panelTappedOpensThePanel() async {
+        let (vm, _) = await loaded()
+        vm.send(.panelTapped(.splits))
+        #expect(vm.state.panel == .splits)
+        vm.send(.destinationDismissed)
+        #expect(vm.state.panel == nil)
+    }
+
+    @Test func activityTappedClosesAnOpenPanel() async {
+        let (vm, _) = await loaded()
+        vm.send(.panelTapped(.sameRoute))
+        vm.send(.activityTapped("9000000090"))
+        #expect(vm.state.destination == nil)
+        #expect(router.opened == [.activity("9000000090")])
+    }
+
+    @Test func demoBodyHasTheGridAndOutdoorFlag() async {
+        let (vm, _) = await loaded()
+        let detail = vm.state.detail.content.value
+        #expect(detail?.overview?.value?.gridStats.map(\.label).prefix(2) == ["Distance", "Pace"])
+        #expect(detail?.header?.value?.outdoor == true)
+    }
+}
+
+/// The splits' bar lengths.
+@Suite struct SplitBarMathTests {
+    @Test(arguments: [
+        (Double?.some(3), [2.0, 3.0], Double?.some(1)),
+        (Double?.some(2), [2.0, 3.0], Double?.some(SplitBarMath.shortest)),
+        (Double?.some(2.5), [2.0, 3.0], Double?.some(0.7)),
+        (Double?.some(2), [2.0, 2.0], Double?.some(1)),
+        (Double?.none, [2.0, 3.0], Double?.none),
+        (Double?.some(2), [], Double?.none),
+    ])
+    func fraction(speed: Double?, speeds: [Double], expected: Double?) {
+        let got = SplitBarMath.fraction(speed, of: speeds)
+        #expect(got.map { ($0 * 1000).rounded() } == expected.map { ($0 * 1000).rounded() })
+    }
 }

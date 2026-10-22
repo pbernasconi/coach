@@ -24,7 +24,8 @@
   "fetch": {
    "pending": false,
    "note": null
-  }
+  },
+  "outdoor": true
  },
  "overview": {
   "ok": true,
@@ -102,7 +103,81 @@
     "unit": "km/h"
    }
   ],
-  "achievementsText": "2 achievements · 6 kudos"
+  "achievementsText": "2 achievements · 6 kudos",
+  "grid": [
+   {
+    "label": "Distance",
+    "valueText": "65.40",
+    "unit": "km"
+   },
+   {
+    "label": "Moving Time",
+    "valueText": "2:15:00"
+   },
+   {
+    "label": "Avg Speed",
+    "valueText": "29.1",
+    "unit": "km/h"
+   },
+   {
+    "label": "Elevation",
+    "valueText": "610",
+    "unit": "m"
+   },
+   {
+    "label": "Weighted Avg Power",
+    "valueText": "238",
+    "unit": "W"
+   },
+   {
+    "label": "Coach TSS",
+    "valueText": "142"
+   }
+  ],
+  "more": [
+   {
+    "label": "Relative Effort",
+    "valueText": "96"
+   },
+   {
+    "label": "Elapsed Time",
+    "valueText": "2:23:20"
+   },
+   {
+    "label": "Calories",
+    "valueText": "1,650"
+   },
+   {
+    "label": "Avg Heart Rate",
+    "valueText": "141",
+    "unit": "bpm"
+   },
+   {
+    "label": "Max Heart Rate",
+    "valueText": "172",
+    "unit": "bpm"
+   },
+   {
+    "label": "Cadence",
+    "valueText": "88",
+    "unit": "rpm"
+   },
+   {
+    "label": "Avg Power",
+    "valueText": "221",
+    "unit": "W"
+   },
+   {
+    "label": "Total Work",
+    "valueText": "1,790",
+    "unit": "kJ"
+   },
+   {
+    "label": "Max Speed",
+    "valueText": "54.0",
+    "unit": "km/h"
+   }
+  ]
  },
  "weather": {
   "ok": true,

@@ -44,7 +44,7 @@ struct ActivityAnalysisView: View {
             guard stream.overlayOf == nil else { return nil }
             let overlays = analysis.streams.filter { $0.overlayOf == stream.key }
             let series =
-                [line(stream, xs: xs, color: theme.palette.chartColor(index), dashed: false)]
+                [line(stream, xs: xs, color: ActivityStreamColor.color(stream.key, index: index, palette: theme.palette), dashed: false)]
                 + overlays.map { line($0, xs: xs, color: theme.palette.textSecondary, dashed: true) }
             let title = [stream.label, stream.avgText.map { String(localized: "avg \($0)") }].compactMap(\.self)
                 .joined(separator: " · ")
