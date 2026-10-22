@@ -22,7 +22,7 @@ export function Chip({ item, h, roomy = false }: { item: Item; h: Handlers; room
   return <LiftChip l={item.l} a={item.a} roomy={roomy} onOpen={open} />;
 }
 
-const chipBase = 'group/chip relative flex min-w-0 flex-col justify-center rounded-[5px] border border-l-[3px] px-1.5 text-[11px] leading-[15px] transition-shadow';
+const chipBase = 'plan-chip group/chip relative flex min-w-0 flex-col justify-center rounded-[5px] border border-l-[3px] px-1.5 text-[11px] leading-[15px] transition-shadow';
 const chipFocus = 'rounded-[4px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
 type OnOpen = (e: React.MouseEvent<HTMLElement>) => void;
@@ -38,9 +38,6 @@ function PlannedChip({ w, actual, roomy, onOpen }: { w: CalendarWorkout; actual:
   const plannedText = loadText(w.duration, w.tss, dur);
   const doneText = actual ? loadText(actual.min, actual.tss, dur) || dur(0) : w.match?.name ?? null;
   const status = skipped ? skipText(w.skipReason) : `${w.compliance.label}${pct ? ` (${pct})` : ''}`;
-  const tooltip = [plainTitle(w.title), `Planned: ${plannedText || 'no target'}`, doneText && `Done: ${doneText}`, status]
-    .filter(Boolean)
-    .join('\n');
   const draggable = !done;
   return (
     <div
@@ -59,13 +56,12 @@ function PlannedChip({ w, actual, roomy, onOpen }: { w: CalendarWorkout; actual:
         draggable && 'cursor-grab hover:shadow-md active:cursor-grabbing'
       )}
       style={{ borderLeftColor: filled ? sport(w.sport).color : `color-mix(in srgb, ${sport(w.sport).color} 45%, transparent)`, borderLeftStyle: 'solid', '--chip-tint': lvl.color } as React.CSSProperties}
-      title={tooltip}
     >
       <button type="button" onClick={onOpen} draggable={false} className={cn('block min-w-0 text-left', chipFocus)}>
         <span className="flex min-w-0 items-center gap-1">
           <SportIcon id={w.sport} className={cn('h-3 w-3', !filled && 'opacity-70')} />
           <span className={cn('min-w-0 flex-1 truncate font-medium', filled ? 'text-[var(--viz-ink)]' : 'text-[var(--viz-ink-2)]')}>{plainTitle(w.title)}</span>
-          <ComplianceMark level={w.compliance.level} title={status} />
+          <ComplianceMark level={w.compliance.level} title={status} tooltip={false} />
         </span>
         <span className={cn('block truncate tabular-nums', filled ? 'text-[var(--viz-ink-2)]' : 'text-[var(--viz-muted)]')}>
           {done && actual ? (
@@ -93,14 +89,13 @@ function ActivityChip({ a, roomy, onOpen }: { a: CalendarActivity; roomy: boolea
     <button
       type="button"
       onClick={onOpen}
-      title={`${a.name}\n${text}\nCompleted, not planned.`}
       className={cn(chipBase, 'text-left', roomy ? 'py-1.5' : 'h-[40px] shrink-0', 'plan-done shadow-sm hover:shadow-md', chipFocus, 'rounded-[5px]')}
       style={{ borderLeftColor: sport(a.sport).color, '--chip-tint': 'var(--plan-good)' } as React.CSSProperties}
     >
       <span className="flex min-w-0 items-center gap-1">
         <SportIcon id={a.sport} className="h-3 w-3" />
         <span className="min-w-0 flex-1 truncate font-medium text-[var(--viz-ink)]">{a.name || sport(a.sport).label}</span>
-        <ComplianceMark level="done" title="Completed, not planned" />
+        <ComplianceMark level="done" title="Completed, not planned" tooltip={false} />
       </span>
       <span className="block truncate tabular-nums text-[var(--viz-ink-2)]">{text}</span>
     </button>
@@ -114,14 +109,13 @@ function LiftChip({ l, a, roomy, onOpen }: { l: CalendarLift; a: CalendarActivit
     <button
       type="button"
       onClick={onOpen}
-      title={`${l.name}\n${l.setsLogged} sets logged in Lift`}
       className={cn(chipBase, 'text-left', roomy ? 'py-1.5' : 'h-[40px] shrink-0', 'plan-done shadow-sm hover:shadow-md', chipFocus, 'rounded-[5px]')}
       style={{ borderLeftColor: sport('strength').color, '--chip-tint': 'var(--plan-good)' } as React.CSSProperties}
     >
       <span className="flex min-w-0 items-center gap-1">
         <Dumbbell aria-hidden className="h-3 w-3 shrink-0" style={{ color: sport('strength').color }} />
         <span className="min-w-0 flex-1 truncate font-medium text-[var(--viz-ink)]">{l.name}</span>
-        <ComplianceMark level="done" title="Logged in Lift" />
+        <ComplianceMark level="done" title="Logged in Lift" tooltip={false} />
       </span>
       <span className="block truncate tabular-nums text-[var(--viz-ink-2)]">{watch ? `${watch} · ${l.setsLogged} sets` : `${l.setsLogged} sets · Lift`}</span>
     </button>

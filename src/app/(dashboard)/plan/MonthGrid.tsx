@@ -65,7 +65,7 @@ function DayCell({ day, today, wx, over, clip, h }: { day: Day; today: string; w
         if (e.target === e.currentTarget) h.day(d, 'add');
       }}
       className={cn(
-        'group/day relative flex min-h-0 min-w-0 flex-col gap-0.5 overflow-hidden border-r px-1 pb-1 pt-0.5 transition-colors',
+        'plan-day group/day relative flex min-h-0 min-w-0 flex-col gap-0.5 overflow-hidden border-r px-1 pb-1 pt-0.5 transition-colors',
         past && 'bg-muted/40',
         isToday && 'bg-primary/[0.04] ring-2 ring-inset ring-primary',
         over && 'bg-primary/10 ring-2 ring-inset ring-primary/70'
@@ -87,7 +87,7 @@ function DayCell({ day, today, wx, over, clip, h }: { day: Day; today: string; w
           type="button"
           onClick={() => h.day(d, 'add')}
           aria-label={`Add a workout on ${longDate(d)}`}
-          className="mt-0.5 flex h-6 shrink-0 items-center justify-center rounded-[5px] border border-dashed border-[var(--viz-axis)] text-[var(--viz-muted)] opacity-0 transition-opacity hover:border-[var(--viz-ink-2)] hover:text-[var(--viz-ink)] focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group-hover/day:opacity-100"
+          className="plan-day-add mt-0.5 flex h-6 shrink-0 items-center justify-center rounded-[5px] border border-dashed border-[var(--viz-axis)] text-[var(--viz-muted)] opacity-0 transition-opacity hover:border-[var(--viz-ink-2)] hover:text-[var(--viz-ink)] focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group-hover/day:opacity-100"
         >
           <Plus aria-hidden className="h-3.5 w-3.5" />
         </button>

@@ -41,6 +41,32 @@
   background: color-mix(in srgb, var(--chip-tint, transparent) 16%, hsl(var(--card)));
   border-color: color-mix(in srgb, var(--chip-tint, transparent) 45%, transparent);
 }
+/* Hover and press on any chip: a light wash and a stronger border, so the card under the pointer stands out.
+   Dashed (planned) cards turn solid. The left sport stripe is an inline style and keeps its colour. */
+.plan-chip {
+  transition: background-color 120ms, border-color 120ms, box-shadow 120ms, transform 80ms;
+}
+.plan-chip:hover {
+  background-color: color-mix(in srgb, var(--viz-ink) 10%, transparent);
+  border-color: color-mix(in srgb, var(--viz-ink) 55%, transparent);
+  border-style: solid;
+}
+.plan-done:hover {
+  background: color-mix(in srgb, var(--chip-tint, transparent) 26%, hsl(var(--card)));
+  border-color: color-mix(in srgb, var(--chip-tint, transparent) 75%, transparent);
+}
+.plan-chip:active {
+  transform: scale(0.98);
+  background-color: color-mix(in srgb, var(--viz-ink) 15%, transparent);
+}
+.plan-done:active {
+  background: color-mix(in srgb, var(--chip-tint, transparent) 34%, hsl(var(--card)));
+}
+/* The day's "+" add button stays hidden while a workout card in that day is hovered (MonthGrid.tsx). */
+.plan-day:has(.plan-chip:hover) .plan-day-add {
+  opacity: 0;
+  pointer-events: none;
+}
 .plan-dragging {
   opacity: 0.4;
 }
