@@ -40,8 +40,8 @@ export function feelForSkip(reason, date, today) {
   return reason === 'sick' ? 'wrecked' : 'tired';
 }
 
-/** 'Skipped · Tired', or 'Skipped' with no reason. */
+/** 'Not done · Tired', or 'Not done · Skipped' with no reason. */
 export function skipText(reason) {
   const r = cleanReason(reason);
-  return r ? `Skipped · ${SKIP_LABEL[r]}` : 'Skipped';
+  return `Not done · ${r ? SKIP_LABEL[r] : 'Skipped'}`;
 }

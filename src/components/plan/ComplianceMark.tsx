@@ -1,14 +1,16 @@
-import { Check, Circle, CircleDashed, Minus, TriangleAlert, X, type LucideIcon } from 'lucide-react';
+import { Check, Circle, CircleDashed, X, type LucideIcon } from 'lucide-react';
 import { LEVEL_LABEL } from '@/lib/plan/compliance.mjs';
 
 /** The colour token and icon for each compliance level (src/lib/plan/compliance.mjs). */
 export const LEVEL_STYLE: Record<string, { color: string; Icon: LucideIcon }> = {
   good: { color: 'var(--plan-good)', Icon: Check },
   done: { color: 'var(--plan-good)', Icon: Check },
-  partial: { color: 'var(--plan-partial)', Icon: Minus },
-  off: { color: 'var(--plan-off)', Icon: TriangleAlert },
+  // Partly done is still a session done: a check, in yellow.
+  partial: { color: 'var(--plan-partial)', Icon: Check },
+  off: { color: 'var(--plan-partial)', Icon: Check },
+  // Missed and skipped are one state on the calendar: not done.
   missed: { color: 'var(--plan-missed)', Icon: X },
-  skipped: { color: 'var(--plan-idle)', Icon: Minus },
+  skipped: { color: 'var(--plan-missed)', Icon: X },
   rest: { color: 'var(--plan-idle)', Icon: Circle },
   today: { color: 'var(--plan-idle)', Icon: CircleDashed },
   planned: { color: 'var(--plan-idle)', Icon: CircleDashed },
@@ -31,10 +33,9 @@ export default function ComplianceMark({ level, title, showLabel = false }: { le
 /** The legend for the compliance colours. */
 export function ComplianceLegend() {
   const items: [string, string][] = [
-    ['good', 'On target (80–120 %)'],
-    ['partial', 'Partly (50–80 %, 120–150 %)'],
-    ['off', 'Far off (under 50 %, over 150 %)'],
-    ['missed', 'Missed'],
+    ['good', 'Done (80–120 % of the plan)'],
+    ['partial', 'Partly done'],
+    ['missed', 'Not done'],
     ['planned', 'Planned'],
   ];
   return (
