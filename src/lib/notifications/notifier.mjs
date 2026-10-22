@@ -158,16 +158,17 @@ export function createNotifier(deps) {
      * Sends the notice `type` with `payload` to the user's devices, once per idempotency key.
      * @param {string} type
      * @param {unknown} payload
-     * @param {{ userId: string }} target
+     * @param {{ userId: string, replay?: string }} target  `replay` sends a notice again as a test: its idempotency
+     *   key gets the replay id, so it neither counts as the original nor blocks it
      * @returns {Promise<NotifyResult>}
      */
-    async notify(type, payload, { userId }) {
+    async notify(type, payload, { userId, replay }) {
       const bound = bindEvent(type, payload, { origin });
       if (!bound.ok) {
         log.error(`Notification ${type} not sent: ${bound.error}`);
         return { status: 'invalid', error: bound.error };
       }
-      const event = bound.event;
+      const event = replay ? { ...bound.event, idempotencyKey: `${bound.event.idempotencyKey}:replay:${replay}` } : bound.event;
       const mandatory = CATEGORIES[event.category].mandatory;
       const enabled = mandatory || (await repo.categoryEnabled(userId, event.category));
       const stored = await repo.create(userId, event, enabled ? 'pending' : 'muted');

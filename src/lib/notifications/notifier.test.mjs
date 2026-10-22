@@ -98,3 +98,12 @@ test('a bad payload stores nothing', async () => {
   assert.equal(r.status, 'invalid');
   assert.equal(repo.notifications.size, 0);
 });
+
+test('a replay sends a notice again under its own key, without blocking or counting as the original', async () => {
+  const { notifier, sent } = await setup();
+  assert.equal((await notifier.notify('weigh_in.recorded', weighIn, { userId: USER, replay: 'r1' })).status, 'sent');
+  assert.equal((await notifier.notify('weigh_in.recorded', weighIn, { userId: USER, replay: 'r1' })).status, 'duplicate');
+  assert.equal((await notifier.notify('weigh_in.recorded', weighIn, { userId: USER, replay: 'r2' })).status, 'sent');
+  assert.equal((await notifier.notify('weigh_in.recorded', weighIn, { userId: USER })).status, 'sent');
+  assert.equal(sent.length, 3);
+});
