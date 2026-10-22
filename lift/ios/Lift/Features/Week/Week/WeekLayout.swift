@@ -56,7 +56,9 @@ nonisolated struct WeekLayout: Sendable {
     /// Days with rows, marked done when every row that day is done.
     func markedDays(_ merge: WeekPlanMerge) -> [WeekDay] {
         merge.markedDays.compactMap { marked in
-            days.date(of: marked.day).map { WeekDay(date: $0, status: marked.isDone ? .done : .planned) }
+            days.date(of: marked.day).map {
+                WeekDay(date: $0, status: marked.isDone ? .done : .planned, workouts: marked.workouts)
+            }
         }
     }
 

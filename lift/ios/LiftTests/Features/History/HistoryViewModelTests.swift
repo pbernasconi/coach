@@ -65,8 +65,19 @@ import Testing
         #expect(vm.state.weeks == .empty)
     }
 
-    @Test func aWorkoutFinishedTodayWithNothingLoggedIsHistory() async {
+    @Test func aWorkoutFinishedTodayWithNothingLoggedIsNotHistory() async {
+        // Finished with nothing logged is not done (SessionSummary), so it waits on Week like a planned one.
         var finished = SessionBuilder.session(id: 1, on: monday, done: 0, planned: 3)
+        finished.session.finishedAt = ManualNow.start
+        let vm = makeViewModel(FakeSessionRepository(emissions: [[finished]]))
+
+        await vm.run()
+
+        #expect(vm.state.weeks == .empty)
+    }
+
+    @Test func aWorkoutFinishedTodayWithASetLoggedIsHistory() async {
+        var finished = SessionBuilder.session(id: 1, on: monday, done: 1, planned: 2)
         finished.session.finishedAt = ManualNow.start
         let vm = makeViewModel(FakeSessionRepository(emissions: [[finished]]))
 

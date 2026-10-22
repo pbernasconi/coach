@@ -131,6 +131,34 @@ test('the response: 7 days a week, Monday first, items in plan order, plan title
   assert.equal(w2.days.length, 7);
 });
 
+test('activities nothing matched are done items after the plan; a Lift session keeps the watch lift out', () => {
+  const ride = { id: '901', date: '2026-10-13', sport: 'ride', name: 'Morning Ride', km: 30.44, min: 62, tss: 70 };
+  const matchedRun = { id: '902', date: '2026-10-14', sport: 'run', name: 'Run', km: 8, min: 40, tss: 35 };
+  const watchLift = { id: '903', date: '2026-10-15', sport: 'strength', name: 'Strength', km: 0, min: 50, tss: 20 };
+  const body = weekResponse({
+    timeZone: 'America/Los_Angeles', today: '2026-10-20', mondays: ['2026-10-12'], now: NOW,
+    range: {
+      workouts: [workout({ id: 'p', date: '2026-10-14', sport: 'run', state: 'done', match: { source: 'strava', id: '902', name: 'Run' } })],
+      activities: [ride, matchedRun, watchLift],
+      lifts: [{ id: 'L1', date: '2026-10-15', name: 'Workout C', setsLogged: 12 }],
+      summaries: [],
+    },
+    plans: new Map(),
+    sports,
+  });
+  const [w] = body.weeks;
+  assert.deepEqual(w.days[1].items.map((i) => i.id), ['activity-901']);
+  assert.deepEqual(w.days[2].items.map((i) => i.id), ['p']);
+  assert.deepEqual(w.days[3].items, []);
+  const item = w.days[1].items[0];
+  assert.equal(item.unplanned, true);
+  assert.equal(item.state, 'done');
+  assert.equal(item.title, 'Morning Ride');
+  assert.deepEqual(item.stats, { time: '1:02:00', distance: '30.4 km', tss: '70' });
+  assert.equal(item.done.activityId, '901');
+  assert.equal(w.days[2].items[0].unplanned, false);
+});
+
 test('a rest day reads "Rest" in every state but skipped', () => {
   for (const state of ['planned', 'today', 'done']) {
     const item = weekItem(workout({ title: 'Rest day', sport: 'rest', state, compliance: complianceOf({}, state, null, { rest: true }) }), sports);

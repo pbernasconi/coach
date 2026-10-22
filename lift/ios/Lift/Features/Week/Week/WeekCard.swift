@@ -12,7 +12,7 @@ nonisolated enum WeekCardStatus: Equatable, Sendable {
 }
 
 /// The surface of one Week workout, styled as the web plan's chips: a done, partly done or not done card is filled with
-/// a light tint of its status colour; a planned one is a dashed outline on the canvas. The left edge is the sport's
+/// a light tint of its status colour; a planned one is a plain surface card with a dashed outline. The left edge is the sport's
 /// colour (faded while planned). The status is also an icon and a word inside the card, never colour alone.
 struct WeekCard<Content: View>: View {
     @Environment(\.koboTheme) private var theme
@@ -43,7 +43,7 @@ struct WeekCard<Content: View>: View {
                 theme.palette.surface
                 tone.soft
             } else {
-                Color.clear
+                theme.palette.surface
             }
             Rectangle()
                 .fill(status == .planned ? sport.opacity(0.45) : sport)

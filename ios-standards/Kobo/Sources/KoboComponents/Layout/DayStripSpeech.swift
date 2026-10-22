@@ -13,8 +13,8 @@ nonisolated enum DayStripSpeech {
             style.timeZone = calendar.timeZone
             style = style.locale(calendar.locale ?? .autoupdatingCurrent)
             parts = [day.date.formatted(style)]
-            switch day.marker {
-            case .none: break
+            switch day.marker.spokenState {
+            case nil: break
             case .planned: parts.append(String(localized: "Planned", bundle: .module))
             case .done: parts.append(String(localized: "Done", bundle: .module))
             }

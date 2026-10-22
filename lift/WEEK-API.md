@@ -80,7 +80,13 @@ not port plan logic. Change this file first, then both sides.
 
 Field rules:
 
-- `days`: always 7 entries, Monday first. `items` in the web's order (`sort_order`, then `startTime`). A day with no
+- `days`: always 7 entries, Monday first. `items` as the web's day cell (`cellItems`): planned workouts in the web's
+  order (`sort_order`, then `startTime`), then Strava activities that no planned workout matched. A Lift session is
+  never an item (the phone has its own), but an unplanned one takes the day's watch strength activity, so a lift
+  shows once.
+- `unplanned`: `true` for such an activity: `id` is `activity-<Strava id>`, `state` is `done`, `stateLabel` "Done",
+  `stats` and `done` are what was done, and the plan fields are `null` or empty. The phone opens the activity. `false`
+  for a planned workout. A day with no
   items is empty; the phone shows it as a free day. A planned rest day is an item with `sport: "rest"`.
 - `sport`: an id from `design/sports.json` (the phone's `SportStyle.swift`). Unknown ids: the phone uses `other`.
 - `title`: without the leading emoji (`plainTitle`).
