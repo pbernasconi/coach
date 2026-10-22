@@ -197,6 +197,20 @@ test('recent peaks: widest top-3 window, newest first, at most the limit', () =>
     ['b1', 300, 'd90', 2, 'Last 90 days'],
   ]);
   assert.equal(recentPeaks([row({ date: '2026-10-14', rank90: 1 }), row({ date: '2026-10-13', rank90: 1 })], '2026-10-21', { limit: 1 }).length, 1);
+  // maxRank 1: only the bests, each in its widest window where it is the best.
+  const best = recentPeaks(
+    [
+      row({ date: '2026-10-14', activityId: 'r1', rankAll: 5, rankYear: 2, rank90: 1 }),
+      row({ date: '2026-10-14', activityId: 'r1', span: 10000, value: 3162, rankAll: 1, rankYear: 1, rank90: 1 }),
+      row({ date: '2026-10-07', activityId: 'b1', metric: 'power', span: 300, value: 300, rankAll: 8, rankYear: 4, rank90: 2 }),
+    ],
+    '2026-10-21',
+    { maxRank: 1 },
+  );
+  assert.deepEqual(best.map((p) => [p.activityId, p.span, p.window, p.rank]), [
+    ['r1', 10000, 'all', 1],
+    ['r1', 5000, 'd90', 1],
+  ]);
   // A peak from last year cannot be ranked "this year".
   assert.equal(recentPeaks([row({ date: '2025-12-30', rankYear: 1 })], '2026-01-05').length, 0);
 });

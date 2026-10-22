@@ -6,10 +6,11 @@ import WeatherBadge from '@/components/plan/WeatherBadge';
 import { cn } from '@/lib/utils';
 import { plainTitle } from '@/lib/plan/calendar.mjs';
 import { cellItems, dur } from '@/lib/plan/cells.mjs';
-import type { CalendarActivity, CalendarLift, CalendarRange, CalendarWorkout, WeekSummary } from '@/lib/plan/month';
+import type { CalendarActivity, CalendarLift, CalendarRange, CalendarWorkout } from '@/lib/plan/month';
 import type { DayWeather } from '@/lib/plan/weather';
 import { addDays } from '@/lib/plan/week.mjs';
-import { readinessCue as cueFor, todayItemText, todayWorkouts } from '@/lib/performance/display.mjs';
+import { todayWorkouts } from '@/lib/performance/display.mjs';
+import TodayWorkout from './TodayWorkout';
 import { sport } from '@/lib/sports';
 
 type Item =
@@ -18,9 +19,6 @@ type Item =
   | { kind: 'lift'; key: string; l: CalendarLift; a: CalendarActivity | null };
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const hm = (min: number) => `${Math.floor(min / 60)}:${String(Math.round(min % 60)).padStart(2, '0')}`;
-const signed = (n: number) => `${n > 0 ? '+' : ''}${Math.round(n)}`;
-
 
 const chipBase = 'relative z-10 block min-w-0 rounded-[5px] border border-l-[3px] px-1.5 py-1 text-[11px] leading-[15px] transition-shadow hover:shadow-md';
 
@@ -80,63 +78,14 @@ function Chip({ item, href }: { item: Item; href: string }) {
   );
 }
 
-function WeekSide({ s }: { s: WeekSummary | null }) {
-  if (!s) return <div className="hidden border-l bg-[var(--viz-surface)] md:block" />;
-  const link = 'rounded px-1 -mx-1 transition-colors hover:bg-[var(--viz-band)]';
-  const rows: [string, string, string | null][] = [
-    ['Time', hm(s.done.min), s.planned.min ? hm(s.planned.min) : null],
-    ['TSS', String(Math.round(s.done.tss)), s.planned.tss ? String(Math.round(s.planned.tss)) : null],
-  ];
-  if (s.done.km > 0) rows.push(['Dist', `${s.done.km} km`, null]);
-  if (s.planned.count > 0) rows.push(['Done', `${s.planned.done}/${s.planned.count}`, null]);
-  return (
-    <div className="hidden flex-col gap-2 border-l bg-[var(--viz-surface)] px-2 py-1.5 text-[11px] leading-4 md:flex" aria-label="This week">
-      {s.fitness && (
-        <Link href="#fitness" title="Fitness, fatigue and form" className={cn('grid grid-cols-3 gap-1', link)}>
-          {([['Fit', String(Math.round(s.fitness.ctl)), 'var(--viz-ctl)'], ['Fat', String(Math.round(s.fitness.atl)), 'var(--viz-atl)'], ['Form', signed(s.fitness.tsb), 'var(--viz-tsb)']] as const).map(
-            ([label, value, color]) => (
-              <div key={label} className="min-w-0">
-                <div className="flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-[var(--viz-muted)]">
-                  <span className="h-0.5 w-2 shrink-0 rounded-full" style={{ background: color }} />
-                  {label}
-                </div>
-                <div className="font-semibold tabular-nums text-[var(--viz-ink)]">{value}</div>
-              </div>
-            )
-          )}
-        </Link>
-      )}
-      <Link href="/trends" title="Every week on Trends" className={cn('grid grid-cols-[auto_1fr] gap-x-2 tabular-nums', link)}>
-        {rows.map(([label, value, of]) => (
-          <span key={label} className="contents">
-            <span className="text-[var(--viz-muted)]">{label}</span>
-            <span className="text-right text-[var(--viz-ink)]">
-              {value}
-              {of && <span className="text-[var(--viz-muted)]"> / {of}</span>}
-            </span>
-          </span>
-        ))}
-      </Link>
-    </div>
-  );
-}
-
 /**
- * This week on the home page, drawn like a week row of the Plan calendar (same chips, weather and week column),
- * with today's session and a readiness cue on one line above it. Everything links on: a chip opens that item in
- * Plan (?open=), a day opens its week in Plan, the date opens that day's health, the week column opens the fitness
- * chart and Trends, and the readiness cue opens today's health.
+ * This week on the home page, drawn like a week row of the Plan calendar (same chips and weather), with today's
+ * workouts above it: what is asked and the structure chart. Everything links on: a chip opens that item in Plan
+ * (?open=), a day opens its week in Plan, and the date opens that day's health.
  */
-export default function HomeWeek({
-  range, weather, readiness,
-}: {
-  range: CalendarRange;
-  weather: Record<string, DayWeather>;
-  readiness: number | null;
-}) {
+export default function HomeWeek({ range, weather }: { range: CalendarRange; weather: Record<string, DayWeather> }) {
   const today = range.today;
   const monday = range.weeks[0];
-  const summary = range.summaries.find((s) => s.monday === monday) ?? null;
   const days = Array.from({ length: 7 }, (_, i) => {
     const date = addDays(monday, i);
     const items = cellItems(
@@ -147,7 +96,7 @@ export default function HomeWeek({
     return { date, items };
   });
   const { items: todays, emptyText } = todayWorkouts(range);
-  const cue = cueFor(readiness);
+  const skipped = range.workouts.filter((w) => w.date === today && w.status === 'skipped');
   const planHref = `/plan?week=${monday}`;
   const openHref = (key: string) => `${planHref}&open=${encodeURIComponent(key)}`;
   return (
@@ -159,38 +108,30 @@ export default function HomeWeek({
         <Link href={planHref} className="text-xs text-[var(--viz-muted)] hover:text-foreground">Open Plan →</Link>
       </div>
 
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t bg-[var(--viz-surface)] px-4 py-2 text-sm">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--viz-muted)]">Today</span>
-        {todays.length === 0 ? (
-          <Link href={planHref} className="text-[var(--viz-ink-2)] hover:text-foreground">
-            {emptyText}
-          </Link>
-        ) : (
-          todays.map((w) => (
-            <Link key={w.id} href={openHref(`w-${w.id}`)} className="flex items-center gap-1.5 rounded font-medium hover:underline hover:underline-offset-4">
-              <SportIcon id={w.sport} className="h-3.5 w-3.5" />
-              {plainTitle(w.title)}
-              <span className="font-normal tabular-nums text-[var(--viz-muted)]">
-                {todayItemText(w)}
-              </span>
-            </Link>
-          ))
-        )}
-        {cue && todays.length > 0 && (
-          <Link href={`/health/day/${today}`} className="text-amber-800 hover:underline hover:underline-offset-4 dark:text-amber-300">{cue}</Link>
+      <div className="divide-y border-t bg-[var(--viz-surface)]">
+        {todays.map((w) => <TodayWorkout key={w.id} w={w} href={openHref(`w-${w.id}`)} />)}
+        {todays.length === 0 && (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 text-sm">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--viz-muted)]">Today</span>
+            {skipped.length > 0 ? (
+              skipped.map((w) => (
+                <Link key={w.id} href={openHref(`w-${w.id}`)} className="flex items-center gap-1.5 text-[var(--viz-ink-2)] hover:text-foreground">
+                  <SportIcon id={w.sport} className="h-3.5 w-3.5" />
+                  <span className="line-through">{plainTitle(w.title)}</span>
+                  <span className="text-[var(--viz-muted)]">skipped</span>
+                </Link>
+              ))
+            ) : (
+              <Link href={planHref} className="text-[var(--viz-ink-2)] hover:text-foreground">{emptyText}</Link>
+            )}
+          </div>
         )}
       </div>
 
-      <div className="grid grid-cols-[repeat(7,minmax(0,1fr))] border-t md:grid-cols-[repeat(7,minmax(0,1fr))_7rem]">
-        {WEEKDAYS.map((d) => (
-          <span key={d} className="border-b border-r px-1.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--viz-muted)]">{d}</span>
+      <div className="grid grid-cols-[repeat(7,minmax(0,1fr))] border-t">
+        {WEEKDAYS.map((d, i) => (
+          <span key={d} className={cn('border-b px-1.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--viz-muted)]', i < 6 && 'border-r')}>{d}</span>
         ))}
-        <Link
-          href="/trends"
-          className="hidden border-b px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--viz-muted)] hover:text-foreground md:block"
-        >
-          Week
-        </Link>
         {days.map(({ date, items }, i) => {
           const isToday = date === today;
           const past = date < today;
@@ -200,7 +141,8 @@ export default function HomeWeek({
             <div
               key={date}
               className={cn(
-                'group relative flex min-h-32 min-w-0 flex-col gap-1 border-r px-1 pb-1.5 pt-1 transition-colors hover:bg-[var(--viz-band)]',
+                'group relative flex min-h-32 min-w-0 flex-col gap-1 px-1 pb-1.5 pt-1 transition-colors hover:bg-[var(--viz-band)]',
+                i < 6 && 'border-r',
                 past && 'bg-muted/40',
                 isToday && 'bg-primary/[0.04] ring-2 ring-inset ring-primary'
               )}
@@ -225,7 +167,6 @@ export default function HomeWeek({
             </div>
           );
         })}
-        <WeekSide s={summary} />
       </div>
     </section>
   );

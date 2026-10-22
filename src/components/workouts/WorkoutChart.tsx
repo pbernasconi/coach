@@ -17,7 +17,7 @@ export const ZONE_COLOR: Record<string, string> = { Z1: '#9ca3af', Z2: '#3b82f6'
  * The workout as an interval chart: one bar per step, its width the time and its height the intensity, colored by
  * zone. A ramp is a slope. Hover a bar for the step. Distance steps are drawn at an estimated pace.
  */
-export default function WorkoutChart({ workout, height = 120 }: { workout: StructuredWorkout; height?: number }) {
+export default function WorkoutChart({ workout, height = 120, className = 'h-28 w-full' }: { workout: StructuredWorkout; height?: number; className?: string }) {
   const flat = flatten(workout.steps as never[]) as Step[];
   const secs = flat.map((s) => Math.max(stepSeconds(s as never), s.duration.type === 'lap' ? 300 : 0));
   const total = secs.reduce((a, b) => a + b, 0) || 1;
@@ -47,7 +47,7 @@ export default function WorkoutChart({ workout, height = 120 }: { workout: Struc
   });
   const ftpLine = y(1);
   return (
-    <svg viewBox={`0 0 ${W} ${height}`} preserveAspectRatio="none" className="h-28 w-full" role="img" aria-label={`${workout.name}: interval chart`}>
+    <svg viewBox={`0 0 ${W} ${height}`} preserveAspectRatio="none" className={className} role="img" aria-label={`${workout.name}: interval chart`}>
       <line x1={0} x2={W} y1={ftpLine} y2={ftpLine} stroke="var(--viz-axis)" strokeDasharray="4 4" strokeWidth={1} vectorEffect="non-scaling-stroke" />
       {bars}
     </svg>

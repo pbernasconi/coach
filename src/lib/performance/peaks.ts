@@ -66,7 +66,7 @@ export type RecentPeak = {
  * The home page's recent peaks: peaks from the last `days` days that rank in the top 3 all time, this year or in
  * the last 90 days. Postgres counts the better values, so only the recent rows (a few dozen) leave the database.
  */
-export async function loadRecentPeaks(userId: string, today: string, { days = 28, limit = 6 } = {}): Promise<RecentPeak[]> {
+export async function loadRecentPeaks(userId: string, today: string, { days = 28, limit = 6, maxRank = 3 } = {}): Promise<RecentPeak[]> {
   const since = addDays(today, -(days - 1));
   const d90 = addDays(today, -89);
   const year = `${today.slice(0, 4)}-01-01`;
@@ -103,6 +103,6 @@ export async function loadRecentPeaks(userId: string, today: string, { days = 28
       rank90: Number(r.d90_better) + 1,
     })),
     today,
-    { limit },
+    { limit, maxRank },
   ) as RecentPeak[];
 }

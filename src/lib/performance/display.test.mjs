@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   daysAgoText, loadTiles, rampTiles, recoveryRows, decimalText, delta, e1rmText, goalView, headerChips, hoursSeries, hoursText, last4Tiles, liftChangeText,
   longDate, minutesText, muscleRows, paceText, peakText, performanceTiles, projectionCaption, rampCell, readinessBand,
-  readinessCue, setsText, signed, sportDetail, staleText, todayItemText, todayWorkouts, weekRow, weightChange,
+  setsText, signed, sportDetail, staleText, todayItemText, todayWorkouts, weekRow, weightChange,
 } from './display.mjs';
 
 const week = (over) => ({ week: '2026-10-12', hours: 5.5, runKm: 20, runMin: 110, rideKm: 60, rideHours: 2.25, strength: 2, tss: 310.4, planned: 8, done: 6, sports: {}, ...over });
@@ -49,12 +49,10 @@ test('header chips: tones and order, missing values left out', () => {
   assert.equal(headerChips(null, { ctl: 1, atl: 1, tsb: -31 })[1].tone, 'bad');
 });
 
-test('stale banner, readiness cue, projection caption', () => {
+test('stale banner, projection caption', () => {
   assert.equal(staleText('2026-10-10', '2026-10-20'), 'The newest Strava activity is from 2026-10-10.');
   assert.equal(staleText('2026-10-14', '2026-10-20'), null);
   assert.equal(staleText(null, '2026-10-20'), null);
-  assert.equal(readinessCue(80), 'Readiness high: go as planned');
-  assert.equal(readinessCue(null), null);
   const days = [{ date: '2026-10-20', ctl: 60, atl: 70, tsb: -10, tss: 50, projected: false }, { date: '2026-11-01', ctl: 62.4, atl: 50, tsb: 4.6, tss: 0, projected: true }];
   assert.equal(projectionCaption({ days, plannedTss: 520, estimatedWorkouts: 1 }), 'Projection to 2026-11-01: 520 planned TSS, fitness 62, form +5. 1 planned workout has no TSS; estimated from duration and intensity.');
   assert.equal(projectionCaption({ days: days.slice(0, 1), plannedTss: 0, estimatedWorkouts: 0 }), null);
@@ -155,7 +153,7 @@ test('fitness panel: load tiles, recovery rows and ramp tiles', () => {
     ['hrv', 'Balanced', 'good'],
     ['sleep', '7:05 · 82', 'good'],
   ]);
-  assert.match(rows[0].note, /Hold back about 10%\.$/);
+  assert.equal(rows[0].note, "Garmin's 0–100 score for training today.");
   assert.deepEqual(recoveryRows({ hrvStatus: { value: 0 } }), []);
   assert.deepEqual(recoveryRows(null), []);
 
