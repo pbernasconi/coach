@@ -93,6 +93,19 @@ export async function notifyStravaWorkouts(created: { id: string }[]) {
   });
 }
 
+/** The `weigh_in.recorded` payload of a reading, compared with the weigh-in before it and the 4-week change. */
+async function weighInNotice(userId: string, reading: { date: string; weightKg: number; bodyFatPct: number | null; source: string }) {
+  const [prev] = (await sql`
+    SELECT to_char(date, 'YYYY-MM-DD') AS date, value FROM health_samples
+    WHERE user_id = ${userId} AND metric = 'weight_kg' AND date < ${reading.date}::date
+    ORDER BY date DESC LIMIT 1`) as Row[];
+  const body = await loadBody(userId, reading.date);
+  return weighInPayload(reading, {
+    previous: prev ? { date: String(prev.date), weightKg: Math.round(Number(prev.value) * 100) / 100 } : null,
+    change4wKg: body.change4w,
+  });
+}
+
 /**
  * After a vitals push made with the Lift token (the scale bridge, or Apple Health from the phone): a
  * `weigh_in.recorded` notice for its weigh-in. Garmin's batch job (CRON_SECRET) never notifies.
@@ -104,15 +117,62 @@ export async function notifyWeighIn(rows: { date: string; metric: string; value:
   await guarded('weigh-in', async () => {
     const userId = await ownerId();
     if (!userId) return;
-    const [prev] = (await sql`
-      SELECT to_char(date, 'YYYY-MM-DD') AS date, value FROM health_samples
-      WHERE user_id = ${userId} AND metric = 'weight_kg' AND date < ${reading.date}::date
-      ORDER BY date DESC LIMIT 1`) as Row[];
-    const body = await loadBody(userId, reading.date);
-    const payload = weighInPayload(reading, {
-      previous: prev ? { date: String(prev.date), weightKg: Math.round(Number(prev.value) * 100) / 100 } : null,
-      change4wKg: body.change4w,
-    });
-    await notifier.notify('weigh_in.recorded', payload, { userId });
+    await notifier.notify('weigh_in.recorded', await weighInNotice(userId, reading), { userId });
   });
+}
+
+export const REPLAY_KINDS = ['lift', 'strava', 'weigh_in'] as const;
+export type ReplayKind = (typeof REPLAY_KINDS)[number];
+
+/** The payload a real notice of `kind` would carry, built from the latest data of that kind; null when there is none. */
+async function latestPayload(kind: ReplayKind, userId: string) {
+  if (kind === 'lift') {
+    const [row] = (await sql`
+      SELECT id FROM lift_rows
+      WHERE entity = 'session' AND deleted_at IS NULL AND payload->>'finishedAt' IS NOT NULL
+      ORDER BY payload->>'finishedAt' DESC LIMIT 1`) as Row[];
+    if (!row) return null;
+    const { model, unit } = await loadLiftModel();
+    const id = String(row.id).toLowerCase();
+    const detail = sessionDetail(model, id, unit);
+    if (!detail) return null;
+    const prs = personalRecords(model, unit).filter((r: { sessionId: string }) => r.sessionId === id).length;
+    return liftWorkoutPayload(detail, prs);
+  }
+  if (kind === 'strava') {
+    const [row] = (await sql`
+      SELECT strava_activity_id, name, type, sport_type, moving_time, elapsed_time, distance, tss, start_date
+      FROM strava_activities WHERE user_id = ${userId} ORDER BY start_date DESC LIMIT 1`) as Row[];
+    if (!row) return null;
+    const start = parseStamp(row.start_date);
+    if (!start) return null;
+    // As if it had just ended, so the 12-hour rule lets it through.
+    const nowMs = start.getTime() + (Number(row.elapsed_time) || 0) * 1000;
+    return stravaWorkoutPayload(row as Parameters<typeof stravaWorkoutPayload>[0], { nowMs, liftFinishedAt: [] });
+  }
+  const [weight] = (await sql`
+    SELECT to_char(date, 'YYYY-MM-DD') AS date, value, source FROM health_samples
+    WHERE user_id = ${userId} AND metric = 'weight_kg' ORDER BY date DESC LIMIT 1`) as Row[];
+  if (!weight) return null;
+  const date = String(weight.date);
+  const [fat] = (await sql`
+    SELECT value FROM health_samples
+    WHERE user_id = ${userId} AND metric = 'body_fat_pct' AND date = ${date}::date LIMIT 1`) as Row[];
+  return weighInNotice(userId, {
+    date,
+    weightKg: Number(weight.value),
+    bodyFatPct: fat ? Number(fat.value) : null,
+    source: String(weight.source || 'scale'),
+  });
+}
+
+/**
+ * Sends the notice a real event of `kind` would send, built from the latest data of that kind (the last finished
+ * Lift session, Strava activity or weigh-in), as a test: `replay` keeps it apart from the original notice.
+ */
+export async function replayLatest(kind: ReplayKind, userId: string, replay: string) {
+  const payload = await latestPayload(kind, userId);
+  if (!payload) return { status: 'no_data' as const };
+  const type = kind === 'weigh_in' ? 'weigh_in.recorded' : 'workout.completed';
+  return notifier.notify(type, payload, { userId, replay });
 }

@@ -98,6 +98,10 @@ switched off.
 Sends `system.test` to every active device and answers with what happened:
 `{ "notificationId", "status": "sent" | "partial" | "failed" | "no_devices", "accepted", "devices" }`.
 
+`{ "replay": "lift" | "strava" | "weigh_in" }` sends the real notice instead, built from the latest finished Lift
+session, Strava activity or weigh-in, with its deep link (`"status": "no_data"` when there is none). A replay has its
+own idempotency key, so it never blocks the real notice. The "Push test" workflow (`push-test.yml`) runs these.
+
 ## Server setup
 
 | Variable | What |
@@ -121,4 +125,4 @@ works for both APNs hosts; each device is sent to the host its `environment` nam
 ## Tables
 
 `push_devices`, `notifications`, `notification_deliveries`, `notification_preferences`
-(`src/db/notifications-schema.ts`, migration `0011_push_notifications`).
+(`src/db/notifications-schema.ts`, migration `0012_push_notifications`).
