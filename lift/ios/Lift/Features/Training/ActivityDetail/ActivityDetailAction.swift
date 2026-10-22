@@ -1,4 +1,5 @@
 import Foundation
+import LiftSync
 
 /// Every intent on the activity page, named for what happened (SCR-1).
 nonisolated enum ActivityDetailAction: Equatable, Sendable {
@@ -20,4 +21,6 @@ nonisolated enum ActivityDetailAction: Equatable, Sendable {
     case destinationDismissed
     /// "Open Settings" under the not-connected state.
     case connectTapped
+    /// The "How did it feel" card.
+    case feedback(WorkoutFeedbackAction)
 }

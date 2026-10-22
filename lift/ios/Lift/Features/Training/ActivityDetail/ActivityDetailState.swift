@@ -1,5 +1,6 @@
 import Foundation
 import KoboPatterns
+import LiftSync
 
 /// The analysis charts' shared x axis.
 nonisolated enum AnalysisAxis: String, CaseIterable, Equatable, Sendable {
@@ -47,4 +48,10 @@ nonisolated struct ActivityDetailState: Equatable, Sendable {
     /// The pace bars' mode key (`splits`, `laps`, `smoothed`); the first the server sends when `nil`.
     var paceMode: String?
     var destination: Destination?
+    var feedback = WorkoutFeedbackEdit()
+
+    /// The card's feedback: the edited copy, else the body's.
+    var shownFeedback: WorkoutFeedback? {
+        feedback.shown(detail.content.value?.feedback)
+    }
 }

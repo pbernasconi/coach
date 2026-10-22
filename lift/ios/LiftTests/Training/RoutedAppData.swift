@@ -20,6 +20,14 @@ final class RoutedAppData: AppDataSource {
 
     func kept(_: String) async -> AppAPIKept? { nil }
 
+    /// Each write's path; a write answers with the body sent.
+    private(set) var puts: [String] = []
+
+    func put(_ path: String, body: Data) async throws -> Data {
+        puts.append(path)
+        return body
+    }
+
     func fetch(_ path: String, query: [URLQueryItem]) async throws -> AppAPIKept {
         let key = appCacheKey(path, query)
         fetched.append(key)

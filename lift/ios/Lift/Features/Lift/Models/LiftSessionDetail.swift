@@ -9,6 +9,10 @@ nonisolated struct LiftSessionDetail: Decodable, Equatable, Sendable {
     var newerId: String?
     var hero: AppSection<LiftSessionHero>
     var exercises: AppSection<LiftSessionExercises>
+    /// The Strava activity the watch recorded for this lift; nil when there is none (or an older server).
+    var watch: AppSection<LiftWatch>?
+    /// "How did it feel"; nil when it did not load.
+    var feedback: WorkoutFeedback?
 }
 
 nonisolated struct LiftSessionHero: Decodable, Equatable, Sendable {
@@ -26,6 +30,10 @@ nonisolated struct LiftSessionHero: Decodable, Equatable, Sendable {
     var ring: LiftRing
     /// Up to 8, most sets first.
     var muscles: [LiftSessionMuscle]
+    /// The page's headline numbers, at most 6 (duration, sets, the watch's heart rate…); nil from an older server.
+    var summary: [ActivityOverview.Stat]?
+    /// The watch activity, for its full page.
+    var watchActivityId: String?
 }
 
 nonisolated struct LiftRing: Decodable, Equatable, Sendable {
@@ -71,6 +79,46 @@ nonisolated struct LiftSessionExercise: Decodable, Equatable, Sendable, Identifi
     var trend: LiftTrend?
     var steps: [String]
     var media: LiftMedia?
+    /// What was done and how it compares; nil from an older server.
+    var result: LiftExerciseResult?
+}
+
+/// One exercise's result (lift/APP-API.md, "Session"): the done sets as one line, the top set, the e1RM against last
+/// time, a record, and the e1RM of the last sessions ending with this one.
+nonisolated struct LiftExerciseResult: Decodable, Equatable, Sendable {
+    /// `done`, `skipped` or `planned`.
+    var state: String
+    var summaryText: String
+    var topSetText: String?
+    var e1rmText: String?
+    var change: Change?
+    var record: Bool
+    var progress: LiftTrend?
+
+    nonisolated struct Change: Decodable, Equatable, Sendable {
+        var text: String
+        /// `up`, `down` or `same`.
+        var tone: String
+        var caption: String
+    }
+}
+
+/// The watch's recording of the lift: its numbers, the heart rate on its clock, and the time in each zone.
+nonisolated struct LiftWatch: Decodable, Equatable, Sendable {
+    var activityId: String
+    var name: String?
+    var deviceText: String?
+    var stats: [ActivityOverview.Stat]
+    var heartRate: HeartRate?
+    var zones: [ActivityZones.Zone]?
+    var note: String?
+
+    nonisolated struct HeartRate: Decodable, Equatable, Sendable {
+        var timeS: [Double]
+        var values: [Double?]
+        var avgText: String?
+        var maxText: String?
+    }
 }
 
 nonisolated struct LiftSessionSet: Decodable, Equatable, Sendable, Identifiable {
@@ -85,6 +133,9 @@ nonisolated struct LiftSessionSet: Decodable, Equatable, Sendable, Identifiable 
     var beatTarget: Bool
     var rpeText: String?
     var note: String?
+
+    /// The server sends Lift's `warmUp`; older bodies wrote `warmup`.
+    var isWarmUp: Bool { kind.lowercased() == "warmup" }
 }
 
 nonisolated struct LiftLastTime: Decodable, Equatable, Sendable {

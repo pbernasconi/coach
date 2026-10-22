@@ -5577,5 +5577,74 @@
     "rankText": ""
    }
   ]
+ },
+ "feedback": {
+  "item": "strava:9000000102",
+  "date": "2026-10-17",
+  "title": "Harbour loop",
+  "planActivityId": null,
+  "feel": null,
+  "rpe": null,
+  "comment": null,
+  "fromWatch": false,
+  "feelLabels": [
+   "Very weak",
+   "Weak",
+   "Normal",
+   "Strong",
+   "Very strong"
+  ],
+  "rpeScale": [
+   {
+    "value": 1,
+    "label": "Very easy",
+    "detail": "Barely any effort."
+   },
+   {
+    "value": 2,
+    "label": "Easy",
+    "detail": "Could go all day."
+   },
+   {
+    "value": 3,
+    "label": "Moderate",
+    "detail": "Comfortable, full sentences."
+   },
+   {
+    "value": 4,
+    "label": "Somewhat hard",
+    "detail": "Breathing deeper, still chatty."
+   },
+   {
+    "value": 5,
+    "label": "Hard",
+    "detail": "Short sentences only."
+   },
+   {
+    "value": 6,
+    "label": "Hard",
+    "detail": "Steady focus needed."
+   },
+   {
+    "value": 7,
+    "label": "Very hard",
+    "detail": "A few words at a time."
+   },
+   {
+    "value": 8,
+    "label": "Extremely hard",
+    "detail": "Very challenging, intense focus."
+   },
+   {
+    "value": 9,
+    "label": "Near max",
+    "detail": "Could not keep it up much longer."
+   },
+   {
+    "value": 10,
+    "label": "Max effort",
+    "detail": "Nothing left."
+   }
+  ]
  }
 }

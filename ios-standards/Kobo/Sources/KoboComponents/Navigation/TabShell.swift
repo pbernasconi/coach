@@ -139,3 +139,15 @@ private struct TabShellAccessory<Accessory: View>: ViewModifier {
         #endif
     }
 }
+
+extension View {
+    /// A page pushed over a tab's root: the tab bar hides while it shows, and comes back on the way back to the root.
+    /// Detail pages get the whole screen for their content; the bar is for moving between tabs, and Back leads there.
+    /// Apply it once where the app builds its pushed routes (`navigationDestination(for:)`), so every pushed page
+    /// has it, never screen by screen.
+    ///
+    ///     .navigationDestination(for: AppRoute.self) { route in RouteScreen(route: route).detailPage() }
+    public func detailPage() -> some View {
+        toolbar(.hidden, for: .tabBar)
+    }
+}

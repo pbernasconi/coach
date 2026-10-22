@@ -9,6 +9,9 @@ import SwiftUI
 /// one the server could not load shows its own line.
 struct ActivitySections: View {
     let detail: ActivityDetail
+    /// "How did it feel", under the numbers; nil hides it.
+    let feedback: WorkoutFeedback?
+    let save: WorkoutFeedbackSaveState
     let send: (ActivityDetailAction) -> Void
 
     var body: some View {
@@ -18,6 +21,9 @@ struct ActivitySections: View {
             }
             OptionalSection(nil, detail.overview) { overview in
                 ActivityStatGrid(overview: overview) { send(.panelTapped(.stats)) }
+            }
+            if let feedback {
+                WorkoutFeedbackCard(feedback: feedback, save: save) { send(.feedback($0)) }
             }
             OptionalSection(nil, detail.analysis) { analysis in
                 ActivityChartCards(analysis: analysis, detail: detail, send: send)

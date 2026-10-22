@@ -23,6 +23,8 @@ public struct AppPlannedWorkout: Decodable, Equatable, Sendable {
     public var notes: String?
     public var liftSessionId: String?
     public var done: PlannedDone?
+    /// "How did it feel", from the workout's day on; nil before it, or when it did not load.
+    public var feedback: WorkoutFeedback?
 
     /// The path of the plan activity `id` (the Week API item's id).
     public static func path(_ id: String) -> String { "api/app/plan/\(id)" }

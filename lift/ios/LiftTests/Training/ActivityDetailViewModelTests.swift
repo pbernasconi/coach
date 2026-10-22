@@ -120,6 +120,17 @@ import Testing
         #expect(detail?.overview?.value?.gridStats.map(\.label).prefix(2) == ["Distance", "Pace"])
         #expect(detail?.header?.value?.outdoor == true)
     }
+
+    @Test func feedbackSavesTheFeelOfTheActivity() async {
+        let (vm, data) = await loaded()
+        #expect(vm.state.shownFeedback?.item == "strava:9000000102")
+
+        await vm.send(.feedback(.changed(.rpe(6))))?.value
+
+        #expect(vm.state.shownFeedback?.rpe == 6)
+        #expect(vm.state.feedback.save == .saved)
+        #expect(data.puts == ["api/app/feedback"])
+    }
 }
 
 /// The splits' bar lengths.
