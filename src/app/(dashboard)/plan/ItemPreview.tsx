@@ -19,7 +19,7 @@ export type PreviewTarget = { kind: 'item'; key: string } | { kind: 'day'; date:
 
 export type PreviewActions = {
   move: (id: string, date: string) => void;
-  skip: (w: CalendarWorkout) => void;
+  skip: (w: CalendarWorkout, reason?: string | null) => void;
   remove: (id: string) => void;
   open: (target: PreviewTarget, anchor: HTMLElement) => void;
 };

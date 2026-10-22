@@ -3,6 +3,7 @@ import { loadLiftModel } from '@/lib/lift-dashboard/queries';
 import { sessionSummaries } from '@/lib/lift-dashboard/stats.mjs';
 import { addDays, adaptForFeel, matchWeek, mondayOf, sportOfStrava, undoAdapts } from './week.mjs';
 import { toDay } from '@/lib/db-time.mjs';
+import { cleanReason, feelForSkip } from './skip.mjs';
 import { followWorkoutInLift } from '@/lib/lift/edit-store';
 
 /** A structured workout (src/lib/workouts/steps.mjs). */
@@ -25,6 +26,8 @@ export type Workout = {
   why: string | null;
   description: string | null;
   status: 'planned' | 'skipped';
+  /** Why it was skipped (src/lib/plan/skip.mjs), or null. */
+  skipReason: string | null;
   adaptedFrom: Record<string, unknown> | null;
   sortOrder: number;
   /** The workout as steps (src/lib/workouts/steps.mjs), or null for a text-only workout. */
@@ -67,7 +70,7 @@ async function planRow(userId: string, weekStart: string) {
 async function workoutRows(planId: string) {
   return (await sql`
     SELECT id, scheduled_date, start_time, end_time, title, activity_type, workout_type, intensity, duration, tss,
-           why, description, status, adapted_from, sort_order
+           why, description, status, skip_reason, adapted_from, sort_order
     FROM training_plan_activities WHERE plan_id = ${planId}
     ORDER BY scheduled_date, sort_order, start_time NULLS LAST`) as Row[];
 }
@@ -87,6 +90,7 @@ function toWorkout(r: Row): Omit<Workout, 'state' | 'match'> {
     why: (r.why as string) ?? null,
     description: (r.description as string) ?? null,
     status: r.status === 'skipped' ? 'skipped' : 'planned',
+    skipReason: r.status === 'skipped' ? ((r.skip_reason as string) ?? null) : null,
     adaptedFrom: (r.adapted_from as Record<string, unknown>) ?? null,
     sortOrder: Number(r.sort_order ?? 0),
   };
@@ -170,6 +174,7 @@ const COLUMN: Record<string, string> = {
   description: 'description',
   workoutType: 'workout_type',
   status: 'status',
+  skipReason: 'skip_reason',
 };
 
 /** Applies field changes to one workout the user owns. Marks it edited, so a re-import keeps the change. */
@@ -208,8 +213,16 @@ export async function moveWorkout(userId: string, id: string, date: string) {
   await sql`UPDATE training_plan_activities SET plan_id = ${planId} WHERE id = ${id}`;
 }
 
-export async function setSkipped(userId: string, id: string, skipped: boolean) {
-  await applyChanges(userId, id, { status: skipped ? 'skipped' : 'planned' });
+/**
+ * Skips a workout (with why) or puts it back. A skip of today's workout for fatigue also records how you feel, which
+ * eases the next quality session (src/lib/plan/skip.mjs). Returns the number of other workouts changed.
+ */
+export async function setSkipped(userId: string, id: string, skipped: boolean, reason: string | null = null, today?: string) {
+  const why = skipped ? cleanReason(reason) : null;
+  await applyChanges(userId, id, { status: skipped ? 'skipped' : 'planned', skipReason: why });
+  const date = today ? await workoutDate(userId, id) : null;
+  const feel = skipped && date && today ? feelForSkip(why, date, today) : null;
+  return feel ? setFeel(userId, mondayOf(today!), today!, feel) : 0;
 }
 
 /** Records how I feel today and adapts the rest of the week. Returns the number of workouts changed. */

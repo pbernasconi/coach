@@ -5,7 +5,8 @@
  *
  *   node --env-file=.env.local scripts/plan-edit.mjs show 2026-10-19
  *   node --env-file=.env.local scripts/plan-edit.mjs move <workoutId> 2026-10-23
- *   node --env-file=.env.local scripts/plan-edit.mjs skip <workoutId>        (unskip <workoutId> to undo)
+ *   node --env-file=.env.local scripts/plan-edit.mjs skip <workoutId> [tired|sick|sore|busy|travel|other]
+ *        (unskip <workoutId> to undo; the reason is what /check-in and /plan read, src/lib/plan/skip.mjs)
  *   node --env-file=.env.local scripts/plan-edit.mjs update <workoutId> title="Easy ride" duration=60 intensity=easy \
  *        start_time=07:30 description="Z2 only"
  *
@@ -20,6 +21,7 @@ import { createHash } from 'node:crypto';
 import { connect } from '../src/db/neon.mjs';
 import { pushWeek } from '../src/lib/calendar-sync/push.mjs';
 import { followWorkout } from '../src/lib/lift/follow-plan.mjs';
+import { SKIP_REASONS, cleanReason } from '../src/lib/plan/skip.mjs';
 
 const [cmd, a, b, ...rest] = process.argv.slice(2).filter((x) => x !== '--no-calendar' && x !== '--push-lift');
 const noCalendar = process.argv.includes('--no-calendar');
@@ -113,7 +115,7 @@ if (cmd === 'show') {
   console.log(`Feel log: ${JSON.stringify(plan.feel_log)}`);
   const rows = await sql`SELECT * FROM training_plan_activities WHERE plan_id = ${plan.id} ORDER BY scheduled_date, sort_order, start_time NULLS LAST`;
   for (const r of rows) {
-    const flags = [r.status === 'skipped' && 'SKIPPED', r.edited_at && 'changed on the web/CLI', r.adapted_from && `adapted, before: ${JSON.stringify(r.adapted_from)}`].filter(Boolean).join('; ');
+    const flags = [r.status === 'skipped' && `SKIPPED${r.skip_reason ? ` (${r.skip_reason})` : ''}`, r.edited_at && 'changed on the web/CLI', r.adapted_from && `adapted, before: ${JSON.stringify(r.adapted_from)}`].filter(Boolean).join('; ');
     console.log(`${r.id}  ${day(r.scheduled_date)} ${r.start_time ?? '--:--'}  ${r.title} (${r.intensity ?? '-'}, ${r.duration ?? '?'} min, ${r.tss ?? '?'} TSS)${flags ? `  [${flags}]` : ''}`);
   }
 } else if (cmd === 'move') {
@@ -125,10 +127,12 @@ if (cmd === 'show') {
   await followLift(a);
   await push([day(w.week_start_date), monday(b)]);
 } else if (cmd === 'skip' || cmd === 'unskip') {
-  if (!a) fail(`${cmd} <workoutId>`);
+  if (!a) fail(`${cmd} <workoutId> [${SKIP_REASONS.join('|')}]`);
+  if (cmd === 'skip' && b && !cleanReason(b)) fail(`Unknown reason "${b}": use one of ${SKIP_REASONS.join(', ')}`);
   const w = await workout(a);
-  await sql`UPDATE training_plan_activities SET status = ${cmd === 'skip' ? 'skipped' : 'planned'}, edited_at = NOW(), updated_at = NOW() WHERE id = ${a}`;
-  console.log(`${cmd}ped ${w.title}`);
+  const reason = cmd === 'skip' ? cleanReason(b) : null;
+  await sql`UPDATE training_plan_activities SET status = ${cmd === 'skip' ? 'skipped' : 'planned'}, skip_reason = ${reason}, edited_at = NOW(), updated_at = NOW() WHERE id = ${a}`;
+  console.log(`${cmd}ped ${w.title}${reason ? ` (${reason})` : ''}`);
   await followLift(a, { restore: cmd === 'unskip' });
   await push([day(w.week_start_date)]);
 } else if (cmd === 'update') {

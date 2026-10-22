@@ -18,6 +18,8 @@ import { liftHref } from './ItemPreview';
 import DevicesPanel from './DevicesPanel';
 import { Description, Header, Hero, StatusChip, longDay, type HeroStat } from './ModalParts';
 import { EditWorkout } from './CreateWorkout';
+import SkipWorkout from './SkipWorkout';
+import { SKIP_LABEL } from '@/lib/plan/skip.mjs';
 
 // ---------------------------------------------------------------------------------------------------------------
 // A planned workout that is not done yet
@@ -32,7 +34,7 @@ function liftHero(lift: NonNullable<CalendarWorkout['lift']>): HeroStat[] {
   ].filter(Boolean) as HeroStat[];
 }
 
-export default function PlannedModal({ w, onClose, onCopy, wx, onLiftChanged, onEdited }: { w: CalendarWorkout; onClose: () => void; onCopy?: (w: CalendarWorkout) => void; wx?: DayWeather; onLiftChanged?: (date: string) => Promise<void> | void; onEdited?: (days: { from: string; to: string }) => void }) {
+export default function PlannedModal({ w, onClose, onCopy, wx, onLiftChanged, onEdited, onSkip }: { w: CalendarWorkout; onClose: () => void; onCopy?: (w: CalendarWorkout) => void; wx?: DayWeather; onLiftChanged?: (date: string) => Promise<void> | void; onEdited?: (days: { from: string; to: string }) => void; onSkip?: (w: CalendarWorkout, reason?: string | null) => void }) {
   const [editing, setEditing] = useState(false);
   const targets = zonesFor(w) as { zone: string; label: string; target: string }[];
   // With the Lift session shown set by set, the text copy of the sets (scripts/lift-plan.mjs) is left out.
@@ -48,6 +50,10 @@ export default function PlannedModal({ w, onClose, onCopy, wx, onLiftChanged, on
           <>
             {w.adaptedFrom && <span className="hidden text-xs text-[var(--plan-partial)] sm:inline">Changed for how you feel</span>}
             <StatusChip level={w.compliance.level} ratio={w.compliance.ratio} basis={w.compliance.basis} />
+            {w.status === 'skipped' && w.skipReason && (
+              <span className="hidden text-xs text-[var(--viz-ink-2)] sm:inline">{(SKIP_LABEL as Record<string, string>)[w.skipReason] ?? w.skipReason}</span>
+            )}
+            {onSkip && <SkipWorkout w={w} onSkip={onSkip} />}
             {onEdited && (
               <button
                 type="button"

@@ -31,14 +31,17 @@ Read fresh `profile.md`. This pulls any newly completed Strava activities + fres
 ### Step 3 — Diff planned vs actual
 For each past day (Mon → today):
 - **Completed**: Strava activity matches planned sport → record actual duration + TSS + how it compares.
-- **Skipped**: No matching activity → mark skipped.
+- **Skipped**: Paolo skipped it on purpose (Skip in the web, `SKIPPED (reason)` in `plan-edit.mjs show`). The reason
+  is one of tired, sick, sore, busy, travel, other.
+- **Missed**: No matching activity and not skipped → ask why in Step 4, then record it with
+  `plan-edit.mjs skip <id> <reason>` so the history says why.
 - **Swapped**: Different sport → note the swap.
 
 Show as a compact table:
 ```
 | Day | Planned | Actual | Notes |
 | Mon | Easy Run 60min | ✅ 59min, TSS 70 | slightly harder than target |
-| Tue | Strength heavy | ⚠️ skipped | — |
+| Tue | Strength heavy | ⚠️ skipped (tired) | — |
 ```
 
 Also surface the **updated fitness state**: new CTL/ATL/TSB and the delta from when the plan was made.
@@ -57,11 +60,25 @@ Common patterns:
 - Skipped Tue strength → don't try to "make it up"; continue
 - Weather got worse → outdoor → Zwift swap
 
+Skipped workouts, by reason:
+- **Never make up a skipped workout.** Don't move it to a later day, don't add its TSS to other days, and don't stack
+  two quality sessions to catch up. The week's TSS target drops by what was skipped.
+- **tired / sore**: a fatigue signal. The next day is easy or rest. The next quality session needs one easy day in
+  front of it; if it is tomorrow, push it a day or make it aerobic. If it is the week's second fatigue skip (or HRV
+  and sleep in the profile are down), cut the rest of the week's intensity and tell Paolo.
+- **sick**: rest until symptoms are gone, then 1–2 easy days before any intensity ("above the neck" mild cold: easy
+  Z1–Z2 only). Drop the week's remaining quality sessions if it is mid-week or later.
+- **busy / travel**: no fatigue signal. Keep the plan; if the skipped session was the week's only quality session,
+  it may replace an easy day later in the week, never next to another hard day.
+- The web does part of this already: a Skip of **today's** workout for tired, sore or sick records how Paolo feels
+  (the feel log) and eases tomorrow's quality session the same way "how I feel: tired" does. Check what it changed
+  (`adapted` in `plan-edit.mjs show`) before you change more.
+
 ### Step 6 — Apply the changes (database, then calendar)
 Make each change to a **future** workout in the database. Each command also updates Google Calendar:
 ```bash
 node --env-file=.env.local scripts/plan-edit.mjs move <workoutId> YYYY-MM-DD
-node --env-file=.env.local scripts/plan-edit.mjs skip <workoutId>
+node --env-file=.env.local scripts/plan-edit.mjs skip <workoutId> tired   # tired | sick | sore | busy | travel | other
 node --env-file=.env.local scripts/plan-edit.mjs update <workoutId> title="Easy aerobic ride" duration=60 intensity=easy description="Z2 only"
 node --env-file=.env.local scripts/plan-edit.mjs update <workoutId> lift_template="Upper (dumbbells)"
 node --env-file=.env.local scripts/lift-plan.mjs

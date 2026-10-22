@@ -58,12 +58,14 @@ export async function moveWorkoutAction(id: string, toDate: string) {
   pushCalendar(userId, [mondayOf(date(toDate)), ...(fromDate ? [mondayOf(fromDate)] : [])]);
 }
 
-export async function skipWorkoutAction(id: string, skipped: boolean) {
+/** Skips a workout with why (or puts it back). Returns how many other workouts were eased for fatigue. */
+export async function skipWorkoutAction(id: string, skipped: boolean, reason: string | null = null) {
   const userId = await user();
-  await setSkipped(userId, String(id), Boolean(skipped));
+  const eased = await setSkipped(userId, String(id), Boolean(skipped), reason, todayIn(await cookieTimeZone()));
   revalidatePath('/plan');
   const onDate = await workoutDate(userId, String(id));
   if (onDate) pushCalendar(userId, [mondayOf(onDate)]);
+  return eased;
 }
 
 export async function addFromLibraryAction(itemId: string, onDate: string) {

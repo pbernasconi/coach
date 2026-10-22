@@ -24,6 +24,8 @@ type Props = {
   onLiftChanged?: (date: string) => Promise<void> | void;
   /** After an edit of a planned workout: loads its old and new week again. */
   onEdited?: (days: { from: string; to: string }) => void;
+  /** Skips a planned workout with why, or puts a skipped one back (no reason). */
+  onSkip?: (w: CalendarWorkout, reason?: string | null) => void;
 };
 
 /**
@@ -31,7 +33,7 @@ type Props = {
  * completed, the load change, zones and peak curves, laps and the stream charts. A done item links to its full
  * page. ← and → step to the previous and next item.
  */
-export default function ItemModal({ item, onClose, onStep, canStep, onCopy, weather, onLiftChanged, onEdited }: Props) {
+export default function ItemModal({ item, onClose, onStep, canStep, onCopy, weather, onLiftChanged, onEdited, onSkip }: Props) {
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
@@ -70,7 +72,7 @@ export default function ItemModal({ item, onClose, onStep, canStep, onCopy, weat
           ) : liftId ? (
             <LiftModal key={`l-${liftId}`} id={liftId} planned={planned} watch={item.kind === 'lift' ? item.a : item.kind === 'planned' ? item.actual : null} onClose={onClose} />
           ) : planned ? (
-            <PlannedModal key={planned.id} w={planned} onClose={onClose} onCopy={onCopy} wx={weather?.[planned.date]} onLiftChanged={onLiftChanged} onEdited={onEdited} />
+            <PlannedModal key={planned.id} w={planned} onClose={onClose} onCopy={onCopy} wx={weather?.[planned.date]} onLiftChanged={onLiftChanged} onEdited={onEdited} onSkip={onSkip} />
           ) : null}
           </StepContext.Provider>
         </Dialog.Content>

@@ -34,9 +34,15 @@
   content-visibility: auto;
   contain-intrinsic-size: auto 16rem;
 }
-/* A chip tinted by its compliance colour, over the cell background, in light and dark. */
-.plan-tint {
-  background: color-mix(in srgb, var(--chip-tint, transparent) 11%, hsl(var(--card)));
+/* Completed chips are filled cards; planned, missed and skipped ones are outlines only (ItemChips.tsx).
+   A done planned workout is tinted by its compliance colour, in light and dark. */
+.plan-done {
+  background: color-mix(in srgb, var(--chip-tint, transparent) 16%, hsl(var(--card)));
+  border-color: color-mix(in srgb, var(--chip-tint, transparent) 45%, transparent);
+}
+.plan-filled {
+  background: hsl(var(--card));
+  border-color: hsl(var(--border));
 }
 .plan-dragging {
   opacity: 0.4;

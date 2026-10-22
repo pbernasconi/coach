@@ -60,6 +60,10 @@ Surface to user:
 2. **This week's focus?** Endurance base / Cycling quality (bike VO2 / SST) / Running quality (run intervals / tempo) / Ski touring (climbing days) / Goal test week (e.g. a 10k test run)
 3. **Anything to lock or skip?** Free-form OR: Keep Bike Club / Skip a strength / Add long run / Travel day(s)
 
+Read "Skipped workouts (last 14 days)" in the profile before question 1. Two or more skips for tired, sore or sick
+mean the default answer is 🟡 Fatigued (say why), and the week starts with 2 easy days. Never carry a skipped
+workout into the new week to make it up.
+
 Tailor the options to what the profile actually shows (e.g. a goal that is behind or near its deadline: offer it as the focus; if travel is detected, don't ask about long rides he can't do).
 
 ### Step 4 — Draft the plan

@@ -91,6 +91,7 @@ function toWorkout(r: Row): Omit<Workout, 'state' | 'match'> {
     why: (r.why as string) ?? null,
     description: (r.description as string) ?? null,
     status: r.status === 'skipped' ? 'skipped' : 'planned',
+    skipReason: r.status === 'skipped' ? ((r.skip_reason as string) ?? null) : null,
     adaptedFrom: (r.adapted_from as Record<string, unknown>) ?? null,
     sortOrder: Number(r.sort_order ?? 0),
     steps: (r.steps as Workout['steps']) ?? null,
@@ -108,7 +109,7 @@ export async function loadRange(userId: string, fromMonday: string, toMonday: st
   const [planRows, actRows, loadRows, lift] = await Promise.all([
     sql`
       SELECT a.id, a.scheduled_date, a.start_time, a.end_time, a.title, a.activity_type, a.workout_type, a.intensity,
-             a.duration, a.tss, a.why, a.description, a.status, a.adapted_from, a.sort_order, a.source_key,
+             a.duration, a.tss, a.why, a.description, a.status, a.skip_reason, a.adapted_from, a.sort_order, a.source_key,
              a.lift_session_id, a.steps,
              (SELECT json_object_agg(s.target, json_build_object('status', s.status, 'error', s.last_error, 'syncedAt', s.synced_at))
                 FROM workout_syncs s WHERE s.activity_id = a.id) AS syncs
