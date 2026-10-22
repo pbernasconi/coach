@@ -31,7 +31,7 @@ export type LiftSessionDetail = RichSession;
 
 export type CalendarWorkout = Workout & {
   compliance: Compliance;
-  actual: { min: number | null; tss: number | null } | null;
+  actual: { min: number | null; tss: number | null; km?: number | null } | null;
   imported: boolean;
   /** Strength: the Lift session planned for it (lift_session_id), else the Lift session that matched it. */
   lift: LiftSessionDetail | null;
@@ -87,6 +87,7 @@ function toWorkout(r: Row): Omit<Workout, 'state' | 'match'> {
     workoutType: (r.workout_type as string) ?? null,
     intensity: (r.intensity as string) ?? null,
     duration: num(r.duration),
+    distance: num(r.distance),
     tss: num(r.tss),
     why: (r.why as string) ?? null,
     description: (r.description as string) ?? null,
@@ -109,7 +110,7 @@ export async function loadRange(userId: string, fromMonday: string, toMonday: st
   const [planRows, actRows, loadRows, lift] = await Promise.all([
     sql`
       SELECT a.id, a.scheduled_date, a.start_time, a.end_time, a.title, a.activity_type, a.workout_type, a.intensity,
-             a.duration, a.tss, a.why, a.description, a.status, a.skip_reason, a.adapted_from, a.sort_order, a.source_key,
+             a.duration, a.distance, a.tss, a.why, a.description, a.status, a.skip_reason, a.adapted_from, a.sort_order, a.source_key,
              a.lift_session_id, a.steps,
              (SELECT json_object_agg(s.target, json_build_object('status', s.status, 'error', s.last_error, 'syncedAt', s.synced_at))
                 FROM workout_syncs s WHERE s.activity_id = a.id) AS syncs
@@ -169,7 +170,7 @@ export async function loadRange(userId: string, fromMonday: string, toMonday: st
     const liftDetail = liftOf(linked.get(w.id) ?? (m.match?.source === 'lift' ? m.match.id : null));
     const actId = matchActivityId(m.match);
     const act = actId ? byStrava.get(actId) : null;
-    const actual = m.match ? { min: act?.min ?? null, tss: act?.tss ?? null } : null;
+    const actual = m.match ? { min: act?.min ?? null, tss: act?.tss ?? null, km: act?.km || null } : null;
     const compliance = complianceOf(w, m.status, actual, { rest: sportOf(w) === 'rest' }) as Compliance;
     return { ...w, state: m.status, match: m.match, actual, compliance, imported: imported.has(w.id), lift: liftDetail, liftSessionId: linked.get(w.id) ?? null, syncs: syncOf.get(w.id) ?? {} };
   });
