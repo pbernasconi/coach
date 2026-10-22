@@ -23,6 +23,6 @@ test('feelForSkip: only today, only fatigue', () => {
 });
 
 test('skipText', () => {
-  assert.equal(skipText('tired'), 'Skipped · Tired');
-  assert.equal(skipText(null), 'Skipped');
+  assert.equal(skipText('tired'), 'Not done · Tired');
+  assert.equal(skipText(null), 'Not done · Skipped');
 });

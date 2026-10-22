@@ -45,6 +45,6 @@ test('a skipped rest day reads skipped', () => {
 });
 
 test('labels name the level', () => {
-  assert.equal(complianceOf({ duration: 60 }, 'done', { min: 60 }).label, 'On target');
-  assert.equal(complianceOf({ duration: 60 }, 'missed', null).label, 'Missed');
+  assert.equal(complianceOf({ duration: 60 }, 'done', { min: 60 }).label, 'Done');
+  assert.equal(complianceOf({ duration: 60 }, 'missed', null).label, 'Not done');
 });

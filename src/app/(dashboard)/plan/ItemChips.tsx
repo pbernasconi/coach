@@ -31,6 +31,8 @@ function PlannedChip({ w, actual, roomy, onOpen }: { w: CalendarWorkout; actual:
   const done = w.state === 'done';
   const missed = w.state === 'missed';
   const skipped = w.state === 'skipped';
+  // Done, partly done and not done (missed or skipped) are filled in their status colour; planned is an outline.
+  const filled = done || missed || skipped;
   const pct = w.compliance.ratio != null ? `${Math.round(w.compliance.ratio * 100)} % of planned ${w.compliance.basis === 'tss' ? 'TSS' : 'time'}` : null;
   const plannedText = loadText(w.duration, w.tss, dur);
   const doneText = actual ? loadText(actual.min, actual.tss, dur) || dur(0) : w.match?.name ?? null;
@@ -52,23 +54,19 @@ function PlannedChip({ w, actual, roomy, onOpen }: { w: CalendarWorkout; actual:
       className={cn(
         chipBase,
         roomy ? 'py-1.5' : 'h-[34px] shrink-0',
-        // Done: a filled card tinted by how close it came to the plan. Not done: an outline only.
-        done ? 'plan-done shadow-sm' : 'border-dashed bg-transparent',
-        missed && 'border-[var(--plan-missed)]/60',
-        !done && !missed && 'border-[var(--viz-axis)]',
-        draggable && 'cursor-grab hover:shadow-md active:cursor-grabbing',
-        skipped && 'opacity-60'
+        filled ? 'plan-done shadow-sm' : 'border-dashed border-[var(--viz-axis)] bg-transparent',
+        draggable && 'cursor-grab hover:shadow-md active:cursor-grabbing'
       )}
-      style={{ borderLeftColor: done ? sport(w.sport).color : `color-mix(in srgb, ${sport(w.sport).color} 45%, transparent)`, borderLeftStyle: 'solid', '--chip-tint': lvl.color } as React.CSSProperties}
+      style={{ borderLeftColor: filled ? sport(w.sport).color : `color-mix(in srgb, ${sport(w.sport).color} 45%, transparent)`, borderLeftStyle: 'solid', '--chip-tint': lvl.color } as React.CSSProperties}
       title={tooltip}
     >
       <button type="button" onClick={onOpen} draggable={false} className={cn('block min-w-0 text-left', chipFocus)}>
         <span className="flex min-w-0 items-center gap-1">
-          <SportIcon id={w.sport} className={cn('h-3 w-3', !done && 'opacity-70')} />
-          <span className={cn('min-w-0 flex-1 truncate font-medium', done ? 'text-[var(--viz-ink)]' : 'text-[var(--viz-ink-2)]', skipped && 'line-through')}>{plainTitle(w.title)}</span>
+          <SportIcon id={w.sport} className={cn('h-3 w-3', !filled && 'opacity-70')} />
+          <span className={cn('min-w-0 flex-1 truncate font-medium', filled ? 'text-[var(--viz-ink)]' : 'text-[var(--viz-ink-2)]')}>{plainTitle(w.title)}</span>
           <ComplianceMark level={w.compliance.level} title={status} />
         </span>
-        <span className={cn('block truncate tabular-nums', done ? 'text-[var(--viz-ink-2)]' : 'text-[var(--viz-muted)]')}>
+        <span className={cn('block truncate tabular-nums', filled ? 'text-[var(--viz-ink-2)]' : 'text-[var(--viz-muted)]')}>
           {done && actual ? (
             <>
               {doneText}
@@ -77,7 +75,7 @@ function PlannedChip({ w, actual, roomy, onOpen }: { w: CalendarWorkout; actual:
           ) : skipped ? (
             skipText(w.skipReason)
           ) : missed ? (
-            `Missed${plannedText ? ` · ${plannedText}` : ''}`
+            `Not done${plannedText ? ` · ${plannedText}` : ''}`
           ) : (
             plannedText || sport(w.sport).label
           )}
@@ -94,8 +92,8 @@ function ActivityChip({ a, roomy, onOpen }: { a: CalendarActivity; roomy: boolea
       type="button"
       onClick={onOpen}
       title={`${a.name}\n${text}\nCompleted, not planned.`}
-      className={cn(chipBase, 'text-left', roomy ? 'py-1.5' : 'h-[34px] shrink-0', 'plan-filled shadow-sm hover:shadow-md', chipFocus, 'rounded-[5px]')}
-      style={{ borderLeftColor: sport(a.sport).color }}
+      className={cn(chipBase, 'text-left', roomy ? 'py-1.5' : 'h-[34px] shrink-0', 'plan-done shadow-sm hover:shadow-md', chipFocus, 'rounded-[5px]')}
+      style={{ borderLeftColor: sport(a.sport).color, '--chip-tint': 'var(--plan-good)' } as React.CSSProperties}
     >
       <span className="flex min-w-0 items-center gap-1">
         <SportIcon id={a.sport} className="h-3 w-3" />
@@ -115,8 +113,8 @@ function LiftChip({ l, a, roomy, onOpen }: { l: CalendarLift; a: CalendarActivit
       type="button"
       onClick={onOpen}
       title={`${l.name}\n${l.setsLogged} sets logged in Lift`}
-      className={cn(chipBase, 'text-left', roomy ? 'py-1.5' : 'h-[34px] shrink-0', 'plan-filled shadow-sm hover:shadow-md', chipFocus, 'rounded-[5px]')}
-      style={{ borderLeftColor: sport('strength').color }}
+      className={cn(chipBase, 'text-left', roomy ? 'py-1.5' : 'h-[34px] shrink-0', 'plan-done shadow-sm hover:shadow-md', chipFocus, 'rounded-[5px]')}
+      style={{ borderLeftColor: sport('strength').color, '--chip-tint': 'var(--plan-good)' } as React.CSSProperties}
     >
       <span className="flex min-w-0 items-center gap-1">
         <Dumbbell aria-hidden className="h-3 w-3 shrink-0" style={{ color: sport('strength').color }} />

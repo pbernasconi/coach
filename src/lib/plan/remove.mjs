@@ -38,7 +38,7 @@ export function applyChange(list, change) {
     if (w.id !== change.id) return w;
     if (change.date) return { ...w, date: change.date };
     if (change.status === 'skipped') {
-      const compliance = w.compliance ? { level: 'skipped', label: 'Skipped', ratio: null, basis: null } : w.compliance;
+      const compliance = w.compliance ? { level: 'skipped', label: 'Not done', ratio: null, basis: null } : w.compliance;
       return { ...w, status: 'skipped', state: 'skipped', skipReason: change.skipReason ?? null, ...(compliance && { compliance }) };
     }
     if (change.status) return { ...w, status: change.status, skipReason: null, state: w.state === 'skipped' ? 'planned' : w.state };
