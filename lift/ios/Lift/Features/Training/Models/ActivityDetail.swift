@@ -77,6 +77,30 @@ nonisolated struct ActivityOverview: Decodable, Equatable, Sendable {
     var more: [Stat]?
     /// "7 PRs · 7 achievements · 4 kudos".
     var achievementsText: String?
+    /// Every stat by meaning (effort, heart and lungs, running form or power), each with a word that places it
+    /// ("Improving", "Top 30%"). `nil` from a server before this field.
+    var groups: [StatGroup]?
+    /// The web's headline numbers, each with its companion (`sub`). Shown first on "All stats" with `groups`.
+    var hero: [StatGroup.Row]?
+
+    nonisolated struct StatGroup: Decodable, Equatable, Sendable, Identifiable {
+        nonisolated struct Row: Decodable, Equatable, Sendable, Hashable {
+            var key: String
+            var label: String
+            var valueText: String
+            var unit: String?
+            /// A companion number under a headline stat: "GAP 5:39", "max 173".
+            var sub: String?
+            var word: String?
+        }
+
+        var id: String
+        var title: String
+        var tag: String?
+        var rows: [Row]
+        /// The other load scores on one line each: "Garmin load 133", "Relative Effort 20".
+        var footer: [String]?
+    }
 
     var gridStats: [Stat] { grid ?? Array((big + small).prefix(6)) }
     var moreStats: [Stat] { more ?? Array((big + small).dropFirst(6)) }

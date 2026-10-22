@@ -19,6 +19,7 @@ import { ActivityHoverProvider } from '../activities/[id]/ActivityHover';
 import Histogram from '../activities/[id]/Histogram';
 import PowerCurve from '../activities/[id]/PowerCurve';
 import RouteMap from '../activities/[id]/RouteMap';
+import RouteProfile from '../activities/[id]/RouteProfile';
 import StreamCharts from '../activities/[id]/StreamCharts';
 import { ZoneBars } from '../activities/[id]/Sections';
 import EffortLog from './EffortLog';
@@ -176,7 +177,7 @@ function ActivityContent({
                     />
                   </div>
                 )}
-                <ElevationProfile v={v} />
+                {series?.d && v.route.length > 1 ? <RouteProfile series={series} foot={v.layout === 'run'} color={color} height={130} /> : <ElevationProfile v={v} />}
                 {load && <LoadTiles load={load} />}
                 <MinAvgMax v={v} />
                 {v.description && <Description title="Description" text={v.description} />}

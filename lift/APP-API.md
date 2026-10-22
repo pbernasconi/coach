@@ -690,6 +690,13 @@ Field rules:
   with other stats when one is missing. `overview.more`: every other stat of `big` and `small`, in their order. The
   watch's own stats (training effect, Garmin load, running dynamics, stamina, Body Battery) are at the end of `small`
   once Garmin has the activity, about a minute after the workout.
+- `overview.hero`: the web's headline numbers (at most 6), `{ key, label, valueText, unit?, sub? }`; `sub` is the
+  companion number ("GAP 5:39", "max 173", "57:14 elapsed", "IF 0.86 · tempo"). `overview.groups`: every other stat
+  by meaning, `{ id: 'effort' | 'heart' | 'form' | 'power', title, tag?, rows, footer? }`. A row is `{ key, label,
+  valueText, unit?, word?, tone?, scale? }`: `word` places the value ("Improving", "Top 30%", "Below baseline"),
+  `tone` is `good | ok | warn | bad`, `scale` `{ min, max, cuts, value, lowerIsBetter? }` draws the web's band track.
+  `footer`: the other load scores and calories, one string each ("Garmin load 133"). The phone's "All stats" page
+  shows `hero` then `groups` when present, else `more`.
 - `header.outdoor`: the activity has a real track (not a trainer ride, not a `Virtual…` sport): the phone leads the
   page with the route map.
   `achievementsText`: `null` without PRs, achievements or kudos.

@@ -48,12 +48,41 @@ struct ActivityPanelPage: View {
             OptionalSection(nil, detail.sameRoute) { ActivitySameRouteView(sameRoute: $0, send: send) }
         case .stats:
             OptionalSection(nil, detail.overview) { overview in
-                ListSection {
-                    ForEach(overview.moreStats, id: \.label) { stat in
-                        KeyValueRow(
-                            verbatim: stat.label,
-                            value: [stat.valueText, stat.unit].compactMap(\.self).joined(separator: " ")
-                        )
+                if let groups = overview.groups, !groups.isEmpty {
+                    // The web's groups: each value with its word ("268 ms · Average").
+                    if let hero = overview.hero, !hero.isEmpty {
+                        ListSection(verbatim: String(localized: "Summary")) {
+                            ForEach(hero, id: \.key) { row in
+                                KeyValueRow(
+                                    verbatim: row.label,
+                                    value: [[row.valueText, row.unit].compactMap(\.self).joined(separator: " "), row.sub]
+                                        .compactMap(\.self).joined(separator: " · ")
+                                )
+                            }
+                        }
+                    }
+                    ForEach(groups) { group in
+                        ListSection(
+                            verbatim: [group.title, group.tag].compactMap(\.self).joined(separator: " · "),
+                            footer: group.footer.flatMap { $0.isEmpty ? nil : $0.joined(separator: " · ") }
+                        ) {
+                            ForEach(group.rows, id: \.key) { row in
+                                KeyValueRow(
+                                    verbatim: row.label,
+                                    value: [[row.valueText, row.unit].compactMap(\.self).joined(separator: " "), row.word]
+                                        .compactMap(\.self).joined(separator: " · ")
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    ListSection {
+                        ForEach(overview.moreStats, id: \.label) { stat in
+                            KeyValueRow(
+                                verbatim: stat.label,
+                                value: [stat.valueText, stat.unit].compactMap(\.self).joined(separator: " ")
+                            )
+                        }
                     }
                 }
             }

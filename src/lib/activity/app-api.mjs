@@ -57,6 +57,7 @@ export function isOutdoor(v) {
 }
 
 export { NOT_LOADED_NOTE } from './view.mjs';
+import { heroStats, statGroups } from './summary.mjs';
 import { NOT_LOADED_NOTE } from './view.mjs';
 
 // ===== Queries =====
@@ -398,7 +399,7 @@ export function detailResponse({ v, context, timeZone, today, now, typeLabel }) 
     })),
     overview: section('overview', () => {
       const stats = overviewStats(v);
-      return { ...stats, ...overviewGrid(stats, v.layout), achievementsText: achievementsText(st) };
+      return { ...stats, ...overviewGrid(stats, v.layout), hero: heroStats(v), groups: statGroups(v), achievementsText: achievementsText(st) };
     }),
     weather: section('weather', () => (v.weather ? weatherView(v.weather) : null)),
     equipment: section('equipment', () => (v.device || v.gear ? { device: v.device, gear: gearView(v) } : null)),
