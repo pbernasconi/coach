@@ -34,8 +34,11 @@ def client() -> "asc.Client":
 
 
 def app_id(api: "asc.Client", bundle: str) -> str:
-    query = urllib.parse.urlencode({"filter[bundleId]": bundle})
-    for item in api.call("GET", f"/apps?{query}").get("data", []):
+    apps = api.call("GET", "/apps?limit=50").get("data", [])
+    for item in apps:
+        attributes = item["attributes"]
+        print(f"app {attributes.get('name')!r} · {attributes.get('bundleId')} · id {item['id']}")
+    for item in apps:
         if item["attributes"]["bundleId"] == bundle:
             return item["id"]
     raise SystemExit(f"::error::No App Store Connect app for {bundle}.")
