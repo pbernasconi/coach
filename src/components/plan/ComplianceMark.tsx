@@ -18,14 +18,15 @@ export const LEVEL_STYLE: Record<string, { color: string; Icon: LucideIcon }> = 
 
 export const levelStyle = (level: string) => LEVEL_STYLE[level] ?? LEVEL_STYLE.planned;
 
-/** A status icon in the level colour. The label goes to screen readers and the tooltip; `showLabel` prints it. */
-export default function ComplianceMark({ level, title, showLabel = false }: { level: string; title?: string; showLabel?: boolean }) {
+/** A status icon in the level colour. The label goes to screen readers and the tooltip; `showLabel` prints it.
+ *  `tooltip={false}` drops the hover tooltip (calendar cards) and reads `title` to screen readers instead. */
+export default function ComplianceMark({ level, title, showLabel = false, tooltip = true }: { level: string; title?: string; showLabel?: boolean; tooltip?: boolean }) {
   const { color, Icon } = levelStyle(level);
   const label = (LEVEL_LABEL as Record<string, string>)[level] ?? level;
   return (
-    <span className="inline-flex items-center gap-1" title={title ?? label}>
+    <span className="inline-flex items-center gap-1" title={tooltip ? title ?? label : undefined}>
       <Icon aria-hidden className="h-3 w-3 shrink-0" style={{ color }} strokeWidth={2.75} />
-      {showLabel ? <span className="text-[var(--viz-ink-2)]">{label}</span> : <span className="sr-only">{label}</span>}
+      {showLabel ? <span className="text-[var(--viz-ink-2)]">{label}</span> : <span className="sr-only">{tooltip ? label : title ?? label}</span>}
     </span>
   );
 }
