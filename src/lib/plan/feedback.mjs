@@ -62,3 +62,23 @@ export function feedbackLine(f) {
     .filter(Boolean)
     .join(' · ');
 }
+
+/**
+ * The phone's "How did it feel" block (lift/APP-API.md, "Feedback"): the item to save under, what is logged, and the
+ * scales' words. `row` is the stored feedback (loadFeedback), which can sit on another item of the same planned workout:
+ * then the phone saves under that item, as the web's EffortLog does.
+ * @param {{ item: string, date: string, title: string | null, planActivityId: string | null, row: { item: string, feel: number | null, rpe: number | null, comment: string | null } | null }} input
+ */
+export function feedbackBlock({ item, date, title, planActivityId, row }) {
+  return {
+    item: row?.item ?? item,
+    date,
+    title,
+    planActivityId,
+    feel: row?.feel ?? null,
+    rpe: row?.rpe ?? null,
+    comment: row?.comment ?? null,
+    feelLabels: FEEL_LABELS,
+    rpeScale: RPE_SCALE.map(([label, detail], i) => ({ value: i + 1, label, detail })),
+  };
+}

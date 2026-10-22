@@ -2,6 +2,8 @@ import { sql } from '@/db';
 import { appRoute } from '@/lib/app-api/route';
 import { load, safe } from '@/lib/safe';
 import { loadRange } from '@/lib/plan/month';
+import { feedbackBlock } from '@/lib/plan/feedback.mjs';
+import { loadFeedback } from '@/lib/plan/feedback';
 import { addDays, matchActivityId, mondayOf } from '@/lib/plan/week.mjs';
 import { stravaTypeLabel } from '@/lib/sports';
 import { loadActivity, loadActivityContext } from './queries';
@@ -71,7 +73,12 @@ export async function loadAppActivity(userId: string, id: string, today: string,
   const v = await loadActivity(userId, id);
   if (!v) return null;
   const context = await load("app activity: coach's view", () => loadActivityContext(userId, v, today));
-  return { body: detailResponse({ v, context, timeZone, today, now, typeLabel: stravaTypeLabel }), rowId: v.id };
+  const plannedId = context.ok ? (context.value.planned?.id ?? null) : null;
+  const item = `strava:${v.stravaId}`;
+  const row = await load('app activity: feedback', () => loadFeedback(userId, [item], plannedId));
+  const feedback = row.ok ? feedbackBlock({ item, date: v.day, title: v.name, planActivityId: plannedId, row: row.value }) : null;
+  const body = { ...detailResponse({ v, context, timeZone, today, now, typeLabel: stravaTypeLabel }), feedback };
+  return { body, rowId: v.id };
 }
 
 /**

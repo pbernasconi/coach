@@ -11,6 +11,7 @@ import {
   sessionMeta, sessionStats, setTile, weekStats,
 } from './text.mjs';
 import { plannedVolume, sessionMuscles, sessionState } from '../lift/session-stats.mjs';
+import { exerciseResult, summaryGrid, watchSection } from './session-result.mjs';
 
 const LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 /** Logged sessions the web shows before "Show older sessions". */
@@ -356,9 +357,10 @@ export function weeklyResponse({ weeks, unit, now }) {
  * @typedef {Omit<Detail, 'exercises'> & { exercises: (Detail['exercises'][number] & { media: Media | null })[] }} Rich
  */
 
-/** @param {Rich} d @param {string} timeZone */
-function heroSection(d, timeZone) {
+/** @param {Rich} d @param {string} timeZone @param {ReturnType<typeof watchSection>} watch */
+function heroSection(d, timeZone, watch) {
   const state = sessionState(d);
+  const results = d.exercises.map((e) => exerciseResult(e, d.unit));
   const start = clockText(d.startedAt, timeZone);
   const muscles = sessionMuscles(d).slice(0, 8);
   const most = muscles[0]?.sets ?? 1;
@@ -372,6 +374,8 @@ function heroSection(d, timeZone) {
     state,
     stateLabel: SESSION_STATE_LABEL[state],
     stats: sessionStats(d, plannedVolume(d)),
+    summary: summaryGrid(d, results, watch, state),
+    watchActivityId: watch?.activityId ?? null,
     ring: {
       logged: d.setsLogged,
       total: d.setsTotal,
@@ -438,14 +442,18 @@ function exerciseCard(e, index, unit) {
     trend: showE1rm && h.trend.length >= 2 ? { values: h.trend.map((p) => r1(p.e1rm)), caption: `e1RM · last ${h.trend.length} sessions` } : null,
     steps: media?.steps ?? [],
     media: media && (media.image || media.gif) ? { image: media.image, gif: media.gif } : null,
+    result: exerciseResult(e, unit),
   };
 }
 
 /**
  * The whole GET /api/app/lift/sessions/:id response from a session with media (lib/lift/session.ts richSession).
- * @param {{ session: Rich, timeZone: string, now: Date }} input
+ * `watch`: the activity page's body of the Strava activity the watch recorded for this lift (null: none; false: it did
+ * not load). `feedback`: the "How did it feel" block (feedbackBlock), null when it did not load.
+ * @param {{ session: Rich, timeZone: string, now: Date, watch?: object | null | false, feedback?: object | null }} input
  */
-export function sessionResponse({ session: d, timeZone, now }) {
+export function sessionResponse({ session: d, timeZone, now, watch = null, feedback = null }) {
+  const watchCard = watch ? watchSection(watch) : null;
   return {
     generatedAt: now.toISOString(),
     timeZone,
@@ -453,7 +461,9 @@ export function sessionResponse({ session: d, timeZone, now }) {
     unit: d.unit,
     olderId: d.olderId,
     newerId: d.newerId,
-    hero: section('session hero', () => heroSection(d, timeZone)),
+    hero: section('session hero', () => heroSection(d, timeZone, watchCard)),
+    watch: watch === false ? { ok: false } : watchCard ? { ok: true, ...watchCard } : null,
+    feedback,
     exercises: section('session exercises', () => ({
       emptyText: 'This session has no exercises.',
       items: d.exercises.map((e, i) => exerciseCard(e, i, d.unit)),

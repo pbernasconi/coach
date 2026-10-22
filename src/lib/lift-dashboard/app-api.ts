@@ -1,8 +1,15 @@
 import { richSession } from '@/lib/lift/session';
-import { safe } from '@/lib/safe';
+import { load, safe } from '@/lib/safe';
 import { DEFAULT_TARGETS, loadTargets } from '@/lib/status';
 import { loadBody } from '@/lib/vitals/garmin-pages';
+import { loadAppActivity } from '@/lib/activity/app-api';
+import { appRoute } from '@/lib/app-api/route';
+import { feedbackBlock } from '@/lib/plan/feedback.mjs';
+import { loadFeedback } from '@/lib/plan/feedback';
+import { loadRange } from '@/lib/plan/month';
+import { mondayOf } from '@/lib/plan/week.mjs';
 import { exerciseResponse, liftResponse, sessionResponse, weeklyResponse } from './app-api.mjs';
+import { sessionPairing } from './session-result.mjs';
 import { liftOverview } from './overview.mjs';
 import { loadLiftModel } from './queries';
 import { exerciseDetail, exerciseList, weeklyVolume } from './stats.mjs';
@@ -42,11 +49,49 @@ export async function loadAppLiftWeekly(now = new Date()) {
   return weeklyResponse({ weeks: loaded?.weeks ?? null, unit: loaded?.unit ?? null, now });
 }
 
-/** GET /api/app/lift/sessions/:id: one session (an id in any case, or 'latest'); null when there is none. */
-export async function loadAppLiftSession(id: string, timeZone: string, now = new Date()) {
+/**
+ * GET /api/app/lift/sessions/:id: one session (an id in any case, or 'latest'); null when there is none. With the watch
+ * activity of the same lift (the plan calendar's pairing, sessionPairing) and the "How did it feel" block. Each fails
+ * alone.
+ */
+export async function loadAppLiftSession(
+  userId: string,
+  id: string,
+  today: string,
+  timeZone: string,
+  now = new Date()
+) {
   const { model, unit } = await loadLiftModel();
   const session = richSession(model, id, unit);
-  return session ? sessionResponse({ session, timeZone, now }) : null;
+  if (!session) return null;
+  const pairing = await safe(
+    'app lift session: pairing',
+    async () => {
+      const monday = mondayOf(session.day);
+      return sessionPairing(session.id, session.day, await loadRange(userId, monday, monday, today));
+    },
+    null
+  );
+  const plannedId = pairing?.planned?.id ?? null;
+  const [watch, row] = await Promise.all([
+    !pairing
+      ? (false as const)
+      : pairing.activityId
+        ? safe<object | null | false>(
+            'app lift session: watch',
+            async () => {
+              const a = await loadAppActivity(userId, pairing.activityId!, today, timeZone, now);
+              return a?.body ?? null;
+            },
+            false as const
+          )
+        : null,
+    load('app lift session: feedback', () => loadFeedback(userId, [`lift:${session.id}`], plannedId)),
+  ]);
+  const feedback = row.ok
+    ? feedbackBlock({ item: `lift:${session.id}`, date: session.day, title: session.title || 'Lift session', planActivityId: plannedId, row: row.value })
+    : null;
+  return sessionResponse({ session, timeZone, now, watch, feedback });
 }
 
 /** GET /api/app/lift/exercises/:key: one exercise's history; null when it has no logged sets. */
@@ -60,3 +105,9 @@ export async function loadAppLiftExercise(key: string, now = new Date()) {
 export const SESSION_ID = /^(latest|[0-9A-Za-z-]{1,64})$/;
 /** An exercise key: 'id-<library id>' or 'name-<lower-case name>', as exerciseKey() in stats.mjs. */
 export const EXERCISE_KEY = /^(id|name)-[\s\S]{1,200}$/;
+
+/** The handler of GET /api/app/lift/sessions/:id through appRoute (the route and the health check). */
+export function appLiftSessionResponse(request: Request, id: string) {
+  const invalid = SESSION_ID.test(id) ? null : 'id must be a session id or latest';
+  return appRoute(request, 'lift session', ({ userId, today, timeZone }) => loadAppLiftSession(userId, id, today, timeZone), invalid);
+}
