@@ -73,8 +73,8 @@ struct WeekCard<Content: View>: View {
     }
 }
 
-/// The status as the web marks it: a check in green (done) or yellow (partly done), an X in red (not done), with its
-/// word. Nothing while planned: being on the list says it is planned.
+/// The status as the web marks it, as an icon only: a check in green (done) or yellow (partly done), an X in red (not
+/// done). VoiceOver reads its word. Nothing while planned: being on the list says it is planned.
 struct WeekStatusMark: View {
     @Environment(\.koboTheme) private var theme
     let status: WeekCardStatus
@@ -82,15 +82,10 @@ struct WeekStatusMark: View {
 
     var body: some View {
         if let style {
-            Label {
-                Text(verbatim: label)
-            } icon: {
-                Image(systemName: style.symbol).fontWeight(.bold).accessibilityHidden(true)
-            }
-            .labelStyle(.titleAndIcon)
-            .font(theme.font(.caption).weight(.semibold))
-            .foregroundStyle(style.color)
-            .fixedSize()
+            Image(systemName: style.symbol)
+                .font(theme.font(.subheadline).weight(.bold))
+                .foregroundStyle(style.color)
+                .accessibilityLabel(Text(verbatim: label))
         }
     }
 
