@@ -21,7 +21,7 @@ test('an older markdown summary becomes titled blocks', () => {
   const b = summaryBlocks('**Fitness:** CTL 52.\n**Rotation changes:**\n- The test takes B.\n- Thu is easy.\nloose line');
   assert.deepEqual(b, [
     { title: 'Fitness', lines: ['CTL 52.'] },
-    { title: 'Rotation changes', lines: ['The test takes B.', 'Thu is easy.', 'loose line'] },
+    { title: 'Rotation changes', lines: ['The test takes B.', 'Thu is easy.', 'Loose line'] },
   ]);
   assert.deepEqual(summaryBlocks(null), []);
 });

@@ -18,6 +18,7 @@ const plan = {
 };
 
 test('request, claim, check, propose and accept a cloud plan', async () => {
+  await sql`DELETE FROM calendar_connections WHERE user_id = ${user}`;
   await sql`DELETE FROM users WHERE id = ${user}`;
   await sql`INSERT INTO users (id, email) VALUES (${user}, 'proposals@example.com')`;
   try {
@@ -41,8 +42,19 @@ test('request, claim, check, propose and accept a cloud plan', async () => {
     assert.equal(open?.review?.headline, 'Two quality days.');
     assert.equal(open?.review?.decisions[0].tradeoff, 'No VO2 this week');
     assert.equal((await loadOutlook(user, open!)).plannedTss > 0, true);
+    // Calendar: Coach's own workout events and declined events are not busy time; times are Paolo's wall clock.
+    await sql`
+      INSERT INTO calendar_connections (id, user_id, google_email, access_token, refresh_token, token_expires_at, google_account_id, scope)
+      VALUES ('cc_proposals', ${user}, 'p@example.com', 'x', 'x', NOW(), 'gacct_proposals', 'calendar')`;
+    const event = (id: string, summary: string, start: string, end: string, description: string | null, attendees: unknown = null) => sql`
+      INSERT INTO calendar_events (id, connection_id, google_event_id, google_calendar_id, summary, description, start_time, end_time, is_all_day, status, attendees, timezone)
+      VALUES (${id}, 'cc_proposals', ${id}, 'primary', ${summary}, ${description}, ${start}, ${end}, false, 'confirmed', ${attendees ? JSON.stringify(attendees) : null}, 'UTC')`;
+    await event('ev_hh', 'Alum HH', '2026-11-05T01:30:00Z', '2026-11-05T03:30:00Z', null);
+    await event('ev_coach', 'Recovery spin', '2026-11-03T15:00:00Z', '2026-11-03T16:00:00Z', 'Easy.\n\nOpen in Coach: https://coach.example/plan');
+    await event('ev_no', 'Declined sync', '2026-11-06T17:00:00Z', '2026-11-06T18:00:00Z', null, [{ self: true, responseStatus: 'declined' }]);
     const ctx = await loadPlanningContext(user, week, { strict: true });
     assert.ok(Array.isArray(ctx.facts) && ctx.suggested.feel);
+    assert.deepEqual(ctx.days, { '2026-11-04': '17:30 Alum HH' });
 
     const accepted = await acceptProposal(user, id);
     assert.ok('counts' in accepted && accepted.counts.inserted === 2, JSON.stringify(accepted));
@@ -58,6 +70,7 @@ test('request, claim, check, propose and accept a cloud plan', async () => {
     await sql`DELETE FROM training_plan_activities a USING training_plans p WHERE p.id = a.plan_id AND p.user_id = ${user}`;
     await sql`DELETE FROM training_plans WHERE user_id = ${user}`;
     await sql`DELETE FROM plan_proposals WHERE user_id = ${user}`;
+    await sql`DELETE FROM calendar_connections WHERE user_id = ${user}`;
     await sql`DELETE FROM users WHERE id = ${user}`;
   }
 });

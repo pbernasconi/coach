@@ -58,11 +58,13 @@ export async function loadPlanningContext(userId: string, weekStart: string, { s
         AND a.scheduled_date >= ${addDays(today, -14)}::date AND a.scheduled_date <= ${today}::date` as Promise<Row[]>, []),
     quiet(loadUpcomingEvents(userId, today, 180), []),
     quiet(sql`
-      SELECT ce.summary, ce.start_time, ce.end_time, ce.is_all_day, ce.timezone
+      SELECT ce.summary, ce.start_time, ce.end_time, ce.is_all_day
       FROM calendar_events ce JOIN calendar_connections cc ON cc.id = ce.connection_id
       WHERE cc.user_id = ${userId} AND ce.status <> 'cancelled'
         AND ce.start_time >= ${addDays(weekStart, -1)}::date AND ce.start_time < ${addDays(weekStart, 8)}::date
-        AND ce.raw_event_data #>> '{extendedProperties,private,coachWorkoutId}' IS NULL
+        -- Coach's own workouts (pushWeek writes this line into each event) are not busy time.
+        AND COALESCE(ce.description, '') NOT LIKE '%Open in Coach: %'
+        AND NOT COALESCE(ce.attendees::jsonb @> '[{"self": true, "responseStatus": "declined"}]', false)
       ORDER BY ce.start_time
       LIMIT 80` as Promise<Row[]>, []),
   ]);
@@ -78,10 +80,10 @@ export async function loadPlanningContext(userId: string, weekStart: string, { s
   const minByWeek = new Map(weeks.map((w) => [String(w.monday), { min: Number(w.min), sessions: Number(w.sessions) }]));
   const mondays = [0, 1, 2, 3].map((i) => addDays(monday, -7 * (i + 1))).filter((m) => tssByWeek.has(m) || minByWeek.has(m));
 
-  const localDay = (d: unknown, tz: unknown) =>
-    new Date(d as Date).toLocaleDateString('en-CA', { timeZone: (tz as string) || HOME_TZ });
-  const localTime = (d: unknown, tz: unknown) =>
-    new Date(d as Date).toLocaleTimeString('en-GB', { timeZone: (tz as string) || HOME_TZ, hour: '2-digit', minute: '2-digit' });
+  // Paolo's wall clock, as on /plan (an event's own time zone is often UTC).
+  const localDay = (d: unknown) => new Date(d as Date).toLocaleDateString('en-CA', { timeZone: HOME_TZ });
+  const localTime = (d: unknown) =>
+    new Date(d as Date).toLocaleTimeString('en-GB', { timeZone: HOME_TZ, hour: '2-digit', minute: '2-digit' });
 
   return planningContext({
     load,
@@ -93,10 +95,10 @@ export async function loadPlanningContext(userId: string, weekStart: string, { s
     calendar: calendar.map((c) => {
       const allDay = Boolean(c.is_all_day);
       return {
-        date: allDay ? (toDay(c.start_time) ?? '') : localDay(c.start_time, c.timezone),
+        date: allDay ? (toDay(c.start_time) ?? '') : localDay(c.start_time),
         title: String(c.summary ?? 'Busy').slice(0, 60),
         allDay,
-        start: allDay ? null : localTime(c.start_time, c.timezone),
+        start: allDay ? null : localTime(c.start_time),
         minutes: allDay ? 0 : Math.max(0, Math.round((new Date(c.end_time as Date).getTime() - new Date(c.start_time as Date).getTime()) / 60_000)),
       };
     }),
