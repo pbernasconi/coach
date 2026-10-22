@@ -3,7 +3,8 @@
 import { revalidatePath } from 'next/cache';
 import { clearCache } from '@/lib/data-cache';
 import { ownerForSignedInUser } from '@/lib/owner';
-import { deleteFile, linkFile } from '@/lib/vitals/dexa-store';
+import { deleteFile, linkFile, setFileView } from '@/lib/vitals/dexa-store';
+import { isImageView } from '@/lib/vitals/dexa-images.mjs';
 
 async function owner() {
   const id = await ownerForSignedInUser();
@@ -24,6 +25,15 @@ export async function linkDexaFile(form: FormData) {
   const userId = await owner();
   const resultId = String(form.get('resultId') ?? '');
   await linkFile(userId, String(form.get('id') ?? ''), resultId || null);
+  clearCache('dexa');
+  revalidatePath('/health/dexa', 'layout');
+}
+
+/** Sets which scan image view (composite, fat, lean, bone) an uploaded image is, or none. */
+export async function setDexaFileView(form: FormData) {
+  const userId = await owner();
+  const view = form.get('view');
+  await setFileView(userId, String(form.get('id') ?? ''), isImageView(view) ? view : null);
   clearCache('dexa');
   revalidatePath('/health/dexa', 'layout');
 }

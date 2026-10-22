@@ -1,0 +1,1 @@
+ALTER TABLE "dexa_files" ADD COLUMN "view" text;

@@ -151,6 +151,8 @@
   --viz-good: #0ca30c;
   --viz-up: #006300;
   --viz-down: #d03b3b;
+  --viz-warn: #e0a800;
+  --viz-warn-ink: #8f5f00;
 }
 .dark {
   --viz-surface: #1a1a19;
@@ -168,6 +170,8 @@
   --viz-good: #0ca30c;
   --viz-up: #0ca30c;
   --viz-down: #e66767;
+  --viz-warn: #f0b72f;
+  --viz-warn-ink: #f0b72f;
 }
 
 /* DEXA (/health/dexa): fat, lean and bone mass. Fat is the violet slot (not a status hue: amber and red mean

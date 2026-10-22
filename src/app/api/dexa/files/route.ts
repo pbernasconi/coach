@@ -1,6 +1,7 @@
 /**
  * POST /api/dexa/files: uploads a DEXA report (PDF) or scan image for the signed-in owner. Form fields: `file`,
- * optional `resultId` (the scan; else guessed from a date in the file name) and `note`. Answers `{ id, duplicate }`
+ * optional `resultId` (the scan; else guessed from a date in the file name), `view` (composite, fat, lean or bone; else
+ * guessed from the file name) and `note`. Answers `{ id, duplicate }`
  * or `{ error }`. At most 4 MB (Vercel's request limit is 4.5 MB).
  */
 
@@ -8,6 +9,7 @@ import { revalidatePath } from 'next/cache';
 import { ownerForSignedInUser } from '@/lib/owner';
 import { clearCache } from '@/lib/data-cache';
 import { UploadError, loadScans, saveFile, scanForName } from '@/lib/vitals/dexa-store';
+import { isImageView } from '@/lib/vitals/dexa-images.mjs';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -33,6 +35,7 @@ export async function POST(request: Request) {
       data: new Uint8Array(await file.arrayBuffer()),
       resultId: resultId || null,
       note: String(form.get('note') ?? '').trim() || null,
+      view: isImageView(form.get('view')) ? (form.get('view') as 'composite' | 'fat' | 'lean' | 'bone') : null,
     });
     clearCache('dexa');
     revalidatePath('/health/dexa', 'layout');

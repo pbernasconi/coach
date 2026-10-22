@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { sql } from '@/db';
-import { UploadError, deleteFile, linkFile, loadFiles, readFile, saveFile, scanForName } from '@/lib/vitals/dexa-store';
+import { UploadError, deleteFile, linkFile, loadFiles, readFile, saveFile, scanForName, setFileView } from '@/lib/vitals/dexa-store';
 
 const user = 'user_dexa_files';
 
@@ -64,6 +64,34 @@ test('DEXA files are stored once, with a PDF text, and read back byte for byte',
   assert.equal((await loadFiles(user)).find((f) => f.id === image.id)!.resultId, 'files-r1');
   await deleteFile(user, image.id);
   assert.equal((await loadFiles(user)).length, 1);
+
+  await sql`DELETE FROM dexa_files WHERE user_id = ${user}`;
+  await sql`DELETE FROM dexa_scans WHERE user_id = ${user}`;
+});
+
+test('scan images take a view from the form or the file name, and a new image takes over its slot', async () => {
+  await sql`DELETE FROM dexa_files WHERE user_id = ${user}`;
+  await sql`DELETE FROM dexa_scans WHERE user_id = ${user}`;
+  await sql`INSERT INTO dexa_scans (result_id, user_id, scanned_at, scan_date) VALUES ('files-r2', ${user}, now(), '2025-08-08')`;
+  const png = (n: number) => new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, n]);
+  const view = async (id: string) => (await loadFiles(user)).find((f) => f.id === id)!.view;
+
+  const named = await saveFile(user, { name: 'Fat Tissue.png', contentType: 'image/png', data: png(1), resultId: 'files-r2', note: null });
+  assert.equal(await view(named.id), 'fat');
+  const chosen = await saveFile(user, { name: 'image.png', contentType: 'image/png', data: png(2), resultId: 'files-r2', note: null, view: 'fat' });
+  assert.equal(await view(chosen.id), 'fat');
+  assert.equal(await view(named.id), null, 'the replaced image keeps no view');
+
+  const loose = await saveFile(user, { name: 'image.png', contentType: 'image/png', data: png(3), resultId: null, note: null });
+  assert.equal(await view(loose.id), null);
+  const again = await saveFile(user, { name: 'bone.png', contentType: 'image/png', data: png(3), resultId: 'files-r2', note: null });
+  assert.equal(again.duplicate, true);
+  assert.equal(await view(loose.id), 'bone', 'a re-upload fills in the view and scan it lacked');
+  assert.equal((await loadFiles(user)).find((f) => f.id === loose.id)!.resultId, 'files-r2');
+
+  await setFileView(user, named.id, 'bone');
+  assert.equal(await view(named.id), 'bone');
+  assert.equal(await view(loose.id), null);
 
   await sql`DELETE FROM dexa_files WHERE user_id = ${user}`;
   await sql`DELETE FROM dexa_scans WHERE user_id = ${user}`;

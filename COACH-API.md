@@ -259,11 +259,15 @@ tables are `bodyspec_connections` and `dexa_scans` (`drizzle/0009_bodyspec_dexa.
   rebuilds them on the next sync without calling BodySpec.
 - **Files**: BodySpec's API has no scan images or PDF reports for users (only its partner export). Upload them on
   /health/dexa (`POST /api/dexa/files`, Clerk session, PDF or PNG/JPEG/WebP up to 4 MB). They go to `dexa_files`
-  (bytes, and a PDF's text for AI questions); a date in the file name links the scan. `GET /api/dexa/files/{id}`
-  serves one to the owner.
-- **Shown**: /health → Body composition (latest values and every scan), and /health/dexa: a body map (fat % by
-  region, lean change), trends, fat/lean/bone per scan, percentiles, regions, left/right balance, the scans and the
-  files. /health/dexa/{date} is one scan in full (also `latest` or a result id).
+  (bytes, and a PDF's text for AI questions); a date in the file name links the scan. A scan image also has a
+  `view` (composite, fat, lean or bone: the form field `view`, else read from the file name, `dexa-images.mjs`); a
+  new image for a scan's view takes that slot. `GET /api/dexa/files/{id}` serves one to the owner.
+- **Shown**: /health → Body composition (latest values and every scan), and /health/dexa: progress first. Body fat
+  over time on the healthy ranges for the athlete's sex and age, fat and lean mass, the focus areas (belly and
+  visceral fat, arm and leg lean), healthy-range bars (body fat, FFMI, ALMI, bone Z-score; sources in
+  `src/lib/vitals/dexa-health.mjs`), the scan images side by side, and the scans and files.
+  /health/dexa/{date} is one scan: its four images, headline changes, ranges, regions and the rest under Details
+  (also `latest` or a result id).
 
 #### `GET /api/vitals/dexa`
 

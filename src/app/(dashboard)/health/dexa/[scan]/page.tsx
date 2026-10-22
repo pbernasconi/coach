@@ -10,11 +10,13 @@ import FileGallery from '@/components/dexa/FileGallery';
 import HeadlineTiles from '@/components/dexa/HeadlineTiles';
 import PercentileBars from '@/components/dexa/PercentileBars';
 import RegionTable from '@/components/dexa/RegionTable';
-import ScanTrends from '@/components/dexa/ScanTrends';
+import ScanImages from '@/components/dexa/ScanImages';
+import HealthRanges from '@/components/dexa/HealthRanges';
 import UploadFiles from '@/components/dexa/UploadFiles';
 import { ownerForSignedInUser } from '@/lib/owner';
 import { load } from '@/lib/safe';
 import { neighbours, scanReport, type FullScan } from '@/lib/vitals/dexa.mjs';
+import { healthRanges, rangeValue } from '@/lib/vitals/dexa-health.mjs';
 import { findScan, loadDexaPage, type DexaPage } from '@/lib/vitals/dexa-store';
 import { deleteDexaFile } from '../actions';
 
@@ -23,6 +25,7 @@ export const dynamic = 'force-dynamic';
 
 const fmtDate = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 const short = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+const card = 'rounded-2xl bg-[var(--viz-surface)] p-5 shadow-sm ring-1 ring-[var(--viz-grid)]';
 const f = (v: number | null, d: number, unit = '') => (v === null ? '–' : `${v.toFixed(d)}${unit ? ` ${unit}` : ''}`);
 
 function Crumbs({ scan }: { scan?: FullScan }) {
@@ -72,6 +75,7 @@ function Scan({ scan, page }: { scan: FullScan; page: DexaPage }) {
   const { scans, first } = page.trends;
   const { index, previous, next } = neighbours(scans, scan.resultId);
   const files = page.files.filter((x) => x.resultId === scan.resultId);
+  const otherFiles = files.filter((x) => !(x.kind === 'image' && x.view));
   const d = scan.derived;
   const facts = [
     scan.location?.replace(/^BodySpec\s*-\s*/, ''),
@@ -91,7 +95,7 @@ function Scan({ scan, page }: { scan: FullScan; page: DexaPage }) {
   ];
 
   return (
-    <div className="space-y-8" data-smoke="health-dexa-scan">
+    <div className="mx-auto max-w-6xl space-y-6" data-smoke="health-dexa-scan">
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-3">
           <Crumbs scan={scan} />
@@ -116,45 +120,53 @@ function Scan({ scan, page }: { scan: FullScan; page: DexaPage }) {
           </div>
           <div className="flex flex-wrap gap-2">
             <CopyReport text={scanReport(scan, previous)} />
-            <UploadFiles resultId={scan.resultId} label="Upload for this scan" />
+            <UploadFiles resultId={scan.resultId} label="Upload" />
           </div>
         </div>
       </div>
 
-      <section className="grid gap-6 rounded-lg border bg-[var(--viz-surface)] p-4 sm:p-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-        <div className={previous ? 'grid grid-cols-1 gap-2 sm:grid-cols-3' : 'grid grid-cols-1'}>
-          <BodyMap scan={scan} title="Fat % by region" />
-          {previous && (
-            <>
-              <BodyMap scan={scan} mode={{ kind: 'change', previous, field: 'fatKg' }} title={`Fat since ${short(previous.scanDate)}`} />
-              <BodyMap scan={scan} mode={{ kind: 'change', previous, field: 'leanKg' }} title={`Lean since ${short(previous.scanDate)}`} />
-            </>
-          )}
-        </div>
-        <HeadlineTiles scan={scan} previous={previous} first={first !== scan ? first : null} />
+      <section aria-label="Scan images" className={card}>
+        <ScanImages resultId={scan.resultId} files={files} />
       </section>
 
-      <section className="grid gap-6 rounded-lg border bg-[var(--viz-surface)] p-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+      <section className={`${card} grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]`}>
+        <HeadlineTiles scan={scan} previous={previous} first={first !== scan ? first : null} />
+        <div className="space-y-3">
+          <h2 className="font-semibold">Healthy for your age and height</h2>
+          <HealthRanges rows={healthRanges({ gender: scan.percentiles.gender, age: scan.ageYears }).map((range) => ({ range, now: rangeValue(scan, range.key), then: previous ? rangeValue(previous, range.key) : null }))} thenDate={previous?.scanDate ?? null} />
+        </div>
+      </section>
+
+      <section className={`${card} grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]`}>
+        <BodyMap scan={scan} title="Fat % by region" />
         <div className="space-y-2">
           <h2 className="font-semibold">Regions{previous ? ` · change since ${short(previous.scanDate)}` : ''}</h2>
           <RegionTable scan={scan} previous={previous} />
+          <BalanceBars scan={scan} />
         </div>
-        <BalanceBars scan={scan} />
       </section>
-
+      <details className={`${card} group py-1`}>
+        <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between font-semibold [&::-webkit-details-marker]:hidden">
+          Details
+          <span className="flex items-center gap-1 text-sm font-normal text-[var(--viz-muted)]">
+            BodySpec percentiles, bone sites, indices, resting burn
+            <ChevronRight className="h-4 w-4 transition-transform group-open:rotate-90" aria-hidden />
+          </span>
+        </summary>
+        <div className="space-y-4 pb-4">
       <div className="grid gap-6 lg:grid-cols-2">
-        <section className="space-y-3 rounded-lg border bg-[var(--viz-surface)] p-4">
+        <section className="space-y-3 rounded-xl bg-[var(--viz-band)] p-4">
           <h2 className="font-semibold">Percentiles</h2>
           <PercentileBars p={scan.percentiles} />
         </section>
-        <section className="space-y-3 rounded-lg border bg-[var(--viz-surface)] p-4">
+        <section className="space-y-3 rounded-xl bg-[var(--viz-band)] p-4">
           <h2 className="font-semibold">Bone density</h2>
           <BoneTable bone={scan.bone} />
         </section>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <section className="space-y-3 rounded-lg border bg-[var(--viz-surface)] p-4">
+        <section className="space-y-3 rounded-xl bg-[var(--viz-band)] p-4">
           <h2 className="font-semibold">Indices</h2>
           <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
             {indices.map((i) => (
@@ -165,7 +177,7 @@ function Scan({ scan, page }: { scan: FullScan; page: DexaPage }) {
             ))}
           </dl>
         </section>
-        <section className="space-y-3 rounded-lg border bg-[var(--viz-surface)] p-4">
+        <section className="space-y-3 rounded-xl bg-[var(--viz-band)] p-4">
           <h2 className="font-semibold">Resting metabolic rate</h2>
           {scan.rmr.estimates.length ? (
             <ul className="space-y-1.5 text-sm">
@@ -186,21 +198,15 @@ function Scan({ scan, page }: { scan: FullScan; page: DexaPage }) {
         </section>
       </div>
 
-      {scans.length > 1 && (
+        </div>
+      </details>
+
+      {otherFiles.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-lg font-semibold tracking-tight">Across scans</h2>
-          <ScanTrends measures={page.trends.measures.filter((m) => ['fatPct', 'vatKg', 'leanKg', 'armsLeanKg', 'almi', 'totalKg'].includes(m.key))} firstDate={first?.scanDate ?? null} highlight={scan.resultId} />
+          <h2 className="text-lg font-semibold tracking-tight">Files</h2>
+          <FileGallery files={otherFiles} onDelete={deleteDexaFile} />
         </section>
       )}
-
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold tracking-tight">Reports and images</h2>
-        {files.length ? (
-          <FileGallery files={files} onDelete={deleteDexaFile} />
-        ) : (
-          <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">No files for this scan.</div>
-        )}
-      </section>
 
       <details className="rounded-lg border bg-[var(--viz-surface)]">
         <summary className="cursor-pointer px-4 py-2.5 text-sm font-medium">Report as text</summary>
