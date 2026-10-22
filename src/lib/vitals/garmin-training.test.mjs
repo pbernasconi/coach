@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import {
-  fmtPace, fmtTime, hrvNights, intensityWeeks, latestWithChange, parseEnduranceScore, parseHillScore, parsePersonalRecords,
+  fmtPace, fmtTime, hrvNights, intensityWeeks, latestWithChange, trailingAverage, parseEnduranceScore, parseHillScore, parsePersonalRecords,
   parseTrainingStatus, ratioLabel, series, sleepNights, statusFromPhrase, trainingStatusOf,
 } from './garmin-training.mjs';
 
@@ -129,6 +129,18 @@ test('series and latest with change', () => {
   assert.deepEqual(latestWithChange(s, 28), { date: '2026-10-18', value: 54, change: 2, since: '2026-09-01' });
   assert.equal(latestWithChange([], 28), null);
   assert.equal(latestWithChange([{ date: '2026-10-18', value: 1 }]).change, null);
+});
+
+test('trailingAverage: mean of the readings in the 7 days ending on each one', () => {
+  const pts = [
+    { date: '2026-10-01', value: 84 },
+    { date: '2026-10-03', value: 83 },
+    { date: '2026-10-07', value: 85 },
+    { date: '2026-10-08', value: 82 }, // 10-01 falls out of the window
+  ];
+  assert.deepEqual(trailingAverage(pts, 7).map((p) => p.value), [84, 83.5, 84, 250 / 3]);
+  assert.deepEqual(trailingAverage(pts, 7).map((p) => p.date), pts.map((p) => p.date));
+  assert.deepEqual(trailingAverage([], 7), []);
 });
 
 const raw = (k) => JSON.parse(readFileSync(new URL(`../../../scripts/garmin/fixtures/raw_${k}.json`, import.meta.url), 'utf8'));

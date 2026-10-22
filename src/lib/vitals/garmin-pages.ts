@@ -3,7 +3,7 @@ import { toDay } from '@/lib/db-time.mjs';
 import { cached } from '@/lib/data-cache';
 import { parseDay } from './garmin-day.mjs';
 import {
-  latestWithChange, parseEnduranceScore, parseHillScore, parsePersonalRecords, parseTrainingStatus,
+  latestWithChange, trailingAverage, parseEnduranceScore, parseHillScore, parsePersonalRecords, parseTrainingStatus,
   series, trainingStatusOf, type SampleRow,
 } from './garmin-training.mjs';
 import { addDays } from './readiness.mjs';
@@ -176,19 +176,24 @@ export type RecoveryToday = Awaited<ReturnType<typeof loadRecoveryToday>>;
 
 /**
  * Weight and body fat for the home page: the latest reading, the change over 4 weeks, and the last 12 weeks of
- * weight. Readings come from the scale through the vitals push (health_samples). Null fields when there are none.
+ * weight. Readings come from the scale through the vitals push (health_samples). The change and the line use the
+ * 7-day average, so a single heavy or light morning does not read as progress or a setback. Null fields when there
+ * are none.
  */
 export async function loadBody(userId: string, today: string) {
   const from = addDays(today, -83);
-  const rows = await samples(userId, from, today, ['weight_kg', 'body_fat_pct']);
-  const weight = series(rows, 'weight_kg') as Pt[];
+  // 6 extra days so the first points of the window have a full 7-day average.
+  const rows = await samples(userId, addDays(from, -6), today, ['weight_kg', 'body_fat_pct']);
+  const raw = series(rows, 'weight_kg') as Pt[];
+  const trend = (trailingAverage(raw, 7) as Pt[]).filter((p) => p.date >= from);
   const fat = series(rows, 'body_fat_pct') as Pt[];
-  const latest = latestWithChange(weight, 28) as (Pt & { change: number | null }) | null;
+  const last = raw.at(-1);
+  const latest = latestWithChange(trend, 28) as (Pt & { change: number | null }) | null;
   return {
-    weight: latest ? { date: latest.date, value: latest.value } : null,
+    weight: last && last.date >= from ? { date: last.date, value: last.value } : null,
     change4w: latest?.change ?? null,
     bodyFat: fat.at(-1) ?? null,
-    series: weight,
+    series: trend,
   };
 }
 export type Body = Awaited<ReturnType<typeof loadBody>>;

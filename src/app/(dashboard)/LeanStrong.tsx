@@ -78,7 +78,7 @@ export default function LeanStrong({
               color="var(--viz-ink)"
               height={56}
               lastDot
-              label="Weight, last 12 weeks"
+              label="Weight, 7-day average, last 12 weeks"
             />
             <span className="flex justify-between text-xs">
               <span className="text-[var(--viz-muted)]">Body fat</span>

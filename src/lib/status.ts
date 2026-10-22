@@ -3,11 +3,12 @@ import { cached } from '@/lib/data-cache';
 import { toDay, toIso } from '@/lib/db-time.mjs';
 import type { GarminStatus } from '@/lib/vitals/garmin.mjs';
 import { loadGarminStatus } from '@/lib/vitals/queries';
+import { SCALE_SOURCE, scaleWarning } from '@/lib/vitals/scale.mjs';
 
 export type Targets = { runKm: number; rideHours: number; strength: number };
 export const DEFAULT_TARGETS: Targets = { runKm: 35, rideHours: 4, strength: 2 };
 
-export type Warning = { level: 'error' | 'warn' | 'info'; source: 'strava' | 'lift' | 'calendar' | 'garmin' | 'function'; text: string };
+export type Warning = { level: 'error' | 'warn' | 'info'; source: 'strava' | 'lift' | 'calendar' | 'garmin' | 'function' | 'scale'; text: string };
 
 /** The last Function Health sync (users.settings.functionSync, written by POST /api/vitals/function). */
 export type FunctionSync = { lastSuccessAt: string | null; lastAttemptAt: string | null; status: 'ok' | 'partial' | 'failed' | null; error: string | null };
@@ -25,6 +26,7 @@ export type Status = {
   calendars: { email: string; active: boolean; lastSyncedAt: string | null }[];
   garmin: GarminStatus;
   functionSync: FunctionSync;
+  scale: { lastWeighIn: string | null }; // newest day the bathroom scale bridge sent a weight
   warnings: Warning[];
 };
 
@@ -66,7 +68,7 @@ export async function saveTargets(userId: string, targets: Targets) {
  * error and warn show as a banner on every page and on the start page; info shows on Settings only.
  */
 export async function loadStatus(userId: string, now = Date.now()): Promise<Status> {
-  const [conn, newest, lift, cals, garmin, fn] = await Promise.all([
+  const [conn, newest, lift, cals, garmin, fn, scaleRows] = await Promise.all([
     sql`SELECT athlete_id, is_active, last_synced_at FROM strava_connections WHERE user_id = ${userId} LIMIT 1` as Promise<Row[]>,
     sql`SELECT max(start_date_local) AS at FROM strava_activities WHERE user_id = ${userId}` as Promise<Row[]>,
     sql`SELECT max(updated_at) AS at, count(*) FILTER (WHERE entity = 'session' AND deleted_at IS NULL) AS sessions FROM lift_rows` as Promise<Row[]>,
@@ -80,7 +82,9 @@ export async function loadStatus(userId: string, now = Date.now()): Promise<Stat
       };
     }),
     sql`SELECT settings -> 'functionSync' AS s FROM users WHERE id = ${userId}` as Promise<Row[]>,
+    sql`SELECT max(date) AS day FROM health_samples WHERE user_id = ${userId} AND metric = 'weight_kg' AND source = ${SCALE_SOURCE}` as Promise<Row[]>,
   ]);
+  const scale = { lastWeighIn: toDay(scaleRows[0]?.day) };
   const f = (fn[0]?.s ?? {}) as Record<string, unknown>;
   const functionSync: FunctionSync = {
     lastSuccessAt: typeof f.lastSuccessAt === 'string' ? f.lastSuccessAt : null,
@@ -131,14 +135,17 @@ export async function loadStatus(userId: string, now = Date.now()): Promise<Stat
   } else if (functionSync.status === 'partial') {
     warnings.push({ level: 'info', source: 'function', text: 'The last Function Health sync looked partial, so no biomarkers were removed.' });
   }
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Los_Angeles' }).format(new Date(now));
+  const scaleNote = scaleWarning(scale.lastWeighIn, today);
+  if (scaleNote) warnings.push({ ...scaleNote, source: 'scale' });
   // A Vercel preview reads a copy of the data and must not sync (a Strava refresh there would rotate production's
   // token), so its missing secrets are expected: show them on Settings only, not as a banner.
   if (env.VERCEL_ENV === 'preview') {
     const quiet = warnings.map((w) => ({ ...w, level: 'info' as const }));
     quiet.unshift({ level: 'info', source: 'strava', text: 'Preview deployment: it reads the development database, and syncs are off.' });
-    return { strava, lift: liftStatus, calendars, garmin, functionSync, warnings: quiet };
+    return { strava, lift: liftStatus, calendars, garmin, functionSync, scale, warnings: quiet };
   }
-  return { strava, lift: liftStatus, calendars, garmin, functionSync, warnings };
+  return { strava, lift: liftStatus, calendars, garmin, functionSync, scale, warnings };
 }
 
 /**
