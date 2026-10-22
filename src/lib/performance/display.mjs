@@ -333,6 +333,33 @@ export function todayWorkouts(range) {
 /** A workout on the Today line: "13:30 · 1:00 · done". */
 export const todayItemText = (w) => [w.startTime, w.duration ? dur(w.duration) : null].filter(Boolean).join(' · ') + (w.state === 'done' ? ' · done' : '');
 
+/**
+ * A done workout on the Today card: its status (as the Plan calendar colours it), what was done next to what was
+ * planned, and where the activity opens. Null when it is not done.
+ * @param {{ state?: string, duration?: number | null, tss?: number | null, compliance?: { level: string, label: string } | null,
+ *   actual?: { min?: number | null, tss?: number | null, km?: number | null } | null,
+ *   match?: { source: string, id: string, name: string, activityId?: string | null } | null }} w
+ * @param {number | null} [plannedTss]  the planned TSS when the workout has none of its own (from its steps)
+ */
+export function todayDone(w, plannedTss = null) {
+  if (w.state !== 'done') return null;
+  const a = w.actual ?? {};
+  const tssP = w.tss ? Math.round(w.tss) : plannedTss ? Math.round(plannedTss) : null;
+  const doneText = [a.min ? dur(a.min) : null, a.km ? `${a.km.toFixed(1)} km` : null, a.tss ? `${Math.round(a.tss)} TSS` : null].filter(Boolean).join(' · ');
+  const plannedText = [w.duration ? dur(w.duration) : null, tssP ? `${tssP} TSS` : null].filter(Boolean).join(' · ');
+  const m = w.match ?? null;
+  const stravaId = m ? (m.source === 'strava' ? m.id : m.activityId ?? null) : null;
+  const href = m?.source === 'lift' ? `/lift/sessions/${m.id}` : stravaId ? `/activities/${stravaId}` : null;
+  return {
+    level: w.compliance?.level ?? 'done',
+    label: w.compliance?.label ?? 'Done',
+    doneText: doneText || null,
+    plannedText: plannedText || null,
+    href,
+    name: m?.name || null,
+  };
+}
+
 // ---- Today: the Fitness panel (right column) ----
 
 /** What each form zone means for training, in plain words. Keys: FORM_ZONES labels (form.mjs). */
