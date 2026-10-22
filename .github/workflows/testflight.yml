@@ -176,3 +176,25 @@ jobs:
         run: |
           rm -f "$RUNNER_TEMP"/AuthKey_*.p8 "$RUNNER_TEMP/lift.p12"
           security delete-keychain "$RUNNER_TEMP/lift-signing.keychain-db" 2>/dev/null || true
+
+  processing:
+    # An upload can still fail Apple's processing or wait on export compliance; this job reports it. It does not
+    # fail the run, so the hourly check does not upload the same app again every hour.
+    needs: upload
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    environment: testflight
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+        with:
+          persist-credentials: false
+      - name: Wait for App Store Connect to process the build
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID || 'TTPPF7B89U' }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID || '69a6de7d-2335-47e3-e053-5b8c7c11a4d1' }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          BUNDLE_ID: ${{ vars.LIFT_BUNDLE_ID || 'com.pbernasconi.lift' }}
+        run: |
+          if [ -z "$ASC_KEY_P8" ]; then echo "No App Store Connect key; nothing uploaded."; exit 0; fi
+          python3 lift/ios/scripts/asc-builds.py --wait "$GITHUB_RUN_NUMBER"
