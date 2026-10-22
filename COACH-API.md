@@ -264,7 +264,8 @@ tables are `bodyspec_connections` and `dexa_scans` (`drizzle/0009_bodyspec_dexa.
   `view` (composite, fat, lean or bone: the form field `view`, else read from the file name, `dexa-images.mjs`); a
   new image for a scan's view takes that slot. A BodySpec PDF report links to its scan by the "Measured Date" inside
   it, and its whole-body image (page 2, the only scan image in the report) is stored as that scan's composite PNG.
-  `GET /api/dexa/files/{id}` serves one to the owner.
+  `GET /api/dexa/files/{id}` serves one to the owner. From a terminal, `node --env-file=.env.local --import tsx
+  scripts/dexa-upload.ts <files>` stores files the same way and clears the cache.
 - **Shown**: /health → Body composition (latest values and every scan), and /health/dexa: progress first. Body fat
   over time on the healthy ranges for the athlete's sex and age, fat and lean mass, the focus areas (belly and
   visceral fat, arm and leg lean), healthy-range bars (body fat, FFMI, ALMI, bone Z-score; sources in
