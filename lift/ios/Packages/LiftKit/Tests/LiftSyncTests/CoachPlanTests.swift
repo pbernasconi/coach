@@ -4,6 +4,10 @@ import Testing
 
 @testable import LiftSync
 
+#if canImport(FoundationNetworking)
+    import FoundationNetworking
+#endif
+
 /// The Week API client side (lift/WEEK-API.md): decoding, the request, the merge of kept responses and the cache.
 @Suite struct CoachPlanTests {
     /// The example response of WEEK-API.md, cut to one day.

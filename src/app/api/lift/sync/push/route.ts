@@ -2,7 +2,8 @@
  * Lift sync push (lift/SYNC.md). Public to Clerk; authenticated by the LIFT_SYNC_TOKEN bearer token.
  *
  * After the changes are stored, a planned session the phone moved to another day takes its plan workout along
- * (src/lib/lift/plan-follow.ts), and Google Calendar follows after the response.
+ * (src/lib/lift/plan-follow.ts), and Google Calendar follows after the response. A session the push finished gets a
+ * "Workout completed!" push after the response (src/lib/notifications).
  */
 
 import { after } from 'next/server';
@@ -12,6 +13,7 @@ import { handlePush } from '@/lib/lift-sync/sync.mjs';
 import type { ValidChange } from '@/lib/lift-sync/contract.mjs';
 import { drizzleLiftRepository } from '@/lib/lift-sync/drizzle-repository';
 import { followSessionsInPlan } from '@/lib/lift/plan-follow';
+import { notifyLiftWorkouts } from '@/lib/notifications';
 import { mondayOf } from '@/lib/plan/week.mjs';
 
 export const runtime = 'nodejs';
@@ -51,7 +53,11 @@ export async function POST(request: Request) {
       drizzleLiftRepository,
       { applied }
     );
-    if (result.status === 200 && applied.length) await followInPlan(applied);
+    if (result.status === 200 && applied.length) {
+      await followInPlan(applied);
+      // A session finished on the phone: "Workout completed!" with a link to it (src/lib/notifications).
+      after(() => notifyLiftWorkouts(applied));
+    }
     return Response.json(result.body, { status: result.status });
   } catch (error) {
     console.error('Lift sync push failed:', error);

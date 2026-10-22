@@ -17,23 +17,27 @@ extension ImportFlowPresenter: ImportTextPresenting {
 /// open its app, so the app also checks the inbox whenever it comes to the foreground. A shared note opens straight on
 /// the review step; nothing is written until Import is tapped there. A `lift://templates` link opens the template link
 /// review, which writes nothing until its Add button is tapped. A `lift://sync?code=…` link trades its one-time code for
-/// the sync token and syncs (`SyncEnrollmentLink`).
+/// the sync token and syncs (`SyncEnrollmentLink`). A screen link (`lift://session/…`, `lift://weigh-in/…`; a tapped
+/// notice opens the same links) selects its tab and shows its screen (`ScreenLinkOpening`).
 final class IncomingNoteRouter {
     private let inbox: (any NoteInboxing)?
     private let importFlow: any ImportTextPresenting
     private let templateLinks: any TemplateLinkPresenting
     private let syncLinks: (any SyncEnrolling)?
+    private let screens: (any ScreenLinkOpening)?
 
     init(
         inbox: (any NoteInboxing)?,
         importFlow: any ImportTextPresenting,
         templateLinks: any TemplateLinkPresenting,
-        syncLinks: (any SyncEnrolling)? = nil
+        syncLinks: (any SyncEnrolling)? = nil,
+        screens: (any ScreenLinkOpening)? = nil
     ) {
         self.inbox = inbox
         self.importFlow = importFlow
         self.templateLinks = templateLinks
         self.syncLinks = syncLinks
+        self.screens = screens
     }
 
     /// Handles `url`. Returns false when it is not a Lift link.
@@ -49,6 +53,10 @@ final class IncomingNoteRouter {
         case .syncCode(let code)?:
             syncLinks?.enroll(code: code)
             return syncLinks != nil
+        case let link?:  // a screen link
+            guard let screens, let destination = link.destination else { return false }
+            screens.open(destination)
+            return true
         case nil:
             return false
         }

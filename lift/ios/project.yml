@@ -56,6 +56,9 @@ targets:
         # Apple Health: Lift saves finished workouts (write only, no clinical records).
         com.apple.developer.healthkit: true
         com.apple.developer.healthkit.access: []
+        # Push notifications from the coach (lift/PUSH.md). "development" while signing for development; the App Store
+        # export signs it as "production", and the app reads which from its profile (ApnsEnvironmentResolver).
+        aps-environment: development
     info:
       path: Lift/Info.plist
       properties:

@@ -62,7 +62,9 @@ final class LiveAppData: AppDataSource {
     }
 
     /// Paths opened by id, each family capped at `keptPerFamily` bodies (the most recently fetched stay).
-    nonisolated static let idFamilies = ["api/app/activities/", "api/app/lift/sessions/", "api/app/lift/exercises/"]
+    nonisolated static let idFamilies = [
+        "api/app/activities/", "api/app/lift/sessions/", "api/app/lift/exercises/", "api/app/weigh-ins/",
+    ]
     nonisolated static let keptPerFamily = 40
 
     /// Disk reads and writes run off the main actor.

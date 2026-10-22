@@ -131,7 +131,7 @@ def main() -> int:
     client = Client(token(os.environ["ASC_KEY_ID"], os.environ["ASC_ISSUER_ID"], os.environ["ASC_KEY_P8"]))
 
     targets = [
-        (bundle, "Lift", ["APP_GROUPS", "HEALTHKIT"]),
+        (bundle, "Lift", ["APP_GROUPS", "HEALTHKIT", "PUSH_NOTIFICATIONS"]),
         (f"{bundle}.widgets", "Lift Widgets", ["APP_GROUPS"]),
         (f"{bundle}.share", "Lift Share", ["APP_GROUPS"]),
     ]

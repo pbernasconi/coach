@@ -32,4 +32,11 @@ enum SyncLog {
             logger.error("pull dropped \(count, privacy: .public) changes with an unknown entity or id")
         #endif
     }
+
+    /// A push registration the server refused or that could not be sent; it waits for the next foreground.
+    static func pushRegistrationFailed(_ error: any Error) {
+        #if canImport(os)
+            logger.info("push registration not sent: \(String(describing: error), privacy: .public)")
+        #endif
+    }
 }

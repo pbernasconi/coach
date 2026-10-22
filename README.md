@@ -28,5 +28,6 @@ Environment variables (set them in Vercel and in `.env.local`, and never commit 
 | --- | --- |
 | `DATABASE_URL` | Neon Postgres connection string (already used by the rest of the app) |
 | `LIFT_SYNC_TOKEN` | Long random secret the iPhone sends as `Authorization: Bearer <token>`. If it's unset, every sync request gets `401`. Generate one with `openssl rand -base64 48` |
+| `APNS_KEY_P8`, `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_TOPIC` | The APNs auth key for Lift's push notifications (lift/PUSH.md). Without them nothing is sent |
 
 Production builds apply new migrations by themselves; see DATABASE.md for a new database or a Neon branch.

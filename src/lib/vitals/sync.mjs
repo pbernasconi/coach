@@ -121,22 +121,29 @@ export async function upsertVitals(sql, userId, samples, options = {}) {
   return { accepted, rejected };
 }
 
-/** Either bearer token: the Lift token (Apple Health from the iPhone) or CRON_SECRET (the Garmin job). */
-function authorized(authorization, tokens) {
+/**
+ * Which bearer token the request carries: 'lift' (the Lift app or the scale bridge), 'cron' (the Garmin job), or null.
+ * @returns {'lift' | 'cron' | null}
+ */
+function caller(authorization, tokens) {
   // Both checks always run, so the time does not show which token matched.
   const a = isAuthorized(authorization, tokens.lift);
   const b = isAuthorized(authorization, tokens.cron);
-  return a || b;
+  return a ? 'lift' : b ? 'cron' : null;
 }
+
+const authorized = (authorization, tokens) => caller(authorization, tokens) !== null;
 
 /**
  * POST /api/vitals/sync. Body `{ samples: [...] }`, at most MAX_SAMPLES. Invalid samples are rejected one by one
- * with their index; the others are stored.
+ * with their index; the others are stored. `stored` (not sent to the client) is what was written and with which
+ * token, for the weigh-in notice.
  * @param {{ authorization: string | null, rawBody: string, tokens: { lift?: string, cron?: string }, today?: string }} req
  * @param {VitalsRepository} repo
  */
 export async function handleVitalsPush(req, repo) {
-  if (!authorized(req.authorization, req.tokens)) return { status: 401, body: { error: 'unauthorized' } };
+  const via = caller(req.authorization, req.tokens);
+  if (!via) return { status: 401, body: { error: 'unauthorized' } };
   if (Buffer.byteLength(req.rawBody, 'utf8') > MAX_BODY_BYTES) return { status: 413, body: { error: 'body too large' } };
   let body;
   try {
@@ -154,7 +161,7 @@ export async function handleVitalsPush(req, repo) {
     if (!owner) return { status: 503, body: { error: 'no Coach user yet' } };
     await repo.upsert(owner, rows);
   }
-  return { status: 200, body: { accepted, rejected } };
+  return { status: 200, body: { accepted, rejected }, stored: { via, rows } };
 }
 
 /**

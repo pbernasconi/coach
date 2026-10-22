@@ -99,6 +99,7 @@ enum CompositionRoot {
             health: makeHealth(sessions: sessions, isSaved: source.isSaved),
             coachPlan: makeCoachPlan(source: source, sessions: sessions, sync: sync, now: now, calendar: appCalendar),
             appData: makeAppData(source: source, sync: sync, now: now),
+            push: makePush(source: source, sync: sync),
             seedsDemo: seedsDemo,
             practice: practice
         )

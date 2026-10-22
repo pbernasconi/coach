@@ -3,6 +3,8 @@ import SwiftUI
 
 @main
 struct LiftApp: App {
+    /// The APNs token and tapped notices (lift/PUSH.md), which only a UIKit delegate receives.
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     private let options: LaunchOptions
     /// Opens the data now, in `init`, so the workout Live Activity's buttons find it also when they launch Lift in the
     /// background (`AppLauncher` hands them the center).
@@ -18,7 +20,7 @@ struct LiftApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView(launcher: launcher, options: options)
+            RootView(launcher: launcher, options: options, push: appDelegate.push)
                 .koboTheme(.lift)
                 .preferredColorScheme(colorScheme)
         }

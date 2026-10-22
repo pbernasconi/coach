@@ -716,3 +716,31 @@ Field rules:
   "All segments" list is not sent.
 - Not sent: the web's range highlights (a lap or segment on the charts and the map), the map's crosshair dot, links
   to Strava segments, and the Health day link.
+
+### Weigh-in: `GET /api/app/weigh-ins/{date | latest}`
+
+The screen a weigh-in notice opens (lift/PUSH.md, `lift://weigh-in/<date>`). `date` is `YYYY-MM-DD`; `latest` is the
+last day with a weight. `404` when that day has no weight.
+
+```json
+{
+  "date": "2026-10-22", "dateText": "Thursday, Oct 22",
+  "weight": { "kg": 83.2, "text": "83.2", "unit": "kg" },
+  "bodyFat": { "pct": 18.4, "text": "18.4 %" },
+  "changes": [
+    { "id": "previous", "label": "Since yesterday", "kg": -0.3, "text": "▼ 0.3 kg", "tone": "good", "noteText": "83.5 kg on Oct 21" },
+    { "id": "4w", "label": "4 weeks", "kg": -1.4, "text": "▼ 1.4 kg", "tone": "good", "noteText": "-0.35 kg a week" }
+  ],
+  "series": [{ "date": "2026-09-22", "kg": 84.6 }, { "date": "2026-10-22", "kg": 83.2 }],
+  "source": "renpho", "recordedAt": "2026-10-22T14:05:00.000Z",
+  "newerDate": null, "olderDate": "2026-10-21"
+}
+```
+
+- `weight.kg` 2 decimals, `text` 1 decimal. `bodyFat`: `null` when the day has none.
+- `changes`: `previous` against the last earlier weigh-in at any distance, `4w` against the last weigh-in 28 or
+  more days before (the web's Health card). Either is left out when there is nothing to compare. `tone`: `good`
+  (down), `bad` (up), `neutral`; the goal is losing fat (COACH.md).
+- `series`: every weigh-in in the 12 weeks up to `date`, oldest first, 1 decimal.
+- `source`: the sample's source (`renpho`, `garmin`, `apple_health`, …). `recordedAt`: when the day's weight was
+  stored. `newerDate` / `olderDate`: the next and previous days with a weight, `null` at the ends.

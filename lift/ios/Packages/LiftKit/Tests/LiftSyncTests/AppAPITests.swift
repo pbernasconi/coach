@@ -5,6 +5,10 @@ import Testing
 
 @testable import LiftSync
 
+#if canImport(FoundationNetworking)
+    import FoundationNetworking
+#endif
+
 /// The shared App API client side (lift/APP-API.md): the request, sections that fail alone, plain days, the cache, and
 /// the Today example.
 @Suite struct AppAPITests {

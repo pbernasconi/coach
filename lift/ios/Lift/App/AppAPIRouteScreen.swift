@@ -31,6 +31,9 @@ struct AppAPIRouteScreen: View {
             LiftExerciseRoute(exerciseKey: key, dependencies: dependencies, router: router)
         case .liftWeekly:
             LiftWeeklyRoute(dependencies: dependencies, router: router)
+        case .weighIn(let day):
+            WeighInRoute(day: day, dependencies: dependencies, router: router)
+                .id(route)
         default:
             EmptyView()
         }
