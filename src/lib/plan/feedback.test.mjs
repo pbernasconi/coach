@@ -37,4 +37,6 @@ test('feedbackBlock saves under the row it found, with the scales', () => {
   assert.equal(found.item, 'plan:p1');
   assert.equal(found.rpe, 7);
   assert.equal(found.comment, 'ok');
+  assert.equal(found.fromWatch, false);
+  assert.equal(feedbackBlock({ item: 'lift:abc', date: '2026-10-21', title: null, planActivityId: null, row: { item: 'strava:9', feel: 3, rpe: 6, comment: null, fromWatch: true } }).fromWatch, true);
 });

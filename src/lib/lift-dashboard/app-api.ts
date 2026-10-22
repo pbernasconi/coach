@@ -86,7 +86,10 @@ export async function loadAppLiftSession(
             false as const
           )
         : null,
-    load('app lift session: feedback', () => loadFeedback(userId, [`lift:${session.id}`], plannedId)),
+    // The watch's own feel and RPE sit on its Strava activity (strava:<id>): read them too, as one workout.
+    load('app lift session: feedback', () =>
+      loadFeedback(userId, [`lift:${session.id}`, ...(pairing?.activityId ? [`strava:${pairing.activityId}`] : [])], plannedId)
+    ),
   ]);
   const feedback = row.ok
     ? feedbackBlock({ item: `lift:${session.id}`, date: session.day, title: session.title || 'Lift session', planActivityId: plannedId, row: row.value })

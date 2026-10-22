@@ -67,7 +67,8 @@ export function feedbackLine(f) {
  * The phone's "How did it feel" block (lift/APP-API.md, "Feedback"): the item to save under, what is logged, and the
  * scales' words. `row` is the stored feedback (loadFeedback), which can sit on another item of the same planned workout:
  * then the phone saves under that item, as the web's EffortLog does.
- * @param {{ item: string, date: string, title: string | null, planActivityId: string | null, row: { item: string, feel: number | null, rpe: number | null, comment: string | null } | null }} input
+ * `fromWatch`: the values came from the Garmin watch and nobody changed them in Coach (the card says so).
+ * @param {{ item: string, date: string, title: string | null, planActivityId: string | null, row: { item: string, feel: number | null, rpe: number | null, comment: string | null, fromWatch?: boolean } | null }} input
  */
 export function feedbackBlock({ item, date, title, planActivityId, row }) {
   return {
@@ -78,6 +79,7 @@ export function feedbackBlock({ item, date, title, planActivityId, row }) {
     feel: row?.feel ?? null,
     rpe: row?.rpe ?? null,
     comment: row?.comment ?? null,
+    fromWatch: Boolean(row?.fromWatch),
     feelLabels: FEEL_LABELS,
     rpeScale: RPE_SCALE.map(([label, detail], i) => ({ value: i + 1, label, detail })),
   };

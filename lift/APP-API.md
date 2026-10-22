@@ -520,7 +520,7 @@ The phone's page shows the result and the trend, not plan totals (`stats` keeps 
            "zones": [{ "zone": 2, "name": "Moderate", "rangeText": "123–153 bpm", "timeText": "21:10", "seconds": 1270, "percent": 41 }],
            "note": null },
 "feedback": { "item": "lift:…", "date": "2026-10-20", "title": "Heavy barbell", "planActivityId": "…",
-              "feel": 4, "rpe": 7, "comment": null, "feelLabels": ["Very weak", "Weak", "Normal", "Strong", "Very strong"],
+              "feel": 4, "rpe": 7, "comment": null, "fromWatch": false, "feelLabels": ["Very weak", "Weak", "Normal", "Strong", "Very strong"],
               "rpeScale": [{ "value": 1, "label": "Very easy", "detail": "Barely any effort." }] }
 ```
 
@@ -809,6 +809,8 @@ session, activity and planned workout bodies carry it as `feedback`:
   workout already has feedback under another item (logged on the web from another view), `item` is that one, so one
   workout keeps one row. `planActivityId`: the plan workout, or `null`. Send both back unchanged.
 - `feel`, `rpe`, `comment`: `null` when not logged.
+- `fromWatch`: the values came from the Garmin watch (its feel and effort questions) and were not changed in Coach;
+  the phone says "From your watch". A Lift session also reads the feedback of its watch activity.
 
 Body: `{ "item", "date", "title", "planActivityId", "feel", "rpe", "comment" }` (the three values `null` to clear
 them). It answers with the saved block. Errors: `400 {"error":"…"}` for a bad item, date, feel (1–5 whole) or RPE
