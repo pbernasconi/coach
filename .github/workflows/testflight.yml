@@ -59,6 +59,8 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 60
     environment: testflight
+    outputs:
+      build: ${{ steps.number.outputs.build }}
     env:
       # Not secret: identifiers only. Repository secrets or variables of the same name override them.
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID || 'TTPPF7B89U' }}
@@ -127,6 +129,15 @@ jobs:
         run: |
           command -v xcodegen >/dev/null || brew install xcodegen
           xcodegen generate
+      - name: Choose the version and build number
+        # Every upload must sort on top in TestFlight, which offers the highest version first: never below a version
+        # already in App Store Connect (an upload from Xcode can be ahead), never a build number already used.
+        id: number
+        if: steps.config.outputs.ready == 'true'
+        run: |
+          set -o pipefail
+          project=$(sed -n 's/^ *MARKETING_VERSION: *"\{0,1\}\([0-9.]*\)"\{0,1\}.*/\1/p' lift/ios/project.yml | head -1)
+          python3 lift/ios/scripts/asc-builds.py --next "$project" "$GITHUB_RUN_NUMBER" | tee -a "$GITHUB_OUTPUT"
       - name: Archive
         if: steps.config.outputs.ready == 'true'
         working-directory: lift/ios
@@ -145,7 +156,8 @@ jobs:
             LIFT_BUNDLE_ID="$BUNDLE_ID" \
             LIFT_SYNC_BASE_URL="$SYNC_BASE_URL" \
             CODE_SIGN_STYLE=Automatic \
-            CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER"
+            MARKETING_VERSION="${{ steps.number.outputs.version }}" \
+            CURRENT_PROJECT_VERSION="${{ steps.number.outputs.build }}"
       - name: Upload to App Store Connect
         if: steps.config.outputs.ready == 'true'
         run: |
@@ -195,6 +207,7 @@ jobs:
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID || '69a6de7d-2335-47e3-e053-5b8c7c11a4d1' }}
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
           BUNDLE_ID: ${{ vars.LIFT_BUNDLE_ID || 'com.pbernasconi.lift' }}
+          BUILD: ${{ needs.upload.outputs.build }}
         run: |
-          if [ -z "$ASC_KEY_P8" ]; then echo "No App Store Connect key; nothing uploaded."; exit 0; fi
-          python3 lift/ios/scripts/asc-builds.py --wait "$GITHUB_RUN_NUMBER"
+          if [ -z "$ASC_KEY_P8" ] || [ -z "$BUILD" ]; then echo "Nothing uploaded."; exit 0; fi
+          python3 lift/ios/scripts/asc-builds.py --wait "$BUILD"

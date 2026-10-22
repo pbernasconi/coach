@@ -7,6 +7,11 @@ the internal groups it is in, and exits 1 when a build is invalid or stuck.
 
     asc-builds.py                 the last 5 builds
     asc-builds.py --wait 36       wait (up to 30 minutes) until build 36 has finished processing, then report
+    asc-builds.py --next 1.1 40   print the version and build number for the next upload (GitHub output lines)
+
+--next keeps every upload on top in TestFlight, which offers the highest version first: the version is the higher
+of project.yml's and the highest one in App Store Connect (an upload from Xcode can be ahead), and the build number
+is the higher of the run number and one past the highest build of that version.
 
 Inputs come from the environment: ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 (the .p8 contents) and BUNDLE_ID.
 """
@@ -37,7 +42,7 @@ def app_id(api: "asc.Client", bundle: str) -> str:
     apps = api.call("GET", "/apps?limit=50").get("data", [])
     for item in apps:
         attributes = item["attributes"]
-        print(f"app {attributes.get('name')!r} · {attributes.get('bundleId')} · id {item['id']}")
+        print(f"app {attributes.get('name')!r} · {attributes.get('bundleId')} · id {item['id']}", file=sys.stderr)
     for item in apps:
         if item["attributes"]["bundleId"] == bundle:
             return item["id"]
@@ -80,6 +85,28 @@ def builds(api: "asc.Client", app: str, version: str | None, limit: int) -> list
     return rows
 
 
+def version_key(version: str) -> tuple[int, ...]:
+    return tuple(int(part) if part.isdigit() else 0 for part in version.split("."))
+
+
+def next_upload(api: "asc.Client", app: str, project_version: str, run_number: int) -> tuple[str, int]:
+    query = urllib.parse.urlencode({"filter[app]": app, "limit": 200, "fields[preReleaseVersions]": "version"})
+    versions = [item["attributes"]["version"] for item in api.call("GET", f"/preReleaseVersions?{query}").get("data", [])]
+    version = max([project_version, *versions], key=version_key)
+    if version != project_version:
+        print(f"::warning::App Store Connect already has version {version}, above project.yml's {project_version}; "
+              f"uploading as {version}. Raise MARKETING_VERSION in lift/ios/project.yml.", file=sys.stderr)
+    query = urllib.parse.urlencode(
+        {"filter[app]": app, "filter[preReleaseVersion.version]": version, "limit": 200, "fields[builds]": "version"}
+    )
+    numbers = [
+        int(item["attributes"]["version"])
+        for item in api.call("GET", f"/builds?{query}").get("data", [])
+        if item["attributes"]["version"].isdigit()
+    ]
+    return version, max([run_number, *(number + 1 for number in numbers)])
+
+
 def problem(row: dict) -> str | None:
     if row["processing"] in {"FAILED", "INVALID"}:
         return f"Apple's processing marked it {row['processing']} (Apple emails the reason to the account holder)"
@@ -107,9 +134,15 @@ def report(rows: list[dict]) -> int:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--wait", metavar="BUILD", help="wait until this build number has finished processing")
+    parser.add_argument("--next", nargs=2, metavar=("VERSION", "RUN"), help="version and build for the next upload")
     args = parser.parse_args()
     api = client()
     app = app_id(api, os.environ.get("BUNDLE_ID") or "com.pbernasconi.lift")
+    if args.next:
+        version, build = next_upload(api, app, args.next[0], int(args.next[1]))
+        print(f"version={version}")
+        print(f"build={build}")
+        return 0
     if not args.wait:
         return report(builds(api, app, None, 5))
 

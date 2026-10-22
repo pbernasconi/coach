@@ -66,6 +66,7 @@ targets:
         CFBundleDisplayName: Lift
         # XcodeGen's default Info.plist hard-codes "1.0" and "1"; these follow the build settings, so TestFlight's
         # CURRENT_PROJECT_VERSION (the workflow run number) is the uploaded build number.
+        # CI never uploads below App Store Connect's highest version or reuses a build number (asc-builds.py --next).
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         UILaunchScreen: {}
