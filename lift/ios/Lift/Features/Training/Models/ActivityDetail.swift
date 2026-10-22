@@ -25,6 +25,8 @@ nonisolated struct ActivityDetail: Decodable, Equatable, Sendable {
     var laps: AppSection<ActivityLaps>?
     var bestEfforts: AppSection<ActivityBestEfforts>?
     var segments: AppSection<ActivitySegments>?
+    /// "How did it feel"; nil when it did not load (or an older server).
+    var feedback: WorkoutFeedback?
 
     /// The "Loading details from Strava" note to show under the header, if any.
     var fetchNote: String? { header?.value?.fetch.note }

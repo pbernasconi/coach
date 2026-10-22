@@ -10,6 +10,7 @@ final class ActivityDetailViewModel {
     private(set) var state: ActivityDetailState
 
     private let resource: AppResource<ActivityDetail>
+    private let feedbackSaver: WorkoutFeedbackSaver
     private let router: any Navigating
     private let tabs: any TabSwitching
     @ObservationIgnored private var isLoading = false
@@ -32,6 +33,7 @@ final class ActivityDetailViewModel {
             days: DayCalendar(calendar: calendar)
         )
         self.router = router
+        self.feedbackSaver = WorkoutFeedbackSaver(data: data)
     }
 
     /// Started by the Screen's `.task`; cancelled when the view goes away (SCR-4).
@@ -67,8 +69,22 @@ final class ActivityDetailViewModel {
             state.destination = nil
         case .connectTapped:
             tabs.show(.settings)
+        case .feedback(let action):
+            return saveFeedback(action)
         }
         return nil
+    }
+
+    /// One action on "How did it feel": the shared flow decides, and a save runs on the App API.
+    private func saveFeedback(_ action: WorkoutFeedbackAction) -> Task<Void, Never>? {
+        guard let pending = state.feedback.handle(action, loaded: state.detail.content.value?.feedback) else {
+            return nil
+        }
+        let saver = feedbackSaver
+        return Task {
+            let saved = await saver.save(pending.feedback)
+            state.feedback.finish(saved, attempt: pending.attempt)
+        }
     }
 
     private func load() async {

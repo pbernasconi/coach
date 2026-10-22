@@ -18,7 +18,7 @@ struct PlannedWorkoutContent: View {
                 onConnect: { send(.connectTapped) },
                 showsFreshness: false
             ) { workout in
-                PlannedWorkoutSections(workout: workout, send: send)
+                PlannedWorkoutSections(workout: workout, feedback: state.shownFeedback, save: state.feedback.save, send: send)
             }
             .pageColumn()
             .padding(.top, Space.sm)
@@ -26,12 +26,16 @@ struct PlannedWorkoutContent: View {
         }
         .workoutBarTitle(state.workout.content.value?.title)
         .screenCanvas()
+        .workoutFeedbackComment(state.feedback, comment: state.shownFeedback?.comment) { send(.feedback($0)) }
     }
 }
 
 private struct PlannedWorkoutSections: View {
     @Environment(\.koboTheme) private var theme
     let workout: AppPlannedWorkout
+    /// "How did it feel", under the numbers once the workout is done; nil hides it.
+    let feedback: WorkoutFeedback?
+    let save: WorkoutFeedbackSaveState
     let send: (PlannedWorkoutAction) -> Void
 
     var body: some View {
@@ -42,6 +46,9 @@ private struct PlannedWorkoutSections: View {
                     WorkoutStatCell(label: stat.label, value: stat.valueText, unit: stat.unit)
                 }
                 .koboCard()
+            }
+            if workout.state == "done", let feedback {
+                WorkoutFeedbackCard(feedback: feedback, save: save) { send(.feedback($0)) }
             }
             if let structure = workout.workout {
                 PlannedStructureCard(structure: structure)

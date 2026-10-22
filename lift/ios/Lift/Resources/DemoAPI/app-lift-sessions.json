@@ -83,7 +83,40 @@
     "setsText": "1.5",
     "relative": 0.25
    }
-  ]
+  ],
+  "summary": [
+   {
+    "label": "Duration",
+    "valueText": "54",
+    "unit": "min"
+   },
+   {
+    "label": "Sets",
+    "valueText": "11/12",
+    "unit": null
+   },
+   {
+    "label": "Avg HR",
+    "valueText": "118",
+    "unit": "bpm"
+   },
+   {
+    "label": "Calories",
+    "valueText": "342",
+    "unit": null
+   },
+   {
+    "label": "TSS",
+    "valueText": "41",
+    "unit": null
+   },
+   {
+    "label": "Records",
+    "valueText": "1",
+    "unit": null
+   }
+  ],
+  "watchActivityId": "9000000105"
  },
  "exercises": {
   "ok": true,
@@ -200,6 +233,35 @@
     "media": {
      "image": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/7455efae/images/0043-qXTaZnJ.jpg",
      "gif": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/7455efae/videos/0043-qXTaZnJ.gif"
+    },
+    "result": {
+     "state": "done",
+     "summaryText": "120 kg × 5 · 122.5 kg × 5 · 120 kg × 6",
+     "topSetText": "122.5 kg × 5",
+     "e1rm": 144,
+     "e1rmText": "144 kg",
+     "change": {
+      "value": 6.9,
+      "text": "+7 kg",
+      "tone": "up",
+      "caption": "vs Oct 12"
+     },
+     "record": true,
+     "progress": {
+      "values": [
+       130,
+       131,
+       129,
+       134,
+       136,
+       138,
+       137,
+       141.9,
+       143.9,
+       144
+      ],
+      "caption": "e1RM · last 10 sessions"
+     }
     }
    },
    {
@@ -291,7 +353,35 @@
      "caption": "e1RM · last 8 sessions"
     },
     "steps": [],
-    "media": null
+    "media": null,
+    "result": {
+     "state": "done",
+     "summaryText": "90 kg × 8, 8, 7",
+     "topSetText": "90 kg × 8",
+     "e1rm": 114,
+     "e1rmText": "114 kg",
+     "change": {
+      "value": 0,
+      "text": "Same",
+      "tone": "same",
+      "caption": "vs Sep 28"
+     },
+     "record": false,
+     "progress": {
+      "values": [
+       108,
+       110,
+       112,
+       113,
+       112,
+       114,
+       116,
+       114,
+       114
+      ],
+      "caption": "e1RM · last 9 sessions"
+     }
+    }
    },
    {
     "id": "5e100000-0000-4000-8000-000000000003",
@@ -363,7 +453,407 @@
     "best": null,
     "trend": null,
     "steps": [],
-    "media": null
+    "media": null,
+    "result": {
+     "state": "done",
+     "summaryText": "BW × 12, 10, 10",
+     "topSetText": "BW × 12",
+     "e1rm": null,
+     "e1rmText": null,
+     "change": null,
+     "record": false,
+     "progress": null
+    }
+   }
+  ]
+ },
+ "watch": {
+  "ok": true,
+  "activityId": "9000000105",
+  "name": "Strength",
+  "deviceText": "Garmin Forerunner 965",
+  "stats": [
+   {
+    "label": "Avg Heart Rate",
+    "valueText": "118",
+    "unit": "bpm"
+   },
+   {
+    "label": "Max Heart Rate",
+    "valueText": "151",
+    "unit": "bpm"
+   },
+   {
+    "label": "Calories",
+    "valueText": "342"
+   },
+   {
+    "label": "Coach TSS",
+    "valueText": "41"
+   },
+   {
+    "label": "Moving Time",
+    "valueText": "53:40"
+   }
+  ],
+  "heartRate": {
+   "timeS": [
+    0,
+    27,
+    54,
+    82,
+    109,
+    136,
+    163,
+    191,
+    218,
+    245,
+    272,
+    299,
+    327,
+    354,
+    381,
+    408,
+    436,
+    463,
+    490,
+    517,
+    545,
+    572,
+    599,
+    626,
+    653,
+    681,
+    708,
+    735,
+    762,
+    790,
+    817,
+    844,
+    871,
+    898,
+    926,
+    953,
+    980,
+    1007,
+    1035,
+    1062,
+    1089,
+    1116,
+    1144,
+    1171,
+    1198,
+    1225,
+    1252,
+    1280,
+    1307,
+    1334,
+    1361,
+    1389,
+    1416,
+    1443,
+    1470,
+    1497,
+    1525,
+    1552,
+    1579,
+    1606,
+    1634,
+    1661,
+    1688,
+    1715,
+    1743,
+    1770,
+    1797,
+    1824,
+    1851,
+    1879,
+    1906,
+    1933,
+    1960,
+    1988,
+    2015,
+    2042,
+    2069,
+    2096,
+    2124,
+    2151,
+    2178,
+    2205,
+    2233,
+    2260,
+    2287,
+    2314,
+    2342,
+    2369,
+    2396,
+    2423,
+    2450,
+    2478,
+    2505,
+    2532,
+    2559,
+    2587,
+    2614,
+    2641,
+    2668,
+    2695,
+    2723,
+    2750,
+    2777,
+    2804,
+    2832,
+    2859,
+    2886,
+    2913,
+    2941,
+    2968,
+    2995,
+    3022,
+    3049,
+    3077,
+    3104,
+    3131,
+    3158,
+    3186,
+    3213,
+    3240
+   ],
+   "values": [
+    92,
+    94,
+    98,
+    105,
+    113,
+    119,
+    119,
+    115,
+    109,
+    104,
+    102,
+    103,
+    104,
+    105,
+    106,
+    107,
+    108,
+    109,
+    110,
+    111,
+    112,
+    113,
+    114,
+    116,
+    122,
+    130,
+    137,
+    141,
+    140,
+    134,
+    128,
+    124,
+    122,
+    122,
+    122,
+    122,
+    122,
+    122,
+    122,
+    122,
+    122,
+    122,
+    122,
+    122,
+    122,
+    124,
+    130,
+    137,
+    143,
+    144,
+    140,
+    133,
+    126,
+    123,
+    122,
+    122,
+    122,
+    122,
+    122,
+    122,
+    122,
+    122,
+    122,
+    122,
+    122,
+    122,
+    123,
+    126,
+    133,
+    140,
+    144,
+    143,
+    137,
+    130,
+    124,
+    122,
+    122,
+    122,
+    122,
+    122,
+    122,
+    122,
+    122,
+    122,
+    122,
+    122,
+    122,
+    122,
+    124,
+    128,
+    135,
+    142,
+    144,
+    141,
+    135,
+    128,
+    123,
+    122,
+    122,
+    122,
+    122,
+    122,
+    122,
+    122,
+    122,
+    122,
+    122,
+    122,
+    122,
+    122,
+    125,
+    116,
+    123,
+    128,
+    129,
+    124,
+    117,
+    111,
+    108,
+    107
+   ],
+   "avgText": "118",
+   "maxText": "151"
+  },
+  "zones": [
+   {
+    "zone": 1,
+    "name": "Recovery",
+    "rangeText": "< 122 bpm",
+    "timeText": "28:10",
+    "seconds": 1690,
+    "percent": 52
+   },
+   {
+    "zone": 2,
+    "name": "Endurance",
+    "rangeText": "122–140 bpm",
+    "timeText": "17:40",
+    "seconds": 1060,
+    "percent": 33
+   },
+   {
+    "zone": 3,
+    "name": "Tempo",
+    "rangeText": "140–152 bpm",
+    "timeText": "8:10",
+    "seconds": 490,
+    "percent": 15
+   },
+   {
+    "zone": 4,
+    "name": "Threshold",
+    "rangeText": "152–165 bpm",
+    "timeText": "0:00",
+    "seconds": 0,
+    "percent": 0
+   },
+   {
+    "zone": 5,
+    "name": "Max",
+    "rangeText": "> 165 bpm",
+    "timeText": "0:00",
+    "seconds": 0,
+    "percent": 0
+   }
+  ],
+  "note": null
+ },
+ "feedback": {
+  "item": "lift:de300000-0000-4000-8000-000000000100",
+  "date": "2026-10-19",
+  "title": "Lower A",
+  "planActivityId": null,
+  "feel": 4,
+  "rpe": 7,
+  "comment": null,
+  "fromWatch": true,
+  "feelLabels": [
+   "Very weak",
+   "Weak",
+   "Normal",
+   "Strong",
+   "Very strong"
+  ],
+  "rpeScale": [
+   {
+    "value": 1,
+    "label": "Very easy",
+    "detail": "Barely any effort."
+   },
+   {
+    "value": 2,
+    "label": "Easy",
+    "detail": "Could go all day."
+   },
+   {
+    "value": 3,
+    "label": "Moderate",
+    "detail": "Comfortable, full sentences."
+   },
+   {
+    "value": 4,
+    "label": "Somewhat hard",
+    "detail": "Breathing deeper, still chatty."
+   },
+   {
+    "value": 5,
+    "label": "Hard",
+    "detail": "Short sentences only."
+   },
+   {
+    "value": 6,
+    "label": "Hard",
+    "detail": "Steady focus needed."
+   },
+   {
+    "value": 7,
+    "label": "Very hard",
+    "detail": "A few words at a time."
+   },
+   {
+    "value": 8,
+    "label": "Extremely hard",
+    "detail": "Very challenging, intense focus."
+   },
+   {
+    "value": 9,
+    "label": "Near max",
+    "detail": "Could not keep it up much longer."
+   },
+   {
+    "value": 10,
+    "label": "Max effort",
+    "detail": "Nothing left."
    }
   ]
  }

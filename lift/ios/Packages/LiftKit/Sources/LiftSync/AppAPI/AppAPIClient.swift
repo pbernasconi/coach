@@ -12,11 +12,18 @@ public protocol AppAPIFetching: Sendable {
     /// when no token is stored (nothing was sent), `unauthorized` for 401, `rejected(status:)` for 400 and 404,
     /// `retryable` for 5xx and network errors; or `CancellationError`.
     func get(_ path: String, query: [URLQueryItem]) async throws -> Data
+    /// Sends `body` (JSON) to `path` with `method` ("PUT") and returns the answer's body; the same errors as `get`.
+    func send(_ method: String, _ path: String, body: Data) async throws -> Data
 }
 
 extension AppAPIFetching {
     public func get(_ path: String) async throws -> Data {
         try await get(path, query: [])
+    }
+
+    /// A client that only reads.
+    public func send(_: String, _: String, body _: Data) async throws -> Data {
+        throw SyncTransportError.missingToken
     }
 }
 
@@ -52,6 +59,25 @@ public struct URLSessionAppAPIClient: AppAPIFetching {
             timeZone: timeZone(),
             token: token
         )
+        let result: (Data, URLResponse)
+        do {
+            result = try await session.data(for: request)
+        } catch {
+            throw SyncResponseMapper.transportError(error)
+        }
+        guard let http = result.1 as? HTTPURLResponse else { throw SyncTransportError.invalidResponse }
+        if let error = SyncTransportError.forStatus(http.statusCode) { throw error }
+        return result.0
+    }
+
+    /// Runs off the caller's actor.
+    @concurrent
+    public func send(_ method: String, _ path: String, body: Data) async throws -> Data {
+        guard let token = try await TokenRead.token(from: tokens) else { throw SyncTransportError.missingToken }
+        var request = AppAPIRequest.make(baseURL: baseURL, path: path, query: [], timeZone: timeZone(), token: token)
+        request.httpMethod = method
+        request.httpBody = body
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         let result: (Data, URLResponse)
         do {
             result = try await session.data(for: request)

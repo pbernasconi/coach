@@ -47,7 +47,6 @@ import Testing
         let hero = try #require(detail.hero.value)
         #expect(hero.state == "planned")
         #expect(hero.stats.count == 5)
-        #expect(hero.shownStats.map(\.id) == ["exercises", "plannedVolume", "volume", "duration"])
         #expect(hero.ring.text == "0/25")
         #expect(hero.muscles.map(\.name) == ["Back", "Glutes"])
         let squat = try #require(detail.exercises.value?.items.first)

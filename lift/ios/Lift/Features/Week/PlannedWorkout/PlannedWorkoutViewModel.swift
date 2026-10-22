@@ -8,6 +8,7 @@ final class PlannedWorkoutViewModel {
     private(set) var state = PlannedWorkoutState()
 
     private let resource: AppResource<AppPlannedWorkout>
+    private let feedbackSaver: WorkoutFeedbackSaver
     private let router: any Navigating
     private let tabs: any TabSwitching
     @ObservationIgnored private var isLoading = false
@@ -29,6 +30,7 @@ final class PlannedWorkoutViewModel {
         )
         self.router = router
         self.tabs = tabs
+        self.feedbackSaver = WorkoutFeedbackSaver(data: data)
     }
 
     /// Started by the Screen's `.task` (SCR-4); the plan can change, so each appearance loads again.
@@ -50,8 +52,22 @@ final class PlannedWorkoutViewModel {
             router.open(.activity(id))
         case .sessionTapped(let id):
             router.open(LiftLinks.session(id))
+        case .feedback(let action):
+            return saveFeedback(action)
         }
         return nil
+    }
+
+    /// One action on "How did it feel": the shared flow decides, and a save runs on the App API.
+    private func saveFeedback(_ action: WorkoutFeedbackAction) -> Task<Void, Never>? {
+        guard let pending = state.feedback.handle(action, loaded: state.workout.content.value?.feedback) else {
+            return nil
+        }
+        let saver = feedbackSaver
+        return Task {
+            let saved = await saver.save(pending.feedback)
+            state.feedback.finish(saved, attempt: pending.attempt)
+        }
     }
 
     private func load() async {

@@ -44,7 +44,7 @@ private struct ActivityPage: View {
                     onConnect: { send(.connectTapped) },
                     showsFreshness: false
                 ) { detail in
-                    ActivitySections(detail: detail, send: send)
+                    ActivitySections(detail: detail, feedback: state.shownFeedback, save: state.feedback.save, send: send)
                 }
                 .pageColumn()
                 .padding(.top, heroRoute == nil ? Space.sm : Space.lg)
@@ -89,6 +89,7 @@ private struct ActivityPage: View {
                 .navigationTransition(.zoom(sourceID: ActivityHeroMap.zoomID, in: mapZoom))
             }
         }
+        .workoutFeedbackComment(state.feedback, comment: state.shownFeedback?.comment) { send(.feedback($0)) }
         .navigationDestination(
             item: Binding.action(state.panel) { if $0 == nil { send(.destinationDismissed) } }
         ) { panel in

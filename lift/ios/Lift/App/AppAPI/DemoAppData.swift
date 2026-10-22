@@ -25,6 +25,9 @@ final class DemoAppData: AppDataSource {
         return AppAPIKept(data: data, fetchedAt: now())
     }
 
+    /// A demo write saves nothing: it answers with what was sent, as the server answers with what it saved.
+    func put(_: String, body: Data) async throws -> Data { body }
+
     /// The first of `names` the bundle has, read from disk.
     @concurrent
     nonisolated static func read(_ names: [String], in bundle: Bundle) async -> Data? {

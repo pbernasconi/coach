@@ -32,7 +32,9 @@ struct TabStack: View {
                 options: options
             )
             .navigationDestination(for: AppRoute.self) { route in
+                // Every pushed page hides the tab bar (a detail page), for the whole app.
                 RouteScreen(route: route, dependencies: dependencies, router: router, toasts: toasts)
+                    .detailPage()
             }
         }
         .toastHost(toasts)

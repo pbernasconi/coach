@@ -10,6 +10,7 @@ final class LiftSessionViewModel {
     private(set) var state: LiftSessionState
 
     private let resource: AppResource<LiftSessionDetail>
+    private let feedbackSaver: WorkoutFeedbackSaver
     private let mediaLoader: any ExerciseMediaLoader
     private let router: any Navigating
     private let tabs: any TabSwitching
@@ -38,6 +39,7 @@ final class LiftSessionViewModel {
             now: now,
             days: DayCalendar(calendar: calendar)
         )
+        self.feedbackSaver = WorkoutFeedbackSaver(data: data)
         self.mediaLoader = mediaLoader
         self.router = router
         self.tabs = tabs
@@ -66,10 +68,23 @@ final class LiftSessionViewModel {
             replace(with: session?.olderId)
         case .newerTapped:
             replace(with: session?.newerId)
+        case .exerciseOpened(let id):
+            guard state.page == nil else { return nil }
+            state.page = .exercise(id)
+            return loadMedia(id)
+        case .pageClosed:
+            state.page = nil
         case .lastTimeTapped(let id):
+            state.page = nil
             router.open(LiftLinks.session(id))
         case .exerciseTapped(let key):
+            state.page = nil
             router.open(LiftLinks.exercise(key))
+        case .watchTapped:
+            guard let id = session?.watch?.value?.activityId else { return nil }
+            router.open(.activity(id))
+        case .feedback(let action):
+            return saveFeedback(action)
         case .mediaNeeded(let exerciseID):
             return loadMedia(exerciseID)
         case .stepsExpandedChanged(let exerciseID, let isExpanded):
@@ -83,6 +98,16 @@ final class LiftSessionViewModel {
     }
 
     private var session: LiftSessionDetail? { state.detail.content.value }
+
+    /// One action on "How did it feel": the shared flow decides, and a save runs on the App API.
+    private func saveFeedback(_ action: WorkoutFeedbackAction) -> Task<Void, Never>? {
+        guard let pending = state.feedback.handle(action, loaded: session?.feedback) else { return nil }
+        let saver = feedbackSaver
+        return Task {
+            let saved = await saver.save(pending.feedback)
+            state.feedback.finish(saved, attempt: pending.attempt)
+        }
+    }
 
     /// Swaps this page for a neighbour, so the stack does not grow with each step through the sessions.
     private func replace(with sessionID: String?) {

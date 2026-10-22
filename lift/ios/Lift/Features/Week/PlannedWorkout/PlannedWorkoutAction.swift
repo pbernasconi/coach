@@ -10,4 +10,6 @@ nonisolated enum PlannedWorkoutAction: Equatable, Sendable {
     case activityTapped(String)
     /// "Open session": the Lift session the workout plans.
     case sessionTapped(String)
+    /// The "How did it feel" card.
+    case feedback(WorkoutFeedbackAction)
 }

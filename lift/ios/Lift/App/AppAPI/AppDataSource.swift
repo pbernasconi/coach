@@ -18,11 +18,20 @@ protocol AppDataSource: AnyObject {
 
     /// Keeps `kept` as the body of `path`, for the next launch and for offline.
     func keep(_ kept: AppAPIKept, for path: String) async
+
+    /// Sends a JSON `body` to `path` with PUT (a write, as "api/app/feedback") and returns the answer. Throws
+    /// `SyncTransportError` (`missingToken` when not connected). Nothing is kept.
+    func put(_ path: String, body: Data) async throws -> Data
 }
 
 extension AppDataSource {
     /// Nothing to keep (demo data, sync off, test fakes).
     func keep(_: AppAPIKept, for _: String) async {}
+
+    /// No writes (sync off, test fakes that only read).
+    func put(_: String, body _: Data) async throws -> Data {
+        throw SyncTransportError.missingToken
+    }
 
     /// Fetches `path` with no query.
     func fetch(_ path: String) async throws -> AppAPIKept {
@@ -59,6 +68,10 @@ final class LiveAppData: AppDataSource {
 
     func keep(_ kept: AppAPIKept, for path: String) async {
         await Self.save(kept, for: path, in: cache)
+    }
+
+    func put(_ path: String, body: Data) async throws -> Data {
+        try await client.send("PUT", path, body: body)
     }
 
     /// Paths opened by id, each family capped at `keptPerFamily` bodies (the most recently fetched stay).

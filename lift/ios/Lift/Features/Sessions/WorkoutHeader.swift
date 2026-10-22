@@ -116,7 +116,8 @@ extension WorkoutHeader where Detail == EmptyView {
 }
 
 extension View {
-    /// The older and newer arrows of a workout page in the bar, in ink, the same on every workout page.
+    /// The older and newer workouts in one "…" menu in the bar, the same on every workout page: the bar keeps Back and
+    /// one quiet button, with no arrows. Nothing shows when there is neither.
     func workoutNeighbours(
         older: String,
         newer: String,
@@ -149,13 +150,18 @@ private struct WorkoutNeighbours: ViewModifier {
 
     func body(content: Content) -> some View {
         content.toolbar {
-            ToolbarItemGroup(placement: .topBarTrailing) {
-                Button(older, systemImage: "chevron.left", action: onOlder)
-                    .disabled(!canGoOlder)
+            if canGoOlder || canGoNewer {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Button(newer, systemImage: "arrow.up", action: onNewer)
+                            .disabled(!canGoNewer)
+                        Button(older, systemImage: "arrow.down", action: onOlder)
+                            .disabled(!canGoOlder)
+                    } label: {
+                        Label("More", systemImage: "ellipsis")
+                    }
                     .tint(theme.palette.textPrimary)
-                Button(newer, systemImage: "chevron.right", action: onNewer)
-                    .disabled(!canGoNewer)
-                    .tint(theme.palette.textPrimary)
+                }
             }
         }
     }

@@ -230,6 +230,10 @@ and a second reader (web dashboard, coach scripts).
   command through one router. They validate their input, wait until the app is ready, and never perform a
   destructive action without the app open (logging a set from a Live Activity is not destructive; deleting
   a workout is).
+- `NAV-4` **MUST** Show the tab bar on a tab's root screens only. Every pushed page is a detail page and hides
+  it with Kobo's `.detailPage()`, applied once where the shell builds pushed routes (`navigationDestination(for:)`),
+  never screen by screen. Why: a detail page needs the whole screen for its content, and Back is the way out;
+  the bar only moves between tabs.
 
 ## 9. UI, design system and Liquid Glass
 

@@ -90,4 +90,15 @@ import Testing
     func zoneLevels(zone: String, level: Int) {
         #expect(PlannedZone.level(zone) == level)
     }
+
+    @Test func feedbackSavesUnderThePlannedWorkout() async throws {
+        let source = FakeAppData([.success(try body)])
+        let vm = await loaded(source)
+
+        await vm.send(.feedback(.changed(.feel(4))))?.value
+
+        #expect(vm.state.shownFeedback?.feel == 4)
+        #expect(vm.state.feedback.save == .saved)
+        #expect(source.puts.map(\.path) == ["api/app/feedback"])
+    }
 }

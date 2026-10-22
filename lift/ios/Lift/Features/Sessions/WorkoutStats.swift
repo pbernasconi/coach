@@ -37,15 +37,16 @@ struct WorkoutStatCell: View {
     }
 }
 
-/// Numbers two to a row (one at accessibility sizes), for a card.
+/// Numbers two (or `columns`) to a row, one at accessibility sizes, for a card.
 struct WorkoutStatGrid<Item, Cell: View>: View {
     let items: [Item]
     let id: KeyPath<Item, String>
+    var columns = 2
     @ViewBuilder let cell: (Item) -> Cell
     @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
-        let count = typeSize.isAccessibilitySize ? 1 : 2
+        let count = typeSize.isAccessibilitySize ? 1 : typeSize > .xLarge ? min(columns, 2) : columns
         LazyVGrid(
             columns: Array(repeating: GridItem(.flexible(), spacing: Space.md, alignment: .topLeading), count: count),
             alignment: .leading,
