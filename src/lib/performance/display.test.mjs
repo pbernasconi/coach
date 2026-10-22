@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   daysAgoText, loadTiles, rampTiles, recoveryRows, decimalText, delta, e1rmText, goalView, headerChips, hoursSeries, hoursText, last4Tiles, liftChangeText,
   longDate, minutesText, muscleRows, paceText, peakText, performanceTiles, projectionCaption, rampCell, readinessBand,
-  setsText, signed, sportDetail, staleText, todayItemText, todayWorkouts, weekRow, weightChange,
+  setsText, signed, sportDetail, staleText, todayDone, todayItemText, todayWorkouts, weekRow, weightChange,
 } from './display.mjs';
 
 const week = (over) => ({ week: '2026-10-12', hours: 5.5, runKm: 20, runMin: 110, rideKm: 60, rideHours: 2.25, strength: 2, tss: 310.4, planned: 8, done: 6, sports: {}, ...over });
@@ -137,6 +137,14 @@ test('goals and the today line', () => {
   assert.equal(todayWorkouts({ today: '2026-10-20', workouts: [] }).emptyText, 'No plan this week. Run /plan in Claude Code to make one.');
   assert.equal(todayItemText(w({})), '13:30 · 1:00');
   assert.equal(todayItemText(w({ startTime: null, duration: 45, state: 'done' })), '45m · done');
+
+  assert.equal(todayDone(w({})), null);
+  const done = w({ state: 'done', duration: 60, tss: 40, compliance: { level: 'good', label: 'Done' }, actual: { min: 56, tss: 69, km: 10.24 }, match: { source: 'strava', id: '99', name: 'Lunch Run' } });
+  assert.deepEqual(todayDone(done), { level: 'good', label: 'Done', doneText: '56m · 10.2 km · 69 TSS', plannedText: '1:00 · 40 TSS', href: '/activities/99', name: 'Lunch Run' });
+  const lift = todayDone(w({ state: 'done', tss: null, duration: 60, compliance: { level: 'done', label: 'Done' }, actual: { min: null, tss: null }, match: { source: 'lift', id: 's1', name: 'Upper' } }), 25.4);
+  assert.equal(lift.href, '/lift/sessions/s1');
+  assert.equal(lift.doneText, null);
+  assert.equal(lift.plannedText, '1:00 · 25 TSS');
 });
 
 test('fitness panel: load tiles, recovery rows and ramp tiles', () => {
