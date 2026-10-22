@@ -5,8 +5,8 @@ import ComplianceMark from '@/components/plan/ComplianceMark';
 import { percents } from '@/lib/activity/format.mjs';
 import type { ActivityContext, ActivityView, Zone } from '@/lib/activity/queries';
 import {
-  achievementsText, bestEffortRow, bestEffortsNote, effortView, garminRows, gearView, heartRateNote, lapRow, loadView, noStreamsText,
-  overviewStats, paceHistogramView, plannedTexts, rankedSegments, sameRouteRows, segmentRow, segmentsNote, splitRow, weatherView, zoneTexts,
+  bestEffortRow, bestEffortsNote, garminRows, heartRateNote, lapRow, loadView, noStreamsText,
+  paceHistogramView, plannedTexts, rankedSegments, sameRouteRows, segmentRow, segmentsNote, splitRow, zoneTexts,
 } from '@/lib/activity/view.mjs';
 import { rangeOfIndexes, splitRanges } from '@/lib/activity/ranges.mjs';
 import { RangeRow, type HighlightRange } from './ActivityHover';
@@ -14,6 +14,8 @@ import Histogram from './Histogram';
 import PaceBars from './PaceBars';
 import PowerCurve from './PowerCurve';
 import RouteMap from './RouteMap';
+import RouteProfile from './RouteProfile';
+import StatSummary from './StatSummary';
 import StreamCharts from './StreamCharts';
 
 export type SectionLink = { id: string; label: string; sub?: boolean };
@@ -25,7 +27,6 @@ export function sectionsFor(v: ActivityView): SectionLink[] {
   if (v.series) out.push({ id: 'analysis', label: 'Analysis' });
   if (v.layout !== 'basic' && (v.splits.length || v.laps.length > 1 || v.series?.speed)) out.push({ id: 'pace-analysis', label: foot ? 'Pace Analysis' : 'Speed Analysis', sub: true });
   if (foot && v.paceBins.length) out.push({ id: 'pace-distribution', label: 'Pace Distribution', sub: true });
-  out.push({ id: 'relative-effort', label: 'Relative Effort', sub: true });
   if (v.hrZones.some((z) => z.seconds > 0)) out.push({ id: 'heart-rate', label: 'Heart Rate', sub: true });
   if (v.powerZones.length || v.powerCurve.length) out.push({ id: 'power', label: 'Power', sub: true });
   if (v.laps.length > 1) out.push({ id: 'laps', label: 'Laps' });
@@ -43,18 +44,6 @@ function Card({ id, title, note, children, className = '' }: { id?: string; titl
       </div>
       {children}
     </section>
-  );
-}
-
-function Stat({ label, value, unit, big = false }: { label: string; value: string; unit?: string; big?: boolean }) {
-  return (
-    <div className="min-w-0">
-      <div className={`${big ? 'text-2xl sm:text-3xl' : 'text-lg'} font-semibold tabular-nums tracking-tight text-[var(--viz-ink)]`}>
-        {value}
-        {unit && <span className={`${big ? 'text-base' : 'text-sm'} ml-0.5 font-normal text-[var(--viz-ink-2)]`}>{unit}</span>}
-      </div>
-      <div className="text-xs text-[var(--viz-muted)]">{label}</div>
-    </div>
   );
 }
 
@@ -106,45 +95,12 @@ export function ZoneBars({ zones, unit, kind }: { zones: Zone[]; unit: string; k
 }
 
 function Overview({ v, color }: { v: ActivityView; color: string }) {
-  const st = v.stats;
-  const { big, small } = overviewStats(v);
-  const achievements = achievementsText(st);
-  const w = v.weather ? weatherView(v.weather) : null;
-  const gear = gearView(v);
   const splitR = v.series ? splitRanges(v.splits, v.series) : v.splits.map(() => null);
   const points = v.series?.lat && v.series.lng ? v.series.lat.map((la, i) => (la != null && v.series!.lng![i] != null ? ([v.series!.lng![i]!, la] as [number, number]) : null)) : null;
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border bg-[var(--viz-surface)] p-4">
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">{big.map((b) => <Stat key={b.label} label={b.label} value={b.valueText} unit={b.unit} big />)}</div>
-        <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 border-t pt-4 sm:grid-cols-4 lg:grid-cols-6">{small.map((b) => <Stat key={b.label} label={b.label} value={b.valueText} unit={b.unit} />)}</div>
-        {achievements && <p className="mt-3 text-xs text-[var(--viz-muted)]">{achievements}</p>}
-      </div>
-
-      {(w || v.device || v.gear) && <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {w && (
-          <div className="rounded-lg border p-4 text-sm">
-            <div className="text-xs font-medium text-[var(--viz-muted)]">Weather at the start</div>
-            <div className="mt-1 text-lg font-semibold">{w.headline}</div>
-            <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
-              {w.rows.map((r) => (<Fragment key={r.label}><dt className="text-[var(--viz-muted)]">{r.label}</dt><dd className="tabular-nums">{r.valueText}</dd></Fragment>))}
-            </dl>
-            <p className="mt-2 text-[10px] text-[var(--viz-muted)]">{w.source}</p>
-          </div>
-        )}
-        {(v.device || v.gear) && (
-          <div className="rounded-lg border p-4 text-sm">
-            {v.device && (<><div className="text-xs font-medium text-[var(--viz-muted)]">Device</div><div className="mb-2 font-medium">{v.device}</div></>)}
-            {gear && (
-              <>
-                <div className="text-xs font-medium text-[var(--viz-muted)]">{gear.label}</div>
-                <div className="font-medium">{gear.name}{gear.distanceText && <span className="font-normal text-[var(--viz-ink-2)]"> {gear.distanceText}</span>}</div>
-              </>
-            )}
-          </div>
-        )}
-      </div>}
+      <StatSummary v={v} />
 
       {(v.splits.length > 0 || v.route.length > 1) && <div className={`grid gap-6 ${v.splits.length && v.route.length > 1 ? 'lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]' : ''}`}>
         {v.splits.length > 0 && (
@@ -174,8 +130,9 @@ function Overview({ v, color }: { v: ActivityView; color: string }) {
           </div>
         )}
         {v.route.length > 1 && (
-          <div className="min-w-0">
+          <div className="min-w-0 space-y-2">
             <RouteMap route={v.route} points={points} color={color} label={`Route map of ${v.name}${v.place ? ` near ${v.place}` : ''}`} />
+            {v.series && points && <RouteProfile series={v.series} foot={v.layout === 'run'} color={color} />}
           </div>
         )}
       </div>}
@@ -206,11 +163,7 @@ function CoachView({ v, c, failed }: { v: ActivityView; c: ActivityContext | nul
         )}
       </div>
       <div className="rounded-lg border p-4 text-sm">
-        <div className="text-xs font-medium text-[var(--viz-muted)]">Load</div>
-        <p className="mt-1">
-          <b className="text-lg tabular-nums">{load.tssText}</b> TSS
-          <span className="text-xs text-[var(--viz-muted)]">{load.methodText ? ` · ${load.methodText}` : ''}</span>
-        </p>
+        <div className="text-xs font-medium text-[var(--viz-muted)]">Training load after this day</div>
         {load.rows.length ? (
           <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs tabular-nums">
             {load.rows.map((r) => (<Fragment key={r.key}><dt className="text-[var(--viz-muted)]">{r.label}</dt><dd>{r.valueText}</dd></Fragment>))}
@@ -298,7 +251,6 @@ export function ActivityBody({ v, context, contextFailed, color }: { v: Activity
   const series = v.series;
   const st = v.stats;
   const hrTotal = v.hrZones.reduce((n, z) => n + z.seconds, 0);
-  const effort = effortView(v);
   const hist = paceHistogramView(v);
   return (
     <>
@@ -348,13 +300,6 @@ export function ActivityBody({ v, context, contextFailed, color }: { v: Activity
           </div>
         </Card>
       )}
-
-      <Card id="relative-effort" title="Relative Effort" note="Strava's score and two other ways to count the load">
-        <div className="grid grid-cols-2 gap-4 rounded-lg border bg-[var(--viz-surface)] p-4 sm:grid-cols-4">
-          {effort.stats.map((x) => <Stat key={x.label} label={x.label} value={x.valueText} big />)}
-        </div>
-        {effort.note && <p className="text-xs text-[var(--viz-muted)]">{effort.note}</p>}
-      </Card>
 
       {hrTotal > 0 && (
         <Card id="heart-rate" title="Heart Rate" note={heartRateNote(st)}>

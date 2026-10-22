@@ -248,8 +248,9 @@ export default function StreamCharts({
           tabIndex={0}
           onKeyDown={onKey}
           onBlur={() => setHover(null)}
+          onPointerDown={onMove}
           onPointerMove={onMove}
-          onPointerLeave={() => setHover(null)}
+          onPointerLeave={(e) => { if (e.pointerType === 'mouse') setHover(null); }}
           className="max-w-full touch-pan-y outline-none focus-visible:ring-2 focus-visible:ring-[var(--viz-ctl)]"
         >
           {shown.map((p, k) => {
