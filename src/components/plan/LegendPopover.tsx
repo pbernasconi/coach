@@ -50,7 +50,7 @@ export default function LegendPopover({ placeName }: { placeName: string }) {
               <span className="text-[var(--viz-ink-2)]">Planned, still to do (dashed outline)</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="h-5 w-10 rounded-[5px] border bg-card shadow-sm [border-left:3px_solid_var(--sport-ride)]" />
+              <span className="plan-done h-5 w-10 rounded-[5px] border shadow-sm [border-left:3px_solid_var(--sport-ride)]" style={{ '--chip-tint': 'var(--plan-good)' } as React.CSSProperties} />
               <span className="text-[var(--viz-ink-2)]">Done, partly done or not done (filled in its status colour). The edge is the sport colour.</span>
             </div>
           </section>

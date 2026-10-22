@@ -17,6 +17,7 @@ test('duration comes before TSS', () => {
   const c = complianceOf({ duration: 60, tss: 50 }, 'done', { min: 30, tss: 50 });
   assert.equal(c.basis, 'duration');
   assert.equal(c.level, 'partial');
+  assert.equal(c.label, 'Partly done');
   assert.equal(c.ratio, 0.5);
 });
 
@@ -24,7 +25,10 @@ test('TSS when a duration is missing', () => {
   const c = complianceOf({ duration: null, tss: 80 }, 'done', { min: 60, tss: 40 });
   assert.equal(c.basis, 'tss');
   assert.equal(c.level, 'partial');
-  assert.equal(complianceOf({ duration: 0, tss: 80 }, 'done', { min: 60, tss: 200 }).level, 'off');
+  assert.equal(c.label, 'Partly done');
+  const off = complianceOf({ duration: 0, tss: 80 }, 'done', { min: 60, tss: 200 });
+  assert.equal(off.level, 'off');
+  assert.equal(off.label, 'Partly done');
 });
 
 test('done with nothing to compare (a Lift session) is done', () => {
