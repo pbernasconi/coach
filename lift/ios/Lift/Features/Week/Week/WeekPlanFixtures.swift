@@ -164,11 +164,5 @@
                 isOffline: true
             )
         )
-        static let fixturePlanItem = WeekState(
-            strip: strip,
-            sessions: .loaded(planSections),
-            destination: .planItem(fixtureIntervals),
-            plan: planHeader
-        )
     }
 #endif

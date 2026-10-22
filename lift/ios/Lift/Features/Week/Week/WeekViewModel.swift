@@ -127,10 +127,7 @@ final class WeekViewModel {
             return undoChange(undo)
         case .planItemTapped(let id):
             guard let item = merge?.item(id) else { return nil }
-            if let route = WeekLinks.planItem(item) { router.open(route) } else { state.destination = .planItem(item) }
-        case .planActivityTapped(let id):
-            state.destination = nil
-            router.open(.activity(id))
+            if let route = WeekLinks.planItem(item) { router.open(route) }
         default:
             state.destination = nil
             let start = layout?.weekStart(offset: state.weekOffset)

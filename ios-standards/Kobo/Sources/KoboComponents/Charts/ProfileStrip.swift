@@ -14,22 +14,37 @@ import SwiftUI
 ///     )
 public struct ProfileStrip: View {
     @Environment(\.koboTheme) private var theme
-    @ScaledMetric(relativeTo: .caption) private var height = Space.xxl
+    @ScaledMetric(relativeTo: .caption) private var scale: CGFloat = 1
     private let segments: [ProfileSegment]
     private let color: Color?
+    private let height: CGFloat
     private let label: Text
 
-    /// - Parameter color: one colour for every block; nil colours them by level.
-    public init(segments: [ProfileSegment], color: Color? = nil, accessibilityLabel: LocalizedStringKey) {
+    /// - Parameters:
+    ///   - color: one colour for every block; nil colours them by level.
+    ///   - height: the strip's height at the default text size (it grows with Dynamic Type).
+    public init(
+        segments: [ProfileSegment],
+        color: Color? = nil,
+        height: CGFloat = Space.xxl,
+        accessibilityLabel: LocalizedStringKey
+    ) {
         self.segments = segments
         self.color = color
+        self.height = height
         self.label = Text(accessibilityLabel)
     }
 
     /// A strip whose accessibility label is shown as is (it names user data).
-    public init(segments: [ProfileSegment], color: Color? = nil, verbatimAccessibilityLabel: String) {
+    public init(
+        segments: [ProfileSegment],
+        color: Color? = nil,
+        height: CGFloat = Space.xxl,
+        verbatimAccessibilityLabel: String
+    ) {
         self.segments = segments
         self.color = color
+        self.height = height
         self.label = Text(verbatim: verbatimAccessibilityLabel)
     }
 
@@ -54,7 +69,7 @@ public struct ProfileStrip: View {
                 context.fill(path, with: .color(color ?? ramp[shape.level].opacity(0.75)))
             }
         }
-        .frame(height: height)
+        .frame(height: height * scale)
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(label)

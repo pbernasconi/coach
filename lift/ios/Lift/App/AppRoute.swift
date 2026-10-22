@@ -31,6 +31,8 @@ nonisolated enum AppRoute: Hashable, Sendable {
     case liftExercise(String)
     /// Volume per week as the coach shows it (`/api/app/lift/weekly`).
     case liftWeekly
+    /// One planned workout as the coach shows it (`/api/app/plan/{id}`), by the Week API item's `id`.
+    case plannedWorkout(String)
     /// One day's weigh-in as the coach shows it (`/api/app/weigh-ins/{date}`): `YYYY-MM-DD` or `latest`.
     case weighIn(String)
 }

@@ -4,13 +4,8 @@ import LiftSync
 import SwiftUI
 
 extension View {
-    /// The read-only detail sheet of a coach plan item: its state, why, notes, key targets and steps, all as the server
-    /// sent them. Nothing here can change the plan; the web app owns it.
-    func weekPlanItemSheet(item: WeekPlanItem?, send: @escaping (WeekAction) -> Void) -> some View {
-        planItemSheet(item: item, onOpenActivity: { send(.planActivityTapped($0)) }) { send(.destinationDismissed) }
-    }
-
-    /// The same sheet for any screen. `onOpenActivity` opens the matched Strava activity; `onDismiss` runs when it
+    /// The read-only detail sheet of a coach plan item (Today's plan rows): its state, why, notes, key targets and
+    /// steps, all as the server sent them. Nothing here can change the plan; the web app owns it. `onOpenActivity` opens the matched Strava activity; `onDismiss` runs when it
     /// closes.
     func planItemSheet(
         item: WeekPlanItem?,

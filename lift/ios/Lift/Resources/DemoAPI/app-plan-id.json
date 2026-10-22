@@ -1,0 +1,185 @@
+{
+ "id": "demo-ride",
+ "date": "2026-03-03",
+ "title": "Sweet spot 3 × 12",
+ "sport": "ride",
+ "sportLabel": "Ride",
+ "subtitle": "Ride · Tuesday, March 3 · 07:00",
+ "state": "today",
+ "stateLabel": "Today",
+ "compliance": null,
+ "adapted": false,
+ "hero": [
+  {
+   "label": "Planned time",
+   "valueText": "1:13",
+   "unit": null
+  },
+  {
+   "label": "Planned TSS",
+   "valueText": "70",
+   "unit": null
+  },
+  {
+   "label": "Planned IF",
+   "valueText": "0.76",
+   "unit": null
+  }
+ ],
+ "workout": {
+  "summaryText": "1:13:00 · 69 TSS · IF 0.76",
+  "keyTargets": [
+   {
+    "text": "3 × 12:00 at 233–246 W, 4:00 easy",
+    "zone": "Z3"
+   }
+  ],
+  "profile": [
+   {
+    "seconds": 900,
+    "from": 0.55,
+    "to": 0.7,
+    "zone": "Z2"
+   },
+   {
+    "seconds": 720,
+    "from": 0.91,
+    "to": 0.91,
+    "zone": "Z3"
+   },
+   {
+    "seconds": 240,
+    "from": 0.53,
+    "to": 0.53,
+    "zone": "Z1"
+   },
+   {
+    "seconds": 720,
+    "from": 0.91,
+    "to": 0.91,
+    "zone": "Z3"
+   },
+   {
+    "seconds": 240,
+    "from": 0.53,
+    "to": 0.53,
+    "zone": "Z1"
+   },
+   {
+    "seconds": 720,
+    "from": 0.91,
+    "to": 0.91,
+    "zone": "Z3"
+   },
+   {
+    "seconds": 240,
+    "from": 0.53,
+    "to": 0.53,
+    "zone": "Z1"
+   },
+   {
+    "seconds": 600,
+    "from": 0.55,
+    "to": 0.55,
+    "zone": "Z1"
+   }
+  ],
+  "ticks": [
+   {
+    "at": 0,
+    "text": "0"
+   },
+   {
+    "at": 0.2054794520547945,
+    "text": "15"
+   },
+   {
+    "at": 0.410958904109589,
+    "text": "30"
+   },
+   {
+    "at": 0.6164383561643836,
+    "text": "45"
+   },
+   {
+    "at": 0.821917808219178,
+    "text": "1:00"
+   }
+  ],
+  "steps": [
+   {
+    "kind": "step",
+    "length": "15:00",
+    "label": "Warm-up",
+    "target": "Ramp 146–186 W",
+    "zone": "Z2"
+   },
+   {
+    "kind": "repeat",
+    "label": "3 ×",
+    "steps": [
+     {
+      "kind": "step",
+      "length": "12:00",
+      "label": "Work",
+      "target": "233–246 W",
+      "zone": "Z3"
+     },
+     {
+      "kind": "step",
+      "length": "4:00",
+      "label": "Recovery",
+      "target": "133–146 W",
+      "zone": "Z1"
+     }
+    ]
+   },
+   {
+    "kind": "step",
+    "length": "10:00",
+    "label": "Cool-down",
+    "target": "133–159 W",
+    "zone": "Z1"
+   }
+  ],
+  "zones": {
+   "basis": "by power",
+   "items": [
+    {
+     "zone": "Z1",
+     "seconds": 1320,
+     "timeText": "22",
+     "percent": 30
+    },
+    {
+     "zone": "Z2",
+     "seconds": 900,
+     "timeText": "15",
+     "percent": 21
+    },
+    {
+     "zone": "Z3",
+     "seconds": 2160,
+     "timeText": "36",
+     "percent": 49
+    },
+    {
+     "zone": "Z4",
+     "seconds": 0,
+     "timeText": "–",
+     "percent": 0
+    },
+    {
+     "zone": "Z5",
+     "seconds": 0,
+     "timeText": "–",
+     "percent": 0
+    }
+   ]
+  }
+ },
+ "intensity": null,
+ "notes": "Keep the cadence high on the last set.",
+ "liftSessionId": null,
+ "done": null
+}

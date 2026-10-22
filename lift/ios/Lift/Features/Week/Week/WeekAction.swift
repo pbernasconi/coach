@@ -37,8 +37,6 @@ nonisolated enum WeekAction: Equatable, Sendable {
     case templateUndoTapped(TemplateChangeUndo)
     /// "New template" (no templates yet): makes one and opens its editor.
     case newTemplateTapped
-    /// A coach plan item tapped: opens its read-only detail sheet.
+    /// A coach plan item tapped: opens its workout page, the activity, or the Lift session.
     case planItemTapped(String)
-    /// "Open activity" in a plan item's sheet: the matched Strava activity on Training.
-    case planActivityTapped(String)
 }

@@ -145,6 +145,7 @@ nonisolated enum WeekLinks {
     static func planItem(_ item: WeekPlanItem) -> AppRoute? {
         if let id = item.liftSessionId { return LiftLinks.session(id) }
         if item.isUnplanned, let id = item.doneActivityId { return .activity(id) }
-        return nil
+        // A rest day has nothing to show beyond its row.
+        return item.sport == .rest ? nil : .plannedWorkout(item.id)
     }
 }

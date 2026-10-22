@@ -8,6 +8,8 @@ struct ActivityDetailContent: View {
     let state: ActivityDetailState
     let send: (ActivityDetailAction) -> Void
 
+    private var header: ActivityHeader? { state.detail.content.value?.header?.value }
+
     var body: some View {
         ScrollView {
             AppResourcePage(
@@ -22,8 +24,16 @@ struct ActivityDetailContent: View {
             .padding(.bottom, Space.xxl)
         }
         .screenCanvas()
-        // No bar title: the page's header names the activity.
+        // No bar title: the page's header names the activity. The bar holds the older and newer activity.
         .navigationBarTitleDisplayMode(.inline)
+        .workoutNeighbours(
+            older: String(localized: "Older activity"),
+            newer: String(localized: "Newer activity"),
+            canGoOlder: header?.prevId != nil,
+            canGoNewer: header?.nextId != nil,
+            onOlder: { if let id = header?.prevId { send(.neighbourTapped(id)) } },
+            onNewer: { if let id = header?.nextId { send(.neighbourTapped(id)) } }
+        )
         .koboSheet(
             isPresented: Binding.action(state.destination == .map) { if !$0 { send(.destinationDismissed) } },
             title: "Route",

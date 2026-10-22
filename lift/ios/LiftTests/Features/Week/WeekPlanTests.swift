@@ -175,21 +175,14 @@ import Testing
         #expect(router.opened == [.activity("8001")])
     }
 
-    @Test func planItemTappedOpensTheDetailSheet() async throws {
+    @Test func planItemTappedOpensTheWorkoutPage() async throws {
         let ride = CoachPlanSamples.item("ride", on: monday.adding(days: 1))
         let (vm, _) = await loaded([], plan: [try snapshot([(monday.adding(days: 1), ride)])])
 
         vm.send(.planItemTapped("ride"))
-        #expect(vm.state.planItemTarget?.id == "ride")
-        #expect(vm.state.planItemTarget?.why == "Because")
-        #expect(vm.state.planItemTarget?.doneText == "62 min / 60 min")
-        #expect(
-            vm.state.planItemTarget?.dayTitle == DayCalendar(calendar: calendar).longTitle(of: monday.adding(days: 1))
-        )
-        vm.send(.destinationDismissed)
-        #expect(vm.state.destination == nil)
+        #expect(router.opened == [.plannedWorkout("ride")])
         vm.send(.planItemTapped("gone"))
-        #expect(vm.state.destination == nil)
+        #expect(router.opened == [.plannedWorkout("ride")])
     }
 
     @Test func aFinishedSessionOpensTheCoachsSessionPageWhenTheCoachIsOn() async throws {
@@ -211,15 +204,5 @@ import Testing
         vm.send(.planItemTapped("lift"))
         #expect(router.opened == [.liftSession(missing)])
         #expect(vm.state.destination == nil)
-    }
-
-    @Test func planActivityTappedOpensTheMatchedActivity() async throws {
-        let ride = CoachPlanSamples.item("ride", on: monday.adding(days: 1))
-        let (vm, _) = await loaded([], plan: [try snapshot([(monday.adding(days: 1), ride)])])
-        vm.send(.planItemTapped("ride"))
-        #expect(vm.state.planItemTarget?.doneActivityId == "8001")
-        vm.send(.planActivityTapped("8001"))
-        #expect(vm.state.destination == nil)
-        #expect(router.opened == [.activity("8001")])
     }
 }
