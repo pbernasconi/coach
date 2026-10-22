@@ -1,0 +1,58 @@
+/* Calendar workout cards, shared by /plan (ItemChips.tsx) and the home "This week" strip (HomeWeek.tsx) through
+   CalendarCard.tsx. Loaded globally from globals.css so every page has the status colours. */
+/* Plan compliance status colours (TrainingPeaks style). Always shown with an icon and a label, never colour
+   alone. Green and red are the chart tokens; amber and orange sit between them. */
+:root {
+  --plan-good: var(--viz-good);
+  --plan-partial: #b98000;
+  --plan-off: #e2620f;
+  --plan-missed: var(--viz-down);
+  --plan-idle: var(--viz-muted);
+}
+.dark {
+  --plan-good: var(--viz-good);
+  --plan-partial: #e0a400;
+  --plan-off: #f07a2a;
+  --plan-missed: var(--viz-down);
+  --plan-idle: var(--viz-muted);
+}
+
+/* Done is light green, partly done light yellow, not done (missed or skipped) light red. In light and dark. */
+.plan-done {
+  background: color-mix(in srgb, var(--chip-tint, transparent) 16%, hsl(var(--card)));
+  border-color: color-mix(in srgb, var(--chip-tint, transparent) 45%, transparent);
+}
+/* Upcoming (planned, not done yet) cards are white so they stand out on the grey day cells. */
+.plan-upcoming {
+  background: hsl(var(--card));
+}
+/* Hover and press on any chip: a light wash and a stronger border, so the card under the pointer stands out.
+   Dashed (planned) cards turn solid. The left sport stripe is an inline style and keeps its colour. */
+.plan-chip {
+  transition: background-color 120ms, border-color 120ms, box-shadow 120ms, transform 80ms;
+}
+.plan-chip:hover {
+  background-color: color-mix(in srgb, var(--viz-ink) 10%, transparent);
+  border-color: color-mix(in srgb, var(--viz-ink) 55%, transparent);
+  border-style: solid;
+}
+.plan-done:hover {
+  background: color-mix(in srgb, var(--chip-tint, transparent) 26%, hsl(var(--card)));
+  border-color: color-mix(in srgb, var(--chip-tint, transparent) 75%, transparent);
+}
+.plan-chip:active {
+  transform: scale(0.98);
+  background-color: color-mix(in srgb, var(--viz-ink) 15%, transparent);
+}
+.plan-upcoming:hover {
+  background: color-mix(in srgb, var(--viz-ink) 5%, hsl(var(--card)));
+}
+.plan-upcoming:active {
+  background: color-mix(in srgb, var(--viz-ink) 9%, hsl(var(--card)));
+}
+.plan-done:active {
+  background: color-mix(in srgb, var(--chip-tint, transparent) 34%, hsl(var(--card)));
+}
+.plan-dragging {
+  opacity: 0.4;
+}

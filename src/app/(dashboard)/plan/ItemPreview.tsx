@@ -7,12 +7,10 @@ import SportIcon from '@/components/SportIcon';
 import { sport } from '@/lib/sports';
 import { plainTitle } from '@/lib/plan/calendar.mjs';
 import { dur } from '@/lib/plan/cells.mjs';
-import type { CalendarActivity, CalendarLift, CalendarWorkout } from '@/lib/plan/month';
+import type { CalendarWorkout } from '@/lib/plan/month';
+import type { CalendarItem } from '@/components/plan/CalendarCard';
 
-export type Item =
-  | { kind: 'planned'; key: string; w: CalendarWorkout; actual: CalendarActivity | null }
-  | { kind: 'activity'; key: string; a: CalendarActivity }
-  | { kind: 'lift'; key: string; l: CalendarLift; a: CalendarActivity | null };
+export type Item = CalendarItem;
 
 /** What the preview shows: one calendar item, or all the items of a day ("+N more"). */
 export type PreviewTarget = { kind: 'item'; key: string } | { kind: 'day'; date: string };
