@@ -687,7 +687,9 @@ Field rules:
 - `overview.big`/`small`: `{ label, valueText, unit? }`, shown as they are, in this order (the web's stat tiles).
   `overview.grid`: the phone's headline stats, at most 6, in the sport's order (run: distance, pace, moving time,
   elevation, average heart rate, Coach TSS; ride: distance, moving time, speed, elevation, power, Coach TSS), filled
-  with other stats when one is missing. `overview.more`: every other stat of `big` and `small`, in their order.
+  with other stats when one is missing. `overview.more`: every other stat of `big` and `small`, in their order. The
+  watch's own stats (training effect, Garmin load, running dynamics, stamina, Body Battery) are at the end of `small`
+  once Garmin has the activity, about a minute after the workout.
 - `header.outdoor`: the activity has a real track (not a trainer ride, not a `Virtual…` sport): the phone leads the
   page with the route map.
   `achievementsText`: `null` without PRs, achievements or kudos.

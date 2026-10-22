@@ -6,6 +6,7 @@ Usage:
   python sync.py --since 2025-04-20    # backfill from that day; resumable
   python sync.py --days 60             # a bigger window this run only (not resumable)
   python sync.py --fresh-hours 2       # the data only when the last data sync is 2 hours old or more
+  python sync.py --activities          # only the watch's recent activities (activities.py), after a workout
   python sync.py --dry-run             # fetch and map; print counts and sizes; post nothing
   python sync.py --dry-run --local-tokens   # the same with ~/.garminconnect, no Coach at all
 
@@ -593,8 +594,12 @@ class Run:
             log.error("%s", e)
             return EXIT_FAILED
 
+        if getattr(self.args, "activities", False):
+            return self.activities(api, keeper)
         if getattr(self.args, "workouts_only", False):
-            return self.workouts(api, keeper)
+            code = self.workouts(api, keeper)
+            self.activities(api, keeper)  # catch-up for a missed post-workout run; never fails this run
+            return code
         today = self.today(api)
         if self.args.since:
             state = self.start_backfill(state, self.args.since, today)
@@ -602,7 +607,29 @@ class Run:
         code = self.sync(api, keeper, date_window(today, n), state)
         if code != EXIT_AUTH:
             self.workouts(api, keeper)  # its own trouble never fails the data sync
+            self.activities(api, keeper)
         return code
+
+    def activities(self, api: Any, keeper: TokenKeeper) -> int:
+        """The watch's recent activities (activities.py). Exit code for --activities."""
+        import activities
+
+        fetcher = Fetcher(self.args.delay, sleep=self.sleep, after_call=keeper.after_call)
+        try:
+            _, failed = activities.sync_recent(
+                api, self.coach, fetcher.call, account_identifiers(api), now=self.now(), dry_run=self.args.dry_run
+            )
+        except AuthFailed as e:
+            return self.fail_auth(str(e))
+        except CoachError as e:
+            log.error("activities: %s", e)
+            return EXIT_FAILED
+        except Exception as e:  # noqa: BLE001 - the data sync must not depend on this
+            log.error("activities: %s", type(e).__name__)
+            return EXIT_FAILED
+        with contextlib.suppress(CoachError):
+            keeper.save_if_changed()
+        return EXIT_OK if not failed and not fetcher.failed else EXIT_FAILED
 
     def workouts(self, api: Any, keeper: TokenKeeper) -> int:
         """Puts Coach's planned runs on the Garmin calendar (workouts.py). Exit code for --workouts-only."""
@@ -817,6 +844,7 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     p.add_argument("--max-minutes", type=float, default=DEFAULT_MAX_MINUTES, help="stop starting backfill chunks after this")
     p.add_argument("--dry-run", action="store_true", help="fetch and map; print counts and sizes; post nothing")
     p.add_argument("--workouts-only", action="store_true", help="only put Coach's planned runs on the Garmin calendar")
+    p.add_argument("--activities", action="store_true", help="only the watch's recent activities (after a workout)")
     p.add_argument(
         "--fresh-hours",
         type=float,

@@ -125,6 +125,29 @@ export const garminRaw = pgTable(
 );
 
 /**
+ * `garmin_activities`: the watch's own record of each workout, from Garmin Connect (scripts/garmin/activities.py),
+ * about a minute after the workout reaches Strava (the Strava webhook starts garmin.yml). What Strava does not
+ * carry: training effect, Garmin's training load, running dynamics, stamina, respiration, Body Battery.
+ * `summary` is the activity list item, `detail` the activity's summary page, `series` a few of its time series
+ * at up to 600 points ({ t: seconds[], <metric key>: values[] }). The activity page matches a Strava activity by
+ * start time (src/lib/activity/watch.mjs).
+ */
+export const garminActivities = pgTable(
+  'garmin_activities',
+  {
+    garminActivityId: text('garmin_activity_id').primaryKey(),
+    userId: text('user_id').notNull(),
+    startUtc: timestamp('start_utc', { withTimezone: true, mode: 'date' }).notNull(),
+    activityType: text('activity_type'),
+    summary: jsonb('summary'),
+    detail: jsonb('detail'),
+    series: jsonb('series'),
+    fetchedAt: timestamp('fetched_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+  },
+  (t) => [index('garmin_activities_user_start_idx').on(t.userId, t.startUtc)]
+);
+
+/**
  * `lab_biomarkers`: Function Health's catalog entry for each biomarker Paolo has results for (scripts/function-sync.mjs,
  * src/lib/vitals/function-catalog.mjs). Function's status, range and the reading text for /health/labs. The values and
  * the history stay in lab_results; `result_names` are the lab_results.biomarker names of this biomarker's draws.

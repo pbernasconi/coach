@@ -2,6 +2,7 @@
 
 GET/PUT /api/vitals/garmin   the job's state: encrypted tokens, synced_through, status
 POST    /api/vitals/sync     the samples, in batches of at most 2000
+GET/POST /api/vitals/garmin/activities   the watch's activities (activities.py)
 
 Network errors, 429 and 5xx are retried with backoff. Every call is idempotent
 (the server upserts), so a retry is safe. Logs show status codes, never bodies.
@@ -102,6 +103,19 @@ class Coach:
     def post_workout_results(self, results: list[dict[str, Any]]) -> None:
         """POST /api/workouts/garmin: what the workout push did."""
         self._request("POST", "/api/workouts/garmin", "store workout results", {"results": results})
+
+    def garmin_activity_ids(self, since_iso: str) -> list[str]:
+        """GET /api/vitals/garmin/activities: the ids of the Garmin activities Coach has that started after since_iso."""
+        from urllib.parse import quote
+
+        data = self._request("GET", f"/api/vitals/garmin/activities?since={quote(since_iso)}", "read Garmin activity ids")
+        ids = data.get("ids") if isinstance(data, dict) else None
+        return [str(i) for i in ids] if isinstance(ids, list) else []
+
+    def post_garmin_activities(self, activities: list[dict[str, Any]]) -> None:
+        """POST /api/vitals/garmin/activities, a few at a time (each is up to about 100 KB)."""
+        for start in range(0, len(activities), 5):
+            self._request("POST", "/api/vitals/garmin/activities", "store Garmin activities", {"activities": activities[start : start + 5]})
 
     def put_state(self, **fields: Any) -> None:
         """PUT /api/vitals/garmin. Only the given fields change."""
