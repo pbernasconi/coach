@@ -1,0 +1,28 @@
+import { sql } from '@/db';
+import { toDay } from '@/lib/db-time.mjs';
+import { SPORTS, sport } from '@/lib/sports';
+import { loadRange } from './month';
+import { mondayOf } from './week.mjs';
+import { appWorkout } from './app-workout.mjs';
+
+const sports = { known: new Set<string>(SPORTS.map((s) => s.id)), label: (id: string) => sport(id).label };
+
+/** A plan activity id as the Week API sends it (a UUID or another plain id). */
+export const PLAN_ID = /^[A-Za-z0-9-]{1,64}$/;
+
+/**
+ * GET /api/app/plan/{id} (lift/APP-API.md, "Planned workout"): the owner's planned workout `id` with its state and
+ * match from loadRange (the same data as the web calendar), or null when the owner has no such workout.
+ */
+export async function loadAppWorkout(userId: string, id: string, today: string) {
+  const rows = (await sql`
+    SELECT a.scheduled_date FROM training_plan_activities a JOIN training_plans p ON p.id = a.plan_id
+    WHERE p.user_id = ${userId} AND a.id::text = ${id}
+    LIMIT 1`) as { scheduled_date: unknown }[];
+  const date = rows[0] ? toDay(rows[0].scheduled_date) : null;
+  if (!date) return null;
+  const monday = mondayOf(date);
+  const range = await loadRange(userId, monday, monday, today);
+  const w = range.workouts.find((x) => String(x.id) === id);
+  return w ? appWorkout(w, sports) : null;
+}

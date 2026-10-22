@@ -11,15 +11,13 @@ struct LiftSessionHeroView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Space.lg) {
-            VStack(alignment: .leading, spacing: Space.xs) {
-                Text(verbatim: hero.kicker)
-                    .font(theme.font(.subheadline).weight(.semibold))
-                    .foregroundStyle(theme.palette.accentText)
-                Text(verbatim: hero.title)
-                    .font(theme.font(.title2))
-                    .foregroundStyle(theme.palette.textPrimary)
-                    .accessibilityAddTraits(.isHeader)
-                StatusPill(verbatim: hero.stateLabel, tone: Self.tone(hero.state), symbol: Self.symbol(hero.state))
+            WorkoutHeader(
+                sport: .strength,
+                kicker: hero.kicker,
+                title: hero.title,
+                status: WorkoutStatus(sessionState: hero.state),
+                statusLabel: hero.stateLabel
+            ) {
                 if let note = hero.note {
                     Text(verbatim: note)
                         .font(theme.font(.subheadline))
@@ -60,23 +58,6 @@ struct LiftSessionHeroView: View {
     private var columns: [GridItem] {
         let count = dynamicTypeSize.isAccessibilitySize ? 1 : 2
         return Array(repeating: GridItem(.flexible(), spacing: Space.sm, alignment: .top), count: count)
-    }
-
-    /// Done green, in progress accent, planned neutral; the pill always carries the label too.
-    static func tone(_ state: String) -> Tone {
-        switch state {
-        case "done": .success
-        case "inProgress": .accent
-        default: .neutral
-        }
-    }
-
-    static func symbol(_ state: String) -> String {
-        switch state {
-        case "done": "checkmark.circle.fill"
-        case "inProgress": "play.circle.fill"
-        default: "calendar"
-        }
     }
 }
 

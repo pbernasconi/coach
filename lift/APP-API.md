@@ -717,6 +717,39 @@ Field rules:
 - Not sent: the web's range highlights (a lap or segment on the charts and the map), the map's crosshair dot, links
   to Strava segments, and the Health day link.
 
+### Planned workout: `GET /api/app/plan/{id}?tz=`
+
+One planned workout as the web's workout window shows it (`PlannedModal.tsx`, `PlannedDetails.tsx`); the Week tab
+opens it for a planned workout that is not a Lift session. `id` is the Week API item's `id`. Built by `appWorkout`
+(`src/lib/plan/app-workout.mjs`) from the same `loadRange` row as the web. `404` when the owner has no such workout.
+
+```json
+{
+  "id": "…", "date": "2026-10-21", "title": "Threshold A — Zwift", "sport": "ride", "sportLabel": "Ride",
+  "subtitle": "Ride · Wednesday, October 21 · 07:00",
+  "state": "today", "stateLabel": "Today", "compliance": null, "adapted": false,
+  "hero": [{ "label": "Planned time", "valueText": "1:30", "unit": null }, { "label": "Planned TSS", "valueText": "95", "unit": null }],
+  "workout": {
+    "summaryText": "1:30:00 · 95 TSS · IF 0.79",
+    "keyTargets": [{ "text": "6 × 5:00 at 254–276 W, 2:00 easy", "zone": "Z4" }],
+    "profile": [{ "seconds": 600, "from": 0.6, "to": 0.6, "zone": "Z2" }],
+    "ticks": [{ "at": 0, "text": "0" }, { "at": 0.33, "text": "30" }],
+    "steps": [
+      { "kind": "step", "length": "10:00", "label": "Warm-up", "target": "157–210 W", "zone": "Z2" },
+      { "kind": "repeat", "label": "6 ×", "steps": [{ "kind": "step", "length": "5:00", "label": "Work", "target": "254–276 W", "zone": "Z4" }] }
+    ],
+    "zones": { "basis": "by power", "items": [{ "zone": "Z1", "seconds": 600, "timeText": "10", "percent": 11 }] }
+  },
+  "intensity": null, "notes": "Coach notes (the text above the Lift session block)",
+  "liftSessionId": null, "done": { "activityId": "16234567890", "name": "Morning Ride" }
+}
+```
+
+- `hero`: planned time, TSS and IF, then done time and TSS once done (as the web's hero row).
+- `workout`: `null` without structured steps. `profile` is the Week API's bars; `ticks` place the time labels along
+  the chart (0…1). `steps` nest one level for repeats. `zones` is the web's "Time in zones" (`null` with no time).
+- `done.activityId`: the Strava activity to open (`null` for a Lift match); `done` is `null` until done.
+
 ### Weigh-in: `GET /api/app/weigh-ins/{date | latest}`
 
 The screen a weigh-in notice opens (lift/PUSH.md, `lift://weigh-in/<date>`). `date` is `YYYY-MM-DD`; `latest` is the

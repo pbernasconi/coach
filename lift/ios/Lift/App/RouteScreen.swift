@@ -67,7 +67,7 @@ struct RouteScreen: View {
                 viewModel: PlatesViewModel(gym: dependencies.gym, unit: dependencies.info.unit),
                 toasts: toasts
             )
-        case .activity, .liftSession, .liftExercise, .liftWeekly, .weighIn:
+        case .activity, .liftSession, .liftExercise, .liftWeekly, .weighIn, .plannedWorkout:
             AppAPIRouteScreen(route: route, dependencies: dependencies, router: router, toasts: toasts)
         case .templates, .template, .exercisePicker, .workoutSummary:
             PlanRouteScreen(route: route, dependencies: dependencies, router: router)

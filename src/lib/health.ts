@@ -1,3 +1,4 @@
+import { loadAppWorkout } from '@/lib/plan/app-workout';
 import journal from '../../drizzle/meta/_journal.json';
 import { openProposal } from '@/lib/plan/proposals';
 import { GET as homeSummary } from '@/app/api/home/route';
@@ -96,6 +97,11 @@ export async function runChecks(now = new Date(), { migrations = true }: { migra
     check('recovery today', () => loadRecoveryToday(userId, today)),
     check('body', () => loadBody(userId, today)),
     check('home week', () => loadRange(userId, monday, monday, today)),
+    // GET /api/app/plan/{id} (the Lift app's workout page): the first planned workout of this week, if any.
+    check('app planned workout', async () => {
+      const first = (await loadRange(userId, monday, monday, today)).workouts[0];
+      if (first && !(await loadAppWorkout(userId, String(first.id), today))) throw new Error('workout not found');
+    }),
     // GET /api/lift/week (the Lift app's Week tab): this week and the next three.
     check('lift week', () => loadLiftWeeks(userId, monday, 4, today, 'America/Los_Angeles', now)),
     check('activity (latest)', async () => {

@@ -38,14 +38,6 @@ nonisolated struct WeekState: Equatable, Sendable {
         case add(WeekAddDay)
         /// The template picker for changing a planned session's workout.
         case change(WeekSessionRef)
-        /// The read-only detail sheet of a coach plan item.
-        case planItem(WeekPlanItem)
-    }
-
-    /// The plan item the detail sheet is open for.
-    var planItemTarget: WeekPlanItem? {
-        guard case .planItem(let item) = destination else { return nil }
-        return item
     }
 
     /// The session the lift sheet is open for.

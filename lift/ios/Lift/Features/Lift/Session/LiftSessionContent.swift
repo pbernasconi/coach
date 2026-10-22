@@ -22,16 +22,14 @@ struct LiftSessionContent: View {
         .screenCanvas()
         .navigationTitle(Text(verbatim: ""))  // the hero names the session; the bar keeps only older and newer
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            if let detail = state.detail.content.value {
-                ToolbarItemGroup(placement: .topBarTrailing) {
-                    Button("Older session", systemImage: "chevron.left") { send(.olderTapped) }
-                        .disabled(detail.olderId == nil)
-                    Button("Newer session", systemImage: "chevron.right") { send(.newerTapped) }
-                        .disabled(detail.newerId == nil)
-                }
-            }
-        }
+        .workoutNeighbours(
+            older: String(localized: "Older session"),
+            newer: String(localized: "Newer session"),
+            canGoOlder: state.detail.content.value?.olderId != nil,
+            canGoNewer: state.detail.content.value?.newerId != nil,
+            onOlder: { send(.olderTapped) },
+            onNewer: { send(.newerTapped) }
+        )
     }
 }
 
