@@ -63,7 +63,7 @@
             dayTitle: "Friday, 6 March"
         )
 
-        static let fixtureDefault = WeekState(strip: strip, sessions: .loaded(sections), canPlanNextWeek: true)
+        static let fixtureDefault = WeekState(strip: strip, sessions: .loaded(sections))
         static let fixtureLoading = WeekState(strip: strip, sessions: .loading)
         /// Nothing planned this week: seven rest days.
         static let fixtureEmpty = WeekState(
@@ -93,8 +93,7 @@
                         SessionSummary.fixtureLower.moved(to: day(1)),
                     ]
                 ])
-            ),
-            canPlanNextWeek: true
+            )
         )
         static let fixtureOptions = WeekState(
             strip: strip,

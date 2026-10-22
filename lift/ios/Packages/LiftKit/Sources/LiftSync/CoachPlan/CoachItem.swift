@@ -28,6 +28,10 @@ public struct CoachItem: Decodable, Equatable, Sendable, Identifiable {
     public var notes: String?
     public var keyTargets: [String]
     public var steps: [CoachStep]
+    /// The workout as bars for a small interval chart; empty without structured steps.
+    public var profile: [CoachProfileBar]
+    /// The row's numbers as text: what was done, or what is planned.
+    public var stats: CoachStats
     /// The Lift session this item plans, lower-case; compare it case-insensitively.
     public var liftSessionId: String?
     public var done: CoachDone?
@@ -45,6 +49,8 @@ public struct CoachItem: Decodable, Equatable, Sendable, Identifiable {
         notes: String? = nil,
         keyTargets: [String] = [],
         steps: [CoachStep] = [],
+        profile: [CoachProfileBar] = [],
+        stats: CoachStats = CoachStats(),
         liftSessionId: String? = nil
     ) {
         self.id = id
@@ -59,12 +65,14 @@ public struct CoachItem: Decodable, Equatable, Sendable, Identifiable {
         self.notes = notes
         self.keyTargets = keyTargets
         self.steps = steps
+        self.profile = profile
+        self.stats = stats
         self.liftSessionId = liftSessionId
     }
 
     private enum CodingKeys: String, CodingKey {
         case id, date, startTime, endTime, title, sport, workoutType, intensity, durationMinutes, tss, subtitle
-        case state, stateLabel, compliance, adapted, why, notes, keyTargets, steps, liftSessionId, done
+        case state, stateLabel, compliance, adapted, why, notes, keyTargets, steps, profile, stats, liftSessionId, done
     }
 
     public init(from decoder: any Decoder) throws {
@@ -79,6 +87,8 @@ public struct CoachItem: Decodable, Equatable, Sendable, Identifiable {
         adapted = try container.decodeIfPresent(Bool.self, forKey: .adapted) ?? false
         keyTargets = try container.decodeIfPresent([String].self, forKey: .keyTargets) ?? []
         steps = try container.decodeIfPresent([CoachStep].self, forKey: .steps) ?? []
+        profile = try container.decodeIfPresent([CoachProfileBar].self, forKey: .profile) ?? []
+        stats = try container.decodeIfPresent(CoachStats.self, forKey: .stats) ?? CoachStats()
         try decodeOptionals(container)
     }
 

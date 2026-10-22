@@ -7,7 +7,7 @@ import LiftCore
 ///     -fresh                                  in-memory database as a first launch leaves it: the exercise library
 ///                                             and nothing else (no sessions, no templates); wins over -demo, so
 ///                                             the screenshot script's empty states (`-demo -fresh`) work
-///     -tab today|week|training|lift|settings  the tab to open first (Today without it); history and exercises
+///     -tab today|week|training|lift|settings  the tab to open first (Week without it); history and exercises
 ///                                             open the Lift tab on that segment
 ///     -appearance dark|light                  forces an appearance (CI usually sets it with simctl)
 ///     -open workout                           with -demo: pushes today's or the next planned session on Week
@@ -85,7 +85,7 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
     }
 
     var isDemo = false
-    var initialTab = AppTab.today
+    var initialTab = AppTab.week
     /// The Lift tab's first segment: `-tab history` and `-tab exercises` open it there (they were tabs before).
     var liftSegment = LiftSegment.overview
     var appearance: Appearance?
@@ -97,7 +97,7 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
 
     init(
         isDemo: Bool = false,
-        initialTab: AppTab = .today,
+        initialTab: AppTab = .week,
         liftSegment: LiftSegment = .overview,
         appearance: Appearance? = nil,
         opening: Opening? = nil,

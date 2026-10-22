@@ -212,10 +212,4 @@ import Testing
         #expect(vm.state.destination == nil)
         #expect(router.opened == [.activity("8001")])
     }
-
-    @Test func refreshPulledFetchesThePlanAgain() async {
-        let (vm, plan) = await loaded([], plan: [.off])
-        await vm.send(.refreshPulled)?.value
-        #expect(plan.refreshCount == 1)
-    }
 }

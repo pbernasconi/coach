@@ -12,7 +12,7 @@ struct WeekContent: View {
         WeekSessionList(state: state, send: send)
             .safeAreaInset(edge: .top, spacing: 0) {
                 if let strip = state.strip {
-                    WeekStripBar(strip: strip, weekOffset: state.weekOffset, send: send)
+                    WeekStripBar(strip: strip, mode: state.calendar, weekOffset: state.weekOffset, send: send)
                 }
             }
             .screenCanvas()
@@ -34,12 +34,14 @@ struct WeekContent: View {
             }
     }
 
-    /// Plan next week copies the visible week's template days a week forward, with Undo in a toast; it is off while the
-    /// week has none. Add workout plans the selected day.
+    /// The calendar button switches the top between the week strip and the month calendar. Add workout plans the
+    /// selected day.
     private var header: some View {
         AppHeader("Week") {
-            Button("Plan next week", systemImage: "calendar.badge.plus") { send(.planNextWeekTapped) }
-                .disabled(!state.canPlanNextWeek)
+            Button(
+                state.calendar == .week ? "Show month" : "Show week",
+                systemImage: state.calendar == .week ? "calendar" : "rectangle.split.3x1"
+            ) { send(.calendarToggled) }
             Button("Add workout", systemImage: "plus") { send(.addWorkoutTapped(nil)) }
         }
     }

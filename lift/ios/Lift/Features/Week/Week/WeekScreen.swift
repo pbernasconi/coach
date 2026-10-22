@@ -14,7 +14,6 @@ struct WeekScreen: View {
 
     var body: some View {
         WeekContent(state: viewModel.state, send: { viewModel.send($0) })
-            .weekPlanRefresh(isOn: viewModel.state.plan != nil) { await viewModel.send(.refreshPulled)?.value }
             .task { await viewModel.run() }
             .onChange(of: viewModel.state.toast) { _, toast in show(toast) }
             .toastHost(toasts)
@@ -28,31 +27,9 @@ struct WeekScreen: View {
                 switch change {
                 case .reschedule(let undo): viewModel.send(.undoTapped(undo))
                 case .template(let undo): viewModel.send(.templateUndoTapped(undo))
-                case .plan(let undo): viewModel.send(.planUndoTapped(undo))
                 }
             }
         }
         toasts.show(Toast(verbatim: toast.message, action: undo))
-    }
-}
-
-extension View {
-    /// Pull to refresh fetches the coach plan again; it is there only while the plan is on, so the list behaves as
-    /// before when sync is off.
-    fileprivate func weekPlanRefresh(isOn: Bool, _ action: @escaping @Sendable () async -> Void) -> some View {
-        modifier(WeekPlanRefresh(isOn: isOn, action: action))
-    }
-}
-
-private struct WeekPlanRefresh: ViewModifier {
-    let isOn: Bool
-    let action: @Sendable () async -> Void
-
-    func body(content: Content) -> some View {
-        if isOn {
-            content.koboRefreshable(action)
-        } else {
-            content
-        }
     }
 }

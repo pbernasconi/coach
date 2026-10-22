@@ -119,6 +119,38 @@ public struct CoachStep: Decodable, Equatable, Sendable {
     }
 }
 
+/// One bar of an item's interval chart (lift/WEEK-API.md, `profile`): its seconds, its height at the start and end as a
+/// fraction of FTP or LTHR (equal unless it is a ramp) and its zone, "Z1" to "Z5".
+public struct CoachProfileBar: Decodable, Equatable, Sendable {
+    public var seconds: Double
+    public var from: Double
+    public var to: Double
+    public var zone: String
+
+    public init(seconds: Double, from: Double, to: Double, zone: String) {
+        self.seconds = seconds
+        self.from = from
+        self.to = to
+        self.zone = zone
+    }
+}
+
+/// An item's three numbers as display text (lift/WEEK-API.md, `stats`), each nil when unknown.
+public struct CoachStats: Decodable, Equatable, Sendable {
+    /// "1:30:00".
+    public var time: String?
+    /// "18.2 km".
+    public var distance: String?
+    /// "95".
+    public var tss: String?
+
+    public init(time: String? = nil, distance: String? = nil, tss: String? = nil) {
+        self.time = time
+        self.distance = distance
+        self.tss = tss
+    }
+}
+
 /// The activity that completed an item.
 public struct CoachDone: Decodable, Equatable, Sendable {
     public var source: String

@@ -1,10 +1,10 @@
 import Foundation
 
-/// The five tabs of the root shell. The raw value is the `-tab` launch argument; `-tab history` and `-tab exercises`
+/// The five tabs of the root shell, Week (the home page) first. The raw value is the `-tab` launch argument; `-tab history` and `-tab exercises`
 /// open the Lift tab on that segment (`LaunchOptions`).
 nonisolated enum AppTab: String, CaseIterable, Hashable, Sendable {
-    case today
     case week
+    case today
     case training
     case lift
     case settings

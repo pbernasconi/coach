@@ -11,6 +11,8 @@ nonisolated struct WeekState: Equatable, Sendable {
     var strip: WeekStrip?
     /// The visible strip page.
     var weekOffset = 0
+    /// Whether the top shows the week strip or the month calendar (the header's calendar button).
+    var calendar: CalendarMode = .week
     /// The visible week's seven days, Monday first, each with its plan items and sessions (none on a free day).
     var sessions: Loadable<[WeekDaySection]> = .loading
     /// The open lift sheet or day picker, if any.
@@ -19,10 +21,13 @@ nonisolated struct WeekState: Equatable, Sendable {
     var toast: WeekToast?
     /// The templates a day can be planned from, by list order.
     var templates: [WeekTemplateChoice] = []
-    /// Whether the visible week has template days to copy to the next week.
-    var canPlanNextWeek = false
     /// The visible week's coach plan line; nil when sync is off or the week's plan is not kept.
     var plan: WeekPlanHeader?
+
+    enum CalendarMode: Equatable, Sendable {
+        case week
+        case month
+    }
 
     enum Destination: Equatable, Sendable {
         /// The lift sheet for a planned session.
@@ -74,6 +79,8 @@ nonisolated struct WeekStrip: Equatable, Sendable {
     var selected: Date
     /// Days in the strip's range that have sessions.
     var days: [WeekDay]
+    /// The first and last days the strip and the month calendar can show.
+    var range: ClosedRange<Date>? = nil
 }
 
 /// A day with sessions, as the strip marks it.
@@ -144,7 +151,6 @@ nonisolated struct WeekToast: Equatable, Sendable, Identifiable {
 nonisolated enum WeekUndo: Equatable, Sendable {
     case reschedule(RescheduleUndo)
     case template(TemplateChangeUndo)
-    case plan(WeekPlanUndo)
 }
 
 /// A template in the add and change pickers.

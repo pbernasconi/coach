@@ -58,6 +58,7 @@ struct ChartsDemo: View {
                 BandBar(value: 4, scaleMax: 25, band: 10...20, tick: 8, accessibilityLabel: "Writing")
             }
         case .zoneBars: ZoneBars(items: ChartSamples.zones)
+        case .profileStrip: ProfileStrip(segments: ChartSamples.profile, accessibilityLabel: "Plan")
         case .heatmap:
             KoboHeatmap(
                 days: ChartSamples.activeDays,

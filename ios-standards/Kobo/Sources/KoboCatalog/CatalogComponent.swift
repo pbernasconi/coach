@@ -110,6 +110,7 @@ nonisolated public enum CatalogComponent: String, CaseIterable, Identifiable, Se
     case variableWidthBarChart = "VariableWidthBarChart"
     case bandBar = "BandBar"
     case zoneBars = "ZoneBars"
+    case profileStrip = "ProfileStrip"
     case heatmap = "KoboHeatmap"
     case dataTable = "KoboDataTable"
     case routeMap = "KoboRouteMap"

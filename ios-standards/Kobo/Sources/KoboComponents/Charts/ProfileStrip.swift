@@ -1,0 +1,104 @@
+import KoboTokens
+import SwiftUI
+
+/// A small strip of blocks laid end to end: each block's width is how long it lasts and its height how hard or high
+/// it is, coloured calm to hot by level, or all in one quiet `color` when the shape is what matters. For a glance in a
+/// list row; it has no axes and no touch. VoiceOver reads the label the caller gives.
+///
+///     ProfileStrip(
+///         segments: [
+///             ProfileSegment(id: 0, width: 600, start: 0.5, level: 0),
+///             ProfileSegment(id: 1, width: 300, start: 1.1, level: 4),
+///         ],
+///         accessibilityLabel: "Plan"
+///     )
+public struct ProfileStrip: View {
+    @Environment(\.koboTheme) private var theme
+    @ScaledMetric(relativeTo: .caption) private var height = Space.xxl
+    private let segments: [ProfileSegment]
+    private let color: Color?
+    private let label: Text
+
+    /// - Parameter color: one colour for every block; nil colours them by level.
+    public init(segments: [ProfileSegment], color: Color? = nil, accessibilityLabel: LocalizedStringKey) {
+        self.segments = segments
+        self.color = color
+        self.label = Text(accessibilityLabel)
+    }
+
+    /// A strip whose accessibility label is shown as is (it names user data).
+    public init(segments: [ProfileSegment], color: Color? = nil, verbatimAccessibilityLabel: String) {
+        self.segments = segments
+        self.color = color
+        self.label = Text(verbatim: verbatimAccessibilityLabel)
+    }
+
+    public var body: some View {
+        let shapes = ProfileMath.shapes(segments)
+        let ramp = [
+            theme.palette.neutral.ink, theme.palette.info.ink, theme.palette.success.ink, theme.palette.warning.ink,
+            theme.palette.danger.ink,
+        ]
+        Canvas { context, size in
+            for shape in shapes {
+                // A hairline gap between blocks, dropped when a block is too narrow to keep it.
+                let left = shape.x0 * size.width
+                let right = shape.x1 * size.width
+                let gap = right - left > Size.hairline * 6 ? Size.hairline : 0
+                var path = Path()
+                path.move(to: CGPoint(x: left + gap, y: size.height))
+                path.addLine(to: CGPoint(x: left + gap, y: size.height * (1 - shape.top0)))
+                path.addLine(to: CGPoint(x: right - gap, y: size.height * (1 - shape.top1)))
+                path.addLine(to: CGPoint(x: right - gap, y: size.height))
+                path.closeSubpath()
+                context.fill(path, with: .color(color ?? ramp[shape.level].opacity(0.75)))
+            }
+        }
+        .frame(height: height)
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(label)
+    }
+}
+
+private struct ProfileStripPreview: View {
+    @Environment(\.koboTheme) private var theme
+
+    var body: some View {
+        VStack(spacing: Space.lg) {
+            ProfileStrip(
+                segments: [
+                    ProfileSegment(id: 0, width: 600, start: 0.5, end: 0.75, level: 1),
+                    ProfileSegment(id: 1, width: 480, start: 1.0, level: 3),
+                    ProfileSegment(id: 2, width: 180, start: 0.55, level: 0),
+                    ProfileSegment(id: 3, width: 480, start: 1.0, level: 3),
+                    ProfileSegment(id: 4, width: 180, start: 0.55, level: 0),
+                    ProfileSegment(id: 5, width: 60, start: 1.2, level: 4),
+                    ProfileSegment(id: 6, width: 600, start: 0.5, level: 0),
+                ],
+                accessibilityLabel: "Plan"
+            )
+            ProfileStrip(
+                segments: [ProfileSegment(id: 0, width: 3_600, start: 0.7, level: 1)],
+                accessibilityLabel: "Steady"
+            )
+            ProfileStrip(
+                segments: [
+                    ProfileSegment(id: 0, width: 600, start: 0.5, level: 0),
+                    ProfileSegment(id: 1, width: 300, start: 1.1, level: 4),
+                    ProfileSegment(id: 2, width: 600, start: 0.5, level: 0),
+                ],
+                color: theme.palette.textTertiary,
+                accessibilityLabel: "One colour"
+            )
+        }
+        .padding()
+        .background(theme.palette.canvas)
+    }
+}
+
+#if DEBUG
+    #Preview("Profile strip") { ProfileStripPreview() }
+    #Preview("Profile strip, dark") { ProfileStripPreview().preferredColorScheme(.dark) }
+    #Preview("Profile strip, AX3") { ProfileStripPreview().dynamicTypeSize(.accessibility3) }
+#endif

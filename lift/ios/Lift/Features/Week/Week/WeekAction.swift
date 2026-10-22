@@ -9,6 +9,8 @@ nonisolated enum WeekAction: Equatable, Sendable {
     /// A rest day's row tapped in the list.
     case dayTapped(LocalDay)
     case weekChanged(Int)
+    /// The header's calendar button: switches the top between the week strip and the month calendar.
+    case calendarToggled
     case sessionTapped(UUID)
     /// The "…" button of a planned session: opens the lift sheet.
     case sessionOptionsTapped(UUID)
@@ -31,18 +33,12 @@ nonisolated enum WeekAction: Equatable, Sendable {
     case changeWorkoutTapped(UUID)
     /// A template picked for a session: swaps the session's exercises for the template's.
     case changeTemplatePicked(UUID, to: UUID)
-    /// "Plan next week": copies the visible week's template days a week forward.
-    case planNextWeekTapped
     /// "Undo" on the toast after Change workout.
     case templateUndoTapped(TemplateChangeUndo)
-    /// "Undo" on the toast after Plan next week.
-    case planUndoTapped(WeekPlanUndo)
     /// "New template" (no templates yet): makes one and opens its editor.
     case newTemplateTapped
     /// A coach plan item tapped: opens its read-only detail sheet.
     case planItemTapped(String)
     /// "Open activity" in a plan item's sheet: the matched Strava activity on Training.
     case planActivityTapped(String)
-    /// The list pulled down: fetches the visible week's plan again.
-    case refreshPulled
 }

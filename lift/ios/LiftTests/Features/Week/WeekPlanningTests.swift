@@ -55,11 +55,10 @@ import Testing
         return vm
     }
 
-    @Test func runReadsTheTemplatesAndOffersPlanningTheNextWeek() async {
+    @Test func runReadsTheTemplates() async {
         let vm = await loaded()
 
         #expect(vm.state.templates == [.init(id: upperID, name: "Upper A"), .init(id: lowerID, name: "Lower A")])
-        #expect(vm.state.canPlanNextWeek)
     }
 
     @Test func addWorkoutTappedOpensThePickerForTheSelectedDay() async {
@@ -148,32 +147,6 @@ import Testing
         #expect(vm.state.toast?.undo == nil)
     }
 
-    @Test func planNextWeekTappedCopiesTheVisibleWeekAndOffersUndo() async {
-        let plans = FakeWorkoutPlanRepository(plannedCount: 2)
-        let vm = await loaded(plans: plans)
-
-        await vm.send(.planNextWeekTapped)?.value
-
-        #expect(plans.calls == [.planNextWeek(monday)])
-        #expect(vm.state.toast?.message == String(localized: "Planned \(2) workouts for next week"))
-        guard case .plan(let plan)? = vm.state.toast?.undo else {
-            Issue.record("expected an undo")
-            return
-        }
-        #expect(plan.sessionIDs.count == 2)
-    }
-
-    @Test func planningAFullNextWeekSaysSo() async {
-        let vm = await loaded(plans: FakeWorkoutPlanRepository(plannedCount: 0))
-
-        await vm.send(.planNextWeekTapped)?.value
-
-        #expect(
-            vm.state.toast
-                == WeekToast(id: 1, message: String(localized: "Next week already has those days"), undo: nil)
-        )
-    }
-
     @Test func templateUndoTappedPutsTheOldWorkoutBack() async {
         let plans = FakeWorkoutPlanRepository()
         let vm = await loaded(plans: plans)
@@ -182,17 +155,6 @@ import Testing
         await vm.send(.templateUndoTapped(undo))?.value
 
         #expect(plans.calls == [.undoChange(undo)])
-        #expect(vm.state.toast == nil)
-    }
-
-    @Test func planUndoTappedRemovesThePlannedWeek() async {
-        let plans = FakeWorkoutPlanRepository()
-        let vm = await loaded(plans: plans)
-        let undo = WeekPlanUndo(sessionIDs: [IDSequence.id(1, prefix: 0xC3)])
-
-        await vm.send(.planUndoTapped(undo))?.value
-
-        #expect(plans.calls == [.undoPlan(undo)])
         #expect(vm.state.toast == nil)
     }
 

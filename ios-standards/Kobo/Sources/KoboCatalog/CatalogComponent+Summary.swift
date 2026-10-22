@@ -81,6 +81,7 @@ extension CatalogComponent {
         case .variableWidthBarChart: "Bars as wide as each part lasted and as tall as its value"
         case .bandBar: "Horizontal bar over a shaded target band, with a tick"
         case .zoneBars: "How a total splits across zones, with times and percentages"
+        case .profileStrip: "Blocks end to end, wide for long and tall for hard, for a glance in a row"
         case .heatmap: "Weeks by weekdays grid shaded by value, with a legend"
         case .dataTable: "Read-only table with numeric columns, emphasis and row taps"
         case .routeMap: "A route on a muted map, fitted, still or interactive"

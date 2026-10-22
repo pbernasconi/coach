@@ -93,6 +93,8 @@ final class WeekViewModel {
             return select(day)
         case .weekChanged(let offset):
             return changeWeek(to: offset)
+        case .calendarToggled:
+            state.calendar = state.calendar == .week ? .month : .week
         case .sessionTapped(let id):
             router.open(WeekLinks.session(summary(id), id: id, coachIsOn: plan.status != .off))
         case .sessionOptionsTapped(let id):
@@ -129,8 +131,6 @@ final class WeekViewModel {
         case .planActivityTapped(let id):
             state.destination = nil
             router.open(.activity(id))
-        case .refreshPulled:
-            return Task { [coachPlan] in await coachPlan.refresh() }
         default:
             state.destination = nil
             let start = layout?.weekStart(offset: state.weekOffset)
@@ -178,11 +178,12 @@ final class WeekViewModel {
         let days = days
         let merge = WeekPlanMerge(summaries: all, book: plan.shownBook) { days.longTitle(of: $0) }
         self.merge = merge
-        state.strip = WeekStrip(today: todayDate, selected: selectedDate, days: layout.markedDays(merge))
+        let range = days.date(of: layout.stripRange.lowerBound).flatMap { first in
+            days.date(of: layout.stripRange.upperBound).map { first...$0 }
+        }
+        state.strip = WeekStrip(today: todayDate, selected: selectedDate, days: layout.markedDays(merge), range: range)
         state.sessions = .loaded(layout.sections(merge, offset: state.weekOffset, selected: selected))
         state.plan = layout.planHeader(plan, offset: state.weekOffset)
-        let week = layout.week(offset: state.weekOffset)
-        state.canPlanNextWeek = all.contains { week.contains($0.day) && $0.templateID != nil }
     }
 
     // MARK: - Lift sheet
