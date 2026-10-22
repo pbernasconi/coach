@@ -36,9 +36,9 @@ test('watchValues: flat list names first, then the summary page, stride in metre
 test('watchStats: running dynamics for runs only; power only when Strava has none', () => {
   const w = watchValues({ summary: { aerobicTrainingEffect: 3.2, anaerobicTrainingEffect: 1, avgGroundContactTime: 250, avgPower: 300, differenceBodyBattery: -9 } });
   const run = watchStats(w, { foot: true, stravaPower: true });
-  assert.deepEqual(run.map((r) => r.label), ['Training Effect', 'Ground Contact', 'Body Battery']);
-  assert.equal(run[0].valueText, '3.2 aerobic · 1.0 anaerobic');
-  assert.equal(run[2].valueText, '-9');
+  assert.deepEqual(run.map((r) => r.label), ['Training Effect', 'Ground Contact', 'Body Battery Used']);
+  assert.equal(run[0].valueText, '3.2 / 1.0');
+  assert.equal(run[2].valueText, '9');
   const ride = watchStats(w, { foot: false, stravaPower: false });
-  assert.deepEqual(ride.map((r) => r.label), ['Training Effect', 'Avg Power', 'Body Battery']);
+  assert.deepEqual(ride.map((r) => r.label), ['Training Effect', 'Avg Power', 'Body Battery Used']);
 });

@@ -110,9 +110,10 @@ export function watchStats(w, { foot, stravaPower }) {
   if (!w) return [];
   /** @type {Array<{ label: string, valueText: string, unit?: string } | false | null>} */
   const rows = [
+    // Short values: a tile holds about 12 characters. Aerobic / anaerobic, the label in the tile's title.
     w.aerobicTe != null && {
-      label: 'Training Effect',
-      valueText: `${r1(w.aerobicTe)} aerobic${w.anaerobicTe != null ? ` · ${r1(w.anaerobicTe)} anaerobic` : ''}${w.teLabel ? ` · ${w.teLabel}` : ''}`,
+      label: `Training Effect${w.teLabel ? ` · ${w.teLabel}` : ''}`,
+      valueText: w.anaerobicTe != null ? `${r1(w.aerobicTe)} / ${r1(w.anaerobicTe)}` : r1(w.aerobicTe),
     },
     w.load != null && { label: 'Garmin Load', valueText: String(Math.round(w.load)) },
     w.performanceCondition != null && { label: 'Performance Condition', valueText: `${w.performanceCondition > 0 ? '+' : ''}${Math.round(w.performanceCondition)}` },
@@ -124,7 +125,11 @@ export function watchStats(w, { foot, stravaPower }) {
     !stravaPower && w.powerW != null && { label: 'Avg Power', valueText: String(Math.round(w.powerW)), unit: 'W' },
     w.respirationBrpm != null && { label: 'Respiration', valueText: String(Math.round(w.respirationBrpm)), unit: 'brpm' },
     w.staminaStart != null && w.staminaEnd != null && { label: 'Stamina', valueText: `${Math.round(w.staminaStart)} → ${Math.round(w.staminaEnd)}`, unit: '%' },
-    w.bodyBatteryDelta != null && { label: 'Body Battery', valueText: `${w.bodyBatteryDelta > 0 ? '+' : ''}${Math.round(w.bodyBatteryDelta)}` },
+    // Garmin sends the change during the activity (negative: drained).
+    w.bodyBatteryDelta != null && {
+      label: w.bodyBatteryDelta <= 0 ? 'Body Battery Used' : 'Body Battery Gained',
+      valueText: String(Math.abs(Math.round(w.bodyBatteryDelta))),
+    },
   ];
   return /** @type {Array<{ label: string, valueText: string, unit?: string }>} */ (rows.filter(Boolean));
 }
