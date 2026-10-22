@@ -15,7 +15,9 @@ import { useActivityHover } from './ActivityHover';
 export default function RouteProfile({ series, foot, color, height = 150 }: { series: Series; foot: boolean; color: string; height?: number }) {
   const [ref, width] = useMeasure<HTMLDivElement>(640, 200);
   const { index, setIndex, range } = useActivityHover();
-  const { speed } = useMemo(() => profileSeries(series), [series]);
+  // Slower than this is a stop (lights, a walk break): the line breaks there instead of diving to the bottom.
+  const moving = foot ? 1.6 : 1.0;
+  const { speed } = useMemo(() => profileSeries(series, moving), [series, moving]);
   const d = series.d;
   const n = series.t.length;
 
@@ -29,11 +31,14 @@ export default function RouteProfile({ series, foot, color, height = 150 }: { se
     const aHi = alts.length ? Math.max(...alts) : 1;
     const aSpan = Math.max(20, aHi - aLo);
     // Pace: robust range (stops make huge paces), faster at the top.
-    const paces = (speed ?? []).filter((v): v is number => typeof v === 'number' && v > 0.5).map((v) => (foot ? 1000 / v : v * 3.6)).sort((a, b) => a - b);
-    const pLo = paces.length ? paces[Math.floor(paces.length * 0.02)] : 0;
-    const pHi = paces.length ? paces[Math.floor(paces.length * 0.98)] : 1;
+    const paces = (speed ?? []).filter((v): v is number => typeof v === 'number' && v >= moving).map((v) => (foot ? 1000 / v : v * 3.6)).sort((a, b) => a - b);
+    const p1 = paces.length ? paces[Math.floor(paces.length * 0.01)] : 0;
+    const p99 = paces.length ? paces[Math.floor(paces.length * 0.99)] : 1;
+    const pad = (p99 - p1) * 0.08;
+    const pLo = Math.max(0, p1 - pad);
+    const pHi = p99 + pad;
     return { xs, xMax, aLo, aHi, aSpan, pLo, pHi: Math.max(pHi, pLo + 1) };
-  }, [d, series.alt, speed, foot]);
+  }, [d, series.alt, speed, foot, moving]);
 
   if (!view || n < 10) return null;
   const M = { l: 4, r: 4, t: 8, b: 18 };
@@ -66,7 +71,7 @@ export default function RouteProfile({ series, foot, color, height = 150 }: { se
   if (speed) {
     let pen = false;
     speed.forEach((v, i) => {
-      if (typeof v !== 'number' || v <= 0.5) { pen = false; return; }
+      if (typeof v !== 'number' || v < moving) { pen = false; return; }
       line += `${pen ? 'L' : 'M'}${x(i).toFixed(1)},${yP(v).toFixed(1)}`;
       pen = true;
     });
@@ -145,7 +150,7 @@ export default function RouteProfile({ series, foot, color, height = 150 }: { se
           {at != null && (
             <g pointerEvents="none">
               <line x1={x(at)} x2={x(at)} y1={M.t} y2={M.t + plotH} stroke="var(--viz-ink)" strokeWidth={1} />
-              {typeof speed?.[at] === 'number' && speed[at]! > 0.5 && <circle cx={x(at)} cy={yP(speed[at]!)} r={3.5} fill={color} stroke="var(--viz-surface)" strokeWidth={1.5} />}
+              {typeof speed?.[at] === 'number' && speed[at]! >= moving && <circle cx={x(at)} cy={yP(speed[at]!)} r={3.5} fill={color} stroke="var(--viz-surface)" strokeWidth={1.5} />}
             </g>
           )}
         </svg>

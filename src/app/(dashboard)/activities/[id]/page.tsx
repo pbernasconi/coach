@@ -5,7 +5,9 @@ import SectionError from '@/components/SectionError';
 import LinkHotkeys from '@/components/hotkeys/LinkHotkeys';
 import SportIcon from '@/components/SportIcon';
 import { loadActivity, loadActivityContext } from '@/lib/activity/queries';
+import { planVsDone } from '@/lib/activity/summary.mjs';
 import { NOT_LOADED_NOTE, whenText } from '@/lib/activity/view.mjs';
+import ComplianceMark from '@/components/plan/ComplianceMark';
 import { ownerForSignedInUser } from '@/lib/owner';
 import { todayIn } from '@/lib/plan/week.mjs';
 import { load } from '@/lib/safe';
@@ -58,6 +60,8 @@ export default async function ActivityPage({ params }: { params: Promise<{ id: s
   const context = await load("Coach's view", () => loadActivityContext(userId, v, today));
   const s = sport(v.sport);
   const sections = sectionsFor(v);
+  const planned = context.ok ? context.value.planned : null;
+  const plan = planVsDone(v, planned);
 
   return (
     <ActivityHoverProvider>
@@ -107,6 +111,13 @@ export default async function ActivityPage({ params }: { params: Promise<{ id: s
                   {v.trainer ? ' · indoor' : ''}
                   {v.commute ? ' · commute' : ''}
                 </p>
+                {plan && planned && (
+                  <p className="mt-1.5 flex flex-wrap items-center gap-x-1.5 text-sm">
+                    <ComplianceMark level={planned.compliance.level} />
+                    <Link href={`/plan?week=${planned.date}`} className="text-[var(--viz-ink-2)] underline-offset-4 hover:underline">Planned {plan.planned}</Link>
+                    {plan.done && <span className="text-[var(--viz-ink)]">→ done {plan.done}</span>}
+                  </p>
+                )}
                 {v.description && <p className="mt-2 whitespace-pre-wrap text-sm">{v.description}</p>}
               </div>
             </div>

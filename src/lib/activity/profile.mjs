@@ -28,10 +28,15 @@ export function gradeAt(alt, d, i) {
 
 /**
  * The series the profile draws: smoothed speed (30 s) beside the raw elevation. Pace for foot sports, speed else.
+ * `minSpeed` (m/s): slower points are stops, null in the result.
  * @param {{ t: number[], d: (number|null)[] | null, alt: (number|null)[] | null, speed: (number|null)[] | null, hr: (number|null)[] | null }} s
  */
-export function profileSeries(s) {
-  return { speed: s.speed ? smooth(s.speed, s.t, 30) : null };
+export function profileSeries(s, minSpeed = 0) {
+  if (!s.speed) return { speed: null };
+  // Stops (slower than minSpeed) are left out of the average and stay gaps, so the line breaks instead of diving.
+  const moving = s.speed.map((v) => (typeof v === 'number' && v >= minSpeed ? v : null));
+  const sm = smooth(moving, s.t, 30);
+  return { speed: sm.map((v, i) => (moving[i] == null ? null : v)) };
 }
 
 /**
