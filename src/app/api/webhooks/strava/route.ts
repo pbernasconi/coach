@@ -11,6 +11,7 @@ import { after } from 'next/server';
 import { sql } from '@/db';
 import { deleteStravaActivity, syncStrava } from '@/lib/strava-sync/sync.mjs';
 import { syncActivityPeaks } from '@/lib/performance/peaks-sync.mjs';
+import { notifyStravaWorkouts } from '@/lib/notifications';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -51,7 +52,9 @@ export async function POST(request: Request) {
       } else if (event.object_type === 'activity' && event.aspect_type === 'delete' && event.object_id) {
         await deleteStravaActivity(sql, event.object_id);
       } else if (event.object_type === 'activity') {
-        await syncStrava(sql, { detailed: true, streams: 'new', waitOnRateLimit: false });
+        const { created } = await syncStrava(sql, { detailed: true, streams: 'new', waitOnRateLimit: false });
+        // A new activity that just ended: "Run completed!" with a link to it (src/lib/notifications).
+        await notifyStravaWorkouts(created);
         await syncActivityPeaks(sql, { limit: 5 }).catch((e: unknown) => console.error('Peak scan failed:', e));
       }
     } catch (error) {

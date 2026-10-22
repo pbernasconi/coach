@@ -141,6 +141,8 @@ export async function syncStrava(sql, opts = {}) {
 
   // ===== 5. Upsert each =====
   let upsertCount = 0, detailedCount = 0, streamCount = 0;
+  /** The rows this sync inserted (new activities), for the "workout completed" notice. */
+  const created = [];
   for (const a of activities) {
     const { startDate, startLocal } = activityTimes(a);
 
@@ -205,6 +207,7 @@ export async function syncStrava(sql, opts = {}) {
         WHERE id = ${existing.id}`;
     } else {
       activityRowId = createId();
+      created.push({ id: activityRowId, stravaId: String(a.id) });
       await sql`
         INSERT INTO strava_activities (
           id, user_id, connection_id, strava_activity_id,
@@ -281,7 +284,7 @@ export async function syncStrava(sql, opts = {}) {
   await rebuildTrainingLoad(sql, conn.user_id, log);
 
   await sql`UPDATE strava_connections SET last_synced_at = NOW() WHERE id = ${conn.id}`;
-  return { upserted: upsertCount, detailed: detailedCount, streams: streamCount, apiCalls: apiCallsInWindow };
+  return { upserted: upsertCount, detailed: detailedCount, streams: streamCount, apiCalls: apiCallsInWindow, created };
 }
 
 /** Removes one activity that was deleted on Strava. Laps, splits and streams cascade. */

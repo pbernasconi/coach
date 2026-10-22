@@ -37,3 +37,39 @@ export async function appRoute(
     return Response.json({ error: 'internal error' }, { status: 500, headers: NO_STORE });
   }
 }
+
+/** Largest JSON body a write route reads (a device registration is under 1 KB). */
+const MAX_WRITE_BYTES = 16 * 1024;
+
+/**
+ * A write route (POST, PUT, DELETE) for the Lift app: the same token, owner and errors as `appRoute`, a JSON body,
+ * and the handler's own status. `run` gets the parsed body (undefined for an empty one).
+ */
+export async function appWrite(
+  request: Request,
+  label: string,
+  run: (ctx: AppContext, body: unknown) => Promise<{ status: number; body: object }>
+) {
+  if (!isAuthorized(request.headers.get('authorization'), process.env.LIFT_SYNC_TOKEN)) {
+    return Response.json({ error: 'unauthorized' }, { status: 401, headers: NO_STORE });
+  }
+  const text = await request.text();
+  if (Buffer.byteLength(text, 'utf8') > MAX_WRITE_BYTES) return Response.json({ error: 'body too large' }, { status: 413, headers: NO_STORE });
+  let body: unknown;
+  try {
+    body = text ? JSON.parse(text) : undefined;
+  } catch {
+    return Response.json({ error: 'body is not JSON' }, { status: 400, headers: NO_STORE });
+  }
+  try {
+    const params = new URL(request.url).searchParams;
+    const timeZone = zoneOrDefault(params.get('tz'));
+    const userId = await ownerId();
+    if (!userId) return Response.json({ error: 'no user' }, { status: 404, headers: NO_STORE });
+    const result = await run({ userId, timeZone, today: todayIn(timeZone), params }, body);
+    return Response.json(result.body, { status: result.status, headers: NO_STORE });
+  } catch (error) {
+    console.error(`App ${label} failed:`, error instanceof Error ? error.message : 'unknown error');
+    return Response.json({ error: 'internal error' }, { status: 500, headers: NO_STORE });
+  }
+}

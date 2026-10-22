@@ -2,9 +2,12 @@
  * Vitals sync (COACH-API.md, Health). Public to Clerk. Authenticated by a bearer token: LIFT_SYNC_TOKEN (the Lift
  * app, Apple Health) or CRON_SECRET (the Garmin job in GitHub Actions). Both write to the owner's data.
  * POST stores daily values; GET says the newest stored day of each metric.
- * Errors are logged without the request body: it is health data.
+ * Errors are logged without the request body: it is health data. A weigh-in pushed with the Lift token (the bathroom
+ * scale) gets a push notification after the response (src/lib/notifications).
  */
 
+import { after } from 'next/server';
+import { notifyWeighIn } from '@/lib/notifications';
 import { handleVitalsLatest, handleVitalsPush } from '@/lib/vitals/sync.mjs';
 import { neonVitalsRepository } from '@/lib/vitals/repository';
 
@@ -20,6 +23,8 @@ export async function POST(request: Request) {
       { authorization: request.headers.get('authorization'), rawBody: await request.text(), tokens: tokens() },
       neonVitalsRepository
     );
+    const stored = 'stored' in result ? result.stored : null;
+    if (stored?.via === 'lift' && stored.rows.length) after(() => notifyWeighIn(stored.rows));
     return Response.json(result.body, { status: result.status, headers });
   } catch (error) {
     console.error('Vitals sync push failed:', error instanceof Error ? error.name : 'unknown error');

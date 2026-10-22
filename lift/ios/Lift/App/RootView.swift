@@ -7,11 +7,13 @@ import SwiftUI
 struct RootView: View {
     let launcher: AppLauncher
     let options: LaunchOptions
+    /// The APNs token and tapped notices from the app delegate.
+    let push: PushInbox
 
     var body: some View {
         switch launcher.launch {
         case .ready(let dependencies):
-            AppShell(dependencies: dependencies, options: options)
+            AppShell(dependencies: dependencies, options: options, push: push)
                 .id(launcher.generation)
         case .failed:
             ErrorState(title: "Lift could not open its data", message: "Close Lift and open it again.")
@@ -25,6 +27,7 @@ struct RootView: View {
 private struct AppShell: View {
     private let dependencies: AppDependencies
     private let options: LaunchOptions
+    private let push: PushInbox
     @Environment(\.scenePhase) private var scenePhase
     @State private var isReady = false
     /// Syncs after launch, on returning to the foreground and after local writes.
@@ -33,9 +36,10 @@ private struct AppShell: View {
     /// `prepare()`.
     @State private var openedRoute: AppRoute?
 
-    init(dependencies: AppDependencies, options: LaunchOptions) {
+    init(dependencies: AppDependencies, options: LaunchOptions, push: PushInbox) {
         self.dependencies = dependencies
         self.options = options
+        self.push = push
         _syncCoordinator = State(
             initialValue: SyncCoordinator(sync: dependencies.sync, outbox: dependencies.outbox)
         )
@@ -61,6 +65,7 @@ private struct AppShell: View {
                 }
                 .task { await syncCoordinator.watchOutbox() }
                 .task { await dependencies.coachPlan.watchSync() }  // the Week plan refreshes after each sync run
+                .task { await dependencies.push?.registrar.run() }
             } else {
                 LoadingState()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -79,15 +84,17 @@ private struct AppShell: View {
             } else {
                 dependencies.incomingNotes.checkInbox()
             }
-            if let url = options.openURL, !options.isDemo {
+            if let url = options.openURL, !options.isDemo || AppLink(url: url)?.destination != nil {
                 open(url)
             }
+            attachPush()
             isReady = true
             await syncCoordinator.launched()  // after the tabs show: logging never waits for the network
         }
         .onChange(of: scenePhase) { _, phase in
             guard phase == .active else { return }
             dependencies.incomingNotes.checkInbox()
+            dependencies.push?.registrar.refresh()  // the permission may have changed in iOS Settings
             Task { await syncCoordinator.sceneBecameActive() }
         }
         .onOpenURL { url in open(url) }
@@ -97,6 +104,19 @@ private struct AppShell: View {
     private func open(_ url: URL) {
         guard dependencies.incomingNotes.open(url), case .syncCode? = AppLink(url: url) else { return }
         dependencies.tabs.show(.settings)
+    }
+
+    /// Takes the APNs token and tapped notices from the app delegate, a tap that launched Lift included. A tap opens its
+    /// link like any `lift://` link and tells the coach it was opened.
+    private func attachPush() {
+        push.attach(
+            onToken: { token in dependencies.push?.registrar.tokenReceived(token) },
+            onTap: { tap in
+                dependencies.push?.tapped(tap)
+                if let link = tap.link { open(link) }
+            }
+        )
+        dependencies.push?.registrar.refresh()
     }
 
     /// The tab bar's selection: the shared `TabSwitcher`, so screens can switch tabs too.
@@ -124,109 +144,5 @@ private struct AppShell: View {
             KoboTab("Lift", systemImage: AppTab.lift.systemImage, value: .lift),
             KoboTab("Settings", systemImage: AppTab.settings.systemImage, value: .settings),
         ]
-    }
-}
-
-/// One tab's navigation stack: its root screen plus any pushed routes, and the tab's toast slot, which outlives the
-/// pages pushed on it.
-private struct TabStack: View {
-    let tab: AppTab
-    let dependencies: AppDependencies
-    @State private var router: TabRouter
-    @State private var toasts = ToastCenter()
-
-    /// Where each root screen starts (segments, Today's scroll position), from the launch arguments.
-    let options: LaunchOptions
-
-    init(tab: AppTab, dependencies: AppDependencies, initialPath: [AppRoute], options: LaunchOptions) {
-        self.tab = tab
-        self.dependencies = dependencies
-        self.options = options
-        _router = State(initialValue: TabRouter(path: initialPath))
-    }
-
-    var body: some View {
-        let rootRequests = dependencies.tabs.rootRequests[tab, default: 0]
-        NavigationStack(path: $router.path) {
-            TabRootScreen(
-                tab: tab,
-                dependencies: dependencies,
-                router: router,
-                options: options
-            )
-            .navigationDestination(for: AppRoute.self) { route in
-                RouteScreen(route: route, dependencies: dependencies, router: router, toasts: toasts)
-            }
-        }
-        .toastHost(toasts)
-        .onChange(of: rootRequests) { router.path.removeAll() }  // a re-tap of the tab goes back to its root
-    }
-}
-
-/// Builds the root screen of a tab and hands it the dependencies it needs (DI-1).
-private struct TabRootScreen: View {
-    let tab: AppTab
-    let dependencies: AppDependencies
-    let router: any Navigating
-    let options: LaunchOptions
-
-    var body: some View {
-        switch tab {
-        case .today:
-            TodayScreen(
-                viewModel: TodayViewModel(
-                    data: dependencies.appData,
-                    coachPlan: dependencies.coachPlan,
-                    router: router,
-                    tabs: dependencies.tabs,
-                    now: dependencies.now,
-                    calendar: dependencies.calendar,
-                    anchor: options.todayAnchor
-                )
-            )
-        case .training:
-            TrainingScreen(
-                viewModel: TrainingViewModel(
-                    data: dependencies.appData,
-                    router: router,
-                    tabs: dependencies.tabs,
-                    now: dependencies.now,
-                    calendar: dependencies.calendar,
-                    segment: options.trainingSegment
-                )
-            )
-        case .lift:
-            LiftTabScreen(
-                dependencies: dependencies,
-                router: router,
-                historySegment: options.historySegment,
-                initialSegment: options.liftSegment
-            )
-        case .week:
-            WeekScreen(
-                viewModel: WeekViewModel(
-                    sessions: dependencies.sessions,
-                    templates: dependencies.templates,
-                    plans: dependencies.plans,
-                    router: router,
-                    now: dependencies.now,
-                    calendar: dependencies.calendar,
-                    units: dependencies.units,
-                    coachPlan: dependencies.coachPlan
-                )
-            )
-        case .settings:
-            SettingsScreen(
-                viewModel: SettingsViewModel(
-                    info: dependencies.info,
-                    sync: dependencies.sync,
-                    health: dependencies.health,
-                    units: dependencies.units,
-                    practice: dependencies.practice,
-                    now: dependencies.now,
-                    router: router
-                )
-            )
-        }
     }
 }

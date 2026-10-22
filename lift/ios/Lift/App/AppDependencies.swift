@@ -49,15 +49,19 @@ final class AppDependencies {
     let coachPlan: any CoachPlanProviding
     /// The coach's read-only pages (Today, Training, Lift; lift/APP-API.md), or a stand-in that is not connected.
     let appData: any AppDataSource
-    /// The shell's selected tab, for screens that link to another tab (`TabSwitching`).
-    let tabs = TabSwitcher()
+    /// The shell's selected tab, for screens that link to another tab (`TabSwitching`), and the screen a link or a
+    /// tapped notice opens (`ScreenLinkOpening`).
+    let tabs: TabSwitcher
     /// Opens and closes Import from Notes, which the shell shows as a modal page above the tabs.
     let importFlow: ImportFlowPresenter
     /// Opens, closes and undoes `lift://templates` links, which the shell shows as a sheet above the tabs.
     let templateLinks: TemplateLinkPresenter
-    /// Routes `lift://` links: Import from Notes (and notes shared through the Share extension), template links and
-    /// sync links.
+    /// Routes `lift://` links: Import from Notes (and notes shared through the Share extension), template links, sync
+    /// links and screen links (a tapped notice's too).
     let incomingNotes: IncomingNoteRouter
+    /// Push notifications (lift/PUSH.md), or nil when this data never syncs (demo, `-fresh`, practice) or the build has
+    /// no server.
+    let push: PushNotifications?
     /// Turns practice mode on or off (Settings, and the practice banner's Turn off).
     let practice: any PracticeModeSwitching
     /// Fills the database with the fabricated demo sessions in `prepare()`: demo data, and new practice data.
@@ -86,6 +90,7 @@ final class AppDependencies {
         health: any WorkoutHealthRecording,
         coachPlan: any CoachPlanProviding,
         appData: any AppDataSource,
+        push: PushNotifications?,
         seedsDemo: Bool,
         practice: any PracticeModeSwitching
     ) {
@@ -110,17 +115,21 @@ final class AppDependencies {
         self.health = health
         self.coachPlan = coachPlan
         self.appData = appData
+        self.push = push
         self.seedsDemo = seedsDemo
         self.practice = practice
         let importFlow = ImportFlowPresenter()
         self.importFlow = importFlow
         let templateLinks = TemplateLinkPresenter(templates: templates, exercises: exercises)
         self.templateLinks = templateLinks
+        let tabs = TabSwitcher()
+        self.tabs = tabs
         incomingNotes = IncomingNoteRouter(
             inbox: AppGroupNoteInbox(bundle: .main),
             importFlow: importFlow,
             templateLinks: templateLinks,
-            syncLinks: SyncEnrollmentLink(sync: sync)
+            syncLinks: SyncEnrollmentLink(sync: sync),
+            screens: tabs
         )
     }
 

@@ -33,6 +33,7 @@ import { appActivityResponse, loadAppActivities, loadAppActivity } from '@/lib/a
 import { GET as appActivities } from '@/app/api/app/activities/route';
 import { GET as appToday } from '@/app/api/app/today/route';
 import { GET as appTrends } from '@/app/api/app/trends/route';
+import { GET as appWeighIn } from '@/app/api/app/weigh-ins/[date]/route';
 import { loadAppToday, loadAppTrends } from '@/lib/performance/app-pages';
 
 export type Check = { name: string; ok: boolean; ms: number; error?: string };
@@ -206,6 +207,13 @@ export async function runChecks(now = new Date(), { migrations = true }: { migra
       await check('/api/app/trends', async () => {
         const res = await appTrends(new Request('http://health.local/api/app/trends?tz=America/Los_Angeles', auth));
         if (res.status !== 200) throw new Error(`status ${res.status}: ${(await res.text()).slice(0, 200)}`);
+      }),
+      // The screen a weigh-in push opens. 404 only when no weight was ever stored.
+      await check('/api/app/weigh-ins/latest', async () => {
+        const res = await appWeighIn(new Request('http://health.local/api/app/weigh-ins/latest', auth), {
+          params: Promise.resolve({ date: 'latest' }),
+        });
+        if (res.status !== 200 && res.status !== 404) throw new Error(`status ${res.status}: ${(await res.text()).slice(0, 200)}`);
       })
     );
     checks.push(

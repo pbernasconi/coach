@@ -15,6 +15,10 @@ final class TabSwitcher: TabSwitching {
     private(set) var selected: AppTab
     /// Counts the re-taps of each tab; its stack pops to the root when its count changes.
     private(set) var rootRequests: [AppTab: Int] = [:]
+    /// The screen a link or a notice asked each tab to show (`open(_:)`). The tab's stack applies a request once, when
+    /// it changes or when the stack first appears, so a link that comes before the tab exists still opens its screen.
+    private(set) var routeRequests: [AppTab: TabRouteRequest] = [:]
+    private var routeSerial = 0
 
     init(selected: AppTab = .today) {
         self.selected = selected
@@ -24,9 +28,25 @@ final class TabSwitcher: TabSwitching {
         selected = tab
     }
 
+    /// Selects the destination's tab and asks its stack to show exactly the destination's route over the root (the
+    /// root alone when it has none), whatever was pushed before.
+    func open(_ destination: ScreenDestination) {
+        routeSerial += 1
+        routeRequests[destination.tab] = TabRouteRequest(serial: routeSerial, route: destination.route)
+        selected = destination.tab
+    }
+
     /// The tab bar picked `tab`: a switch, or a re-tap of the selected tab, which asks for its root.
     func barPicked(_ tab: AppTab) {
         if tab == selected { rootRequests[tab, default: 0] += 1 }
         selected = tab
     }
 }
+
+/// A screen a link asked a tab to show. `serial` tells two requests for the same route apart.
+nonisolated struct TabRouteRequest: Equatable, Sendable {
+    var serial: Int
+    var route: AppRoute?
+}
+
+extension TabSwitcher: ScreenLinkOpening {}
