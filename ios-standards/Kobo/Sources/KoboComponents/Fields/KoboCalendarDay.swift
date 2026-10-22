@@ -6,8 +6,12 @@ import SwiftUI
 /// and struck through, so they never read by colour alone.
 struct KoboCalendarDay: View {
     @Environment(\.koboTheme) private var theme
-    @ScaledMetric(relativeTo: .body) private var diameter = Size.minTouch
+    @Environment(\.dayHighlight) private var highlight
+    @ScaledMetric(relativeTo: .body) private var regularDiameter = Size.minTouch
+    @ScaledMetric(relativeTo: .subheadline) private var compactDiameter = Size.iconLg + Space.sm
     @ScaledMetric(relativeTo: .body) private var dotSize = Space.xs + Space.xxs
+    /// Smaller numbers and circles with the dot tucked under them, in a row one touch target high.
+    let isCompact: Bool
     let dayNumber: String
     let marker: DayMarker
     let isToday: Bool
@@ -19,9 +23,9 @@ struct KoboCalendarDay: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: Space.xxs) {
+            VStack(spacing: isCompact ? 0 : Space.xxs) {
                 Text(verbatim: dayNumber)
-                    .font(theme.font(.numeric))
+                    .font(isCompact ? theme.font(.subheadline).monospacedDigit() : theme.font(.numeric))
                     .fontWeight(isSelected || isToday ? .bold : .regular)
                     .strikethrough(isDisabled && isInMonth)
                     .lineLimit(1)
@@ -29,9 +33,13 @@ struct KoboCalendarDay: View {
                     .foregroundStyle(numberColor)
                     .frame(width: diameter, height: diameter)
                     .background { background }
-                Circle()
-                    .fill(dotColor)
-                    .frame(width: dotSize, height: dotSize)
+                if case .dots(let dots) = marker {
+                    DayDots(dots: dots, size: Space.xs + Space.xxs / 2)
+                } else {
+                    Circle()
+                        .fill(dotColor)
+                        .frame(width: isCompact ? Space.xs : dotSize, height: isCompact ? Space.xs : dotSize)
+                }
             }
             .frame(maxWidth: .infinity, minHeight: Size.minTouch)
             .contentShape(Rectangle())
@@ -46,24 +54,28 @@ struct KoboCalendarDay: View {
         }
     }
 
+    private var colors: DayHighlightColors { DayHighlightColors(highlight, palette: theme.palette) }
+
+    private var diameter: CGFloat { isCompact ? compactDiameter : regularDiameter }
+
     @ViewBuilder
     private var background: some View {
         if isSelected {
-            Circle().fill(theme.palette.accent)
+            Circle().fill(colors.selectedFill)
         } else if case .done(let tone) = marker {
             Circle().fill(tone == .accent ? theme.palette.accentSoft : theme.palette.status(tone).soft)
         } else if isToday {
-            Circle().strokeBorder(theme.palette.accent, lineWidth: Space.xxs)
+            Circle().strokeBorder(colors.todayRing, lineWidth: highlight == .ink ? Size.hairline * 3 : Space.xxs)
         }
     }
 
     private var numberColor: Color {
-        if isSelected { return theme.palette.onAccent }
+        if isSelected { return colors.onSelected }
         if isDisabled || !isInMonth { return theme.palette.textTertiary }
         if case .done(let tone) = marker {
             return tone == .accent ? theme.palette.accentText : theme.palette.status(tone).ink
         }
-        return isToday ? theme.palette.accentText : theme.palette.textPrimary
+        return isToday ? colors.todayText : theme.palette.textPrimary
     }
 
     private var dotColor: Color {
@@ -85,8 +97,8 @@ enum CalendarSpeech {
         style.timeZone = calendar.timeZone
         var parts = [day.formatted(style)]
         if isToday { parts.append(String(localized: "Today", bundle: .module)) }
-        switch marker {
-        case .none: break
+        switch marker.spokenState {
+        case nil: break
         case .planned: parts.append(String(localized: "Planned", bundle: .module))
         case .done: parts.append(String(localized: "Done", bundle: .module))
         }

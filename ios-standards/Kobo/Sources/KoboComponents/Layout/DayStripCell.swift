@@ -2,9 +2,11 @@ import KoboTokens
 import SwiftUI
 
 /// One tappable day of a `DayStrip`: the day number (ringed today, filled when done, a soft disc or an outer ring when
-/// selected) above a planned dot.
+/// selected) above a planned dot, or above a row of coloured dots. In the `.ink` highlight the selected day is a solid
+/// ink disc and today an ink ring.
 struct DayStripCell: View {
     @Environment(\.koboTheme) private var theme
+    @Environment(\.dayHighlight) private var highlight
     @ScaledMetric(relativeTo: .body) private var diameter = Size.buttonHeightCompact
     @ScaledMetric(relativeTo: .body) private var dotSize = Space.xs + Space.xxs
     let dayNumber: String
@@ -26,9 +28,14 @@ struct DayStripCell: View {
                     .foregroundStyle(numberColor)
                     .frame(width: diameter, height: diameter)
                     .background { background }
-                Circle()
-                    .fill(dotColor)
-                    .frame(width: dotSize, height: dotSize)
+                if case .dots(let dots) = marker {
+                    DayDots(dots: dots, size: Space.xs + Space.xxs)
+                        .frame(height: dotSize)
+                } else {
+                    Circle()
+                        .fill(dotColor)
+                        .frame(width: dotSize, height: dotSize)
+                }
             }
             .frame(maxWidth: .infinity, minHeight: Size.minTouch)
             .padding(.vertical, Space.xxs)
@@ -50,10 +57,15 @@ struct DayStripCell: View {
             Circle().fill(fill(tone))
                 .padding(isSelected ? Space.xs : 0)
                 .background { if isSelected { Circle().strokeBorder(theme.palette.textPrimary, lineWidth: Space.xxs) } }
-        case .none, .planned:
+        case .none, .planned, .dots:
             ZStack {
-                if isSelected { Circle().fill(theme.palette.accentSoft) }
-                if isToday { Circle().strokeBorder(theme.palette.accent, lineWidth: Space.xxs) }
+                if isSelected { Circle().fill(highlight == .ink ? colors.selectedFill : theme.palette.accentSoft) }
+                if isToday && !(isSelected && highlight == .ink) {
+                    Circle().strokeBorder(
+                        colors.todayRing,
+                        lineWidth: highlight == .ink ? Size.hairline * 3 : Space.xxs
+                    )
+                }
             }
         }
     }
@@ -62,7 +74,8 @@ struct DayStripCell: View {
         if case .done(let tone) = marker {
             return tone == .accent ? theme.palette.onAccent : theme.palette.surface
         }
-        if isToday || isSelected { return theme.palette.accentText }
+        if isSelected && highlight == .ink { return colors.onSelected }
+        if isToday || isSelected { return colors.todayText }
         return isPast ? theme.palette.textTertiary : theme.palette.textPrimary
     }
 
@@ -70,6 +83,8 @@ struct DayStripCell: View {
         if case .planned(let tone) = marker { return fill(tone) }
         return .clear
     }
+
+    private var colors: DayHighlightColors { DayHighlightColors(highlight, palette: theme.palette) }
 
     private func fill(_ tone: Tone) -> Color {
         tone == .accent ? theme.palette.accent : theme.palette.status(tone).ink

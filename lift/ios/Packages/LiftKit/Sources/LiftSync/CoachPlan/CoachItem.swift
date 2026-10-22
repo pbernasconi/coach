@@ -24,6 +24,8 @@ public struct CoachItem: Decodable, Equatable, Sendable, Identifiable {
     /// `good | partial | off`, only for done items.
     public var compliance: String?
     public var adapted: Bool
+    /// A completed activity that no planned workout matched (`id` is "activity-<Strava id>").
+    public var unplanned: Bool
     public var why: String?
     public var notes: String?
     public var keyTargets: [String]
@@ -45,6 +47,7 @@ public struct CoachItem: Decodable, Equatable, Sendable, Identifiable {
         state: CoachItemState,
         stateLabel: String,
         adapted: Bool = false,
+        unplanned: Bool = false,
         why: String? = nil,
         notes: String? = nil,
         keyTargets: [String] = [],
@@ -61,6 +64,7 @@ public struct CoachItem: Decodable, Equatable, Sendable, Identifiable {
         self.state = state
         self.stateLabel = stateLabel
         self.adapted = adapted
+        self.unplanned = unplanned
         self.why = why
         self.notes = notes
         self.keyTargets = keyTargets
@@ -72,7 +76,8 @@ public struct CoachItem: Decodable, Equatable, Sendable, Identifiable {
 
     private enum CodingKeys: String, CodingKey {
         case id, date, startTime, endTime, title, sport, workoutType, intensity, durationMinutes, tss, subtitle
-        case state, stateLabel, compliance, adapted, why, notes, keyTargets, steps, profile, stats, liftSessionId, done
+        case state, stateLabel, compliance, adapted, unplanned, why, notes, keyTargets, steps, profile, stats
+        case liftSessionId, done
     }
 
     public init(from decoder: any Decoder) throws {
@@ -85,6 +90,7 @@ public struct CoachItem: Decodable, Equatable, Sendable, Identifiable {
         state = try container.decodeIfPresent(CoachItemState.self, forKey: .state) ?? .planned
         stateLabel = try container.decodeIfPresent(String.self, forKey: .stateLabel) ?? ""
         adapted = try container.decodeIfPresent(Bool.self, forKey: .adapted) ?? false
+        unplanned = try container.decodeIfPresent(Bool.self, forKey: .unplanned) ?? false
         keyTargets = try container.decodeIfPresent([String].self, forKey: .keyTargets) ?? []
         steps = try container.decodeIfPresent([CoachStep].self, forKey: .steps) ?? []
         profile = try container.decodeIfPresent([CoachProfileBar].self, forKey: .profile) ?? []

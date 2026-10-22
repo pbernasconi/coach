@@ -3,7 +3,8 @@ import KoboTokens
 import SwiftUI
 
 /// The top of the Week screen, pinned above the list: the week strip, or the month calendar when the header's
-/// calendar button asks for it. It sits flat on the canvas with a hairline under it, so it reads as the header's part
+/// calendar button asks for it. Each day has a dot per workout in its sport's colour; the selected day and today are in
+/// ink, so the sport colours carry all the colour. It sits flat on the canvas with a hairline under it, so it reads as the header's part
 /// and the workout cards below as the content.
 struct WeekStripBar: View {
     @Environment(\.koboTheme) private var theme
@@ -30,11 +31,13 @@ struct WeekStripBar: View {
                     selection: strip.selected,
                     bounds: DateBounds(minDate: strip.range?.lowerBound, maxDate: strip.range?.upperBound),
                     markers: strip.dayItems,
+                    density: .compact,
                     onSelect: { send(.daySelected($0)) }
                 )
                 .pageGutter()
             }
         }
+        .dayHighlight(.ink)
         .padding(.bottom, Space.sm)
         .background(theme.palette.canvas)
         .overlay(alignment: .bottom) {
@@ -44,13 +47,14 @@ struct WeekStripBar: View {
 }
 
 extension WeekStrip {
-    /// The strip and calendar markers: a dot while something is planned, a filled day once all is done.
+    /// The strip and calendar markers: one dot per workout in its sport's colour, filled once done, a ring while
+    /// still to do.
     var dayItems: [DayItem] {
         days.map { day in
-            switch day.status {
-            case .planned: DayItem(date: day.date, marker: .planned(.accent))
-            case .done: DayItem(date: day.date, marker: .done(.accent))
+            let dots = day.workouts.map { workout in
+                DayDot(light: workout.sport.hex.light, dark: workout.sport.hex.dark, isDone: workout.isDone)
             }
+            return DayItem(date: day.date, marker: .dots(dots))
         }
     }
 }

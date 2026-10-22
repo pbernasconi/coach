@@ -10,7 +10,38 @@ public nonisolated enum DayMarker: Hashable, Sendable {
     case planned(Tone)
     /// Completed: the number sits on a filled circle in the tone.
     case done(Tone)
+    /// One dot per thing on the day, each in its own colour (a category's colour): filled once done, a ring while
+    /// still to do. At most three show. VoiceOver says "Done" when every one is done, else "Planned".
+    case dots([DayDot])
 }
+
+/// One dot of a `DayMarker.dots` day: its colour as 0xRRGGBB for light and dark mode (a category's colour, from the
+/// app's design file) and whether it is done (filled) or still to do (a ring).
+public nonisolated struct DayDot: Hashable, Sendable {
+    public var light: UInt32
+    public var dark: UInt32
+    public var isDone: Bool
+
+    public init(light: UInt32, dark: UInt32, isDone: Bool) {
+        self.light = light
+        self.dark = dark
+        self.isDone = isDone
+    }
+}
+
+nonisolated extension DayMarker {
+    /// The word VoiceOver adds for the marker, or nil for none.
+    var spokenState: DayMarkerState? {
+        switch self {
+        case .none: nil
+        case .planned: .planned
+        case .done: .done
+        case .dots(let dots): dots.isEmpty ? nil : (dots.allSatisfy(\.isDone) ? .done : .planned)
+        }
+    }
+}
+
+nonisolated enum DayMarkerState { case planned, done }
 
 /// One day of a `DayStrip`: a date, its marker, and optionally what VoiceOver reads for it.
 ///

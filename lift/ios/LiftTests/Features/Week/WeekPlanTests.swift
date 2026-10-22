@@ -165,6 +165,16 @@ import Testing
         #expect(plan.shownWeeks.last == monday.adding(days: 7))
     }
 
+    @Test func planItemTappedOnAnUnplannedActivityOpensIt() async throws {
+        let ride = CoachPlanSamples.item("activity-8001", on: monday.adding(days: 1), state: "done", unplanned: true)
+        let (vm, _) = await loaded([], plan: [try snapshot([(monday.adding(days: 1), ride)])])
+
+        vm.send(.planItemTapped("activity-8001"))
+
+        #expect(vm.state.destination == nil)
+        #expect(router.opened == [.activity("8001")])
+    }
+
     @Test func planItemTappedOpensTheDetailSheet() async throws {
         let ride = CoachPlanSamples.item("ride", on: monday.adding(days: 1))
         let (vm, _) = await loaded([], plan: [try snapshot([(monday.adding(days: 1), ride)])])

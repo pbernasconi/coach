@@ -82,7 +82,7 @@ import Testing
         ]
         #expect(vm.state.strip?.today == date(monday))
         #expect(vm.state.strip?.selected == date(monday))
-        #expect(vm.state.strip?.days == expectedDays)
+        #expect(vm.state.strip?.days.map { WeekDay(date: $0.date, status: $0.status) } == expectedDays)
         // The month calendar pages from four weeks back to four weeks ahead.
         #expect(vm.state.strip?.range?.lowerBound == date(monday.adding(days: -28)))
         #expect(vm.state.strip?.range?.upperBound == date(monday.adding(days: 34)))
@@ -95,7 +95,11 @@ import Testing
 
         #expect(days(vm).count == 7)
         #expect(days(vm).allSatisfy { $0.sessions.isEmpty })
-        #expect(vm.state.strip?.days == [WeekDay(date: date(monday.adding(days: 8)), status: .planned)])
+        #expect(
+            vm.state.strip?.days.map { WeekDay(date: $0.date, status: $0.status) }
+                == [WeekDay(date: date(monday.adding(days: 8)), status: .planned)]
+        )
+        #expect(vm.state.strip?.days.first?.workouts == [WeekDayWorkout(sport: .strength, isDone: false)])
     }
 
     // MARK: - Selection

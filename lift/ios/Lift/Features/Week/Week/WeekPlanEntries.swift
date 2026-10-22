@@ -29,6 +29,14 @@ nonisolated enum WeekEntry: Equatable, Sendable, Identifiable {
         }
     }
 
+    /// The sport of the row: strength for a Lift session.
+    var sport: Sport {
+        switch self {
+        case .session: .strength
+        case .plan(let item): item.sport
+        }
+    }
+
     /// A planned rest day is an item, but it marks nothing in the strip.
     var isRest: Bool {
         guard case .plan(let item) = self else { return false }
@@ -47,6 +55,8 @@ nonisolated struct WeekPlanItem: Equatable, Sendable, Identifiable {
     /// "Today", "Done"…
     let stateLabel: String
     let isAdapted: Bool
+    /// A completed activity that no planned workout matched; a tap opens it.
+    let isUnplanned: Bool
     let why: String?
     let notes: String?
     let keyTargets: [String]
@@ -74,6 +84,7 @@ nonisolated struct WeekPlanItem: Equatable, Sendable, Identifiable {
         state = item.state
         stateLabel = item.stateLabel
         isAdapted = item.adapted
+        isUnplanned = item.unplanned
         why = item.why.flatMap { $0.isEmpty ? nil : $0 }
         notes = item.notes.flatMap { $0.isEmpty ? nil : $0 }
         keyTargets = item.keyTargets
@@ -132,6 +143,8 @@ nonisolated enum WeekLinks {
     }
 
     static func planItem(_ item: WeekPlanItem) -> AppRoute? {
-        item.liftSessionId.map(LiftLinks.session)
+        if let id = item.liftSessionId { return LiftLinks.session(id) }
+        if item.isUnplanned, let id = item.doneActivityId { return .activity(id) }
+        return nil
     }
 }

@@ -22,6 +22,24 @@ import Testing
         #expect(text.hasSuffix(", Planned"))
     }
 
+    @Test(arguments: [
+        ([true, true], ", Done"),
+        ([true, false], ", Planned"),
+        ([false], ", Planned"),
+    ])
+    func dotsAreDoneOnlyWhenEveryOneIsDone(done: [Bool], suffix: String) {
+        let dots = done.map { DayDot(light: 0x2A78D6, dark: 0x3987E5, isDone: $0) }
+        let day = DayItem(date: Self.tuesday, marker: .dots(dots))
+        let text = DayStripSpeech.text(for: day, isToday: false, calendar: Self.calendar)
+        #expect(text.hasSuffix(suffix))
+    }
+
+    @Test func noDotsSayNothing() {
+        let day = DayItem(date: Self.tuesday, marker: .dots([]))
+        let text = DayStripSpeech.text(for: day, isToday: false, calendar: Self.calendar)
+        #expect(text == "Tuesday, October 20")
+    }
+
     @Test func todaySitsAfterTheDate() {
         let day = DayItem(date: Self.tuesday, marker: .done(.accent))
         let text = DayStripSpeech.text(for: day, isToday: true, calendar: Self.calendar)

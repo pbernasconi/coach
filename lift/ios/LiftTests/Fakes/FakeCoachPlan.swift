@@ -89,13 +89,14 @@ nonisolated enum CoachPlanSamples {
         on day: LocalDay,
         sport: String = "ride",
         state: String = "planned",
-        session: String? = nil
+        session: String? = nil,
+        unplanned: Bool = false
     ) -> String {
         let link = session.map { "\"\($0)\"" } ?? "null"
         return """
             {"id":"\(id)","date":"\(CoachPlanDates.plain(day))","startTime":null,"endTime":null,"title":"\(id) title",
             "sport":"\(sport)","workoutType":null,"intensity":null,"durationMinutes":60,"tss":50,"subtitle":"60 min",
-            "state":"\(state)","stateLabel":"\(state.capitalized)","compliance":null,"adapted":false,"why":"Because",
+            "state":"\(state)","stateLabel":"\(state.capitalized)","compliance":null,"adapted":false,"unplanned":\(unplanned),"why":"Because",
             "notes":null,"keyTargets":[],"steps":[{"label":"Warm up","detail":"10:00"}],"liftSessionId":\(link),
             "done":{"source":"strava","name":null,"minutes":62,"tss":70,"text":"62 min / 60 min","activityId":"8001"}}
             """

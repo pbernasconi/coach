@@ -69,6 +69,18 @@ import Testing
         #expect(client.requests.isEmpty)
     }
 
+    @Test func showFetchesAgainWhenTheKeptWeeksAreOld() async {
+        let client = FakeCoachPlanClient(responses: [monday: body(monday)])
+        let old = "2026-02-20T09:00:00.000Z"
+        let cache = InMemoryCoachPlanCache([
+            monday: body(monday, generatedAt: old), nextMonday: body(nextMonday, generatedAt: old),
+        ])
+        let plan = makePlan(client: client, cache: cache)
+
+        await plan.show(weekStart: monday)
+        #expect(client.requests == [monday])
+    }
+
     @Test func refreshFetchesTheShownWeekEvenWhenKept() async {
         let client = FakeCoachPlanClient(responses: [nextMonday: body(nextMonday)])
         let later = nextMonday.adding(days: 7)

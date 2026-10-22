@@ -67,7 +67,12 @@ struct LayoutDemo: View {
                 confirm: SheetHeaderAction(accessibilityLabel: "Save") {}
             )
         case .dayStrip:
-            DayStrip(items: sampleDays, today: today, week: $week, onSelect: { _ in })
+            VStack(spacing: Space.lg) {
+                DayStrip(items: sampleDays, today: today, week: $week, onSelect: { _ in })
+                // Dots in each category's colour, the selected day and today in ink.
+                DayStrip(items: dotDays, today: today, week: $week, selection: today, onSelect: { _ in })
+                    .dayHighlight(.ink)
+            }
         case .segmentedProgress:
             SegmentedProgress(done: 1, planned: 1, minimum: 2, goal: 3, accessibilityLabel: "Tasks this week")
         case .tileGrid:
@@ -80,6 +85,14 @@ struct LayoutDemo: View {
                 Image(systemName: "timer").accessibilityHidden(true)
             }
         default: EmptyView()
+        }
+    }
+
+    private var dotDays: [DayItem] {
+        let blue = DayDot(light: 0x2A78D6, dark: 0x3987E5, isDone: true)
+        let orange = DayDot(light: 0xEB6834, dark: 0xD95926, isDone: false)
+        return [(-1, [blue]), (0, [blue, orange]), (2, [orange])].compactMap { offset, dots in
+            calendar.date(byAdding: .day, value: offset, to: today).map { DayItem(date: $0, marker: .dots(dots)) }
         }
     }
 

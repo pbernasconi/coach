@@ -16,7 +16,7 @@ struct WeekPlanRow: View {
             HStack(alignment: .firstTextBaseline, spacing: Space.sm) {
                 Text(verbatim: item.title)
                     .font(theme.font(.body).weight(.semibold))
-                    .foregroundStyle(item.cardStatus == .planned ? theme.palette.textSecondary : theme.palette.textPrimary)
+                    .foregroundStyle(theme.palette.textPrimary)
                     .strikethrough(item.state == .skipped)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 WeekStatusMark(status: item.cardStatus, label: item.stateLabel)

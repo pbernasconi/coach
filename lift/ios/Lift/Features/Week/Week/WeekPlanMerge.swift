@@ -57,12 +57,13 @@ nonisolated struct WeekPlanMerge: Sendable {
     }
 
     /// Every day with a row to mark in the strip (a rest item marks nothing), and whether all its rows are done.
-    var markedDays: [(day: LocalDay, isDone: Bool)] {
+    var markedDays: [(day: LocalDay, isDone: Bool, workouts: [WeekDayWorkout])] {
         Set(itemsByDay.keys).union(unlinkedByDay.keys)
             .sorted()
             .compactMap { day in
                 let rows = entries(on: day).filter { !$0.isRest }
-                return rows.isEmpty ? nil : (day, rows.allSatisfy(\.isDone))
+                let workouts = rows.map { WeekDayWorkout(sport: $0.sport, isDone: $0.isDone) }
+                return rows.isEmpty ? nil : (day, rows.allSatisfy(\.isDone), workouts)
             }
     }
 

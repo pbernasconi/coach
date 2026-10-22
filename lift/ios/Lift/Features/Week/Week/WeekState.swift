@@ -94,6 +94,14 @@ nonisolated struct WeekDay: Equatable, Sendable {
 
     var date: Date
     var status: Status
+    /// Each workout that day, in list order: its sport (the dot's colour) and whether it is done (a filled dot).
+    var workouts: [WeekDayWorkout] = []
+}
+
+/// One workout's dot in the strip and the month calendar.
+nonisolated struct WeekDayWorkout: Equatable, Sendable {
+    var sport: Sport
+    var isDone: Bool
 }
 
 /// One day of the visible week in the list: its plan items and Lift sessions. A day with no rows is a free day.

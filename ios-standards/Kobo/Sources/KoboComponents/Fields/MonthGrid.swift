@@ -1,8 +1,8 @@
 import Foundation
 
 /// Month-grid maths for `KoboCalendar`. Every day is midnight in `calendar`; the calendar decides the first weekday
-/// (Sunday in the US, Monday in most of Europe). The grid always has six weeks, so the calendar never changes height
-/// between months.
+/// (Sunday in the US, Monday in most of Europe). The regular grid always has six weeks, so the calendar never changes
+/// height between months; the compact one has only the weeks that hold a day of the month (four to six).
 nonisolated struct MonthGrid: Sendable {
     let calendar: Calendar
 
@@ -23,7 +23,14 @@ nonisolated struct MonthGrid: Sendable {
     }
 
     /// Six weeks of days around the month containing `anchor`, each week starting on the calendar's first weekday.
-    func weeks(of anchor: Date) -> [[Date]] {
+    /// With `fitted`, only the weeks that hold a day of that month.
+    func weeks(of anchor: Date, fitted: Bool = false) -> [[Date]] {
+        let all = sixWeeks(of: anchor)
+        guard fitted else { return all }
+        return all.filter { week in week.contains { isInMonth($0, month: anchor) } }
+    }
+
+    private func sixWeeks(of anchor: Date) -> [[Date]] {
         let first = startOfMonth(anchor)
         let days = calendar.weekdaySymbols.count
         let weekday = calendar.component(.weekday, from: first)

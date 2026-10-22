@@ -34,11 +34,26 @@ import Testing
         #expect(summary.isDone)
     }
 
-    @Test func aFinishedSessionIsDone() {
-        var detail = SessionBuilder.session(id: 1, on: Fixtures.monday, done: 0, planned: 3)
+    @Test func aFinishedSessionWithALoggedSetIsDone() {
+        var detail = SessionBuilder.session(id: 1, on: Fixtures.monday, done: 1, planned: 2)
         detail.session.finishedAt = ManualNow.start
 
         #expect(SessionSummary(detail: detail).isDone)
+    }
+
+    @Test func aSessionFinishedWithNothingLoggedIsNotDone() {
+        var detail = SessionBuilder.session(id: 1, on: Fixtures.monday, done: 0, planned: 3)
+        detail.session.finishedAt = ManualNow.start
+
+        #expect(!SessionSummary(detail: detail).isDone)
+    }
+
+    @Test func aSessionWithEverySetSkippedIsNotDone() {
+        var detail = SessionBuilder.session(id: 1, on: Fixtures.monday, done: 0, planned: 2)
+        detail.items[0].sets[0].status = .skipped
+        detail.items[0].sets[1].status = .skipped
+
+        #expect(!SessionSummary(detail: detail).isDone)
     }
 }
 

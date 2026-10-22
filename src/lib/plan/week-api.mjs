@@ -4,7 +4,7 @@
 // (week-api.test.mjs).
 
 import { plainTitle } from './calendar.mjs';
-import { weekColumnMode } from './cells.mjs';
+import { cellItems, weekColumnMode } from './cells.mjs';
 import { LIFT_MARKER } from './lift-plan.mjs';
 import { addDays, mondayOf, sportOf, todayIn } from './week.mjs';
 import { keyTargets, profileBars, stepLines } from '../workouts/steps.mjs';
@@ -126,6 +126,7 @@ export function weekItem(w, sports) {
     stateLabel: w.compliance?.label ?? w.state,
     compliance: w.state === 'done' && RATED.has(w.compliance?.level) ? w.compliance.level : null,
     adapted: Boolean(w.adaptedFrom),
+    unplanned: false,
     why: w.why ?? null,
     notes: notesOf(w.description),
     keyTargets: steps ? keyTargets(steps).map((l) => l.text) : [],
@@ -147,6 +148,42 @@ export function weekItem(w, sports) {
           text: [loadText(doneMinutes, doneTss), planned].filter(Boolean).join(' / ') || null,
         }
       : null,
+  };
+}
+
+/**
+ * A completed activity that no planned workout matched, as an item: done, with what was done, and `unplanned` so the
+ * phone opens the activity itself. As the web calendar's activity chip.
+ * @param {{ id: string, date: string, sport: string, name: string, km: number, min: number, tss: number | null }} a
+ */
+export function activityItem(a, sports) {
+  const sport = sports.known.has(a.sport) ? a.sport : 'other';
+  const done = loadText(a.min, a.tss);
+  return {
+    id: `activity-${a.id}`,
+    date: a.date,
+    startTime: null,
+    endTime: null,
+    title: a.name || sports.label(sport),
+    sport,
+    workoutType: null,
+    intensity: null,
+    durationMinutes: null,
+    tss: null,
+    subtitle: done || sports.label(sport),
+    state: 'done',
+    stateLabel: 'Done',
+    compliance: null,
+    adapted: false,
+    unplanned: true,
+    why: null,
+    notes: null,
+    keyTargets: [],
+    steps: [],
+    profile: [],
+    stats: statsOf({ minutes: a.min, km: a.km, tss: a.tss }),
+    liftSessionId: null,
+    done: { source: 'strava', activityId: String(a.id), name: a.name || null, minutes: a.min, tss: num(a.tss), text: done || null },
   };
 }
 
@@ -209,7 +246,19 @@ export function weekResponse({ timeZone, today, mondays, now, range, plans, spor
         },
         days: Array.from({ length: 7 }, (_, i) => {
           const date = addDays(monday, i);
-          return { date, items: workouts.filter((w) => w.date === date).map((w) => weekItem(w, sports)) };
+          // As the web's day cell: planned workouts, then activities nothing matched. Lift sessions stay out (the
+          // phone has its own), but one takes the day's watch strength activity, so a lift shows once.
+          const items = cellItems(
+            workouts.filter((w) => w.date === date),
+            (range.activities ?? []).filter((a) => a.date === date),
+            (range.lifts ?? []).filter((l) => l.date === date)
+          );
+          return {
+            date,
+            items: items.flatMap((c) =>
+              c.kind === 'planned' ? [weekItem(c.w, sports)] : c.kind === 'activity' ? [activityItem(c.a, sports)] : []
+            ),
+          };
         }),
       };
     }),
