@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { bandOf, heroStats, intensityOf, intensityWord, statGroups, tssNote, zoneShares } from './summary.mjs';
+import { bandOf, conditionsLine, heroStats, intensityOf, intensityWord, planVsDone, statGroups, tssNote, zoneShares } from './summary.mjs';
 
 const run = {
   layout: 'run',
@@ -57,6 +57,7 @@ test('statGroups: effort, heart, running form; no duplicates of the hero; words 
   assert.equal(form.gct.word, 'Average');
   assert.equal(form.vo.word, 'Average');
   assert.equal(form.vr.word, 'Average');
+  assert.deepEqual(g[2].footer, ['Stride 1.05 m', 'Power 336 W']);
   assert.equal(statGroups({ ...run, watch: { ...run.watch, gctMs: 200 } })[2].rows.find((r) => r.key === 'gct').word, 'Top 5%');
   assert.equal(statGroups({ ...run, stats: { ...run.stats, avgCadence: 150 } })[2].rows.find((r) => r.key === 'cadence').word, 'Bottom 5%');
   // Device temperature only without weather.
@@ -67,7 +68,8 @@ test('statGroups: effort, heart, running form; no duplicates of the hero; words 
 test('statGroups: without watch data a run keeps Strava cadence and power', () => {
   const g = statGroups({ ...run, watch: null });
   assert.deepEqual(g.map((x) => x.id), ['effort', 'form']);
-  assert.deepEqual(g[1].rows.map((r) => r.key), ['cadence', 'power']);
+  assert.deepEqual(g[1].rows.map((r) => r.key), ['cadence']);
+  assert.deepEqual(g[1].footer, ['Power 336 W']);
 });
 
 test('tssNote: method, and the run power caveat', () => {
@@ -79,4 +81,19 @@ test('tssNote: method, and the run power caveat', () => {
 test('zoneShares: shares of the total, null without time', () => {
   assert.equal(zoneShares([{ zone: 1, name: 'a', seconds: 0 }]), null);
   assert.deepEqual(zoneShares([{ zone: 1, name: 'a', seconds: 30 }, { zone: 2, name: 'b', seconds: 90 }]).map((z) => z.share), [0.25, 0.75]);
+});
+
+test('planVsDone: plan and TSS, then done with the difference and intensity', () => {
+  assert.equal(planVsDone(run, null), null);
+  const r = planVsDone(run, { title: '🏃 Easy run + strides', tss: 40, duration: 45 });
+  assert.equal(r.planned, 'Easy run + strides · 40 TSS');
+  assert.match(r.done, /^69 TSS \(\+29\) · /);
+});
+
+test('conditionsLine: weather headline and the useful rows on one line', () => {
+  assert.equal(conditionsLine(null), null);
+  assert.equal(
+    conditionsLine({ headline: 'Cloudy, 16 °C', rows: [{ label: 'Feels like', valueText: '17 °C' }, { label: 'Humidity', valueText: '88%' }, { label: 'Wind', valueText: '4.0 km/h NNW' }] }),
+    'Cloudy, 16 °C · 88% humidity · wind 4.0 km/h NNW',
+  );
 });

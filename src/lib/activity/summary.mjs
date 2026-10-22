@@ -2,7 +2,8 @@
 // form or power, conditions), each value with a word that says where it sits. Shared by the web page (Sections.tsx)
 // and the app API (app-api.mjs `overview.hero`/`groups`). No framework or database imports (node --test).
 
-import { duration, int, km, kmh, pace } from './format.mjs';
+import { duration, int, km, kmh, pace, signed } from './format.mjs';
+import { plainTitle } from '../plan/calendar.mjs';
 import { tssMethodLabel } from '../strava-sync/tss.mjs';
 
 /**
@@ -174,8 +175,11 @@ export function statGroups(/** @type {any} */ v) {
           w?.gctMs != null && percentileRow({ key: 'gct', label: 'Ground contact', valueText: int(w.gctMs), unit: 'ms' }, w.gctMs, [208, 241, 273, 306], { lowerIsBetter: true, min: 180, max: 330 }),
           w?.verticalOscCm != null && percentileRow({ key: 'vo', label: 'Vertical oscillation', valueText: r1(w.verticalOscCm), unit: 'cm' }, w.verticalOscCm, [6.7, 8.4, 10.1, 11.9], { lowerIsBetter: true, min: 5, max: 13.5 }),
           w?.verticalRatioPct != null && percentileRow({ key: 'vr', label: 'Vertical ratio', valueText: r1(w.verticalRatioPct), unit: '%' }, w.verticalRatioPct, [6.1, 7.5, 8.7, 10.2], { lowerIsBetter: true, min: 5, max: 11.5 }),
-          w?.strideM != null && { key: 'stride', label: 'Stride length', valueText: w.strideM.toFixed(2), unit: 'm' },
-          (st.avgWatts || w?.powerW != null) && { key: 'power', label: st.avgWatts && !st.deviceWatts ? 'Est. power' : 'Power', valueText: int(st.avgWatts || w.powerW), unit: 'W' },
+        ]),
+        // No bands for these (stride depends on height, power on weight): one line under the card.
+        footer: present([
+          w?.strideM != null && `Stride ${w.strideM.toFixed(2)} m`,
+          (st.avgWatts || w?.powerW != null) && `${st.avgWatts && !st.deviceWatts ? 'Est. power' : 'Power'} ${int(st.avgWatts || w.powerW)} W`,
         ]),
       }
     : {
@@ -198,4 +202,29 @@ export function zoneShares(/** @type {Array<{ zone: number, name: string, second
   const total = zones.reduce((n, z) => n + z.seconds, 0);
   if (!total) return null;
   return zones.map((z) => ({ zone: z.zone, name: z.name, seconds: z.seconds, share: z.seconds / total }));
+}
+
+/**
+ * Plan against what was done, one line under the title: the planned workout and its TSS, then this activity's TSS
+ * with the difference and its intensity word. Null without a matched plan workout.
+ * @param {any} v
+ * @param {{ title: string, tss: number | null, duration: number | null } | null | undefined} p
+ */
+export function planVsDone(v, p) {
+  if (!p) return null;
+  const f = intensityOf(v.effort.tss, v.stats.moving);
+  const planned = present([plainTitle(p.title), p.tss ? `${Math.round(p.tss)} TSS` : p.duration ? `${p.duration} min` : null]).join(' · ');
+  const done = present([
+    v.effort.tss != null && `${Math.round(v.effort.tss)} TSS${p.tss ? ` (${signed(Math.round(v.effort.tss - p.tss))})` : ''}`,
+    !p.tss && p.duration && v.stats.moving && `${Math.round(v.stats.moving / 60)} min`,
+    f != null && intensityWord(f).toLowerCase(),
+  ]).join(' · ');
+  return { planned, done };
+}
+
+/** Weather, shoes and device as one line: 'Cloudy, 16 °C · 88% humidity · wind 4.0 km/h NNW'. */
+export function conditionsLine(/** @type {{ headline: string, rows: Array<{ label: string, valueText: string }> } | null} */ w) {
+  if (!w) return null;
+  const pick = (/** @type {string} */ l) => w.rows.find((r) => r.label === l)?.valueText;
+  return present([w.headline, pick('Humidity') && `${pick('Humidity')} humidity`, pick('Wind') && `wind ${pick('Wind')}`, pick('Rain') && `rain ${pick('Rain')}`]).join(' · ');
 }

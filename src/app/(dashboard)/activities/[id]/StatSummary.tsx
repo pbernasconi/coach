@@ -1,7 +1,7 @@
 import { HelpTooltip } from '@kobo/web';
 import { Info } from 'lucide-react';
 import type { ActivityView } from '@/lib/activity/queries';
-import { heroStats, statGroups, tssNote, zoneShares } from '@/lib/activity/summary.mjs';
+import { conditionsLine, heroStats, statGroups, tssNote, zoneShares } from '@/lib/activity/summary.mjs';
 import { achievementsText, gearView, weatherView } from '@/lib/activity/view.mjs';
 
 type Tone = 'good' | 'ok' | 'warn' | 'bad';
@@ -92,8 +92,8 @@ function ZoneStrip({ zones }: { zones: NonNullable<ReturnType<typeof zoneShares>
 }
 
 /**
- * The top of the activity page: the headline numbers, then the rest in groups (effort, heart, running form or power,
- * conditions), each value with a word that places it.
+ * The top of the activity page: the headline numbers, then the rest in groups (effort, heart, running form or power),
+ * each value with a word that places it, then the weather, shoes and device on one line.
  */
 export default function StatSummary({ v }: { v: ActivityView }) {
   const hero = heroStats(v) as Row[];
@@ -106,8 +106,8 @@ export default function StatSummary({ v }: { v: ActivityView }) {
   const heart = groups.find((g) => g.id === 'heart');
   const cards = groups.filter((g) => g.id !== 'heart');
   const showHeart = Boolean(heart || zones);
-  const showConditions = Boolean(w || gear || v.device);
-  const count = cards.length + (showHeart ? 1 : 0) + (showConditions ? 1 : 0);
+  const conditions = [conditionsLine(w), gear && `${gear.name}${gear.distanceText ? ` ${gear.distanceText}` : ''}`, v.device].filter(Boolean).join(' · ');
+  const count = cards.length + (showHeart ? 1 : 0);
 
   return (
     <div className="space-y-4">
@@ -131,7 +131,7 @@ export default function StatSummary({ v }: { v: ActivityView }) {
       </div>
 
       {count > 0 && (
-        <div className={`grid gap-4 md:grid-cols-2 ${count >= 4 ? '2xl:grid-cols-4' : count === 3 ? 'xl:grid-cols-3' : ''}`}>
+        <div className={`grid gap-4 md:grid-cols-2 ${count >= 3 ? 'xl:grid-cols-3' : ''}`}>
           {cards.filter((g) => g.id === 'effort').map((g) => (
             <GroupCard key={g.id} title={g.title} tag={g.tag} footer={g.footer}>{g.rows.map((r) => <StatRow key={r.key} r={r as Row} />)}</GroupCard>
           ))}
@@ -144,33 +144,9 @@ export default function StatSummary({ v }: { v: ActivityView }) {
           {cards.filter((g) => g.id !== 'effort').map((g) => (
             <GroupCard key={g.id} title={g.title} footer={g.footer}>{g.rows.map((r) => <StatRow key={r.key} r={r as Row} />)}</GroupCard>
           ))}
-          {showConditions && (
-            <GroupCard title="Conditions">
-              {w && (
-                <div className="py-1.5">
-                  <div className="flex items-baseline justify-between gap-3">
-                    <span className="text-sm text-[var(--viz-ink-2)]">Weather</span>
-                    <span className="font-semibold">{w.headline}</span>
-                  </div>
-                  {w.rows.length > 0 && <div className="mt-0.5 text-right text-xs tabular-nums text-[var(--viz-ink-2)]">{w.rows.map((r) => `${r.label.toLowerCase()} ${r.valueText}`).join(' · ')}</div>}
-                </div>
-              )}
-              {gear && (
-                <div className="flex items-baseline justify-between gap-3 py-1.5">
-                  <span className="text-sm text-[var(--viz-ink-2)]">{gear.label}</span>
-                  <span className="min-w-0 truncate text-right font-medium">{gear.name}{gear.distanceText && <span className="font-normal text-[var(--viz-ink-2)]"> {gear.distanceText}</span>}</span>
-                </div>
-              )}
-              {v.device && (
-                <div className="flex items-baseline justify-between gap-3 py-1.5">
-                  <span className="text-sm text-[var(--viz-ink-2)]">Device</span>
-                  <span className="min-w-0 truncate text-right font-medium">{v.device}</span>
-                </div>
-              )}
-            </GroupCard>
-          )}
         </div>
       )}
+      {conditions && <p className="px-1 text-xs text-[var(--viz-ink-2)]">{conditions}</p>}
     </div>
   );
 }

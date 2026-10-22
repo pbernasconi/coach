@@ -733,8 +733,8 @@ Field rules:
   by meaning, `{ id: 'effort' | 'heart' | 'form' | 'power', title, tag?, rows, footer? }`. A row is `{ key, label,
   valueText, unit?, word?, tone?, scale? }`: `word` places the value ("Improving", "Top 30%", "Below baseline"),
   `tone` is `good | ok | warn | bad`, `scale` `{ min, max, cuts, value, lowerIsBetter? }` draws the web's band track.
-  `footer`: the other load scores and calories, one string each ("Garmin load 133"). The phone's "All stats" page
-  shows `hero` then `groups` when present, else `more`.
+  `footer`: values without bands, one string each (effort: "Garmin load 133", "766 kcal"; form: "Stride 1.05 m").
+  The phone's "All stats" page shows `hero` then `groups` when present, else `more`.
 - `header.outdoor`: the activity has a real track (not a trainer ride, not a `Virtual…` sport): the phone leads the
   page with the route map.
   `achievementsText`: `null` without PRs, achievements or kudos.

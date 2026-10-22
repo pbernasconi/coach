@@ -19,3 +19,10 @@ test('profileAt: time title, then distance, elevation, grade, pace, HR', () => {
   assert.deepEqual(p.rows.map((r) => r.value), ['0.30 km', '65 m', '5.0%', '5:33 /km', '150 bpm']);
   assert.equal(profileAt(s, speed, 10, false).rows[3].value, '10.8 km/h');
 });
+
+test('profileSeries: stops are gaps, not averaged into the pace', () => {
+  const sp = [3, 3, 3, 0, 0, 3, 3, 3];
+  const t = sp.map((_, i) => i * 10);
+  const r = profileSeries({ t, d: null, alt: null, hr: null, speed: sp }, 1.6).speed;
+  assert.deepEqual(r.map((v) => (v == null ? null : Math.round(v))), [3, 3, 3, null, null, 3, 3, 3]);
+});
