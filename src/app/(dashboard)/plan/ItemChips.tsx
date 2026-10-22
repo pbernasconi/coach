@@ -22,7 +22,7 @@ export function Chip({ item, h, roomy = false }: { item: Item; h: Handlers; room
   return <LiftChip l={item.l} a={item.a} roomy={roomy} onOpen={open} />;
 }
 
-const chipBase = 'group/chip relative flex min-w-0 flex-col justify-center rounded-[5px] border border-l-[3px] px-1.5 text-[11px] leading-[15px] transition-shadow';
+const chipBase = 'plan-chip group/chip relative flex min-w-0 flex-col justify-center rounded-[5px] border border-l-[3px] px-1.5 text-[11px] leading-[15px] transition-shadow';
 const chipFocus = 'rounded-[4px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
 type OnOpen = (e: React.MouseEvent<HTMLElement>) => void;
