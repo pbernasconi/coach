@@ -66,6 +66,7 @@ not port plan logic. Change this file first, then both sides.
                 { "seconds": 600, "from": 0.68, "to": 0.68, "zone": "Z2" },
                 { "seconds": 300, "from": 1.13, "to": 1.13, "zone": "Z5" }
               ],
+              "stats": { "time": "1:00:00", "distance": null, "tss": "45" },
               "liftSessionId": "ca4f651b-98c7-4765-83a9-07ab74435d69",
               "done": { "source": "strava", "activityId": "16234567890", "name": "Morning Ride", "minutes": 62, "tss": 70, "text": "62 min · 70 TSS / 60 min · 45 TSS" }
             }
@@ -94,6 +95,9 @@ Field rules:
   (`profileBars` in `src/lib/workouts/steps.mjs`): one bar per step in order with repeats expanded, `seconds` (a lap
   step counts 300), `from`/`to` the height as a fraction of FTP or LTHR (equal unless the step is a ramp) and `zone`
   `Z1`–`Z5` for its colour. `[]` without structured steps (lifts, rest). Builds before it ignore the key.
+- `stats`: the row's three numbers as text, each `null` when unknown: `time` ("1:30:00"), `distance` ("18.2 km", from
+  the plan's meters or the Strava activity) and `tss` ("95"). A done item shows what was done; any other item what is
+  planned.
 - `subtitle`, `stateLabel`, `totals.text`, `keyTargets`, `steps[].label/detail`, `done.text`: display-ready text. The
   phone shows them as they are. Targets are in watts or beats with the athlete's anchors, as on the web.
 - `subtitle`: start time, planned minutes and TSS; the sport label when all three are unknown.

@@ -74,6 +74,25 @@ export function sportId(w, known) {
   return known.has(w.sport) ? w.sport : sportOf(w);
 }
 
+/** Minutes as a clock, "1:30:00" (hours, minutes, seconds). */
+export function clockOf(min) {
+  const s = Math.max(0, Math.round(Number(min) * 60));
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${Math.floor(s / 3600)}:${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}`;
+}
+
+/**
+ * The row's three numbers, as text: time ("1:30:00"), distance ("18.2 km") and TSS ("95"), each null when unknown.
+ * A done item shows what was done; any other item what is planned.
+ */
+export function statsOf({ minutes, km, tss }) {
+  return {
+    time: minutes ? clockOf(minutes) : null,
+    distance: km ? `${(Math.round(km * 10) / 10).toFixed(1)} km` : null,
+    tss: tss ? String(Math.round(tss)) : null,
+  };
+}
+
 const RATED = new Set(['good', 'partial', 'off']);
 const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
 
@@ -112,6 +131,9 @@ export function weekItem(w, sports) {
     keyTargets: steps ? keyTargets(steps).map((l) => l.text) : [],
     steps: steps ? stepLines(steps) : [],
     profile: steps ? profileBars(steps) : [],
+    stats: match
+      ? statsOf({ minutes: doneMinutes, km: num(w.actual?.km), tss: doneTss })
+      : statsOf({ minutes: duration, km: num(w.distance) ? num(w.distance) / 1000 : null, tss }),
     liftSessionId: w.liftSessionId ? String(w.liftSessionId).toLowerCase() : null,
     done: match
       ? {

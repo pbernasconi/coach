@@ -22,6 +22,8 @@ export type Workout = {
   workoutType: string | null;
   intensity: string | null;
   duration: number | null;
+  /** Planned distance in meters, when the plan has one. */
+  distance?: number | null;
   tss: number | null;
   why: string | null;
   description: string | null;

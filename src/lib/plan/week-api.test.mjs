@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { hm, loadText, notesOf, parseWeekQuery, totalsText, weekItem, weekResponse } from './week-api.mjs';
+import { clockOf, hm, loadText, notesOf, parseWeekQuery, statsOf, totalsText, weekItem, weekResponse } from './week-api.mjs';
 import { LIFT_MARKER } from './lift-plan.mjs';
 import { complianceOf } from './compliance.mjs';
 
@@ -54,6 +54,7 @@ test('a planned lift: plain title, subtitle, notes above the marker, lower-case 
   assert.deepEqual(item.keyTargets, []);
   assert.deepEqual(item.steps, []);
   assert.deepEqual(item.profile, []);
+  assert.deepEqual(item.stats, { time: '1:00:00', distance: null, tss: '45' });
 });
 
 test('a done ride: compliance, done minutes and TSS from the matched activity, key targets from steps', () => {
@@ -75,6 +76,7 @@ test('a done ride: compliance, done minutes and TSS from the matched activity, k
   assert.deepEqual(item.keyTargets, ['6 × 5:00 at 278–292 W']);
   assert.equal(item.steps.length, 1);
   assert.equal(item.profile.length, 6);
+  assert.deepEqual(item.stats, { time: '1:02:00', distance: null, tss: '70' });
   assert.deepEqual(item.profile[0], { seconds: 300, from: 1.08, to: 1.08, zone: 'Z5' });
 });
 
@@ -136,4 +138,13 @@ test('a rest day reads "Rest" in every state but skipped', () => {
     assert.equal(item.compliance, null);
   }
   assert.equal(weekItem(workout({ sport: 'rest', state: 'skipped', compliance: complianceOf({}, 'skipped', null, { rest: true }) }), sports).stateLabel, 'Skipped');
+});
+
+test('stats: a clock, km with one decimal and whole TSS; planned distance from meters', () => {
+  assert.equal(clockOf(90), '1:30:00');
+  assert.equal(clockOf(0.5), '0:00:30');
+  assert.deepEqual(statsOf({ minutes: 45, km: 8.04, tss: 39.6 }), { time: '0:45:00', distance: '8.0 km', tss: '40' });
+  assert.deepEqual(statsOf({ minutes: null, km: null, tss: null }), { time: null, distance: null, tss: null });
+  const run = weekItem(workout({ title: 'Easy run', sport: 'run', distance: 10000 }), sports);
+  assert.equal(run.stats.distance, '10.0 km');
 });
