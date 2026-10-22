@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { ExternalLink } from 'lucide-react';
 import SportIcon from '@/components/SportIcon';
 import PeakCurve from '@/components/charts/PeakCurve';
@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { sport, stravaTypeLabel } from '@/lib/sports';
 import { duration, int, km, kmh, pace, paceOfSeconds, signed } from '@/lib/activity/format.mjs';
 import { PEAK_DURATIONS, peakCurve } from '@/lib/activity/peaks.mjs';
+import { NOT_LOADED_NOTE } from '@/lib/activity/view.mjs';
 import { weatherLabel } from '@/lib/activity/weather.mjs';
 import { plainTitle } from '@/lib/plan/calendar.mjs';
 import { LIFT_MARKER } from '@/lib/plan/lift-plan.mjs';
@@ -31,27 +32,7 @@ import { Description, Failed, Header, Hero, Loading, OpenButton, Panel, Section,
 type ATab = 'overview' | 'hr' | 'power' | 'pace' | 'laps' | 'charts';
 
 export default function ActivityModal({ id, planned, onClose }: { id: string; planned: CalendarWorkout | null; onClose: () => void }) {
-  const [rev, setRev] = useState(0);
-  const [fetching, setFetching] = useState(false);
-  const state = useLoad(() => activityPreviewAction(id), [id, rev]);
-  // Like the full page: an activity without its Strava detail (streams, map, weather) fetches it once, then
-  // the modal loads again. The next view reads it from the database.
-  const stravaId = state.status === 'ok' && state.value?.v.fetch.needed ? state.value.v.stravaId : null;
-  useEffect(() => {
-    if (!stravaId || rev > 0) return;
-    let live = true;
-    setFetching(true);
-    fetch(`/api/activities/${encodeURIComponent(stravaId)}/fetch`, { method: 'POST' })
-      .then((r) => r.json().catch(() => ({})))
-      .then((body: { fetched?: string[] }) => {
-        if (live && body.fetched?.length) setRev(1);
-      })
-      .catch((error) => console.error('Strava fetch failed:', error))
-      .finally(() => live && setFetching(false));
-    return () => {
-      live = false;
-    };
-  }, [stravaId, rev]);
+  const state = useLoad(() => activityPreviewAction(id), [id]);
   if (state.status === 'loading') {
     return (
       <>
@@ -68,12 +49,12 @@ export default function ActivityModal({ id, planned, onClose }: { id: string; pl
       </>
     );
   }
-  return <ActivityContent v={state.value.v} c={state.value.context} planned={planned} onClose={onClose} fetching={fetching} />;
+  return <ActivityContent v={state.value.v} c={state.value.context} planned={planned} onClose={onClose} />;
 }
 
 function ActivityContent({
-  v, c, planned, onClose, fetching,
-}: { v: ActivityView; c: ActivityContext | null; planned: CalendarWorkout | null; onClose: () => void; fetching: boolean }) {
+  v, c, planned, onClose,
+}: { v: ActivityView; c: ActivityContext | null; planned: CalendarWorkout | null; onClose: () => void }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState<ATab>('overview');
@@ -294,11 +275,7 @@ function ActivityContent({
             </Section>
           )}
           {v.fetch.needed && (
-            <p role="status" className="px-4 pb-6 text-xs sm:px-6 text-[var(--viz-muted)]">
-              {fetching
-                ? 'Loading the streams, map and weather from Strava. This happens once per activity.'
-                : <>The Strava streams did not load. Open the <Link href={`/activities/${v.stravaId}`} className="underline">full page</Link> to try again.</>}
-            </p>
+            <p role="status" className="px-4 pb-6 text-xs sm:px-6 text-[var(--viz-muted)]">{NOT_LOADED_NOTE}</p>
           )}
         </div>
       </div>

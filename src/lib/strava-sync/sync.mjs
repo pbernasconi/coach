@@ -29,6 +29,113 @@ export function activityTimes(a) {
   return { startDate: plain(a.start_date), startLocal: plain(a.start_date_local) };
 }
 
+/** Stores an activity's TSS from its stream summary (`inputs`, tss.mjs) or, without one, from its averages. */
+export async function storeTss(sql, activityRowId, a, th, inputs) {
+  const { tss, method } = tssFromInputs(a, th, inputs);
+  await sql`
+    UPDATE strava_activities
+    SET tss = ${tss}, tss_method = ${method}, tss_inputs = ${inputs ? JSON.stringify(inputs) : null}, updated_at = NOW()
+    WHERE id = ${activityRowId}`;
+}
+
+/**
+ * Inserts or updates one activity row from a Strava activity (the list's summary or the detailed activity: the
+ * detail has every summary field). Returns the row id and whether the row is new.
+ * @returns {Promise<{ id: string, created: boolean }>}
+ */
+export async function upsertActivity(sql, conn, a) {
+  const { startDate, startLocal } = activityTimes(a);
+  const [existing] = await sql`
+    SELECT id FROM strava_activities
+    WHERE user_id = ${conn.user_id} AND strava_activity_id = ${String(a.id)}
+    LIMIT 1`;
+
+  const fields = {
+    name: a.name, type: a.type, sport_type: a.sport_type,
+    distance: a.distance, moving_time: a.moving_time, elapsed_time: a.elapsed_time, total_elevation_gain: a.total_elevation_gain,
+    start_date: startDate, start_date_local: startLocal, timezone: a.timezone,
+    average_speed: a.average_speed, max_speed: a.max_speed,
+    average_cadence: a.average_cadence ?? null,
+    average_watts: a.average_watts ?? null,
+    weighted_average_watts: a.weighted_average_watts ?? null,
+    max_watts: a.max_watts ?? null,
+    device_watts: a.device_watts ?? null,
+    average_heartrate: a.average_heartrate ?? null,
+    max_heartrate: a.max_heartrate ?? null,
+    kilojoules: a.kilojoules ?? null,
+    average_temp: a.average_temp ?? null,
+    workout_type: a.workout_type ?? null,
+    commute: a.commute ?? false,
+    trainer: a.trainer ?? false,
+    gear_id: a.gear_id ?? null,
+    start_latlng: a.start_latlng ? JSON.stringify(a.start_latlng) : null,
+    location_city: a.location_city ?? null,
+    location_state: a.location_state ?? null,
+    location_country: a.location_country ?? null,
+    elev_high: a.elev_high ?? null,
+    elev_low: a.elev_low ?? null,
+    achievement_count: a.achievement_count ?? 0,
+    pr_count: a.pr_count ?? 0,
+    kudos_count: a.kudos_count ?? 0,
+    comment_count: a.comment_count ?? 0,
+  };
+
+  /** @type {string} */
+  let activityRowId;
+  if (existing) {
+    activityRowId = existing.id;
+    await sql`
+      UPDATE strava_activities SET
+        name = ${fields.name}, type = ${fields.type}, sport_type = ${fields.sport_type},
+        distance = ${fields.distance}, moving_time = ${fields.moving_time}, elapsed_time = ${fields.elapsed_time},
+        total_elevation_gain = ${fields.total_elevation_gain},
+        start_date = ${fields.start_date}, start_date_local = ${fields.start_date_local}, timezone = ${fields.timezone},
+        average_speed = ${fields.average_speed}, max_speed = ${fields.max_speed},
+        average_cadence = ${fields.average_cadence},
+        average_watts = ${fields.average_watts}, weighted_average_watts = ${fields.weighted_average_watts},
+        max_watts = ${fields.max_watts}, device_watts = ${fields.device_watts},
+        average_heartrate = ${fields.average_heartrate}, max_heartrate = ${fields.max_heartrate},
+        kilojoules = ${fields.kilojoules}, average_temp = ${fields.average_temp},
+        workout_type = ${fields.workout_type}, commute = ${fields.commute}, trainer = ${fields.trainer},
+        gear_id = ${fields.gear_id}, start_latlng = ${fields.start_latlng},
+        location_city = ${fields.location_city}, location_state = ${fields.location_state}, location_country = ${fields.location_country},
+        elev_high = ${fields.elev_high}, elev_low = ${fields.elev_low},
+        achievement_count = ${fields.achievement_count}, pr_count = ${fields.pr_count},
+        kudos_count = ${fields.kudos_count}, comment_count = ${fields.comment_count},
+        updated_at = NOW()
+      WHERE id = ${existing.id}`;
+  } else {
+    activityRowId = createId();
+    await sql`
+      INSERT INTO strava_activities (
+        id, user_id, connection_id, strava_activity_id,
+        name, type, sport_type,
+        distance, moving_time, elapsed_time, total_elevation_gain,
+        start_date, start_date_local, timezone,
+        average_speed, max_speed,
+        average_cadence, average_watts, weighted_average_watts, max_watts, device_watts,
+        average_heartrate, max_heartrate, kilojoules, average_temp,
+        workout_type, commute, trainer, gear_id,
+        start_latlng, location_city, location_state, location_country,
+        elev_high, elev_low, achievement_count, pr_count,
+        kudos_count, comment_count
+      ) VALUES (
+        ${activityRowId}, ${conn.user_id}, ${conn.id}, ${String(a.id)},
+        ${fields.name}, ${fields.type}, ${fields.sport_type},
+        ${fields.distance}, ${fields.moving_time}, ${fields.elapsed_time}, ${fields.total_elevation_gain},
+        ${fields.start_date}, ${fields.start_date_local}, ${fields.timezone},
+        ${fields.average_speed}, ${fields.max_speed},
+        ${fields.average_cadence}, ${fields.average_watts}, ${fields.weighted_average_watts}, ${fields.max_watts}, ${fields.device_watts},
+        ${fields.average_heartrate}, ${fields.max_heartrate}, ${fields.kilojoules}, ${fields.average_temp},
+        ${fields.workout_type}, ${fields.commute}, ${fields.trainer}, ${fields.gear_id},
+        ${fields.start_latlng}, ${fields.location_city}, ${fields.location_state}, ${fields.location_country},
+        ${fields.elev_high}, ${fields.elev_low}, ${fields.achievement_count}, ${fields.pr_count},
+        ${fields.kudos_count}, ${fields.comment_count}
+      )`;
+  }
+  return { id: activityRowId, created: !existing };
+}
+
 /**
  * @param {import('@neondatabase/serverless').NeonQueryFunction<false, false>} sql
  * streams: true fetches the streams of every listed activity; 'new' (the server's default) only of new ones.
@@ -144,97 +251,9 @@ export async function syncStrava(sql, opts = {}) {
   /** The rows this sync inserted (new activities), for the "workout completed" notice. */
   const created = [];
   for (const a of activities) {
-    const { startDate, startLocal } = activityTimes(a);
-
-    // Upsert the activity row
-    const [existing] = await sql`
-      SELECT id FROM strava_activities
-      WHERE user_id = ${conn.user_id} AND strava_activity_id = ${String(a.id)}
-      LIMIT 1`;
-
-    const fields = {
-      name: a.name, type: a.type, sport_type: a.sport_type,
-      distance: a.distance, moving_time: a.moving_time, elapsed_time: a.elapsed_time, total_elevation_gain: a.total_elevation_gain,
-      start_date: startDate, start_date_local: startLocal, timezone: a.timezone,
-      average_speed: a.average_speed, max_speed: a.max_speed,
-      average_cadence: a.average_cadence ?? null,
-      average_watts: a.average_watts ?? null,
-      weighted_average_watts: a.weighted_average_watts ?? null,
-      max_watts: a.max_watts ?? null,
-      device_watts: a.device_watts ?? null,
-      average_heartrate: a.average_heartrate ?? null,
-      max_heartrate: a.max_heartrate ?? null,
-      kilojoules: a.kilojoules ?? null,
-      average_temp: a.average_temp ?? null,
-      workout_type: a.workout_type ?? null,
-      commute: a.commute ?? false,
-      trainer: a.trainer ?? false,
-      gear_id: a.gear_id ?? null,
-      start_latlng: a.start_latlng ? JSON.stringify(a.start_latlng) : null,
-      location_city: a.location_city ?? null,
-      location_state: a.location_state ?? null,
-      location_country: a.location_country ?? null,
-      elev_high: a.elev_high ?? null,
-      elev_low: a.elev_low ?? null,
-      achievement_count: a.achievement_count ?? 0,
-      pr_count: a.pr_count ?? 0,
-      kudos_count: a.kudos_count ?? 0,
-      comment_count: a.comment_count ?? 0,
-    };
-
-    let activityRowId;
-    if (existing) {
-      activityRowId = existing.id;
-      await sql`
-        UPDATE strava_activities SET
-          name = ${fields.name}, type = ${fields.type}, sport_type = ${fields.sport_type},
-          distance = ${fields.distance}, moving_time = ${fields.moving_time}, elapsed_time = ${fields.elapsed_time},
-          total_elevation_gain = ${fields.total_elevation_gain},
-          start_date = ${fields.start_date}, start_date_local = ${fields.start_date_local}, timezone = ${fields.timezone},
-          average_speed = ${fields.average_speed}, max_speed = ${fields.max_speed},
-          average_cadence = ${fields.average_cadence},
-          average_watts = ${fields.average_watts}, weighted_average_watts = ${fields.weighted_average_watts},
-          max_watts = ${fields.max_watts}, device_watts = ${fields.device_watts},
-          average_heartrate = ${fields.average_heartrate}, max_heartrate = ${fields.max_heartrate},
-          kilojoules = ${fields.kilojoules}, average_temp = ${fields.average_temp},
-          workout_type = ${fields.workout_type}, commute = ${fields.commute}, trainer = ${fields.trainer},
-          gear_id = ${fields.gear_id}, start_latlng = ${fields.start_latlng},
-          location_city = ${fields.location_city}, location_state = ${fields.location_state}, location_country = ${fields.location_country},
-          elev_high = ${fields.elev_high}, elev_low = ${fields.elev_low},
-          achievement_count = ${fields.achievement_count}, pr_count = ${fields.pr_count},
-          kudos_count = ${fields.kudos_count}, comment_count = ${fields.comment_count},
-          updated_at = NOW()
-        WHERE id = ${existing.id}`;
-    } else {
-      activityRowId = createId();
-      created.push({ id: activityRowId, stravaId: String(a.id) });
-      await sql`
-        INSERT INTO strava_activities (
-          id, user_id, connection_id, strava_activity_id,
-          name, type, sport_type,
-          distance, moving_time, elapsed_time, total_elevation_gain,
-          start_date, start_date_local, timezone,
-          average_speed, max_speed,
-          average_cadence, average_watts, weighted_average_watts, max_watts, device_watts,
-          average_heartrate, max_heartrate, kilojoules, average_temp,
-          workout_type, commute, trainer, gear_id,
-          start_latlng, location_city, location_state, location_country,
-          elev_high, elev_low, achievement_count, pr_count,
-          kudos_count, comment_count
-        ) VALUES (
-          ${activityRowId}, ${conn.user_id}, ${conn.id}, ${String(a.id)},
-          ${fields.name}, ${fields.type}, ${fields.sport_type},
-          ${fields.distance}, ${fields.moving_time}, ${fields.elapsed_time}, ${fields.total_elevation_gain},
-          ${fields.start_date}, ${fields.start_date_local}, ${fields.timezone},
-          ${fields.average_speed}, ${fields.max_speed},
-          ${fields.average_cadence}, ${fields.average_watts}, ${fields.weighted_average_watts}, ${fields.max_watts}, ${fields.device_watts},
-          ${fields.average_heartrate}, ${fields.max_heartrate}, ${fields.kilojoules}, ${fields.average_temp},
-          ${fields.workout_type}, ${fields.commute}, ${fields.trainer}, ${fields.gear_id},
-          ${fields.start_latlng}, ${fields.location_city}, ${fields.location_state}, ${fields.location_country},
-          ${fields.elev_high}, ${fields.elev_low}, ${fields.achievement_count}, ${fields.pr_count},
-          ${fields.kudos_count}, ${fields.comment_count}
-        )`;
-    }
+    const { id: activityRowId, created: isNew } = await upsertActivity(sql, conn, a);
+    const existing = !isNew;
+    if (isNew) created.push({ id: activityRowId, stravaId: String(a.id) });
     upsertCount++;
 
     // Detail: description, laps, splits (with grade-adjusted pace), best efforts, gear (the activity page's writer).
@@ -269,11 +288,7 @@ export async function syncStrava(sql, opts = {}) {
 
     // ===== TSS (storeStreams wrote the zone times) =====
     if (Object.keys(stored).length) inputs = tssInputs(stored);
-    const { tss, method } = tssFromInputs(a, th, inputs);
-    await sql`
-      UPDATE strava_activities
-      SET tss = ${tss}, tss_method = ${method}, tss_inputs = ${inputs ? JSON.stringify(inputs) : null}, updated_at = NOW()
-      WHERE id = ${activityRowId}`;
+    await storeTss(sql, activityRowId, a, th, inputs);
 
     if (upsertCount % 10 === 0) log(`  upserted ${upsertCount}/${activities.length}…`);
   }

@@ -1,4 +1,5 @@
 import { sql } from '@/db';
+import { cached } from '@/lib/data-cache';
 import { toDay } from '@/lib/db-time.mjs';
 import { complianceOf } from '@/lib/plan/compliance.mjs';
 import { loadWeek } from '@/lib/plan/queries';
@@ -16,8 +17,10 @@ import {
 /**
  * The loader for /activities/[id]: one Strava activity with its laps, splits, streams (cut to chart resolution),
  * zones, best efforts, segments and weather, and Coach's view of it (the planned workout, TSS, fitness and
- * fatigue, the Garmin night before). Owner-scoped. Reads the database only; the page asks
- * POST /api/activities/[id]/fetch for the parts that are not stored yet (`fetch.needed`).
+ * fatigue, the Garmin night before). Owner-scoped. Reads the database only, through the data cache (tag
+ * `activities`, cleared by every writer of activities): a view does not wait for Neon to wake up. The parts come
+ * from the Strava webhook at once (src/lib/strava-sync/ingest.mjs); `fetch.needed` says an older activity still
+ * waits for the background fill (fillMissingParts).
  */
 
 type Row = Record<string, unknown>;
@@ -140,7 +143,7 @@ function seriesOf(s: Record<string, (number | null)[] | null>, latlng: [number, 
   };
 }
 
-export async function loadActivity(userId: string, id: string): Promise<ActivityView | null> {
+async function readActivity(userId: string, id: string): Promise<ActivityView | null> {
   const a = await activityRow(userId, id);
   if (!a) return null;
   const rowId = String(a.id);
@@ -264,7 +267,8 @@ export async function loadActivity(userId: string, id: string): Promise<Activity
 
   const place = d?.place ? String(d.place) : [a.location_city, a.location_state, a.location_country].filter(Boolean).join(', ') || null;
   let note: string | null = null;
-  const needed = (need.detail || need.streams || need.weather) && !need.retryLater;
+  // Weather alone does not count: the page is complete without it.
+  const needed = (need.detail || need.streams) && !need.retryLater;
   if (d?.fetch_error) {
     const e = String(d.fetch_error);
     note = / 429 /.test(e)
@@ -332,6 +336,9 @@ export async function loadActivity(userId: string, id: string): Promise<Activity
     fetch: { needed, note },
   };
 }
+
+/** One activity for its page, the plan modal and the Lift app: readActivity through the data cache. */
+export const loadActivity = cached(readActivity, 'activity-view', 'activities');
 
 /** Coach's view of an activity and the runs on its route: optional parts, loaded apart from the activity. */
 export type ActivityContext = {

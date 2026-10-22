@@ -235,8 +235,8 @@ test('detailResponse: a failed context fails only its sections; no streams says 
   assert.deepEqual(r.sameRoute, { ok: false });
   assert.equal(r.header.ok, true);
   assert.equal(r.header.fetch.pending, true);
-  assert.match(r.header.fetch.note, /Loading details from Strava/);
-  assert.equal(r.analysis.emptyText, 'The streams are loading from Strava.');
+  assert.match(r.header.fetch.note, /still being imported/);
+  assert.equal(r.analysis.emptyText, 'The streams of this older activity are still being imported.');
   assert.deepEqual(r.analysis.streams, []);
   assert.equal(r.weather, null);
   assert.equal(r.equipment, null);

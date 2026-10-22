@@ -677,11 +677,11 @@ A ride with power (Saturday, October 3, 102 km) has `power`, no `paceHistogram`,
 
 Field rules:
 
-- `header.fetch`: `pending: true` when Coach has not stored the details, streams or weather from Strava yet. Then the
-  server starts the web page's fetch (`fetchActivityParts`) after it answers (`after()`, one at a time per activity,
-  not on previews; the health check never starts it), and `note` is "Loading details from Strava. Pull to refresh in
-  a minute." After a failed fetch, `note` is the web's text (rate limit, or the error) and `pending` is `false`; the
-  server tries again an hour after the failure. Show `note` under the header.
+- `header.fetch`: `pending: true` when Coach has not stored an older activity's details or streams yet. The server
+  never calls Strava for this request: the Strava webhook stores a new activity in full (detail, streams, weather)
+  a few seconds after it reaches Strava, before the "workout completed" notice, and the 3-hourly Strava sync fills in
+  older activities. `note` is then "The details of this older activity are still being imported." After a failed
+  import, `note` is the web's text (rate limit, or the error) and `pending` is `false`. Show `note` under the header.
 - `header.prevId`/`nextId`: the older and newer activity (`activityId`), `null` at the ends. `stravaUrl` is the only
   URL: the "Open on Strava" button. `description`: Strava's text, line breaks kept.
 - `overview.big`/`small`: `{ label, valueText, unit? }`, shown as they are, in this order (the web's stat tiles).
