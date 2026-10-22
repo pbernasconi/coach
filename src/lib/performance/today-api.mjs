@@ -5,7 +5,7 @@
 import { FORM_ZONES, zoneOf } from './form.mjs';
 import {
   MUSCLE_TARGET, daysAgoText, e1rmText, goalView, headerChips, last4Tiles, lastWeeks, liftChangeText, longDate,
-  projectionCaption, readinessCue, setsText, shortDate, staleText, todayItemText, todayWorkouts, weightChange,
+  projectionCaption, setsText, shortDate, staleText, todayItemText, todayWorkouts, weightChange,
 } from './display.mjs';
 import { plainTitle } from '../plan/calendar.mjs';
 import { sportId } from '../plan/week-api.mjs';
@@ -86,7 +86,7 @@ export function todayResponse({ now, timeZone, today, perf, week, pmc, lift, bod
           liftSessionId: w.liftSessionId ? String(w.liftSessionId).toLowerCase() : null,
         })),
         emptyText,
-        cue: items.length ? readinessCue(r?.readiness ? r.readiness.value : null) : null,
+        cue: null, // Lift still reads this key; the readiness advice is gone (2026-10-22).
       };
     }),
     fitness: section(pmc, fitnessSection),

@@ -77,7 +77,7 @@ export default async function HomePage() {
     safe('recovery today', () => loadRecoveryToday(userId, today), null),
     safe('body', () => loadBody(userId, today), null),
     load('Goals', async () => measureGoals(sql, userId, await loadGoals(sql, userId), today)),
-    safe('recent peaks', () => loadRecentPeaks(userId, today), null),
+    safe('recent peaks', () => loadRecentPeaks(userId, today, { maxRank: 1, limit: 4 }), null),
   ]);
 
   const r = recovery?.hasData ? recovery : null;
@@ -99,7 +99,7 @@ export default async function HomePage() {
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <div className="min-w-0 space-y-5">
           {week.ok ? (
-            <HomeWeek range={week.value} weather={weather} readiness={r?.readiness ? r.readiness.value : null} />
+            <HomeWeek range={week.value} weather={weather} />
           ) : (
             <SectionError label="This week" />
           )}

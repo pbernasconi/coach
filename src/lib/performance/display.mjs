@@ -91,15 +91,6 @@ export function staleText(latestActivity, today) {
   return days > 7 ? `The newest Strava activity is from ${latestActivity}.` : null;
 }
 
-/** Garmin's readiness bands, with what they mean for today's session (the Today line). */
-export function readinessCue(readiness) {
-  if (readiness == null) return null;
-  if (readiness >= 75) return 'Readiness high: go as planned';
-  if (readiness >= 50) return 'Readiness moderate: hold back about 10%';
-  if (readiness >= 25) return 'Readiness low: keep it easy';
-  return 'Readiness poor: consider rest';
-}
-
 // ---- Fitness chart ----
 
 /** The line under the fitness chart, or null when there is no projection. */
@@ -378,11 +369,10 @@ export function recoveryRows(recovery) {
   const rows = [];
   if (r?.readiness) {
     const v = Math.round(r.readiness.value);
-    const cue = readinessCue(v)?.split(': ')[1] ?? '';
     rows.push({
       key: 'readiness', label: 'Readiness', valueText: `${v} · ${readinessBand(v)}`,
       tone: v < 25 ? 'bad' : v < 50 ? 'warn' : 'good',
-      note: `Garmin's 0–100 score for training today. ${cue.charAt(0).toUpperCase()}${cue.slice(1)}.`,
+      note: "Garmin's 0–100 score for training today.",
     });
   }
   const hrv = hrvStatusLabel(r?.hrvStatus?.value ?? null);

@@ -52,7 +52,7 @@ test('the whole response: every section ok, display text ready', () => {
     ok: true,
     items: [{ id: '42', title: 'Heavy lift', sport: 'strength', state: 'today', text: '13:30 · 1:00', liftSessionId: 'ca4f' }],
     emptyText: null,
-    cue: 'Readiness high: go as planned',
+    cue: null,
   });
   assert.equal(r.fitness.ok, true);
   assert.deepEqual(r.last4Weeks.tiles.map((t) => t.valueText), ['6:00 h', '0 km', '100 km', '2 of 8']);
@@ -76,7 +76,7 @@ test('a failed loader fails only its section', () => {
   assert.deepEqual(r.stale, { ok: false, text: null });
   assert.deepEqual(r.header, { ok: true, chips: [], emptyText: 'No Garmin data today.' });
   assert.equal(r.todayLine.ok, true);
-  assert.equal(r.todayLine.cue, null, 'no readiness, no cue');
+  assert.equal(r.todayLine.cue, null);
   assert.equal(r.body.ok, true);
 });
 

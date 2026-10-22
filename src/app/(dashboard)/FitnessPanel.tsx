@@ -74,7 +74,7 @@ function peakLines(p: RecentPeak) {
 
 /**
  * The Intervals.icu-style fitness panel: fatigue, fitness and form today with what they mean, how fitness moved over
- * 7, 28, 90 and 365 days (mini charts of CTL), and the recent peak performances that made a top 3.
+ * 7, 28, 90 and 365 days (mini charts of CTL), and the recent peak performances that are a best (#1).
  */
 export default function FitnessPanel({ pmc, peaks }: { pmc: Pmc | null; peaks: RecentPeak[] | null }) {
   const last = pmc?.days.filter((d) => !d.projected).at(-1) ?? null;
@@ -154,7 +154,7 @@ export default function FitnessPanel({ pmc, peaks }: { pmc: Pmc | null; peaks: R
         <div className="mb-1 flex items-baseline justify-between">
           <Kicker>
             Recent peaks
-            <Info label="About recent peaks">Efforts from the last 4 weeks in your top 3 all time, this year or the last 90 days.</Info>
+            <Info label="About recent peaks">Efforts from the last 4 weeks that are your best all time, this year or in the last 90 days.</Info>
           </Kicker>
           <Link href="/trends#peaks" className="text-xs text-[var(--viz-muted)] hover:text-foreground">All peaks →</Link>
         </div>
