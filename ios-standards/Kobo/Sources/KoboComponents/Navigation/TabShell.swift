@@ -147,7 +147,12 @@ extension View {
     /// has it, never screen by screen.
     ///
     ///     .navigationDestination(for: AppRoute.self) { route in RouteScreen(route: route).detailPage() }
+    @ViewBuilder
     public func detailPage() -> some View {
-        toolbar(.hidden, for: .tabBar)
+        #if os(iOS)
+            toolbar(.hidden, for: .tabBar)
+        #else
+            self  // no tab bar to hide (the package's macOS test build)
+        #endif
     }
 }
