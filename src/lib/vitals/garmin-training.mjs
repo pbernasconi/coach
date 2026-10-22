@@ -207,6 +207,23 @@ export function series(rows, metric) {
     .sort((a, b) => a.date.localeCompare(b.date));
 }
 
+/**
+ * Each point replaced by the mean of the points in the `days` days ending on it (that day included). Daily
+ * weigh-ins swing about a kilogram with water and food; the average shows the trend.
+ */
+export function trailingAverage(points, days = 7) {
+  return points.map((p, i) => {
+    const from = Date.parse(`${p.date}T00:00:00Z`) - (days - 1) * 864e5;
+    let sum = 0;
+    let n = 0;
+    for (let j = i; j >= 0 && Date.parse(`${points[j].date}T00:00:00Z`) >= from; j--) {
+      sum += points[j].value;
+      n++;
+    }
+    return { date: p.date, value: sum / n };
+  });
+}
+
 /** The newest point of a series and the change against the point nearest to `days` before it. */
 export function latestWithChange(points, days = 28) {
   const last = points.at(-1);

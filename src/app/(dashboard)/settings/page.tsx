@@ -9,7 +9,7 @@ import { loadEventsWithCountdown } from '@/lib/performance/events';
 import { todayIn } from '@/lib/plan/week.mjs';
 import { loadGoals } from '@/lib/goals/goals.mjs';
 import { createEnrollmentCode } from '@/lib/lift-sync/enroll.mjs';
-import { FlaskConical } from 'lucide-react';
+import { FlaskConical, Weight } from 'lucide-react';
 import { loadThresholdSources } from '@/lib/strava-sync/thresholds.mjs';
 import { resolveThresholds } from '@/lib/strava-sync/tss.mjs';
 import SectionError from '@/components/SectionError';
@@ -317,6 +317,22 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                 ['Last success', when(fn.lastSuccessAt)],
                 ['Last run', when(fn.lastAttemptAt)],
                 ['Sync', 'By hand: Actions → Function Health sync → Run workflow, or gh workflow run function.yml'],
+              ]}
+            />
+            <Connection
+              logo={<Weight aria-hidden className="h-5 w-5 text-muted-foreground" />}
+              name="Bathroom scale"
+              connected={Boolean(status.scale.lastWeighIn)}
+              level={levelOf('scale')}
+              summary={
+                status.scale.lastWeighIn
+                  ? `Last weigh-in ${status.scale.lastWeighIn} · Renpho Elis 1 through the scale bridge`
+                  : 'The Renpho Elis 1 sends weigh-ins through an ESP32 bridge (devices/scale-bridge). None yet.'
+              }
+              notes={notes('scale')}
+              details={[
+                ['Last weigh-in', status.scale.lastWeighIn ?? 'never'],
+                ['Bridge status page', 'http://scale-bridge.local/ (home Wi-Fi)'],
               ]}
             />
             <Connection
