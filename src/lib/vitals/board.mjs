@@ -96,8 +96,38 @@ export function statOf(points) {
   return { latest, normal, status: latest.value < normal.low ? 'below' : latest.value > normal.high ? 'above' : 'normal' };
 }
 
+/** Series compared over the last 30 and 90 days. */
+export const TREND_KEYS = ['hrv', 'rhr', 'sleep', 'sleepScore', 'bbHigh', 'stress', 'readiness', 'respiration', 'steps', 'intensity'];
+
 /**
- * @param {SampleRow[]} rows health_samples for the window plus the 60 days before it
+ * The average of the last 30 and the last 90 days (today included), and how many of those days have a value.
+ * @param {Dated[]} points
+ * @param {string} today
+ */
+export function trendOf(points, today) {
+  const span = (/** @type {number} */ n) => {
+    const from = addDays(today, -(n - 1));
+    const xs = points.filter((p) => p.date >= from && p.date <= today).map((p) => p.value);
+    return { avg: xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null, n: xs.length };
+  };
+  const d30 = span(30);
+  const d90 = span(90);
+  return { avg30: d30.avg, n30: d30.n, avg90: d90.avg, n90: d90.n };
+}
+
+/**
+ * Last night's sleep: 'in' with the minutes, 'off' when the watch was not worn, else 'waiting' (the watch has not
+ * synced the night yet, or there was none).
+ * @param {number | null} sleepMin today's sleep_total_min
+ * @param {Coverage} coverage today's coverage
+ */
+export function lastNightOf(sleepMin, coverage) {
+  if (sleepMin !== null) return { status: /** @type {const} */ ('in'), sleepMin };
+  return { status: coverage === 'off' ? /** @type {const} */ ('off') : /** @type {const} */ ('waiting'), sleepMin: null };
+}
+
+/**
+ * @param {SampleRow[]} rows health_samples for the window plus the 60 days before it (at least 90 days in all)
  * @param {{ today: string, days: number, syncedThrough: string | null }} opts
  */
 export function boardOf(rows, { today, days: n, syncedThrough }) {
@@ -127,6 +157,18 @@ export function boardOf(rows, { today, days: n, syncedThrough }) {
   const w = weight.at(-1);
   const w28 = w ? weight.filter((p) => p.date <= addDays(w.date, -28)).at(-1) ?? null : null;
   const coverage = coverageOf(rows, days, syncedThrough);
+  // Intensity per day for the 30/90-day comparison (the window's series may be shorter than 90 days).
+  /** @type {Map<string, { m: number, v: number }>} */
+  const im = new Map();
+  for (const r of rows) {
+    if (r.date > today || (r.metric !== 'intensity_minutes_moderate' && r.metric !== 'intensity_minutes_vigorous')) continue;
+    const e = im.get(r.date) ?? { m: 0, v: 0 };
+    if (r.metric === 'intensity_minutes_moderate') e.m = Number(r.value) || 0;
+    else e.v = Number(r.value) || 0;
+    im.set(r.date, e);
+  }
+  points.intensity = [...im].map(([date, e]) => ({ date, value: e.m + 2 * e.v })).sort((a, b) => a.date.localeCompare(b.date));
+  const trend = Object.fromEntries(TREND_KEYS.map((k) => [k, trendOf(points[k] ?? [], today)]));
   const counts = { worn: 0, partial: 0, off: 0, pending: 0 };
   for (const d of days) counts[coverage[d]]++;
   // This week's intensity minutes (Monday to today) against Garmin's 150-minute goal.
@@ -150,5 +192,7 @@ export function boardOf(rows, { today, days: n, syncedThrough }) {
       weight: { ...stat('weight'), change28: w && w28 ? w.value - w28.value : null },
     },
     intensityWeek: week,
+    trend,
+    lastNight: lastNightOf(series.sleep[n - 1] ?? null, coverage[today]),
   };
 }

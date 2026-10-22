@@ -35,6 +35,8 @@ export type DayChartProps = {
   height?: number;
   connect?: boolean; // line: join readings across empty days (sparse metrics such as weight)
   watchless?: boolean; // the metric does not come from the watch: no hatching for days it was off
+  /** Under the chart: how many days have a value ("26/30 nights"), and the 30-day against the 90-day average. */
+  foot?: { recorded: string; compare?: string | null };
 };
 
 const fmtShort = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
@@ -249,6 +251,12 @@ export default function DayChart(p: DayChartProps) {
           )}
         </svg>
       </div>
+      {p.foot && (
+        <div className="flex justify-between gap-2 text-[11px] tabular-nums text-[var(--viz-muted)]">
+          <span>{p.foot.recorded}</span>
+          {p.foot.compare && <span>{p.foot.compare}</span>}
+        </div>
+      )}
     </div>
   );
 }

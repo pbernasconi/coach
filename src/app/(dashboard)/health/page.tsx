@@ -53,7 +53,7 @@ export default async function HealthPage({ searchParams }: { searchParams: Promi
       <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
         <div className="space-y-0.5">
           <h1 className="text-2xl font-semibold tracking-tight">Health</h1>
-          <GarminStatusLine status={garmin} now={now} />
+          <GarminStatusLine status={garmin} now={now} lastNight={board.ok ? board.value.lastNight : null} />
         </div>
         <div className="flex items-center gap-4 text-sm">
           <Link href={`/health/day/${today}`} className="text-muted-foreground hover:text-foreground">Today</Link>
