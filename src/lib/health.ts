@@ -1,6 +1,7 @@
 import { loadAppWorkout } from '@/lib/plan/app-workout';
 import journal from '../../drizzle/meta/_journal.json';
-import { openProposal } from '@/lib/plan/proposals';
+import { openProposal, type Proposal } from '@/lib/plan/proposals';
+import { loadOutlook, loadPlanningContext } from '@/lib/plan/planning-context';
 import { GET as homeSummary } from '@/app/api/home/route';
 import { GET as liftWeek } from '@/app/api/lift/week/route';
 import { GET as appLiftRoute } from '@/app/api/app/lift/route';
@@ -73,6 +74,8 @@ export async function runChecks(now = new Date(), { migrations = true }: { migra
     check('workout library', () => loadLibrary(userId)),
     check('workout feedback', () => loadFeedback(userId, ['plan:health-check'], 'health-check')),
     check('plan proposal', () => openProposal(userId)),
+    check('planning context', () => loadPlanningContext(userId, addDays(monday, 7), { strict: true })),
+    check('plan outlook', () => loadOutlook(userId, { weekStart: addDays(monday, 7), rows: [] } as unknown as Proposal)),
     check('fitness projection', () => loadPmc(userId, today)),
     check('peak performances', () => loadPeakPerformances(userId, today)),
     check('recent peaks', () => loadRecentPeaks(userId, today)),
