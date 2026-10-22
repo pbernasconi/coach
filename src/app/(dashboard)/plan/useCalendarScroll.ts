@@ -15,13 +15,20 @@ const LOAD_TIMEOUT_MS = 15_000;
 /** After a failed load, scrolling retries it, at most this often. */
 const RETRY_AFTER_MS = 4_000;
 
+type Target = { monday: string; phone?: string; smooth: boolean };
+
 export const fetchWeeks = (from: string, to: string) => withTimeout(loadWeeksAction(from, to), LOAD_TIMEOUT_MS, 'Loading weeks') as Promise<CalendarRange>;
 
 /**
  * The continuous scroll of the calendar: the loaded weeks, the loads at the top and the bottom, the snap, the
  * title that follows the top week, and goTo (a jump to a week).
  */
-export function useCalendarScroll({ openAt, range, bounds }: { openAt: string; range: CalendarRange; bounds: DataBounds }) {
+export function useCalendarScroll({ openAt, phoneAt, range, bounds }: {
+  openAt: string;
+  phoneAt: string;
+  range: CalendarRange;
+  bounds: DataBounds;
+}) {
   const [data, setData] = useState<CalendarRange>(range);
   const [loading, setLoading] = useState<'before' | 'after' | null>(null);
   const [month, setMonth] = useState(() => monthOfWeek(openAt));
@@ -40,8 +47,9 @@ export function useCalendarScroll({ openAt, range, bounds }: { openAt: string; r
   // The week at the top of the view and its distance from the scroll top, taken just before a load or a refresh
   // changes the weeks, so the view can be put back exactly where it was.
   const anchor = useRef<{ monday: string; offset: number } | null>(null);
-  // A week to scroll to once it is on the page (the first render, the arrows, Today).
-  const scrollTarget = useRef<{ monday: string; smooth: boolean } | null>({ monday: openAt, smooth: false });
+  // A week to scroll to once it is on the page (the first render, the arrows, Today). `phone` is the week the
+  // agenda (phones) goes to instead: its weeks are taller than the screen, so it shows today's week itself.
+  const scrollTarget = useRef<Target | null>({ monday: openAt, phone: phoneAt, smooth: false });
   const failedRef = useRef(failed);
   failedRef.current = failed;
   const jumping = useRef(false);
@@ -95,12 +103,21 @@ export function useCalendarScroll({ openAt, range, bounds }: { openAt: string; r
     }
   }, []);
 
+  /** Where a jump lands: the week row, or on phones today's day inside today's week. */
+  const landingOf = useCallback((t: { monday: string; phone?: string }) => {
+    const agenda = !gridRef.current?.offsetParent;
+    const row = rowOf(agenda && t.phone ? t.phone : t.monday);
+    if (!row || !agenda) return row;
+    return row.querySelector<HTMLElement>(`[data-day="${dataRef.current.today}"]`) ?? row;
+  }, [rowOf]);
+
   const scrollToRow = useCallback((row: HTMLElement, smooth: boolean) => {
     const el = scrollerRef.current;
     if (!el) return;
     jumping.current = true;
     el.style.scrollSnapType = 'none';
-    el.scrollTo({ top: Math.max(0, row.offsetTop - HEAD_PX), behavior: smooth ? 'smooth' : 'auto' });
+    const top = row.getBoundingClientRect().top - el.getBoundingClientRect().top + el.scrollTop;
+    el.scrollTo({ top: Math.max(0, top - HEAD_PX), behavior: smooth ? 'smooth' : 'auto' });
     if (smooth) resumeSnap('scrollend');
     else {
       jumping.current = false;
@@ -136,12 +153,12 @@ export function useCalendarScroll({ openAt, range, bounds }: { openAt: string; r
       resumeSnap('frame');
     }
     const target = scrollTarget.current;
-    const row = target && rowOf(target.monday);
+    const row = target && landingOf(target);
     if (target && row) {
       scrollTarget.current = null;
       scrollToRow(row, target.smooth);
     }
-  }, [data, rowOf, scrollToRow, resumeSnap]);
+  }, [data, rowOf, landingOf, scrollToRow, resumeSnap]);
 
   const loadChunk = useCallback(async (chunk: { from: string; to: string } | null, side: 'before' | 'after') => {
     if (!chunk || loadingRef.current) return false;
@@ -240,18 +257,18 @@ export function useCalendarScroll({ openAt, range, bounds }: { openAt: string; r
     };
   }, [updateTitle, retry]);
 
-  /** Scrolls to a week (a Monday), loading weeks first when it is not loaded. */
-  async function goTo(monday: string, smooth = true) {
+  /** Scrolls to a week (a Monday; `phone` on phones), loading weeks first when it is not loaded. */
+  async function goTo(monday: string, smooth = true, phone?: string) {
     const floor = earliestBound(bounds.earliest);
     const target = floor && monday < floor ? floor : monday;
     const d = dataRef.current;
     const chunk = chunkToReach(target, d.weeks[0], d.weeks.at(-1)!, bounds.earliest);
     if (chunk) {
-      scrollTarget.current = { monday: target, smooth };
+      scrollTarget.current = { monday: target, phone, smooth };
       if (!(await loadChunk(chunk, target < d.weeks[0] ? 'before' : 'after'))) scrollTarget.current = null;
       return;
     }
-    const row = rowOf(target);
+    const row = landingOf({ monday: target, phone });
     if (row) scrollToRow(row, smooth);
   }
 
