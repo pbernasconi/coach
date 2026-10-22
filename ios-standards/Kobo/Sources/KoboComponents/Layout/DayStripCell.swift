@@ -61,7 +61,10 @@ struct DayStripCell: View {
             ZStack {
                 if isSelected { Circle().fill(highlight == .ink ? colors.selectedFill : theme.palette.accentSoft) }
                 if isToday && !(isSelected && highlight == .ink) {
-                    Circle().strokeBorder(colors.todayRing, lineWidth: highlight == .ink ? Size.hairline * 3 : Space.xxs)
+                    Circle().strokeBorder(
+                        colors.todayRing,
+                        lineWidth: highlight == .ink ? Size.hairline * 3 : Space.xxs
+                    )
                 }
             }
         }

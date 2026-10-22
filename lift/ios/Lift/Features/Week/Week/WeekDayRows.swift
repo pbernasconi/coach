@@ -14,7 +14,9 @@ struct WeekDayRows: View {
         VStack(alignment: .leading, spacing: Space.sm) {
             Text(verbatim: day.title)
                 .font(theme.font(.subheadline).weight(.semibold))
-                .foregroundStyle(day.isToday || day.isSelected ? theme.palette.textPrimary : theme.palette.textSecondary)
+                .foregroundStyle(
+                    day.isToday || day.isSelected ? theme.palette.textPrimary : theme.palette.textSecondary
+                )
                 .accessibilityAddTraits(.isHeader)
             if workouts.isEmpty {
                 emptySlot

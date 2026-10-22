@@ -51,7 +51,9 @@ extension WeekStrip {
     /// still to do.
     var dayItems: [DayItem] {
         days.map { day in
-            let dots = day.workouts.map { DayDot(light: $0.sport.hex.light, dark: $0.sport.hex.dark, isDone: $0.isDone) }
+            let dots = day.workouts.map { workout in
+                DayDot(light: workout.sport.hex.light, dark: workout.sport.hex.dark, isDone: workout.isDone)
+            }
             return DayItem(date: day.date, marker: .dots(dots))
         }
     }

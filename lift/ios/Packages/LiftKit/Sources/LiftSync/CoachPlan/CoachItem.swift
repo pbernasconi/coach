@@ -76,7 +76,8 @@ public struct CoachItem: Decodable, Equatable, Sendable, Identifiable {
 
     private enum CodingKeys: String, CodingKey {
         case id, date, startTime, endTime, title, sport, workoutType, intensity, durationMinutes, tss, subtitle
-        case state, stateLabel, compliance, adapted, unplanned, why, notes, keyTargets, steps, profile, stats, liftSessionId, done
+        case state, stateLabel, compliance, adapted, unplanned, why, notes, keyTargets, steps, profile, stats
+        case liftSessionId, done
     }
 
     public init(from decoder: any Decoder) throws {

@@ -3,7 +3,8 @@ import KoboTokens
 import LiftCore
 import SwiftUI
 
-/// The visible week as seven rows, one per day, Monday first; a day without rows is a rest day. Picking a day brings its row into view; or, on a first launch, where to start.
+/// The visible week as seven rows, one per day, Monday first; a day without rows is a rest day. A horizontal swipe
+/// pages the weeks. Picking a day brings its row into view; or, on a first launch, where to start.
 struct WeekSessionList: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let state: WeekState
@@ -18,6 +19,7 @@ struct WeekSessionList: View {
                 .pageColumn()
                 .padding(.top, Space.sm)
                 .padding(.bottom, Space.xxl)
+                .weekPager(offset: state.weekOffset, range: WeekState.weeks) { send(.weekChanged($0)) }
             }
             .onChange(of: selectedDay) { _, day in
                 guard let day else { return }

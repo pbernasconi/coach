@@ -53,7 +53,7 @@ struct DayDots: View {
     var body: some View {
         HStack(spacing: size / 2) {
             ForEach(Array(dots.prefix(3).enumerated()), id: \.offset) { _, dot in
-                let color = Color(light: Color(hex: dot.light), dark: Color(hex: dot.dark))
+                let color = dot.color
                 Group {
                     if dot.isDone {
                         Circle().fill(color)
@@ -67,4 +67,9 @@ struct DayDots: View {
         .frame(height: size)
         .accessibilityHidden(true)
     }
+}
+
+extension DayDot {
+    /// The dot's colour, from the caller's own design file (passed in as data, so no token applies).
+    var color: Color { Color(light: Color(hex: light), dark: Color(hex: dark)) }  // ios-guard: allow caller's colour
 }
