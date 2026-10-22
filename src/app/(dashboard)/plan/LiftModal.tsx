@@ -7,6 +7,7 @@ import { dur } from '@/lib/plan/cells.mjs';
 import { LIFT_MARKER } from '@/lib/plan/lift-plan.mjs';
 import type { CalendarActivity, CalendarWorkout } from '@/lib/plan/month';
 import { Card as PCard } from './PlannedDetails';
+import EffortLog from './EffortLog';
 import LiftView, { liftStats } from './LiftView';
 import { liftPreviewAction } from './actions';
 import { liftHref } from './ItemPreview';
@@ -75,6 +76,7 @@ export default function LiftModal({ id, planned, watch = null, onClose }: { id: 
                   ]}
                 />
               </PCard>
+              <EffortLog item={`lift:${d.id}`} date={d.day} title={d.title || 'Lift session'} planActivityId={planned?.id ?? null} />
               {d.note && <Description title="Session note" text={d.note} />}
               {planned?.description && planned.description.split(LIFT_MARKER)[0].trim() && (
                 <Description title="The plan" text={planned.description.split(LIFT_MARKER)[0].trim()} />

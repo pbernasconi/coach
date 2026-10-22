@@ -2,6 +2,7 @@
 
 import { Dumbbell } from 'lucide-react';
 import SportIcon from '@/components/SportIcon';
+import { MiniWorkoutChart } from '@/components/workouts/WorkoutChart';
 import ComplianceMark, { levelStyle } from '@/components/plan/ComplianceMark';
 import { cn } from '@/lib/utils';
 import { sport } from '@/lib/sports';
@@ -51,7 +52,7 @@ function PlannedChip({ w, actual, roomy, onOpen }: { w: CalendarWorkout; actual:
       onDragEnd={(e) => e.currentTarget.classList.remove('plan-dragging')}
       className={cn(
         chipBase,
-        roomy ? 'py-1.5' : 'h-[34px] shrink-0',
+        roomy ? 'py-1.5' : w.steps ? 'h-[48px] shrink-0' : 'h-[34px] shrink-0',
         // Done: a filled card tinted by how close it came to the plan. Not done: an outline only.
         done ? 'plan-done shadow-sm' : 'border-dashed bg-transparent',
         missed && 'border-[var(--plan-missed)]/60',
@@ -82,6 +83,7 @@ function PlannedChip({ w, actual, roomy, onOpen }: { w: CalendarWorkout; actual:
             plannedText || sport(w.sport).label
           )}
         </span>
+        {w.steps && <MiniWorkoutChart workout={w.steps} className={cn('mt-0.5 block w-full', roomy ? 'h-4' : 'h-3')} />}
       </button>
     </div>
   );

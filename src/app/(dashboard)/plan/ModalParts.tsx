@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { ArrowUpRight, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ArrowUpRight, X } from 'lucide-react';
 import ComplianceMark from '@/components/plan/ComplianceMark';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -20,24 +20,6 @@ export const clock = (local: string) => {
   const h = Number(m[1]);
   return `${h % 12 || 12}:${m[2]} ${h < 12 ? 'AM' : 'PM'}`;
 };
-
-/** The previous / next buttons in the header. */
-export const StepContext = createContext<{ onStep: (dir: -1 | 1) => void; prev: boolean; next: boolean }>({ onStep: () => {}, prev: false, next: false });
-
-function StepButtons() {
-  const { onStep, prev, next } = useContext(StepContext);
-  const btn = 'rounded-md p-1.5 text-[var(--viz-muted)] hover:bg-accent hover:text-foreground disabled:opacity-30 disabled:hover:bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
-  return (
-    <span className="flex items-center">
-      <button type="button" className={btn} disabled={!prev} onClick={() => onStep(-1)} aria-label="Previous item" title="Previous item (←)">
-        <ChevronLeft aria-hidden className="h-5 w-5" />
-      </button>
-      <button type="button" className={btn} disabled={!next} onClick={() => onStep(1)} aria-label="Next item" title="Next item (→)">
-        <ChevronRight aria-hidden className="h-5 w-5" />
-      </button>
-    </span>
-  );
-}
 
 // ---------------------------------------------------------------------------------------------------------------
 // Shared parts
@@ -73,7 +55,6 @@ export function Header({ icon, title, sub, right, onClose }: { icon: ReactNode; 
       </div>
       <div className="flex shrink-0 items-center gap-2">
         {right}
-        <StepButtons />
         <Dialog.Close
           aria-label="Close"
           className="rounded-md p-1.5 text-[var(--viz-muted)] hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

@@ -2,7 +2,7 @@ import type { WeekSummary } from '@/lib/plan/month';
 import type { Item, PreviewTarget } from './ItemPreview';
 
 /** The fixed week row height (also --plan-row in plan.css) and the grid columns: 7 equal days and the week column. */
-export const ROW_H = 'h-[9.5rem]';
+export const ROW_H = 'h-[11rem]';
 export const COLS = 'grid grid-cols-[repeat(7,minmax(0,1fr))_9.5rem]';
 
 export { hm } from '@/lib/plan/week-api.mjs';

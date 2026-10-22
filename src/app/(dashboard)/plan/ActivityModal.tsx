@@ -20,6 +20,7 @@ import PowerCurve from '../activities/[id]/PowerCurve';
 import RouteMap from '../activities/[id]/RouteMap';
 import StreamCharts from '../activities/[id]/StreamCharts';
 import { ZoneBars } from '../activities/[id]/Sections';
+import EffortLog from './EffortLog';
 import { BestEfforts, ElevationProfile, LoadTiles, MinAvgMax, PlanVsDone, SplitBars, StatGrid, ZoneStrip } from './ActivityOverview';
 import { activityPreviewAction } from './actions';
 import { Description, Failed, Header, Hero, Loading, OpenButton, Panel, Section, SectionNav, StatusChip, clock, longDay, td, th, useLoad } from './ModalParts';
@@ -177,6 +178,7 @@ function ActivityContent({
             <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
               <div className="space-y-4">
                 {plan && <PlanVsDone v={v} plan={plan} />}
+                <EffortLog item={`strava:${v.stravaId}`} date={v.day} title={v.name} planActivityId={planned?.id ?? null} />
                 <StatGrid v={v} />
                 <ZoneStrip v={v} />
                 <SplitBars v={v} />

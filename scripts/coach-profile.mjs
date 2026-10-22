@@ -28,6 +28,7 @@ import { label, loadRotation } from './rotation.mjs';
 import { untrusted } from './untrusted.mjs';
 import { noteLines, noteText, setExtras } from './lift-notes.mjs';
 import { healthProfileMarkdown } from './health-profile.mjs';
+import { feedbackLine } from '../src/lib/plan/feedback.mjs';
 
 const sql = connect();
 const args = process.argv.slice(2);
@@ -369,6 +370,16 @@ try {
   liftSessions.notes = noteLines(liftSessions.logged);
 } catch (e) { console.error('lift sessions fail:', e.message); }
 
+// ===== 8a. How workouts felt (logged in the Coach workout window: feel 1–5, RPE 1–10, comment) =====
+let feedback = [];
+try {
+  feedback = await sql`
+    SELECT f.date, coalesce(f.title, a.title) AS title, f.item, f.feel, f.rpe, f.comment, a.intensity, a.tss
+    FROM workout_feedback f LEFT JOIN training_plan_activities a ON a.id = f.plan_activity_id
+    WHERE f.user_id = ${USER_ID} AND f.date >= ${todayLocal}::date - 28
+    ORDER BY f.date DESC`;
+} catch (e) { console.error('workout feedback fail:', e.message); }
+
 // ===== 8b. Quality rotation state (from prior plans in the database, not vibes) =====
 const rotation = await loadRotation(sql, user.id, weekStart.toISOString().slice(0, 10));
 
@@ -438,6 +449,16 @@ for (const a of acts120.filter((x) => new Date(x.start_date_local) >= new Date(D
   const tss = r1(tssOf(a));
   const notes = (a.description ?? '').replace(/\n/g, ' ').slice(0, 40);
   md.push(`| ${d} | ${a.type} | ${min}min | ${km}km | ${vert} | ${hr} | ${np} | ${tss} | ${notes} |`);
+}
+md.push('');
+
+md.push(`## How workouts felt (last 28 days, logged by Paolo after each workout)`);
+md.push('Feel is 1 very weak … 5 very strong; RPE is 1–10 (modified Borg). A hard RPE on an easy or moderate workout, or "weak" two sessions running, means fatigue: ease the next quality day or add rest. Strong feel with a moderate RPE on quality work means there is room to progress.');
+if (feedback.length === 0) md.push('_(none logged)_');
+for (const f of feedback) {
+  const d = typeof f.date === 'string' ? f.date.slice(0, 10) : new Date(f.date).toISOString().slice(0, 10);
+  const plan = [f.intensity, f.tss ? `${Math.round(f.tss)} TSS planned` : null].filter(Boolean).join(', ');
+  md.push(`- **${d} ${untrusted(f.title ?? f.item)}**${plan ? ` (${plan})` : ''}: ${untrusted(feedbackLine({ feel: f.feel, rpe: f.rpe, comment: f.comment }))}`);
 }
 md.push('');
 
