@@ -143,6 +143,9 @@ export const garminActivities = pgTable(
     detail: jsonb('detail'),
     series: jsonb('series'),
     fetchedAt: timestamp('fetched_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+    // When the feel and RPE logged on the watch were copied to workout_feedback (src/lib/activity/watch-feedback.mjs),
+    // once per activity, so a value cleared in Coach does not come back.
+    feedbackAt: timestamp('feedback_at', { withTimezone: true, mode: 'date' }),
   },
   (t) => [index('garmin_activities_user_start_idx').on(t.userId, t.startUtc)]
 );

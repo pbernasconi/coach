@@ -2,7 +2,8 @@
  * The watch's activities from Garmin Connect (scripts/garmin/activities.py, COACH-API.md). Public to Clerk;
  * CRON_SECRET bearer only. GET ?since=<ISO>: the Garmin activity ids Coach has from then on. POST
  * { activities: [{ id, startUtc, type, summary, detail, series }] }: stores them in garmin_activities and clears the
- * activity cache, so the activity page shows the watch's numbers at once. Errors are logged without the body.
+ * activity cache, so the activity page shows the watch's numbers at once; the feel and RPE logged on the watch
+ * become the workout's feedback (watch-feedback.mjs). Errors are logged without the body.
  */
 
 import { sql } from '@/db';
@@ -10,6 +11,7 @@ import { clearCache } from '@/lib/data-cache';
 import { isAuthorized } from '@/lib/lift-sync/auth.mjs';
 import { ownerId } from '@/lib/plan/queries';
 import { parseActivityPush } from '@/lib/activity/watch.mjs';
+import { prefillWatchFeedback } from '@/lib/activity/watch-feedback.mjs';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -58,7 +60,9 @@ export async function POST(request: Request) {
           detail = EXCLUDED.detail, series = EXCLUDED.series, fetched_at = now()`;
     }
     if (parsed.rows.length) clearCache('activities');
-    return Response.json({ accepted: parsed.rows.length, rejected: parsed.rejected }, { headers });
+    // The feel and RPE logged on the watch become the workout's "How did it go?".
+    const feedback = parsed.rows.length ? await prefillWatchFeedback(sql).catch(() => ({ error: true })) : null;
+    return Response.json({ accepted: parsed.rows.length, rejected: parsed.rejected, feedback }, { headers });
   } catch (error) {
     console.error('Garmin activities failed:', error instanceof Error ? error.name : 'unknown error');
     return Response.json({ error: 'internal error' }, { status: 500, headers });

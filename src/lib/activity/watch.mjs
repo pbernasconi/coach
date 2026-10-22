@@ -133,3 +133,21 @@ export function watchStats(w, { foot, stravaPower }) {
   ];
   return /** @type {Array<{ label: string, valueText: string, unit?: string }>} */ (rows.filter(Boolean));
 }
+
+/**
+ * The feel and perceived effort logged on the watch after a workout, on Coach's scales, or null. Garmin stores the
+ * feel as 0, 25, 50, 75 or 100 (very weak … very strong) and the RPE as 10 to 100.
+ * @param {{ summary?: any, detail?: any } | null} row
+ * @returns {{ feel: number | null, rpe: number | null } | null}
+ */
+export function watchFeedback(row) {
+  if (!row) return null;
+  const s = row.summary ?? {};
+  const d = row.detail?.summaryDTO ?? {};
+  const first = (/** @type {unknown[]} */ ...vs) => { for (const v of vs) { const n = num(v); if (n != null) return n; } return null; };
+  const feelRaw = first(d.directWorkoutFeel, s.directWorkoutFeel, s.workoutFeel);
+  const rpeRaw = first(d.directWorkoutRpe, s.directWorkoutRpe, s.workoutRpe);
+  const feel = feelRaw != null && feelRaw >= 0 && feelRaw <= 100 ? Math.round(feelRaw / 25) + 1 : null;
+  const rpe = rpeRaw != null && rpeRaw >= 5 && rpeRaw <= 100 ? Math.min(10, Math.max(1, Math.round(rpeRaw / 10))) : null;
+  return feel == null && rpe == null ? null : { feel, rpe };
+}

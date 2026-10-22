@@ -46,6 +46,8 @@ export const workoutFeedback = pgTable(
     feel: smallint('feel'),
     rpe: smallint('rpe'),
     comment: text('comment'),
+    // 'watch' when the feel and RPE came from the Garmin watch (src/lib/activity/watch-feedback.mjs); a save in Coach clears it.
+    source: text('source'),
     createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow(),
   },
