@@ -60,11 +60,24 @@ final class LiveCoachPlan: CoachPlanProviding {
         return stream
     }
 
+    /// Shows the kept weeks at once, then fetches them again unless they are fresh (fetched in the last
+    /// `freshFor`), so a week kept from long ago (a past week) catches up with the server.
     func show(weekStart: LocalDay) async {
         await loadCacheOnce()
         shownWeek = weekStart
-        guard snapshot.status != .off, !snapshot.book.holds(Self.weeks(from: weekStart)) else { return }
+        guard snapshot.status != .off, !isFresh(Self.weeks(from: weekStart)) else { return }
         await fetch(from: weekStart)
+    }
+
+    /// How long a kept week counts as fresh.
+    static let freshFor: TimeInterval = 5 * 60
+
+    private func isFresh(_ starts: [LocalDay]) -> Bool {
+        let book = snapshot.book
+        guard book.holds(starts) else { return false }
+        return starts.allSatisfy { start in
+            book.updatedAt(of: start).map { now().timeIntervalSince($0) < Self.freshFor } ?? false
+        }
     }
 
     func refresh() async {
