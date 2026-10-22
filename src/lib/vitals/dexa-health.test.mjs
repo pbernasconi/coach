@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { bodyFatRange, distanceToHealthy, healthRanges, perYear, zFromPercentile, zoneOf } from './dexa-health.mjs';
-import { viewForName } from './dexa-images.mjs';
+import { measuredDate, pickScanImage, viewForName } from './dexa-images.mjs';
 
 test('bodyFatRange follows Gallagher 2000 by sex and age', () => {
   const m32 = bodyFatRange('male', 32);
@@ -44,4 +44,16 @@ test('viewForName reads the image type from a file name', () => {
   assert.equal(viewForName('bone.png'), 'bone');
   assert.equal(viewForName('fatigue.png'), null);
   assert.equal(viewForName('report.pdf'), null);
+});
+
+test('measuredDate reads the scan date of a BodySpec report, not the birth date', () => {
+  const text = 'Client Sex Birth Date Intake Height Intake Weight Measured Date\nBernasconi, Paolo Male 7/22/1993 70.0 in. 187.0 lbs. 4/7/2025\nmore';
+  assert.equal(measuredDate(text), '2025-04-07');
+  assert.equal(measuredDate('no dates here'), null);
+});
+
+test('pickScanImage takes the tall whole-body image', () => {
+  const body = { width: 156, height: 450 };
+  assert.equal(pickScanImage([{ width: 600, height: 400 }, body, { width: 40, height: 120 }]), body);
+  assert.equal(pickScanImage([{ width: 600, height: 400 }]), null);
 });

@@ -10,7 +10,8 @@ import { sql } from '@/db';
 import { cached, clearCache } from '@/lib/data-cache';
 import { toDay, toIso } from '@/lib/db-time.mjs';
 import { REPORT_VERSION, dexaTrends, fullScan, scanReport, storedDerived, type FullScan } from './dexa.mjs';
-import { isImageView, viewForName, type ImageView } from './dexa-images.mjs';
+import { isImageView, measuredDate, pickScanImage, viewForName, type ImageView } from './dexa-images.mjs';
+import { encodePng } from './png';
 
 type ScanRow = { result_id: string; scan_date: unknown; location: string | null; scanner: string | null; age_years: unknown; height_cm: unknown; raw: Record<string, unknown> | null };
 
@@ -118,19 +119,42 @@ export async function loadFileTexts(userId: string): Promise<Map<string, string>
   return new Map(rows.map((r) => [r.id, r.text]));
 }
 
-/** The text of a PDF, or null when it has none (a scan of paper) or cannot be read. At most 200,000 characters. */
-export async function pdfText(data: Uint8Array): Promise<string | null> {
+/**
+ * A PDF's text (null when it has none, as in a scan of paper; at most 200,000 characters) and, for a BodySpec report,
+ * its whole-body scan image as PNG (page 2 holds it; the report has no fat, lean or bone images). Either is null when
+ * missing or unreadable.
+ */
+export async function readPdf(data: Uint8Array): Promise<{ text: string | null; scanImage: Buffer | null }> {
+  let text: string | null = null;
+  let scanImage: Buffer | null = null;
   try {
-    const { extractText, getDocumentProxy } = await import('unpdf');
+    const { extractText, extractImages, getDocumentProxy } = await import('unpdf');
     const pdf = await getDocumentProxy(new Uint8Array(data));
-    const { text } = await extractText(pdf, { mergePages: false });
-    const pages = (Array.isArray(text) ? text : [text]).map((t, i) => `--- Page ${i + 1} ---\n${t.trim()}`);
+    const { text: pageTexts } = await extractText(pdf, { mergePages: false });
+    const pages = (Array.isArray(pageTexts) ? pageTexts : [pageTexts]).map((t, i) => `--- Page ${i + 1} ---\n${t.trim()}`);
     const all = pages.join('\n\n').trim();
-    return all.replace(/--- Page \d+ ---/g, '').trim() ? all.slice(0, 200_000) : null;
+    text = all.replace(/--- Page \d+ ---/g, '').trim() ? all.slice(0, 200_000) : null;
+    if (text && measuredDate(text)) {
+      for (let page = 1; page <= Math.min(3, pdf.numPages) && !scanImage; page++) {
+        const img = pickScanImage((await extractImages(pdf, page)).filter((i) => i.channels === 3 || i.channels === 4));
+        if (img) scanImage = encodePng(img.data, img.width, img.height, img.channels as 3 | 4);
+      }
+    }
   } catch (e) {
-    console.error('DEXA PDF text failed:', (e as Error).message);
-    return null;
+    console.error('DEXA PDF read failed:', (e as Error).message);
   }
+  return { text, scanImage };
+}
+
+/** The scan within 3 days of a date, or null. */
+function scanNear(date: string, scans: { result_id: string; scan_date: string }[]): string | null {
+  const t = Date.parse(`${date}T00:00:00Z`);
+  let best: { id: string; d: number } | null = null;
+  for (const s of scans) {
+    const d = Math.abs(Date.parse(`${s.scan_date}T00:00:00Z`) - t) / 864e5;
+    if (d <= 3 && (!best || d < best.d)) best = { id: s.result_id, d };
+  }
+  return best?.id ?? null;
 }
 
 export class UploadError extends Error {}
@@ -153,22 +177,36 @@ export async function saveFile(
     if (!scan) throw new UploadError('That scan does not exist.');
   }
   const view = kind === 'image' ? (file.view ?? viewForName(file.name)) : null;
+  const pdf = kind === 'report' ? await readPdf(file.data) : null;
+  let resultId = file.resultId;
+  const date = pdf?.text ? measuredDate(pdf.text) : null;
+  if (!resultId && date) {
+    const scans = (await sql`SELECT result_id, scan_date::text AS scan_date FROM dexa_scans WHERE user_id = ${userId}`) as { result_id: string; scan_date: string }[];
+    resultId = scanNear(date, scans);
+  }
+  // A BodySpec report carries the scan's composite image: store it as that scan's composite (once, by its bytes).
+  if (pdf?.scanImage && resultId) {
+    const [has] = (await sql`SELECT 1 FROM dexa_files WHERE user_id = ${userId} AND result_id = ${resultId} AND view = 'composite'`) as unknown[];
+    if (!has) {
+      await saveFile(userId, { name: `${date ?? 'scan'} composite.png`, contentType: 'image/png', data: pdf.scanImage, resultId, note: 'From the BodySpec report', view: 'composite' });
+    }
+  }
   const sha = createHash('sha256').update(file.data).digest('hex');
   const [existing] = (await sql`SELECT id FROM dexa_files WHERE user_id = ${userId} AND sha256 = ${sha}`) as { id: string }[];
   if (existing) {
-    await sql`UPDATE dexa_files SET result_id = COALESCE(result_id, ${file.resultId}), view = COALESCE(view, ${view})
+    await sql`UPDATE dexa_files SET result_id = COALESCE(result_id, ${resultId}), view = COALESCE(view, ${view})
       WHERE user_id = ${userId} AND id = ${existing.id}`;
     return { id: existing.id, duplicate: true };
   }
-  if (view && file.resultId) {
-    await sql`UPDATE dexa_files SET view = NULL WHERE user_id = ${userId} AND result_id = ${file.resultId} AND view = ${view}`;
+  if (view && resultId) {
+    await sql`UPDATE dexa_files SET view = NULL WHERE user_id = ${userId} AND result_id = ${resultId} AND view = ${view}`;
   }
-  const text = kind === 'report' ? await pdfText(file.data) : null;
+  const text = pdf?.text ?? null;
   const id = createId();
   const name = file.name.replace(/[\u0000-\u001f]/g, '').slice(0, 200) || 'scan';
   await sql`
     INSERT INTO dexa_files (id, user_id, result_id, kind, name, content_type, size_bytes, sha256, data, text, note, view)
-    VALUES (${id}, ${userId}, ${file.resultId}, ${kind}, ${name}, ${file.contentType}, ${file.data.byteLength}, ${sha},
+    VALUES (${id}, ${userId}, ${resultId}, ${kind}, ${name}, ${file.contentType}, ${file.data.byteLength}, ${sha},
       decode(${Buffer.from(file.data).toString('base64')}, 'base64'), ${text}, ${file.note?.slice(0, 500) || null}, ${view})`;
   return { id, duplicate: false };
 }

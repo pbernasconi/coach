@@ -110,7 +110,7 @@ function Overview({ page }: { page: DexaPage }) {
           </div>
           <div className="flex flex-wrap gap-2">
             <CopyReport text={historyReport(scans)} label="Copy for AI" />
-            <UploadFiles label="Upload images" />
+            <UploadFiles label="Upload reports or images" />
           </div>
         </div>
       </div>
@@ -156,9 +156,9 @@ function Overview({ page }: { page: DexaPage }) {
         ) : (
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-dashed border-[var(--viz-axis)] p-5">
             <p className="max-w-xl text-sm text-[var(--viz-ink-2)]">
-              No scan images yet. BodySpec doesn&rsquo;t share them with other apps: download each scan&rsquo;s composite, fat, lean and bone images on bodyspec.com and upload them here. Coach files them by date and type.
+              No scan images yet. Upload your BodySpec PDF reports: Coach takes the body scan out of each one and files it under its scan.
             </p>
-            <UploadFiles label="Upload images" accept="image/png,image/jpeg,image/webp" />
+            <UploadFiles label="Upload reports" />
           </div>
         )}
       </section>
