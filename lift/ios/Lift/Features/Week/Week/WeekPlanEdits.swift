@@ -53,25 +53,11 @@ struct WeekPlanEdits {
         try await templates.createTemplate(name: TemplateText.newName(taken: taken)).id
     }
 
-    func planNextWeek(from weekStart: LocalDay) async throws -> WeekNotice {
-        let plan = try await plans.planNextWeek(from: weekStart)
-        guard !plan.sessionIDs.isEmpty else {
-            return WeekNotice(String(localized: "Next week already has those days"))
-        }
-        let count = plan.sessionIDs.count
-        let message =
-            count == 1
-            ? String(localized: "Planned 1 workout for next week")
-            : String(localized: "Planned \(count) workouts for next week")
-        return WeekNotice(message, undo: .plan(plan))
-    }
-
     /// Puts a change back; nothing to show after it.
     func undo(_ undo: WeekUndo) async throws -> WeekNotice? {
         switch undo {
         case .reschedule(let change): try await sessions.undo(change)
         case .template(let change): try await plans.undo(change)
-        case .plan(let plan): try await plans.undo(plan)
         }
         return nil
     }
@@ -113,12 +99,8 @@ extension WeekPlanEdits {
                 router.open(.template(try await edits.newTemplate(taken: taken)))
                 return nil
             }
-        case .planNextWeekTapped:
-            return weekStart.map { start in WeekPlanWrite(key: nil) { try await $0.planNextWeek(from: start) } }
         case .templateUndoTapped(let undo):
             return WeekPlanWrite(key: undo.sessionID) { try await $0.undo(.template(undo)) }
-        case .planUndoTapped(let undo):
-            return WeekPlanWrite(key: nil) { try await $0.undo(.plan(undo)) }
         default:
             return nil
         }

@@ -20,7 +20,7 @@ final class TabSwitcher: TabSwitching {
     private(set) var routeRequests: [AppTab: TabRouteRequest] = [:]
     private var routeSerial = 0
 
-    init(selected: AppTab = .today) {
+    init(selected: AppTab = .week) {
         self.selected = selected
     }
 

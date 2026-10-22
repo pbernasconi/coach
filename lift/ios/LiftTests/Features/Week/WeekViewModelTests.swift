@@ -80,7 +80,12 @@ import Testing
             WeekDay(date: date(monday.adding(days: 4)), status: .planned),
             WeekDay(date: date(monday.adding(days: 8)), status: .planned),
         ]
-        #expect(vm.state.strip == WeekStrip(today: date(monday), selected: date(monday), days: expectedDays))
+        #expect(vm.state.strip?.today == date(monday))
+        #expect(vm.state.strip?.selected == date(monday))
+        #expect(vm.state.strip?.days == expectedDays)
+        // The month calendar pages from four weeks back to four weeks ahead.
+        #expect(vm.state.strip?.range?.lowerBound == date(monday.adding(days: -28)))
+        #expect(vm.state.strip?.range?.upperBound == date(monday.adding(days: 34)))
         #expect(title(monday).hasPrefix("Today"))
     }
 
@@ -94,6 +99,17 @@ import Testing
     }
 
     // MARK: - Selection
+
+    @Test func calendarToggledSwitchesBetweenTheWeekAndTheMonth() async {
+        let (vm, _) = await loadedWeek()
+        #expect(vm.state.calendar == .week)
+
+        vm.send(.calendarToggled)
+        #expect(vm.state.calendar == .month)
+
+        vm.send(.calendarToggled)
+        #expect(vm.state.calendar == .week)
+    }
 
     @Test func daySelectedMovesTheHighlightAndKeepsTheWeek() async {
         let (vm, _) = await loadedWeek()

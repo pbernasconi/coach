@@ -1,4 +1,5 @@
 import Foundation
+import KoboComponents
 import LiftCore
 import LiftSync
 
@@ -50,6 +51,12 @@ nonisolated struct WeekPlanItem: Equatable, Sendable, Identifiable {
     let notes: String?
     let keyTargets: [String]
     let steps: [CoachStep]
+    /// Time, distance and TSS as text, each nil when unknown.
+    let stats: CoachStats
+    /// `good | partial | off` for a done item, else nil: the colour of the card's edge.
+    let compliance: String?
+    /// The interval bars under the row; empty without structured steps.
+    let profile: [ProfileSegment]
     /// The matched activity against the plan, "62 min · 70 TSS / 60 min · 45 TSS"; nil until done.
     let doneText: String?
     /// The Strava activity that completed the item, to open on Training.
@@ -71,11 +78,30 @@ nonisolated struct WeekPlanItem: Equatable, Sendable, Identifiable {
         notes = item.notes.flatMap { $0.isEmpty ? nil : $0 }
         keyTargets = item.keyTargets
         steps = item.steps
+        stats = item.stats
+        compliance = item.compliance
+        profile = item.profile.enumerated().map { index, bar in
+            // "Z1"…"Z5" to the strip's levels 0…4, calm to hot.
+            let level = Int(bar.zone.dropFirst()).map { $0 - 1 } ?? 0
+            return ProfileSegment(id: index, width: bar.seconds, start: bar.from, end: bar.to, level: level)
+        }
         doneText = item.done?.text.flatMap { $0.isEmpty ? nil : $0 }
         doneActivityId = item.done?.activityId
         liftSessionId = item.liftSessionId
         self.dayTitle = dayTitle
     }
+
+    /// The card's status as the web plan colours it: missed and skipped are one "not done".
+    var cardStatus: WeekCardStatus {
+        switch state {
+        case .done: compliance == "partial" || compliance == "off" ? .partlyDone : .done
+        case .missed, .skipped: .notDone
+        case .planned, .today: .planned
+        }
+    }
+
+    /// Whether the card shows a distance: not for strength, yoga or rest, which have none.
+    var hasDistance: Bool { ![.strength, .yoga, .rest].contains(sport) }
 
     /// The row's second line: the subtitle, with "Adapted" when the coach changed the item.
     var rowSubtitle: String? {

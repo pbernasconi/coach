@@ -49,6 +49,14 @@ enum ChartSamples {
         WidthBar(id: "\(index)", width: width, value: 5.2 - sin(Double(index)) * 0.5 - (width < 1 ? 0.6 : 0))
     }
 
+    static let profile = [
+        ProfileSegment(id: 0, width: 600, start: 0.5, end: 0.75, level: 1),
+        ProfileSegment(id: 1, width: 480, start: 1.0, level: 3),
+        ProfileSegment(id: 2, width: 180, start: 0.55, level: 0),
+        ProfileSegment(id: 3, width: 480, start: 1.0, level: 3),
+        ProfileSegment(id: 4, width: 600, start: 0.5, level: 0),
+    ]
+
     static let zones = [
         ZoneBarItem(name: "Z1", detail: "< 120", amount: 600, amountText: "10 min"),
         ZoneBarItem(name: "Z2", detail: "120–140", amount: 1_920, amountText: "32 min"),

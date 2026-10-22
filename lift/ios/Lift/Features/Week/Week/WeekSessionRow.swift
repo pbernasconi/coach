@@ -2,61 +2,45 @@ import KoboComponents
 import KoboTokens
 import SwiftUI
 
-/// One session in the week list, after the day's date badge (`leading`). A done session ends in the accent check disc
-/// (the same mark as a logged set) and reads quieter; a planned one ends in a "…" button that opens the lift sheet.
-/// Both end in the same 44pt trailing slot, so their set counts end on one line.
-struct WeekSessionRow<Leading: View>: View {
+/// One Lift session as a Week card: its title, then the strength icon with its exercises and sets. A done session is
+/// a green card with a "Done" check, as on the web; a planned one a dashed outline. A long press on a planned one
+/// opens the lift sheet (move, push to next week, change, remove). A tap opens the workout.
+struct WeekSessionRow: View {
     @Environment(\.koboTheme) private var theme
     let session: SessionSummary
     let send: (WeekAction) -> Void
-    @ViewBuilder let leading: () -> Leading
 
     var body: some View {
-        if session.isDone {
-            ListRow(
-                verbatim: session.title,
-                subtitle: subtitle,
-                value: sets,
-                action: { send(.sessionTapped(session.id)) },
-                leading: leading,
-                trailing: {
-                    Image(systemName: "checkmark.circle.fill")
-                        .symbolRenderingMode(.palette)
-                        .foregroundStyle(theme.palette.onAccent, theme.palette.accent)
-                        .font(theme.font(.title2))
-                        .frame(width: Size.minTouch)
-                        .accessibilityHidden(true)
-                }
-            )
-            .listRowEmphasis(.quiet)
-            .accessibilityValue(Text("Done"))
-        } else {
-            ListRow(
-                verbatim: session.title,
-                subtitle: subtitle,
-                value: sets,
-                action: { send(.sessionTapped(session.id)) },
-                leading: leading,
-                trailing: { Color.clear.frame(width: Size.minTouch) }
-            )
-            .overlay(alignment: .trailing) { optionsButton }
-        }
-    }
-
-    private var subtitle: String { SessionText.exercises(session.exerciseCount) }
-    private var sets: String { SessionText.sets(logged: session.loggedSets, total: session.totalSets) }
-
-    /// Sits exactly over the row's reserved trailing slot, outside the row's own button, so the buttons never nest.
-    private var optionsButton: some View {
-        IconButton(
-            "ellipsis",
-            verbatimAccessibilityLabel: String(localized: "Options for \(session.title)"),
-            style: .plain,
-            size: .small
+        WeekCard(
+            status: session.isDone ? .done : .planned,
+            sport: Sport.strength.color,
+            action: { send(.sessionTapped(session.id)) }
         ) {
-            send(.sessionOptionsTapped(session.id))
+            HStack(alignment: .firstTextBaseline, spacing: Space.sm) {
+                Text(verbatim: session.title)
+                    .font(theme.font(.body).weight(.semibold))
+                    .foregroundStyle(theme.palette.textPrimary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                WeekStatusMark(status: session.isDone ? .done : .planned, label: String(localized: "Done"))
+            }
+            HStack(spacing: Space.sm) {
+                Sport.strength.icon
+                    .font(theme.font(.title2))
+                    .frame(width: Size.iconLg + Space.sm, alignment: .leading)
+                Text(verbatim: SessionText.exercises(session.exerciseCount))
+                    .font(theme.font(.subheadline))
+                    .foregroundStyle(theme.palette.textSecondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Text(verbatim: SessionText.sets(logged: session.loggedSets, total: session.totalSets))
+                    .font(theme.font(.headline).monospacedDigit())
+                    .foregroundStyle(theme.palette.textPrimary)
+            }
         }
-        .frame(width: Size.minTouch)
-        .padding(.trailing, Space.gutter)
+        .accessibilityElement(children: .combine)
+        .contextMenu {
+            if !session.isDone {
+                Button("Reschedule", systemImage: "calendar") { send(.sessionOptionsTapped(session.id)) }
+            }
+        }
     }
 }

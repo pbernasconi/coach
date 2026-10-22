@@ -152,7 +152,6 @@
         static let fixturePlan = WeekState(
             strip: strip,
             sessions: .loaded(planSections),
-            canPlanNextWeek: true,
             plan: planHeader
         )
         static let fixturePlanOffline = WeekState(

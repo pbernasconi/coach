@@ -19,9 +19,9 @@ import Testing
 
     @Test func showSelectsTheTab() {
         let tabs = TabSwitcher()
+        #expect(tabs.selected == .week)  // Week is the home page
+        tabs.show(.today)
         #expect(tabs.selected == .today)
-        tabs.show(.week)
-        #expect(tabs.selected == .week)
     }
 
     @Test func trainingOpeningsPushTheMadeUpActivitiesOrOpenTrends() {

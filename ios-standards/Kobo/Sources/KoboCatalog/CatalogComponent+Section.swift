@@ -32,7 +32,7 @@ extension CatalogComponent {
         case .progressRing, .countdownRing, .animatedNumber, .statTile, .avatar, .thumbnail:
             .display
         case .sparkline, .lineChart, .linePanels, .stackedBarChart, .histogram, .variableWidthBarChart, .bandBar,
-            .zoneBars, .heatmap, .dataTable, .routeMap:
+            .zoneBars, .profileStrip, .heatmap, .dataTable, .routeMap:
             .charts
         case .card, .listRow, .listSection, .keyValueList, .sectionHeader, .separator, .collapsible,
             .pinnedFooter,
