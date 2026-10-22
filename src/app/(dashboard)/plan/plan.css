@@ -41,6 +41,10 @@
   background: color-mix(in srgb, var(--chip-tint, transparent) 16%, hsl(var(--card)));
   border-color: color-mix(in srgb, var(--chip-tint, transparent) 45%, transparent);
 }
+/* Upcoming (planned, not done yet) cards are white so they stand out on the grey day cells. */
+.plan-upcoming {
+  background: hsl(var(--card));
+}
 /* Hover and press on any chip: a light wash and a stronger border, so the card under the pointer stands out.
    Dashed (planned) cards turn solid. The left sport stripe is an inline style and keeps its colour. */
 .plan-chip {
@@ -58,6 +62,12 @@
 .plan-chip:active {
   transform: scale(0.98);
   background-color: color-mix(in srgb, var(--viz-ink) 15%, transparent);
+}
+.plan-upcoming:hover {
+  background: color-mix(in srgb, var(--viz-ink) 5%, hsl(var(--card)));
+}
+.plan-upcoming:active {
+  background: color-mix(in srgb, var(--viz-ink) 9%, hsl(var(--card)));
 }
 .plan-done:active {
   background: color-mix(in srgb, var(--chip-tint, transparent) 34%, hsl(var(--card)));

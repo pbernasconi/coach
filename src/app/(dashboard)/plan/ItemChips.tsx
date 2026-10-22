@@ -32,7 +32,7 @@ function PlannedChip({ w, actual, roomy, onOpen }: { w: CalendarWorkout; actual:
   const done = w.state === 'done';
   const missed = w.state === 'missed';
   const skipped = w.state === 'skipped';
-  // Done, partly done and not done (missed or skipped) are filled in their status colour; planned is an outline.
+  // Done, partly done and not done (missed or skipped) are filled in their status colour; upcoming is a white card with a dashed outline.
   const filled = done || missed || skipped;
   const pct = w.compliance.ratio != null ? `${Math.round(w.compliance.ratio * 100)} % of planned ${w.compliance.basis === 'tss' ? 'TSS' : 'time'}` : null;
   const plannedText = loadText(w.duration, w.tss, dur);
@@ -52,7 +52,7 @@ function PlannedChip({ w, actual, roomy, onOpen }: { w: CalendarWorkout; actual:
       className={cn(
         chipBase,
         roomy ? 'py-1.5' : w.steps ? 'h-[60px] shrink-0' : 'h-[40px] shrink-0',
-        filled ? 'plan-done shadow-sm' : 'border-dashed border-[var(--viz-axis)] bg-transparent',
+        filled ? 'plan-done shadow-sm' : 'plan-upcoming border-dashed border-[var(--viz-axis)] shadow-sm',
         draggable && 'cursor-grab hover:shadow-md active:cursor-grabbing'
       )}
       style={{ borderLeftColor: filled ? sport(w.sport).color : `color-mix(in srgb, ${sport(w.sport).color} 45%, transparent)`, borderLeftStyle: 'solid', '--chip-tint': lvl.color } as React.CSSProperties}
