@@ -30,7 +30,9 @@ struct WeekPlanRow: View {
                 stat(item.stats.tss, unit: "TSS")
             }
             if !item.profile.isEmpty {
+                // Close to the card's bottom edge: most of the card's bottom padding goes under the bars.
                 ProfileStrip(segments: item.profile, color: theme.palette.textTertiary, accessibilityLabel: "Intervals")
+                    .padding(.bottom, -(Space.md - Space.xs))
             }
         }
         // One element: "Ride: Sweet spot 3 × 12", then "1:00:00, 30.0 km, 70 TSS, Today".
