@@ -372,6 +372,14 @@ try {
 // ===== 8b. Quality rotation state (from prior plans in the database, not vibes) =====
 const rotation = await loadRotation(sql, user.id, weekStart.toISOString().slice(0, 10));
 
+// ===== 8c. Workouts skipped on purpose in the last 14 days, with why (src/lib/plan/skip.mjs) =====
+const skippedRecent = await sql`
+  SELECT a.scheduled_date, a.title, a.intensity, a.duration, a.tss, a.skip_reason
+  FROM training_plan_activities a JOIN training_plans p ON p.id = a.plan_id
+  WHERE p.user_id = ${user.id} AND a.status = 'skipped'
+    AND a.scheduled_date >= ${localDateKey(new Date(Date.now() - 14 * 86_400_000), HOME_TZ)} AND a.scheduled_date <= ${todayLocal}
+  ORDER BY a.scheduled_date`;
+
 // ===== 9. Build markdown profile =====
 const md = [];
 md.push(`# Athlete Profile — ${user.first_name ?? user.email}`);
@@ -501,6 +509,15 @@ for (const w of weekWindows) {
   } else md.push('_(no forecast — beyond 16-day range or all travel days)_');
   md.push('');
 }
+
+md.push(`## Skipped workouts (last 14 days)`);
+if (skippedRecent.length === 0) md.push('_(none)_');
+for (const r of skippedRecent) {
+  const d = new Date(r.scheduled_date).toISOString().slice(0, 10);
+  md.push(`- ${d}: ${r.title} (${r.intensity ?? '-'}, ${r.duration ?? '?'} min, ${r.tss ?? '?'} TSS) — skipped: ${r.skip_reason ?? 'no reason given'}`);
+}
+md.push('A skip for tired, sick or sore is a fatigue signal: never make it up, and ease the next 1–2 days (see /check-in).');
+md.push('');
 
 md.push(`## Workout rotation (plans/PLAN-STRUCTURE.md order)`);
 md.push(`- **Next workouts, in order**: ${rotation.nextLabels.join(' → ')}`);

@@ -1,0 +1,1 @@
+ALTER TABLE "training_plan_activities" ADD COLUMN "skip_reason" text;

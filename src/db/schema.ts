@@ -222,6 +222,7 @@ export const trainingPlanActivities = pgTable('training_plan_activities', {
   tss: real('tss'),
   why: text('why'),
   status: text('status').notNull().default('planned'), // planned | skipped
+  skipReason: text('skip_reason'), // why it was skipped: tired | sick | sore | busy | travel | other (src/lib/plan/skip.mjs)
   adaptedFrom: jsonb('adapted_from').$type<Record<string, unknown> | null>(), // fields before an adapt, for undo
   editedAt: timestamp('edited_at', { mode: 'date' }), // set when moved or changed on the web; import then leaves it
   sourceKey: text('source_key'), // '<weekStart>#<index>' from plans/<weekStart>.json

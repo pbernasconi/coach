@@ -37,7 +37,11 @@ export function applyChange(list, change) {
   return list.map((w) => {
     if (w.id !== change.id) return w;
     if (change.date) return { ...w, date: change.date };
-    if (change.status) return { ...w, status: change.status, state: change.status === 'skipped' ? 'skipped' : w.state === 'skipped' ? 'planned' : w.state };
+    if (change.status === 'skipped') {
+      const compliance = w.compliance ? { level: 'skipped', label: 'Skipped', ratio: null, basis: null } : w.compliance;
+      return { ...w, status: 'skipped', state: 'skipped', skipReason: change.skipReason ?? null, ...(compliance && { compliance }) };
+    }
+    if (change.status) return { ...w, status: change.status, skipReason: null, state: w.state === 'skipped' ? 'planned' : w.state };
     return w;
   });
 }

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-import { ChevronDown, ChevronUp, Library } from 'lucide-react';
+import { Check, ChevronDown, ChevronUp, Library, Minus, X } from 'lucide-react';
 import LegendPopover from '@/components/plan/LegendPopover';
 import { useHotkeys } from '@/components/hotkeys/HotkeysProvider';
 import { Button } from '@/components/ui/button';
@@ -30,7 +30,7 @@ const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 /** Planned workouts copied for Paste: their ids and a label for the menu. */
 type Clip = { ids: string[]; label: string };
-type Change = { id: string; date?: string; remove?: boolean; status?: 'planned' | 'skipped' };
+type Change = { id: string; date?: string; remove?: boolean; status?: 'planned' | 'skipped'; skipReason?: string | null };
 
 type Props = {
   anchor: string; // the Monday the first weeks are loaded around (this week, or the first week of ?month)
@@ -140,12 +140,15 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
     });
   }
 
-  function skip(w: CalendarWorkout) {
+  /** Skips a workout with why, or puts a skipped one back (reason undefined). */
+  function skip(w: CalendarWorkout, reason?: string | null) {
+    const skipping = w.status !== 'skipped';
     // At once on the calendar; the reload then brings the server's state.
-    changeLocal({ id: w.id, status: w.status === 'skipped' ? 'planned' : 'skipped' });
+    changeLocal({ id: w.id, status: skipping ? 'skipped' : 'planned', skipReason: reason ?? null });
     startTransition(async () => {
       try {
-        await skipWorkoutAction(w.id, w.status !== 'skipped');
+        const eased = await skipWorkoutAction(w.id, skipping, reason ?? null);
+        if (eased > 0) toast.success(`Skipped. Eased ${eased === 1 ? '1 workout' : `${eased} workouts`} after it for fatigue.`);
       } catch {
         toast.error('Could not change the workout');
       }
@@ -253,7 +256,7 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
   const closePreview = useCallback(() => setPreview(null), []);
   const previewActions = useMemo<PreviewActions>(() => ({
     move: (id, date) => impl.current.move(id, date),
-    skip: (w) => impl.current.skip(w),
+    skip: (w, reason) => impl.current.skip(w, reason),
     remove: (id) => {
       setPreview(null);
       impl.current.remove(id);
@@ -301,10 +304,25 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
         <h1 className="min-w-[10.5rem] text-2xl font-semibold tracking-tight text-[var(--viz-ink)]" aria-live="polite">{monthTitle(month)}</h1>
         <span className="hidden items-center gap-3 text-xs text-[var(--viz-muted)] xl:flex">
           <span className="inline-flex items-center gap-1.5">
+            <span className="inline-flex h-3.5 w-6 items-center justify-end rounded-[4px] border bg-card pr-0.5 shadow-sm">
+              <Check aria-hidden className="h-2.5 w-2.5 text-[var(--plan-good)]" strokeWidth={3} />
+            </span>
+            Completed
+          </span>
+          <span className="inline-flex items-center gap-1.5">
             <span className="h-3.5 w-6 rounded-[4px] border border-dashed border-[var(--viz-axis)]" /> Planned
           </span>
           <span className="inline-flex items-center gap-1.5">
-            <span className="h-3.5 w-6 rounded-[4px] bg-card shadow-sm ring-1 ring-border" /> Completed
+            <span className="inline-flex h-3.5 w-6 items-center justify-end rounded-[4px] border border-dashed border-[var(--plan-missed)]/60 pr-0.5">
+              <X aria-hidden className="h-2.5 w-2.5 text-[var(--plan-missed)]" strokeWidth={3} />
+            </span>
+            Missed
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="inline-flex h-3.5 w-6 items-center justify-end rounded-[4px] border border-dashed border-[var(--viz-axis)] pr-0.5 opacity-60">
+              <Minus aria-hidden className="h-2.5 w-2.5 text-[var(--plan-idle)]" strokeWidth={3} />
+            </span>
+            Skipped
           </span>
         </span>
         <div className="ml-auto flex items-center gap-1.5">
@@ -428,6 +446,7 @@ export default function MonthCalendar({ openAt, range, bounds, weather, placeNam
           weather={weather}
           onLiftChanged={(date) => reload([mondayOf(date)])}
           onEdited={({ from, to }) => void reload([...new Set([mondayOf(from), mondayOf(to)])])}
+          onSkip={(w, reason) => impl.current.skip(w, reason)}
         />
       )}
       {createOn && (
