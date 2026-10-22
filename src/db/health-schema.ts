@@ -292,6 +292,8 @@ export const dexaFiles = pgTable(
     data: bytea('data').notNull(),
     text: text('text'),
     note: text('note'),
+    /** For a scan image: which BodySpec view it is (composite, fat, lean, bone). */
+    view: text('view').$type<'composite' | 'fat' | 'lean' | 'bone'>(),
     uploadedAt: timestamp('uploaded_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
   },
   (t) => [index('dexa_files_user_idx').on(t.userId, t.uploadedAt), uniqueIndex('dexa_files_user_sha_idx').on(t.userId, t.sha256)]

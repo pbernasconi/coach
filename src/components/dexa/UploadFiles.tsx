@@ -10,8 +10,25 @@ const MAX = 4 * 1024 * 1024;
 /**
  * Uploads BodySpec report PDFs and scan images to POST /api/dexa/files, one request per file (Vercel takes 4.5 MB
  * a request). With `resultId` the files belong to that scan; without, the server matches a date in the file name.
+ * Images get their view (composite, fat, lean, bone) from `view` or, failing that, from the file name.
  */
-export default function UploadFiles({ resultId, label = 'Upload report' }: { resultId?: string; label?: string }) {
+export default function UploadFiles({
+  resultId,
+  view,
+  label = 'Upload',
+  accept = 'application/pdf,image/png,image/jpeg,image/webp',
+  className,
+  children,
+}: {
+  resultId?: string;
+  /** For a scan image slot: which view (composite, fat, lean, bone) the file is. */
+  view?: string;
+  label?: string;
+  accept?: string;
+  /** Replaces the button's look (a dashed image slot, say); `children` replaces its content. */
+  className?: string;
+  children?: React.ReactNode;
+}) {
   const input = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -27,6 +44,7 @@ export default function UploadFiles({ resultId, label = 'Upload report' }: { res
       const body = new FormData();
       body.set('file', file);
       if (resultId) body.set('resultId', resultId);
+      if (view) body.set('view', view);
       try {
         const res = await fetch('/api/dexa/files', { method: 'POST', body });
         const json = (await res.json().catch(() => ({}))) as { error?: string; duplicate?: boolean };
@@ -48,8 +66,8 @@ export default function UploadFiles({ resultId, label = 'Upload report' }: { res
       <input
         ref={input}
         type="file"
-        accept="application/pdf,image/png,image/jpeg,image/webp"
-        multiple
+        accept={accept}
+        multiple={!view}
         className="sr-only"
         aria-label={label}
         onChange={(e) => e.target.files?.length && upload(e.target.files)}
@@ -58,10 +76,15 @@ export default function UploadFiles({ resultId, label = 'Upload report' }: { res
         type="button"
         disabled={busy}
         onClick={() => input.current?.click()}
-        className="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-sm text-[var(--viz-ink-2)] hover:bg-accent hover:text-foreground disabled:opacity-60"
+        aria-label={children ? label : undefined}
+        className={className ?? 'inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm text-[var(--viz-ink-2)] hover:bg-accent hover:text-foreground disabled:opacity-60'}
       >
-        <Upload className="h-3.5 w-3.5" aria-hidden />
-        {busy ? 'Uploading…' : label}
+        {children ?? (
+          <>
+            <Upload className="h-3.5 w-3.5" aria-hidden />
+            {busy ? 'Uploading…' : label}
+          </>
+        )}
       </button>
     </>
   );

@@ -2,19 +2,19 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 import SectionError from '@/components/SectionError';
-import BalanceBars from '@/components/dexa/BalanceBars';
-import BodyMap from '@/components/dexa/BodyMap';
-import CompositionBars from '@/components/dexa/CompositionBars';
 import CopyReport from '@/components/dexa/CopyReport';
 import FileGallery from '@/components/dexa/FileGallery';
-import PercentileBars from '@/components/dexa/PercentileBars';
-import RegionTable from '@/components/dexa/RegionTable';
-import ScanTrends from '@/components/dexa/ScanTrends';
+import FocusList from '@/components/dexa/FocusList';
+import HealthRanges from '@/components/dexa/HealthRanges';
+import ImageStrip from '@/components/dexa/ImageStrip';
+import MassTrend from '@/components/dexa/MassTrend';
+import ProgressHero from '@/components/dexa/ProgressHero';
 import UploadFiles from '@/components/dexa/UploadFiles';
-import HeadlineTiles from '@/components/dexa/HeadlineTiles';
+import type { Point } from '@/components/dexa/BandChart';
 import { ownerForSignedInUser } from '@/lib/owner';
 import { load } from '@/lib/safe';
 import { historyReport } from '@/lib/vitals/dexa.mjs';
+import { healthRanges, rangeValue } from '@/lib/vitals/dexa-health.mjs';
 import { loadDexaPage, type DexaPage } from '@/lib/vitals/dexa-store';
 import { deleteDexaFile } from './actions';
 
@@ -23,7 +23,7 @@ export const dynamic = 'force-dynamic';
 
 const fmtDate = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 const monthYear = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' });
-const f = (v: number | null, d: number) => (v === null ? '–' : v.toFixed(d));
+const card = 'rounded-2xl bg-[var(--viz-surface)] p-5 shadow-sm ring-1 ring-[var(--viz-grid)]';
 
 function Crumbs() {
   return (
@@ -35,7 +35,7 @@ function Crumbs() {
   );
 }
 
-/** /health/dexa: every BodySpec DEXA scan. The latest on a body map, trends, regions, percentiles, scans and files. */
+/** /health/dexa: progress across every BodySpec DEXA scan, judged against healthy ranges for the athlete's age. */
 export default async function DexaPageRoute() {
   const userId = await ownerForSignedInUser();
   if (!userId) return <p data-smoke="health-dexa" className="text-sm text-muted-foreground">This account has no Coach data.</p>;
@@ -65,138 +65,131 @@ export default async function DexaPageRoute() {
   return <Overview page={page.value} />;
 }
 
-/** The next scan on a 3-month cadence: its month, or how long it is overdue. */
+/** The next scan on a 3-month cadence: its month, or that it is overdue. */
 function NextScan({ latest }: { latest: string }) {
   const due = new Date(`${latest}T12:00:00Z`);
   due.setUTCMonth(due.getUTCMonth() + 3);
   const days = Math.round((due.getTime() - Date.now()) / 864e5);
   if (days >= 0) return <>next scan {monthYear(due.toISOString().slice(0, 10))}</>;
-  const months = Math.round(-days / 30.4);
-  return <span className="text-[var(--viz-ink)]">next scan overdue{months >= 1 ? ` by ${months} ${months === 1 ? 'month' : 'months'}` : ''}</span>;
+  return <span className="font-medium text-[var(--viz-warn-ink)]">next scan overdue</span>;
+}
+
+/** A measure's dated values, without the scans that lack it. */
+function series(page: DexaPage, key: string): Point[] {
+  const m = page.trends.measures.find((x) => x.key === key);
+  return (m?.series ?? []).filter((p): p is Point => p.value !== null);
 }
 
 function Overview({ page }: { page: DexaPage }) {
   const { trends, files } = page;
-  const { scans, first, previous } = trends;
+  const { scans, first } = trends;
   const latest = trends.latest!;
+  const who = { gender: latest.percentiles.gender, age: latest.ageYears };
+  const ranges = healthRanges(who);
+  const focus = ['androidFatPct', 'vatKg', 'armsLeanKg', 'legsLeanKg']
+    .map((k) => trends.measures.find((m) => m.key === k))
+    .filter((m): m is NonNullable<typeof m> => !!m && m.series.filter((p) => p.value !== null).length > 0);
+  const fat = series(page, 'fatKg');
+  const lean = series(page, 'leanKg');
+  const images = files.filter((f) => f.kind === 'image' && f.view);
+  const peer = latest.percentiles.metrics.find((m) => m.key === 'total_body_fat_pct');
+  const otherFiles = files.filter((f) => !(f.kind === 'image' && f.view));
   const dateOf = new Map(scans.map((s) => [s.resultId, s.scanDate]));
-  const fileCount = new Map<string, number>();
-  for (const file of files) if (file.resultId) fileCount.set(file.resultId, (fileCount.get(file.resultId) ?? 0) + 1);
 
   return (
-    <div className="space-y-8" data-smoke="health-dexa">
+    <div className="mx-auto max-w-6xl space-y-6" data-smoke="health-dexa">
       <div className="space-y-3">
         <Crumbs />
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="space-y-0.5">
             <h1 className="text-2xl font-semibold tracking-tight">Body composition</h1>
             <p className="text-sm text-muted-foreground">
-              {scans.length} DEXA {scans.length === 1 ? 'scan' : 'scans'} · BodySpec{first ? ` · ${monthYear(first.scanDate)} – ${monthYear(latest.scanDate)}` : ''} · <NextScan latest={latest.scanDate} />
+              {scans.length} DEXA {scans.length === 1 ? 'scan' : 'scans'}
+              {first ? ` · ${monthYear(first.scanDate)} – ${monthYear(latest.scanDate)}` : ''} · <NextScan latest={latest.scanDate} />
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <CopyReport text={historyReport(scans)} label="Copy all for AI" />
-            <UploadFiles />
+            <CopyReport text={historyReport(scans)} label="Copy for AI" />
+            <UploadFiles label="Upload images" />
           </div>
         </div>
       </div>
 
-      <section className="grid gap-6 rounded-lg border bg-[var(--viz-surface)] p-4 sm:p-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]" aria-labelledby="latest-scan">
-        <div className="space-y-3">
-          <div className="flex items-baseline justify-between gap-3">
-            <h2 id="latest-scan" className="font-semibold text-[var(--viz-ink)]">
-              <Link href={`/health/dexa/${latest.scanDate}`} className="hover:underline">Latest · {fmtDate(latest.scanDate)}</Link>
-            </h2>
-            <Link href={`/health/dexa/${latest.scanDate}`} className="inline-flex items-center text-sm text-[var(--viz-ink-2)] hover:text-foreground">
-              Scan <ChevronRight className="h-4 w-4" aria-hidden />
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            <BodyMap scan={latest} title="Fat % by region" />
-            {first ? (
-              <BodyMap scan={latest} mode={{ kind: 'change', previous: first, field: 'leanKg' }} title={`Lean change since ${monthYear(first.scanDate)}`} />
-            ) : (
-              <BodyMap scan={latest} title="Fat % by region" />
-            )}
-          </div>
-        </div>
-        <HeadlineTiles scan={latest} previous={previous} first={first} />
-      </section>
-
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold tracking-tight">Trends</h2>
-        <ScanTrends measures={trends.measures.filter((m) => m.key !== 'rmr')} firstDate={first?.scanDate ?? null} />
-      </section>
+      <ProgressHero points={series(page, 'fatPct')} range={ranges[0]} />
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <section className="space-y-3 rounded-lg border bg-[var(--viz-surface)] p-4">
-          <h2 className="font-semibold">Fat, lean and bone</h2>
-          <CompositionBars scans={scans} />
-        </section>
-        <section className="space-y-3 rounded-lg border bg-[var(--viz-surface)] p-4">
-          <h2 className="font-semibold">Percentiles · {fmtDate(latest.scanDate)}</h2>
-          <PercentileBars p={latest.percentiles} />
-        </section>
+        {fat.length > 1 && (
+          <section aria-labelledby="dexa-mass" className={`${card} space-y-3`}>
+            <h2 id="dexa-mass" className="font-semibold">Fat and lean mass</h2>
+            <div className="sm:hidden">
+              <MassTrend fat={fat} lean={lean} width={340} />
+            </div>
+            <div className="hidden sm:block">
+              <MassTrend fat={fat} lean={lean} />
+            </div>
+          </section>
+        )}
+        {focus.length > 0 && (
+          <section aria-labelledby="dexa-focus" className={card}>
+            <h2 id="dexa-focus" className="font-semibold">Focus areas</h2>
+            <FocusList measures={focus} firstDate={first?.scanDate ?? null} />
+          </section>
+        )}
       </div>
 
-      <section className="grid gap-6 rounded-lg border bg-[var(--viz-surface)] p-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <div className="space-y-2">
-          <h2 className="font-semibold">Regions{previous ? ` · change since ${fmtDate(previous.scanDate)}` : ''}</h2>
-          <RegionTable scan={latest} previous={previous} />
+      <section aria-labelledby="dexa-health" className={`${card} space-y-4`}>
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 id="dexa-health" className="font-semibold">Healthy for your age and height</h2>
+          {peer && latest.percentiles.minAge !== null && (
+            <span className="text-xs text-[var(--viz-muted)]">
+              Body fat ranks {peer.percentile}th of {latest.percentiles.gender === 'female' ? 'women' : 'men'} {latest.percentiles.minAge}–{latest.percentiles.maxAge} on BodySpec
+            </span>
+          )}
         </div>
-        <BalanceBars scan={latest} />
+        <HealthRanges rows={ranges.map((range) => ({ range, now: rangeValue(latest, range.key), then: first ? rangeValue(first, range.key) : null }))} thenDate={first?.scanDate ?? null} />
       </section>
 
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold tracking-tight">Scans</h2>
-        <div className="overflow-x-auto rounded-lg border bg-[var(--viz-surface)]">
-          <table className="w-full min-w-[640px] text-sm tabular-nums">
-            <thead>
-              <tr className="border-b text-left text-xs text-[var(--viz-muted)]">
-                <th className="px-3 py-2 font-medium">Date</th>
-                <th className="px-3 py-2 font-medium">Place</th>
-                <th className="px-3 py-2 text-right font-medium">Body fat %</th>
-                <th className="px-3 py-2 text-right font-medium">Visceral kg</th>
-                <th className="px-3 py-2 text-right font-medium">Lean kg</th>
-                <th className="px-3 py-2 text-right font-medium">Arms lean kg</th>
-                <th className="px-3 py-2 text-right font-medium">Weight kg</th>
-                <th className="px-3 py-2 text-right font-medium">Files</th>
-                <th className="w-8" />
-              </tr>
-            </thead>
-            <tbody>
-              {[...scans].reverse().map((s) => (
-                <tr key={s.resultId} className="group relative border-b last:border-0 hover:bg-[var(--viz-band)]">
-                  <td className="whitespace-nowrap px-3 py-2 font-medium text-[var(--viz-ink)]">
-                    <Link href={`/health/dexa/${s.scanDate}`} className="after:absolute after:inset-0">{fmtDate(s.scanDate)}</Link>
-                  </td>
-                  <td className="max-w-[12rem] truncate px-3 py-2 text-[var(--viz-ink-2)]">{s.location?.replace(/^BodySpec\s*-\s*/, '') ?? '–'}</td>
-                  <td className="px-3 py-2 text-right">{f(s.totals.fatPct, 1)}</td>
-                  <td className="px-3 py-2 text-right">{f(s.vat.massKg, 2)}</td>
-                  <td className="px-3 py-2 text-right">{f(s.totals.leanKg, 1)}</td>
-                  <td className="px-3 py-2 text-right">{f(s.derived.armsLeanKg, 2)}</td>
-                  <td className="px-3 py-2 text-right">{f(s.totals.totalKg, 1)}</td>
-                  <td className="px-3 py-2 text-right text-[var(--viz-muted)]">{fileCount.get(s.resultId) ?? ''}</td>
-                  <td className="pr-3 text-[var(--viz-muted)] group-hover:text-foreground"><ChevronRight className="h-4 w-4" aria-hidden /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section className="space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold tracking-tight">Reports and images</h2>
-          <UploadFiles label="Upload" />
-        </div>
-        {files.length ? (
-          <FileGallery files={files} onDelete={deleteDexaFile} scanLabel={(id) => (id && dateOf.get(id) ? fmtDate(dateOf.get(id)!) : null)} />
+      <section aria-labelledby="dexa-images" className="space-y-3">
+        <h2 id="dexa-images" className="text-lg font-semibold tracking-tight">Scans side by side</h2>
+        {images.length ? (
+          <ImageStrip scans={scans.map((s) => ({ resultId: s.resultId, scanDate: s.scanDate, fatPct: s.totals.fatPct }))} images={images.map((f) => ({ id: f.id, resultId: f.resultId, view: f.view }))} />
         ) : (
-          <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-            No files yet. BodySpec&rsquo;s report builder exports each scan as a PDF; upload it here and its text is kept for AI questions.
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-dashed border-[var(--viz-axis)] p-5">
+            <p className="max-w-xl text-sm text-[var(--viz-ink-2)]">
+              No scan images yet. BodySpec doesn&rsquo;t share them with other apps: download each scan&rsquo;s composite, fat, lean and bone images on bodyspec.com and upload them here. Coach files them by date and type.
+            </p>
+            <UploadFiles label="Upload images" accept="image/png,image/jpeg,image/webp" />
           </div>
         )}
+      </section>
+
+      <section aria-labelledby="dexa-scans" className={`${card} py-1`}>
+        <details className="group">
+          <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
+            <h2 id="dexa-scans" className="font-semibold">All scans and files</h2>
+            <span className="flex items-center gap-1 text-sm text-[var(--viz-muted)]">
+              {scans.length} scans{otherFiles.length ? ` · ${otherFiles.length} files` : ''}
+              <ChevronRight className="h-4 w-4 transition-transform group-open:rotate-90" aria-hidden />
+            </span>
+          </summary>
+          <ul className="divide-y divide-[var(--viz-grid)] border-t border-[var(--viz-grid)]">
+            {[...scans].reverse().map((s) => (
+              <li key={s.resultId}>
+                <Link href={`/health/dexa/${s.scanDate}`} className="flex min-h-12 items-center gap-3 text-sm hover:text-foreground">
+                  <span className="flex-1 font-medium text-[var(--viz-ink)]">{fmtDate(s.scanDate)}</span>
+                  <span className="hidden text-[var(--viz-muted)] sm:inline">{s.location?.replace(/^BodySpec\s*-\s*/, '')}</span>
+                  <span className="w-16 text-right tabular-nums text-[var(--viz-ink)]">{s.totals.fatPct === null ? '–' : `${s.totals.fatPct.toFixed(1)}%`}</span>
+                  <ChevronRight className="h-4 w-4 text-[var(--viz-muted)]" aria-hidden />
+                </Link>
+              </li>
+            ))}
+          </ul>
+          {otherFiles.length > 0 && (
+            <div className="border-t border-[var(--viz-grid)] py-4">
+              <FileGallery files={otherFiles} onDelete={deleteDexaFile} scanLabel={(id) => (id && dateOf.get(id) ? fmtDate(dateOf.get(id)!) : null)} />
+            </div>
+          )}
+        </details>
       </section>
     </div>
   );

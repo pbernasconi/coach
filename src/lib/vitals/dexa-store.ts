@@ -10,6 +10,7 @@ import { sql } from '@/db';
 import { cached, clearCache } from '@/lib/data-cache';
 import { toDay, toIso } from '@/lib/db-time.mjs';
 import { REPORT_VERSION, dexaTrends, fullScan, scanReport, storedDerived, type FullScan } from './dexa.mjs';
+import { isImageView, viewForName, type ImageView } from './dexa-images.mjs';
 
 type ScanRow = { result_id: string; scan_date: unknown; location: string | null; scanner: string | null; age_years: unknown; height_cm: unknown; raw: Record<string, unknown> | null };
 
@@ -80,13 +81,15 @@ export type DexaFile = {
   sizeBytes: number;
   hasText: boolean;
   note: string | null;
+  /** For a scan image: composite, fat, lean or bone. */
+  view: ImageView | null;
   uploadedAt: string | null;
 };
 
 /** The user's files without their data, newest first. */
 export async function loadFiles(userId: string): Promise<DexaFile[]> {
   const rows = (await sql`
-    SELECT id, result_id, kind, name, content_type, size_bytes, text IS NOT NULL AND text <> '' AS has_text, note, uploaded_at
+    SELECT id, result_id, kind, name, content_type, size_bytes, text IS NOT NULL AND text <> '' AS has_text, note, view, uploaded_at
     FROM dexa_files WHERE user_id = ${userId} ORDER BY uploaded_at DESC`) as Record<string, unknown>[];
   return rows.map((r) => ({
     id: String(r.id),
@@ -97,6 +100,7 @@ export async function loadFiles(userId: string): Promise<DexaFile[]> {
     sizeBytes: Number(r.size_bytes),
     hasText: Boolean(r.has_text),
     note: (r.note as string | null) ?? null,
+    view: isImageView(r.view) ? r.view : null,
     uploadedAt: toIso(r.uploaded_at),
   }));
 }
@@ -132,12 +136,13 @@ export async function pdfText(data: Uint8Array): Promise<string | null> {
 export class UploadError extends Error {}
 
 /**
- * Stores an uploaded file. A file already stored (same bytes) is not stored twice: its id comes back. `resultId`
- * must be one of the user's scans.
+ * Stores an uploaded file. A file already stored (same bytes) is not stored twice: its id comes back, and a scan or
+ * view it lacked is filled in. `resultId` must be one of the user's scans. `view` (images only) defaults to the one in
+ * the file name; a new image for a scan's view takes that slot, and the image it replaces keeps no view.
  */
 export async function saveFile(
   userId: string,
-  file: { name: string; contentType: string; data: Uint8Array; resultId: string | null; note: string | null }
+  file: { name: string; contentType: string; data: Uint8Array; resultId: string | null; note: string | null; view?: ImageView | null }
 ): Promise<{ id: string; duplicate: boolean }> {
   const kind = FILE_TYPES[file.contentType];
   if (!kind) throw new UploadError('Upload a PDF or an image (PNG, JPEG, WebP).');
@@ -147,22 +152,39 @@ export async function saveFile(
     const [scan] = (await sql`SELECT 1 FROM dexa_scans WHERE user_id = ${userId} AND result_id = ${file.resultId}`) as unknown[];
     if (!scan) throw new UploadError('That scan does not exist.');
   }
+  const view = kind === 'image' ? (file.view ?? viewForName(file.name)) : null;
   const sha = createHash('sha256').update(file.data).digest('hex');
   const [existing] = (await sql`SELECT id FROM dexa_files WHERE user_id = ${userId} AND sha256 = ${sha}`) as { id: string }[];
-  if (existing) return { id: existing.id, duplicate: true };
+  if (existing) {
+    await sql`UPDATE dexa_files SET result_id = COALESCE(result_id, ${file.resultId}), view = COALESCE(view, ${view})
+      WHERE user_id = ${userId} AND id = ${existing.id}`;
+    return { id: existing.id, duplicate: true };
+  }
+  if (view && file.resultId) {
+    await sql`UPDATE dexa_files SET view = NULL WHERE user_id = ${userId} AND result_id = ${file.resultId} AND view = ${view}`;
+  }
   const text = kind === 'report' ? await pdfText(file.data) : null;
   const id = createId();
   const name = file.name.replace(/[\u0000-\u001f]/g, '').slice(0, 200) || 'scan';
   await sql`
-    INSERT INTO dexa_files (id, user_id, result_id, kind, name, content_type, size_bytes, sha256, data, text, note)
+    INSERT INTO dexa_files (id, user_id, result_id, kind, name, content_type, size_bytes, sha256, data, text, note, view)
     VALUES (${id}, ${userId}, ${file.resultId}, ${kind}, ${name}, ${file.contentType}, ${file.data.byteLength}, ${sha},
-      decode(${Buffer.from(file.data).toString('base64')}, 'base64'), ${text}, ${file.note?.slice(0, 500) || null})`;
+      decode(${Buffer.from(file.data).toString('base64')}, 'base64'), ${text}, ${file.note?.slice(0, 500) || null}, ${view})`;
   return { id, duplicate: false };
 }
 
 /** Moves a file to another scan (or none). */
 export async function linkFile(userId: string, id: string, resultId: string | null) {
   await sql`UPDATE dexa_files SET result_id = ${resultId} WHERE user_id = ${userId} AND id = ${id}`;
+}
+
+/** Sets which view an image shows (or none). The image it replaces on the same scan keeps no view. */
+export async function setFileView(userId: string, id: string, view: ImageView | null) {
+  if (view) {
+    await sql`UPDATE dexa_files SET view = NULL WHERE user_id = ${userId} AND view = ${view} AND id <> ${id}
+      AND result_id = (SELECT result_id FROM dexa_files WHERE user_id = ${userId} AND id = ${id})`;
+  }
+  await sql`UPDATE dexa_files SET view = ${view} WHERE user_id = ${userId} AND id = ${id} AND kind = 'image'`;
 }
 
 export async function deleteFile(userId: string, id: string) {
