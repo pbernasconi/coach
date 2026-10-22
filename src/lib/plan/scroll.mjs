@@ -23,9 +23,25 @@ export function firstWeekOfMonth(month) {
   return monthOfWeek(m) === month ? m : addDays(m, 7);
 }
 
-/** The week the calendar opens at: the first week of ?month=YYYY-MM when it is given, else the current week. */
+/** A ?month=YYYY-MM that names another month than today's (the current month opens at today, not its first week). */
+function otherMonth(month, today) {
+  return typeof month === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(month) && month !== today.slice(0, 7);
+}
+
+/** The week the first load centres on: the first week of ?month=YYYY-MM for another month, else the current week. */
 export function startWeek(month, today) {
-  return typeof month === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(month) ? firstWeekOfMonth(month) : mondayOf(today);
+  return otherMonth(month, today) ? firstWeekOfMonth(month) : mondayOf(today);
+}
+
+/**
+ * The week at the top of the view when the page opens: the first week of ?month= for another month, else the week
+ * that shows today's week as the second row (topWeekFor).
+ * @param {string | undefined} month
+ * @param {string} today
+ * @param {string | null} [earliest]
+ */
+export function openWeek(month, today, earliest = null) {
+  return otherMonth(month, today) ? firstWeekOfMonth(month) : topWeekFor(mondayOf(today), earliest);
 }
 
 /**
