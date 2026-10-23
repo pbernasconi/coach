@@ -83,9 +83,11 @@ test('merge aliases: one Omega-3 row, the one with a range', () => {
   const merged = mergeAliases([
     b('Omega-3 Total', null, [r('2025-08-01', 'unknown')]),
     b('Iron', 60, [r('2025-08-01', 'in_range')]),
+    b('Blood Urea Nitrogen (BUN)', 7, [{ ...r('2025-08-01', 'in_range'), value: 15 }]),
+    b('Blood Urea Nitrogen (BUN) / Creatinine Ratio', 6, [{ ...r('2025-08-01', 'out_of_range'), value: 28 }]),
     b('Omega-3 Total / OmegaCheck', 5.4, [r('2025-08-01', 'out_of_range')]),
   ]);
-  assert.deepEqual(merged.map((m) => m.biomarker), ['Omega-3 Total / OmegaCheck', 'Iron']);
+  assert.deepEqual(merged.map((m) => m.biomarker), ['Omega-3 Total / OmegaCheck', 'Iron', 'Blood Urea Nitrogen (BUN)', 'Blood Urea Nitrogen (BUN) / Creatinine Ratio']);
   assert.equal(merged[0].latest.status, 'out_of_range');
   assert.equal(merged[0].history.length, 1);
 });

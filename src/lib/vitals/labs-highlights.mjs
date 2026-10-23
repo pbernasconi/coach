@@ -124,18 +124,20 @@ export function mergeByCatalog(biomarkers, catalog) {
  * One row per marker when the same marker comes in under a longer name ("Omega-3 Total / OmegaCheck" from the
  * OmegaCheck panel, "Omega-3 Total" from Function without a range). The row with a reference range leads; the
  * other's draws join its history.
- * @template {{ biomarker: string, refLow: number | null, refHigh: number | null, latest: { collectedOn: string },
+ * @template {{ biomarker: string, refLow: number | null, refHigh: number | null, latest: { collectedOn: string, value?: number | null, valueText?: string | null },
  *   history: { collectedOn: string }[] }} B
  * @param {B[]} biomarkers
  * @returns {B[]}
  */
 export function mergeAliases(biomarkers) {
-  const base = (name) => fold(String(name).split(' / ')[0]);
+  // Same name before " / " and the same latest reading: one result under two names. "BUN" and "BUN / Creatinine
+  // Ratio" share the start but not the reading, so they stay apart.
+  const key = (b) => `${fold(String(b.biomarker).split(' / ')[0])}|${b.latest.collectedOn}|${b.latest.value ?? b.latest.valueText ?? ''}`;
   const groups = new Map();
-  for (const b of biomarkers) groups.set(base(b.biomarker), [...(groups.get(base(b.biomarker)) ?? []), b]);
+  for (const b of biomarkers) groups.set(key(b), [...(groups.get(key(b)) ?? []), b]);
   const out = [];
   for (const b of biomarkers) {
-    const g = groups.get(base(b.biomarker));
+    const g = groups.get(key(b));
     if (g.length === 1) { out.push(b); continue; }
     if (g[0] !== b) continue; // the group goes out once
     const ranged = (x) => x.refLow !== null || x.refHigh !== null;
