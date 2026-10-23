@@ -71,3 +71,22 @@ test('a weight typed in kg is stored in the unit of the set (lb)', () => {
   assert.equal(r.changes[0].payload.targetWeight, 220.5);
   assert.equal(toUnit(100, 'lb', 'lb'), 100);
 });
+
+test('reset takes a finished session back to planned: sets planned with no actuals, no start or finish', () => {
+  const r0 = rows();
+  r0.session = { ...r0.session, startedAt: T0, finishedAt: T0 };
+  r0.sets.push(set('C4', E2, 1, { status: 'skipped', completedAt: T0 }));
+  const r = planLiftEdit(r0, [{ type: 'resetSession' }], { now: NOW });
+  assert.deepEqual(r.changes.map((c) => [c.entity, c.op, String(c.payload.id)]), [['session', 'update', S], ['set', 'update', 'C3'], ['set', 'update', 'C4']]);
+  assert.deepEqual([r.changes[0].payload.startedAt, r.changes[0].payload.finishedAt, r.changes[0].payload.title], [null, null, 'Lower']);
+  const c3 = r.changes[1].payload;
+  assert.deepEqual([c3.status, c3.completedAt, c3.actualReps, c3.actualWeight, c3.targetWeight, c3.updatedAt], ['planned', null, null, null, 100, NOW.toISOString()]);
+  assert.equal(r.after.sets.every((s) => s.status === 'planned'), true);
+});
+
+test('reset of a session with nothing logged changes nothing; reset mixed with other edits is refused', () => {
+  const r0 = rows();
+  r0.sets = r0.sets.filter((s) => s.status === 'planned');
+  assert.deepEqual(planLiftEdit(r0, [{ type: 'resetSession' }], { now: NOW }).changes, []);
+  assert.match(planLiftEdit(rows(), [{ type: 'resetSession' }, { type: 'addSet', sessionExerciseId: E1 }], { now: NOW }).error, /on its own/);
+});

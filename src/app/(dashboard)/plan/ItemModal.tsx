@@ -68,7 +68,7 @@ export default function ItemModal({ item, onClose, onStep, canStep, onCopy, weat
           {activityId ? (
             <ActivityModal key={`a-${activityId}`} id={activityId} planned={planned} onClose={onClose} />
           ) : liftId ? (
-            <LiftModal key={`l-${liftId}`} id={liftId} planned={planned} watch={item.kind === 'lift' ? item.a : item.kind === 'planned' ? item.actual : null} onClose={onClose} />
+            <LiftModal key={`l-${liftId}`} id={liftId} planned={planned} watch={item.kind === 'lift' ? item.a : item.kind === 'planned' ? item.actual : null} onClose={onClose} onLiftChanged={onLiftChanged} />
           ) : planned ? (
             <PlannedModal key={planned.id} w={planned} onClose={onClose} onCopy={onCopy} wx={weather?.[planned.date]} onLiftChanged={onLiftChanged} onEdited={onEdited} onSkip={onSkip} />
           ) : null}
