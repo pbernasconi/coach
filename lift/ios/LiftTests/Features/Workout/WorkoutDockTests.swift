@@ -112,6 +112,13 @@ import Testing
         #expect(!state([.planned, .planned, .planned], started: false).dockFinishes)
     }
 
+    @Test func theListOffersFinishOnlyOnceStartedAndNotInTheDock() {
+        #expect(state([.done, .planned, .planned]).listOffersFinish)
+        #expect(!state([.planned, .planned, .planned], started: false).listOffersFinish)
+        #expect(!state([.done, .done, .done]).listOffersFinish)  // the dock offers it
+        #expect(!state([.done, .done, .done], finished: true).listOffersFinish)
+    }
+
     @Test func plannedSetsLeftCountsWhatFinishWouldLeave() {
         #expect(state([.done, .skipped, .planned]).plannedSetsLeft == 1)
         #expect(state([.done, .done, .done]).plannedSetsLeft == 0)

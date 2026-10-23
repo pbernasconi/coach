@@ -114,7 +114,8 @@ struct WorkoutExerciseOptionsButton: View {
     }
 }
 
-/// Under the exercises: Add exercise, then Finish workout (unless the dock offers it), or View summary once finished.
+/// Under the exercises: Add exercise, then Finish workout once started (unless the dock offers it), or View summary
+/// once finished.
 struct WorkoutFooterActions: View {
     let workout: WorkoutOverview
     let showsFinish: Bool
