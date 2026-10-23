@@ -90,6 +90,8 @@ import Testing
 
         #expect(vm.state.reorder?.ids == detail.items.map(\.id))
         #expect(vm.state.reorder?.hasChanges == false)
+
+        #expect(vm.state.reorder?.rows.first?.detail == "2 sets")
     }
 
     @Test func reorderMovedMovesTheRow() async {
