@@ -12,6 +12,7 @@ final class WorkoutActivityCenter: RestActivityController {
     private let sets: any SetRepository
     private let presenter: any WorkoutActivityPresenting
     private let gym: any GymPreference
+    private let stills: WorkoutActivityStillCache
     private let days: DayCalendar
     private let now: @Sendable () -> Date
 
@@ -35,6 +36,7 @@ final class WorkoutActivityCenter: RestActivityController {
         sets: any SetRepository,
         presenter: any WorkoutActivityPresenting,
         gym: any GymPreference,
+        stills: any WorkoutActivityStills = NoWorkoutActivityStills(),
         calendar: Calendar,
         now: @escaping @Sendable () -> Date
     ) {
@@ -42,6 +44,7 @@ final class WorkoutActivityCenter: RestActivityController {
         self.sets = sets
         self.presenter = presenter
         self.gym = gym
+        self.stills = WorkoutActivityStillCache(stills: stills)
         self.days = DayCalendar(calendar: calendar)
         self.now = now
     }
@@ -204,17 +207,15 @@ final class WorkoutActivityCenter: RestActivityController {
         case end
     }
 
-    /// What the Lock Screen should show now: nothing while the workout is loading, then the workout while it is under
-    /// way, and no activity once it is finished, discarded or not started.
+    /// What the Lock Screen shows now: nothing while loading, the workout while under way, else no activity.
     private func change() -> Change? {
         guard sessionID != nil, isLoaded else { return nil }
         guard let detail, detail.isUnderway else { return isShown ? .end : nil }
         let overview = WorkoutOverview(detail: detail, days: days, previous: [:], gym: gym.setup)
-        let state = WorkoutActivityAttributes.ContentState(
-            overview: overview,
-            currentSetID: detail.activitySetID(focus: focus),
-            rest: rest
-        )
+        let setID = detail.activitySetID(focus: focus)
+        var state = WorkoutActivityAttributes.ContentState(overview: overview, currentSetID: setID, rest: rest)
+        let still = stills.still(forSet: setID, in: overview) { [weak self] in self?.publish() }
+        state.current?.still = still
         return .show(WorkoutActivityAttributes(sessionID: detail.id, title: detail.session.title), state)
     }
 
@@ -234,8 +235,7 @@ final class WorkoutActivityCenter: RestActivityController {
         }
     }
 
-    /// Waits until the store has stopped answering for now and every change has reached the screen. For tests, whose
-    /// fake store finishes its stream.
+    /// Waits until the store has stopped answering and every change has reached the screen (tests).
     func settle() async {
         await observation?.value
         await publishing?.value

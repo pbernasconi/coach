@@ -1,5 +1,6 @@
 import AppIntents
 import SwiftUI
+import UIKit
 
 extension WorkoutActivityAttributes.ContentState {
     /// A rest is counting down: there is one and its end has not passed (`isStale` is the context's).
@@ -59,12 +60,12 @@ struct LoadText: View {
     }
 }
 
-/// "1:30", counting down to the end of the rest. The system updates it; the app sends no ticks.
-struct RestCountdown: View {
+/// "0:36": the time rested so far, counting up to the rest's length. The system updates it; the app sends no ticks.
+struct RestElapsed: View {
     let rest: RestSnapshot
 
     var body: some View {
-        Text(timerInterval: rest.interval, countsDown: true)
+        Text(timerInterval: rest.interval, countsDown: false)
             .monospacedDigit()
     }
 }
@@ -103,42 +104,105 @@ struct WorkoutBar: View {
     }
 }
 
-/// The buttons under the set: Done (log it), and Next or, while resting, +30s and Skip. Each runs an App Intent in the
-/// background (`WorkoutActivityIntents.swift`), so they work from the Lock Screen and the Dynamic Island without
-/// unlocking or opening Lift.
-struct WorkoutButtons: View {
+/// The orange strip on top of a rest: "RESTING", then the sets done.
+struct RestBand: View {
+    let state: WorkoutActivityAttributes.ContentState
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "timer")
+                .accessibilityHidden(true)
+            Text("Resting")
+                .fontWeight(.heavy)
+                .textCase(.uppercase)
+            Spacer(minLength: 8)
+            Text("\(state.loggedSets)/\(state.totalSets) sets")
+                .monospacedDigit()
+        }
+        .font(.footnote.weight(.semibold))
+        .foregroundStyle(WidgetColors.ink)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 7)
+        .frame(maxWidth: .infinity)
+        .background(WidgetColors.accent)
+    }
+}
+
+/// The exercise's photo in a white circle; nothing when the content carries none.
+struct ExerciseStill: View {
     @Environment(\.colorScheme) private var colorScheme
     let set: WorkoutActivitySet
-    let isResting: Bool
+    let size: CGFloat
+
+    var body: some View {
+        if let data = set.still, let image = UIImage(data: data) {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
+                .frame(width: size, height: size)
+                .background(WidgetColors.stillBackground)
+                .clipShape(Circle())
+                .opacity(colorScheme == .dark ? 0.85 : 1)
+                .accessibilityHidden(true)
+        }
+    }
+}
+
+/// The bottom bar while lifting: "100 kg × 5 reps" and a check that logs it (Done).
+struct LiftBar: View {
+    let set: WorkoutActivitySet
 
     var body: some View {
         HStack(spacing: 8) {
-            if isResting {
-                Button(intent: AddRestTimeIntent()) { Text("+30s") }
-                    .accessibilityLabel(Text("Add 30 seconds"))
-                Button(intent: SkipRestIntent()) { Text("Skip") }
-                    .accessibilityLabel(Text("Skip rest"))
-            } else {
-                Button(intent: ShowNextSetIntent()) {
-                    Label("Next", systemImage: "forward.end.fill")
-                }
-                .accessibilityLabel(Text("Show the next set"))
-            }
-            Spacer(minLength: 0)
+            Text(verbatim: set.loadLine)
+                .font(.system(.title2, design: .rounded).weight(.semibold))
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .frame(maxWidth: .infinity, alignment: .leading)
             Button(intent: LogSetIntent()) {
-                Label("Done", systemImage: "checkmark")
-                    .padding(.horizontal, 6)
+                Image(systemName: "checkmark")
+                    .font(.title3.weight(.bold))
+                    .frame(width: 44, height: 44)
+                    .foregroundStyle(WidgetColors.ink)
+                    .background(WidgetColors.accent, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
-            .buttonStyle(.borderedProminent)
-            .tint(WidgetColors.accent)
-            .foregroundStyle(WidgetColors.ink)
+            .buttonStyle(.plain)
             .accessibilityLabel(Text("Log \(set.exerciseName), \(set.title)"))
         }
-        .font(.subheadline.weight(.semibold))
-        .labelStyle(.titleAndIcon)
-        .buttonStyle(.bordered)
-        .buttonBorderShape(.capsule)
-        .controlSize(.small)
-        .tint(WidgetColors.accentText(for: colorScheme))
+    }
+}
+
+/// The bottom bar while resting: the time rested, large, against the rest's length ("0:36 / 2:00"), then Skip.
+struct RestBar: View {
+    @Environment(\.colorScheme) private var colorScheme
+    let rest: RestSnapshot
+    let timerSize: CGFloat
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            RestElapsed(rest: rest)
+                .font(.system(size: timerSize, weight: .bold, design: .rounded))
+                .foregroundStyle(WidgetColors.accentText(for: colorScheme))
+                .lineLimit(1)
+                .frame(maxWidth: timerSize * 2.6, alignment: .leading)
+            Text(verbatim: "/ \(rest.limitText)")
+                .font(.system(.title3, design: .rounded).weight(.semibold))
+                .monospacedDigit()
+                .foregroundStyle(.secondary)
+            Spacer(minLength: 8)
+            Button(intent: SkipRestIntent()) {
+                Text("Skip")
+                    .font(.headline)
+                    .padding(.horizontal, 10)
+            }
+            .buttonStyle(.borderedProminent)
+            .buttonBorderShape(.capsule)
+            .controlSize(.large)
+            .tint(WidgetColors.accent)
+            .foregroundStyle(WidgetColors.ink)
+            .accessibilityLabel(Text("Skip rest"))
+        }
+        .accessibilityElement(children: .contain)
     }
 }

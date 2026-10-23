@@ -67,6 +67,7 @@ enum CompositionRoot {
         let makeID: @Sendable () -> UUID = { UUID() }
         let sessions = LiveSessionRepository(database: database, now: now, makeID: makeID)
         let mediaLoader = makeMediaLoader()
+        let catalog = LiveExerciseCatalog(loader: mediaLoader)
         let gym = gym(source: source)
         let sets = LiveSetRepository(database: database, now: now, makeID: makeID)
         let sync = makeSync(database: database, isSaved: source.isSaved, now: now, makeID: makeID)
@@ -84,11 +85,12 @@ enum CompositionRoot {
                 sets: sets,
                 presenter: LiveWorkoutActivityPresenter(),
                 gym: gym,
+                stills: CatalogWorkoutActivityStills(catalog: catalog),
                 calendar: appCalendar,
                 now: now
             ),
             mediaLoader: mediaLoader,
-            catalog: LiveExerciseCatalog(loader: mediaLoader),
+            catalog: catalog,
             calendar: appCalendar,
             info: info(source: source),
             units: units(source: source),
