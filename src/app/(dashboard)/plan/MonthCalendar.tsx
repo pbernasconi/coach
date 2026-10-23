@@ -14,7 +14,7 @@ import { chunkBefore, firstWeekOfMonth, mergeRange, monthOfWeek, topWeekFor } fr
 import { addDays, mondayOf } from '@/lib/plan/week.mjs';
 import type { CalendarRange, CalendarWorkout, DataBounds, LibraryItem } from '@/lib/plan/month';
 import type { DayWeather } from '@/lib/plan/weather';
-import { addFromLibraryAction, duplicateWorkoutAction, moveWorkoutAction, removeWorkoutAction, restoreWorkoutAction, skipWorkoutAction } from './actions';
+import { addFromLibraryAction, duplicateWorkoutAction, moveWorkoutAction, removeWorkoutAction, restoreWorkoutAction, skipWorkoutAction, markDoneAction } from './actions';
 import CreateWorkout from './CreateWorkout';
 import ItemModal from './ItemModal';
 import ItemPreview, { type PreviewActions, type PreviewTarget } from './ItemPreview';
@@ -29,7 +29,7 @@ const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 /** Planned workouts copied for Paste: their ids and a label for the menu. */
 type Clip = { ids: string[]; label: string };
-type Change = { id: string; date?: string; remove?: boolean; status?: 'planned' | 'skipped'; skipReason?: string | null };
+type Change = { id: string; date?: string; remove?: boolean; status?: 'planned' | 'skipped' | 'done'; skipReason?: string | null };
 
 type Props = {
   anchor: string; // the Monday the first weeks are loaded around (this week, or the first week of ?month)
@@ -157,6 +157,20 @@ export default function MonthCalendar({ anchor, openAt, range, bounds, weather, 
     });
   }
 
+  /** Marks a workout done by hand (no activity needed), or puts it back to planned. A toast offers Undo. */
+  function markDone(w: CalendarWorkout, done: boolean) {
+    changeLocal({ id: w.id, status: done ? 'done' : 'planned' });
+    startTransition(async () => {
+      try {
+        await markDoneAction(w.id, done);
+        if (done) toast.success(`Marked ${plainTitle(w.title)} done`, { action: { label: 'Undo', onClick: () => impl.current.markDone(w, false) } });
+      } catch {
+        toast.error('Could not change the workout');
+      }
+      await reload([mondayOf(w.date)]);
+    });
+  }
+
   function add(itemId: string, date: string) {
     const item = library.find((x) => x.id === itemId);
     startTransition(async () => {
@@ -236,8 +250,8 @@ export default function MonthCalendar({ anchor, openAt, range, bounds, weather, 
   }
 
   // The rows get one stable handler object; it calls the latest move / add / remove through this ref.
-  const impl = useRef({ move, add, remove, skip, dayAction });
-  impl.current = { move, add, remove, skip, dayAction };
+  const impl = useRef({ move, add, remove, skip, markDone, dayAction });
+  impl.current = { move, add, remove, skip, markDone, dayAction };
   const clipRef = useRef(clip);
   clipRef.current = clip;
   const handlers = useMemo<Handlers>(() => ({
@@ -457,6 +471,7 @@ export default function MonthCalendar({ anchor, openAt, range, bounds, weather, 
           onLiftChanged={(date) => reload([mondayOf(date)])}
           onEdited={({ from, to }) => void reload([...new Set([mondayOf(from), mondayOf(to)])])}
           onSkip={(w, reason) => impl.current.skip(w, reason)}
+          onMarkDone={(w, done) => impl.current.markDone(w, done)}
         />
       )}
       {createOn && (

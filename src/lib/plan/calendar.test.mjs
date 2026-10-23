@@ -95,3 +95,12 @@ test('locationFrom validates users.settings.location', () => {
   assert.equal(locationFrom({}, home), home);
   assert.equal(locationFrom(null, home), home);
 });
+
+test('weekSummary counts a workout marked done by hand at its planned time and TSS', () => {
+  const calf = { date: '2026-10-22', sport: 'strength', title: 'Home calf raises', duration: 15, tss: 5, status: 'done', state: 'done', match: null };
+  const s = weekSummary('2026-10-19', { ...data, workouts: [...data.workouts, calf] });
+  assert.equal(s.done.min, 120);
+  assert.equal(s.done.tss, 96);
+  assert.equal(s.done.bySport.strength, 15);
+  assert.equal(s.planned.done, 2);
+});

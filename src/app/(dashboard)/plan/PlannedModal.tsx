@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { Copy, Pencil } from 'lucide-react';
+import { ChevronDown, Copy, Pencil } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@kobo/web';
 import SportIcon from '@/components/SportIcon';
 import { totals } from '@/lib/workouts/steps.mjs';
 import { sport } from '@/lib/sports';
@@ -20,6 +21,7 @@ import EffortLog from './EffortLog';
 import { Description, Header, Hero, StatusChip, longDay, type HeroStat } from './ModalParts';
 import { EditWorkout } from './CreateWorkout';
 import SkipWorkout from './SkipWorkout';
+import MarkDone from './MarkDone';
 import { SKIP_LABEL } from '@/lib/plan/skip.mjs';
 
 /** Today on this device, as YYYY-MM-DD. */
@@ -38,7 +40,7 @@ function liftHero(lift: NonNullable<CalendarWorkout['lift']>): HeroStat[] {
   ].filter(Boolean) as HeroStat[];
 }
 
-export default function PlannedModal({ w, onClose, onCopy, wx, onLiftChanged, onEdited, onSkip }: { w: CalendarWorkout; onClose: () => void; onCopy?: (w: CalendarWorkout) => void; wx?: DayWeather; onLiftChanged?: (date: string) => Promise<void> | void; onEdited?: (days: { from: string; to: string }) => void; onSkip?: (w: CalendarWorkout, reason?: string | null) => void }) {
+export default function PlannedModal({ w, onClose, onCopy, wx, onLiftChanged, onEdited, onSkip, onMarkDone }: { w: CalendarWorkout; onClose: () => void; onCopy?: (w: CalendarWorkout) => void; wx?: DayWeather; onLiftChanged?: (date: string) => Promise<void> | void; onEdited?: (days: { from: string; to: string }) => void; onSkip?: (w: CalendarWorkout, reason?: string | null) => void; onMarkDone?: (w: CalendarWorkout, done: boolean) => void }) {
   const [editing, setEditing] = useState(false);
   const targets = zonesFor(w) as { zone: string; label: string; target: string }[];
   // With the Lift session shown set by set, the text copy of the sets (scripts/lift-plan.mjs) is left out.
@@ -55,29 +57,36 @@ export default function PlannedModal({ w, onClose, onCopy, wx, onLiftChanged, on
         right={
           <>
             {w.adaptedFrom && <span className="hidden text-xs text-[var(--plan-partial)] sm:inline">Changed for how you feel</span>}
-            <StatusChip level={w.compliance.level} ratio={w.compliance.ratio} basis={w.compliance.basis} />
+            {/* "Today" or "Planned" says nothing the date line does not: the chip shows only a real status. */}
+            {w.compliance.level !== 'today' && w.compliance.level !== 'planned' && (
+              <StatusChip level={w.compliance.level} ratio={w.compliance.ratio} basis={w.compliance.basis} />
+            )}
             {w.status === 'skipped' && w.skipReason && (
               <span className="hidden text-xs text-[var(--viz-ink-2)] sm:inline">{(SKIP_LABEL as Record<string, string>)[w.skipReason] ?? w.skipReason}</span>
             )}
-            {onSkip && <SkipWorkout w={w} onSkip={onSkip} />}
+            {onMarkDone && w.sport !== 'rest' && w.status !== 'skipped' && (w.status === 'done' || w.state !== 'done') && <MarkDone w={w} onMarkDone={onMarkDone} />}
+            {onSkip && w.status !== 'done' && <SkipWorkout w={w} onSkip={onSkip} />}
             <SyncStatus w={w} />
-            {onEdited && (
-              <button
-                type="button"
-                onClick={() => setEditing(true)}
-                className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs font-medium hover:bg-accent"
-              >
-                <Pencil aria-hidden className="h-3.5 w-3.5" /> Edit
-              </button>
-            )}
-            {onCopy && (
-              <button
-                type="button"
-                onClick={() => onCopy(w)}
-                className="hidden items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs font-medium hover:bg-accent sm:inline-flex"
-              >
-                <Copy aria-hidden className="h-3.5 w-3.5" /> Copy
-              </button>
+            {(onEdited || onCopy) && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button type="button" className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs font-medium hover:bg-accent">
+                    <Pencil aria-hidden className="h-3.5 w-3.5" /> Edit <ChevronDown aria-hidden className="h-3 w-3 opacity-60" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="z-[60]">
+                  {onEdited && (
+                    <DropdownMenuItem onSelect={() => setEditing(true)}>
+                      <Pencil aria-hidden className="h-3.5 w-3.5" /> Edit workout
+                    </DropdownMenuItem>
+                  )}
+                  {onCopy && (
+                    <DropdownMenuItem onSelect={() => onCopy(w)}>
+                      <Copy aria-hidden className="h-3.5 w-3.5" /> Copy
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
           </>
         }

@@ -91,7 +91,7 @@ function toWorkout(r: Row): Omit<Workout, 'state' | 'match'> {
     tss: num(r.tss),
     why: (r.why as string) ?? null,
     description: (r.description as string) ?? null,
-    status: r.status === 'skipped' ? 'skipped' : 'planned',
+    status: r.status === 'skipped' ? 'skipped' : r.status === 'done' ? 'done' : 'planned',
     skipReason: r.status === 'skipped' ? ((r.skip_reason as string) ?? null) : null,
     adaptedFrom: (r.adapted_from as Record<string, unknown>) ?? null,
     sortOrder: Number(r.sort_order ?? 0),

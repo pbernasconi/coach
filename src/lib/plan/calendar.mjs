@@ -38,7 +38,7 @@ export function weekDays(monday) {
  * @param {{
  *   activities: Array<{ date: string, sport: string, min: number, km: number, tss: number | null, commute?: boolean }>,
  *   lifts: Array<{ date: string }>,
- *   workouts: Array<{ date: string, sport: string, title?: string, workoutType?: string | null, duration: number | null, tss: number | null, status: string, state: string }>,
+ *   workouts: Array<{ date: string, sport: string, title?: string, workoutType?: string | null, duration: number | null, tss: number | null, status: string, state: string, match?: object | null }>,
  *   load: Array<{ date: string, ctl: number, atl: number, tsb: number }>,
  *   today: string,
  * }} data  The month's data; only rows in this week count. `load` sorted by date.
@@ -66,6 +66,14 @@ export function weekSummary(monday, { activities, lifts, workouts, load, today }
     planned.count += 1;
     if (w.state === 'done') planned.done += 1;
     if (w.state === 'missed') planned.missed += 1;
+    // Marked done by hand with no activity behind it: its planned time and TSS count as done.
+    if (w.status === 'done' && !w.match) {
+      done.min += w.duration ?? 0;
+      done.tss += w.tss ?? 0;
+      done.count += 1;
+      const s = sportOf(w);
+      done.bySport[s] = (done.bySport[s] ?? 0) + (w.duration ?? 0);
+    }
   }
 
   // Fitness at the end of the week: the last load row on or before Sunday. None for a week that has not started.

@@ -25,6 +25,8 @@ type Props = {
   onEdited?: (days: { from: string; to: string }) => void;
   /** Skips a planned workout with why, or puts a skipped one back (no reason). */
   onSkip?: (w: CalendarWorkout, reason?: string | null) => void;
+  /** Marks a planned workout done by hand, or back to planned. */
+  onMarkDone?: (w: CalendarWorkout, done: boolean) => void;
 };
 
 /**
@@ -32,7 +34,7 @@ type Props = {
  * completed, the load change, zones and peak curves, laps and the stream charts. A done item links to its full
  * page. The ← and → keys step to the previous and next item.
  */
-export default function ItemModal({ item, onClose, onStep, canStep, onCopy, weather, onLiftChanged, onEdited, onSkip }: Props) {
+export default function ItemModal({ item, onClose, onStep, canStep, onCopy, weather, onLiftChanged, onEdited, onSkip, onMarkDone }: Props) {
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
@@ -50,7 +52,7 @@ export default function ItemModal({ item, onClose, onStep, canStep, onCopy, weat
   const liftId =
     item.kind === 'lift' ? item.l.id
     : planned?.match?.source === 'lift' ? planned.match.id
-    : planned?.state === 'done' && planned.lift ? planned.lift.id
+    : planned?.state === 'done' && planned.status !== 'done' && planned.lift ? planned.lift.id
     : null;
 
   return (
@@ -70,7 +72,7 @@ export default function ItemModal({ item, onClose, onStep, canStep, onCopy, weat
           ) : liftId ? (
             <LiftModal key={`l-${liftId}`} id={liftId} planned={planned} watch={item.kind === 'lift' ? item.a : item.kind === 'planned' ? item.actual : null} onClose={onClose} onLiftChanged={onLiftChanged} />
           ) : planned ? (
-            <PlannedModal key={planned.id} w={planned} onClose={onClose} onCopy={onCopy} wx={weather?.[planned.date]} onLiftChanged={onLiftChanged} onEdited={onEdited} onSkip={onSkip} />
+            <PlannedModal key={planned.id} w={planned} onClose={onClose} onCopy={onCopy} wx={weather?.[planned.date]} onLiftChanged={onLiftChanged} onEdited={onEdited} onSkip={onSkip} onMarkDone={onMarkDone} />
           ) : null}
         </Dialog.Content>
       </Dialog.Portal>

@@ -27,7 +27,8 @@ export type Workout = {
   tss: number | null;
   why: string | null;
   description: string | null;
-  status: 'planned' | 'skipped';
+  /** done: marked done by hand (no activity needed). */
+  status: 'planned' | 'skipped' | 'done';
   /** Why it was skipped (src/lib/plan/skip.mjs), or null. */
   skipReason: string | null;
   adaptedFrom: Record<string, unknown> | null;
@@ -91,7 +92,7 @@ function toWorkout(r: Row): Omit<Workout, 'state' | 'match'> {
     tss: (r.tss as number) ?? null,
     why: (r.why as string) ?? null,
     description: (r.description as string) ?? null,
-    status: r.status === 'skipped' ? 'skipped' : 'planned',
+    status: r.status === 'skipped' ? 'skipped' : r.status === 'done' ? 'done' : 'planned',
     skipReason: r.status === 'skipped' ? ((r.skip_reason as string) ?? null) : null,
     adaptedFrom: (r.adapted_from as Record<string, unknown>) ?? null,
     sortOrder: Number(r.sort_order ?? 0),
@@ -225,6 +226,11 @@ export async function setSkipped(userId: string, id: string, skipped: boolean, r
   const date = today ? await workoutDate(userId, id) : null;
   const feel = skipped && date && today ? feelForSkip(why, date, today) : null;
   return feel ? setFeel(userId, mondayOf(today!), today!, feel) : 0;
+}
+
+/** Marks a workout done by hand (no activity needed), or puts it back to planned. */
+export async function setDone(userId: string, id: string, done: boolean) {
+  await applyChanges(userId, id, { status: done ? 'done' : 'planned', skipReason: null });
 }
 
 /** Records how I feel today and adapts the rest of the week. Returns the number of workouts changed. */

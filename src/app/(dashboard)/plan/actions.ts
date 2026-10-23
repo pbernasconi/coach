@@ -6,7 +6,7 @@ import { after } from 'next/server';
 import { sql } from '@/db';
 import { pushWeek } from '@/lib/calendar-sync/push.mjs';
 import { mondayOf } from '@/lib/plan/week.mjs';
-import { moveWorkout, setSkipped, workoutDate } from '@/lib/plan/queries';
+import { moveWorkout, setDone, setSkipped, workoutDate } from '@/lib/plan/queries';
 import { addFromLibrary, createWorkout, duplicateWorkout, loadRange, removeWorkout, restoreWorkout, updateWorkout, type CalendarRange, type WorkoutInput } from '@/lib/plan/month';
 import { MAX_SPAN_WEEKS, spanWeeks } from '@/lib/plan/scroll.mjs';
 import { cookieTimeZone } from '@/lib/plan/timezone';
@@ -68,6 +68,16 @@ export async function skipWorkoutAction(id: string, skipped: boolean, reason: st
   const onDate = await workoutDate(userId, String(id));
   if (onDate) pushCalendar(userId, [mondayOf(onDate)]);
   return eased;
+}
+
+/** Marks a workout done by hand (e.g. a home session with no activity), or back to planned. */
+export async function markDoneAction(id: string, done: boolean) {
+  const userId = await user();
+  await setDone(userId, String(id), Boolean(done));
+  revalidatePath('/plan');
+  revalidatePath('/');
+  const onDate = await workoutDate(userId, String(id));
+  if (onDate) pushCalendar(userId, [mondayOf(onDate)]);
 }
 
 export async function addFromLibraryAction(itemId: string, onDate: string) {
