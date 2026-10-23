@@ -85,7 +85,7 @@ export default function WeekHero({ o }: { o: Overview }) {
             <span className="text-xs text-[var(--viz-ink-2)]">
               {plannedText(next)}
             </span>
-            <span className="text-xs font-medium" style={{ color: 'var(--sport-strength)' }}>Open the plan →</span>
+            <span className="text-xs font-medium text-brand-ink">Open the plan →</span>
           </Link>
         ) : (
           <Link href="/plan" className="flex flex-col justify-between gap-3 rounded-xl border border-dashed bg-background/60 p-4 transition-colors hover:border-[var(--sport-strength)]">

@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
@@ -14,6 +15,8 @@ import { load } from '@/lib/safe';
 import { sport, stravaTypeLabel } from '@/lib/sports';
 import { ActivityHoverProvider } from './ActivityHover';
 import { ActivityBody, sectionsFor } from './Sections';
+
+export const metadata: Metadata = { title: 'Activity' };
 
 export const dynamic = 'force-dynamic';
 

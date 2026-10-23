@@ -34,7 +34,9 @@ const keyOf = (href: string) => NAV_KEYS.find((n) => n.href === href)?.key;
 export default function DashboardNav() {
   const pathname = usePathname();
   // The current section: / only on its own, others also for their sub-pages (/health/day/… is Health).
-  const isActive = (href: string) => (href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`));
+  // Pages outside the nav belong to a section: /trends to Today, an activity to Plan.
+  const section = pathname.startsWith('/trends') ? '/' : pathname.startsWith('/activities/') ? '/plan' : pathname;
+  const isActive = (href: string) => (href === '/' ? section === '/' : section === href || section.startsWith(`${href}/`));
   const { isLoaded } = useUser();
   const [open, setOpen] = useState(false);
 

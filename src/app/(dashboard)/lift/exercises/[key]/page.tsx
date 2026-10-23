@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +10,8 @@ import { formatWeight } from '@/lib/lift-dashboard/format';
 import { bestSetText } from '@/lib/lift-dashboard/app-api.mjs';
 import ResponsiveDay from '@/components/ResponsiveDay';
 import E1rmChart, { type Point } from './E1rmChart';
+
+export const metadata: Metadata = { title: 'Exercise' };
 
 export const dynamic = 'force-dynamic';
 

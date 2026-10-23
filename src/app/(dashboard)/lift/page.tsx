@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import SectionError from '@/components/SectionError';
 import { ownerForSignedInUser } from '@/lib/owner';
@@ -21,6 +22,8 @@ import RecentLifts from './RecentLifts';
 import { exerciseMedia } from '@/lib/lift/catalog';
 import { richSession, type RichSession } from '@/lib/lift/session';
 import type { Overview } from './types';
+
+export const metadata: Metadata = { title: 'Lift' };
 
 export const dynamic = 'force-dynamic';
 

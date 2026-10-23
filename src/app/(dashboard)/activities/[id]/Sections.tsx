@@ -218,11 +218,13 @@ function SameRoute({ v, c }: { v: ActivityView; c: ActivityContext | null }) {
 
 function SegmentTable({ v, rows, bare = false }: { v: ActivityView; rows: ActivityView['segments']; bare?: boolean }) {
   const foot = v.layout === 'run';
+  // Strava sends no rank for most efforts; the column shows only when one has it.
+  const ranked = rows.some((sg) => segmentRow(sg, foot).rankText);
   return (
     <div className={`overflow-x-auto bg-[var(--viz-surface)] ${bare ? 'border-t' : 'rounded-lg border'}`}>
       <table className="w-full min-w-[520px] text-sm">
         <thead className="text-xs text-[var(--viz-muted)]">
-          <tr><th className="px-3 py-1.5 text-left font-medium">Name</th><th className={th}>Distance</th><th className={th}>Grade</th><th className={th}>Time</th><th className={th}>{foot ? 'Pace' : 'Speed'}</th><th className={th}>HR</th><th className={`${th} pr-3`}>Rank</th></tr>
+          <tr><th className="px-3 py-1.5 text-left font-medium">Name</th><th className={th}>Distance</th><th className={th}>Grade</th><th className={th}>Time</th><th className={th}>{foot ? 'Pace' : 'Speed'}</th><th className={`${th} ${ranked ? '' : 'pr-3'}`}>HR</th>{ranked && <th className={`${th} pr-3`}>Rank</th>}</tr>
         </thead>
         <tbody>
           {rows.map((sg, i) => {
@@ -234,8 +236,8 @@ function SegmentTable({ v, rows, bare = false }: { v: ActivityView; rows: Activi
                 <td className={td}>{r.gradeText}</td>
                 <td className={td}>{r.timeText}</td>
                 <td className={td}>{r.paceText}</td>
-                <td className={td}>{r.hrText}</td>
-                <td className={`${td} pr-3`}>{r.rankText}</td>
+                <td className={`${td} ${ranked ? '' : 'pr-3'}`}>{r.hrText}</td>
+                {ranked && <td className={`${td} pr-3`}>{r.rankText}</td>}
               </RangeRow>
             );
           })}
@@ -252,17 +254,18 @@ export function ActivityBody({ v, context, contextFailed, color }: { v: Activity
   const st = v.stats;
   const hrTotal = v.hrZones.reduce((n, z) => n + z.seconds, 0);
   const hist = paceHistogramView(v);
+  const effortsRanked = v.bestEfforts.some((e) => bestEffortRow(e).rankText);
   return (
     <>
       <Overview v={v} color={color} />
       <SameRoute v={v} c={context} />
 
-      <Card id="coach" title="Coach's view" note="The plan, the training load, and Garmin's recovery data">
+      <Card id="coach" title="Coach's view">
         <CoachView v={v} c={context} failed={contextFailed} />
       </Card>
 
       {series ? (
-        <Card id="analysis" title="Analysis" note={foot ? 'Pace is upside down: faster is higher.' : undefined}>
+        <Card id="analysis" title="Analysis">
           <StreamCharts
             series={series}
             layout={v.layout}
@@ -288,7 +291,7 @@ export function ActivityBody({ v, context, contextFailed, color }: { v: Activity
       )}
 
       {foot && v.paceBins.length > 0 && (
-        <Card id="pace-distribution" title="Pace Distribution" note="Moving time per 15 s of pace">
+        <Card id="pace-distribution" title="Pace Distribution">
           <div className="rounded-lg border bg-[var(--viz-surface)] p-4">
             <Histogram
               bins={hist.bins}
@@ -320,7 +323,7 @@ export function ActivityBody({ v, context, contextFailed, color }: { v: Activity
       )}
 
       {v.laps.length > 1 && (
-        <Card id="laps" title="Laps" note={v.series ? "Point at a row to show it on the charts and the map. Click to pin it." : undefined}>
+        <Card id="laps" title="Laps">
           <div className="overflow-x-auto rounded-lg border bg-[var(--viz-surface)]">
             <table className="w-full min-w-[480px] text-sm">
               <thead className="text-xs text-[var(--viz-muted)]">
@@ -356,14 +359,14 @@ export function ActivityBody({ v, context, contextFailed, color }: { v: Activity
         <Card id="best-efforts" title="Best Efforts" note={bestEffortsNote(v.bestEffortsSource)}>
           <div className="overflow-x-auto rounded-lg border bg-[var(--viz-surface)]">
             <table className="w-full text-sm">
-              <thead className="text-xs text-[var(--viz-muted)]"><tr><th className="px-3 py-1.5 text-left font-medium">Distance</th><th className={th}>Time</th><th className={th}>Pace</th><th className={`${th} pr-3`}>Rank</th></tr></thead>
+              <thead className="text-xs text-[var(--viz-muted)]"><tr><th className="px-3 py-1.5 text-left font-medium">Distance</th><th className={th}>Time</th><th className={`${th} ${effortsRanked ? '' : 'pr-3'}`}>Pace</th>{effortsRanked && <th className={`${th} pr-3`}>Rank</th>}</tr></thead>
               <tbody>
                 {v.bestEfforts.map((e) => (
                   <RangeRow key={e.label} className="border-t" range={indexRange(v, `best-${e.label}`, `Best ${e.label}`, e)}>
                     <td className="px-3 py-1.5">{e.label}</td>
                     <td className={td}>{bestEffortRow(e).timeText}</td>
-                    <td className={td}>{bestEffortRow(e).paceText}</td>
-                    <td className={`${td} pr-3`}>{bestEffortRow(e).rankText}</td>
+                    <td className={`${td} ${effortsRanked ? '' : 'pr-3'}`}>{bestEffortRow(e).paceText}</td>
+                    {effortsRanked && <td className={`${td} pr-3`}>{bestEffortRow(e).rankText}</td>}
                   </RangeRow>
                 ))}
               </tbody>

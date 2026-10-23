@@ -73,7 +73,7 @@ export default function DayDetail({ d }: { d: DayView }) {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <Stat label="Asleep" value={`${hm(sleepTotal)} h`} sub={s?.awakeCount != null ? `${s.awakeCount} times awake` : null} />
           <Stat label="Sleep score" value={score == null ? '-' : String(Math.round(score))} sub={words(s?.quality ?? null)} />
-          <Stat label="Avg sleep stress" value={r0(s?.avgStress ?? v.sleep_avg_stress)} sub="0–100, lower is calmer" />
+          <Stat label="Avg sleep stress" value={r0(s?.avgStress ?? v.sleep_avg_stress)} />
           <Stat label="Resting HR" value={`${r0(s?.restingHr ?? v.resting_hr_bpm)} bpm`} sub={v.sleep_avg_hr_bpm != null ? `sleep avg ${r0(v.sleep_avg_hr_bpm)} bpm` : null} />
         </div>
         {mins && (
@@ -93,7 +93,6 @@ export default function DayDetail({ d }: { d: DayView }) {
           <TimeChart title="Stress in sleep" points={s?.stress ?? []} from={sleepFrom} to={sleepTo} unit="stress" kind="bars" yMin={0} yMax={100} color="var(--color-amber-500)" empty="No sleep stress." height={120} />
           <TimeChart
             title="Blood oxygen (SpO2)"
-            subtitle={s?.avgSpo2 != null ? `avg ${Math.round(s.avgSpo2)}%${s.lowestSpo2 != null ? `, lowest ${Math.round(s.lowestSpo2)}%` : ''}` : undefined}
             points={s?.spo2 ?? []}
             from={sleepFrom}
             to={sleepTo}
@@ -115,7 +114,6 @@ export default function DayDetail({ d }: { d: DayView }) {
         </div>
         <TimeChart
           title="HRV readings"
-          subtitle="5-minute readings over the night."
           points={d.hrv?.readings ?? []}
           from={sleepFrom}
           to={sleepTo}
@@ -127,13 +125,17 @@ export default function DayDetail({ d }: { d: DayView }) {
         />
       </Card>
 
-      <Card title="Training readiness" note={readiness?.at ? `at ${clock(readiness.at)}` : undefined}>
+      <Card title="Training readiness">
         {!readiness && v.training_readiness == null ? (
           <p className="text-sm text-[var(--viz-muted)]">No training readiness for this day.</p>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <Stat label="Score" value={r0(readiness?.score ?? v.training_readiness)} sub={readiness?.level ?? null} />
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+              {/* The morning score is the one Home and Health show; Garmin keeps updating it through the day. */}
+              <Stat label="Morning" value={r0(v.training_readiness ?? readiness?.score)} sub={v.training_readiness == null ? readiness?.level ?? null : null} />
+              {readiness?.score != null && readiness.at && readiness.score !== v.training_readiness && (
+                <Stat label={`Latest, ${clock(readiness.at)}`} value={r0(readiness.score)} sub={readiness.level} />
+              )}
               <Stat label="Recovery time" value={readiness?.recoveryTimeH != null ? `${Math.round(readiness.recoveryTimeH)} h` : v.readiness_recovery_time_h != null ? `${Math.round(v.readiness_recovery_time_h)} h` : '-'} />
               <Stat label="Acute load" value={r0(readiness?.acuteLoad ?? v.readiness_acute_load)} />
               <Stat label="Sleep score" value={r0(readiness?.sleepScore ?? score)} />
@@ -141,7 +143,6 @@ export default function DayDetail({ d }: { d: DayView }) {
             {readiness?.feedback && <p className="text-xs text-[var(--viz-ink-2)]">{words(readiness.feedback)}</p>}
             {readiness && readiness.factors.length > 0 ? (
               <div className="space-y-1.5">
-                <p className="text-xs text-[var(--viz-muted)]">Parts of the score: 100% is the best for each part.</p>
                 {readiness.factors.map((f) => <Meter key={f.key} label={f.label} value={f.percent} sub={f.feedback} />)}
               </div>
             ) : (
@@ -165,7 +166,6 @@ export default function DayDetail({ d }: { d: DayView }) {
           />
           <TimeChart
             title="Stress"
-            subtitle={d.stressAvg != null ? `Average ${d.stressAvg}. 0–25 rest, 26–50 low, 51–75 medium, 76–100 high.` : '0–25 rest, 26–50 low, 51–75 medium, 76–100 high.'}
             points={d.stress}
             from={dayStart}
             to={dayEnd}

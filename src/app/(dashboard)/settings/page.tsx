@@ -31,7 +31,8 @@ type Level = 'ok' | Warning['level'];
 
 function when(at: string | null) {
   if (!at) return 'never';
-  return new Date(at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  // In Coach's home zone: the server renders in UTC, which put sync times hours ahead.
+  return new Date(at).toLocaleString('en-US', { timeZone: 'America/Los_Angeles', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 }
 
 function zone(tz: string | undefined) {

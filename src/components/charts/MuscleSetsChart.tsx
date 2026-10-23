@@ -1,5 +1,8 @@
 'use client';
 
+import { Info } from 'lucide-react';
+import { HelpTooltip } from '@kobo/web';
+
 import { useState } from 'react';
 import { LegendItem } from './ChartTooltip';
 import { decimalText as fmt, muscleLabel as label, muscleStatusText } from '@/lib/performance/display.mjs';
@@ -18,12 +21,12 @@ export default function MuscleSetsChart({ rows }: { rows: MuscleBar[] }) {
   return (
     <div className="rounded-lg border bg-[var(--viz-surface)] p-4">
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-        <div>
-          <h2 className="font-semibold text-[var(--viz-ink)]">Hard sets per muscle</h2>
-          <p className="text-xs text-[var(--viz-muted)]">This week. A set counts 1 for a primary muscle and 0.5 for a secondary one.</p>
-        </div>
+        <h2 className="inline-flex items-center gap-1.5 font-semibold text-[var(--viz-ink)]">
+          Hard sets per muscle
+          <HelpTooltip label="About hard sets" icon={<Info aria-hidden />}>This week. A set counts 1 for a primary muscle and 0.5 for a secondary one.</HelpTooltip>
+        </h2>
         <div className="flex flex-wrap gap-3">
-          <LegendItem color="var(--viz-ride)" label="This week" />
+          <LegendItem color="var(--sport-strength)" label="This week" />
           <LegendItem color="var(--viz-ink-2)" label="4-week average" shape="line" />
           <LegendItem color="var(--viz-band)" label="Target 10–20" />
         </div>
@@ -46,7 +49,7 @@ export default function MuscleSetsChart({ rows }: { rows: MuscleBar[] }) {
               <span className="truncate text-[var(--viz-ink)]">{label(r.muscle)}</span>
               <div className="relative h-3">
                 <div className="absolute inset-y-0 rounded-sm bg-[var(--viz-band)]" style={{ left: pct(10), width: `calc(${pct(20)} - ${pct(10)})` }} />
-                <div className="absolute inset-y-0.5 left-0 rounded-r-[4px] bg-[var(--viz-ride)]" style={{ width: pct(r.week) }} />
+                <div className="absolute inset-y-0.5 left-0 rounded-r-[4px] bg-[var(--sport-strength)]" style={{ width: pct(r.week) }} />
                 <div className="absolute -inset-y-0.5 w-0.5 rounded-full bg-[var(--viz-ink-2)]" style={{ left: pct(r.avg) }} />
               </div>
               <span className="whitespace-nowrap text-right tabular-nums text-[var(--viz-ink-2)]">

@@ -1,3 +1,5 @@
+import { Info } from 'lucide-react';
+import { HelpTooltip } from '@kobo/web';
 import { RAMP_NOTE, rampCell } from '@/lib/performance/display.mjs';
 import type { RampRate } from '@/lib/performance/projection';
 
@@ -8,7 +10,10 @@ import type { RampRate } from '@/lib/performance/projection';
 export default function RampRates({ ramp }: { ramp: RampRate[] }) {
   return (
     <div className="rounded-lg border bg-[var(--viz-surface)] p-4">
-      <div className="text-xs font-medium text-[var(--viz-muted)]">Ramp rate · fitness change</div>
+      <div className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--viz-muted)]">
+        Ramp rate · fitness change
+        <HelpTooltip label="About ramp rate" icon={<Info aria-hidden />}>{RAMP_NOTE}</HelpTooltip>
+      </div>
       <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
         {ramp.map((r, k) => {
           const c = rampCell(r, k);
@@ -33,7 +38,6 @@ export default function RampRates({ ramp }: { ramp: RampRate[] }) {
           );
         })}
       </dl>
-      <p className="mt-3 text-[11px] text-[var(--viz-muted)]">{RAMP_NOTE}</p>
     </div>
   );
 }

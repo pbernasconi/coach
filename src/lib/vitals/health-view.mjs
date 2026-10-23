@@ -112,12 +112,16 @@ export function vitalCells(b) {
 }
 
 /**
- * "All within your normal", or "Outside your normal: HRV low, Stress high".
+ * "All within your normal", "Nothing worse than your normal" (some are past it on the good side), or "Outside your
+ * normal: HRV low, Stress high".
  * @param {{ label: string, isOff: boolean, status: Stat['status'] }[]} cells
  */
 export function outliersText(cells) {
   const off = cells.filter((c) => c.isOff);
-  return off.length === 0 ? 'All within your normal' : `Outside your normal: ${off.map((c) => `${c.label} ${c.status === 'above' ? 'high' : 'low'}`).join(', ')}`;
+  // A value past its range on the good side (resting HR below, readiness above) is not "within" it.
+  const better = cells.some((c) => !c.isOff && (c.status === 'above' || c.status === 'below'));
+  if (off.length === 0) return better ? 'Nothing worse than your normal' : 'All within your normal';
+  return `Outside your normal: ${off.map((c) => `${c.label} ${c.status === 'above' ? 'high' : 'low'}`).join(', ')}`;
 }
 
 // ---- The board ----

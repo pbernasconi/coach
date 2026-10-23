@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { loadLiftModel } from '@/lib/lift-dashboard/queries';
@@ -5,20 +6,21 @@ import { weeklyVolume } from '@/lib/lift-dashboard/stats.mjs';
 import { formatVolume } from '@/lib/lift-dashboard/format';
 import ResponsiveDay from '@/components/ResponsiveDay';
 
+export const metadata: Metadata = { title: 'Weekly volume' };
+
 export const dynamic = 'force-dynamic';
 
 export default async function LiftWeeklyPage() {
   const { model, unit } = await loadLiftModel();
-  const weeks = weeklyVolume(model, unit);
+  // Weeks without a session are left out: years of gaps read as rows of zeros.
+  const weeks = weeklyVolume(model, unit).filter((w) => w.sessions > 0);
   const max = Math.max(1, ...weeks.map((w) => w.volume));
 
   return (
     <Card data-smoke="lift-weekly">
       <CardHeader>
         <CardTitle>Weekly volume</CardTitle>
-        <CardDescription>
-          Weeks start on Monday. Volume = reps x logged weight over logged sets, warm-ups excluded, in {unit}.
-        </CardDescription>
+        <CardDescription>Weeks with a session, from Monday. Volume is reps × weight of the logged working sets, in {unit}.</CardDescription>
       </CardHeader>
       <CardContent>
         {weeks.length === 0 ? (
@@ -45,7 +47,7 @@ export default async function LiftWeeklyPage() {
                   <TableCell className="whitespace-nowrap text-right tabular-nums">{formatVolume(w.volume, unit)}</TableCell>
                   <TableCell className="hidden sm:table-cell" aria-hidden="true">
                     <div
-                      className="h-2 rounded-r bg-foreground/70"
+                      className="h-2 rounded-r bg-[var(--sport-strength)]"
                       style={{ width: `${(w.volume / max) * 100}%` }}
                     />
                   </TableCell>

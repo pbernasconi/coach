@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import LinkHotkeys from '@/components/hotkeys/LinkHotkeys';
 import Link from 'next/link';
 import { cookies } from 'next/headers';
@@ -10,6 +11,8 @@ import { addDays } from '@/lib/vitals/readiness.mjs';
 import { isCalendarDate } from '@/lib/vitals/sync.mjs';
 import { loadDay, type DayView } from '@/lib/vitals/garmin-pages';
 import DayDetail from './DayDetail';
+
+export const metadata: Metadata = { title: 'Health day' };
 
 export const dynamic = 'force-dynamic';
 

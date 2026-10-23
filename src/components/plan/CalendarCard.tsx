@@ -93,7 +93,8 @@ function PlannedCard({ w, actual, roomy, action, drag }: { w: CalendarWorkout; a
           ) : skipped ? (
             skipText(w.skipReason)
           ) : missed ? (
-            `Not done${plannedText ? ` · ${plannedText}` : ''}`
+            // The red ✕ already says not done; the line keeps the plan, struck through.
+            <span className="line-through decoration-[var(--viz-muted)]">{plannedText || 'Not done'}</span>
           ) : (
             plannedText || sport(w.sport).label
           )}
@@ -118,7 +119,7 @@ function ActivityCard({ a, roomy, action }: { a: CalendarActivity; roomy: boolea
           <span className="min-w-0 flex-1 truncate font-medium text-[var(--viz-ink)]">{a.name || sport(a.sport).label}</span>
           <ComplianceMark level="done" title="Completed, not planned" tooltip={false} />
         </span>
-        <span className="block truncate tabular-nums text-[var(--viz-ink-2)]">{text}</span>
+        <span className="block truncate font-semibold tabular-nums text-[var(--viz-ink)]">{text}</span>
       </Action>
     </div>
   );
@@ -138,7 +139,7 @@ function LiftCard({ l, a, roomy, action }: { l: CalendarLift; a: CalendarActivit
           <span className="min-w-0 flex-1 truncate font-medium text-[var(--viz-ink)]">{l.name}</span>
           <ComplianceMark level="done" title="Logged in Lift" tooltip={false} />
         </span>
-        <span className="block truncate tabular-nums text-[var(--viz-ink-2)]">{watch ? `${watch} · ${l.setsLogged} sets` : `${l.setsLogged} sets · Lift`}</span>
+        <span className="block truncate font-semibold tabular-nums text-[var(--viz-ink)]">{watch ? `${watch} · ${l.setsLogged} sets` : `${l.setsLogged} sets · Lift`}</span>
       </Action>
     </div>
   );

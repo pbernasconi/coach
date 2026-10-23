@@ -111,6 +111,15 @@ export function extractPeaks(streams, activity) {
   return [];
 }
 
+/**
+ * A run effort faster than this pace (seconds per km) is a GPS jump, not a run: 2:50/km is faster than any 1 km
+ * Coach's athlete has run. Such rows are kept in the table but never shown as a best.
+ */
+export const FASTEST_RUN_S_PER_KM = 170;
+
+/** Whether a peak row is believable (run efforts under FASTEST_RUN_S_PER_KM are GPS errors). */
+export const plausiblePeak = (r) => r.metric !== 'run' || r.value / (r.span / 1000) >= FASTEST_RUN_S_PER_KM;
+
 export const PEAK_WINDOWS = [
   { key: 'all', label: 'All time', days: null },
   { key: 'd90', label: '90 days', days: 90 },
@@ -131,7 +140,7 @@ export function bestByWindow(rows, today) {
   for (const d of RUN_DISTANCES) out.run[d.span] = { all: null, d90: null, d28: null };
   for (const r of rows) {
     const cell = out[r.metric]?.[r.span];
-    if (!cell || r.date > today) continue;
+    if (!cell || r.date > today || !plausiblePeak(r)) continue;
     const better = (b) => !b || (r.metric === 'power' ? r.value > b.value : r.value < b.value);
     for (const w of PEAK_WINDOWS) {
       if (r.date >= starts[w.key] && better(cell[w.key])) {

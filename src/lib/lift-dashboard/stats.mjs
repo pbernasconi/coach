@@ -29,6 +29,18 @@ export const MAX_RELIABLE_REPS = 12;
 const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
 /** @param {unknown} v */
 const str = (v) => (typeof v === 'string' ? v : null);
+
+/**
+ * A session note without the bookkeeping lines scripts/lift-import-notes.mjs writes ("Imported from Apple Notes
+ * (notes-import): …", "Date confidence …"); null when nothing else is left.
+ * @param {unknown} v
+ */
+export function sessionNote(v) {
+  const text = str(v);
+  if (!text) return null;
+  const kept = text.split('\n').filter((l) => !/^(Imported from Apple Notes \(notes-import\)|Date confidence )/.test(l.trim()));
+  return kept.join('\n').trim() || null;
+}
 /** @param {unknown} v */
 const lowerId = (v) => (typeof v === 'string' ? v.toLowerCase() : null);
 /** @param {Payload} p */
@@ -115,7 +127,7 @@ export function buildModel(data) {
       title: str(s.title) ?? '',
       startedAt: str(s.startedAt),
       finishedAt: str(s.finishedAt),
-      note: str(s.note),
+      note: sessionNote(s.note),
       unit: /** @type {Unit} */ (s.unitsAtLog === 'lb' ? 'lb' : 'kg'),
     });
   }

@@ -30,7 +30,7 @@ export function minutesText(min) {
 export const signed = (n) => `${n > 0 ? '+' : ''}${Math.round(n) || 0}`;
 
 /** One decimal with its sign: "+1.5", "-0.4". */
-export const signed1 = (n) => `${n > 0 ? '+' : ''}${n.toFixed(1)}`;
+export const signed1 = (n) => (Math.abs(n) < 0.05 ? '0.0' : `${n > 0 ? '+' : '−'}${Math.abs(n).toFixed(1)}`);
 
 /** Pace per km as "m:ss" for minutes over km, or null without km. */
 export function paceText(min, km) {
@@ -240,7 +240,8 @@ export function rampCell(r, k) {
 
 /** A peak value as text: watts for power; time plus pace for a run distance in meters. */
 export function peakText(metric, meters, v) {
-  return metric === 'power' ? { main: `${Math.round(v)} W`, sub: null } : { main: formatDuration(v), sub: formatPace(meters, v) };
+  // Over 1 km the pace is the time, so it is left out.
+  return metric === 'power' ? { main: `${Math.round(v)} W`, sub: null } : { main: formatDuration(v), sub: meters === 1000 ? null : formatPace(meters, v) };
 }
 
 // ---- Lift ----

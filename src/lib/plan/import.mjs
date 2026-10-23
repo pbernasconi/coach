@@ -50,8 +50,9 @@ export function rowsFromPlan(plan) {
     liftTemplate: e.liftTemplate ?? null,
     intensity: e.intensity ?? null,
     duration,
-    // With steps, the planned TSS comes from them unless the plan gives one.
-    tss: typeof e.tss === 'number' ? e.tss : steps ? totals(steps).tss : null,
+    // With steps, the planned TSS comes from them: the workout window shows their TSS, and a planner's own number
+    // (75 against the steps' 52 on Oct 2026's VO2 run) contradicted it.
+    tss: steps ? totals(steps).tss : typeof e.tss === 'number' ? e.tss : null,
     steps,
     why: e.why ?? null,
     description: e.description ?? null,

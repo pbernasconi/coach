@@ -1,3 +1,5 @@
+import { toDay } from '@/lib/db-time.mjs';
+import { fmtDate, fmtDay } from '@/lib/vitals/health-view.mjs';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { cookies } from 'next/headers';
@@ -26,14 +28,22 @@ function zone(tz: string | undefined) {
   return 'America/Los_Angeles';
 }
 
+/** "Oct 22", or "Oct 22, 2025" before this year. */
+const dayText = (d: string, today: string) => {
+  const x = toDay(d) ?? d;
+  return x.slice(0, 4) === today.slice(0, 4) ? fmtDay(x) : fmtDate(x);
+};
+
 const signed = (n: number, f: (v: number) => string) => `${n > 0 ? '+' : n < 0 ? '−' : '±'}${f(Math.abs(n))}`;
 
 /** A tile: the newest value, its change over 4 weeks, and a trend. `better` says which way is an improvement. */
-function TrendTile({ label, points, format, unit, better }: { label: string; points: Pt[]; format: (v: number) => string; unit?: string; better: 'up' | 'down' }) {
+function TrendTile({ label, points, format, unit, better, today }: { label: string; points: Pt[]; format: (v: number) => string; unit?: string; better?: 'up' | 'down'; today: string }) {
   const last = points.at(-1);
   const before = last ? [...points].reverse().find((p) => Date.parse(p.date) <= Date.parse(last.date) - 28 * 864e5) : undefined;
-  const change = last && before ? last.value - before.value : null;
-  const good = change === null || change === 0 ? null : (change > 0) === (better === 'up');
+  const raw = last && before ? last.value - before.value : null;
+  // A change that rounds to nothing is no change ("+0 (worse)" before).
+  const change = raw !== null && format(Math.abs(raw)) === format(0) ? 0 : raw;
+  const good = change === null || change === 0 || !better ? null : (change > 0) === (better === 'up');
   return (
     <div className="rounded-lg border bg-[var(--viz-surface)] p-4">
       <div className="text-xs font-medium text-[var(--viz-muted)]">{label}</div>
@@ -42,7 +52,7 @@ function TrendTile({ label, points, format, unit, better }: { label: string; poi
         {last && unit && <span className="ml-1 text-sm font-normal text-[var(--viz-muted)]">{unit}</span>}
       </div>
       <div className="mt-1 text-xs text-[var(--viz-muted)]">
-        {!last ? 'No data yet' : change === null ? `as of ${last.date}` : (
+        {!last ? 'No data yet' : change === null ? `as of ${dayText(last.date, today)}` : change === 0 ? 'no change in 4 weeks' : (
           <>
             <span className={good === null ? '' : good ? 'text-[var(--viz-up)]' : 'text-[var(--viz-down)]'}>
               {signed(change, format)} {good === null ? '' : good ? '(better)' : '(worse)'}
@@ -66,7 +76,6 @@ export default async function TrainingPage() {
       <div className="space-y-1">
         <Link href="/health" className="text-sm text-muted-foreground underline-offset-4 hover:underline">← Health</Link>
         <h1 className="text-2xl font-semibold tracking-tight">Training</h1>
-        <p className="text-muted-foreground">Garmin&apos;s performance view: status, load, scores, race predictions, thresholds and records.</p>
       </div>
       {training.ok ? <TrainingBody t={training.value} today={today} /> : <SectionError label="Training" />}
     </div>
@@ -99,7 +108,7 @@ function TrainingBody({ t, today }: { t: TrainingView; today: string }) {
         <div className="grid gap-4 md:grid-cols-2">
           <HealthTrendChart
             title="Endurance score"
-            subtitle={t.endurance.latest?.classification ? `${t.endurance.latest.classification}. Garmin's measure of how long you can hold an effort.` : "Garmin's measure of how long you can hold an effort."}
+            subtitle={t.endurance.latest?.classification ?? ""}
             points={t.endurance.series}
             from={from}
             to={today}
@@ -130,9 +139,9 @@ function TrainingBody({ t, today }: { t: TrainingView; today: string }) {
                     <MiniTrend points={r.series} display={r.series.map((p) => fmtTime(p.value))} height={28} />
                   </div>
                   <span className="col-span-2 text-xs text-[var(--viz-ink-2)] sm:col-span-1 sm:text-right">
-                    {c === null || !r.latest?.since ? (r.latest ? `as of ${r.latest.date}` : 'No prediction') : c === 0 ? `no change since ${r.latest.since}` : (
+                    {c === null || !r.latest?.since ? (r.latest ? `as of ${dayText(r.latest.date, today)}` : 'No prediction') : c === 0 ? `no change since ${dayText(r.latest.since, today)}` : (
                       <span className={c < 0 ? 'text-[var(--viz-up)]' : 'text-[var(--viz-down)]'}>
-                        {fmtTime(Math.abs(c))} {c < 0 ? 'faster' : 'slower'} since {r.latest.since}
+                        {fmtTime(Math.abs(c))} {c < 0 ? 'faster' : 'slower'} since {dayText(r.latest.since, today)}
                       </span>
                     )}
                   </span>
@@ -146,14 +155,14 @@ function TrainingBody({ t, today }: { t: TrainingView; today: string }) {
       <section className="space-y-3">
         <h2 className="text-xl font-semibold tracking-tight">Thresholds and fitness</h2>
         <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
-          <TrendTile label="Lactate threshold HR" points={t.tiles.ltHr} format={r0} unit="bpm" better="up" />
-          <TrendTile label="Lactate threshold pace" points={t.tiles.ltPace} format={(v) => fmtPace(v)} better="down" />
-          <TrendTile label="Cycling FTP" points={t.tiles.ftp} format={r0} unit="W" better="up" />
-          <TrendTile label={t.tiles.vo2maxCycling.length ? 'VO2max (running)' : 'VO2max'} points={t.tiles.vo2max} format={(v) => v.toFixed(1)} unit="mL/kg/min" better="up" />
+          <TrendTile today={today} label="Lactate threshold HR" points={t.tiles.ltHr} format={r0} unit="bpm" />
+          <TrendTile today={today} label="Lactate threshold pace" points={t.tiles.ltPace} format={(v) => fmtPace(v)} better="down" />
+          {t.tiles.ftp.length > 0 && <TrendTile today={today} label="Cycling FTP" points={t.tiles.ftp} format={r0} unit="W" better="up" />}
+          <TrendTile today={today} label={t.tiles.vo2maxCycling.length ? 'VO2max (running)' : 'VO2max'} points={t.tiles.vo2max} format={(v) => v.toFixed(1)} unit="mL/kg/min" better="up" />
           {t.tiles.vo2maxCycling.length > 0 && (
-            <TrendTile label="VO2max (cycling)" points={t.tiles.vo2maxCycling} format={(v) => v.toFixed(1)} unit="mL/kg/min" better="up" />
+            <TrendTile today={today} label="VO2max (cycling)" points={t.tiles.vo2maxCycling} format={(v) => v.toFixed(1)} unit="mL/kg/min" better="up" />
           )}
-          <TrendTile label="Fitness age" points={t.tiles.fitnessAge} format={(v) => v.toFixed(0)} unit="years" better="down" />
+          <TrendTile today={today} label="Fitness age" points={t.tiles.fitnessAge} format={(v) => v.toFixed(0)} unit="years" better="down" />
         </div>
       </section>
 

@@ -1,5 +1,8 @@
 'use client';
 
+import { Info } from 'lucide-react';
+import { HelpTooltip } from '@kobo/web';
+
 import { useState } from 'react';
 import SportIcon from '@/components/SportIcon';
 import type { SportWeek } from '@/lib/performance/queries';
@@ -59,10 +62,10 @@ export default function WeeklyHoursChart({ weeks, currentWeek }: { weeks: HoursW
   return (
     <div className="rounded-lg border bg-[var(--viz-surface)] p-4">
       <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-        <div>
-          <h2 className="font-semibold text-[var(--viz-ink)]">Training hours per week</h2>
-          <p className="text-xs text-[var(--viz-muted)]">Moving time from Strava. Strength counts Lift and Strava sessions, one per day.</p>
-        </div>
+        <h2 className="inline-flex items-center gap-1.5 font-semibold text-[var(--viz-ink)]">
+          Training hours per week
+          <HelpTooltip label="About training hours" icon={<Info aria-hidden />}>Moving time from Strava. Strength counts Lift and Strava sessions, one per day.</HelpTooltip>
+        </h2>
         <div className="flex flex-wrap gap-3">
           {series.map((s) => <LegendItem key={s.id} icon={<SportIcon id={s.id} />} label={s.label} />)}
           <LegendItem color="var(--sport-strength)" label="Strength session" shape="dot" />

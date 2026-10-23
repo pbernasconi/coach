@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import SectionError from '@/components/SectionError';
@@ -7,6 +8,8 @@ import { loadBiomarker, type BiomarkerView, type LabStatus } from '@/lib/vitals/
 import BiomarkerChart from '../BiomarkerChart';
 import BiomarkerTabs from '../BiomarkerTabs';
 import ContentBlocks from '../ContentBlocks';
+
+export const metadata: Metadata = { title: 'Lab result' };
 
 export const dynamic = 'force-dynamic';
 
