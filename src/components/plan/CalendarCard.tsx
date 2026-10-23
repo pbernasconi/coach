@@ -54,7 +54,27 @@ function Action({ action, children }: { action: CardAction; children: React.Reac
   );
 }
 
+/** A rest day: one quiet line (no card, no status mark; rest is not something to complete). It still opens and moves. */
+function RestCard({ w, action, drag }: { w: CalendarWorkout; action: CardAction; drag?: CardDrag }) {
+  return (
+    <div
+      draggable={Boolean(drag)}
+      onDragStart={drag?.onDragStart}
+      onDragEnd={drag?.onDragEnd}
+      className={cn('plan-rest min-w-0 rounded-[5px] px-2 py-1 text-[12px] leading-4 text-[var(--viz-muted)] transition-colors hover:bg-[var(--viz-ink)]/[0.04] hover:text-[var(--viz-ink-2)]', drag && 'cursor-grab active:cursor-grabbing')}
+    >
+      <Action action={action}>
+        <span className="flex min-w-0 items-center gap-1.5">
+          <SportIcon id="rest" className="h-3 w-3 shrink-0 opacity-70" />
+          <span className="min-w-0 flex-1 truncate">{plainTitle(w.title) || 'Rest day'}</span>
+        </span>
+      </Action>
+    </div>
+  );
+}
+
 function PlannedCard({ w, actual, roomy, action, drag }: { w: CalendarWorkout; actual: CalendarActivity | null; roomy: boolean; action: CardAction; drag?: CardDrag }) {
+  if (w.sport === 'rest' && !actual) return <RestCard w={w} action={action} drag={drag} />;
   const lvl = levelStyle(w.compliance.level);
   const done = w.state === 'done';
   const missed = w.state === 'missed';

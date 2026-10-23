@@ -9,6 +9,7 @@ import type { Item } from './ItemPreview';
 import ActivityModal from './ActivityModal';
 import LiftModal from './LiftModal';
 import PlannedModal from './PlannedModal';
+import { isTextSession } from './SetTable';
 
 type Props = {
   item: Item;
@@ -49,9 +50,12 @@ export default function ItemModal({ item, onClose, onStep, canStep, onCopy, weat
 
   const planned = item.kind === 'planned' ? item.w : null;
   const activityId = item.kind === 'activity' ? item.a.id : planned?.match?.source === 'strava' ? planned.match.id : null;
-  // A done strength workout opens its Lift session; a planned one shows the Lift session's targets.
+  // A done strength workout opens its Lift session; a planned one shows the Lift session's targets. A home session
+  // written as text keeps its own window with the set table, logged or not.
+  const home = planned != null && isTextSession(planned) && (planned.match?.source !== 'lift' || planned.match.id === planned.lift?.id);
   const liftId =
     item.kind === 'lift' ? item.l.id
+    : home ? null
     : planned?.match?.source === 'lift' ? planned.match.id
     : planned?.state === 'done' && planned.status !== 'done' && planned.lift ? planned.lift.id
     : null;

@@ -19,7 +19,7 @@ import { loadActivity, loadActivityContext, type ActivityContext, type ActivityV
 import { loadLiftModel } from '@/lib/lift-dashboard/queries';
 import { sessionDetail } from '@/lib/lift-dashboard/stats.mjs';
 import { richSession, type RichSession } from '@/lib/lift/session';
-import { applyLiftEdit, liftLibrary, startPlanLift } from '@/lib/lift/edit-store';
+import { applyLiftEdit, liftLibrary, logPlanSet } from '@/lib/lift/edit-store';
 import type { LiftEdit } from '@/lib/lift/edit.mjs';
 import { loadDay } from '@/lib/vitals/garmin-pages';
 import { dayGlance, type DayGlance } from '@/lib/vitals/day-glance';
@@ -191,16 +191,22 @@ export async function editLiftAction(sessionId: string, edits: LiftEdit[]): Prom
 }
 
 /**
- * "Log sets" on a strength workout written as text (a home session): makes its Lift session from the coach's
- * exercises and links it, so each set can be logged here or in Lift.
+ * Logs one set of a strength workout written as text (a home session), from the set table. The first log makes the
+ * workout's Lift session from the coach's exercises and links it.
  */
-export async function startPlanLiftAction(planId: string): Promise<{ sessionId: string } | { error: string }> {
+export async function logPlanSetAction(
+  planId: string,
+  at: { setId: string } | { exercise: number; set: number },
+  log: { reps: number; weight?: number | null }
+): Promise<{ ok: true } | { error: string }> {
   const userId = await user();
   const { unit } = await loadLiftModel();
-  const r = await startPlanLift(userId, String(planId).slice(0, 64), unit === 'kg' ? 'kg' : 'lb');
+  const timeZone = await cookieTimeZone();
+  const r = await logPlanSet(userId, String(planId).slice(0, 64), at, log, unit === 'kg' ? 'kg' : 'lb', { today: todayIn(timeZone), timeZone });
   if ('error' in r) return r;
   revalidatePath('/plan');
-  return r;
+  revalidatePath('/');
+  return { ok: true };
 }
 
 /** The Lift exercise library, for "Add exercise". */
