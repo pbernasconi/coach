@@ -842,6 +842,30 @@ opens it for a planned workout that is not a Lift session. `id` is the Week API 
 - `done.activityId`: the Strava activity to open (`null` for a Lift match); `done` is `null` until done.
 - `feedback`: from the workout's day on (see "Feedback", item `plan:<id>`); `null` before it, or when it did not load.
 
+### Workout: `GET /api/app/workouts/{ref}?tz=`
+
+One workout, planned and done as one: the phone's one workout page. `ref` is `plan-<plan workout id>` (a Week API item's
+`id`) or `strava-<Strava activity id>` (also `strava-latest`); either opens the same workout, and the other half is
+found from it (the plan workout's match, or the activity's planned workout). Loader `loadUnifiedWorkout`
+(`src/lib/workout/unified.ts`), shape `workoutResponse` (`src/lib/workout/unified.mjs`). `400` for a malformed ref,
+`404` when the half it names does not exist.
+
+```json
+{
+  "ref": "plan-6f1c…", "state": "done", "title": "Easy run + strides",
+  "plan": { "id": "6f1c…", "date": "2026-10-22", "title": "Easy run + strides", "workout": { "…": "as Planned workout" },
+            "done": { "activityId": "16234567890", "name": "Lunch Run" } },
+  "activity": { "activityId": "16234567890", "header": { "…": "as Activities, detail" }, "route": { "…": "…" } },
+  "feedback": { "item": "strava:16234567890", "…": "as Feedback" }
+}
+```
+
+- `plan`: the Planned workout body without its `feedback`; `null` for an activity that matched no plan workout.
+- `activity`: the Activities detail body without its `feedback`; `null` until the workout is done, or when it could not
+  be read.
+- `state`: `done` with an activity, else `planned`. `title`: the plan's title, else the activity's name.
+- `feedback`: the activity's block when there is one (it reads rows saved under either item), else the plan's.
+
 ### Feedback: `PUT /api/app/feedback`
 
 How a done workout felt, in the web's `workout_feedback` table (`src/lib/plan/feedback.ts`, the web's EffortLog): the

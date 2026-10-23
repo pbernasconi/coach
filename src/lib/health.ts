@@ -36,6 +36,7 @@ import { GET as appActivities } from '@/app/api/app/activities/route';
 import { GET as appToday } from '@/app/api/app/today/route';
 import { GET as appTrends } from '@/app/api/app/trends/route';
 import { GET as appSettings } from '@/app/api/app/settings/route';
+import { GET as appWorkout } from '@/app/api/app/workouts/[ref]/route';
 import { GET as appWeighIn } from '@/app/api/app/weigh-ins/[date]/route';
 import { loadAppToday, loadAppTrends } from '@/lib/performance/app-pages';
 
@@ -215,6 +216,12 @@ export async function runChecks(now = new Date(), { migrations = true }: { migra
       await check('/api/app/trends', async () => {
         const res = await appTrends(new Request('http://health.local/api/app/trends?tz=America/Los_Angeles', auth));
         if (res.status !== 200) throw new Error(`status ${res.status}: ${(await res.text()).slice(0, 200)}`);
+      }),
+      await check('/api/app/workouts/strava-latest', async () => {
+        const res = await appWorkout(new Request('http://health.local/api/app/workouts/strava-latest?tz=America/Los_Angeles', auth), {
+          params: Promise.resolve({ ref: 'strava-latest' }),
+        });
+        if (res.status !== 200 && res.status !== 404) throw new Error(`status ${res.status}: ${(await res.text()).slice(0, 200)}`);
       }),
       await check('/api/app/settings', async () => {
         const res = await appSettings(new Request('http://health.local/api/app/settings?tz=America/Los_Angeles', auth));
