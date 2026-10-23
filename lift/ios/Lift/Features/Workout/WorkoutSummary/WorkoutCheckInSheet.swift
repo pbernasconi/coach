@@ -176,7 +176,7 @@ struct EffortDial: View {
     var body: some View {
         GeometryReader { proxy in
             let side = min(proxy.size.width, proxy.size.height)
-            let radius = side / 2 - EffortDialMetrics.line
+            let radius = side / 2 - EffortDialMetrics.line / 2  // the stroke's centre line
             let center = CGPoint(x: proxy.size.width / 2, y: proxy.size.height / 2)
             ZStack {
                 arc(to: 1)
