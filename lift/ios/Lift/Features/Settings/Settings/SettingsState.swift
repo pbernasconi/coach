@@ -1,4 +1,5 @@
 import LiftCore
+import LiftSync
 
 /// Everything the Settings screen renders. Nothing here is saved yet except the sync token, which lives in the
 /// Keychain and never in this state once saved.
@@ -12,6 +13,8 @@ nonisolated struct SettingsState: Equatable, Sendable {
     var tokenEditor: TokenEditor?
     /// Saving finished workouts to Apple Health.
     var health: HealthStatus
+    /// The server's half: every connection's state and the coach's targets and next event.
+    var remote = AppResourceState<AppSettings>()
 
     /// The Practice mode switch, from where the data lives.
     var practice: PracticeSection {

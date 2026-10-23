@@ -20,7 +20,9 @@ import Testing
             health: RecordingHealthRecorder(status: .notSaved),
             units: InMemoryUnitSettings(.kg),
             practice: RecordingPracticeModeSwitch(),
+            data: FakeAppData(),
             now: { now() },
+            calendar: SessionBuilder.calendar,
             router: RecordingNavigator()
         )
         await vm.run()
@@ -66,7 +68,9 @@ import Testing
             health: RecordingHealthRecorder(status: .notSaved),
             units: InMemoryUnitSettings(.kg),
             practice: RecordingPracticeModeSwitch(),
+            data: FakeAppData(),
             now: { ManualNow.start },
+            calendar: SessionBuilder.calendar,
             router: RecordingNavigator()
         )
 

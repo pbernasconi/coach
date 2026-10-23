@@ -15,6 +15,9 @@ final class SettingsViewModel {
     private let units: any UnitPreference
     /// Opens practice data or the log; the app starts over on it.
     private let practice: any PracticeModeSwitching
+    /// The connections and the coach's side, from the server.
+    private let remote: AppResource<AppSettings>
+    @ObservationIgnored private var isLoading = false
     /// The latest sync status, kept to redraw the status row when the token changes.
     @ObservationIgnored private var latest = SyncStatus.initial
 
@@ -25,9 +28,12 @@ final class SettingsViewModel {
         health: any WorkoutHealthRecording,
         units: any UnitPreference,
         practice: any PracticeModeSwitching,
+        data: any AppDataSource,
         now: @escaping @Sendable () -> Date,
+        calendar: Calendar,
         router: any Navigating
     ) {
+        remote = AppResource(path: AppSettings.path, source: data, now: now, days: DayCalendar(calendar: calendar))
         state = SettingsState(
             info: info,
             sync: Self.section(dataSource: info.dataSource, isConfigured: sync.isConfigured)
@@ -44,6 +50,20 @@ final class SettingsViewModel {
     /// the screen is shown (SCR-4). Demo data and builds without a server skip the sync part.
     func run() async {
         state.health = health.status()
+        await withDiscardingTaskGroup { group in
+            group.addTask { await self.load() }
+            group.addTask { await self.followSync() }
+        }
+    }
+
+    private func load() async {
+        guard !isLoading else { return }
+        isLoading = true
+        defer { isLoading = false }
+        await remote.load(current: state.remote) { state.remote = $0 }
+    }
+
+    private func followSync() async {
         guard case .available = state.sync else { return }
         let hasToken = await sync.hasToken()
         refresh(hasToken: hasToken)
@@ -68,6 +88,14 @@ final class SettingsViewModel {
             return syncNow()
         case .healthToggled(let isOn):
             return setHealth(isOn)
+        case .refreshPulled, .retryTapped:
+            if action == .retryTapped { state.remote.content = .loading }
+            let sync = sync
+            let canSync = state.sync != .demo && state.sync != .unavailable
+            return Task {
+                if canSync { await sync.syncNow() }
+                await load()
+            }
         case .practiceModeToggled(let isOn):
             // Only the log and practice data can switch; demo and `-fresh` launches keep theirs.
             guard state.practice.isOn != isOn, state.practice != .unavailable else { return nil }

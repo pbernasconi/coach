@@ -1,0 +1,21 @@
+{
+  "generatedAt": "2026-10-22T20:00:00.000Z",
+  "connections": {
+    "ok": true,
+    "summary": { "attention": 1, "total": 5, "level": "warn", "text": "1 of 5 needs attention" },
+    "items": [
+      { "id": "strava", "name": "Strava", "state": "connected", "level": "ok", "statusText": "Synced 2 h ago", "detailText": "Newest activity Oct 22", "note": null, "lastSyncedAt": "2026-10-22T18:00:00Z", "required": true },
+      { "id": "garmin", "name": "Garmin", "state": "connected", "level": "ok", "statusText": "Synced 3 h ago", "detailText": "Sleep and HRV through Oct 22", "note": null, "lastSyncedAt": "2026-10-22T17:00:00Z", "required": true },
+      { "id": "calendar", "name": "Google Calendar", "state": "attention", "level": "warn", "statusText": "Synced 5 h ago", "detailText": "1 calendar", "note": "Calendar has not synced for 5 h (it should sync every hour).", "lastSyncedAt": "2026-10-22T15:00:00Z", "required": true },
+      { "id": "lift", "name": "Lift", "state": "connected", "level": "ok", "statusText": "Synced 12 min ago", "detailText": "57 sessions", "note": null, "lastSyncedAt": "2026-10-22T19:48:00Z", "required": true },
+      { "id": "bodyspec", "name": "BodySpec", "state": "connected", "level": "ok", "statusText": "4 scans", "detailText": "Newest scan Sep 30", "note": null, "lastSyncedAt": "2026-10-20T10:00:00Z", "required": true },
+      { "id": "function", "name": "Function Health", "state": "connected", "level": "ok", "statusText": "Synced 21 days ago", "detailText": null, "note": null, "lastSyncedAt": "2026-10-01T10:00:00Z", "required": false },
+      { "id": "scale", "name": "Bathroom scale", "state": "connected", "level": "ok", "statusText": "Last weigh-in Oct 21", "detailText": null, "note": null, "lastSyncedAt": null, "required": false }
+    ]
+  },
+  "coach": {
+    "ok": true,
+    "targetsText": "35 km run · 4 h ride · 2 strength a week",
+    "nextEvent": { "name": "Harbour marathon", "dateText": "Dec 6", "countdownText": "In 6 wk 3 d", "priority": "A" }
+  }
+}

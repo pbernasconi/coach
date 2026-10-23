@@ -16,7 +16,11 @@ import Testing
     let health = RecordingHealthRecorder(status: .notSaved)
     let units = InMemoryUnitSettings(.kg)
 
-    func makeViewModel(_ dataSource: AppInfo.DataSource = .device, unit: WeightUnit = .kg) -> SettingsViewModel {
+    func makeViewModel(
+        _ dataSource: AppInfo.DataSource = .device,
+        unit: WeightUnit = .kg,
+        data: any AppDataSource = FakeAppData()
+    ) -> SettingsViewModel {
         let now = now
         return SettingsViewModel(
             info: AppInfo(version: "0.1.0", build: "7", unit: unit, dataSource: dataSource),
@@ -24,7 +28,9 @@ import Testing
             health: health,
             units: units,
             practice: RecordingPracticeModeSwitch(),
+            data: data,
             now: { now() },
+            calendar: SessionBuilder.calendar,
             router: router
         )
     }
@@ -35,9 +41,33 @@ import Testing
         await vm.run()
 
         let summary = SyncSummary(status: "Not set up", isSyncing: false, hasToken: false)
-        #expect(
-            vm.state == SettingsState(unit: .lb, version: "0.1.0 (7)", dataSource: .device, sync: .available(summary))
-        )
+        var expected = SettingsState(unit: .lb, version: "0.1.0 (7)", dataSource: .device, sync: .available(summary))
+        expected.remote = vm.state.remote  // the server's half is tested below
+        #expect(vm.state == expected)
+    }
+
+    @Test func runLoadsTheConnectionsAndTheCoach() async throws {
+        let vm = makeViewModel(data: RoutedAppData([AppSettings.path: RoutedAppData.demo("app-settings")]))
+        await vm.run()
+        let settings = try #require(vm.state.remote.content.value)
+        let connections = try #require(settings.connections.value)
+        #expect(connections.items.map(\.id) == ["strava", "garmin", "calendar", "lift", "bodyspec", "function", "scale"])
+        #expect(connections.summary.text == "1 of 5 needs attention")
+        #expect(settings.coach.value?.nextEvent?.name == "Harbour marathon")
+    }
+
+    @Test func refreshPulledSyncsAndReadsTheConnectionsAgain() async {
+        let data = RoutedAppData([AppSettings.path: RoutedAppData.demo("app-settings")])
+        let vm = makeViewModel(data: data)
+        await vm.send(.refreshPulled)?.value
+        #expect(sync.syncNowCount == 1)
+        #expect(vm.state.remote.content.value != nil)
+    }
+
+    @Test func retryTappedReadsTheConnectionsAgain() async {
+        let vm = makeViewModel(data: RoutedAppData([AppSettings.path: RoutedAppData.demo("app-settings")]))
+        await vm.send(.retryTapped)?.value
+        #expect(vm.state.remote.content.value?.connections.value != nil)
     }
 
     @Test func demoDataIsNeverSynced() async {
