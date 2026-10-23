@@ -30,7 +30,7 @@ const actionBase = 'block min-w-0 rounded-[4px] text-left focus-visible:outline-
 
 /**
  * The workout card of the calendar, used by /plan and the home page's week strip so both look the same.
- * Upcoming workouts are white with a dashed outline; done, partly done and not done are filled in their status
+ * Upcoming workouts are white with a solid grey outline; done, partly done and not done are filled in their status
  * colour; unplanned activities and Lift sessions count as done. `roomy` drops the fixed height (agenda view).
  */
 export default function CalendarCard({ item, action, roomy = false, drag }: { item: CalendarItem; action: CardAction; roomy?: boolean; drag?: CardDrag }) {
@@ -76,18 +76,18 @@ function PlannedCard({ w, actual, roomy, action, drag }: { w: CalendarWorkout; a
       className={cn(
         cardBase,
         roomy ? 'py-1.5' : showDone ? 'h-[62px] shrink-0' : w.steps ? 'h-[70px] shrink-0' : 'h-[46px] shrink-0',
-        filled ? 'plan-done shadow-sm' : 'plan-upcoming border-dashed border-[var(--viz-axis)] shadow-sm',
+        filled ? 'plan-done shadow-sm' : 'plan-upcoming shadow',
         draggable && 'cursor-grab hover:shadow-md active:cursor-grabbing'
       )}
-      style={{ borderLeftColor: filled ? sport(w.sport).color : `color-mix(in srgb, ${sport(w.sport).color} 45%, transparent)`, borderLeftStyle: 'solid', '--chip-tint': lvl.color } as React.CSSProperties}
+      style={{ borderLeftColor: sport(w.sport).color, '--chip-tint': lvl.color } as React.CSSProperties}
     >
       <Action action={action}>
         <span className="flex min-w-0 items-center gap-1">
-          <SportIcon id={w.sport} className={cn('h-3.5 w-3.5', !filled && 'opacity-70')} />
-          <span className={cn('min-w-0 flex-1 truncate font-medium', filled ? 'text-[var(--viz-ink)]' : 'text-[var(--viz-ink-2)]')}>{plainTitle(w.title)}</span>
+          <SportIcon id={w.sport} className="h-3.5 w-3.5" />
+          <span className={cn('min-w-0 flex-1 truncate font-medium', 'text-[var(--viz-ink)]')}>{plainTitle(w.title)}</span>
           <ComplianceMark level={w.compliance.level} title={status} tooltip={false} />
         </span>
-        <span className={cn('block truncate tabular-nums', filled ? 'text-[var(--viz-ink-2)]' : 'text-[var(--viz-muted)]')}>
+        <span className="block truncate tabular-nums text-[var(--viz-ink-2)]">
           {showDone ? (
             <span className="font-semibold text-[var(--viz-ink)]">{doneParts.join(' · ') || doneText}</span>
           ) : skipped ? (

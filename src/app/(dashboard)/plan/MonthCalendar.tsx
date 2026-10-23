@@ -352,7 +352,7 @@ export default function MonthCalendar({ anchor, openAt, range, bounds, weather, 
             </span>
           ))}
           <span className="inline-flex items-center gap-1.5">
-            <span className="h-3.5 w-6 rounded-[4px] border border-dashed border-[var(--viz-axis)]" /> Planned
+            <span className="plan-upcoming h-3.5 w-6 rounded-[4px] border" /> Planned
           </span>
         </span>
         {coach && <div className="order-last w-full min-w-0 md:order-none md:ml-auto md:w-auto md:flex-1 md:max-w-2xl">{coach}</div>}

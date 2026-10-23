@@ -13,7 +13,7 @@ nonisolated enum WeekCardStatus: Equatable, Sendable {
 
 /// One Week workout as a row of its day's card (`WeekDayGroup`), styled as the web plan's chips but quieter: a done,
 /// partly done or not done row has a faint tint of its status colour; a planned one is the plain surface. The left edge
-/// is the sport's colour (faded while planned). The day's card draws the border and the lines between rows. The status
+/// is the sport's colour. The day's card draws the border and the lines between rows. The status
 /// is also an icon inside the row, never colour alone.
 struct WeekCard<Content: View>: View {
     @Environment(\.koboTheme) private var theme
@@ -43,7 +43,7 @@ struct WeekCard<Content: View>: View {
                 tone.soft.opacity(WeekCardStatus.tintStrength)
             }
             Rectangle()
-                .fill(status == .planned ? sport.opacity(0.45) : sport)
+                .fill(sport)
                 .frame(width: Space.xs)
                 .frame(maxHeight: .infinity)
         }
@@ -67,7 +67,7 @@ extension WeekCardStatus {
 
 /// One day's workouts as one card: its rows stacked, clipped to a rounded shape, with a hairline between rows. The
 /// border is a faint status colour for a day with one done or not done workout, neutral for a day with several, and
-/// dashed while everything that day is still planned.
+/// a solid grey outline while everything that day is still planned.
 struct WeekDayGroup<Content: View>: View {
     @Environment(\.koboTheme) private var theme
     let statuses: [WeekCardStatus]
@@ -83,10 +83,7 @@ struct WeekDayGroup<Content: View>: View {
 
     @ViewBuilder private var border: some View {
         if statuses.allSatisfy({ $0 == .planned }) {
-            shape.strokeBorder(
-                theme.palette.textTertiary.opacity(0.7),
-                style: StrokeStyle(lineWidth: Size.hairline * 2, dash: [Space.xs, Space.xs])
-            )
+            shape.strokeBorder(theme.palette.textTertiary, lineWidth: Size.hairline * 2)
         } else if statuses.count == 1, let tone = statuses[0].tone(in: theme.palette) {
             shape.strokeBorder(tone.ink.opacity(0.2), lineWidth: Size.hairline * 2)
         } else {
