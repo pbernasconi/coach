@@ -50,6 +50,8 @@ nonisolated struct LiftSessionMuscle: Decodable, Equatable, Sendable, Identifiab
     var setsText: String
     /// Against the first muscle, 0–1.
     var relative: Double
+    /// Hard sets, as `setsText` counts them; nil from an older server.
+    var sets: Double?
 
     var id: String { muscle }
 }

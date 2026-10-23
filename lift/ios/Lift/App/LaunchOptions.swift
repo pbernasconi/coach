@@ -18,6 +18,7 @@ import LiftCore
 ///     -open templates                         with -demo: pushes the templates list on Exercises
 ///     -open template                          with -demo: pushes the first template's editor on Exercises
 ///     -open summary                           with -demo: pushes the latest logged session's summary on Week
+///     -open lift-session                      with -demo: pushes the demo Lower A on Lift (its body map)
 ///     -open progress                          with -demo: opens History on Progress (hard sets per muscle)
 ///     -open plates                            with -demo: pushes Plates and bars on Settings
 ///     -open activity|ride|activity-pending   with -demo: pushes a made-up activity on Training (DemoActivities)
@@ -44,6 +45,8 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
         case templates
         case template
         case summary
+        /// Lift: the demo's finished Lower A, which leads with its body map.
+        case liftSession = "lift-session"
         /// History's Progress view: a segment of the History tab rather than a pushed route.
         case progress
         /// Settings → Plates and bars.
@@ -76,7 +79,7 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
         var tab: AppTab {
             switch self {
             case .workout, .summary: .week
-            case .exercise, .catalog, .templates, .template, .templateLink, .importNotes, .progress: .lift
+            case .exercise, .catalog, .templates, .template, .templateLink, .importNotes, .progress, .liftSession: .lift
             case .plates: .settings
             case .activity, .ride, .activityPending, .trends: .training
             case .todayTrends, .todayEnd: .today
@@ -153,6 +156,8 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
         case .templates: return .templates
         case .template: return templateID.map(AppRoute.template)
         case .summary: return loggedSessionID.map(AppRoute.workoutSummary)
+        // The session in DemoAPI/app-lift-sessions.json.
+        case .liftSession: return .liftSession("de300000-0000-4000-8000-000000000100")
         case .exercise: return .exercise(ExerciseLibrary.seedID(1))
         case .catalog: return .catalog
         case .plates: return .plates
