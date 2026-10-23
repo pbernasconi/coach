@@ -79,7 +79,7 @@ private struct WorkoutOptionsSheets: ViewModifier {
     }
 }
 
-/// An exercise's "…" beside How to: opens its options.
+/// An exercise's "…" at the end of its header: opens its options.
 struct WorkoutExerciseOptionsButton: View {
     let exercise: WorkoutExercise
     let send: (WorkoutAction) -> Void

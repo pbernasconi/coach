@@ -3,8 +3,8 @@ import KoboTokens
 import LiftCore
 import SwiftUI
 
-/// One exercise on the Workout screen: a compact header (thumbnail, name, working target, How to), one-line warm-up,
-/// plates and progression hints, last time's note and this session's (or Add note), then the set grid with last time's
+/// One exercise on the Workout screen: a compact header (thumbnail, name and working target, which open the exercise's
+/// page), one-line warm-up, plates and progression hints, then the set grid with last time's
 /// sets, and Add set as the grid's last row. The header and the grid's card edge sit on the page keyline; the grid is a
 /// grouped card (a set of editable fields) with its column header inside it, so the column titles, the rows and Add set
 /// share the card's inset.
@@ -46,23 +46,30 @@ struct WorkoutExerciseSection: View {
         }
     }
 
-    /// Thumbnail, name and target, How to and "…" in one row; at accessibility sizes the name wraps between the thumbnail
-    /// and the buttons (all top-aligned) and the target takes the full width under them.
+    /// Thumbnail, name and target, then "…", in one row; a tap on the thumbnail or the name opens the exercise's page
+    /// (how to do it, this workout's note, its history). At accessibility sizes the name wraps between the thumbnail and
+    /// "…" (top-aligned) and the target takes the full width under them.
     private var header: some View {
         VStack(alignment: .leading, spacing: Space.sm) {
             if dynamicTypeSize.isAccessibilitySize {
                 HStack(alignment: .top, spacing: Space.md) {
-                    thumbnailView
-                    name.frame(maxWidth: .infinity, alignment: .leading)
-                    howTo
+                    opensDetail {
+                        HStack(alignment: .top, spacing: Space.md) {
+                            thumbnailView
+                            name.frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
                     WorkoutExerciseOptionsButton(exercise: exercise, send: send)
                 }
                 target
             } else {
                 HStack(spacing: Space.md) {
-                    thumbnailView
-                    title.frame(maxWidth: .infinity, alignment: .leading)
-                    howTo
+                    opensDetail {
+                        HStack(spacing: Space.md) {
+                            thumbnailView
+                            title.frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
                     WorkoutExerciseOptionsButton(exercise: exercise, send: send)
                 }
             }
@@ -87,11 +94,36 @@ struct WorkoutExerciseSection: View {
         }
     }
 
+    /// The name, with a small chevron when it opens the exercise's page.
     private var name: some View {
-        Text(verbatim: exercise.name)
-            .font(theme.font(.headline))
-            .foregroundStyle(theme.palette.textPrimary)
-            .accessibilityAddTraits(.isHeader)
+        HStack(alignment: .firstTextBaseline, spacing: Space.xxs) {
+            Text(verbatim: exercise.name)
+                .font(theme.font(.headline))
+                .foregroundStyle(theme.palette.textPrimary)
+                .multilineTextAlignment(.leading)
+            if exercise.libraryID != nil {
+                Image(systemName: "chevron.right")
+                    .font(theme.font(.footnote).weight(.semibold))
+                    .foregroundStyle(theme.palette.textTertiary)
+                    .accessibilityHidden(true)
+            }
+        }
+        .accessibilityAddTraits(.isHeader)
+    }
+
+    /// `label` as one button to the exercise's page when it has one; as it is otherwise.
+    @ViewBuilder private func opensDetail(@ViewBuilder _ label: () -> some View) -> some View {
+        if let libraryID = exercise.libraryID {
+            Button {
+                send(.howToTapped(exerciseID: libraryID, note: exercise.note))
+            } label: {
+                label().contentShape(.rect)
+            }
+            .buttonStyle(.pressFeedback)
+            .accessibilityHint(Text("Shows how to do it and its history"))
+        } else {
+            label()
+        }
     }
 
     @ViewBuilder private var target: some View {
@@ -102,32 +134,12 @@ struct WorkoutExerciseSection: View {
         }
     }
 
-    @ViewBuilder private var howTo: some View {
-        if let libraryID = exercise.libraryID {
-            IconButton(
-                "info",
-                verbatimAccessibilityLabel: String(localized: "How to \(exercise.name)"),
-                style: .tinted
-            ) { send(.howToTapped(exerciseID: libraryID, note: exercise.note)) }
-        }
-    }
-
-    /// The still; tapping it opens How to too. VoiceOver skips it, since the How to button does the same.
+    /// The still, inside the header's button.
     @ViewBuilder private var thumbnailView: some View {
         if let thumbnail, let catalogID = exercise.catalogID {
-            let still = ExerciseThumbnail(image: thumbnail, name: exercise.name, side: Size.minTouch)
+            ExerciseThumbnail(image: thumbnail, name: exercise.name, side: Size.minTouch)
                 .onAppear { send(.thumbnailNeeded(catalogID: catalogID)) }
-            if let libraryID = exercise.libraryID {
-                Button {
-                    send(.howToTapped(exerciseID: libraryID, note: exercise.note))
-                } label: {
-                    still
-                }
-                .buttonStyle(.pressFeedback)
                 .accessibilityHidden(true)
-            } else {
-                still
-            }
         }
     }
 
