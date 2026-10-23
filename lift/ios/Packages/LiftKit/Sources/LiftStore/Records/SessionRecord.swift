@@ -19,6 +19,10 @@ public struct SessionRecord: Hashable, Sendable, Identifiable {
     /// When Lift last changed `day` on this device (v8): a move, a push to next week, or the undo of one. Other edits
     /// keep it. Nil when the day was never moved here.
     public var dayMovedAt: Date?
+    /// When the running pause started (v9); nil while the workout is not paused.
+    public var pausedAt: Date?
+    /// Whole seconds of every pause already ended (v9). The workout's length leaves them out, and a running pause too.
+    public var pausedSeconds: Int
     public var createdAt: Date
     public var updatedAt: Date
     public var deletedAt: Date?
@@ -35,6 +39,8 @@ public struct SessionRecord: Hashable, Sendable, Identifiable {
         unitsAtLog: WeightUnit,
         healthWorkoutID: UUID? = nil,
         dayMovedAt: Date? = nil,
+        pausedAt: Date? = nil,
+        pausedSeconds: Int = 0,
         createdAt: Date,
         updatedAt: Date,
         deletedAt: Date? = nil
@@ -50,6 +56,8 @@ public struct SessionRecord: Hashable, Sendable, Identifiable {
         self.unitsAtLog = unitsAtLog
         self.healthWorkoutID = healthWorkoutID
         self.dayMovedAt = dayMovedAt
+        self.pausedAt = pausedAt
+        self.pausedSeconds = pausedSeconds
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.deletedAt = deletedAt
@@ -72,6 +80,8 @@ extension SessionRecord: SyncedRecord {
         unitsAtLog = try row.raw("unitsAtLog")
         healthWorkoutID = try row.optional("healthWorkoutID")  // absent from payloads written before v5
         dayMovedAt = try row.optional("dayMovedAt")  // absent from payloads written before v8
+        pausedAt = try row.optional("pausedAt")  // absent from payloads written before v9
+        pausedSeconds = try row.optional("pausedSeconds") ?? 0
         createdAt = try row.required("createdAt")
         updatedAt = try row.required("updatedAt")
         deletedAt = try row.optional("deletedAt")
@@ -89,6 +99,8 @@ extension SessionRecord: SyncedRecord {
         container["unitsAtLog"] = unitsAtLog.rawValue
         container["healthWorkoutID"] = healthWorkoutID
         container["dayMovedAt"] = dayMovedAt
+        container["pausedAt"] = pausedAt
+        container["pausedSeconds"] = pausedSeconds
         container["createdAt"] = createdAt
         container["updatedAt"] = updatedAt
         container["deletedAt"] = deletedAt

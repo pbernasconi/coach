@@ -6,7 +6,7 @@ import Synchronization
 
 /// A `SessionRepository` whose `observeSession` yields the given values, then finishes, so `await vm.run()`
 /// returns. Records each requested id. Day ranges yield nothing. The Workout screen's writes (notes, remove, restore
-/// and reorder exercises, finish, start, discard and its undo) are recorded, then throw `writeError` when one is
+/// and reorder exercises, finish, start, pause, resume, a new start time, rename, discard and its undo) are recorded, then throw `writeError` when one is
 /// given; the others are not used by the Workout screen and throw.
 nonisolated final class FakeSessionDetailRepository: SessionRepository {
     enum Call: Equatable, Sendable {
@@ -17,6 +17,8 @@ nonisolated final class FakeSessionDetailRepository: SessionRepository {
         case reorder(UUID, [UUID])
         case finish(UUID)
         case start(UUID)
+        case changeTime(UUID, SessionTimeChange)
+        case rename(UUID, String)
         case reschedule(UUID, RescheduleAction)
         case undo(RescheduleUndo)
     }
@@ -96,6 +98,25 @@ nonisolated final class FakeSessionDetailRepository: SessionRepository {
             throw AppError(.notFound)
         }
         session.startedAt = session.startedAt ?? ManualNow.start
+        return session
+    }
+
+    func changeTime(sessionID: UUID, _ change: SessionTimeChange) async throws -> SessionRecord {
+        try record(.changeTime(sessionID, change))
+        return try latest(sessionID)
+    }
+
+    func rename(sessionID: UUID, title: String) async throws -> SessionRecord {
+        try record(.rename(sessionID, title))
+        var session = try latest(sessionID)
+        session.title = title
+        return session
+    }
+
+    private func latest(_ sessionID: UUID) throws -> SessionRecord {
+        guard let session = emissions.compactMap(\.self).last(where: { $0.id == sessionID })?.session else {
+            throw AppError(.notFound)
+        }
         return session
     }
 

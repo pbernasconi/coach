@@ -5,7 +5,7 @@ import SwiftUI
 /// Dumb view: the session header, one section per exercise, the dock pinned at the bottom (Start, then the clock, the set
 /// to do now and the rest) and the set editor (SCR-2). Ticking a set brings that set into view, clear of the dock, and
 /// tapping the dock's set goes back to it. When the rest runs out the dock turns to the next set and brings it into
-/// view. Haptics: a tap for each of the last three seconds, then a success.
+/// view. Haptics: a tap for each of the last three seconds, then a success, unless Workout settings turned rest alerts off.
 struct WorkoutContent: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let state: WorkoutState
@@ -22,9 +22,11 @@ struct WorkoutContent: View {
                 }
                 .onChange(of: ready?.setID) { _, setID in focus(setID, proxy) }
                 .koboFeedback(trigger: state.rest?.remaining) { _, left in
-                    (1...RestCue.countdownTaps).contains(left ?? 0) ? .tap : nil
+                    state.playsRestHaptics && (1...RestCue.countdownTaps).contains(left ?? 0) ? .tap : nil
                 }
-                .koboFeedback(trigger: ready?.since) { _, since in since == nil ? nil : .success }
+                .koboFeedback(trigger: ready?.since) { _, since in
+                    state.playsRestHaptics && since != nil ? .success : nil
+                }
         }
     }
 
@@ -64,6 +66,7 @@ struct WorkoutContent: View {
             }
         }
         .modifier(WorkoutEditorSheets(state: state, send: send))
+        .workoutMenuSheets(state: state, send: send)
     }
 
     /// The "rest over" state, while its set is still planned (not logged, skipped or removed some other way).

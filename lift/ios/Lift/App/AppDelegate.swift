@@ -25,10 +25,12 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     /// A notice that comes while Lift is open shows as a banner too.
     nonisolated func userNotificationCenter(
         _: UNUserNotificationCenter,
-        willPresent _: UNNotification,
+        willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
-        completionHandler([.banner, .list, .sound])
+        // "Rest over" is for a phone in a pocket; with Lift open the dock already says it.
+        let isRest = notification.request.identifier == LocalRestAlerts.identifier
+        completionHandler(isRest ? [] : [.banner, .list, .sound])
     }
 
     nonisolated func userNotificationCenter(

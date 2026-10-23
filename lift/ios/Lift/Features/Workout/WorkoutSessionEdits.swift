@@ -2,8 +2,8 @@ import Foundation
 import LiftCore
 import LiftStore
 
-/// The Workout screen's session-level writes: Start, exercises added, moved and removed, finish, discard and Save
-/// as template. Each returns the toast to show, if any; the ViewModel shows a failure. Finish, discard and its Undo
+/// The Workout screen's session-level writes: Start, Pause and Resume, the start moved, the name, exercises added,
+/// moved, reordered and removed, finish, discard and Save as template. Each returns the toast to show, if any; the ViewModel shows a failure. Finish, discard and its Undo
 /// also keep Apple Health in step.
 struct WorkoutSessionEdits {
     let sessionID: UUID
@@ -18,6 +18,23 @@ struct WorkoutSessionEdits {
         guard let index = ids.firstIndex(of: id), ids.indices.contains(index + offset) else { return nil }
         ids.swapAt(index, index + offset)
         try await sessions.reorderExercises(in: sessionID, ids: ids)
+        return nil
+    }
+
+    /// Puts the exercises in the order of `ids` (the reorder sheet's Done).
+    func reorder(_ ids: [UUID]) async throws -> WorkoutToast.Kind? {
+        try await sessions.reorderExercises(in: sessionID, ids: ids)
+        return nil
+    }
+
+    /// Pause, Resume, or the start moved in Workout settings.
+    func changeTime(_ change: SessionTimeChange) async throws -> WorkoutToast.Kind? {
+        _ = try await sessions.changeTime(sessionID: sessionID, change)
+        return nil
+    }
+
+    func rename(_ title: String) async throws -> WorkoutToast.Kind? {
+        _ = try await sessions.rename(sessionID: sessionID, title: title)
         return nil
     }
 

@@ -32,8 +32,10 @@ nonisolated enum WorkoutClock {
 nonisolated enum WorkoutClockPhase: Equatable, Sendable {
     /// Not started and not finished: the Start button.
     case notStarted
-    /// Started and not finished: the live clock from this start.
+    /// Started and not finished: the live clock from this start, moved on by the time paused so far.
     case running(since: Date)
+    /// Paused: the clock stopped at this many seconds.
+    case paused(elapsed: Int)
     /// Finished: no clock and no button (the day line says "Finished" and the time it took).
     case finished
     /// An earlier day's session that nobody started: nothing (Start would stamp today's time on it).
@@ -43,13 +45,17 @@ nonisolated enum WorkoutClockPhase: Equatable, Sendable {
 extension WorkoutOverview {
     var clockPhase: WorkoutClockPhase {
         if isFinished { return .finished }
-        if let startedAt { return .running(since: startedAt) }
+        if let startedAt {
+            let paused = TimeInterval(pausedSeconds)
+            if let pausedAt { return .paused(elapsed: WorkoutClock.seconds(from: startedAt + paused, to: pausedAt)) }
+            return .running(since: startedAt + paused)
+        }
         return isPastDay ? .pastDay : .notStarted
     }
 
-    /// The time the finished workout took ("52:10"); nil while it runs or when the start is unknown.
+    /// The time the finished workout took ("52:10"), pauses left out; nil while it runs or when the start is unknown.
     var durationText: String? {
         guard let startedAt, let finishedAt, finishedAt >= startedAt else { return nil }
-        return WorkoutClock.text(seconds: WorkoutClock.seconds(from: startedAt, to: finishedAt))
+        return WorkoutClock.text(seconds: WorkoutClock.seconds(from: startedAt, to: finishedAt) - pausedSeconds)
     }
 }

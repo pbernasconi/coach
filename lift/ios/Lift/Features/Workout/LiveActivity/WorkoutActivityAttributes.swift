@@ -21,6 +21,11 @@ nonisolated struct WorkoutActivityAttributes: ActivityAttributes, Codable, Hasha
         var rest: RestSnapshot?
         /// The exercise after the current one ("Romanian deadlift"); nil on the last.
         var nextExercise: String?
+        /// When the workout was paused; nil while it runs. Optional, so content from before pausing existed decodes.
+        var pausedAt: Date?
+
+        /// The workout is paused: the header says so and the clock stops.
+        var isPaused: Bool { pausedAt != nil }
 
         /// The share of sets logged, from 0 to 1.
         var progress: Double {

@@ -22,6 +22,12 @@ nonisolated struct WorkoutState: Equatable, Sendable {
     var previous: [UUID: PreviousSets] = [:]
     /// The open options sheet: the workout's, or one exercise's.
     var options: WorkoutOptions?
+    /// The reorder sheet, while it is open.
+    var reorder: ExerciseReorder?
+    /// Workout settings, while the sheet is open.
+    var settings: WorkoutSettingsSheet?
+    /// The defaults for every workout, as last read: the rest haptics and keeping the screen awake follow them.
+    var preferences = WorkoutPreferences()
 }
 
 /// The session header and its exercises in order.
@@ -48,8 +54,13 @@ nonisolated struct WorkoutOverview: Equatable, Sendable {
     /// The session's day is after today (a workout planned ahead): a set's check does not log it until Start moves the
     /// workout to today, so a stray tap never marks a later workout done.
     var isFutureDay = false
+    /// When the running pause started; nil while the workout is not paused. The clock stops there.
+    var pausedAt: Date?
+    /// Whole seconds of the pauses already ended, left out of the clock and the length.
+    var pausedSeconds = 0
 
     var isFinished: Bool { finishedAt != nil }
+    var isPaused: Bool { pausedAt != nil && !isFinished }
 }
 
 /// One exercise section: name, plain hint lines and its sets.

@@ -4,7 +4,7 @@
 // Every number comes from the synced Lift rows (./stats.mjs). The tips are fixed rules over those numbers, each
 // with the numbers that triggered it; nothing is generated.
 
-import { MUSCLE_TARGET, convert, epley, exerciseList, isCountedSet, muscleSets, sessionSummaries, weekStart } from './stats.mjs';
+import { MUSCLE_TARGET, convert, epley, exerciseList, isCountedSet, muscleSets, sessionSummaries, weekStart, workoutMinutes } from './stats.mjs';
 import { liftFocus } from './focus.mjs';
 
 const DAY_MS = 86_400_000;
@@ -94,10 +94,8 @@ export function liftOverview(model, unit, today, { strengthTarget = 2, weightKg 
   }
   const minutesOf = (/** @type {string} */ id) => {
     const s = model.sessions.get(id);
-    const a = s?.startedAt ? Date.parse(s.startedAt) : NaN;
-    const b = s?.finishedAt ? Date.parse(s.finishedAt) : NaN;
-    const m = Math.round((b - a) / 60000);
-    return Number.isFinite(m) && m > 0 && m < 600 ? m : null;
+    const m = s ? workoutMinutes(s) : null;
+    return m !== null && m > 0 && m < 600 ? m : null;
   };
   const plannedSets = new Map();
   for (const set of model.sets) {

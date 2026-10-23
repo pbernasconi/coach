@@ -18,9 +18,9 @@ struct WorkoutDock: View {
             Button("Start workout", systemImage: "play.fill") { send(.startTapped) }
                 .buttonStyle(.kobo(.primary, width: .full))
                 .padding(.bottom, Space.xs)
-        case .lifting, .resting, .ready, .complete:
-            if let content = phase.content, let since = phase.since {
-                WorkoutDockCard(phase: phase, content: content, since: since, send: send, onFocus: onFocus)
+        case .lifting, .resting, .ready, .complete, .paused:
+            if let content = phase.content {
+                WorkoutDockCard(phase: phase, content: content, send: send, onFocus: onFocus)
             }
         }
     }
@@ -30,13 +30,12 @@ private struct WorkoutDockCard: View {
     @Environment(\.koboTheme) private var theme
     let phase: WorkoutDockPhase
     let content: WorkoutActivityAttributes.ContentState
-    let since: Date
     let send: (WorkoutAction) -> Void
     let onFocus: (UUID) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: Space.sm) {
-            WorkoutDockHeader(content: content, since: since)
+            WorkoutDockHeader(content: content, phase: phase)
             Button {
                 if let id = content.current?.id { onFocus(id) }
             } label: {
@@ -67,27 +66,39 @@ private struct WorkoutDockCard: View {
     }
 }
 
-/// "⏱ 12:34" on the left, "Exercise 1 of 3 · 3/12 sets" on the right. The clock reads the time from the timeline each
-/// second and works out the elapsed time from the start, so it never drifts.
+/// "⏱ 12:34" on the left (or "Paused · 12:34", stopped), "Exercise 1 of 3 · 3/12 sets" on the right. The clock reads
+/// the time from the timeline each second and works out the elapsed time from the start, so it never drifts.
 private struct WorkoutDockHeader: View {
     @Environment(\.koboTheme) private var theme
     let content: WorkoutActivityAttributes.ContentState
-    let since: Date
+    let phase: WorkoutDockPhase
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: Space.sm) {
-            TimelineView(.periodic(from: since, by: 1)) { context in
-                let seconds = WorkoutClock.seconds(from: since, to: context.date)
+            if case .paused(_, let elapsed) = phase {
                 Label {
-                    Text(verbatim: seconds < WorkoutClock.limit ? WorkoutClock.text(seconds: seconds) : "–")
-                        .contentTransition(.numericText())
+                    Text("Paused · \(WorkoutClock.text(seconds: elapsed))")
                 } icon: {
-                    Image(systemName: "timer").accessibilityHidden(true)
+                    Image(systemName: "pause.fill").accessibilityHidden(true)
                 }
                 .font(theme.font(.subheadline).weight(.semibold).monospacedDigit())
-                .foregroundStyle(theme.palette.accentText)
-                .accessibilityLabel(Text("Workout time"))
-                .accessibilityValue(Text(verbatim: WorkoutClock.spoken(seconds: seconds)))
+                .foregroundStyle(theme.palette.textSecondary)
+                .accessibilityLabel(Text("Workout paused"))
+                .accessibilityValue(Text(verbatim: WorkoutClock.spoken(seconds: elapsed)))
+            } else if let since = phase.since {
+                TimelineView(.periodic(from: since, by: 1)) { context in
+                    let seconds = WorkoutClock.seconds(from: since, to: context.date)
+                    Label {
+                        Text(verbatim: seconds < WorkoutClock.limit ? WorkoutClock.text(seconds: seconds) : "–")
+                            .contentTransition(.numericText())
+                    } icon: {
+                        Image(systemName: "timer").accessibilityHidden(true)
+                    }
+                    .font(theme.font(.subheadline).weight(.semibold).monospacedDigit())
+                    .foregroundStyle(theme.palette.accentText)
+                    .accessibilityLabel(Text("Workout time"))
+                    .accessibilityValue(Text(verbatim: WorkoutClock.spoken(seconds: seconds)))
+                }
             }
             Spacer(minLength: Space.sm)
             Text("Exercise \(content.exerciseNumber) of \(content.exerciseCount) · \(content.loggedSets)/\(content.totalSets) sets")
@@ -154,7 +165,7 @@ private struct WorkoutDockNow: View {
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(Text("\(rest.remaining) of \(rest.total) seconds of rest left"))
             .accessibilityAddTraits(.updatesFrequently)
-        case .lifting, .ready:
+        case .lifting, .ready, .paused:
             if let set = content.current {
                 VStack(alignment: .trailing, spacing: 0) {
                     if case .ready(_, let ready, _) = phase {
@@ -182,7 +193,7 @@ private struct WorkoutDockNow: View {
     }
 }
 
-/// The action that matters now: Log set (and Skip), +30s and Skip rest, or Finish workout.
+/// The action that matters now: Log set (and Skip), +30s and Skip rest, Resume (and Finish), or Finish workout.
 private struct WorkoutDockButtons: View {
     let phase: WorkoutDockPhase
     let content: WorkoutActivityAttributes.ContentState
@@ -209,6 +220,12 @@ private struct WorkoutDockButtons: View {
             case .complete:
                 Button("Finish workout", systemImage: "flag.checkered") { send(.finishTapped) }
                     .buttonStyle(.kobo(.primary, width: .full))
+            case .paused:
+                Button("Resume", systemImage: "play.fill") { send(.resumeTapped) }
+                    .buttonStyle(.kobo(.primary, width: .full))
+                Button("Finish") { send(.finishTapped) }
+                    .buttonStyle(.kobo(.tonal))
+                    .accessibilityLabel(Text("Finish workout"))
             case .start:
                 EmptyView()
             }

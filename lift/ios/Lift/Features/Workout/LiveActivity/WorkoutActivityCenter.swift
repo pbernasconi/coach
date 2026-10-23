@@ -6,13 +6,17 @@ import LiftStore
 /// is finished or discarded, also after the Workout screen is left. It follows the session in the store, so a tick in
 /// the app moves it on, and its own buttons (`WorkoutActivityIntents.swift`) log sets through the same repository as
 /// the app (PLAT-2). The composition root makes one; the Workout screen reaches it as its `RestActivityController`, and
-/// the buttons through `WorkoutActivityButtons`.
+/// the buttons through `WorkoutActivityButtons`. With the Live Activity turned off in Workout settings it still follows
+/// the rest, for the rest-over alert, but shows nothing.
 final class WorkoutActivityCenter: RestActivityController {
     private let sessions: any SessionRepository
     private let sets: any SetRepository
     private let presenter: any WorkoutActivityPresenting
     private let gym: any GymPreference
     private let stills: WorkoutActivityStillCache
+    /// Workout settings: the default rest, whether a rest starts, and whether the Live Activity shows.
+    private let preferences: any WorkoutPreferenceStore
+    private let restAlerts: any RestAlerting
     private let days: DayCalendar
     private let now: @Sendable () -> Date
 
@@ -37,6 +41,8 @@ final class WorkoutActivityCenter: RestActivityController {
         presenter: any WorkoutActivityPresenting,
         gym: any GymPreference,
         stills: any WorkoutActivityStills = NoWorkoutActivityStills(),
+        preferences: any WorkoutPreferenceStore = InMemoryWorkoutSettings(),
+        restAlerts: any RestAlerting = NoRestAlerts(),
         calendar: Calendar,
         now: @escaping @Sendable () -> Date
     ) {
@@ -45,6 +51,8 @@ final class WorkoutActivityCenter: RestActivityController {
         self.presenter = presenter
         self.gym = gym
         self.stills = WorkoutActivityStillCache(stills: stills)
+        self.preferences = preferences
+        self.restAlerts = restAlerts
         self.days = DayCalendar(calendar: calendar)
         self.now = now
     }
@@ -92,6 +100,7 @@ final class WorkoutActivityCenter: RestActivityController {
         rest = nil
         focus = nil
         isShown = false
+        restAlerts.restChanged(endsAt: nil, nextSet: nil)
         await publishing?.value
         await presenter.end()
     }
@@ -112,12 +121,14 @@ final class WorkoutActivityCenter: RestActivityController {
         await showNextSet(after: set.id, in: shown.attributes.sessionID)
     }
 
-    /// Done: logs `setID` and starts its exercise's rest from full, as a tick in the app does. A set that is no longer
-    /// planned (logged in the app meanwhile, or a second tap) is left alone.
+    /// Done: logs `setID` and starts its exercise's rest from full (or the default rest), as a tick in the app does; a
+    /// paused workout resumes first. A set that is no longer planned (logged in the app meanwhile, or a second tap) is
+    /// left alone.
     func logSet(_ setID: UUID, in sessionID: UUID) async {
         await load(sessionID)
         guard case (let item, let set)? = detail?.find(setID: setID), set.status == .planned else { return }
         do {
+            if detail?.session.pausedAt != nil { _ = try await sessions.changeTime(sessionID: sessionID, .resume) }
             _ = try await sets.log(setID: setID)
         } catch {
             AppLog.rest.error(
@@ -125,7 +136,8 @@ final class WorkoutActivityCenter: RestActivityController {
             )
             return
         }
-        let seconds = item.exercise.restSeconds ?? RestTimer.defaultSeconds
+        let settings = preferences.preferences
+        let seconds = settings.startsRest ? item.exercise.restSeconds ?? settings.defaultRestSeconds : 0
         let endsAt = now().addingTimeInterval(TimeInterval(seconds))
         rest = seconds > 0 ? RestSnapshot(endsAt: endsAt, totalSeconds: seconds, setID: setID) : nil
         focus = nil
@@ -208,19 +220,29 @@ final class WorkoutActivityCenter: RestActivityController {
     }
 
     /// What the Lock Screen shows now: nothing while loading, the workout while under way, else no activity.
-    private func change() -> Change? {
+    private func change(_ content: (WorkoutActivityAttributes, WorkoutActivityAttributes.ContentState)?) -> Change? {
         guard sessionID != nil, isLoaded else { return nil }
-        guard let detail, detail.isUnderway else { return isShown ? .end : nil }
+        guard let content, preferences.preferences.showsLiveActivity else { return isShown ? .end : nil }
+        return .show(content.0, content.1)
+    }
+
+    /// The workout as the Lock Screen would draw it; nil while loading or once it is not under way.
+    private func content() -> (WorkoutActivityAttributes, WorkoutActivityAttributes.ContentState)? {
+        guard sessionID != nil, isLoaded, let detail, detail.isUnderway else { return nil }
         let overview = WorkoutOverview(detail: detail, days: days, previous: [:], gym: gym.setup)
         let setID = detail.activitySetID(focus: focus)
         var state = WorkoutActivityAttributes.ContentState(overview: overview, currentSetID: setID, rest: rest)
         let still = stills.still(forSet: setID, in: overview) { [weak self] in self?.publish() }
         state.current?.still = still
-        return .show(WorkoutActivityAttributes(sessionID: detail.id, title: detail.session.title), state)
+        return (WorkoutActivityAttributes(sessionID: detail.id, title: detail.session.title), state)
     }
 
     private func publish() {
-        guard let change = change() else { return }
+        let shown = content()
+        // A finished or discarded workout has no rest left to alert for.
+        let endsAt = isLoaded && shown == nil ? nil : rest?.endsAt
+        restAlerts.restChanged(endsAt: endsAt, nextSet: shown?.1.current.map { "\($0.exerciseName) · \($0.title)" })
+        guard let change = change(shown) else { return }
         switch change {
         case .show: isShown = true
         case .end: isShown = false

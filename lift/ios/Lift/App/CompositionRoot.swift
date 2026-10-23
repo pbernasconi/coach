@@ -69,6 +69,7 @@ enum CompositionRoot {
         let mediaLoader = makeMediaLoader()
         let catalog = LiveExerciseCatalog(loader: mediaLoader)
         let gym = gym(source: source)
+        let workoutPreferences = workoutPreferences(source: source)
         let sets = LiveSetRepository(database: database, now: now, makeID: makeID)
         let sync = makeSync(database: database, isSaved: source.isSaved, now: now, makeID: makeID)
         return AppDependencies(
@@ -86,6 +87,9 @@ enum CompositionRoot {
                 presenter: LiveWorkoutActivityPresenter(),
                 gym: gym,
                 stills: CatalogWorkoutActivityStills(catalog: catalog),
+                preferences: workoutPreferences,
+                restAlerts: source.isSaved
+                    ? LocalRestAlerts(center: .current(), preferences: workoutPreferences, now: now) : NoRestAlerts(),
                 calendar: appCalendar,
                 now: now
             ),
@@ -95,6 +99,7 @@ enum CompositionRoot {
             info: info(source: source),
             units: units(source: source),
             gym: gym,
+            workoutPreferences: workoutPreferences,
             pasteboard: SystemPasteboard(),
             outbox: LiveOutboxRepository(database: database),
             sync: sync,
@@ -149,6 +154,16 @@ enum CompositionRoot {
         case .device: UserDefaultsGymSettings.standard()
         case .practice: InMemoryGymSettings(UserDefaultsGymSettings.standard().setup)
         case .demo, .fresh: InMemoryGymSettings(.standard)
+        }
+    }
+
+    /// Workout settings saved on this iPhone; the defaults in memory for demo data, and a copy of the saved ones in
+    /// memory in practice mode.
+    private static func workoutPreferences(source: AppInfo.DataSource) -> any WorkoutPreferenceStore {
+        switch source {
+        case .device: UserDefaultsWorkoutSettings.standard()
+        case .practice: InMemoryWorkoutSettings(UserDefaultsWorkoutSettings.standard().preferences)
+        case .demo, .fresh: InMemoryWorkoutSettings()
         }
     }
 

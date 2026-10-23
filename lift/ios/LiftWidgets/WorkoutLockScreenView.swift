@@ -4,7 +4,7 @@ import SwiftUI
 /// its photo and set dots; a bar runs edge to edge; the bottom bar holds what to do now: the load with a check to log
 /// it, or, while resting, the time rested against the rest's length with Skip. A rest gets an orange "Resting" strip
 /// and a tinted top, so it never reads as a set. Once the rest is over (the content is stale) the set to log is back,
-/// with "Rest over +0:12" in the header.
+/// with "Rest over +0:12" in the header. A paused workout says "Paused" in the header.
 struct WorkoutLockScreenView: View {
     @Environment(\.colorScheme) private var colorScheme
     let attributes: WorkoutActivityAttributes
@@ -64,7 +64,8 @@ struct WorkoutLockScreenView: View {
     }
 }
 
-/// The badge, "UPPER A", and "Exercise 2 of 5 · 7/18 sets", or "Rest over +0:12" once the rest has run out.
+/// The badge, "UPPER A", and "Exercise 2 of 5 · 7/18 sets", "Paused" while paused, or "Rest over +0:12" once the rest
+/// has run out.
 struct WorkoutHeader: View {
     @Environment(\.colorScheme) private var colorScheme
     let attributes: WorkoutActivityAttributes
@@ -87,6 +88,12 @@ struct WorkoutHeader: View {
                 .font(.caption.weight(.bold))
                 .textCase(.uppercase)
                 .foregroundStyle(WidgetColors.accentText(for: colorScheme))
+            } else if state.isPaused {
+                Label("Paused", systemImage: "pause.fill")
+                    .font(.caption.weight(.bold))
+                    .textCase(.uppercase)
+                    .foregroundStyle(WidgetColors.accentText(for: colorScheme))
+                    .lineLimit(1)
             } else {
                 Text(
                     "Exercise \(state.exerciseNumber) of \(state.exerciseCount) · \(state.loggedSets)/\(state.totalSets) sets"

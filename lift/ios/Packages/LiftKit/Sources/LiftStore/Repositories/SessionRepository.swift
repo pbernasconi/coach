@@ -19,6 +19,16 @@ public struct RescheduleUndo: Hashable, Sendable {
     }
 }
 
+/// A change to a running workout's time from the Workout screen.
+public enum SessionTimeChange: Hashable, Sendable {
+    /// Stops the clock now. Only a started, unfinished, unpaused session changes.
+    case pause
+    /// Starts the clock again; the pause's whole seconds are added to `pausedSeconds`. Only a paused session changes.
+    case resume
+    /// Moves the start (the person forgot Start, or started early). Never later than the finish, or now.
+    case start(at: Date)
+}
+
 /// Sessions and their exercises. Reads are streams (DATA-1); each write is one transaction with one outbox
 /// entry (DATA-3). Removing is a soft delete, so every action can be undone without a confirmation dialog.
 public protocol SessionRepository: Sendable {
@@ -61,6 +71,13 @@ public protocol SessionRepository: Sendable {
     /// Stamps `startedAt` now on a live session that has neither a start nor a finish. A session already started or
     /// finished is returned as it is, with no write, so a second Start (or a Start after the first logged set) is safe.
     func start(sessionID: UUID) async throws -> SessionRecord
+
+    /// Pauses, resumes or moves the start of a live session. A change that does not apply (a pause of a paused
+    /// session, a resume of a running one) returns the session as it is, with no write.
+    func changeTime(sessionID: UUID, _ change: SessionTimeChange) async throws -> SessionRecord
+
+    /// Renames a live session. The title is trimmed; an empty one keeps the old title, with no write.
+    func rename(sessionID: UUID, title: String) async throws -> SessionRecord
 
     /// Moves, pushes or removes a live session. Returns what `undo` needs.
     func reschedule(_ sessionID: UUID, _ action: RescheduleAction) async throws -> RescheduleUndo

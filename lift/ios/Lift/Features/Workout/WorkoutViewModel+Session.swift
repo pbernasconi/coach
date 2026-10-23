@@ -51,6 +51,16 @@ extension WorkoutViewModel {
         case .saveAsTemplateTapped:
             let name = detail.session.title
             return { try await $0.saveAsTemplate(named: name) }
+        case .pauseTapped: return { try await $0.changeTime(.pause) }
+        case .resumeTapped: return { try await $0.changeTime(.resume) }
+        case .reorderDoneTapped:
+            guard let reorder = state.reorder, reorder.hasChanges else { return nil }
+            let ids = reorder.ids
+            return { try await $0.reorder(ids) }
+        case .settingsDoneTapped:
+            guard let settings = state.settings, settings.hasChanges else { return nil }
+            let title = settings.title
+            return { try await $0.rename(title) }
         default: return nil
         }
     }
@@ -63,6 +73,25 @@ extension WorkoutViewModel {
             case .loaded(let workout) = state.workout, !workout.isPastDay
         else { return }
         _ = try? await edits.sessions.start(sessionID: session.id)
+    }
+
+    /// A paused workout runs again before a set is logged. A failure is left alone: the set still logs.
+    func resumeIfPaused() async {
+        guard detail?.session.pausedAt != nil else { return }
+        _ = try? await edits.sessions.changeTime(sessionID: edits.sessionID, .resume)
+    }
+
+    /// The start picked in Workout settings. Not one at a time like the other session writes: the picker sends every
+    /// step, and the last one must land.
+    func changeStart(to date: Date) -> Task<Void, Never> {
+        let edits = edits
+        return Task {
+            do {
+                _ = try await edits.changeTime(.start(at: date))
+            } catch {
+                showToast(.failed)
+            }
+        }
     }
 
     /// The options sheet to open for `action`, from the current session.

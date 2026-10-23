@@ -13,21 +13,24 @@ nonisolated enum WorkoutDockPhase: Equatable, Sendable {
     case ready(WorkoutActivityAttributes.ContentState, RestReady, since: Date)
     /// Every set is logged or skipped: Finish workout.
     case complete(WorkoutActivityAttributes.ContentState, since: Date)
+    /// Paused from the workout menu: the clock stopped at `elapsed` seconds, with Resume and Finish.
+    case paused(WorkoutActivityAttributes.ContentState, elapsed: Int)
 
     /// The Live Activity's view of the workout; nil before the start.
     var content: WorkoutActivityAttributes.ContentState? {
         switch self {
         case .start: nil
         case .lifting(let content, _), .resting(let content, _, _), .ready(let content, _, _),
-            .complete(let content, _):
+            .complete(let content, _), .paused(let content, _):
             content
         }
     }
 
-    /// When the workout started, for the clock.
+    /// When the workout started, moved on by the time paused, for the running clock; nil before the start and while
+    /// paused.
     var since: Date? {
         switch self {
-        case .start: nil
+        case .start, .paused: nil
         case .lifting(_, let since), .resting(_, _, let since), .ready(_, _, let since), .complete(_, let since): since
         }
     }
@@ -43,6 +46,8 @@ extension WorkoutState {
             return nil
         case .notStarted:
             return .start
+        case .paused(let elapsed):
+            return .paused(workout.dockContent(currentSetID: workout.currentSetID(after: nil)), elapsed: elapsed)
         case .running(let since):
             if let rest {
                 let content = workout.dockContent(currentSetID: workout.currentSetID(after: rest.setID))

@@ -9,6 +9,8 @@ public struct Session: Codable, Hashable, Sendable, Identifiable {
     public var exercises: [SessionExercise]
     public var startedAt: Date?
     public var finishedAt: Date?
+    /// Whole seconds the workout was paused, left out of its length.
+    public var pausedSeconds: Int
     public var warmUpNote: String?
     public var note: String?
     /// The unit the user logged in (DATA-6).
@@ -30,7 +32,8 @@ public struct Session: Codable, Hashable, Sendable, Identifiable {
         unitsAtLog: WeightUnit,
         createdAt: Date,
         updatedAt: Date,
-        deletedAt: Date? = nil
+        deletedAt: Date? = nil,
+        pausedSeconds: Int = 0
     ) {
         self.id = id
         self.date = date
@@ -45,6 +48,7 @@ public struct Session: Codable, Hashable, Sendable, Identifiable {
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.deletedAt = deletedAt
+        self.pausedSeconds = pausedSeconds
     }
 
     /// Every set in the session, in order.
