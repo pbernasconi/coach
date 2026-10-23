@@ -11,9 +11,10 @@ nonisolated enum PlateDrawing {
     static let width = Space.lg
     static let minWidth = Space.sm
     /// The lightest plates are this share of the tallest, so a 2.5 still reads as a plate (a maths constant).
-    static let minHeightShare: Double = 0.36
-    /// How plate height grows with weight: a plate's diameter grows slower than its weight (a maths constant).
-    static let heightCurve: Double = 0.6
+    static let minHeightShare: Double = 0.3
+    /// How plate height grows with weight; 1 is straight with weight, so a 10 is clearly shorter than a 45 (a maths
+    /// constant).
+    static let heightCurve: Double = 1
     static let gap = Space.xxs
     static let corner = Space.xxs
     /// The sleeve the plates slide onto, the bar between the collars, and the collars.
@@ -49,18 +50,20 @@ struct BarPlates: View {
                 .frame(maxWidth: .infinity)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(Text(verbatim: WorkoutText.platesAccessibility(loading)))
+            // Every line keeps its height when it is empty, so the stepper under the card doesn't move while tapping.
             VStack(spacing: Space.xxs) {
-                if let change = loading.change.flatMap(WorkoutText.plateChange) {
-                    changeLine(change)
-                }
+                let change = loading.change.flatMap(WorkoutText.plateChange)
+                changeLine(change ?? " ")
+                    .opacity(change == nil ? 0 : 1)
+                    .accessibilityHidden(change == nil)
                 Text(verbatim: WorkoutText.platesPerSide(loading))
                     .font(theme.font(.subheadline).monospacedDigit())
                     .foregroundStyle(theme.palette.textSecondary)
-                if !loading.isExact {
-                    Text(verbatim: WorkoutText.closestLoad(Weight(loading.loaded, unit)))
-                        .font(theme.font(.footnote).monospacedDigit())
-                        .foregroundStyle(theme.palette.textSecondary)
-                }
+                Text(verbatim: loading.isExact ? " " : WorkoutText.closestLoad(Weight(loading.loaded, unit)))
+                    .font(theme.font(.footnote).monospacedDigit())
+                    .foregroundStyle(theme.palette.textSecondary)
+                    .opacity(loading.isExact ? 0 : 1)
+                    .accessibilityHidden(loading.isExact)
             }
             .accessibilityElement(children: .combine)
         }
@@ -154,15 +157,14 @@ struct BarPlates: View {
         }
     }
 
-    /// The plates from the collar outwards. With a change, the plates that stay, then those going on, or, when only
-    /// plates come off, those coming off as outlines.
+    /// The plates from the collar outwards. With a change: the plates that stay, those going on, then those coming
+    /// off as outlines past them.
     private var marks: [PlateMark] {
         guard let change = loading.change else {
             return loading.perSide.enumerated().map { PlateMark(id: $0.offset, size: $0.element, role: .kept) }
         }
-        let outer: [(Double, PlateMark.Role)] =
-            change.add.isEmpty ? change.remove.map { ($0, .removed) } : change.add.map { ($0, .added) }
-        let all = change.kept.map { ($0, PlateMark.Role.kept) } + outer
+        let all: [(Double, PlateMark.Role)] =
+            change.kept.map { ($0, .kept) } + change.add.map { ($0, .added) } + change.remove.map { ($0, .removed) }
         return all.enumerated().map { PlateMark(id: $0.offset, size: $0.element.0, role: $0.element.1) }
     }
 
