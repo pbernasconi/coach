@@ -8,10 +8,14 @@ import { levelStyle } from '@/components/plan/ComplianceMark';
 import { cn } from '@/lib/utils';
 import { clock, keyTargets, totals } from '@/lib/workouts/steps.mjs';
 import type { CalendarWorkout } from '@/lib/plan/month';
+import { strengthNotes } from '@/lib/plan/strength-text.mjs';
+import { strengthLines } from '@/lib/performance/strength-lines.mjs';
+import StrengthPanel from './StrengthPanel';
 
 /**
  * One of today's workouts on the home page: the title and time, what is asked (the main sets, as in the workout
  * window) and the structure chart. A workout without steps shows its description. Links open it in Plan.
+ * A strength workout shows its exercises there instead (StrengthPanel), from its Lift session or the coach's text.
  * Done, the row takes its Plan status colour (green done, yellow partly done) with a status badge, what was done
  * next to what was planned, and a link to the activity.
  */
@@ -22,7 +26,9 @@ export default function TodayWorkout({ w, href }: { w: CalendarWorkout; href: st
   const work = s ? (keyTargets(s as never) as { text: string; zone: string }[]).slice(0, 3).map((l) => ({ ...l, text: l.text.split(' · ')[0] })) : [];
   const tss = w.tss ? Math.round(w.tss) : t?.tss || null;
   const meta = [todayItemText(w), tss ? `${tss} TSS` : null, t?.if ? `IF ${t.if.toFixed(2)}` : null].filter(Boolean).join(' · ');
-  const desc = !s && w.description ? w.description.trim() : null;
+  const lines = !s ? strengthLines(w.lift, w.description) : [];
+  // The exercise lines of the coach's text are in the panel; the note keeps the rest.
+  const desc = !s && w.description ? (lines.length && !w.lift?.exercises.length ? strengthNotes(w.description) : w.description.trim()) : null;
   const done = todayDone(w, t?.tss ?? null);
   const color = done ? levelStyle(done.level).color : null;
   const DoneIcon = done ? levelStyle(done.level).Icon : null;
@@ -81,6 +87,7 @@ export default function TodayWorkout({ w, href }: { w: CalendarWorkout; href: st
           </div>
         </Link>
       )}
+      {lines.length > 0 && <StrengthPanel lines={lines} href={href} label={plainTitle(w.title)} dim={Boolean(done)} />}
     </div>
   );
 }
