@@ -65,6 +65,9 @@ function PlannedCard({ w, actual, roomy, action, drag }: { w: CalendarWorkout; a
   const doneText = actual ? loadText(actual.min, actual.tss, dur) || dur(0) : w.match?.name ?? null;
   const status = skipped ? skipText(w.skipReason) : `${w.compliance.label}${pct ? ` (${pct})` : ''}`;
   const draggable = Boolean(drag) && !done;
+  // Done with a matched activity: what was done leads (time, distance, TSS), the plan is a small line under it.
+  const showDone = done && Boolean(actual);
+  const doneParts = actual ? [dur(actual.min), actual.km >= 0.5 ? `${actual.km} km` : null, actual.tss ? `${Math.round(actual.tss)} TSS` : null].filter(Boolean) : [];
   return (
     <div
       draggable={draggable}
@@ -72,7 +75,7 @@ function PlannedCard({ w, actual, roomy, action, drag }: { w: CalendarWorkout; a
       onDragEnd={draggable ? drag?.onDragEnd : undefined}
       className={cn(
         cardBase,
-        roomy ? 'py-1.5' : w.steps ? 'h-[70px] shrink-0' : 'h-[46px] shrink-0',
+        roomy ? 'py-1.5' : showDone ? 'h-[62px] shrink-0' : w.steps ? 'h-[70px] shrink-0' : 'h-[46px] shrink-0',
         filled ? 'plan-done shadow-sm' : 'plan-upcoming border-dashed border-[var(--viz-axis)] shadow-sm',
         draggable && 'cursor-grab hover:shadow-md active:cursor-grabbing'
       )}
@@ -85,11 +88,8 @@ function PlannedCard({ w, actual, roomy, action, drag }: { w: CalendarWorkout; a
           <ComplianceMark level={w.compliance.level} title={status} tooltip={false} />
         </span>
         <span className={cn('block truncate tabular-nums', filled ? 'text-[var(--viz-ink-2)]' : 'text-[var(--viz-muted)]')}>
-          {done && actual ? (
-            <>
-              {doneText}
-              {plannedText && <span className="text-[var(--viz-muted)]"> / {plannedText}</span>}
-            </>
+          {showDone ? (
+            <span className="font-semibold text-[var(--viz-ink)]">{doneParts.join(' · ') || doneText}</span>
           ) : skipped ? (
             skipText(w.skipReason)
           ) : missed ? (
@@ -98,7 +98,8 @@ function PlannedCard({ w, actual, roomy, action, drag }: { w: CalendarWorkout; a
             plannedText || sport(w.sport).label
           )}
         </span>
-        {w.steps && <MiniWorkoutChart workout={w.steps} className={cn('mt-1 block w-full text-[var(--viz-ink-2)]', roomy ? 'h-6' : 'h-5')} />}
+        {showDone && plannedText && <span className="block truncate text-[11px] tabular-nums text-[var(--viz-muted)]">P: {plannedText}</span>}
+        {w.steps && !showDone && <MiniWorkoutChart workout={w.steps} className={cn('mt-1 block w-full text-[var(--viz-ink-2)]', roomy ? 'h-6' : 'h-5')} />}
       </Action>
     </div>
   );
