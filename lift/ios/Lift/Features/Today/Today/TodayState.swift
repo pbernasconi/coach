@@ -1,12 +1,15 @@
 import Foundation
 import LiftSync
 
-/// Everything the Today screen renders: the coach's Today page (`/api/app/today`) and the open sheet. Exclusive states
-/// are enums (SCR-6).
+/// Everything the Today screen renders: today's plan (`/api/app/today`), the health page (`/api/app/health`) and the
+/// open sheet. Exclusive states are enums (SCR-6).
 nonisolated struct TodayState: Equatable, Sendable {
+    /// Today's date line and planned workouts.
     var today = AppResourceState<AppToday>()
-    /// The fitness chart's data, worked out once per body; nil without a fitness section.
-    var fitness: TodayFitnessChart?
+    /// Readiness, vitals, trends, body and labs: the page's main content.
+    var health = AppResourceState<AppHealth>()
+    /// The trends' window.
+    var range = HealthRange.days30
     var destination: Destination?
     /// A section to scroll to once the page shows (screenshots); nil for the top.
     var anchor: TodayAnchor?
@@ -22,9 +25,18 @@ nonisolated struct TodayState: Equatable, Sendable {
     }
 }
 
+/// The two windows of the health trends, as on the web.
+nonisolated enum HealthRange: Int, CaseIterable, Equatable, Sendable {
+    case days30 = 30
+    case days90 = 90
+
+    /// The health page's query for this window.
+    var query: [URLQueryItem] { [URLQueryItem(name: "days", value: String(rawValue))] }
+}
+
 /// A section of Today the page can start scrolled to.
 nonisolated enum TodayAnchor: String, Equatable, Sendable {
-    case fitness
+    case trends
     /// The end of the page, under the last section.
     case end
 }

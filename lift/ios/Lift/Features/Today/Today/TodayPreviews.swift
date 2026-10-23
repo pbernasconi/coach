@@ -18,6 +18,7 @@
     #Preview("Dark") { TodayPreview(state: .fixtureDefault).preferredColorScheme(.dark) }
     #Preview("AX3") { TodayPreview(state: .fixtureDefault).dynamicTypeSize(.accessibility3) }
     #Preview("Offline") { TodayPreview(state: .fixtureOffline) }
+    #Preview("Failed sections") { TodayPreview(state: .fixtureFailedSections) }
     #Preview("Loading") { TodayPreview(state: .fixtureLoading) }
     #Preview("Not connected") { TodayPreview(state: .fixtureNotConnected) }
     #Preview("Failed") { TodayPreview(state: .fixtureFailed) }

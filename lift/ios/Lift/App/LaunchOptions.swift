@@ -22,7 +22,7 @@ import LiftCore
 ///     -open plates                            with -demo: pushes Plates and bars on Settings
 ///     -open activity|ride|activity-pending   with -demo: pushes a made-up activity on Training (DemoActivities)
 ///     -open trends                            with -demo: opens Training on Trends
-///     -open today-fitness|today-end           with -demo: Today scrolled to its fitness chart or its end
+///     -open today-trends|today-end            with -demo: Today scrolled to its trends or its end
 ///     -open template-link                     with -demo: opens the template link review over Exercises with the
 ///                                             made-up `TemplateLinkSample`
 ///     -open-url lift://…                      opens that Lift link once the data is ready, through the same router
@@ -58,9 +58,9 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
         case activityPending = "activity-pending"
         /// Training on its Trends segment: a segment rather than a pushed route.
         case trends
-        /// Today scrolled to its fitness chart, for screenshots.
-        case todayFitness = "today-fitness"
-        /// Today scrolled to its end (lift and goals), for screenshots.
+        /// Today scrolled to its trends, for screenshots.
+        case todayTrends = "today-trends"
+        /// Today scrolled to its end (body and labs), for screenshots.
         case todayEnd = "today-end"
 
         /// The Lift segment the screen belongs to; nil outside the Lift tab.
@@ -79,7 +79,7 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
             case .exercise, .catalog, .templates, .template, .templateLink, .importNotes, .progress: .lift
             case .plates: .settings
             case .activity, .ride, .activityPending, .trends: .training
-            case .todayFitness, .todayEnd: .today
+            case .todayTrends, .todayEnd: .today
             }
         }
     }
@@ -161,7 +161,7 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
         case .activityPending: return .activity(DemoActivities.pending)
         // A modal page (`opensImportSample`), a sheet (`opensTemplateLinkSample`), or a segment of History
         // (`historySegment`).
-        case .importNotes, .templateLink, .progress, .trends, .todayFitness, .todayEnd: return nil
+        case .importNotes, .templateLink, .progress, .trends, .todayTrends, .todayEnd: return nil
         }
     }
 
@@ -170,11 +170,11 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
         isDemo && opening == .progress ? .progress : .sessions
     }
 
-    /// Where Today starts scrolled to: `-open today-fitness` or `-open today-end` in demo mode, else the top.
+    /// Where Today starts scrolled to: `-open today-trends` or `-open today-end` in demo mode, else the top.
     var todayAnchor: TodayAnchor? {
         guard isDemo else { return nil }
         switch opening {
-        case .todayFitness: return .fitness
+        case .todayTrends: return .trends
         case .todayEnd: return .end
         default: return nil
         }

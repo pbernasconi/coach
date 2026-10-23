@@ -29,6 +29,8 @@ struct AppResource<Value: Decodable & Equatable & Sendable> {
     let source: any AppDataSource
     let now: @Sendable () -> Date
     let days: DayCalendar
+    /// Query items for the fetch ("days=90"); a body with a query is kept under `appCacheKey(path, query)`.
+    var query: [URLQueryItem] = []
 
     /// Runs one load and reports each step to `update`. `current` is what the screen shows now, kept on failure.
     func load(current: AppResourceState<Value>, _ update: (AppResourceState<Value>) -> Void) async {
@@ -37,14 +39,15 @@ struct AppResource<Value: Decodable & Equatable & Sendable> {
             return
         }
         var shown = current
-        if shown.content.value == nil, let kept = await source.kept(path), let value = await Self.decode(kept.data) {
+        let key = appCacheKey(path, query)
+        if shown.content.value == nil, let kept = await source.kept(key), let value = await Self.decode(kept.data) {
             shown = AppResourceState(content: .loaded(value), freshness: freshness(kept.fetchedAt, offline: false))
             update(shown)
         }
         do {
-            let fetched = try await source.fetch(path)
+            let fetched = try await source.fetch(path, query: query)
             guard let value = await Self.decode(fetched.data) else { throw SyncTransportError.invalidResponse }
-            await source.keep(fetched, for: path)
+            await source.keep(fetched, for: key)
             update(AppResourceState(content: .loaded(value), freshness: freshness(fetched.fetchedAt, offline: false)))
         } catch is CancellationError {
             return

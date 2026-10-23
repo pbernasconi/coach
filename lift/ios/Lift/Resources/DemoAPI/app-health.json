@@ -1,0 +1,1620 @@
+{
+ "generatedAt": "2026-10-20T21:02:24.435Z",
+ "today": "2026-10-20",
+ "days": 30,
+ "status": {
+  "ok": true,
+  "connected": true,
+  "text": "Garmin: synced 2 h ago, through Oct 20",
+  "nightText": "last night 6:42 asleep",
+  "nightIn": true,
+  "warning": null
+ },
+ "readiness": {
+  "ok": true,
+  "status": "low",
+  "label": "Take it easy",
+  "text": "Several signals are off. An easier day is a good idea.",
+  "flags": [
+   "HRV (RMSSD) 7-day 46 ms is below the 60-day baseline 53 ms",
+   "Sleep 6:42 is under 7 h"
+  ]
+ },
+ "vitals": {
+  "ok": true,
+  "summaryText": "Outside your normal: HRV low, Sleep low, Sleep score low, Body Battery low, Readiness low",
+  "items": [
+   {
+    "key": "hrv",
+    "label": "HRV",
+    "valueText": "41",
+    "unit": "ms",
+    "footText": "normal 49–57",
+    "staleText": null,
+    "status": "below",
+    "isOff": true,
+    "range": {
+     "low": 48.6,
+     "high": 57.2,
+     "value": 41,
+     "min": 40.0,
+     "max": 65.8
+    }
+   },
+   {
+    "key": "rhr",
+    "label": "Resting HR",
+    "valueText": "50",
+    "unit": "bpm",
+    "footText": "normal 47–51",
+    "staleText": null,
+    "status": "inRange",
+    "isOff": false,
+    "range": {
+     "low": 47.4,
+     "high": 51.0,
+     "value": 50,
+     "min": 43.8,
+     "max": 54.6
+    }
+   },
+   {
+    "key": "sleep",
+    "label": "Sleep",
+    "valueText": "6:42",
+    "unit": "h",
+    "footText": "normal 7:05–7:46",
+    "staleText": null,
+    "status": "below",
+    "isOff": true,
+    "range": {
+     "low": 425.0,
+     "high": 466.0,
+     "value": 402,
+     "min": 384.0,
+     "max": 507.0
+    }
+   },
+   {
+    "key": "score",
+    "label": "Sleep score",
+    "valueText": "68",
+    "unit": "",
+    "footText": "normal 73–87",
+    "staleText": null,
+    "status": "below",
+    "isOff": true,
+    "range": {
+     "low": 73.0,
+     "high": 87.0,
+     "value": 68,
+     "min": 59.0,
+     "max": 101.0
+    }
+   },
+   {
+    "key": "bb",
+    "label": "Body Battery",
+    "valueText": "64",
+    "unit": "peak",
+    "footText": "normal 70–86",
+    "staleText": null,
+    "status": "below",
+    "isOff": true,
+    "range": {
+     "low": 70.0,
+     "high": 86.0,
+     "value": 64,
+     "min": 54.0,
+     "max": 102.0
+    }
+   },
+   {
+    "key": "ready",
+    "label": "Readiness",
+    "valueText": "48",
+    "unit": "",
+    "footText": "normal 55–77",
+    "staleText": null,
+    "status": "below",
+    "isOff": true,
+    "range": {
+     "low": 55.0,
+     "high": 77.0,
+     "value": 48,
+     "min": 33.0,
+     "max": 99.0
+    }
+   },
+   {
+    "key": "stress",
+    "label": "Stress",
+    "valueText": "31",
+    "unit": "avg",
+    "footText": "normal 23–31",
+    "staleText": "Oct 18",
+    "status": "inRange",
+    "isOff": false,
+    "range": {
+     "low": 23.0,
+     "high": 31.0,
+     "value": 30.6,
+     "min": 15.0,
+     "max": 39.0
+    }
+   },
+   {
+    "key": "weight",
+    "label": "Weight",
+    "valueText": "80.6",
+    "unit": "kg",
+    "footText": "trend 81.0 · ▼ 0.12/wk",
+    "staleText": null,
+    "status": null,
+    "isOff": false,
+    "range": null
+   }
+  ]
+ },
+ "trends": {
+  "ok": true,
+  "items": [
+   {
+    "key": "hrv",
+    "label": "HRV",
+    "unit": "ms",
+    "latestText": "41",
+    "latestDate": "2026-10-20",
+    "normalText": "normal 49–57 ms",
+    "compareText": "30d 53 · 90d 52",
+    "recordedText": "30/30 nights",
+    "points": [
+     {
+      "date": "2026-09-21",
+      "value": 51.9
+     },
+     {
+      "date": "2026-09-22",
+      "value": 51.6
+     },
+     {
+      "date": "2026-09-23",
+      "value": 55.3
+     },
+     {
+      "date": "2026-09-24",
+      "value": 52.5
+     },
+     {
+      "date": "2026-09-25",
+      "value": 55.7
+     },
+     {
+      "date": "2026-09-26",
+      "value": 55.0
+     },
+     {
+      "date": "2026-09-27",
+      "value": 53.3
+     },
+     {
+      "date": "2026-09-28",
+      "value": 56.0
+     },
+     {
+      "date": "2026-09-29",
+      "value": 53.0
+     },
+     {
+      "date": "2026-09-30",
+      "value": 54.9
+     },
+     {
+      "date": "2026-10-01",
+      "value": 52.2
+     },
+     {
+      "date": "2026-10-02",
+      "value": 51.7
+     },
+     {
+      "date": "2026-10-03",
+      "value": 53.0
+     },
+     {
+      "date": "2026-10-04",
+      "value": 54.6
+     },
+     {
+      "date": "2026-10-05",
+      "value": 49.7
+     },
+     {
+      "date": "2026-10-06",
+      "value": 49.6
+     },
+     {
+      "date": "2026-10-07",
+      "value": 51.5
+     },
+     {
+      "date": "2026-10-08",
+      "value": 53.0
+     },
+     {
+      "date": "2026-10-09",
+      "value": 50.5
+     },
+     {
+      "date": "2026-10-10",
+      "value": 49.4
+     },
+     {
+      "date": "2026-10-11",
+      "value": 53.0
+     },
+     {
+      "date": "2026-10-12",
+      "value": 47.7
+     },
+     {
+      "date": "2026-10-13",
+      "value": 53.0
+     },
+     {
+      "date": "2026-10-14",
+      "value": 50.2
+     },
+     {
+      "date": "2026-10-15",
+      "value": 50.0
+     },
+     {
+      "date": "2026-10-16",
+      "value": 50.6
+     },
+     {
+      "date": "2026-10-17",
+      "value": 52.5
+     },
+     {
+      "date": "2026-10-18",
+      "value": 56.2
+     },
+     {
+      "date": "2026-10-19",
+      "value": 53.1
+     },
+     {
+      "date": "2026-10-20",
+      "value": 41
+     }
+    ],
+    "band": {
+     "low": 48.6,
+     "high": 57.2
+    },
+    "goal": null,
+    "isOff": true
+   },
+   {
+    "key": "rhr",
+    "label": "Resting HR",
+    "unit": "bpm",
+    "latestText": "50",
+    "latestDate": "2026-10-20",
+    "normalText": "normal 47–51 bpm",
+    "compareText": "30d 49 · 90d 49",
+    "recordedText": "30/30 days",
+    "points": [
+     {
+      "date": "2026-09-21",
+      "value": 49.4
+     },
+     {
+      "date": "2026-09-22",
+      "value": 49.0
+     },
+     {
+      "date": "2026-09-23",
+      "value": 49.9
+     },
+     {
+      "date": "2026-09-24",
+      "value": 48.7
+     },
+     {
+      "date": "2026-09-25",
+      "value": 48.9
+     },
+     {
+      "date": "2026-09-26",
+      "value": 49.5
+     },
+     {
+      "date": "2026-09-27",
+      "value": 51.0
+     },
+     {
+      "date": "2026-09-28",
+      "value": 50.3
+     },
+     {
+      "date": "2026-09-29",
+      "value": 49.8
+     },
+     {
+      "date": "2026-09-30",
+      "value": 50.4
+     },
+     {
+      "date": "2026-10-01",
+      "value": 49.8
+     },
+     {
+      "date": "2026-10-02",
+      "value": 49.0
+     },
+     {
+      "date": "2026-10-03",
+      "value": 50.1
+     },
+     {
+      "date": "2026-10-04",
+      "value": 49.4
+     },
+     {
+      "date": "2026-10-05",
+      "value": 47.7
+     },
+     {
+      "date": "2026-10-06",
+      "value": 48.4
+     },
+     {
+      "date": "2026-10-07",
+      "value": 47.9
+     },
+     {
+      "date": "2026-10-08",
+      "value": 48.8
+     },
+     {
+      "date": "2026-10-09",
+      "value": 48.2
+     },
+     {
+      "date": "2026-10-10",
+      "value": 46.9
+     },
+     {
+      "date": "2026-10-11",
+      "value": 49.0
+     },
+     {
+      "date": "2026-10-12",
+      "value": 46.6
+     },
+     {
+      "date": "2026-10-13",
+      "value": 47.7
+     },
+     {
+      "date": "2026-10-14",
+      "value": 49.0
+     },
+     {
+      "date": "2026-10-15",
+      "value": 47.5
+     },
+     {
+      "date": "2026-10-16",
+      "value": 48.9
+     },
+     {
+      "date": "2026-10-17",
+      "value": 47.9
+     },
+     {
+      "date": "2026-10-18",
+      "value": 50.2
+     },
+     {
+      "date": "2026-10-19",
+      "value": 50.8
+     },
+     {
+      "date": "2026-10-20",
+      "value": 50
+     }
+    ],
+    "band": {
+     "low": 47.4,
+     "high": 51.0
+    },
+    "goal": null,
+    "isOff": false
+   },
+   {
+    "key": "sleep",
+    "label": "Sleep",
+    "unit": "h",
+    "latestText": "6:42",
+    "latestDate": "2026-10-20",
+    "normalText": "normal 7:05–7:46 h",
+    "compareText": "30d 7:23 · 90d 7:18",
+    "recordedText": "30/30 nights",
+    "points": [
+     {
+      "date": "2026-09-21",
+      "value": 463.8
+     },
+     {
+      "date": "2026-09-22",
+      "value": 439.4
+     },
+     {
+      "date": "2026-09-23",
+      "value": 462.0
+     },
+     {
+      "date": "2026-09-24",
+      "value": 459.9
+     },
+     {
+      "date": "2026-09-25",
+      "value": 461.6
+     },
+     {
+      "date": "2026-09-26",
+      "value": 457.0
+     },
+     {
+      "date": "2026-09-27",
+      "value": 477.0
+     },
+     {
+      "date": "2026-09-28",
+      "value": 482.0
+     },
+     {
+      "date": "2026-09-29",
+      "value": 457.3
+     },
+     {
+      "date": "2026-09-30",
+      "value": 464.9
+     },
+     {
+      "date": "2026-10-01",
+      "value": 432.0
+     },
+     {
+      "date": "2026-10-02",
+      "value": 460.8
+     },
+     {
+      "date": "2026-10-03",
+      "value": 454.5
+     },
+     {
+      "date": "2026-10-04",
+      "value": 468.0
+     },
+     {
+      "date": "2026-10-05",
+      "value": 455.8
+     },
+     {
+      "date": "2026-10-06",
+      "value": 425.7
+     },
+     {
+      "date": "2026-10-07",
+      "value": 427.9
+     },
+     {
+      "date": "2026-10-08",
+      "value": 440.0
+     },
+     {
+      "date": "2026-10-09",
+      "value": 406.5
+     },
+     {
+      "date": "2026-10-10",
+      "value": 428.1
+     },
+     {
+      "date": "2026-10-11",
+      "value": 414.0
+     },
+     {
+      "date": "2026-10-12",
+      "value": 413.0
+     },
+     {
+      "date": "2026-10-13",
+      "value": 412.4
+     },
+     {
+      "date": "2026-10-14",
+      "value": 450.8
+     },
+     {
+      "date": "2026-10-15",
+      "value": 422.3
+     },
+     {
+      "date": "2026-10-16",
+      "value": 431.9
+     },
+     {
+      "date": "2026-10-17",
+      "value": 442.8
+     },
+     {
+      "date": "2026-10-18",
+      "value": 470.3
+     },
+     {
+      "date": "2026-10-19",
+      "value": 433.9
+     },
+     {
+      "date": "2026-10-20",
+      "value": 402
+     }
+    ],
+    "band": {
+     "low": 425.0,
+     "high": 466.0
+    },
+    "goal": {
+     "value": 450,
+     "label": "goal 7:30"
+    },
+    "isOff": true
+   },
+   {
+    "key": "sleepScore",
+    "label": "Sleep score",
+    "unit": "",
+    "latestText": "68",
+    "latestDate": "2026-10-20",
+    "normalText": "normal 73–87",
+    "compareText": "30d 80 · 90d 79",
+    "recordedText": "30/30 nights",
+    "points": [
+     {
+      "date": "2026-09-21",
+      "value": 80.6
+     },
+     {
+      "date": "2026-09-22",
+      "value": 85.8
+     },
+     {
+      "date": "2026-09-23",
+      "value": 86.2
+     },
+     {
+      "date": "2026-09-24",
+      "value": 87.8
+     },
+     {
+      "date": "2026-09-25",
+      "value": 81.5
+     },
+     {
+      "date": "2026-09-26",
+      "value": 83.7
+     },
+     {
+      "date": "2026-09-27",
+      "value": 83.3
+     },
+     {
+      "date": "2026-09-28",
+      "value": 89.5
+     },
+     {
+      "date": "2026-09-29",
+      "value": 90.0
+     },
+     {
+      "date": "2026-09-30",
+      "value": 79.7
+     },
+     {
+      "date": "2026-10-01",
+      "value": 79.1
+     },
+     {
+      "date": "2026-10-02",
+      "value": 78.7
+     },
+     {
+      "date": "2026-10-03",
+      "value": 77.5
+     },
+     {
+      "date": "2026-10-04",
+      "value": 79.3
+     },
+     {
+      "date": "2026-10-05",
+      "value": 79.3
+     },
+     {
+      "date": "2026-10-06",
+      "value": 74.3
+     },
+     {
+      "date": "2026-10-07",
+      "value": 70.3
+     },
+     {
+      "date": "2026-10-08",
+      "value": 74.6
+     },
+     {
+      "date": "2026-10-09",
+      "value": 73.5
+     },
+     {
+      "date": "2026-10-10",
+      "value": 75.8
+     },
+     {
+      "date": "2026-10-11",
+      "value": 80.6
+     },
+     {
+      "date": "2026-10-12",
+      "value": 78.0
+     },
+     {
+      "date": "2026-10-13",
+      "value": 76.7
+     },
+     {
+      "date": "2026-10-14",
+      "value": 78.9
+     },
+     {
+      "date": "2026-10-15",
+      "value": 80.7
+     },
+     {
+      "date": "2026-10-16",
+      "value": 74.5
+     },
+     {
+      "date": "2026-10-17",
+      "value": 85.9
+     },
+     {
+      "date": "2026-10-18",
+      "value": 85.6
+     },
+     {
+      "date": "2026-10-19",
+      "value": 87.8
+     },
+     {
+      "date": "2026-10-20",
+      "value": 68
+     }
+    ],
+    "band": {
+     "low": 73.0,
+     "high": 87.0
+    },
+    "goal": {
+     "value": 80,
+     "label": "good 80"
+    },
+    "isOff": true
+   },
+   {
+    "key": "bbHigh",
+    "label": "Body Battery",
+    "unit": "peak",
+    "latestText": "64",
+    "latestDate": "2026-10-20",
+    "normalText": "normal 70–86",
+    "compareText": "30d 78 · 90d 76",
+    "recordedText": "30/30 days",
+    "points": [
+     {
+      "date": "2026-09-21",
+      "value": 76.7
+     },
+     {
+      "date": "2026-09-22",
+      "value": 78.3
+     },
+     {
+      "date": "2026-09-23",
+      "value": 76.1
+     },
+     {
+      "date": "2026-09-24",
+      "value": 83.7
+     },
+     {
+      "date": "2026-09-25",
+      "value": 77.8
+     },
+     {
+      "date": "2026-09-26",
+      "value": 78.5
+     },
+     {
+      "date": "2026-09-27",
+      "value": 80.5
+     },
+     {
+      "date": "2026-09-28",
+      "value": 79.9
+     },
+     {
+      "date": "2026-09-29",
+      "value": 81.5
+     },
+     {
+      "date": "2026-09-30",
+      "value": 77.3
+     },
+     {
+      "date": "2026-10-01",
+      "value": 75.6
+     },
+     {
+      "date": "2026-10-02",
+      "value": 76.1
+     },
+     {
+      "date": "2026-10-03",
+      "value": 74.1
+     },
+     {
+      "date": "2026-10-04",
+      "value": 75.7
+     },
+     {
+      "date": "2026-10-05",
+      "value": 70.2
+     },
+     {
+      "date": "2026-10-06",
+      "value": 79.1
+     },
+     {
+      "date": "2026-10-07",
+      "value": 74.8
+     },
+     {
+      "date": "2026-10-08",
+      "value": 68.4
+     },
+     {
+      "date": "2026-10-09",
+      "value": 69.2
+     },
+     {
+      "date": "2026-10-10",
+      "value": 70.2
+     },
+     {
+      "date": "2026-10-11",
+      "value": 70.6
+     },
+     {
+      "date": "2026-10-12",
+      "value": 68.3
+     },
+     {
+      "date": "2026-10-13",
+      "value": 78.0
+     },
+     {
+      "date": "2026-10-14",
+      "value": 80.9
+     },
+     {
+      "date": "2026-10-15",
+      "value": 75.9
+     },
+     {
+      "date": "2026-10-16",
+      "value": 77.6
+     },
+     {
+      "date": "2026-10-17",
+      "value": 74.3
+     },
+     {
+      "date": "2026-10-18",
+      "value": 75.9
+     },
+     {
+      "date": "2026-10-19",
+      "value": 80.1
+     },
+     {
+      "date": "2026-10-20",
+      "value": 64
+     }
+    ],
+    "band": {
+     "low": 70.0,
+     "high": 86.0
+    },
+    "goal": {
+     "value": 75,
+     "label": "charged 75"
+    },
+    "isOff": true
+   },
+   {
+    "key": "readiness",
+    "label": "Readiness",
+    "unit": "",
+    "latestText": "48",
+    "latestDate": "2026-10-20",
+    "normalText": "normal 55–77",
+    "compareText": "30d 66 · 90d 63",
+    "recordedText": "30/30 days",
+    "points": [
+     {
+      "date": "2026-09-21",
+      "value": 71.3
+     },
+     {
+      "date": "2026-09-22",
+      "value": 62.6
+     },
+     {
+      "date": "2026-09-23",
+      "value": 62.2
+     },
+     {
+      "date": "2026-09-24",
+      "value": 78.7
+     },
+     {
+      "date": "2026-09-25",
+      "value": 73.2
+     },
+     {
+      "date": "2026-09-26",
+      "value": 67.9
+     },
+     {
+      "date": "2026-09-27",
+      "value": 74.7
+     },
+     {
+      "date": "2026-09-28",
+      "value": 66.3
+     },
+     {
+      "date": "2026-09-29",
+      "value": 73.7
+     },
+     {
+      "date": "2026-09-30",
+      "value": 79.9
+     },
+     {
+      "date": "2026-10-01",
+      "value": 76.6
+     },
+     {
+      "date": "2026-10-02",
+      "value": 72.2
+     },
+     {
+      "date": "2026-10-03",
+      "value": 63.3
+     },
+     {
+      "date": "2026-10-04",
+      "value": 63.0
+     },
+     {
+      "date": "2026-10-05",
+      "value": 57.9
+     },
+     {
+      "date": "2026-10-06",
+      "value": 65.8
+     },
+     {
+      "date": "2026-10-07",
+      "value": 60.5
+     },
+     {
+      "date": "2026-10-08",
+      "value": 63.3
+     },
+     {
+      "date": "2026-10-09",
+      "value": 55.5
+     },
+     {
+      "date": "2026-10-10",
+      "value": 53.6
+     },
+     {
+      "date": "2026-10-11",
+      "value": 63.3
+     },
+     {
+      "date": "2026-10-12",
+      "value": 66.9
+     },
+     {
+      "date": "2026-10-13",
+      "value": 66.0
+     },
+     {
+      "date": "2026-10-14",
+      "value": 66.8
+     },
+     {
+      "date": "2026-10-15",
+      "value": 68.9
+     },
+     {
+      "date": "2026-10-16",
+      "value": 69.6
+     },
+     {
+      "date": "2026-10-17",
+      "value": 63.3
+     },
+     {
+      "date": "2026-10-18",
+      "value": 69.9
+     },
+     {
+      "date": "2026-10-19",
+      "value": 68.9
+     },
+     {
+      "date": "2026-10-20",
+      "value": 48
+     }
+    ],
+    "band": {
+     "low": 55.0,
+     "high": 77.0
+    },
+    "goal": {
+     "value": 75,
+     "label": "high 75"
+    },
+    "isOff": true
+   },
+   {
+    "key": "stress",
+    "label": "Stress",
+    "unit": "avg",
+    "latestText": "31",
+    "latestDate": "2026-10-20",
+    "normalText": "normal 23–31",
+    "compareText": "30d 27 · 90d 28",
+    "recordedText": "30/30 days",
+    "points": [
+     {
+      "date": "2026-09-21",
+      "value": 23.2
+     },
+     {
+      "date": "2026-09-22",
+      "value": 26.0
+     },
+     {
+      "date": "2026-09-23",
+      "value": 26.5
+     },
+     {
+      "date": "2026-09-24",
+      "value": 30.6
+     },
+     {
+      "date": "2026-09-25",
+      "value": 33.2
+     },
+     {
+      "date": "2026-09-26",
+      "value": 29.4
+     },
+     {
+      "date": "2026-09-27",
+      "value": 33.5
+     },
+     {
+      "date": "2026-09-28",
+      "value": 33.9
+     },
+     {
+      "date": "2026-09-29",
+      "value": 33.4
+     },
+     {
+      "date": "2026-09-30",
+      "value": 28.3
+     },
+     {
+      "date": "2026-10-01",
+      "value": 26.6
+     },
+     {
+      "date": "2026-10-02",
+      "value": 26.0
+     },
+     {
+      "date": "2026-10-03",
+      "value": 25.0
+     },
+     {
+      "date": "2026-10-04",
+      "value": 24.3
+     },
+     {
+      "date": "2026-10-05",
+      "value": 26.9
+     },
+     {
+      "date": "2026-10-06",
+      "value": 28.5
+     },
+     {
+      "date": "2026-10-07",
+      "value": 27.5
+     },
+     {
+      "date": "2026-10-08",
+      "value": 24.2
+     },
+     {
+      "date": "2026-10-09",
+      "value": 25.3
+     },
+     {
+      "date": "2026-10-10",
+      "value": 26.4
+     },
+     {
+      "date": "2026-10-11",
+      "value": 20.8
+     },
+     {
+      "date": "2026-10-12",
+      "value": 25.7
+     },
+     {
+      "date": "2026-10-13",
+      "value": 28.2
+     },
+     {
+      "date": "2026-10-14",
+      "value": 27.7
+     },
+     {
+      "date": "2026-10-15",
+      "value": 28.2
+     },
+     {
+      "date": "2026-10-16",
+      "value": 26.7
+     },
+     {
+      "date": "2026-10-17",
+      "value": 25.1
+     },
+     {
+      "date": "2026-10-18",
+      "value": 30.7
+     },
+     {
+      "date": "2026-10-19",
+      "value": 27.6
+     },
+     {
+      "date": "2026-10-20",
+      "value": 31
+     }
+    ],
+    "band": {
+     "low": 23.0,
+     "high": 31.0
+    },
+    "goal": {
+     "value": 25,
+     "label": "rest < 25"
+    },
+    "isOff": false
+   },
+   {
+    "key": "steps",
+    "label": "Steps",
+    "unit": "steps",
+    "latestText": "7.4k",
+    "latestDate": "2026-10-20",
+    "normalText": null,
+    "compareText": "30d 9.8k · 90d 9.4k",
+    "recordedText": "30/30 days",
+    "points": [
+     {
+      "date": "2026-09-21",
+      "value": 12158.0
+     },
+     {
+      "date": "2026-09-22",
+      "value": 9650.0
+     },
+     {
+      "date": "2026-09-23",
+      "value": 10026.0
+     },
+     {
+      "date": "2026-09-24",
+      "value": 13056.0
+     },
+     {
+      "date": "2026-09-25",
+      "value": 12186.0
+     },
+     {
+      "date": "2026-09-26",
+      "value": 9573.0
+     },
+     {
+      "date": "2026-09-27",
+      "value": 9431.0
+     },
+     {
+      "date": "2026-09-28",
+      "value": 9532.0
+     },
+     {
+      "date": "2026-09-29",
+      "value": 13188.0
+     },
+     {
+      "date": "2026-09-30",
+      "value": 12500.0
+     },
+     {
+      "date": "2026-10-01",
+      "value": 8929.0
+     },
+     {
+      "date": "2026-10-02",
+      "value": 12005.0
+     },
+     {
+      "date": "2026-10-03",
+      "value": 12413.0
+     },
+     {
+      "date": "2026-10-04",
+      "value": 10424.0
+     },
+     {
+      "date": "2026-10-05",
+      "value": 8526.0
+     },
+     {
+      "date": "2026-10-06",
+      "value": 9186.0
+     },
+     {
+      "date": "2026-10-07",
+      "value": 6820.0
+     },
+     {
+      "date": "2026-10-08",
+      "value": 6029.0
+     },
+     {
+      "date": "2026-10-09",
+      "value": 10688.0
+     },
+     {
+      "date": "2026-10-10",
+      "value": 9049.0
+     },
+     {
+      "date": "2026-10-11",
+      "value": 8495.0
+     },
+     {
+      "date": "2026-10-12",
+      "value": 10680.0
+     },
+     {
+      "date": "2026-10-13",
+      "value": 8411.0
+     },
+     {
+      "date": "2026-10-14",
+      "value": 10896.0
+     },
+     {
+      "date": "2026-10-15",
+      "value": 11012.0
+     },
+     {
+      "date": "2026-10-16",
+      "value": 8305.0
+     },
+     {
+      "date": "2026-10-17",
+      "value": 8882.0
+     },
+     {
+      "date": "2026-10-18",
+      "value": 9440.0
+     },
+     {
+      "date": "2026-10-19",
+      "value": 9488.0
+     },
+     {
+      "date": "2026-10-20",
+      "value": 7420
+     }
+    ],
+    "band": null,
+    "goal": {
+     "value": 10000,
+     "label": "10k"
+    },
+    "isOff": false
+   },
+   {
+    "key": "weight",
+    "label": "Weight",
+    "unit": "kg",
+    "latestText": "80.6",
+    "latestDate": "2026-10-20",
+    "normalText": null,
+    "compareText": null,
+    "recordedText": "24/30 days",
+    "points": [
+     {
+      "date": "2026-09-21",
+      "value": 81.03
+     },
+     {
+      "date": "2026-09-22",
+      "value": 81.19
+     },
+     {
+      "date": "2026-09-24",
+      "value": 81.08
+     },
+     {
+      "date": "2026-09-25",
+      "value": 81.66
+     },
+     {
+      "date": "2026-09-27",
+      "value": 81.3
+     },
+     {
+      "date": "2026-09-28",
+      "value": 81.37
+     },
+     {
+      "date": "2026-09-29",
+      "value": 81.44
+     },
+     {
+      "date": "2026-10-01",
+      "value": 81.6
+     },
+     {
+      "date": "2026-10-02",
+      "value": 81.22
+     },
+     {
+      "date": "2026-10-03",
+      "value": 81.52
+     },
+     {
+      "date": "2026-10-05",
+      "value": 81.13
+     },
+     {
+      "date": "2026-10-06",
+      "value": 81.11
+     },
+     {
+      "date": "2026-10-07",
+      "value": 81.07
+     },
+     {
+      "date": "2026-10-08",
+      "value": 80.68
+     },
+     {
+      "date": "2026-10-10",
+      "value": 80.96
+     },
+     {
+      "date": "2026-10-11",
+      "value": 80.79
+     },
+     {
+      "date": "2026-10-12",
+      "value": 80.68
+     },
+     {
+      "date": "2026-10-13",
+      "value": 81.27
+     },
+     {
+      "date": "2026-10-15",
+      "value": 80.91
+     },
+     {
+      "date": "2026-10-16",
+      "value": 81.17
+     },
+     {
+      "date": "2026-10-17",
+      "value": 81.4
+     },
+     {
+      "date": "2026-10-18",
+      "value": 81.33
+     },
+     {
+      "date": "2026-10-19",
+      "value": 81.21
+     },
+     {
+      "date": "2026-10-20",
+      "value": 80.6
+     }
+    ],
+    "band": null,
+    "goal": null,
+    "isOff": false,
+    "trendLine": [
+     {
+      "date": "2026-09-21",
+      "value": 81.36
+     },
+     {
+      "date": "2026-09-22",
+      "value": 81.35
+     },
+     {
+      "date": "2026-09-24",
+      "value": 81.32
+     },
+     {
+      "date": "2026-09-25",
+      "value": 81.35
+     },
+     {
+      "date": "2026-09-27",
+      "value": 81.35
+     },
+     {
+      "date": "2026-09-28",
+      "value": 81.35
+     },
+     {
+      "date": "2026-09-29",
+      "value": 81.36
+     },
+     {
+      "date": "2026-10-01",
+      "value": 81.38
+     },
+     {
+      "date": "2026-10-02",
+      "value": 81.37
+     },
+     {
+      "date": "2026-10-03",
+      "value": 81.38
+     },
+     {
+      "date": "2026-10-05",
+      "value": 81.36
+     },
+     {
+      "date": "2026-10-06",
+      "value": 81.33
+     },
+     {
+      "date": "2026-10-07",
+      "value": 81.31
+     },
+     {
+      "date": "2026-10-08",
+      "value": 81.24
+     },
+     {
+      "date": "2026-10-10",
+      "value": 81.22
+     },
+     {
+      "date": "2026-10-11",
+      "value": 81.17
+     },
+     {
+      "date": "2026-10-12",
+      "value": 81.12
+     },
+     {
+      "date": "2026-10-13",
+      "value": 81.14
+     },
+     {
+      "date": "2026-10-15",
+      "value": 81.12
+     },
+     {
+      "date": "2026-10-16",
+      "value": 81.12
+     },
+     {
+      "date": "2026-10-17",
+      "value": 81.15
+     },
+     {
+      "date": "2026-10-18",
+      "value": 81.17
+     },
+     {
+      "date": "2026-10-19",
+      "value": 81.17
+     },
+     {
+      "date": "2026-10-20",
+      "value": 81.11
+     }
+    ]
+   },
+   {
+    "key": "vo2max",
+    "label": "VO2max",
+    "unit": "mL/kg/min",
+    "latestText": "55.0",
+    "latestDate": "2026-10-17",
+    "normalText": null,
+    "compareText": null,
+    "recordedText": "4/30 days",
+    "points": [
+     {
+      "date": "2026-09-24",
+      "value": 54.0
+     },
+     {
+      "date": "2026-10-01",
+      "value": 54.0
+     },
+     {
+      "date": "2026-10-08",
+      "value": 55.0
+     },
+     {
+      "date": "2026-10-17",
+      "value": 55.0
+     }
+    ],
+    "band": null,
+    "goal": null,
+    "isOff": false
+   }
+  ]
+ },
+ "body": {
+  "ok": true,
+  "weight": {
+   "kg": 80.6,
+   "valueText": "80.6",
+   "unit": "kg",
+   "date": "2026-10-20",
+   "dateText": "Oct 20",
+   "trendText": "trend 81.0 · ▼ 0.12/wk",
+   "change4w": -0.52,
+   "change4wText": "▼ 0.5 kg in 4 weeks"
+  },
+  "dexa": {
+   "scanDate": "2026-09-08",
+   "dateText": "Sep 8, 2026",
+   "location": "Demo Clinic",
+   "scanCount": 3,
+   "measures": [
+    {
+     "key": "bodyFatPct",
+     "label": "Body fat",
+     "value": 16.9,
+     "valueText": "16.9",
+     "unit": "%",
+     "changeText": "▼ 0.8 pts since last",
+     "tone": "good"
+    },
+    {
+     "key": "leanMassKg",
+     "label": "Lean mass",
+     "value": 64.1,
+     "valueText": "64.1",
+     "unit": "kg",
+     "changeText": "▲ 0.4 kg since last",
+     "tone": "good"
+    },
+    {
+     "key": "vatMassKg",
+     "label": "Visceral fat",
+     "value": 0.42,
+     "valueText": "0.42",
+     "unit": "kg",
+     "changeText": "▲ 0.03 kg since last",
+     "tone": "bad"
+    },
+    {
+     "key": "fatMassKg",
+     "label": "Fat mass",
+     "value": 13.2,
+     "valueText": "13.2",
+     "unit": "kg",
+     "changeText": "▼ 0.6 kg since last",
+     "tone": "good"
+    }
+   ]
+  }
+ },
+ "labs": {
+  "ok": true,
+  "drawDate": "2026-08-27",
+  "drawDateText": "Aug 27, 2026",
+  "drawCount": 3,
+  "counts": {
+   "total": 64,
+   "inRange": 61,
+   "outOfRange": 3,
+   "noRange": 0
+  },
+  "items": [
+   {
+    "name": "Apolipoprotein B",
+    "valueText": "98",
+    "unit": "mg/dL",
+    "rangeText": "≤ 90",
+    "status": "out_of_range",
+    "statusText": "Out of range"
+   },
+   {
+    "name": "LDL cholesterol",
+    "valueText": "112",
+    "unit": "mg/dL",
+    "rangeText": "≤ 100",
+    "status": "out_of_range",
+    "statusText": "Out of range"
+   },
+   {
+    "name": "Vitamin D",
+    "valueText": "27",
+    "unit": "ng/mL",
+    "rangeText": "30–100",
+    "status": "out_of_range",
+    "statusText": "Out of range"
+   }
+  ],
+  "moreCount": 0
+ },
+ "emptyText": null
+}
