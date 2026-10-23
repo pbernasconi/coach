@@ -15,9 +15,15 @@ struct LiftSessionBodyPage: View {
     @State private var detent: BackdropSheetDetent = .medium
 
     var body: some View {
-        BackdropSheet(detent: $detent, revealFrom: .expanded) { rest in
-            SessionBodyBackdrop(shades: shades, musclesText: detail.hero.value?.musclesText, rest: rest)
-                .equatable()
+        // The sheet stops halfway down, so the body gets the top half of the screen.
+        BackdropSheet(detent: $detent, mediumFraction: 0.5, revealFrom: .expanded) { rest in
+            SessionBodyBackdrop(
+                shades: shades,
+                muscles: detail.bodyMuscles,
+                musclesText: detail.hero.value?.musclesText,
+                rest: rest
+            )
+            .equatable()
         } sheet: {
             LiftSessionSections(detail: detail, state: state, send: send)
                 .pageColumn()
