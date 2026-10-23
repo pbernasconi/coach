@@ -365,7 +365,7 @@ export default function MonthCalendar({ anchor, openAt, range, bounds, weather, 
 
           {/* Grid: tablet and desktop */}
           <div ref={gridRef} className="hidden md:block">
-            <div className={cn(COLS, 'sticky top-0 z-20 h-8 border-b bg-background/95 text-[10px] font-semibold uppercase tracking-wider text-[var(--viz-muted)] backdrop-blur')}>
+            <div className={cn(COLS, 'sticky top-0 z-20 h-8 border-b bg-background/95 text-[11px] font-semibold uppercase tracking-wider text-[var(--viz-muted)] backdrop-blur')}>
               {WEEKDAYS.map((d) => <div key={d} className="flex items-center px-2">{d}</div>)}
               <div className="flex items-center border-l px-2">Week</div>
             </div>

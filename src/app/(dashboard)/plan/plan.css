@@ -9,7 +9,7 @@
   scroll-snap-align: start;
   scroll-margin-top: var(--plan-head, 2rem); /* snap under the sticky weekday header, not behind it */
   content-visibility: auto;
-  contain-intrinsic-size: auto var(--plan-row, 13.5rem);
+  contain-intrinsic-size: auto var(--plan-row, 15.5rem);
 }
 /* Agenda weeks have no content-visibility: their heights vary, and a guessed height that changes once a week
    renders moved the view (phones opened weeks above today). Phones scroll freely, with no snap: the view opens at

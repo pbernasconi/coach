@@ -69,7 +69,7 @@ export default function WeatherBadge({ w, date, compact = false }: { w: DayWeath
           clearTimeout(timer.current);
           setOpen(true); // a tap opens it; a tap outside, Escape or a scroll closes it
         }}
-        className="inline-flex cursor-default items-center gap-1 rounded px-0.5 text-[11px] tabular-nums text-[var(--viz-ink-2)] transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="inline-flex cursor-default items-center gap-1 rounded px-0.5 text-[12px] tabular-nums text-[var(--viz-ink-2)] transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <Icon aria-hidden className="h-3.5 w-3.5 shrink-0 text-[var(--viz-muted)]" />
         <span aria-hidden>
