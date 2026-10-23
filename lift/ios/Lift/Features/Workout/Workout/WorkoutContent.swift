@@ -76,7 +76,7 @@ struct WorkoutContent: View {
     /// Scrolls a set into the upper part of the page.
     private func focus(_ setID: UUID?, _ proxy: ScrollViewProxy) {
         guard let setID else { return }
-        withAnimation(reduceMotion ? nil : .snappy) { proxy.scrollTo(setID, anchor: Self.focusAnchor) }
+        withKoboAnimation(.navigate, reduceMotion: reduceMotion) { proxy.scrollTo(setID, anchor: Self.focusAnchor) }
     }
 
     /// The session title in the inline navigation bar, which keeps the page compact.

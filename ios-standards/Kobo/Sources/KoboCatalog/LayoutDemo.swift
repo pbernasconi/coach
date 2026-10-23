@@ -59,6 +59,10 @@ struct LayoutDemo: View {
             ScrollView { Text("Scrolling content").frame(maxWidth: .infinity, minHeight: Size.minTouch * 4) }
                 .frame(height: Size.minTouch * 5)
                 .pinnedFooter { Button("Save trip") {}.buttonStyle(.kobo(.primary, width: .full)) }
+        case .backdropSheet:
+            BackdropSheetSample()
+                .frame(height: Size.minTouch * 10)
+                .clipShape(RoundedRectangle(cornerRadius: Radius.md, style: .continuous))
         case .sheetHeader:
             SheetHeader(
                 "Edit task",

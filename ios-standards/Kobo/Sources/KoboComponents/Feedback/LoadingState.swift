@@ -1,8 +1,9 @@
 import KoboTokens
 import SwiftUI
 
-/// A centred spinner with an optional caption, for a wait whose result has no known shape. When the shape is known,
-/// draw `Skeleton`s instead.
+/// A quiet centred spinner (in the tertiary text colour, not the accent) with an optional caption, for a wait whose
+/// result has no known shape. When the shape is known, draw `Skeleton`s with `.skeletonPage()` instead. It stays
+/// invisible for `Motion.Duration.loadingGrace` (`.loadingGrace()`), so a fast load shows no spinner at all.
 ///
 /// A long wait says so: after `SlowWait.slowAfter` (2 s) a second line reads "Still working on it…", and after
 /// `SlowWait.verySlowAfter` (15 s) "This is taking longer than usual.". VoiceOver hears each change. Turn it off with
@@ -32,7 +33,7 @@ public struct LoadingState: View {
         VStack(spacing: Space.md) {
             ProgressView()
                 .controlSize(.large)
-                .tint(theme.palette.accent)
+                .tint(theme.palette.textTertiary)
             VStack(spacing: Space.xxs) {
                 if let label {
                     label.font(theme.font(.subheadline)).foregroundStyle(theme.palette.textSecondary)
@@ -55,6 +56,7 @@ public struct LoadingState: View {
         .accessibilityValue(slowCopy ?? Text(verbatim: ""))
         .accessibilityAddTraits(.updatesFrequently)
         .slowWait(isWaiting: showsSlowWait, stage: $wait)
+        .loadingGrace()
         .onChange(of: wait) { _, stage in
             guard let spoken = Self.spokenSlowCopy(stage) else { return }
             AccessibilityNotification.Announcement(spoken).post()

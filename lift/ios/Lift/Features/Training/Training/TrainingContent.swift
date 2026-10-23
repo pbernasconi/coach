@@ -28,6 +28,8 @@ struct TrainingContent: View {
                         onConnect: { send(.connectTapped) }
                     ) { page in
                         ActivityList(page: page, rows: state.rows, footer: state.footer, send: send)
+                    } placeholder: {
+                        ActivityListSkeleton()
                     }
                 case .trends:
                     AppResourcePage(
@@ -36,6 +38,8 @@ struct TrainingContent: View {
                         onConnect: { send(.connectTapped) }
                     ) { trends in
                         TrendsPage(trends: trends, peaksWindow: state.peaksWindow, send: send)
+                    } placeholder: {
+                        TrendsSkeleton()
                     }
                 }
             }

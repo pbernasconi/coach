@@ -12,7 +12,7 @@ struct TemplatesContent: View {
             VStack(alignment: .leading, spacing: Space.section) {
                 switch state.templates {
                 case .loading:
-                    LoadingState()
+                    ListLoadingSkeleton(rows: 4, showsLeading: false)
                 case .empty:
                     EmptyState(
                         symbol: "list.bullet.rectangle",

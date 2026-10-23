@@ -231,9 +231,10 @@ and a second reader (web dashboard, coach scripts).
   destructive action without the app open (logging a set from a Live Activity is not destructive; deleting
   a workout is).
 - `NAV-4` **MUST** Show the tab bar on a tab's root screens only. Every pushed page is a detail page and hides
-  it with Kobo's `.detailPage()`, applied once where the shell builds pushed routes (`navigationDestination(for:)`),
-  never screen by screen. Why: a detail page needs the whole screen for its content, and Back is the way out;
-  the bar only moves between tabs.
+  it with Kobo's `.detailPages(arePushed: !path.isEmpty)`, applied once on each tab stack's root screen, never
+  screen by screen. Why: a detail page needs the whole screen for its content, and Back is the way out; the bar
+  only moves between tabs. Hiding it from the root, driven by the path, keeps the bar's slide in step with the push
+  and the pop (on iOS 26 a bar hidden by the pushed page itself comes back late and with no animation).
 
 ## 9. UI, design system and Liquid Glass
 

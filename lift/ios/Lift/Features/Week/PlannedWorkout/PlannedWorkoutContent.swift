@@ -19,6 +19,8 @@ struct PlannedWorkoutContent: View {
                 showsFreshness: false
             ) { workout in
                 PlannedWorkoutSections(workout: workout, feedback: state.shownFeedback, save: state.feedback.save, send: send)
+            } placeholder: {
+                PlannedWorkoutSkeleton()
             }
             .pageColumn()
             .padding(.top, Space.sm)

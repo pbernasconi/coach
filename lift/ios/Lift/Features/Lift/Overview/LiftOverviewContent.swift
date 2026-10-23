@@ -16,6 +16,8 @@ struct LiftOverviewContent: View {
                 AppResourcePage(state.overview, onRetry: { send(.retryTapped) }, onConnect: { send(.connectTapped) }) {
                     overview in
                     LiftOverviewSections(overview: overview, state: state, send: send)
+                } placeholder: {
+                    LiftOverviewSkeleton()
                 }
                 .pageColumn()
                 .padding(.top, Space.sm)

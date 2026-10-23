@@ -1081,6 +1081,18 @@
         }
       }
     },
+    "Sheet" : {
+      "comment" : "VoiceOver label of a BackdropSheet's grabber; swipe up or down to raise or lower the sheet.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sheet"
+          }
+        }
+      }
+    },
     "Show" : {
       "comment" : "RevealableValue button label that reveals the value.",
       "extractionState" : "manual",

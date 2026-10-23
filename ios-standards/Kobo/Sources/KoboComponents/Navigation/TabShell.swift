@@ -141,18 +141,37 @@ private struct TabShellAccessory<Accessory: View>: ViewModifier {
 }
 
 extension View {
-    /// A page pushed over a tab's root: the tab bar hides while it shows, and comes back on the way back to the root.
+    /// Hides the tab bar while a tab's stack shows a pushed page, and brings it back on the way back to the root.
     /// Detail pages get the whole screen for their content; the bar is for moving between tabs, and Back leads there.
-    /// Apply it once where the app builds its pushed routes (`navigationDestination(for:)`), so every pushed page
-    /// has it, never screen by screen.
+    /// Apply it once, on the stack's root screen inside its `NavigationStack`, driven by the stack's path. Hiding it
+    /// from the root (not from each pushed page) keeps the system's own slide in step with the push and the pop: on
+    /// iOS 26 a bar hidden by the pushed page comes back late and at once, and returns early during a swipe back.
     ///
-    ///     .navigationDestination(for: AppRoute.self) { route in RouteScreen(route: route).detailPage() }
+    ///     NavigationStack(path: $path) {
+    ///         RootScreen()
+    ///             .detailPages(arePushed: !path.isEmpty)
+    ///             .navigationDestination(for: Route.self) { RouteScreen(route: $0) }
+    ///     }
     @ViewBuilder
-    public func detailPage() -> some View {
+    public func detailPages(arePushed: Bool) -> some View {
         #if os(iOS)
-            toolbar(.hidden, for: .tabBar)
+            modifier(DetailPagesTabBar(arePushed: arePushed))
         #else
             self  // no tab bar to hide (the package's macOS test build)
         #endif
     }
 }
+
+#if os(iOS)
+    /// The bar slides out and back with the push's own spring, not at once.
+    private struct DetailPagesTabBar: ViewModifier {
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
+        let arePushed: Bool
+
+        func body(content: Content) -> some View {
+            content
+                .toolbarVisibility(arePushed ? .hidden : .visible, for: .tabBar)
+                .animation(Motion.navigate.animation(reduceMotion: reduceMotion), value: arePushed)
+        }
+    }
+#endif

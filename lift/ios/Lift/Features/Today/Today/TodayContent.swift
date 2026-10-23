@@ -14,6 +14,8 @@ struct TodayContent: View {
                 AppResourcePage(state.today, onRetry: { send(.retryTapped) }, onConnect: { send(.connectTapped) }) {
                     today in
                     TodaySections(today: today, fitness: state.fitness, send: send)
+                } placeholder: {
+                    TodaySkeleton()
                 }
                 .pageColumn()
                 .padding(.top, Space.sm)

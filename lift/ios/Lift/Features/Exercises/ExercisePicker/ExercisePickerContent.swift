@@ -51,7 +51,7 @@ private struct PickerLibraryList: View {
     var body: some View {
         switch state.library {
         case .loading:
-            LoadingState()
+            ListLoadingSkeleton(rows: 6)
         case .empty:
             EmptyState(symbol: "dumbbell", title: "No exercises yet", message: "Pick one from All exercises.") {
                 Button("Show all exercises") { send(.sourceChanged(.catalog)) }
@@ -93,7 +93,7 @@ private struct PickerCatalogList: View {
     var body: some View {
         switch state.catalog {
         case .loading:
-            LoadingState()
+            ListLoadingSkeleton(rows: 6)
         case .empty:
             EmptyState(symbol: "dumbbell", title: "No exercises", message: "The catalog is empty.")
         case .failed:

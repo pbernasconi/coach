@@ -30,8 +30,6 @@ nonisolated enum ActivityPanel: String, Hashable, Identifiable, Sendable {
 nonisolated struct ActivityDetailState: Equatable, Sendable {
     /// What is shown over the page.
     enum Destination: Equatable, Sendable {
-        /// The route on a map that fills the screen and pans and zooms.
-        case map
         /// A page of full charts or tables.
         case panel(ActivityPanel)
     }

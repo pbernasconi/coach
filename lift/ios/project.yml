@@ -151,9 +151,24 @@ targets:
       - target: Lift
       - package: LiftKit
         products: [LiftTesting, LiftSync]
+  LiftUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [LiftUITests]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(LIFT_BUNDLE_ID).uitests
+        GENERATE_INFOPLIST_FILE: "YES"
+        SWIFT_DEFAULT_ACTOR_ISOLATION: nonisolated   # XCTestCase is nonisolated; the tests opt into @MainActor
+    dependencies:
+      - target: Lift
 schemes:
   Lift:
     build: { targets: { Lift: all } }
     run: { config: Debug }
     test: { config: Debug, gatherCoverageData: true, targets: [LiftTests] }
     archive: { config: Release }
+  # Gesture checks on a simulator (drags, scrolls, screenshots); not part of CI. See LiftUITests/README.md.
+  LiftUI:
+    build: { targets: { Lift: all, LiftUITests: [test] } }
+    test: { config: Debug, targets: [LiftUITests] }

@@ -12,7 +12,7 @@ struct ExercisesContent: View {
             VStack(alignment: .leading, spacing: Space.section) {
                 switch state.exercises {
                 case .loading:
-                    LoadingState()
+                    ListLoadingSkeleton(rows: 6)
                 case .empty:
                     LibraryLinks(send: send)
                     EmptyState(

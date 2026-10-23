@@ -13,7 +13,7 @@ struct CatalogContent: View {
             VStack(alignment: .leading, spacing: Space.lg) {
                 switch state.rows {
                 case .loading:
-                    LoadingState()
+                    ListLoadingSkeleton(rows: 8)
                 case .empty:
                     EmptyState(symbol: "dumbbell", title: "No exercises", message: "The catalog is empty.")
                 case .failed:

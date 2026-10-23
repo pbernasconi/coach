@@ -60,7 +60,7 @@ private struct WeekPager: ViewModifier {
             return
         }
         isPaging = true
-        withAnimation(Motion.fastSpatial.animation) {
+        withAnimation(Motion.navigate.animation) {
             dragX = x
         } completion: {
             onChange(next)
@@ -77,7 +77,7 @@ private struct WeekPager: ViewModifier {
         var instant = Transaction()
         instant.disablesAnimations = true
         withTransaction(instant) { dragX = x }
-        withAnimation(Motion.defaultSpatial.animation) {
+        withAnimation(Motion.navigate.animation) {
             dragX = 0
         } completion: {
             isPaging = false

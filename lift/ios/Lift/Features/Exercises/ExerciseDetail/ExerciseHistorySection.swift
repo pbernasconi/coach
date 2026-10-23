@@ -10,11 +10,7 @@ struct ExerciseHistorySection: View {
     var body: some View {
         switch history {
         case .loading:
-            ListSection("Your history") {
-                LoadingState()
-                    .padding(.vertical, Space.md)
-                    .pageGutter()
-            }
+            ListLoadingSkeleton(title: "Your history", rows: 3, showsLeading: false)
         case .empty:
             ListSection("Your history") {
                 ListRow("No logged sets yet", subtitle: "Sessions where you log this exercise show up here.")

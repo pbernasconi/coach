@@ -5,20 +5,33 @@ import SwiftUI
 extension View {
     /// Breathes this view's opacity between full and a dimmer low point, the calm alternative to a shimmer.
     /// Every breathing view reads the same frame clock, so a whole screen of placeholders dims together.
-    /// Static at full opacity with Reduce Motion on, or under `koboFreezesMotion` (snapshots).
+    /// Static at full opacity with Reduce Motion on, or under `koboFreezesMotion` (snapshots). Inside a view that
+    /// already breathes (a `ListRowSkeleton` in a `.skeletonPage()`), it adds nothing, so the dim never doubles.
     public func skeletonBreath() -> some View {
         modifier(SkeletonBreathModifier())
     }
 }
 
+extension EnvironmentValues {
+    /// An ancestor already breathes, so a nested `.skeletonBreath()` passes its content through.
+    @Entry var koboSkeletonBreathes = false
+}
+
 private struct SkeletonBreathModifier: ViewModifier {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.koboFreezesMotion) private var freezesMotion
+    @Environment(\.koboSkeletonBreathes) private var ancestorBreathes
 
     func body(content: Content) -> some View {
-        let still = reduceMotion || freezesMotion
-        TimelineView(.animation(minimumInterval: nil, paused: still)) { context in
-            content.opacity(still ? 1 : SkeletonBreathMotion.opacity(at: context.date.timeIntervalSinceReferenceDate))
+        if ancestorBreathes {
+            content
+        } else {
+            let still = reduceMotion || freezesMotion
+            TimelineView(.animation(minimumInterval: nil, paused: still)) { context in
+                content
+                    .environment(\.koboSkeletonBreathes, true)
+                    .opacity(still ? 1 : SkeletonBreathMotion.opacity(at: context.date.timeIntervalSinceReferenceDate))
+            }
         }
     }
 }
