@@ -153,7 +153,8 @@ final class WorkoutViewModel {
     private func toggleLog(_ id: UUID) -> Task<Void, Never>? {
         guard let detail, case (_, let set)? = detail.find(setID: id), !inFlight.contains(id) else { return nil }
         let isPlanned = set.status == .planned
-        if isPlanned, case .loaded(let workout) = state.workout, workout.isFutureDay, workout.startedAt == nil,
+        // Today now, not when the screen last drew: it may have stayed open past midnight.
+        if isPlanned, detail.session.day > today, case .loaded(let workout) = state.workout, workout.startedAt == nil,
             !workout.isFinished
         {
             // A workout planned for a later day: a stray tap must not mark it done. Start moves it to today first.

@@ -60,7 +60,8 @@ export default function LiftModal({ id, planned, watch = null, onClose, onLiftCh
       if ('error' in r) toast.error(r.error);
       else {
         setVersion((v) => v + 1);
-        await onLiftChanged?.(d.day);
+        // The set is un-logged; a failed calendar reload only leaves the calendar behind until the next load.
+        Promise.resolve(onLiftChanged?.(d.day)).catch(() => toast.error('Set un-logged; reload the page to update the calendar'));
       }
     } catch {
       toast.error('Could not un-log the set');
