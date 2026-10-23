@@ -212,12 +212,10 @@ final class WorkoutActivityCenter: RestActivityController {
         guard sessionID != nil, isLoaded else { return nil }
         guard let detail, detail.isUnderway else { return isShown ? .end : nil }
         let overview = WorkoutOverview(detail: detail, days: days, previous: [:], gym: gym.setup)
-        var state = WorkoutActivityAttributes.ContentState(
-            overview: overview,
-            currentSetID: detail.activitySetID(focus: focus),
-            rest: rest
-        )
-        state.current?.still = stills.still(forSet: state.current?.id, in: overview) { [weak self] in self?.publish() }
+        let setID = detail.activitySetID(focus: focus)
+        var state = WorkoutActivityAttributes.ContentState(overview: overview, currentSetID: setID, rest: rest)
+        let still = stills.still(forSet: setID, in: overview) { [weak self] in self?.publish() }
+        state.current?.still = still
         return .show(WorkoutActivityAttributes(sessionID: detail.id, title: detail.session.title), state)
     }
 
