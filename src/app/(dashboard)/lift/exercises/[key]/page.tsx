@@ -81,26 +81,30 @@ export default async function LiftExercisePage({ params }: { params: Promise<{ k
           <CardDescription>Top sets by estimated 1RM.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead className="text-right">Weight</TableHead>
-                <TableHead className="text-right">Reps</TableHead>
-                <TableHead className="whitespace-nowrap text-right">Est. 1RM</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {detail.bestSets.map((s, i) => (
-                <TableRow key={`${s.sessionId}-${i}`}>
-                  <TableCell className="whitespace-nowrap"><ResponsiveDay day={s.day} /></TableCell>
-                  <TableCell className="whitespace-nowrap text-right tabular-nums">{formatWeight(s.weight, unit)}</TableCell>
-                  <TableCell className="text-right tabular-nums">{s.reps ?? '-'}</TableCell>
-                  <TableCell className="whitespace-nowrap text-right tabular-nums">{formatWeight(s.e1rm, unit)}</TableCell>
+          {detail.bestSets.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No sets logged yet.</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead className="text-right">Weight</TableHead>
+                  <TableHead className="text-right">Reps</TableHead>
+                  <TableHead className="whitespace-nowrap text-right">Est. 1RM</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {detail.bestSets.map((s, i) => (
+                  <TableRow key={`${s.sessionId}-${i}`}>
+                    <TableCell className="whitespace-nowrap"><ResponsiveDay day={s.day} /></TableCell>
+                    <TableCell className="whitespace-nowrap text-right tabular-nums">{formatWeight(s.weight, unit)}</TableCell>
+                    <TableCell className="text-right tabular-nums">{s.reps ?? '-'}</TableCell>
+                    <TableCell className="whitespace-nowrap text-right tabular-nums">{formatWeight(s.e1rm, unit)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -98,7 +98,7 @@ export async function loadAppLiftSession(
   return sessionResponse({ session, timeZone, now, watch, feedback });
 }
 
-/** GET /api/app/lift/exercises/:key: one exercise's history; null when it has no logged sets. */
+/** GET /api/app/lift/exercises/:key: one exercise's history (empty when only planned); null when no session uses it. */
 export async function loadAppLiftExercise(key: string, now = new Date()) {
   const { model, unit } = await loadLiftModel();
   const detail = exerciseDetail(model, key, unit);
