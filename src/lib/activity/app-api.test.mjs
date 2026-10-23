@@ -105,11 +105,13 @@ test('listRow: display text for a run and a ride', () => {
   assert.equal(run.plannedTitle, 'Easy run');
   assert.equal(run.startText, 'Wed, Oct 14 · 6:34 AM');
   assert.equal(run.speedText, null);
+  assert.equal(run.outdoor, true);
   const ride = listRow(
     { strava_activity_id: '162', name: 'Zwift', sport_type: 'VirtualRide', distance: 30000, moving_time: 3600, average_speed: 8.33, tss: null, trainer: true, start_local: '2026-10-15T18:00:00' },
     null,
     typeLabel
   );
+  assert.equal(ride.outdoor, false);
   assert.equal(ride.sport, 'ride');
   assert.equal(ride.typeText, 'Virtual Ride');
   assert.equal(ride.speedText, '30.0 km/h');
