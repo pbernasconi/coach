@@ -66,19 +66,20 @@ struct WorkoutContent: View {
                 WorkoutDock(phase: dock, introducesExercise: state.dockIntroducesExercise, send: send) {
                     focus($0, proxy)
                 }
+                // On the dock, not the screen: iOS 26 points the dialog at the view it hangs on.
+                .koboConfirm(
+                    isPresented: .action(state.isConfirmingFinish) { if !$0 { send(.finishCancelled) } },
+                    ConfirmationAction(
+                        title: "Finish workout?",
+                        message: "^[\(state.plannedSetsLeft) set](inflect: true) not logged yet. You can still log them after you finish.",
+                        confirmLabel: "Finish workout",
+                        cancelLabel: "Keep going"
+                    ) { send(.finishConfirmed) }
+                )
             }
         }
         .modifier(WorkoutEditorSheets(state: state, send: send))
         .workoutMenuSheets(state: state, send: send)
-        .koboConfirm(
-            isPresented: .action(state.isConfirmingFinish) { if !$0 { send(.finishCancelled) } },
-            ConfirmationAction(
-                title: "Finish workout?",
-                message: "^[\(state.plannedSetsLeft) set](inflect: true) not logged yet. You can still log them after you finish.",
-                confirmLabel: "Finish workout",
-                cancelLabel: "Keep going"
-            ) { send(.finishConfirmed) }
-        )
     }
 
     /// The "rest over" state, while its set is still planned (not logged, skipped or removed some other way).
