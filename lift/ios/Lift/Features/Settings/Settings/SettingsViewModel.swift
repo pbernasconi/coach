@@ -18,6 +18,7 @@ final class SettingsViewModel {
     /// The connections and the coach's side, from the server.
     private let remote: AppResource<AppSettings>
     @ObservationIgnored private var isLoading = false
+    @ObservationIgnored private var reloadAfter = false
     /// The latest sync status, kept to redraw the status row when the token changes.
     @ObservationIgnored private var latest = SyncStatus.initial
 
@@ -57,20 +58,32 @@ final class SettingsViewModel {
     }
 
     private func load() async {
-        guard !isLoading else { return }
+        // A load asked for while one runs (the phone was linked meanwhile) runs once more after it.
+        guard !isLoading else {
+            reloadAfter = true
+            return
+        }
         isLoading = true
         defer { isLoading = false }
-        await remote.load(current: state.remote) { state.remote = $0 }
+        repeat {
+            reloadAfter = false
+            await remote.load(current: state.remote) { state.remote = $0 }
+        } while reloadAfter
     }
 
     private func followSync() async {
         guard case .available = state.sync else { return }
         let hasToken = await sync.hasToken()
         refresh(hasToken: hasToken)
+        var hadToken = hasToken
         for await status in sync.statusUpdates() {
             latest = status
             // The token can change behind this screen (a lift://sync link stores one), so read it again.
-            refresh(hasToken: await sync.hasToken())
+            let hasToken = await sync.hasToken()
+            refresh(hasToken: hasToken)
+            // Just connected: the coach's side could not load before, so load it now.
+            if hasToken, !hadToken || state.remote.isNotConnected { await load() }
+            hadToken = hasToken
         }
     }
 

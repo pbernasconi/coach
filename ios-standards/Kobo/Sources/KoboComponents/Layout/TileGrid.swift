@@ -46,6 +46,9 @@ public struct TileGrid<Item, ID: Hashable, Tile: View>: View {
                 }
             }
         }
+        // Each row only as tall as its tallest tile: without this, tiles that stretch to their row fill whatever height
+        // a scroll view offers, and the grid grows with empty space under each value.
+        .fixedSize(horizontal: false, vertical: true)
         .statTileRow()
     }
 
