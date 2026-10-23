@@ -4,6 +4,9 @@
  */
 
 import { SignUp } from '@clerk/nextjs';
+
+// Email code only: Google sign-in has no OAuth credentials in the Clerk production instance, so its button fails.
+const EMAIL_ONLY = { elements: { socialButtonsRoot: { display: 'none' }, dividerRow: { display: 'none' } } };
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = { title: 'Sign up' };
@@ -11,7 +14,7 @@ export const metadata: Metadata = { title: 'Sign up' };
 export default function SignUpPage() {
   return (
     <div className="flex min-h-screen items-center justify-center">
-      <SignUp />
+      <SignUp appearance={EMAIL_ONLY} />
     </div>
   );
 }

@@ -4,6 +4,9 @@
  */
 
 import { SignIn } from '@clerk/nextjs';
+
+// Email code only: Google sign-in has no OAuth credentials in the Clerk production instance, so its button fails.
+const EMAIL_ONLY = { elements: { socialButtonsRoot: { display: 'none' }, dividerRow: { display: 'none' } } };
 import CoachMark from '@/components/brand/CoachMark';
 import type { Metadata } from 'next';
 
@@ -16,7 +19,7 @@ export default function SignInPage() {
         <CoachMark className="size-8" />
         <span className="text-xl font-semibold tracking-tight">Coach</span>
       </div>
-      <SignIn />
+      <SignIn appearance={EMAIL_ONLY} />
     </div>
   );
 }
