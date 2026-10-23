@@ -2,33 +2,47 @@ import KoboComponents
 import KoboTokens
 import SwiftUI
 
-/// One day of the Week list: its date ("Today · Wednesday, 21 October") over one card per plan item and Lift session.
-/// A free day, or a planned rest day, has a short dashed slot instead that plans a workout on it. Today's and the
-/// selected day's date are in ink.
+/// One day of the Week list: its date ("Today · Wednesday, 21 October") over one card holding a row per plan item and
+/// Lift session. A free day, or a planned rest day, has a short dashed slot instead that plans a workout on it. Today's
+/// date is in the brand's text colour, the selected day's in ink.
 struct WeekDayRows: View {
     @Environment(\.koboTheme) private var theme
     let day: WeekDaySection
     let send: (WeekAction) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Space.sm) {
+        VStack(alignment: .leading, spacing: Space.xs) {
             Text(verbatim: day.title)
-                .font(theme.font(.subheadline).weight(.semibold))
-                .foregroundStyle(
-                    day.isToday || day.isSelected ? theme.palette.textPrimary : theme.palette.textSecondary
-                )
+                .font(theme.font(.footnote).weight(.semibold))
+                .foregroundStyle(titleColor)
+                .padding(.leading, Space.xxs)
                 .accessibilityAddTraits(.isHeader)
             if workouts.isEmpty {
                 emptySlot
-            }
-            ForEach(workouts) { entry in
-                switch entry {
-                case .session(let session): WeekSessionRow(session: session, send: send)
-                case .plan(let item): WeekPlanRow(item: item, send: send)
+            } else {
+                WeekDayGroup(statuses: workouts.map(\.cardStatus)) {
+                    ForEach(Array(workouts.enumerated()), id: \.element.id) { index, entry in
+                        row(entry)
+                            .overlay(alignment: .top) {
+                                if index > 0 { WeekRowDivider() }
+                            }
+                    }
                 }
             }
         }
         .accessibilityAddTraits(day.isSelected ? .isSelected : [])
+    }
+
+    @ViewBuilder private func row(_ entry: WeekEntry) -> some View {
+        switch entry {
+        case .session(let session): WeekSessionRow(session: session, send: send)
+        case .plan(let item): WeekPlanRow(item: item, send: send)
+        }
+    }
+
+    private var titleColor: Color {
+        if day.isToday { return theme.palette.accentText }
+        return day.isSelected ? theme.palette.textPrimary : theme.palette.textSecondary
     }
 
     /// Everything but planned rest days, which read as a free day.

@@ -29,6 +29,14 @@ nonisolated enum WeekEntry: Equatable, Sendable, Identifiable {
         }
     }
 
+    /// The row's status as its card shows it: a Lift session is done or planned.
+    var cardStatus: WeekCardStatus {
+        switch self {
+        case .session(let session): session.isDone ? .done : .planned
+        case .plan(let item): item.cardStatus
+        }
+    }
+
     /// The sport of the row: strength for a Lift session.
     var sport: Sport {
         switch self {

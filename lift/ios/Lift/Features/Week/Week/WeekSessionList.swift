@@ -41,7 +41,7 @@ struct WeekSessionList: View {
             if state.templates.isEmpty && days.allSatisfy(\.entries.isEmpty) {
                 WeekFirstRunState(send: send)
             } else {
-                VStack(alignment: .leading, spacing: Space.lg) {
+                VStack(alignment: .leading, spacing: Space.md) {
                     ForEach(days) { day in
                         WeekDayRows(day: day, send: send)
                             .id(day.id)
