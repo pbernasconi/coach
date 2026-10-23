@@ -14,6 +14,7 @@
  *   | { type: 'exerciseNote', sessionExerciseId: string, note: string | null }
  *   | { type: 'addExercise', exerciseId: string, sets: number, reps: number | null, weight: number | null, unit?: 'kg' | 'lb' }
  *   | { type: 'resetSession' }
+ *   | { type: 'unlogSet', setId: string }
  * )} LiftEdit
  * @typedef {{ entity: 'session' | 'sessionExercise' | 'set', op: 'insert' | 'update' | 'delete', payload: Row }} LiftChange
  */
@@ -54,6 +55,8 @@ export function planLiftEdit(rows, edits, opts = {}) {
   if (!session || !alive(session)) return { error: 'The Lift session is not there.' };
   if (edits.length === 1 && edits[0]?.type === 'resetSession') return resetSession(rows, now);
   if (edits.some((e) => e?.type === 'resetSession')) return { error: 'Reset the session on its own.' };
+  if (edits.length === 1 && edits[0]?.type === 'unlogSet') return unlogSet(rows, edits[0].setId, now);
+  if (edits.some((e) => e?.type === 'unlogSet')) return { error: 'Un-log a set on its own.' };
   if (session.finishedAt) return { error: 'The session is finished; edit it in Lift.' };
 
   // Working copies, so later edits see earlier ones; `touched` keeps the change for each row once.
@@ -223,6 +226,36 @@ const DEPTH = { session: 0, sessionExercise: 1, set: 2 };
 
 /** Parents before children, so the phone never sees a set without its exercise. */
 const parentsFirst = (changes) => changes.sort((a, b) => DEPTH[a.entity] - DEPTH[b.entity]);
+
+/**
+ * The changes that un-log one set (a tap logged by mistake): the set back to planned with no completedAt, like Lift's
+ * own un-log (its values stay as the next log's prefill). Works on a finished session too. When nothing is left
+ * logged, the session loses its start and finish, so it reads as planned again everywhere.
+ * @param {SessionRows} rows
+ * @param {string} setId
+ * @param {Date} now
+ */
+function unlogSet(rows, setId, now) {
+  const { session } = rows;
+  const exercises = rows.exercises.filter(alive);
+  const ids = new Set(exercises.map((e) => String(e.id).toLowerCase()));
+  const mine = rows.sets.filter((s) => alive(s) && ids.has(String(s.sessionExerciseID).toLowerCase()));
+  const set = mine.find((s) => same(s.id, setId));
+  if (!set) return { error: 'That set is not in this session.' };
+  /** @type {LiftChange[]} */
+  const changes = [];
+  let next = set;
+  if (set.status !== 'planned') {
+    next = { ...set, status: 'planned', completedAt: null, updatedAt: stamp(set, now) };
+    changes.push({ entity: 'set', op: 'update', payload: next });
+  }
+  const sets = rows.sets.filter(alive).map((s) => (s === set ? next : s));
+  const anyLogged = mine.some((s) => s !== set && s.status !== 'planned');
+  if (!anyLogged && (session.startedAt || session.finishedAt)) {
+    changes.push({ entity: 'session', op: 'update', payload: { ...session, startedAt: null, finishedAt: null, updatedAt: stamp(session, now) } });
+  }
+  return { changes: parentsFirst(changes), after: { exercises, sets } };
+}
 
 /**
  * The changes that take a session back to planned: each logged or skipped set to planned with no actuals and no

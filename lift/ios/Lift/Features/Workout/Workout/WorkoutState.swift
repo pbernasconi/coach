@@ -45,6 +45,9 @@ nonisolated struct WorkoutOverview: Equatable, Sendable {
     var finishedAt: Date?
     /// The session's day is before today (opened from History): no Start button, and logging does not stamp a start.
     var isPastDay = false
+    /// The session's day is after today (a workout planned ahead): a set's check does not log it until Start moves the
+    /// workout to today, so a stray tap never marks a later workout done.
+    var isFutureDay = false
 
     var isFinished: Bool { finishedAt != nil }
 }
@@ -161,6 +164,8 @@ nonisolated struct WorkoutToast: Equatable, Sendable {
         case discarded(RescheduleUndo)
         /// A template was made from the session.
         case savedAsTemplate(name: String)
+        /// A set's check on a workout planned for a later day ("Friday, October 23"): nothing was logged.
+        case plannedLater(day: String)
         /// A write failed.
         case failed
     }

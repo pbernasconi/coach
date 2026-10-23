@@ -43,7 +43,8 @@ function Side({ title, children }: { title: string; children: ReactNode }) {
 /** Scrolls the modal to an exercise card. */
 const jump = (id: string) => document.getElementById(`ex-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-export default function LiftView({ lift, extra, onChanged }: { lift: RichSession; extra?: ReactNode; onChanged?: () => Promise<void> | void }) {
+/** `onUnlog`: un-logs a logged or skipped set (a tap logged by mistake); `unlogging` is the set being saved. */
+export default function LiftView({ lift, extra, onChanged, onUnlog, unlogging = null }: { lift: RichSession; extra?: ReactNode; onChanged?: () => Promise<void> | void; onUnlog?: (setId: string) => void; unlogging?: string | null }) {
   const unit = lift.unit;
   const [editing, setEditing] = useState(false);
   // A finished session is edited in Lift; a planned or started one can change here (logged sets stay).
@@ -70,7 +71,7 @@ export default function LiftView({ lift, extra, onChanged }: { lift: RichSession
             )}
             {lift.exercises.length === 0 && <p className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">No exercises in this session.</p>}
             {lift.exercises.map((e, i) => (
-              <ExerciseCard key={e.id} e={e} unit={unit} index={i} />
+              <ExerciseCard key={e.id} e={e} unit={unit} index={i} onUnlog={onUnlog} unlogging={unlogging} />
             ))}
           </>
         )}
