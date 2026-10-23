@@ -359,7 +359,12 @@ function progressSection(o) {
       e1rm: p.e1rm === null ? null : r1(p.e1rm),
       e1rmText: p.e1rm === null ? '–' : `${Math.round(p.e1rm)} ${o.unit}`,
       change: p.change === null ? null : r3(p.change),
-      changeText: p.change === null ? null : `${p.change >= 0 ? '+' : '−'}${Math.abs(Math.round(p.change * 100))}% since ${fmtDay(p.since ?? o.today)}`,
+      changeText:
+        p.change === null
+          ? null
+          : Math.round(p.change * 100) === 0
+            ? `Same as ${fmtDay(p.since ?? o.today)}`
+            : `${p.change > 0 ? '+' : '−'}${Math.abs(Math.round(p.change * 100))}% since ${fmtDay(p.since ?? o.today)}`,
       tone: p.change === null || Math.abs(p.change) < 0.005 ? 'same' : p.change > 0 ? 'up' : 'down',
       points: p.points.map((pt) => ({ date: pt.day, e1rm: r1(pt.e1rm) })),
       prText: p.prDay ? `PR ${fmtDay(p.prDay)}` : null,

@@ -10,13 +10,17 @@ const NOW = Date.parse('2026-10-22T16:00:00Z');
 const ok = (value) => ({ ok: true, value });
 
 /** Every board metric on every day (VO2max once a week, as the watch sends it): the worst case for size. */
-function fullBoard(days) {
+function fullRows(days) {
   const rows = [];
   for (let i = 0; i < days + 60; i++) {
     const date = addDays(TODAY, -i);
     for (const metric of Object.keys(BOARD_METRICS)) if (metric !== 'vo2max' || i % 7 === 0) rows.push({ date, metric, value: metric === 'wear_min' ? 1400 : 40 + ((i * 7) % 23) + 0.37 });
   }
-  return boardOf(rows, { today: TODAY, days, syncedThrough: TODAY });
+  return rows;
+}
+
+function fullBoard(days) {
+  return boardOf(fullRows(days), { today: TODAY, days, syncedThrough: TODAY });
 }
 
 const garmin = { connected: true, lastSuccessAt: '2026-10-22T13:00:00Z', syncedThrough: TODAY, backfill: null, warning: null };
@@ -99,4 +103,15 @@ test('payload: under 40 KB at 90 days with every metric on every day', () => {
   const bytes = Buffer.byteLength(JSON.stringify(r));
   assert.ok(r.trends.items.every((i) => i.points.length <= 90));
   assert.ok(bytes < 40 * 1024, `${bytes} bytes`);
+});
+
+test('a metric with no reading is left out of vitals and trends', () => {
+  const noWeight = boardOf(
+    fullRows(30).filter((r) => r.metric !== 'weight_kg'),
+    { today: TODAY, days: 30, syncedThrough: TODAY }
+  );
+  const r = response(30, { board: ok(noWeight) });
+  assert.ok(!r.vitals.items.some((i) => i.key === 'weight'));
+  assert.ok(!r.trends.items.some((i) => i.key === 'weight'));
+  assert.ok(r.vitals.items.every((i) => i.valueText !== null));
 });
