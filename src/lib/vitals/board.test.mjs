@@ -56,6 +56,10 @@ test('boardOf: one slot per day, empty days null, intensity counts vigorous twic
   assert.equal(b.intensityWeek, 40); // Monday 2026-10-19 to Wednesday
   assert.equal(b.stats.hrv.latest.value, 99);
   assert.equal(b.stats.weight.change28, -1.5);
+  // The trend runs through every reading; 49 days closes almost all of the gap from 85 to 83.5.
+  assert.equal(b.series.weightTrend[3]?.toFixed(2), '83.51');
+  assert.equal(b.series.weightTrend[4], null);
+  assert.equal(b.stats.weight.trend?.text, '83.5');
   assert.deepEqual(b.counts, { worn: 3, partial: 0, off: 2, pending: 0 });
 });
 

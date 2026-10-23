@@ -165,13 +165,14 @@ export default function HealthBoard({ b }: { b: Board }) {
         <DayChart
           {...common}
           title="Weight"
-          info="From the scale. Readings are joined across days without one."
+          info="Dots: each scale reading. Line: the trend, a smoothed average that moves 10% of the way to each new reading per day, so a salty dinner barely shifts it."
           kind="line"
-          connect
           watchless
           values={s.weight}
-          color="var(--viz-ink-2)"
+          trend={s.weightTrend}
+          color="var(--viz-muted)"
           readout={(i) => dec(s.weight[i], ' kg')}
+          aside={b.stats.weight.trend ? `trend ${b.stats.weight.trend.text}${b.stats.weight.trend.rate ? ` · ${b.stats.weight.trend.rate.text}` : ''}` : undefined}
         />
         <DayChart
           {...common}

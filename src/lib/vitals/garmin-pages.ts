@@ -3,11 +3,12 @@ import { toDay } from '@/lib/db-time.mjs';
 import { cached } from '@/lib/data-cache';
 import { parseDay } from './garmin-day.mjs';
 import {
-  latestWithChange, trailingAverage, parseEnduranceScore, parseHillScore, parsePersonalRecords, parseTrainingStatus,
+  latestWithChange, parseEnduranceScore, parseHillScore, parsePersonalRecords, parseTrainingStatus,
   series, trainingStatusOf, type SampleRow,
 } from './garmin-training.mjs';
 import { addDays } from './readiness.mjs';
 import { BOARD_METRICS, NORMAL_DAYS, boardOf } from './board.mjs';
+import { weightTrend } from './weight-trend.mjs';
 
 /**
  * Loaders for the Garmin views: /health/day/[date], /health/training, the /health board, and the
@@ -182,18 +183,24 @@ export type RecoveryToday = Awaited<ReturnType<typeof loadRecoveryToday>>;
  */
 export async function loadBody(userId: string, today: string) {
   const from = addDays(today, -83);
-  // 6 extra days so the first points of the window have a full 7-day average.
-  const rows = await samples(userId, addDays(from, -6), today, ['weight_kg', 'body_fat_pct']);
+  // 4 extra weeks so the trend has settled by the first day of the window.
+  const rows = await samples(userId, addDays(from, -28), today, ['weight_kg', 'body_fat_pct']);
   const raw = series(rows, 'weight_kg') as Pt[];
-  const trend = (trailingAverage(raw, 7) as Pt[]).filter((p) => p.date >= from);
+  const trend = weightTrend(raw);
+  const points = trend?.points ?? [];
   const fat = series(rows, 'body_fat_pct') as Pt[];
   const last = raw.at(-1);
-  const latest = latestWithChange(trend, 28) as (Pt & { change: number | null }) | null;
+  const latest = latestWithChange(points.map((p) => ({ date: p.date, value: p.trend })), 28) as (Pt & { change: number | null }) | null;
+  const recent = Boolean(last && last.date >= from);
   return {
-    weight: last && last.date >= from ? { date: last.date, value: last.value } : null,
+    weight: last && recent ? { date: last.date, value: last.value } : null,
+    /** The trend's change over 4 weeks. */
     change4w: latest?.change ?? null,
     bodyFat: fat.at(-1) ?? null,
-    series: trend,
+    /** The trend as of the last reading (weight-trend.mjs), null without a reading in 12 weeks. */
+    trend: trend && recent ? { kg: trend.kg, text: trend.text, rate: trend.rate, offKg: trend.offKg, swingKg: trend.swingKg, noteText: trend.noteText } : null,
+    /** Each reading in the 12 weeks with the trend through it, oldest first. */
+    series: points.filter((p) => p.date >= from),
   };
 }
 export type Body = Awaited<ReturnType<typeof loadBody>>;

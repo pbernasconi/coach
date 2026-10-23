@@ -90,8 +90,10 @@ web page also uses. About 17 KB (the fitness chart is about 13 KB of it).
   "body": {
     "ok": true,
     "weight": { "date": "2026-10-19", "kg": 78.4, "text": "78.4", "unit": "kg", "change4w": -1.2,
-                "changeText": "▼ 1.2 kg", "changeTone": "good", "noteText": "in 4 weeks · -0.30 kg a week" },
-    "series": [{ "date": "2026-08-01", "kg": 79.7 }, { "date": "2026-10-19", "kg": 78.4 }],
+                "changeText": "▼ 0.26 kg/wk", "changeTone": "good", "noteText": "Trend 78.9 kg · ▼ 1.2 kg in 4 weeks" },
+    "trend": { "kg": 78.9, "text": "78.9", "rate": { "kgPerWeek": -0.26, "text": "▼ 0.26 kg/wk", "tone": "good" },
+               "offKg": -0.5, "swingKg": 0.6, "noteText": "Today is 0.5 kg under your trend, …" },
+    "series": [{ "date": "2026-08-01", "kg": 79.7, "trendKg": 79.92 }, { "date": "2026-10-19", "kg": 78.4, "trendKg": 78.9 }],
     "bodyFat": 14.3,
     "bodyFatText": "14.3 %",
     "emptyText": null
@@ -149,8 +151,11 @@ Field rules:
   `events`: A events get a label, B and C a thin line. `caption`: `null` without a projection.
 - `last4Weeks.tiles`: the 4 complete weeks before this one; `[]` when there are none. `sport`: the tile's dot color
   (a `design/sports.json` id), `null` for ink.
-- `body`: weight is in kg (the scale's unit), to 0.1. `series`: the last 12 weeks for the trend line (scaled to its
-  own range). `weight: null` with `emptyText` when there is no reading in 12 weeks; `bodyFatText` "–" without one.
+- `body`: weight is in kg (the scale's unit), to 0.1. `trend`: as the weigh-in's (`null` without a reading in 12
+  weeks). `weight.changeText` / `changeTone`: the trend's rate, or the trend's 4-week change before there is a rate;
+  `change4w` is the trend's change over 4 weeks. `series`: each reading in the last 12 weeks with `trendKg`, the trend
+  line (scaled to its own range). `weight: null` with `emptyText` when there is no reading in 12 weeks; `bodyFatText`
+  "–" without one.
 - `lift.arms.rows`: biceps and triceps hard sets this week against `band`. `lift.mainLifts`: the 4 exercises done most
   in 12 weeks, e1RM per session (`points`, in `unit`); `sparkText` "1 session" when there is one point (no line).
   `tone` of the change: `good` (up), `bad` (down), `null`. `mainLifts: []` with `mainLiftsEmptyText` when none.
@@ -868,17 +873,29 @@ last day with a weight. `404` when that day has no weight.
     { "id": "previous", "label": "Since yesterday", "kg": -0.3, "text": "▼ 0.3 kg", "tone": "good", "noteText": "83.5 kg on Oct 21" },
     { "id": "4w", "label": "4 weeks", "kg": -1.4, "text": "▼ 1.4 kg", "tone": "good", "noteText": "-0.35 kg a week" }
   ],
-  "series": [{ "date": "2026-09-22", "kg": 84.6 }, { "date": "2026-10-22", "kg": 83.2 }],
+  "trend": {
+    "kg": 83.52, "text": "83.5", "rate": { "kgPerWeek": -0.26, "text": "▼ 0.26 kg/wk", "tone": "good" },
+    "offKg": -0.3, "swingKg": 0.4,
+    "noteText": "Today is 0.3 kg under your trend, inside your normal ±0.4 kg day-to-day swing. Read the line, not the dot."
+  },
+  "series": [{ "date": "2026-09-22", "kg": 84.6, "trendKg": 84.31 }, { "date": "2026-10-22", "kg": 83.2, "trendKg": 83.52 }],
   "source": "renpho", "recordedAt": "2026-10-22T14:05:00.000Z",
   "newerDate": null, "olderDate": "2026-10-21"
 }
 ```
 
 - `weight.kg` 2 decimals, `text` 1 decimal. `bodyFat`: `null` when the day has none.
-- `changes`: `previous` against the last earlier weigh-in at any distance, `4w` against the last weigh-in 28 or
-  more days before (the web's Health card). Either is left out when there is nothing to compare. `tone`: `good`
+- `changes`: `previous` against the last earlier weigh-in at any distance, `4w`: the trend's change since the last
+  weigh-in 28 or more days before (as Today's `change4w`). Either is left out when there is nothing to compare. `tone`: `good`
   (down), `bad` (up), `neutral`; the goal is losing fat (COACH.md).
-- `series`: every weigh-in in the 12 weeks up to `date`, oldest first, 1 decimal.
+- `trend` (`src/lib/vitals/weight-trend.mjs`, the format every weight view uses): an average that moves 10% of
+  the way to each day's reading (a gap of n days moves it as n daily steps), started 4 weeks before the series.
+  `rate`: the trend's slope over the last 14 days in kg a week, `null` with less than a week of readings; `tone` as
+  `changes`, `neutral` under 0.05. `offKg`: reading minus trend. `swingKg`: 1.5 × the root mean square of reading minus
+  trend over 4 weeks, at least 0.3, `null` with fewer than 5 readings. `noteText`: one sentence on where the reading
+  sits against the trend and the swing, `null` on a first reading.
+- `series`: every weigh-in in the 12 weeks up to `date`, oldest first, `kg` to 1 decimal, `trendKg` (the trend
+  through that reading) to 2.
 - `source`: the sample's source (`renpho`, `garmin`, `apple_health`, …). `recordedAt`: when the day's weight was
   stored. `newerDate` / `olderDate`: the next and previous days with a weight, `null` at the ends.
 

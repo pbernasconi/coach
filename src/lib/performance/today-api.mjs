@@ -12,6 +12,7 @@ import { sportId } from '../plan/week-api.mjs';
 import { mondayOf } from '../plan/week.mjs';
 
 const r1 = (v) => Math.round(v * 10) / 10;
+const r2 = (v) => Math.round(v * 100) / 100;
 const ARMS = ['biceps', 'triceps'];
 
 /** A section: `{ ok: true, ...data }` from a loaded value, or `{ ok: false }`. */
@@ -96,6 +97,8 @@ export function todayResponse({ now, timeZone, today, perf, week, pmc, lift, bod
     }),
     body: section(body, (b) => {
       const change = weightChange(b.change4w);
+      const rate = b.trend?.rate ?? null;
+      const trendNote = b.trend ? `Trend ${b.trend.text} kg` : null;
       return {
         weight: b.weight
           ? {
@@ -104,12 +107,14 @@ export function todayResponse({ now, timeZone, today, perf, week, pmc, lift, bod
               text: b.weight.value.toFixed(1),
               unit: 'kg',
               change4w: b.change4w == null ? null : r1(b.change4w),
-              changeText: change?.text ?? null,
-              changeTone: change?.tone ?? null,
-              noteText: change ? `in 4 weeks · ${change.perWeekText}` : `as of ${shortDate(b.weight.date)}`,
+              // The trend's rate when there is one (weight-trend.mjs), else the 4-week change.
+              changeText: rate?.text ?? change?.text ?? null,
+              changeTone: rate?.tone ?? change?.tone ?? null,
+              noteText: [trendNote, change ? `${change.text} in 4 weeks` : `as of ${shortDate(b.weight.date)}`].filter(Boolean).join(' · '),
             }
           : null,
-        series: b.series.map((p) => ({ date: p.date, kg: r1(p.value) })),
+        trend: b.trend ?? null,
+        series: b.series.map((p) => ({ date: p.date, kg: r1(p.value), trendKg: r2(p.trend) })),
         bodyFatText: b.bodyFat ? `${b.bodyFat.value.toFixed(1)} %` : '–',
         bodyFat: b.bodyFat ? r1(b.bodyFat.value) : null,
         emptyText: b.weight ? null : 'No weight in the last 12 weeks. Step on the scale and it arrives with the next vitals push.',

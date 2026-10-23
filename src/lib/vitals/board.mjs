@@ -1,5 +1,6 @@
 // @ts-check
 import { addDays } from './readiness.mjs';
+import { weightTrend, withTrend } from './weight-trend.mjs';
 
 /**
  * The /health board: one value per day and metric for the chart window, which days the watch was worn, and each
@@ -152,6 +153,9 @@ export function boardOf(rows, { today, days: n, syncedThrough }) {
     const g = series.vigorous[i];
     return m === null && g === null ? null : (m ?? 0) + 2 * (g ?? 0);
   });
+  // The weight trend through each reading (weight-trend.mjs), drawn as the weight chart's line.
+  const weightTrendByDay = new Map(withTrend(points.weight ?? []).map((p) => [p.date, p.trend]));
+  series.weightTrend = days.map((d) => weightTrendByDay.get(d) ?? null);
   const stat = (/** @type {string} */ k) => statOf(points[k] ?? []);
   const weight = points.weight ?? [];
   const w = weight.at(-1);
@@ -189,7 +193,14 @@ export function boardOf(rows, { today, days: n, syncedThrough }) {
       stress: stat('stress'),
       readiness: stat('readiness'),
       respiration: stat('respiration'),
-      weight: { ...stat('weight'), change28: w && w28 ? w.value - w28.value : null },
+      weight: {
+        ...stat('weight'),
+        change28: w && w28 ? w.value - w28.value : null,
+        trend: (() => {
+          const t = weightTrend(weight);
+          return t && { text: t.text, rate: t.rate };
+        })(),
+      },
     },
     intensityWeek: week,
     trend,

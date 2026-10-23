@@ -21,7 +21,7 @@ export async function loadAppWeighIn(userId: string, day: string) {
   const [rows, [fat], [prev], [newer]] = await Promise.all([
     sql`
       SELECT date, value, source, updated_at FROM health_samples
-      WHERE user_id = ${userId} AND metric = 'weight_kg' AND date >= ${addDays(date, -83)}::date AND date <= ${date}::date
+      WHERE user_id = ${userId} AND metric = 'weight_kg' AND date >= ${addDays(date, -111)}::date AND date <= ${date}::date
       ORDER BY date` as Promise<Row[]>,
     sql`SELECT value FROM health_samples WHERE user_id = ${userId} AND metric = 'body_fat_pct' AND date = ${date}::date` as Promise<Row[]>,
     sql`

@@ -59,8 +59,10 @@ public enum AppAPISamples {
           "body": {
             "ok": true,
             "weight": { "date": "2026-10-19", "kg": 78.4, "text": "78.4", "unit": "kg", "change4w": -1.2,
-                        "changeText": "▼ 1.2 kg", "changeTone": "good", "noteText": "in 4 weeks · -0.30 kg a week" },
-            "series": [{ "date": "2026-08-01", "kg": 79.7 }, { "date": "2026-10-19", "kg": 78.4 }],
+                        "changeText": "▼ 0.26 kg/wk", "changeTone": "good", "noteText": "Trend 78.9 kg · ▼ 1.2 kg in 4 weeks" },
+            "trend": { "kg": 78.9, "text": "78.9", "rate": { "kgPerWeek": -0.26, "text": "▼ 0.26 kg/wk", "tone": "good" },
+                       "offKg": -0.5, "swingKg": 0.6, "noteText": "Today is 0.5 kg under your trend, …" },
+            "series": [{ "date": "2026-08-01", "kg": 79.7, "trendKg": 79.92 }, { "date": "2026-10-19", "kg": 78.4, "trendKg": 78.9 }],
             "bodyFat": 14.3,
             "bodyFatText": "14.3 %",
             "emptyText": null

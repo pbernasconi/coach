@@ -68,11 +68,18 @@ import Testing
         #expect(weighIn.changes.map(\.id) == ["previous", "4w"])
         #expect(weighIn.changes.first?.tone == .good)
         #expect(weighIn.series.count == 2)
+        #expect(weighIn.series.last?.trendKg == 83.52)
+        #expect(weighIn.trend?.text == "83.5")
+        #expect(weighIn.trend?.rate?.text == "▼ 0.26 kg/wk")
+        #expect(weighIn.trend?.rate?.tone == .good)
+        #expect(weighIn.trend?.swingKg == 0.4)
         #expect(weighIn.olderDate == PlainDay(LocalDay(year: 2026, month: 10, day: 21)))
         #expect(weighIn.newerDate == nil)
         let first = try JSONDecoder().decode(AppWeighIn.self, from: Data(AppAPISamples.weighInFirst.utf8))
         #expect(first.bodyFat == nil)
         #expect(first.changes.isEmpty)
+        #expect(first.trend?.rate == nil)
+        #expect(first.trend?.noteText == nil)
         #expect(AppWeighIn.path("latest") == "api/app/weigh-ins/latest")
     }
 }
