@@ -7,12 +7,12 @@ import { strengthExercises } from '../plan/strength-text.mjs';
 
 /**
  * @typedef {{ kind: string, status: string, target: { reps: number | null, repMin: number | null, repMax: number | null, weight: number | null } }} LineSet
- * @typedef {{ name: string, loadMode: string | null, media?: { image?: string | null, gif?: string | null } | null, sets: LineSet[] }} LineExercise
- * @typedef {{ name: string, image: string | null, gif: string | null, sets: number, done: number, text: string }} StrengthLine
+ * @typedef {{ key?: string | null, name: string, loadMode: string | null, media?: { image?: string | null, gif?: string | null } | null, sets: LineSet[] }} LineExercise
+ * @typedef {{ key: string | null, name: string, image: string | null, gif: string | null, sets: number, done: number, text: string }} StrengthLine
  */
 
 /**
- * One line per exercise: its name and picture, its working sets (and how many are logged), and "3 × 10 · 25 lb".
+ * One line per exercise: its Lift exercise key (null from the coach's text), its name and picture, its working sets (and how many are logged), and "3 × 10 · 25 lb".
  * Warm-up sets are left out. The load is the heaviest target, the reps those of the first working set.
  * @param {{ unit: string, exercises: LineExercise[] } | null | undefined} lift
  * @param {string | null | undefined} description
@@ -30,6 +30,7 @@ export function strengthLines(lift, description) {
         const load = loadText(top, e.loadMode, lift.unit);
         const setsReps = working.length ? `${working.length}${reps ? ` × ${reps}` : ' sets'}` : '';
         return {
+          key: e.key ?? null,
           name: e.name,
           image: e.media?.image ?? null,
           gif: e.media?.gif ?? null,
@@ -41,6 +42,7 @@ export function strengthLines(lift, description) {
       .filter((l) => l.sets > 0);
   }
   return strengthExercises(description).map((e) => ({
+    key: null,
     name: e.name,
     image: null,
     gif: null,

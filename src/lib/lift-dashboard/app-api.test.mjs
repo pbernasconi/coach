@@ -244,3 +244,14 @@ test('exerciseResponse: stat cards, chart points with session ids, newest sessio
   assert.deepEqual(body.sessions.items.map((r) => [r.sessionId, r.bestSetText]), [['s3', '37.5 kg x 10'], ['s2', '32.5 kg x 10'], ['s1', '30 kg x 10']]);
   assert.equal(body.bestSets.items[0].e1rmText, '50 kg');
 });
+
+test('exerciseResponse: an exercise that is only planned has its name and an empty history; an unknown key has none', () => {
+  const m = model();
+  const body = exerciseResponse({ detail: exerciseDetail(m, `id-${SQUAT.toLowerCase()}`, 'kg'), unit: 'kg', now: NOW });
+  assert.deepEqual(failedSections(body), []);
+  assert.equal(body.name, 'Back squat');
+  assert.deepEqual(body.stats.items.map((s) => s.value), ['0', '0', '-', '-']);
+  assert.deepEqual(body.chart.points, []);
+  assert.deepEqual(body.bestSets.items, []);
+  assert.equal(exerciseDetail(m, 'id-unknown', 'kg'), null);
+});

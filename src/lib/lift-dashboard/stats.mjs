@@ -411,7 +411,8 @@ export function exerciseList(model, unit) {
 }
 
 /**
- * Detail for one exercise: best sets by estimated 1RM, and the best estimate per session over time.
+ * Detail for one exercise: best sets by estimated 1RM, and the best estimate per session over time. An exercise that
+ * is only planned (no logged set yet) gets its name and empty history. Null for a key no session uses.
  * @param {ReturnType<typeof buildModel>} model
  * @param {string} key
  * @param {Unit} unit
@@ -419,7 +420,11 @@ export function exerciseList(model, unit) {
  */
 export function exerciseDetail(model, key, unit, bestCount = 10) {
   const sets = model.sets.filter((s) => s.exerciseKey === key && isCountedSet(s));
-  if (sets.length === 0) return null;
+  if (sets.length === 0) {
+    const planned = [...model.sessionExercises.values()].find((e) => e.key === key);
+    if (!planned) return null;
+    return { key, name: planned.name, loggedSets: 0, sessions: 0, heaviest: null, bestSets: [], e1rmOverTime: [] };
+  }
   const rows = sets.map((s) => {
     const weight = s.weight === null ? null : convert(s.weight, s.unit, unit);
     return {
