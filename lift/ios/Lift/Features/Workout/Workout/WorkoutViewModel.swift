@@ -152,8 +152,15 @@ final class WorkoutViewModel {
     /// One tap logs a planned set; a logged or skipped set goes back to planned.
     private func toggleLog(_ id: UUID) -> Task<Void, Never>? {
         guard let detail, case (_, let set)? = detail.find(setID: id), !inFlight.contains(id) else { return nil }
-        inFlight.insert(id)
         let isPlanned = set.status == .planned
+        if isPlanned, case .loaded(let workout) = state.workout, workout.isFutureDay, workout.startedAt == nil,
+            !workout.isFinished
+        {
+            // A workout planned for a later day: a stray tap must not mark it done. Start moves it to today first.
+            showToast(.plannedLater(day: workout.dayTitle))
+            return nil
+        }
+        inFlight.insert(id)
         let restSeconds = detail.restSeconds(afterLogging: id)
         let activity = isPlanned ? state.restActivity(afterLogging: id) : nil
         return Task {
@@ -221,6 +228,9 @@ final class WorkoutViewModel {
         let catalog = catalog
         return Task { state.thumbnails[catalogID] = await catalog.image(.still, catalogID: catalogID) }
     }
+
+    /// Today on the screen's calendar.
+    var today: LocalDay { days.day(of: now()) }
 
     func showToast(_ kind: WorkoutToast.Kind) {
         serial += 1

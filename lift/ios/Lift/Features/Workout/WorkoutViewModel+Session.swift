@@ -36,7 +36,11 @@ extension WorkoutViewModel {
         case .exerciseMoveDownTapped(let id): return { try await $0.move(id, by: 1, in: detail) }
         case .exerciseRemoveTapped(let id): return { try await $0.remove(id) }
         case .exerciseRemoveUndoTapped(let id): return { try await $0.restore(id) }
-        case .startTapped: return { try await $0.start() }
+        case .startTapped:
+            // Starting a workout planned for a later day does it today: it moves here first (the plan follows).
+            let day = today
+            let moveTo = detail.session.day > day && detail.session.startedAt == nil ? day : nil
+            return { try await $0.start(movingTo: moveTo) }
         case .finishTapped:
             send(.restSkipTapped)  // a finished workout has no rest left, here or on the Lock Screen,
             send(.restReadyDismissed)  // and no "rest over" bar for a next set

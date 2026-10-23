@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Loader2, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -9,8 +10,10 @@ import { editLiftAction } from './actions';
 /**
  * "Reset workout" for a Lift session logged by mistake: every set goes back to planned, with no start or finish. The
  * targets stay. The change goes through Lift sync, so the iPhone has it on its next sync. Asks once before it saves.
+ * Without `onReset` (the Lift session page), the page loads its data again.
  */
-export default function ResetLift({ sessionId, onReset }: { sessionId: string; onReset: () => Promise<void> | void }) {
+export default function ResetLift({ sessionId, onReset }: { sessionId: string; onReset?: () => Promise<void> | void }) {
+  const router = useRouter();
   const [asking, setAsking] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -21,7 +24,8 @@ export default function ResetLift({ sessionId, onReset }: { sessionId: string; o
       if ('error' in r) toast.error(r.error);
       else {
         toast.success('Workout reset to planned');
-        await onReset();
+        if (onReset) await onReset();
+        else router.refresh();
       }
     } catch {
       toast.error('Could not reset the workout');

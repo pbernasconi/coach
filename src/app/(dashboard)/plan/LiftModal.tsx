@@ -1,6 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import { Dumbbell } from 'lucide-react';
+import { toast } from 'sonner';
 import { sport } from '@/lib/sports';
 import { plainTitle } from '@/lib/plan/calendar.mjs';
 import { dur } from '@/lib/plan/cells.mjs';
@@ -10,19 +12,31 @@ import { Card as PCard } from './PlannedDetails';
 import EffortLog from './EffortLog';
 import LiftView, { liftStats } from './LiftView';
 import ResetLift from './ResetLift';
-import { liftPreviewAction } from './actions';
+import { editLiftAction, liftPreviewAction } from './actions';
 import { liftHref } from './ItemPreview';
 import { Description, Failed, Header, Hero, Loading, OpenButton, PlanTable, longDay, useLoad } from './ModalParts';
 
 // ---------------------------------------------------------------------------------------------------------------
 // Lift
 
+/** "Thu, Oct 22 5:21 PM" when the session was started on another day than it is planned for, else "5:21 PM". */
+function startText(startedAt: string | null, day: string) {
+  if (!startedAt) return null;
+  const at = new Date(startedAt);
+  const time = at.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  const local = `${at.getFullYear()}-${String(at.getMonth() + 1).padStart(2, '0')}-${String(at.getDate()).padStart(2, '0')}`;
+  if (local === day) return time;
+  return `started ${at.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} ${time}`;
+}
+
 /**
  * `watch`: the Strava strength activity the watch recorded for the same lift (its TSS and a link), or null.
  * `onLiftChanged`: reloads the calendar week of a day after a reset; the modal then closes, as the item is planned again.
  */
 export default function LiftModal({ id, planned, watch = null, onClose, onLiftChanged }: { id: string; planned: CalendarWorkout | null; watch?: CalendarActivity | null; onClose: () => void; onLiftChanged?: (date: string) => Promise<void> | void }) {
-  const state = useLoad(() => liftPreviewAction(id), [id]);
+  const [version, setVersion] = useState(0);
+  const [unlogging, setUnlogging] = useState<string | null>(null);
+  const state = useLoad(() => liftPreviewAction(id), [id, version]);
   const icon = <Dumbbell aria-hidden className="h-5 w-5" style={{ color: sport('strength').color }} />;
   if (state.status === 'loading') return (<><Header icon={icon} title={planned ? plainTitle(planned.title) : 'Lift session'} sub="Loading…" onClose={onClose} /><Loading /></>);
   if (state.status === 'error' || !state.value) {
@@ -37,7 +51,23 @@ export default function LiftModal({ id, planned, watch = null, onClose, onLiftCh
   const reps = d.exercises.reduce((n, e) => n + e.sets.reduce((m, s) => m + (s.status === 'done' && s.reps ? s.reps : 0), 0), 0);
   const exercisesDone = d.exercises.filter((e) => e.setsLogged > 0).length;
   const vol = (x: number) => `${Math.round(x).toLocaleString('en-US')} ${unit}`;
-  const start = d.startedAt ? new Date(d.startedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : null;
+  const start = startText(d.startedAt, d.day);
+  /** Un-logs one set (the check on a logged set), then loads the session and the calendar day again. */
+  async function unlog(setId: string) {
+    setUnlogging(setId);
+    try {
+      const r = await editLiftAction(d.id, [{ type: 'unlogSet', setId }]);
+      if ('error' in r) toast.error(r.error);
+      else {
+        setVersion((v) => v + 1);
+        await onLiftChanged?.(d.day);
+      }
+    } catch {
+      toast.error('Could not un-log the set');
+    } finally {
+      setUnlogging(null);
+    }
+  }
   return (
     <>
       <Header
@@ -66,6 +96,8 @@ export default function LiftModal({ id, planned, watch = null, onClose, onLiftCh
         />
         <LiftView
           lift={d}
+          onUnlog={onLiftChanged ? unlog : undefined}
+          unlogging={unlogging}
           extra={
             <>
               <PCard title="Planned vs done">

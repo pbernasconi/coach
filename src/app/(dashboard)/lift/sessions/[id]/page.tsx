@@ -13,6 +13,7 @@ import { plannedVolume, richSession, sessionMuscles, sessionState, type RichSess
 import { cookieTimeZone } from '@/lib/plan/timezone';
 import { load } from '@/lib/safe';
 import { cn } from '@/lib/utils';
+import ResetLift from '@/app/(dashboard)/plan/ResetLift';
 
 export const dynamic = 'force-dynamic';
 
@@ -94,6 +95,7 @@ export default async function LiftSessionPage({ params }: { params: Promise<{ id
           ))}
         </div>
       )}
+      {(d.setsLogged > 0 || d.startedAt || d.finishedAt) && <ResetLift sessionId={d.id} />}
     </div>
   );
 }
