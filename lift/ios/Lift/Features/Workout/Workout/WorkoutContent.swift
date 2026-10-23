@@ -52,7 +52,7 @@ struct WorkoutContent: View {
                     workout: workout,
                     thumbnails: state.thumbnails,
                     rest: state.setRowRest,
-                    dockFinishes: state.dockFinishes,
+                    offersFinish: state.listOffersFinish,
                     send: send
                 )
             }
@@ -146,8 +146,8 @@ private struct WorkoutBody: View {
     let thumbnails: [String: MediaImage]
     /// The running rest and the set it comes before.
     let rest: SetRowRest?
-    /// The dock offers Finish (every set done, or paused), so the list does not repeat it.
-    let dockFinishes: Bool
+    /// The list offers Finish workout (`WorkoutState.listOffersFinish`).
+    let offersFinish: Bool
     let send: (WorkoutAction) -> Void
 
     var body: some View {
@@ -175,7 +175,7 @@ private struct WorkoutBody: View {
                     send: send
                 )
             }
-            WorkoutFooterActions(workout: workout, showsFinish: !dockFinishes, send: send)
+            WorkoutFooterActions(workout: workout, showsFinish: offersFinish, send: send)
         }
         .pageColumn()
         .padding(.top, Space.sm)

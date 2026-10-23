@@ -92,6 +92,13 @@ extension WorkoutState {
         }
     }
 
+    /// The list under the exercises offers Finish workout: the workout is under way, and the dock does not offer it
+    /// already. Never before the start, when the dock says Start workout.
+    var listOffersFinish: Bool {
+        guard case .loaded(let workout) = workout, workout.startedAt != nil, !workout.isFinished else { return false }
+        return !dockFinishes
+    }
+
     /// Sets still planned, for "Finish workout?".
     var plannedSetsLeft: Int {
         guard case .loaded(let workout) = workout else { return 0 }
