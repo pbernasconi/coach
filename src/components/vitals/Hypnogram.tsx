@@ -14,7 +14,7 @@ const mins = (ms: number) => {
 };
 
 /** The night's sleep stages: one row per stage, awake at the top. Hover or arrow keys read a stage span. */
-export default function Hypnogram({ stages, from, to }: { stages: StageSpan[]; from: number; to: number }) {
+export default function Hypnogram({ stages, from, to, legend = true }: { stages: StageSpan[]; from: number; to: number; legend?: boolean }) {
   const [ref, width] = useMeasure<HTMLDivElement>(320);
   const [hover, setHover] = useState<number | null>(null);
   const M = { top: 4, right: 10, bottom: 20, left: 46 };
@@ -36,9 +36,11 @@ export default function Hypnogram({ stages, from, to }: { stages: StageSpan[]; f
   }
   return (
     <div>
-      <div className="mb-1 flex flex-wrap gap-3">
-        {ROWS.slice().reverse().map((s) => <LegendItem key={s} color={STAGE_STYLE[s].color} label={STAGE_STYLE[s].label} />)}
-      </div>
+      {legend && (
+        <div className="mb-1 flex flex-wrap gap-3">
+          {ROWS.slice().reverse().map((s) => <LegendItem key={s} color={STAGE_STYLE[s].color} label={STAGE_STYLE[s].label} />)}
+        </div>
+      )}
       <div ref={ref} className="relative">
         <svg
           width={width}

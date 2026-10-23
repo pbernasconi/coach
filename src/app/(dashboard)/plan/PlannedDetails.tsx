@@ -97,7 +97,7 @@ export function ZoneTime({ workout }: { workout: StructuredWorkout }) {
               <span className="h-2 w-2 shrink-0 rounded-sm" style={{ background: ZONE_COLOR[z] }} />
               {z}
             </span>
-            <span className="block font-semibold tabular-nums text-[var(--viz-ink)]">{by[z] ? clock(by[z]).replace(/:00$/, '') : '–'}</span>
+            <span className="block font-semibold tabular-nums text-[var(--viz-ink)]">{by[z] ? (by[z] < 3600 && by[z] % 60 === 0 ? `${by[z] / 60} min` : clock(by[z])) : '–'}</span>
             <span className="block tabular-nums text-[var(--viz-muted)]">{Math.round((by[z] / total) * 100)}%</span>
           </li>
         ))}

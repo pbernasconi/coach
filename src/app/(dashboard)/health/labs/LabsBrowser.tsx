@@ -148,13 +148,14 @@ export default function LabsBrowser({ index }: { index: LabsIndex }) {
       {shown === 0 ? (
         <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">No biomarker matches {q ? `“${query.trim()}”` : 'this filter'}.</p>
       ) : (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        // Columns, not a grid: sections of different heights stack without holes beside the short ones.
+        <div className="gap-4 lg:columns-2">
           {sections.map((s) => {
             const Icon = ICONS[s.name] ?? FlaskConical;
             const open = !closed.has(s.key) || !!q;
             const out = s.items.filter((i) => i.status === 'out_of_range').length;
             return (
-              <section key={s.key} id={anchor(s.name)} className="min-w-0 scroll-mt-20 self-start rounded-lg border bg-[var(--viz-surface)] px-4 py-2 print:break-inside-avoid">
+              <section key={s.key} id={anchor(s.name)} className="mb-4 min-w-0 break-inside-avoid scroll-mt-20 rounded-lg border bg-[var(--viz-surface)] px-4 py-2">
                 <button
                   type="button"
                   aria-expanded={open}
