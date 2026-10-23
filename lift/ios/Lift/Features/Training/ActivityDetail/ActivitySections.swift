@@ -28,10 +28,11 @@ struct ActivitySections: View {
             if let feedback {
                 WorkoutFeedbackCard(feedback: feedback, save: save) { send(.feedback($0)) }
             }
-            if let plan { WorkoutPlanCards(workout: plan) }
             if showsAll {
                 ActivityLowerSections(detail: detail, send: send)
             }
+            // What was planned, at the foot: the workout and the coach's notes, under what was done.
+            if let plan { WorkoutPlanCards(workout: plan, isDone: true) }
         }
         // The charts and tables come one frame after the top, so the page's first frame (and the map sheet's drop)
         // is not held up by work that starts below the fold.

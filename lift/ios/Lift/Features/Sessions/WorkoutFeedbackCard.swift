@@ -12,17 +12,22 @@ struct WorkoutFeedbackCard: View {
     let send: (WorkoutFeedbackAction) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Space.md) {
-            HStack(alignment: .firstTextBaseline) {
+        VStack(alignment: .leading, spacing: Space.sm) {
+            HStack(alignment: .firstTextBaseline, spacing: Space.xs) {
                 Text("How did it feel")
                     .font(theme.font(.headline))
                     .foregroundStyle(theme.palette.textPrimary)
                     .accessibilityAddTraits(.isHeader)
+                // The logged face's word, beside the title (no hint line while none is picked).
+                if let feel = feedback.feelLabel {
+                    Text(verbatim: "· \(feel)")
+                        .font(theme.font(.headline).weight(.regular))
+                        .foregroundStyle(theme.palette.textSecondary)
+                }
                 Spacer(minLength: Space.sm)
                 WorkoutFeedbackStatus(save: save, fromWatch: feedback.fromWatch) { send(.retryTapped) }
             }
             WorkoutFaces(feedback: feedback) { send(.changed(.feel($0))) }
-            Separator()
             WorkoutEffortMeter(feedback: feedback) { send(.changed(.rpe($0))) }
             Separator()
             commentRow
@@ -92,7 +97,7 @@ private struct WorkoutFeedbackStatus: View {
     }
 }
 
-/// The five faces, the logged one in colour and larger with its word under the row.
+/// The five faces, the logged one in colour and larger (its word sits beside the card's title).
 private struct WorkoutFaces: View {
     @Environment(\.koboTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -102,8 +107,7 @@ private struct WorkoutFaces: View {
     static let faces = ["😣", "😕", "😐", "🙂", "😄"]
 
     var body: some View {
-        VStack(spacing: Space.xs) {
-            HStack(spacing: 0) {
+        HStack(spacing: 0) {
                 ForEach(Array(Self.faces.enumerated()), id: \.offset) { index, face in
                     let value = index + 1
                     let isOn = feedback.feel == value
@@ -125,11 +129,6 @@ private struct WorkoutFaces: View {
             }
             .animation(Motion.fastSpatial.animation(reduceMotion: reduceMotion), value: feedback.feel)
             .koboFeedback(.selection, trigger: feedback.feel)
-            Text(verbatim: feedback.feelLabel ?? String(localized: "Tap a face"))
-                .font(theme.font(.footnote).weight(feedback.feel == nil ? .regular : .semibold))
-                .foregroundStyle(feedback.feel == nil ? theme.palette.textTertiary : theme.palette.textPrimary)
-                .accessibilityHidden(true)
-        }
     }
 
     private func label(_ value: Int) -> String {
@@ -137,16 +136,16 @@ private struct WorkoutFaces: View {
     }
 }
 
-/// The perceived effort: ten steps that fill up to the logged one, calm blue to red, with its word and what it feels
-/// like. VoiceOver adjusts it up and down.
+/// The perceived effort: ten steps that fill up to the logged one, calm blue to red, with its number and word on the
+/// right. VoiceOver adjusts it up and down.
 private struct WorkoutEffortMeter: View {
     @Environment(\.koboTheme) private var theme
-    @ScaledMetric(relativeTo: .body) private var barHeight = Space.lg
+    @ScaledMetric(relativeTo: .body) private var barHeight = Space.md
     let feedback: WorkoutFeedback
     let onTap: (Int) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Space.xs) {
+        VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .firstTextBaseline) {
                 Text("Effort")
                     .font(theme.font(.subheadline).weight(.semibold))
@@ -166,16 +165,15 @@ private struct WorkoutEffortMeter: View {
                         RoundedRectangle(cornerRadius: Radius.xs, style: .continuous)
                             .fill(isFilled(value) ? color(value) : theme.palette.surfaceSunken)
                             .frame(height: barHeight)
-                            .frame(maxWidth: .infinity, minHeight: Size.minTouch)
+                            // A wide step with a little air above and below: tall enough to hit, no empty band.
+                            .padding(.vertical, Space.sm + Space.xxs)
+                            .frame(maxWidth: .infinity)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.pressFeedback)
                 }
             }
             .koboFeedback(.selection, trigger: feedback.rpe)
-            Text(verbatim: feedback.rpeStep?.detail ?? String(localized: "Tap from 1, very easy, to 10, max effort"))
-                .font(theme.font(.footnote))
-                .foregroundStyle(theme.palette.textTertiary)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text("Effort"))

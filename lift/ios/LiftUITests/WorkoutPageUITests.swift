@@ -14,6 +14,14 @@ final class WorkoutPageUITests: XCTestCase {
         _ = XCTWaiter.wait(for: [XCTestExpectation(description: "settle")], timeout: 1.5)
         shot(app, "50-planned-workout")
         XCTAssertFalse(app.buttons["Open activity"].exists, "no separate activity page any more")
+        app.swipeUp(velocity: .slow)
+        _ = XCTWaiter.wait(for: [XCTestExpectation(description: "scroll")], timeout: 1)
+        let chart = app.otherElements["Interval chart"].firstMatch
+        if chart.exists {
+            chart.coordinate(withNormalizedOffset: CGVector(dx: 0.45, dy: 0.5)).tap()
+            _ = XCTWaiter.wait(for: [XCTestExpectation(description: "pick")], timeout: 1)
+        }
+        shot(app, "51-picked-bar")
     }
 
     private func shot(_ app: XCUIApplication, _ name: String) {
