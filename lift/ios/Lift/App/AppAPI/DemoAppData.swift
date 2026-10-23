@@ -19,6 +19,10 @@ final class DemoAppData: AppDataSource {
     /// One made-up body per path; a `before` cursor names a later page. The bundle is read off the main actor, like the
     /// live cache; `AppResource` decodes off it too.
     func fetch(_ path: String, query: [URLQueryItem]) async throws -> AppAPIKept {
+        if let ref = path.split(separator: "/").last, path.hasPrefix(WorkoutDetail.path("")) {
+            guard let data = await Self.workout(String(ref), in: bundle) else { throw SyncTransportError.rejected(status: 404) }
+            return AppAPIKept(data: data, fetchedAt: now())
+        }
         guard let data = await Self.read(Self.resourceNames(for: path, query: query), in: bundle) else {
             throw SyncTransportError.rejected(status: 404)
         }
@@ -51,5 +55,38 @@ final class DemoAppData: AppDataSource {
         guard parts.count > 2 else { return cursor + [exact] }
         let parent = parts.dropLast().joined(separator: "-")
         return cursor + [exact, "\(parent)-id", parent]
+    }
+
+    /// A demo workout, put together as the server does: the demo activity for `strava-<id>`, the demo plan workout for
+    /// `plan-<id>`, with the plan's match (or the activity's planned workout) as its other half when the demo has one.
+    @concurrent
+    nonisolated static func workout(_ ref: String, in bundle: Bundle) async -> Data? {
+        let parts = ref.split(separator: "-", maxSplits: 1).map(String.init)
+        guard parts.count == 2 else { return nil }
+        func body(_ path: String) async -> [String: Any]? {
+            guard let data = await read(resourceNames(for: path), in: bundle) else { return nil }
+            return (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+        }
+        var plan: [String: Any]?
+        var activity: [String: Any]?
+        if parts[0] == "plan" {
+            plan = await body("api/app/plan/\(parts[1])")
+            if let done = plan?["done"] as? [String: Any], let id = done["activityId"] as? String {
+                activity = await body("api/app/activities/\(id)")
+            }
+        } else {
+            activity = await body("api/app/activities/\(parts[1])")
+        }
+        guard plan != nil || activity != nil else { return nil }
+        let header = activity?["header"] as? [String: Any]
+        let workout: [String: Any] = [
+            "ref": ref,
+            "state": activity == nil ? "planned" : "done",
+            "title": (plan?["title"] as? String) ?? (header?["name"] as? String) ?? "",
+            "plan": plan ?? NSNull(),
+            "activity": activity ?? NSNull(),
+            "feedback": activity?["feedback"] ?? plan?["feedback"] ?? NSNull(),
+        ]
+        return try? JSONSerialization.data(withJSONObject: workout)
     }
 }

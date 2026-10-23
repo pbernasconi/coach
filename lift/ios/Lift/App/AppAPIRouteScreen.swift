@@ -13,18 +13,8 @@ struct AppAPIRouteScreen: View {
     var body: some View {
         switch route {
         case .activity(let id):
-            ActivityDetailScreen(
-                viewModel: ActivityDetailViewModel(
-                    activityID: id,
-                    seed: dependencies.activitySeeds.seed(for: id),
-                    data: dependencies.appData,
-                    router: router,
-                    tabs: dependencies.tabs,
-                    now: dependencies.now,
-                    calendar: dependencies.calendar
-                )
-            )
-            .id(route)
+            workout(WorkoutDetail.stravaRef(id), seed: dependencies.activitySeeds.seed(for: id))
+                .id(route)
         case .liftSession(let sessionID):
             LiftSessionRoute(sessionID: sessionID, dependencies: dependencies, router: router, toasts: toasts)
                 .id(route)
@@ -33,7 +23,8 @@ struct AppAPIRouteScreen: View {
         case .liftWeekly:
             LiftWeeklyRoute(dependencies: dependencies, router: router)
         case .plannedWorkout(let id):
-            PlannedWorkoutRoute(planID: id, dependencies: dependencies, router: router)
+            // The same page as the activity: a workout is one thing, planned and done.
+            workout(WorkoutDetail.planRef(id), seed: nil)
                 .id(route)
         case .weighIn(let day):
             WeighInRoute(day: day, dependencies: dependencies, router: router)
@@ -41,6 +32,21 @@ struct AppAPIRouteScreen: View {
         default:
             EmptyView()
         }
+    }
+
+    /// The one workout page, for a plan workout or a Strava activity.
+    private func workout(_ ref: String, seed: ActivitySeed?) -> some View {
+        ActivityDetailScreen(
+            viewModel: ActivityDetailViewModel(
+                ref: ref,
+                seed: seed,
+                data: dependencies.appData,
+                router: router,
+                tabs: dependencies.tabs,
+                now: dependencies.now,
+                calendar: dependencies.calendar
+            )
+        )
     }
 }
 
