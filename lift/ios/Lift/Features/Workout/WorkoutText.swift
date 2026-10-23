@@ -56,20 +56,49 @@ nonisolated enum WorkoutText {
         return String(localized: "Warm-up: \(ramp) \(unit.rawValue)")
     }
 
-    /// "Per side: 25 + 15 · 20 kg bar", "Empty 20 kg bar", "… · 20 kg bar + collars", with "= 97.5 kg" when the target
-    /// cannot be made exactly with the gym's plates.
-    static func plates(_ load: PlateLoad, kit: BarbellSetup) -> String {
-        let barText = "\(number(kit.bar)) \(kit.unit.rawValue)"
-        let bar =
-            kit.collar > 0 ? String(localized: "\(barText) bar + collars") : String(localized: "\(barText) bar")
-        var text =
-            load.perSide.isEmpty
-            ? String(localized: "Empty \(bar)")
-            : String(localized: "Per side: \(load.perSide.map(number).joined(separator: " + ")) · \(bar)")
-        if !load.isExact {
-            text += " = \(weight(load.total))"
+    /// "45 · 45 · 10 · 5 a side", or "Empty bar" / "No plates" when the weight needs none.
+    static func platesPerSide(_ loading: PlateLoading) -> String {
+        guard !loading.perSide.isEmpty else {
+            return loading.holder == .sleeve ? String(localized: "No plates") : String(localized: "Empty bar")
         }
-        return text
+        return String(localized: "\(loading.perSide.map(number).joined(separator: " · ")) a side")
+    }
+
+    /// "Add 10 + 5 a side", "Take off 10 + 5 a side" or "Take off 10, add 25 a side"; nil when nothing changes.
+    static func plateChange(_ change: PlateChange) -> String? {
+        let off = change.remove.map(number).joined(separator: " + ")
+        let on = change.add.map(number).joined(separator: " + ")
+        return switch (change.remove.isEmpty, change.add.isEmpty) {
+        case (true, true): nil
+        case (true, false): String(localized: "Add \(on) a side")
+        case (false, true): String(localized: "Take off \(off) a side")
+        case (false, false): String(localized: "Take off \(off), add \(on) a side")
+        }
+    }
+
+    /// "from 225 lb": the weight loaded now.
+    static func plateChangeFrom(_ weight: Weight) -> String {
+        String(localized: "from \(self.weight(weight))")
+    }
+
+    /// "45 lb bar", under the drawing's bar.
+    static func barLabel(_ bar: Double, unit: WeightUnit) -> String {
+        String(localized: "\(number(bar)) \(unit.rawValue) bar")
+    }
+
+    /// "Your plates make 250 lb" when the weight cannot be loaded exactly.
+    static func closestLoad(_ weight: Weight) -> String {
+        String(localized: "Your plates make \(self.weight(weight))")
+    }
+
+    /// The drawing for VoiceOver: "Plates a side: 45, 45, 10, 5. Add 10 + 5 a side."
+    static func platesAccessibility(_ loading: PlateLoading) -> String {
+        let plates =
+            loading.perSide.isEmpty
+            ? platesPerSide(loading)
+            : String(localized: "Plates a side: \(loading.perSide.map(number).joined(separator: ", "))")
+        guard let change = loading.change.flatMap(plateChange) else { return plates }
+        return "\(plates). \(change)."
     }
 
     /// The next session's target as plain numbers, or nil when there is nothing to judge from.
