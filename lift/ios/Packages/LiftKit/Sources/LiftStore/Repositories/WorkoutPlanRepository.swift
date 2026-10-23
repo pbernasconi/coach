@@ -36,12 +36,32 @@ public struct WeekPlanUndo: Hashable, Sendable {
     }
 }
 
+/// One exercise of a coach's planned strength workout: a library exercise, its sets and reps, and the coach's words.
+public struct CoachExercise: Hashable, Sendable {
+    public var exercise: Exercise
+    public var sets: Int
+    public var repRange: ClosedRange<Int>
+    public var note: String?
+
+    public init(exercise: Exercise, sets: Int, repRange: ClosedRange<Int>, note: String? = nil) {
+        self.exercise = exercise
+        self.sets = sets
+        self.repRange = repRange
+        self.note = note
+    }
+}
+
 /// Planning sessions from templates. Every planned set's target comes from the template slot, upgraded by
 /// `SlotPlanner` from the exercise's last logged session. Each call is one transaction with one outbox entry per row
 /// (DATA-3).
 public protocol WorkoutPlanRepository: Sendable {
     /// A planned session on `day` with the template's name, exercises and sets.
     func createSession(from templateID: UUID, on day: LocalDay, unit: WeightUnit) async throws -> SessionRecord
+
+    /// A planned session on `day` named `title` with `exercises`, as a coach's planned strength workout lists them.
+    /// No template.
+    func createSession(titled title: String, on day: LocalDay, unit: WeightUnit, exercises: [CoachExercise])
+        async throws -> SessionRecord
 
     /// Appends a library exercise to a live session with its planned sets: as many as last time with the target
     /// progression suggests, or 3 × 8–12 when it was never logged.

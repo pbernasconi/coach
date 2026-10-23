@@ -30,6 +30,40 @@ public struct LiveWorkoutPlanRepository: WorkoutPlanRepository {
         }
     }
 
+    public func createSession(
+        titled title: String,
+        on day: LocalDay,
+        unit: WeightUnit,
+        exercises: [CoachExercise]
+    ) async throws -> SessionRecord {
+        let store = store
+        let gym = gym()
+        return try await store.transaction { db, stamp in
+            let session = SessionRecord(
+                id: store.makeID(),
+                day: day,
+                title: title,
+                templateID: nil,
+                unitsAtLog: unit,
+                createdAt: stamp,
+                updatedAt: stamp
+            )
+            try store.insertRow(session, at: stamp, db)
+            let slots = exercises.map { item in
+                TemplateExercise(
+                    id: store.makeID(),
+                    exerciseID: item.exercise.id,
+                    displayName: item.exercise.name,
+                    sets: item.sets,
+                    repRange: item.repRange,
+                    note: item.note
+                )
+            }
+            try SessionBuilder(store: store, db: db, stamp: stamp, gym: gym).append(slots, to: session)
+            return session
+        }
+    }
+
     public func addExercise(_ exercise: Exercise, to sessionID: UUID) async throws -> SessionExerciseRecord {
         let store = store
         let gym = gym()

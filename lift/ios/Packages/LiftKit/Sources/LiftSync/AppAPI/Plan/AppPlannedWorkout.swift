@@ -4,6 +4,8 @@ import Foundation
 /// shows it. Every text is ready to show.
 public struct AppPlannedWorkout: Decodable, Equatable, Sendable {
     public var id: String
+    /// The day, "2026-10-22".
+    public var date: String?
     public var title: String
     /// An id from `design/sports.json`.
     public var sport: String
@@ -23,11 +25,46 @@ public struct AppPlannedWorkout: Decodable, Equatable, Sendable {
     public var notes: String?
     public var liftSessionId: String?
     public var done: PlannedDone?
+    /// A strength workout's exercises, read from the coach's text, until a Lift session is linked; nil from an older
+    /// server.
+    public var exercises: [PlannedExercise]?
     /// "How did it feel", from the workout's day on; nil before it, or when it did not load.
     public var feedback: WorkoutFeedback?
 
     /// The path of the plan activity `id` (the Week API item's id).
     public static func path(_ id: String) -> String { "api/app/plan/\(id)" }
+
+    /// `PUT` here marks it done, skipped or planned again (APP-API.md, "Workout status").
+    public static func statusPath(_ id: String) -> String { "api/app/plan/\(id)/status" }
+
+    /// `PUT` here links the Lift session started for it (APP-API.md, "Workout Lift session").
+    public static func liftSessionPath(_ id: String) -> String { "api/app/plan/\(id)/lift-session" }
+}
+
+/// One exercise of a strength workout: "Standing calf raise", 3 × 15, and the coach's words for it.
+public struct PlannedExercise: Decodable, Equatable, Sendable, Identifiable {
+    public var name: String
+    public var sets: Int
+    public var reps: Int
+    /// The top of a range ("3 × 8–10"); nil for one number.
+    public var repsMax: Int?
+    public var note: String?
+
+    public var id: String { name }
+
+    /// The reps to plan: `reps`, or `reps...repsMax`.
+    public var repRange: ClosedRange<Int> {
+        guard let repsMax, repsMax > reps else { return reps...reps }
+        return reps...repsMax
+    }
+
+    public init(name: String, sets: Int, reps: Int, repsMax: Int? = nil, note: String? = nil) {
+        self.name = name
+        self.sets = sets
+        self.reps = reps
+        self.repsMax = repsMax
+        self.note = note
+    }
 }
 
 /// One of the numbers at the top: "Planned time" "1:30".

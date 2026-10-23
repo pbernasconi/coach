@@ -8,6 +8,7 @@ import Synchronization
 nonisolated final class FakeWorkoutPlanRepository: WorkoutPlanRepository {
     enum Call: Equatable, Sendable {
         case createSession(UUID, on: LocalDay, unit: WeightUnit)
+        case createCoachSession(String, on: LocalDay, exercises: [CoachExercise])
         case addExercise(UUID, to: UUID)
         case changeTemplate(UUID, to: UUID)
         case undoChange(TemplateChangeUndo)
@@ -37,6 +38,21 @@ nonisolated final class FakeWorkoutPlanRepository: WorkoutPlanRepository {
             day: day,
             title: "Planned",
             templateID: templateID,
+            unitsAtLog: unit,
+            createdAt: ManualNow.start,
+            updatedAt: ManualNow.start
+        )
+    }
+
+    func createSession(titled title: String, on day: LocalDay, unit: WeightUnit, exercises: [CoachExercise])
+        async throws -> SessionRecord
+    {
+        try record(.createCoachSession(title, on: day, exercises: exercises))
+        return SessionRecord(
+            id: Self.sessionID,
+            day: day,
+            title: title,
+            templateID: nil,
             unitsAtLog: unit,
             createdAt: ManualNow.start,
             updatedAt: ManualNow.start

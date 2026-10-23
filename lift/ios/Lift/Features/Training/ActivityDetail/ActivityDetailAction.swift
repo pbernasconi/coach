@@ -23,4 +23,8 @@ nonisolated enum ActivityDetailAction: Equatable, Sendable {
     case feedback(WorkoutFeedbackAction)
     /// "Open session": the Lift session that completed a planned strength workout.
     case liftSessionTapped(String)
+    /// "Start workout": a Lift session with the coach's exercises, sets and reps.
+    case startWorkoutTapped
+    /// "Mark done" (true), or "Not done" to put a workout marked by hand back (false).
+    case doneToggled(Bool)
 }

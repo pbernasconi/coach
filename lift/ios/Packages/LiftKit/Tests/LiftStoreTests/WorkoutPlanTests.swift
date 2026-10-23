@@ -51,6 +51,25 @@ import Testing
         #expect(entities.filter { $0 == .set }.count == 5)
     }
 
+    @Test func aSessionFromACoachsListHasItsExercisesSetsAndRepsAndNoTemplate() async throws {
+        let store = try TestStore.make()
+        _ = try await store.exercises.installLibrary()
+        let calves = CoachExercise(exercise: Fixtures.squat, sets: 3, repRange: 15...15, note: "3 s up, 3 s down")
+        let session = try await store.plans.createSession(
+            titled: "Home calf raises",
+            on: Self.thursday,
+            unit: .kg,
+            exercises: [calves]
+        )
+        #expect(session.title == "Home calf raises")
+        #expect(session.templateID == nil)
+        let detail = try await detail(session.id, store)
+        #expect(detail.items.map(\.exercise.displayName) == [Fixtures.squat.name])
+        #expect(detail.items.first?.exercise.note == "3 s up, 3 s down")
+        #expect(detail.items.first?.sets.count == 3)
+        #expect(detail.items.first?.sets.allSatisfy { $0.target == SetTarget(reps: 15) } == true)
+    }
+
     @Test(arguments: [
         ([5, 5, 5], 102.5 as Double),  // every set hit the target: one increment more
         ([5, 4, 4], 100.0),  // not yet: the same load again

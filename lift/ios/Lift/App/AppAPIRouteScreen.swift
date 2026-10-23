@@ -41,6 +41,14 @@ struct AppAPIRouteScreen: View {
                 ref: ref,
                 seed: seed,
                 data: dependencies.appData,
+                starter: PlannedSessionStarter(
+                    exercises: dependencies.exercises,
+                    plans: dependencies.plans,
+                    catalog: dependencies.catalog,
+                    units: dependencies.units,
+                    data: dependencies.appData
+                ),
+                coachPlan: dependencies.coachPlan,
                 router: router,
                 tabs: dependencies.tabs,
                 now: dependencies.now,

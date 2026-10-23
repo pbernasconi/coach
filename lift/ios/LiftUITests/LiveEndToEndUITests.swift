@@ -61,6 +61,29 @@ final class LiveEndToEndUITests: XCTestCase {
         scrollShot("41-lift-progress")
     }
 
+    /// A strength workout the coach wrote as text: its exercises and the Start workout and Mark done buttons. It only
+    /// looks: a tap would change the real plan.
+    func testPlannedStrengthWithLiveData() throws {
+        guard let code = ProcessInfo.processInfo.environment["LIFT_LIVE_CODE"], let sync = URL(string: "lift://sync?code=\(code)")
+        else { throw XCTSkip("LIFT_LIVE_CODE not set") }
+        continueAfterFailure = true
+        app = XCUIApplication()
+        app.launchArguments = ["-tab", "settings", "-practice.isOn", "NO"]
+        app.launch()
+        open(sync)
+        wait(8)
+        tab("Week")
+        wait(5)
+        guard let card = firstCard(in: ["Home calf raises"]) else { return XCTFail("no Home calf raises on Week") }
+        card.tap()
+        wait(6)
+        shot("50-strength-workout")
+        XCTAssertTrue(app.buttons["Start workout"].exists)
+        XCTAssertTrue(app.buttons["Mark done"].exists)
+        XCTAssertTrue(app.staticTexts["Standing calf raise"].exists)
+        scrollShot("51-strength-workout-more")
+    }
+
     // MARK: Helpers
 
     private func open(_ url: URL) {
