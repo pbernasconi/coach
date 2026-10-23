@@ -26,17 +26,14 @@ function NoteBody({ body }: { body: string }) {
 const longDate = (d: string) =>
   new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 
-/** Function's clinician notes, one block per test order; the newest is open. Plain text, line breaks kept. */
+/** Function's clinician notes, one block per test order, closed (they run to thousands of words). Plain text, line breaks kept. */
 export default function ClinicianNotes({ groups }: { groups: ClinicianNoteGroup[] }) {
   if (!groups.length) return null;
   return (
     <section className="space-y-3">
-      <div className="space-y-1">
-        <h2 className="text-xl font-semibold tracking-tight">Clinician notes</h2>
-        <p className="text-sm text-muted-foreground">From Function Health, for each blood draw.</p>
-      </div>
-      {groups.map((g, i) => (
-        <details key={g.requisitionId} open={i === 0} className="rounded-lg border bg-[var(--viz-surface)]">
+      <h2 className="text-xl font-semibold tracking-tight">Clinician notes</h2>
+      {groups.map((g) => (
+        <details key={g.requisitionId} className="rounded-lg border bg-[var(--viz-surface)]">
           <summary className="cursor-pointer select-none px-4 py-3 text-sm font-medium">
             {longDate(g.notedOn)} <span className="font-normal text-muted-foreground">· {g.notes.length} notes</span>
           </summary>

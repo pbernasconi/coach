@@ -17,7 +17,7 @@ export default function ProgressHero({ points, range }: { points: Point[]; range
   const zone = zoneOf(range, last.value);
   const away = distanceToHealthy(range, last.value);
   const healthy = range.zones.filter((z) => z.tone === 'good');
-  const healthyText = healthy.length ? `${healthy[0].from}–${healthy[healthy.length - 1].to - 1}%` : '';
+  const healthyText = healthy.length ? `${healthy[0].from}–${healthy[healthy.length - 1].to}%` : '';
   const good = change === null ? null : change < 0;
   return (
     <section aria-labelledby="dexa-hero" className="grid gap-6 rounded-2xl bg-[var(--viz-surface)] p-5 shadow-sm ring-1 ring-[var(--viz-grid)] sm:p-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,2.1fr)] lg:items-center">

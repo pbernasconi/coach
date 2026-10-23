@@ -96,7 +96,7 @@ function Scan({ scan, page }: { scan: FullScan; page: DexaPage }) {
   ];
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6" data-smoke="health-dexa-scan">
+    <div className="space-y-6" data-smoke="health-dexa-scan">
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-3">
           <Crumbs scan={scan} />

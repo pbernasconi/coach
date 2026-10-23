@@ -97,7 +97,7 @@ function Overview({ page }: { page: DexaPage }) {
   const dateOf = new Map(scans.map((s) => [s.resultId, s.scanDate]));
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6" data-smoke="health-dexa">
+    <div className="space-y-6" data-smoke="health-dexa">
       <div className="space-y-3">
         <Crumbs />
         <div className="flex flex-wrap items-end justify-between gap-3">

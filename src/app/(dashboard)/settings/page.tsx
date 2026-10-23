@@ -1,3 +1,4 @@
+import { fmtDate } from '@/lib/vitals/health-view.mjs';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import QRCode from 'qrcode';
@@ -240,7 +241,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               name="Strava"
               connected={connected.strava}
               level={levelOf('strava')}
-              summary={status.strava.connected ? `Synced ${when(status.strava.lastSyncedAt)} · newest: ${status.strava.newestActivity ?? '-'}` : 'Connect Strava to bring in your activities.'}
+              summary={status.strava.connected ? `Synced ${when(status.strava.lastSyncedAt)} · newest ${status.strava.newestActivity ? fmtDate(status.strava.newestActivity) : '-'}` : 'Connect Strava to bring in your activities.'}
               actions={
                 <>
                   {status.strava.canSync && <StravaSyncButton />}
@@ -250,7 +251,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               notes={notes('strava')}
               details={[
                 ['Athlete', status.strava.athleteId ?? '-'],
-                ['Newest activity', status.strava.newestActivity ?? '-'],
+                ['Newest activity', status.strava.newestActivity ? fmtDate(status.strava.newestActivity) : '-'],
                 ['Auto sync', status.strava.canSync ? 'Webhook, and every 3 hours' : 'Off (Strava app secret not set)'],
               ]}
             />
@@ -260,13 +261,13 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               name="Garmin Connect"
               connected={garminOk}
               level={levelOf('garmin')}
-              summary={garmin.connected ? `Synced ${when(garmin.lastSuccessAt)} · data through ${garmin.syncedThrough ?? '-'}` : 'Not set up. Sleep, HRV and readiness come from Garmin.'}
+              summary={garmin.connected ? `Synced ${when(garmin.lastSuccessAt)} · data through ${garmin.syncedThrough ? fmtDate(garmin.syncedThrough) : '-'}` : 'Not set up. Sleep, HRV and readiness come from Garmin.'}
               notes={notes('garmin')}
               details={[
                 ['Login', !garmin.connected ? 'Not set up' : garmin.status === 'auth_failed' ? 'Expired' : 'Stored (encrypted)'],
                 ['Last success', when(garmin.lastSuccessAt)],
                 ['Last run', when(garmin.lastAttemptAt)],
-                ['Synced through', garmin.syncedThrough ?? '-'],
+                ['Synced through', garmin.syncedThrough ? fmtDate(garmin.syncedThrough) : '-'],
                 ...(garmin.backfill ? [['Backfill', `from ${garmin.backfill.from}, through ${garmin.backfill.through ?? '(starting)'}`] as [string, string]] : []),
                 ['Auto sync', 'Daily at 11:00 and 17:00 UTC (GitHub Actions)'],
               ]}
@@ -344,7 +345,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                 !bs
                   ? 'The BodySpec status did not load.'
                   : bs.connected
-                    ? `${bs.scans} ${bs.scans === 1 ? 'scan' : 'scans'} · newest ${bs.newest ?? '-'} · synced ${when(bs.lastSuccessAt)}`
+                    ? `${bs.scans} ${bs.scans === 1 ? 'scan' : 'scans'} · newest ${bs.newest ? fmtDate(bs.newest) : '-'} · synced ${when(bs.lastSuccessAt)}`
                     : 'Connect BodySpec to bring your DEXA scans to /health.'
               }
               actions={
