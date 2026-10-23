@@ -61,7 +61,7 @@ export default function CoachPlanner({
 
   return (
     <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border bg-card px-3 py-2 text-sm">
-      <Sparkles aria-hidden className="h-4 w-4 shrink-0 text-[#fc4c02]" />
+      <Sparkles aria-hidden className="h-4 w-4 shrink-0 text-brand" />
       <span className="min-w-0 flex-1 text-[var(--viz-ink-2)]">
         {!proposal && 'Coach plans next week every Sunday morning. Plan any week now, with how you feel.'}
         {busy && (
@@ -73,7 +73,7 @@ export default function CoachPlanner({
         {proposal?.status === 'failed' && <span className="text-rose-600 dark:text-rose-400">The plan for {weekLabel(proposal.weekStart)} failed: {proposal.error}</span>}
       </span>
       {proposal?.status === 'proposed' && (
-        <Button size="sm" onClick={() => setReviewing(true)} className="bg-[#fc4c02] text-white hover:opacity-90">Review</Button>
+        <Button size="sm" onClick={() => setReviewing(true)} >Review</Button>
       )}
       {proposal?.status === 'failed' && <DismissButton id={proposal.id} onDone={() => setProposal(null)} />}
       <Button size="sm" variant="outline" disabled={busy} onClick={() => setAsking(true)}>Plan with Coach</Button>

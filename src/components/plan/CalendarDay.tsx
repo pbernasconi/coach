@@ -44,7 +44,7 @@ export function CalendarDayHead({
         {date.slice(8) === '01' && !weekdayLabel && <span className="mr-1 uppercase tracking-wide">{monthShort(date)}</span>}
         {Number(date.slice(8))}
       </span>
-      {isToday && <span className="text-[10px] font-semibold uppercase tracking-wide text-primary">Today</span>}
+      {isToday && <span className="text-[10px] font-semibold uppercase tracking-wide text-brand-ink">Today</span>}
       {health && past && (
         <HealthBadge
           date={date}
@@ -65,7 +65,7 @@ export function AgendaDayLabel({ date, today }: { date: string; today: string })
   const isToday = date === today;
   return (
     <div className="w-9 shrink-0 text-center">
-      <span className={cn('block text-[10px] font-semibold uppercase tracking-wide', isToday ? 'text-primary' : 'text-[var(--viz-muted)]')}>
+      <span className={cn('block text-[10px] font-semibold uppercase tracking-wide', isToday ? 'text-brand-ink' : 'text-[var(--viz-muted)]')}>
         {isToday ? 'Today' : weekday(date)}
       </span>
       <span
@@ -80,11 +80,11 @@ export function AgendaDayLabel({ date, today }: { date: string; today: string })
   );
 }
 
-/** The classes of a month-grid day cell (past days greyed, today ringed), shared by /plan and the plan review. */
+/** The classes of a month-grid day cell (past days greyed, today on the brand wash with a brand ring), shared by /plan and the plan review. */
 export function dayCellClass(date: string, today: string) {
   return cn(
     'plan-day group/day relative flex min-h-0 min-w-0 flex-col gap-0.5 overflow-hidden border-r px-1 pb-1 pt-0.5 transition-colors',
     date < today && 'bg-muted/40',
-    date === today && 'bg-primary/[0.04] ring-2 ring-inset ring-primary'
+    date === today && 'bg-brand-wash ring-2 ring-inset ring-brand/45'
   );
 }

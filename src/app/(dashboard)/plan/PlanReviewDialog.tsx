@@ -136,7 +136,7 @@ export default function PlanReviewDialog({
       footer={
         <>
           <Button variant="outline" disabled={pending} onClick={reject}>Reject</Button>
-          <Button disabled={pending} onClick={accept} title="Adds it to Coach, your calendar, Lift and Garmin" className="bg-[#fc4c02] text-white hover:opacity-90">
+          <Button disabled={pending} onClick={accept} title="Adds it to Coach, your calendar, Lift and Garmin">
             {pending ? 'Saving…' : 'Accept'}
           </Button>
         </>
@@ -183,7 +183,7 @@ export default function PlanReviewDialog({
                 {d.why && <p className="mt-0.5 text-[13px] leading-snug text-[var(--viz-ink-2)]">{d.why}</p>}
                 {d.tradeoff && (
                   <p className="mt-1.5 flex gap-1.5 text-xs leading-snug text-[var(--viz-ink-2)]">
-                    <ArrowLeftRight aria-label="Trade-off" className="mt-0.5 h-3 w-3 shrink-0 text-[#fc4c02]" />
+                    <ArrowLeftRight aria-label="Trade-off" className="mt-0.5 h-3 w-3 shrink-0 text-brand-ink" />
                     {d.tradeoff}
                   </p>
                 )}
@@ -238,7 +238,7 @@ export default function PlanReviewDialog({
 /** A planned session: the /plan card, with the coach's reason under it (two lines; the detail has it all). */
 function Session({ w, open, onOpen, roomy = false }: { w: CalendarWorkout; open: boolean; onOpen: (id: string) => void; roomy?: boolean }) {
   return (
-    <div className={cn('min-w-0 rounded-[6px]', open && 'ring-2 ring-[#fc4c02]/60')}>
+    <div className={cn('min-w-0 rounded-[6px]', open && 'ring-2 ring-brand/60')}>
       <CalendarCard item={{ kind: 'planned', key: w.id, w, actual: null }} roomy={roomy} action={{ onClick: () => onOpen(w.id) }} />
       {w.why && <p className="mt-0.5 line-clamp-2 px-0.5 text-[11px] leading-[14px] text-[var(--viz-muted)]">{w.why}</p>}
     </div>

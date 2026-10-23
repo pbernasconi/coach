@@ -14,7 +14,7 @@ import { PrimitivesSection } from './sections/PrimitivesSection'
 import { TextFieldsSection } from './sections/TextFieldsSection'
 import { TokensSection } from './sections/TokensSection'
 
-type Brand = 'system' | 'amber'
+type Brand = 'system' | 'amber' | 'coach'
 
 const SECTIONS = [
   ['tokens', 'Tokens', TokensSection],
@@ -62,6 +62,7 @@ export function Catalog() {
           <div className="ml-auto flex items-center gap-2">
             <Toggle label="Dark" on={dark} onChange={setDark} />
             <Toggle label="Amber" on={brand === 'amber'} onChange={(on) => setBrand(on ? 'amber' : 'system')} />
+            <Toggle label="Coach" on={brand === 'coach'} onChange={(on) => setBrand(on ? 'coach' : 'system')} />
           </div>
         </div>
       </header>

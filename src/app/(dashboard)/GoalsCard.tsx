@@ -19,7 +19,7 @@ export default function GoalsCard({ goals }: { goals: GoalProgress[] }) {
     <section className="space-y-3 rounded-lg border p-4">
       <div className="flex items-baseline justify-between">
         <h2 className="font-semibold">Goals</h2>
-        <Link href="/settings#goals" className="text-xs underline underline-offset-4">Edit goals →</Link>
+        <Link href="/settings#goals" className="text-xs text-brand-ink underline-offset-4 hover:underline">Edit goals →</Link>
       </div>
       {goals.length === 0 && <p className="text-sm text-muted-foreground">No goals. Add milestones in Settings.</p>}
       <div className="grid gap-3 md:grid-cols-2">
@@ -43,7 +43,7 @@ export default function GoalsCard({ goals }: { goals: GoalProgress[] }) {
               </span>
             </div>
             <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-              <div className={`h-full rounded-full ${g.status === 'done' ? 'bg-emerald-500' : 'bg-primary'}`} style={{ width: `${Math.round(g.progress * 100)}%` }} />
+              <div className={`h-full rounded-full ${g.status === 'done' ? 'bg-emerald-500' : 'bg-foreground'}`} style={{ width: `${Math.round(g.progress * 100)}%` }} />
             </div>
           </div>
         ))}

@@ -66,7 +66,7 @@ export default async function HealthPage({ searchParams }: { searchParams: Promi
                 href={r === 30 ? '/health' : `/health?days=${r}`}
                 aria-current={r === days ? 'page' : undefined}
                 scroll={false}
-                className={`rounded px-2 py-0.5 text-xs tabular-nums ${r === days ? 'bg-muted font-medium text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`rounded px-2 py-0.5 text-xs tabular-nums ${r === days ? 'bg-brand-soft font-medium text-brand-ink' : 'text-muted-foreground hover:text-foreground'}`}
               >
                 {r}d
               </Link>

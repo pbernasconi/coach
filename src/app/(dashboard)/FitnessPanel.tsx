@@ -31,7 +31,7 @@ export function RecoveryCard({ recovery, today }: { recovery: RecoveryToday | nu
     <section className="overflow-hidden rounded-lg border bg-card" aria-labelledby="recovery-today">
       <div className="flex items-baseline justify-between border-b px-4 py-3">
         <h2 id="recovery-today" className="font-semibold">Recovery today</h2>
-        <Link href={`/health/day/${today}`} className="text-xs text-[var(--viz-muted)] hover:text-foreground">Details →</Link>
+        <Link href={`/health/day/${today}`} className="text-xs text-brand-ink underline-offset-4 hover:underline">Details →</Link>
       </div>
       {rows.length ? (
         <ul className="divide-y">
@@ -156,7 +156,7 @@ export default function FitnessPanel({ pmc, peaks }: { pmc: Pmc | null; peaks: R
             Recent peaks
             <Info label="About recent peaks">Efforts from the last 4 weeks that are your best all time, this year or in the last 90 days.</Info>
           </Kicker>
-          <Link href="/trends#peaks" className="text-xs text-[var(--viz-muted)] hover:text-foreground">All peaks →</Link>
+          <Link href="/trends#peaks" className="text-xs text-brand-ink underline-offset-4 hover:underline">All peaks →</Link>
         </div>
         {peaks == null ? (
           <p className="py-1 text-sm text-[var(--viz-muted)]">Peaks could not load.</p>

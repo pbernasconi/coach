@@ -40,7 +40,7 @@ export default function HomeWeek({ range, weather }: { range: CalendarRange; wea
         <h2 id="home-week" className="font-semibold">
           <Link href={planHref} className="hover:underline hover:underline-offset-4">This week</Link>
         </h2>
-        <Link href={planHref} className="text-xs text-[var(--viz-muted)] hover:text-foreground">Open Plan →</Link>
+        <Link href={planHref} className="text-xs font-medium text-brand-ink hover:underline hover:underline-offset-4">Open Plan →</Link>
       </div>
 
       <div className="divide-y border-t bg-[var(--viz-surface)]">
@@ -79,7 +79,7 @@ export default function HomeWeek({ range, weather }: { range: CalendarRange; wea
                 'group relative flex min-h-32 min-w-0 flex-col gap-1 px-1 pb-1.5 pt-1 transition-colors hover:bg-[var(--viz-band)]',
                 i < 6 && 'border-r',
                 past && 'bg-muted/40',
-                isToday && 'bg-primary/[0.04] ring-2 ring-inset ring-primary'
+                isToday && 'bg-brand-wash ring-2 ring-inset ring-brand/45'
               )}
             >
               {/* The whole day opens its week in Plan; the date, weather and chips sit above this link. */}

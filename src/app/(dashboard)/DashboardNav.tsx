@@ -39,7 +39,7 @@ export default function DashboardNav() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-[var(--nav-border)] bg-[var(--nav-bg)] backdrop-blur">
+    <header className="sticky top-0 z-50 w-full border-b border-brand-wash-line bg-brand-wash/92 backdrop-blur">
       <div className={cn(PAGE_FRAME, 'flex h-14 items-center gap-2')}>
         {/* Mobile menu button */}
         <Sheet open={open} onOpenChange={setOpen}>
@@ -64,8 +64,8 @@ export default function DashboardNav() {
                   onClick={() => setOpen(false)}
                   aria-current={isActive(link.href) ? 'page' : undefined}
                   className={cn(
-                    'flex min-h-11 items-center rounded-md px-3 text-base transition-colors hover:bg-muted hover:text-foreground',
-                    isActive(link.href) ? 'bg-muted font-medium text-foreground' : 'text-muted-foreground',
+                    'flex min-h-11 items-center rounded-md px-3 text-base transition-colors hover:text-foreground',
+                    isActive(link.href) ? 'bg-brand-soft font-medium text-foreground' : 'text-muted-foreground hover:bg-muted',
                   )}
                 >
                   {link.label}
@@ -92,7 +92,7 @@ export default function DashboardNav() {
               aria-keyshortcuts={keyOf(link.href)}
               className={cn(
                 'relative flex items-center px-3 transition-colors hover:text-foreground',
-                'after:absolute after:inset-x-3 after:-bottom-px after:h-0.5 after:rounded-full after:bg-foreground after:opacity-0 after:transition-opacity',
+                'after:absolute after:inset-x-3 after:-bottom-px after:h-0.5 after:rounded-full after:bg-brand after:opacity-0 after:transition-opacity',
                 isActive(link.href) ? 'font-medium text-foreground after:opacity-100' : 'text-muted-foreground',
               )}
             >

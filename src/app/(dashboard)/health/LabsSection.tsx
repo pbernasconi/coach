@@ -162,7 +162,7 @@ export default function LabsSection({ categories, draws }: { categories: LabCate
             </span>
           )}
         </div>
-        {total > 0 && <Link href="/health/labs" className="text-sm underline underline-offset-4">Full report →</Link>}
+        {total > 0 && <Link href="/health/labs" className="text-sm text-brand-ink underline-offset-4 hover:underline">Full report →</Link>}
       </div>
       {total === 0 ? (
         <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
