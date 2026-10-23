@@ -115,6 +115,13 @@ import Testing
         #expect(LaunchOptions.Opening.summary.tab == .week)
     }
 
+    @Test func openLiftSessionInDemoModePushesTheDemoSession() {
+        let options = LaunchOptions(arguments: ["Lift", "-demo", "-open", "lift-session"])
+        #expect(options.initialTab == .lift)
+        #expect(options.initialRoute(upcomingSessionID: nil) == .liftSession("de300000-0000-4000-8000-000000000100"))
+        #expect(LaunchOptions(opening: .liftSession).initialRoute(upcomingSessionID: nil) == nil)
+    }
+
     @Test func openURLKeepsALiftLinkAsWritten() throws {
         let options = LaunchOptions(arguments: ["Lift", "-open-url", "lift://sync?code=AbC123"])
         #expect(options.openURL == URL(string: "lift://sync?code=AbC123"))
