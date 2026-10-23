@@ -233,6 +233,20 @@ export async function setDone(userId: string, id: string, done: boolean) {
   await applyChanges(userId, id, { status: done ? 'done' : 'planned', skipReason: null });
 }
 
+/**
+ * Links the Lift session the phone started for a workout. False when the workout is not the user's or already has
+ * another session: the phone then opens that one. The session row may arrive later, with the next sync.
+ */
+export async function linkLiftSession(userId: string, id: string, sessionId: string): Promise<boolean> {
+  const rows = (await sql`
+    UPDATE training_plan_activities a SET lift_session_id = ${sessionId}, edited_at = NOW(), updated_at = NOW()
+    FROM training_plans p
+    WHERE a.id = ${id} AND p.id = a.plan_id AND p.user_id = ${userId}
+      AND (a.lift_session_id IS NULL OR lower(a.lift_session_id) = ${sessionId})
+    RETURNING a.id`) as Row[];
+  return rows.length > 0;
+}
+
 /** Records how I feel today and adapts the rest of the week. Returns the number of workouts changed. */
 export async function setFeel(userId: string, weekStart: string, today: string, feel: Feel) {
   const week = await loadWeek(userId, weekStart, today);

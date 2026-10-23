@@ -89,3 +89,12 @@ test('time in zones names each zone and gives its range, as Strava', () => {
   assert.ok(zones.items.some((z) => z.timeText.endsWith('min')));
   assert.ok(zones.items.filter((z) => z.seconds === 0).every((z) => z.timeText === ''));
 });
+
+test('a strength workout lists the exercises in its text, until a Lift session is linked', () => {
+  const text = '1) Standing calf raise 3x15: slow.\n90 s rest.';
+  const page = appWorkout(workout({ steps: null, sport: 'strength', description: text }), sports);
+  assert.deepEqual(page.exercises, [{ name: 'Standing calf raise', sets: 3, reps: 15, repsMax: null, note: 'Slow.' }]);
+  const linked = appWorkout(workout({ steps: null, sport: 'strength', description: text, liftSessionId: 'abc' }), sports);
+  assert.deepEqual(linked.exercises, []);
+  assert.deepEqual(appWorkout(workout(), sports).exercises, []);
+});

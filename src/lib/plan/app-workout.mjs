@@ -7,6 +7,7 @@ import { plainTitle } from './calendar.mjs';
 import { dur } from './cells.mjs';
 import { LIFT_MARKER } from './lift-plan.mjs';
 import { sportId, notesOf } from './week-api.mjs';
+import { strengthExercises } from './strength-text.mjs';
 import { ANCHORS, STEP_KIND, ZONE_RANGES, clock, flatten, keyTargets, profileBars, stepLength, stepSeconds, stepTarget, stepZone, totals } from '../workouts/steps.mjs';
 
 const ZONES = ['Z1', 'Z2', 'Z3', 'Z4', 'Z5'];
@@ -184,6 +185,8 @@ export function appWorkout(w, sports) {
       : null,
     intensity: w.intensity ?? null,
     notes: text,
+    // Strength without a Lift session: the exercises in the coach's text, so the phone can start one with them.
+    exercises: !steps && !w.liftSessionId ? strengthExercises(text) : [],
     liftSessionId: w.liftSessionId ? String(w.liftSessionId).toLowerCase() : null,
     done: done
       ? {
