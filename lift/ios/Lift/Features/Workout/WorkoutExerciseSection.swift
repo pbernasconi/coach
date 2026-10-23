@@ -72,10 +72,9 @@ struct WorkoutExerciseSection: View {
                     WorkoutExerciseOptionsButton(exercise: exercise, send: send)
                 }
             }
-            if exercise.warmUp != nil || exercise.plates != nil || exercise.progression != nil {
+            if exercise.warmUp != nil || exercise.progression != nil {
                 VStack(alignment: .leading, spacing: Space.xxs) {
                     hint(exercise.warmUp, symbol: "flame", color: theme.palette.textSecondary)
-                    hint(exercise.plates, symbol: "scalemass", color: theme.palette.textSecondary)
                     hint(exercise.progression, symbol: "arrow.up.right", color: theme.palette.accentText)
                 }
             }

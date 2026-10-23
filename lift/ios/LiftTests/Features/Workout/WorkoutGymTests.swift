@@ -23,10 +23,11 @@ import Testing
         let planned = SessionBuilder.session(id: 1, on: Fixtures.monday, done: 0, planned: 3)
 
         let (vm, _) = await WorkoutRunTests().run([planned], gym: Self.gym)
+        vm.send(.setValuesTapped(planned.items[0].sets[0].id))
 
-        let exercise = WorkoutRunTests().exercise(vm)
-        #expect(exercise?.plates == "Per side: 20 + 20 + 2.5 · 15 kg bar")
-        #expect(exercise?.warmUp == "Warm-up: 15×10 · 50×5 · 70×3 · 85×1 kg")
+        #expect(vm.state.editor?.loading?.perSide == [20, 20, 2.5])
+        #expect(vm.state.editor?.loading?.holder == .bar(15))
+        #expect(WorkoutRunTests().exercise(vm)?.warmUp == "Warm-up: 15×10 · 50×5 · 70×3 · 85×1 kg")
     }
 
     @Test func collarsShowWithTheBarAndCountInTheLoad() async {
@@ -36,8 +37,10 @@ import Testing
         detail.items[0].sets[0].target = SetTarget(reps: 5, weight: .kg(60))
 
         let (vm, _) = await WorkoutRunTests().run([detail], gym: gym)
+        vm.send(.setValuesTapped(detail.items[0].sets[0].id))
 
-        #expect(WorkoutRunTests().exercise(vm)?.plates == "Per side: 20 · 15 kg bar + collars")
+        #expect(vm.state.editor?.loading?.perSide == [20])
+        #expect(vm.state.editor?.loading?.isExact == true)
     }
 
     @Test func theNextTargetIsAStepThePlatesCanMake() async {

@@ -216,6 +216,9 @@ private struct SetEditorFields: View {
             step: editor.step,
             unit: editor.unit.rawValue
         )
+        if let loading = editor.loading {
+            BarPlates(loading: loading, unit: editor.unit)
+        }
         StepperField("Reps", value: .action(editor.reps) { send(.editorRepsChanged($0)) }, in: 0...100)
         if editor.laterSets > 0 {
             ToggleRow(

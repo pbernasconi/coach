@@ -97,7 +97,7 @@ import Testing
         let task = vm.send(.setValuesTapped(firstSetID(planned)))
 
         #expect(task == nil)
-        let expected = SetEditor(
+        var expected = SetEditor(
             id: firstSetID(planned),
             title: "Set 1 · Back squat",
             unit: .kg,
@@ -109,6 +109,7 @@ import Testing
             lastTime: nil,
             laterSets: 2
         )
+        expected.plates = EditorPlates(holder: .bar(20), plateSet: GymSetup.standard.kg.plateSet, onBar: nil)
         #expect(vm.state.editor == expected)
         #expect(vm.state.editor?.hasChanges == false)
     }

@@ -194,7 +194,6 @@ import Testing
             name: name,
             target: nil,
             warmUp: nil,
-            plates: nil,
             progression: nil,
             sets: sets
         )

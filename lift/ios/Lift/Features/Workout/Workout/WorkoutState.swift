@@ -75,8 +75,6 @@ nonisolated struct WorkoutExercise: Equatable, Sendable, Identifiable {
     var target: String?
     /// "Warm-up: 20×10 · 50×5 · 70×3 · 85×1 kg".
     var warmUp: String?
-    /// "Per side: 25 + 15 · 20 kg bar".
-    var plates: String?
     /// "Next time: 5 @ 102.5 kg".
     var progression: String?
     var sets: [WorkoutSetItem]
@@ -142,6 +140,11 @@ nonisolated struct SetEditor: Equatable, Sendable, Identifiable {
     /// The RPE and note when the editor opened.
     var savedRPE: Double?
     var savedNote = ""
+    /// The plates behind the weight, for a barbell or a lift written per side; nil for other lifts.
+    var plates: EditorPlates?
+
+    /// The plates the weight on the stepper needs, and the change from what is loaded now.
+    var loading: PlateLoading? { plates?.loading(for: weight) }
 
     var hasValueChanges: Bool { weight != savedWeight || reps != savedReps }
     var hasDetailChanges: Bool { rpe != savedRPE || note != savedNote }

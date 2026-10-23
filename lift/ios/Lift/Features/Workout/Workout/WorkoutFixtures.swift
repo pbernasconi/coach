@@ -36,7 +36,6 @@
             name: "Back squat",
             target: "3 × 5 @ 87.5 kg",
             warmUp: "Warm-up: 20×10 · 42.5×5 · 60×3 · 75×1 kg",
-            plates: "Per side: 25 + 5 + 2.5 + 1.25 · 20 kg bar",
             progression: nil,
             sets: [
                 WorkoutSetItem(
@@ -72,7 +71,6 @@
             name: "Romanian deadlift",
             target: "3 × 8 @ 65 kg",
             warmUp: "Warm-up: 20×10 · 32.5×5 · 45×3 · 55×1 kg",
-            plates: "Per side: 20 + 2.5 · 20 kg bar",
             progression: "Next time: 8 @ 67.5 kg",
             sets: [
                 set(31, 1, reps: "8", kg: "65", previous: "8 × 62.5", status: .done),
@@ -88,7 +86,6 @@
             name: "Dumbbell curl",
             target: "2 × 10 @ 14 kg",
             warmUp: nil,
-            plates: nil,
             progression: nil,
             sets: [set(41, 1, reps: "10", kg: "14"), set(42, 2, reps: "10", kg: "14")]
         )
@@ -130,7 +127,13 @@
                 lastTime: "Last time 5 × 85 kg · Thu, Feb 26",
                 laterSets: 1,
                 rpe: 8.5,
-                note: "Belt on"
+                note: "Belt on",
+                plates: EditorPlates(
+                    holder: .bar(20),
+                    plateSet: GymSetup.standard.kg.plateSet,
+                    onBar: 85,
+                    onBarPlates: [25, 5, 2.5]
+                )
             )
         )
         static let fixtureNoteEditing = WorkoutState(
@@ -175,7 +178,6 @@
                             name: "Single-arm dumbbell row with a pause at the top",
                             target: "2 × 10–12 @ 32.5 kg",
                             warmUp: nil,
-                            plates: nil,
                             progression: "Next time: same weight, 11 reps",
                             sets: [
                                 set(51, 1, reps: "10–12", kg: "32.5", previous: "12 × 30"),

@@ -23,7 +23,13 @@ extension WorkoutOverview {
             totalSets: sets.count,
             exercises: detail.items.map { item in
                 let last = item.exercise.exerciseID.flatMap { previous[$0] }
-                return WorkoutExercise(item: item, unit: detail.session.unitsAtLog, previous: last, gym: gym)
+                return WorkoutExercise(
+                    item: item,
+                    unit: detail.session.unitsAtLog,
+                    previous: last,
+                    gym: gym,
+                    isFinished: detail.session.finishedAt != nil
+                )
             },
             note: detail.session.note,
             warmUpNote: detail.session.warmUpNote,
@@ -39,14 +45,14 @@ extension WorkoutOverview {
 }
 
 extension WorkoutExercise {
-    init(item: SessionDetail.Item, unit: WeightUnit, previous: PreviousSets?, gym: GymSetup) {
+    /// A finished workout shows results and "Next time", not how to warm up.
+    init(item: SessionDetail.Item, unit: WeightUnit, previous: PreviousSets?, gym: GymSetup, isFinished: Bool = false) {
         let exercise = item.exercise
         let working = item.sets.filter { $0.kind == .working }
         let heaviest = working.compactMap(\.target.weight).max { $0.value < $1.value }
-        let kit = gym[heaviest?.unit ?? unit]
-        let plateSet = kit.plateSet
+        let plateSet = gym[heaviest?.unit ?? unit].plateSet
         let isBarbell = exercise.equipment == .barbell && exercise.loadMode == .total
-        let barbellWeight = isBarbell ? heaviest : nil
+        let barbellWeight = isBarbell && !isFinished ? heaviest : nil
         let shared = working.first.map(\.target).flatMap { first in
             working.allSatisfy { $0.target == first } ? first : nil
         }
@@ -57,9 +63,6 @@ extension WorkoutExercise {
             warmUp: barbellWeight.flatMap { weight in
                 let steps = WarmUpPlanner.plan(working: weight, equipment: .barbell, plates: plateSet)
                 return WorkoutText.warmUp(steps, unit: plateSet.unit)
-            },
-            plates: barbellWeight.map { weight in
-                WorkoutText.plates(PlateMath.load(for: weight, using: plateSet), kit: kit)
             },
             progression: Self.progression(item: item, working: working, gym: gym),
             sets: Self.rows(item.sets, previous: previous),
@@ -137,6 +140,12 @@ extension SessionDetail.Item {
         sets.prefix(while: { $0.id != set.id }).count(where: { $0.kind == set.kind }) + 1
     }
 
+    /// The weights of the sets logged before `set`, in order: how the bar was loaded up to `set`.
+    func loggedBefore(_ set: SetRecord) -> [Weight] {
+        sets.prefix(while: { $0.id != set.id }).filter { $0.status == .done }
+            .compactMap { $0.actualWeight ?? $0.target.weight }
+    }
+
     /// The planned sets of the same kind after `set`, in order.
     func laterPlanned(after set: SetRecord) -> [SetRecord] {
         sets.drop(while: { $0.id != set.id }).dropFirst().filter { $0.kind == set.kind && $0.status == .planned }
@@ -186,6 +195,7 @@ extension SetEditor {
             laterSets: item.laterPlanned(after: set).count,
             step: Self.step(for: item.exercise, unit: set.unit, gym: gym)
         )
+        plates = EditorPlates.make(for: item.exercise, unit: set.unit, gym: gym, logged: item.loggedBefore(set))
     }
 
     /// The weight stepper's step: two of the lightest plate for a barbell loaded in total, otherwise 2.5 kg or 5 lb.
