@@ -49,3 +49,12 @@ nonisolated enum ProfileMath {
         }
     }
 }
+
+extension ProfileMath {
+    /// The segment under a point `x` (0…1 left to right) across the strip, for a tap or a drag; nil off the ends.
+    public static func segment(at x: Double, in segments: [ProfileSegment]) -> Int? {
+        guard x >= 0, x <= 1 else { return nil }
+        let index = shapes(segments).firstIndex { shape in x >= shape.x0 && x <= shape.x1 }
+        return index.map { segments[$0].id }
+    }
+}

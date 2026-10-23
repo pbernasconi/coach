@@ -41,20 +41,24 @@ struct WorkoutPlanSections: View {
 }
 
 /// The plan's own cards: the workout structure and its time in zones, the intensity, the coach's notes. On a done
-/// workout they sit under what was done, so planned and done read as one page.
+/// workout they sit at the foot of what was done (with no planned zones: the activity has its real ones), so planned
+/// and done read as one page.
 struct WorkoutPlanCards: View {
     @Environment(\.koboTheme) private var theme
     let workout: AppPlannedWorkout
+    /// Done: the activity shows its own time in zones.
+    var isDone = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: Space.section) {
             if let structure = workout.workout {
                 PlannedStructureCard(structure: structure)
-                if let zones = structure.zones {
-                    CardSection(verbatim: String(localized: "Time in zones · \(zones.basis)")) {
+                if let zones = structure.zones, !isDone {
+                    CardSection(verbatim: String(localized: "Time in zones")) {
                         ZoneBars(items: zones.items.map { item in
                             ZoneBarItem(
-                                name: item.zone,
+                                name: [item.zone, item.name].compactMap(\.self).joined(separator: " "),
+                                detail: item.rangeText,
                                 amount: item.seconds,
                                 amountText: item.timeText,
                                 color: PlannedZone.color(item.zone, palette: theme.palette),
@@ -106,13 +110,17 @@ struct PlannedWorkoutHeader: View {
     }
 }
 
-/// The workout card: the main work, the interval chart in zone colours with its time labels, then every step.
+/// The workout card: the main work, the interval chart in zone colours with its time labels, then every step. A tap
+/// or a drag on the chart picks a bar, and a tap on a step picks its first bar: the picked step's detail shows under
+/// the chart (as the web chart's tooltip), its row lights up, and the other bars dim.
 private struct PlannedStructureCard: View {
     @Environment(\.koboTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let structure: PlannedStructure
+    @State private var picked: Int?
 
     var body: some View {
-        CardSection(verbatim: String(localized: "Workout · \(structure.summaryText)")) {
+        CardSection("Workout") {
             ForEach(Array(structure.keyTargets.enumerated()), id: \.offset) { _, line in
                 HStack(alignment: .firstTextBaseline, spacing: Space.sm) {
                     Capsule()
@@ -125,10 +133,24 @@ private struct PlannedStructureCard: View {
             }
             VStack(spacing: Space.xxs) {
                 ProfileStrip(segments: segments, height: Space.xxxl * 3, accessibilityLabel: "Interval chart")
+                    .selectable($picked, highlighted: [])
                 PlannedTicks(ticks: structure.ticks)
             }
-            PlannedStepList(steps: structure.steps)
+            if let bar = pickedBar {
+                PlannedBarDetail(bar: bar) { picked = nil }
+                    .transition(Motion.fade(reduceMotion: reduceMotion))
+            }
+            PlannedStepList(steps: structure.steps, pickedStep: pickedBar?.stepId) { stepId in
+                let first = structure.profile.firstIndex { $0.stepId == stepId }
+                picked = first == picked ? nil : first
+            }
         }
+        .koboAnimation(.fastEffects, value: picked)
+    }
+
+    private var pickedBar: PlannedBar? {
+        guard let picked, structure.profile.indices.contains(picked) else { return nil }
+        return structure.profile[picked]
     }
 
     private var segments: [ProfileSegment] {
@@ -141,6 +163,50 @@ private struct PlannedStructureCard: View {
                 level: PlannedZone.level(bar.zone)
             )
         }
+    }
+}
+
+/// What the picked bar is: its kind and repeat with its zone, its length, target and % of the anchor, when it runs,
+/// and the coach's words for it.
+private struct PlannedBarDetail: View {
+    @Environment(\.koboTheme) private var theme
+    let bar: PlannedBar
+    let onClose: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Space.xxs) {
+            HStack(spacing: Space.xs) {
+                RoundedRectangle(cornerRadius: Size.hairline * 2)
+                    .fill(PlannedZone.color(bar.zone, palette: theme.palette))
+                    .frame(width: Space.sm, height: Space.sm)
+                Text(verbatim: bar.title ?? bar.zone)
+                    .font(theme.font(.subheadline).weight(.semibold))
+                    .foregroundStyle(theme.palette.textPrimary)
+                Spacer(minLength: Space.sm)
+                Text(verbatim: bar.zone)
+                    .font(theme.font(.caption).weight(.semibold))
+                    .foregroundStyle(theme.palette.textSecondary)
+            }
+            Text(verbatim: [bar.lengthText, bar.targetText, bar.percentText].compactMap(\.self).joined(separator: " · "))
+                .font(theme.font(.subheadline).monospacedDigit())
+                .foregroundStyle(theme.palette.textPrimary)
+            if let time = bar.timeText {
+                Text(verbatim: time)
+                    .font(theme.font(.caption).monospacedDigit())
+                    .foregroundStyle(theme.palette.textSecondary)
+            }
+            if let cue = bar.cue {
+                Text(verbatim: cue)
+                    .font(theme.font(.footnote))
+                    .foregroundStyle(theme.palette.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(Space.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(theme.palette.surfaceSunken, in: RoundedRectangle(cornerRadius: Radius.sm, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityAction(named: Text("Close")) { onClose() }
     }
 }
 

@@ -3,7 +3,8 @@ import SwiftUI
 
 /// A small strip of blocks laid end to end: each block's width is how long it lasts and its height how hard or high
 /// it is, coloured calm to hot by level, or all in one quiet `color` when the shape is what matters. For a glance in a
-/// list row; it has no axes and no touch. VoiceOver reads the label the caller gives.
+/// list row it has no touch; given a `selection`, a tap or a drag picks a block (the others dim) and `highlighted`
+/// lights the blocks of one step. VoiceOver reads the label the caller gives.
 ///
 ///     ProfileStrip(
 ///         segments: [
@@ -19,6 +20,8 @@ public struct ProfileStrip: View {
     private let color: Color?
     private let height: CGFloat
     private let label: Text
+    private var selection: Binding<Int?>?
+    private var highlighted: Set<Int> = []
 
     /// - Parameters:
     ///   - color: one colour for every block; nil colours them by level.
@@ -48,6 +51,14 @@ public struct ProfileStrip: View {
         self.label = Text(verbatim: verbatimAccessibilityLabel)
     }
 
+    /// Lets a tap or a drag pick a block; `highlighted` lights a step's blocks while none is picked.
+    public func selectable(_ selection: Binding<Int?>, highlighted: Set<Int> = []) -> ProfileStrip {
+        var copy = self
+        copy.selection = selection
+        copy.highlighted = highlighted
+        return copy
+    }
+
     public var body: some View {
         let shapes = ProfileMath.shapes(segments)
         let ramp = [
@@ -55,7 +66,9 @@ public struct ProfileStrip: View {
             theme.palette.danger.ink,
         ]
         Canvas { context, size in
-            for shape in shapes {
+            let focus: Set<Int> = selection?.wrappedValue.map { [$0] } ?? highlighted
+            for (index, shape) in shapes.enumerated() {
+                let isDim = !focus.isEmpty && !focus.contains(segments[index].id)
                 // A hairline gap between blocks, dropped when a block is too narrow to keep it.
                 let left = shape.x0 * size.width
                 let right = shape.x1 * size.width
@@ -66,11 +79,30 @@ public struct ProfileStrip: View {
                 path.addLine(to: CGPoint(x: right - gap, y: size.height * (1 - shape.top1)))
                 path.addLine(to: CGPoint(x: right - gap, y: size.height))
                 path.closeSubpath()
-                context.fill(path, with: .color(color ?? ramp[shape.level].opacity(0.75)))
+                context.fill(path, with: .color((color ?? ramp[shape.level]).opacity(isDim ? 0.25 : 0.85)))
             }
         }
         .frame(height: height * scale)
         .frame(maxWidth: .infinity)
+        .overlay {
+            if let selection {
+                GeometryReader { proxy in
+                    Color.clear
+                        .contentShape(Rectangle())
+                        .gesture(
+                            DragGesture(minimumDistance: 0).onChanged { drag in
+                                let x = Double(drag.location.x / max(proxy.size.width, 1))
+                                if let id = ProfileMath.segment(at: min(max(x, 0), 1), in: segments),
+                                    id != selection.wrappedValue
+                                {
+                                    selection.wrappedValue = id
+                                }
+                            }
+                        )
+                }
+            }
+        }
+        .koboFeedback(.selection, trigger: selection?.wrappedValue)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(label)
     }

@@ -42,7 +42,8 @@ public struct PlannedStructure: Decodable, Equatable, Sendable {
     /// "1:30:00 · 95 TSS · IF 0.79".
     public var summaryText: String
     public var keyTargets: [PlannedKeyTarget]
-    public var profile: [CoachProfileBar]
+    /// The chart's bars, each with what a tap on it shows.
+    public var profile: [PlannedBar]
     public var ticks: [PlannedTick]
     public var steps: [PlannedStep]
     public var zones: PlannedZones?
@@ -60,11 +61,35 @@ public struct PlannedTick: Decodable, Equatable, Sendable {
     public var text: String
 }
 
-/// A step ("10:00", "Warm-up", "157–210 W", "Z2") or a repeat ("6 ×" and its steps, one level deep).
+/// One bar of the interval chart, and what a tap on it shows (as the web chart's tooltip).
+public struct PlannedBar: Decodable, Equatable, Sendable {
+    public var seconds: Double
+    public var from: Double
+    public var to: Double
+    public var zone: String
+    /// The `id` of its row in the step list.
+    public var stepId: String?
+    /// "Work · 2 of 6".
+    public var title: String?
+    public var lengthText: String?
+    public var targetText: String?
+    /// "95–104% FTP".
+    public var percentText: String?
+    /// "17:00 → 22:00".
+    public var timeText: String?
+    /// The coach's words for the step.
+    public var cue: String?
+}
+
+/// A step ("10:00", "Work", "157–210 W", "Z2") or a repeat ("6 ×" and its steps, one level deep).
 public struct PlannedStep: Decodable, Equatable, Sendable {
     /// `step` or `repeat`.
     public var kind: String
+    /// Ties the step to its bars in the chart (`PlannedBar.stepId`).
+    public var id: String?
     public var label: String
+    /// The coach's words for the step, shown when it is picked.
+    public var cue: String?
     public var length: String?
     public var target: String?
     public var zone: String?
@@ -79,8 +104,12 @@ public struct PlannedZones: Decodable, Equatable, Sendable {
 
 public struct PlannedZoneTime: Decodable, Equatable, Sendable {
     public var zone: String
+    /// "Endurance".
+    public var name: String?
+    /// "148–200 W".
+    public var rangeText: String?
     public var seconds: Double
-    /// "45", "1:10", or "–".
+    /// "58 min"; empty for none.
     public var timeText: String
     public var percent: Int
 }

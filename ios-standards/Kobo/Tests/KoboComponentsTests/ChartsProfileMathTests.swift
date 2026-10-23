@@ -34,4 +34,14 @@ import Testing
         #expect(shapes.first?.level == 4)
         #expect(ProfileMath.shapes([]).isEmpty)
     }
+
+    @Test func aPointPicksTheSegmentUnderIt() {
+        let segments = [
+            ProfileSegment(id: 7, width: 300, start: 0.5, level: 0),
+            ProfileSegment(id: 8, width: 100, start: 1.0, level: 3),
+        ]
+        #expect(ProfileMath.segment(at: 0.1, in: segments) == 7)
+        #expect(ProfileMath.segment(at: 0.9, in: segments) == 8)
+        #expect(ProfileMath.segment(at: 1.2, in: segments) == nil)
+    }
 }
