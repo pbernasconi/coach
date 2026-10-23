@@ -135,14 +135,19 @@ export function statGroups(/** @type {any} */ v) {
       },
       st.perceivedExertion != null && { key: 'rpe', label: 'Perceived exertion', valueText: `${st.perceivedExertion}/10` },
     ]),
-    // The other load scores, one line: they count the same session in other units.
-    footer: present([
-      w?.load != null && `Garmin load ${Math.round(w.load)}`,
-      e.sufferScore != null && `Relative Effort ${e.sufferScore}`,
-      e.trimp != null && `TRIMP ${e.trimp}`,
-      st.calories != null && `${int(st.calories)} kcal`,
-    ]),
+    footer: [],
   };
+  // The other load scores count the same session in other units: one footer line under the effort rows, or the
+  // rows themselves when the card has nothing else (no watch data, no RPE), so the card is never an empty box.
+  /** @type {Row[]} */
+  const scores = present([
+    w?.load != null && { key: 'garminLoad', label: 'Garmin load', valueText: String(Math.round(w.load)) },
+    e.sufferScore != null && { key: 'relativeEffort', label: 'Relative Effort', valueText: String(e.sufferScore) },
+    e.trimp != null && { key: 'trimp', label: 'TRIMP', valueText: String(e.trimp) },
+    st.calories != null && { key: 'calories', label: 'Calories', valueText: int(st.calories), unit: 'kcal' },
+  ]);
+  if (effort.rows.length) effort.footer = scores.map((r) => (r.unit ? `${r.valueText} ${r.unit}` : `${r.label} ${r.valueText}`));
+  else effort.rows = scores;
 
   /** @type {Group} */
   const heart = {

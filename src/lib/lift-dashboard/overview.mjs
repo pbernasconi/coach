@@ -80,8 +80,11 @@ export function liftOverview(model, unit, today, { strengthTarget = 2, weightKg 
   for (const r of prs) prsBySession.set(r.sessionId, [...(prsBySession.get(r.sessionId) ?? []), r]);
   const exercisesBySession = new Map();
   const musclesBySession = new Map();
+  /** Hard (counted) sets per session: done working sets, as the weekly page and sets per muscle count them. */
+  const hardBySession = new Map();
   for (const set of model.sets) {
     if (!isCountedSet(set)) continue;
+    hardBySession.set(set.sessionId, (hardBySession.get(set.sessionId) ?? 0) + 1);
     let ex = exercisesBySession.get(set.sessionId);
     if (!ex) exercisesBySession.set(set.sessionId, (ex = new Set()));
     ex.add(set.exerciseKey);
@@ -137,7 +140,7 @@ export function liftOverview(model, unit, today, { strengthTarget = 2, weightKg 
     const w = weeks[weekIndex.get(weekStart(s.day)) ?? -1];
     if (w) {
       w.sessions += 1;
-      w.sets += s.setsLogged;
+      w.sets += hardBySession.get(s.id) ?? 0;
       w.volume += s.volume;
     }
     const d = days.get(s.day);

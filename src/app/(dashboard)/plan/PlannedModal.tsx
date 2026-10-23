@@ -7,6 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import SportIcon from '@/components/SportIcon';
 import { totals } from '@/lib/workouts/steps.mjs';
 import { sport } from '@/lib/sports';
+import { cn } from '@/lib/utils';
 import { plainTitle } from '@/lib/plan/calendar.mjs';
 import { dur } from '@/lib/plan/cells.mjs';
 import { LIFT_MARKER } from '@/lib/plan/lift-plan.mjs';
@@ -46,8 +47,12 @@ export default function PlannedModal({ w, onClose, onCopy, wx, onLiftChanged, on
   // With the Lift session shown set by set, the text copy of the sets (scripts/lift-plan.mjs) is left out.
   const text = w.lift && w.description ? w.description.split(LIFT_MARKER)[0].trim() : w.description;
   const plan = w.steps ? totals(w.steps as never) : null;
+  // The coach's reason for the workout (plan imports set it), unless the notes already say it.
+  const why = w.sport !== 'rest' && w.why && w.why !== text ? w.why : null;
   // How it went: for any workout from today back (a future one has nothing to log yet).
-  const effort = w.date <= todayLocal() && <EffortLog item={`plan:${w.id}`} date={w.date} title={plainTitle(w.title)} planActivityId={w.id} />;
+  // A rest day has nothing to rate, skip or measure; a skipped workout has no effort to rate.
+  const rest = w.sport === 'rest';
+  const effort = !rest && w.status !== 'skipped' && w.date <= todayLocal() && <EffortLog item={`plan:${w.id}`} date={w.date} title={plainTitle(w.title)} planActivityId={w.id} />;
   return (
     <>
       <Header
@@ -58,14 +63,15 @@ export default function PlannedModal({ w, onClose, onCopy, wx, onLiftChanged, on
           <>
             {w.adaptedFrom && <span className="hidden text-xs text-[var(--plan-partial)] sm:inline">Changed for how you feel</span>}
             {/* "Today" or "Planned" says nothing the date line does not: the chip shows only a real status. */}
-            {w.compliance.level !== 'today' && w.compliance.level !== 'planned' && (
+            {!rest && w.compliance.level !== 'today' && w.compliance.level !== 'planned' && (
               <StatusChip level={w.compliance.level} ratio={w.compliance.ratio} basis={w.compliance.basis} />
             )}
             {w.status === 'skipped' && w.skipReason && (
               <span className="hidden text-xs text-[var(--viz-ink-2)] sm:inline">{(SKIP_LABEL as Record<string, string>)[w.skipReason] ?? w.skipReason}</span>
             )}
-            {onMarkDone && w.sport !== 'rest' && w.status !== 'skipped' && (w.status === 'done' || w.state !== 'done') && <MarkDone w={w} onMarkDone={onMarkDone} />}
-            {onSkip && w.status !== 'done' && <SkipWorkout w={w} onSkip={onSkip} />}
+            {/* A future workout cannot be done yet (one marked done by mistake can still be unmarked). */}
+            {onMarkDone && !rest && w.status !== 'skipped' && (w.status === 'done' || (w.state !== 'done' && w.date <= todayLocal())) && <MarkDone w={w} onMarkDone={onMarkDone} />}
+            {onSkip && !rest && w.status !== 'done' && <SkipWorkout w={w} onSkip={onSkip} />}
             <SyncStatus w={w} />
             {(onEdited || onCopy) && (
               <DropdownMenu>
@@ -104,14 +110,14 @@ export default function PlannedModal({ w, onClose, onCopy, wx, onLiftChanged, on
         />
       )}
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <Hero
+        {!rest && <Hero
           stats={[
             { label: 'Planned time', value: w.duration ? dur(w.duration) : '–' },
             w.tss != null && { label: 'Planned TSS', value: String(Math.round(w.tss)) },
             plan && plan.if > 0 && { label: 'Planned IF', value: plan.if.toFixed(2) },
             ...(w.lift ? liftHero(w.lift) : []),
           ]}
-        />
+        />}
         {w.lift ? (
           <LiftView
             lift={w.lift}
@@ -127,14 +133,19 @@ export default function PlannedModal({ w, onClose, onCopy, wx, onLiftChanged, on
             }
           />
         ) : (
-        <div className="grid gap-4 p-4 sm:p-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
+        <div className={cn('grid gap-4 p-4 sm:p-6', !rest && 'lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]')}>
           <div className="space-y-4">
-            {w.steps ? <Structure workout={w.steps} notes={text} /> : text ? <Description title="The workout" text={text} /> : <p className="text-sm text-muted-foreground">No description.</p>}
+            {w.steps ? <Structure workout={w.steps} notes={text} /> : text ? <Description title={rest ? 'Notes' : 'The workout'} text={text} /> : why ? <Description title="Why" text={why} /> : <p className="text-sm text-muted-foreground">No notes.</p>}
           </div>
           <div className="space-y-4">
             {w.steps && <ZoneTime workout={w.steps} />}
             {effort}
-            {!w.steps && w.intensity && !w.lift && (
+            {why && (w.steps || text) && (
+              <PCard title="Why">
+                <p className="text-sm text-[var(--viz-ink)]">{why}</p>
+              </PCard>
+            )}
+            {!w.steps && w.intensity && !w.lift && !rest && (
               <PCard title="Intensity">
                 <p className="text-sm text-[var(--viz-ink)]">{w.intensity}</p>
               </PCard>

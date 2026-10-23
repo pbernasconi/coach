@@ -58,9 +58,14 @@ export function weekSummary(monday, { activities, lifts, workouts, load, today }
   }
   done.liftSessions = lifts.filter((l) => inWeek(l.date)).length;
 
-  const planned = { min: 0, tss: 0, count: 0, done: 0, missed: 0 };
+  // Skipped workouts leave the planned time and TSS but are counted (`skipped`), so "done 7 of 8" stays honest.
+  const planned = { min: 0, tss: 0, count: 0, done: 0, missed: 0, skipped: 0 };
   for (const w of workouts) {
-    if (!inWeek(w.date) || w.status === 'skipped' || sportOf(w) === 'rest') continue;
+    if (!inWeek(w.date) || sportOf(w) === 'rest') continue;
+    if (w.status === 'skipped') {
+      planned.skipped += 1;
+      continue;
+    }
     planned.min += w.duration ?? 0;
     planned.tss += w.tss ?? 0;
     planned.count += 1;

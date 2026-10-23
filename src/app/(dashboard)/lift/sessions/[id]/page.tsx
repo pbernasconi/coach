@@ -104,12 +104,17 @@ export default async function LiftSessionPage({ params }: { params: Promise<{ id
 }
 
 function Hero({ d, start }: { d: RichSession; start: string | null }) {
-  const state = STATE[sessionState(d)];
+  const st = sessionState(d);
+  const state = STATE[st];
   const pct = d.setsTotal ? d.setsLogged / d.setsTotal : 0;
   const muscles = sessionMuscles(d).slice(0, 8);
   const most = muscles[0]?.sets ?? 1;
   const planned = plannedVolume(d);
-  const stats: [string, string, string?][] = sessionStats(d, planned).map((s) => [s.label, s.value, s.detail ?? undefined]);
+  // A done session shows what was lifted; a planned one what is planned. Both only while in progress.
+  const hide = st === 'done' ? ['plannedVolume'] : st === 'planned' ? ['volume', 'duration'] : [];
+  const stats: [string, string, string?][] = sessionStats(d, planned)
+    .filter((s) => !hide.includes(s.id))
+    .map((s) => [st === 'done' && s.id === 'volume' ? 'Volume' : s.label, s.value, s.detail ?? undefined]);
   return (
     <section
       className="overflow-hidden rounded-2xl border"
@@ -126,7 +131,7 @@ function Hero({ d, start }: { d: RichSession; start: string | null }) {
             <span className={cn('rounded-full px-2.5 py-0.5 text-xs font-medium', state.className)}>{state.label}</span>
           </div>
           {d.note && <p className="max-w-2xl whitespace-pre-wrap text-sm text-[var(--viz-ink-2)]">{d.note}</p>}
-          <dl className="grid grid-cols-2 gap-x-6 gap-y-3 pt-1 sm:grid-cols-5">
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-3 pt-1 sm:grid-cols-[repeat(5,auto)] sm:gap-x-10">
             {stats.map(([label, value, sub]) => (
               <div key={label} className="min-w-0">
                 <dt className="text-[11px] text-[var(--viz-muted)]">{label}</dt>

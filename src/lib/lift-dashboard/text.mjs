@@ -113,7 +113,9 @@ export function weekStats(o) {
 export const nextWhen = (day, today) => (day === today ? 'today' : fmtDay(day, { weekday: 'short', month: 'short', day: 'numeric' }));
 
 /** "5 exercises · 18 sets planned". @param {{ exercises: number, sets: number }} u */
-export const plannedText = (u) => `${u.exercises} exercises · ${u.sets} sets planned`;
+export const plannedText = (u) => `${plural(u.exercises, 'exercise')} · ${plural(u.sets, 'set')} planned`;
+/** "1 set", "18 sets". @param {number} n @param {string} word */
+export const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 /** A main lift's last session ended at most 14 days ago with a new best estimated 1RM. */
 export function isNewBest(
@@ -157,7 +159,7 @@ export function muscleGroups(rows) {
 export const bandStatus = (v) => (v < MUSCLE_BAND.min ? 'below' : v > MUSCLE_BAND.max ? 'above' : 'in');
 
 /** "5 exercises · 18 sets · 52 min". @param {{ exercises: number, sets: number, minutes: number | null }} s */
-export const sessionMeta = (s) => [`${s.exercises} exercises`, `${s.sets} sets`, s.minutes ? `${s.minutes} min` : null].filter(Boolean).join(' · ');
+export const sessionMeta = (s) => [plural(s.exercises, 'exercise'), plural(s.sets, 'set'), s.minutes ? `${s.minutes} min` : null].filter(Boolean).join(' · ');
 
 /** Heatmap level 0–4 of a day's sets (0: none; 4: 20+). @param {number} sets */
 export function heatLevel(sets) {

@@ -53,8 +53,9 @@ export function WeekColumn({ s, monday, today, pace = null }: { s: WeekSummary |
         {row('TSS', String(s.done.tss), s.planned.tss ? String(s.planned.tss) : null)}
         {s.planned.tss > 0 && <WeekBar done={s.done.tss} planned={s.planned.tss} label="TSS" pace={pace?.tss} />}
         {s.done.km > 0 && row('Dist', `${s.done.km} km`)}
-        {s.planned.count > 0 && row('Done', `${s.planned.done}/${s.planned.count}`)}
-        {s.planned.missed > 0 && (<><dt className="text-[var(--plan-missed)]">Not done</dt><dd className="text-right text-[var(--plan-missed)]">{s.planned.missed}</dd></>)}
+        {s.planned.count + s.planned.skipped > 0 && row('Done', `${s.planned.done}/${s.planned.count + s.planned.skipped}`)}
+        {/* Skipped workouts read "Not done" on their cards, so they count here too. */}
+        {s.planned.missed + s.planned.skipped > 0 && (<><dt className="text-[var(--plan-missed)]">Not done</dt><dd className="text-right text-[var(--plan-missed)]">{s.planned.missed + s.planned.skipped}</dd></>)}
       </dl>
       {(sports.length > 0 || s.done.liftSessions > 0) && (
         <ul className="mt-auto flex flex-wrap gap-x-2 gap-y-0.5 tabular-nums text-[var(--viz-ink)]">

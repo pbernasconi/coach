@@ -102,7 +102,7 @@ export function gearView(v) {
 /** One row of the splits table: km label ('3', or '0.4' for a short last split), pace, GAP, elevation, HR. */
 export function splitRow(s) {
   return {
-    label: s.distance < 950 ? (s.distance / 1000).toFixed(1) : String(s.index),
+    label: s.distance < 950 ? (s.distance / 1000).toFixed(2) : String(s.index),
     paceText: pace(s.speed ?? (s.moving ? s.distance / s.moving : 0)),
     gapText: s.gapSpeed ? pace(s.gapSpeed) : '–',
     elevText: s.elevDiff != null ? signed(s.elevDiff) : '–',

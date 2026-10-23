@@ -40,7 +40,7 @@ test('muscleSets counts done working sets: 1 per primary, 0.5 per secondary', ()
   const m = buildModel(data());
   const week = Object.fromEntries(muscleSets(m, '2026-10-19', '2026-10-25').map((x) => [x.muscle, x.sets]));
   // Warm-ups, planned sets and exercises without library muscles do not count.
-  assert.deepEqual(week, { glutes: 2, quads: 2, lats: 1, hamstrings: 1 });
+  assert.deepEqual(week, { glutes: 2, quads: 2, back: 1, hamstrings: 1 });
   assert.equal(muscleSets(m, '2026-10-19', '2026-10-25')[0].status, 'below');
 });
 
@@ -106,4 +106,11 @@ test('sessionNote drops the Apple Notes import lines', async () => {
   assert.equal(sessionNote('Imported from Apple Notes (notes-import): “Workout C”, note created 2026-09-02.\nDate confidence low: x\nFelt strong'), 'Felt strong');
   assert.equal(sessionNote('Imported from Apple Notes (notes-import): “Workout C”.'), null);
   assert.equal(sessionNote('Good day'), 'Good day');
+});
+
+test('buildModel folds catalog muscle names into the app muscles', () => {
+  const m = buildModel({
+    sessions: [], sessionExercises: [], sets: [], exercises: [{ id: SQUAT, name: 'Squat', primaryMuscles: ['Quadriceps', 'quads'], secondaryMuscles: ['lower back'], deletedAt: null }],
+  });
+  assert.deepEqual(m.muscles.get(`id-${SQUAT.toLowerCase()}`), { primary: ['quads'], secondary: ['back'] });
 });

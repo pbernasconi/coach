@@ -94,13 +94,6 @@ export default async function HealthDayPage({ params }: { params: Promise<{ date
 }
 
 function EmptyDay({ date }: { date: string }) {
-  return (
-    <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-      <p className="font-medium text-foreground">No Garmin data for {date}.</p>
-      <p className="mt-1">
-        The Garmin job in GitHub Actions copies each day from Garmin Connect, including the night&apos;s sleep stages and the all-day heart rate,
-        stress and Body Battery. A day appears here after the job has run for it. Days before the first run are not loaded.
-      </p>
-    </div>
-  );
+  // The Garmin job (garmin.yml) copies each day after it runs; days before its first run are never loaded.
+  return <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">No Garmin data for {longDate(date)}.</p>;
 }

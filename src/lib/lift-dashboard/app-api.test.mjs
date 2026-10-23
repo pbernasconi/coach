@@ -100,8 +100,8 @@ test('liftResponse: the week hero, as the web shows it', () => {
   assert.equal(w.days[1].sessionId, 's3');
   assert.equal(w.days[4].sessionId, 'plan');
   assert.equal(w.days[4].label, 'Friday: Lower planned');
-  assert.deepEqual(w.stats.map((s) => [s.label, s.value]), [['Sets', '3'], ['Volume', '475 kg'], ['Last lift', 'today'], ['Streak', '0 weeks']]);
-  assert.deepEqual(w.next, { sessionId: 'plan', date: '2026-10-23', title: 'Lower', whenText: 'Next up · Fri, Oct 23', detail: '1 exercises · 1 sets planned' });
+  assert.deepEqual(w.stats.map((s) => [s.label, s.value]), [['Sets', '2'], ['Volume', '475 kg'], ['Last lift', 'today'], ['Streak', '0 weeks']]);
+  assert.deepEqual(w.next, { sessionId: 'plan', date: '2026-10-23', title: 'Lower', whenText: 'Next up · Fri, Oct 23', detail: '1 exercise · 1 set planned' });
 });
 
 test('liftResponse: tips carry app links, never web URLs', () => {

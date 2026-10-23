@@ -14,6 +14,7 @@
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
     "db:migrate": "node scripts/db/migrate.mjs --yes",
+    "dev:seed": "node scripts/dev-seed.mjs",
     "typecheck": "tsc --noEmit -p .",
     "test:integration": "node --import tsx --test --test-concurrency=1 scripts/integration/*.test.ts",
     "smoke": "node scripts/smoke.mjs",

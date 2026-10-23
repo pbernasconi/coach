@@ -236,8 +236,23 @@ function muscleList(v) {
       return [];
     }
   }
-  return Array.isArray(list) ? list.filter((m) => typeof m === 'string') : [];
+  if (!Array.isArray(list)) return [];
+  // Catalog names ("quadriceps", "lats") fold into LiftCore's Muscle cases, as the app's muscleMap does.
+  return [...new Set(list.filter((m) => typeof m === 'string').map((m) => MUSCLE_ALIAS[m.trim().toLowerCase()] ?? m.trim().toLowerCase()))];
 }
+
+/** Catalog muscle names → LiftCore's Muscle cases (CatalogExercise+Library.swift muscleMap). */
+const MUSCLE_ALIAS = /** @type {Record<string, string>} */ ({
+  abs: 'core', obliques: 'core', abdominals: 'core', 'lower abs': 'core',
+  pectorals: 'chest', 'upper chest': 'chest', 'serratus anterior': 'chest',
+  brachialis: 'biceps',
+  delts: 'shoulders', deltoids: 'shoulders', 'rear deltoids': 'shoulders', 'rotator cuff': 'shoulders',
+  'upper back': 'back', lats: 'back', 'latissimus dorsi': 'back', spine: 'back', 'lower back': 'back',
+  traps: 'back', trapezius: 'back', rhomboids: 'back',
+  quadriceps: 'quads',
+  abductors: 'glutes', soleus: 'calves',
+  'wrist flexors': 'forearms', 'wrist extensors': 'forearms', wrists: 'forearms', 'grip muscles': 'forearms', hands: 'forearms',
+});
 
 /** The target band of weekly hard sets per muscle, as in LiftCore's WeeklyVolume. */
 export const MUSCLE_TARGET = { min: 10, max: 20 };

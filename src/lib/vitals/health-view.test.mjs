@@ -81,7 +81,7 @@ test('dexaChange and caption', () => {
   assert.equal(dexaChange({ digits: 1, unit: 'kg', better: 'up' }, -1, 'x')?.tone, 'bad');
   assert.equal(dexaChange(pct, null, ''), null);
   const scan = (d, fat) => ({ resultId: d, scanDate: d, location: 'SF', bodyFatPct: fat, leanMassKg: 65, totalMassKg: 82, fatMassKg: 14, vatMassKg: 0.4, androidGynoidRatio: 1, boneDensity: null, rmrKcal: null, regions: null, percentiles: null });
-  assert.equal(dexaCaption(dexaView([scan('2026-01-10', 19), scan('2026-09-01', 18)])), 'DEXA scans from BodySpec. 2 scans; latest Sep 1, 2026 at SF.');
+  assert.equal(dexaCaption(dexaView([scan('2026-01-10', 19), scan('2026-09-01', 18)])), '2 DEXA scans · latest Sep 1, 2026 · SF');
   assert.match(dexaCaption(dexaView([])), /^DEXA scans from BodySpec:/);
 });
 

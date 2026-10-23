@@ -113,7 +113,7 @@ function Biomarker({ b }: { b: BiomarkerView }) {
             <h2 className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--viz-muted)]">Results</h2>
             <ul className="space-y-1">
               {[...b.draws].reverse().map((d) => (
-                <li key={d.date} className="flex items-center justify-between gap-3">
+                <li key={d.date} className="grid grid-cols-[9rem_1fr] items-baseline gap-3">
                   <span className="text-[var(--viz-ink-2)]">{longDate(d.date)}</span>
                   <span className="tabular-nums text-[var(--viz-ink)]">
                     {d.text} <span className="text-xs" style={{ color: STATUS[d.status].color }}>· {STATUS[d.status].label}</span>
@@ -151,14 +151,12 @@ function Biomarker({ b }: { b: BiomarkerView }) {
 
       {b.notes.length > 0 && (
         <section className="space-y-3">
-          <div className="space-y-1">
-            <h2 className="text-xl font-semibold tracking-tight">Clinician notes on {b.notes[0].category}</h2>
-            <p className="text-sm text-muted-foreground">From Function Health&apos;s clinician, for the whole category.</p>
-          </div>
+          {/* Function's clinician writes one note per category, not per biomarker; closed like on Health (they run long). */}
+          <h2 className="text-xl font-semibold tracking-tight">Clinician notes <span className="font-normal text-muted-foreground">· {b.notes[0].category}</span></h2>
           {b.notes.map((n, i) => (
-            <details key={`${n.notedOn}-${i}`} open={i === 0} className="rounded-lg border bg-[var(--viz-surface)]">
+            <details key={`${n.notedOn}-${i}`} className="rounded-lg border bg-[var(--viz-surface)]">
               <summary className="cursor-pointer select-none px-4 py-3 text-sm font-medium">
-                {longDate(n.notedOn)} <span className="font-normal text-muted-foreground">· {n.category}</span>
+                {longDate(n.notedOn)}
               </summary>
               <div className="border-t px-4 py-4"><ContentBlocks text={n.body} /></div>
             </details>

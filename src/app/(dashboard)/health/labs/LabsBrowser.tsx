@@ -104,12 +104,13 @@ export default function LabsBrowser({ index }: { index: LabsIndex }) {
         .filter((s) => s.items.length),
     [index.sections, filter, q]
   );
-  const chips: { key: Filter; label: string; n: number; color?: string }[] = [
+  const allChips: { key: Filter; label: string; n: number; color?: string }[] = [
     { key: 'all', label: 'All', n: index.counts.all },
     { key: 'out_of_range', label: 'Out of Range', n: index.counts.out_of_range, color: STATUS.out_of_range.color },
     { key: 'in_range', label: 'In Range', n: index.counts.in_range, color: STATUS.in_range.color },
     { key: 'other', label: 'Other', n: index.counts.other, color: STATUS.other.color },
   ];
+  const chips = allChips.filter((c) => c.key === 'all' || c.n > 0 || c.key === filter);
   const shown = sections.reduce((n, s) => n + s.items.length, 0);
 
   return (

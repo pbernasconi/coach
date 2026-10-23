@@ -1,3 +1,5 @@
+import { Info } from 'lucide-react';
+import { HelpTooltip } from '@kobo/web';
 import { MUSCLE_BAND, bandStatus, muscleGroups } from '@/lib/lift-dashboard/text.mjs';
 import { fmtSets, muscleName, type MuscleRow } from './types';
 
@@ -37,10 +39,12 @@ export default function MuscleBars({ rows }: { rows: MuscleRow[] }) {
   return (
     <section id="muscles" className="scroll-mt-20 rounded-xl border bg-card" aria-labelledby="muscles-h">
       <div className="flex flex-wrap items-baseline justify-between gap-2 border-b px-4 py-3">
-        <div>
-          <h2 id="muscles-h" className="font-semibold">Hard sets per muscle</h2>
-          <p className="text-xs text-[var(--viz-muted)]">10–20 a week grows a muscle. Primary muscle 1 set, secondary ½.</p>
-        </div>
+        <h2 id="muscles-h" className="inline-flex items-center gap-1.5 font-semibold">
+          Hard sets per muscle
+          <HelpTooltip label="About hard sets per muscle" icon={<Info aria-hidden />}>
+            Done working sets this week. 10–20 a week grows a muscle. A primary muscle counts 1 set, a secondary ½.
+          </HelpTooltip>
+        </h2>
         <div className="flex flex-wrap gap-3 text-[11px] text-[var(--viz-ink-2)]">
           <span className="flex items-center gap-1.5"><span className="h-2 w-3 rounded-sm" style={{ background: 'var(--sport-strength)' }} />This week</span>
           <span className="flex items-center gap-1.5"><span className="h-3 w-[3px] rounded-full bg-[var(--viz-ink)]" />4-week average</span>

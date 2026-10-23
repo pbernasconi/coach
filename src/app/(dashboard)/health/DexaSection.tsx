@@ -50,6 +50,9 @@ function Spark({ m }: { m: Measure }) {
   );
 }
 
+/** "Nov '25": short enough for a change line in a narrow card. */
+const monthYear = (d: string) => `${new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' })} '${d.slice(2, 4)}`;
+
 /** Body composition from BodySpec DEXA scans: the latest values with their change, and every scan in a table. */
 export default function DexaSection({ dexa }: { dexa: DexaView }) {
   const { latest, scans, measures } = dexa;
@@ -80,7 +83,7 @@ export default function DexaSection({ dexa }: { dexa: DexaView }) {
         </div>
       ) : (
         <>
-          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          <ul className="grid grid-cols-[repeat(auto-fit,minmax(10.5rem,1fr))] gap-3">
             {measures
               .filter((m) => m.value !== null)
               .map((m) => (
@@ -94,7 +97,7 @@ export default function DexaSection({ dexa }: { dexa: DexaView }) {
                   <Spark m={m} />
                   <div className="flex flex-col text-xs">
                     <Change m={m} value={m.sincePrevious} label="since last" />
-                    <Change m={m} value={m.sinceFirst} label={dexa.first ? `since ${fmtDate(dexa.first.scanDate)}` : ''} />
+                    <Change m={m} value={m.sinceFirst} label={dexa.first ? `since ${monthYear(dexa.first.scanDate)}` : ''} />
                   </div>
                 </li>
               ))}

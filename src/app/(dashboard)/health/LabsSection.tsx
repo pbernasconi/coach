@@ -35,7 +35,7 @@ function RangeBar({ b }: { b: Biomarker }) {
   return (
     <div className="relative h-4" aria-hidden>
       <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-[var(--viz-grid)]" />
-      {(b.refLow !== null || b.refHigh !== null) && <div className="absolute inset-y-0.5 rounded-sm bg-[var(--viz-band)] outline outline-1 outline-[var(--viz-grid)]" style={span(b.refLow, b.refHigh)} />}
+      {(b.refLow !== null || b.refHigh !== null) && <div className="absolute inset-y-0.5 rounded-sm bg-[var(--viz-band)] outline outline-1 outline-[var(--viz-axis)]" style={span(b.refLow, b.refHigh)} />}
       {(b.optimalLow !== null || b.optimalHigh !== null) && (
         <div className="absolute inset-y-1 rounded-sm bg-[var(--viz-good)] opacity-25" style={span(b.optimalLow, b.optimalHigh)} />
       )}

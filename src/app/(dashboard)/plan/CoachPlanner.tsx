@@ -63,13 +63,13 @@ export default function CoachPlanner({
     <div className="flex items-center gap-2 rounded-lg border bg-card py-1 pl-3 pr-1 text-sm">
       <Sparkles aria-hidden className="h-4 w-4 shrink-0 text-brand" />
       <span className="min-w-0 flex-1 truncate text-[var(--viz-ink-2)]">
-        {!proposal && 'Coach plans next week every Sunday morning. Plan any week now, with how you feel.'}
+        {!proposal && 'Coach plans next week on Sunday morning.'}
         {busy && (
           <span className="inline-flex items-center gap-1.5">
-            <Loader2 aria-hidden className="h-3.5 w-3.5 animate-spin" /> Coach is planning {weekLabel(proposal.weekStart)}. This takes a few minutes.
+            <Loader2 aria-hidden className="h-3.5 w-3.5 animate-spin" /> Coach is planning {weekLabel(proposal.weekStart)}…
           </span>
         )}
-        {proposal?.status === 'proposed' && `Coach's plan for ${weekLabel(proposal.weekStart)} is ready for you.`}
+        {proposal?.status === 'proposed' && `Coach's plan for ${weekLabel(proposal.weekStart)} is ready.`}
         {proposal?.status === 'failed' && <span className="text-rose-600 dark:text-rose-400">The plan for {weekLabel(proposal.weekStart)} failed: {proposal.error}</span>}
       </span>
       {proposal?.status === 'proposed' && (

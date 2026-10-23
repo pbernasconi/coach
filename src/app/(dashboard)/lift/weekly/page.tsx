@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Info } from 'lucide-react';
+import { HelpTooltip } from '@kobo/web';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { loadLiftModel } from '@/lib/lift-dashboard/queries';
 import { weeklyVolume } from '@/lib/lift-dashboard/stats.mjs';
@@ -19,8 +21,12 @@ export default async function LiftWeeklyPage() {
   return (
     <Card data-smoke="lift-weekly">
       <CardHeader>
-        <CardTitle>Weekly volume</CardTitle>
-        <CardDescription>Weeks with a session, from Monday. Volume is reps × weight of the logged working sets, in {unit}.</CardDescription>
+        <CardTitle className="inline-flex items-center gap-1.5">
+          Weekly volume
+          <HelpTooltip label="About weekly volume" icon={<Info aria-hidden />}>
+            Weeks with a session, from Monday. Sets are done working sets (warm-ups out); volume is their reps × weight, in {unit}.
+          </HelpTooltip>
+        </CardTitle>
       </CardHeader>
       <CardContent>
         {weeks.length === 0 ? (
@@ -31,7 +37,7 @@ export default async function LiftWeeklyPage() {
               <TableRow>
                 <TableHead>Week of</TableHead>
                 <TableHead className="text-right"><span className="sm:hidden">Sess.</span><span className="hidden sm:inline">Sessions</span></TableHead>
-                <TableHead className="text-right">Sets</TableHead>
+                <TableHead className="text-right">Hard sets</TableHead>
                 <TableHead className="text-right">Volume</TableHead>
                 <TableHead className="w-1/3 hidden sm:table-cell">
                   <span className="sr-only">Volume bar</span>

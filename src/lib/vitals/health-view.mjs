@@ -209,7 +209,7 @@ export function dexaChange(m, value, label) {
 export function dexaCaption(dexa) {
   const { latest, scans } = dexa;
   return latest
-    ? `DEXA scans from BodySpec. ${scans.length} ${scans.length === 1 ? 'scan' : 'scans'}; latest ${fmtDate(latest.scanDate)}${latest.location ? ` at ${latest.location}` : ''}.`
+    ? `${scans.length} DEXA ${scans.length === 1 ? 'scan' : 'scans'} · latest ${fmtDate(latest.scanDate)}${latest.location ? ` · ${latest.location}` : ''}`
     : 'DEXA scans from BodySpec: body fat, visceral (belly) fat and lean mass per arm.';
 }
 

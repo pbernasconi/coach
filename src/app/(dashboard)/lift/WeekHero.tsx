@@ -92,7 +92,7 @@ export default function WeekHero({ o }: { o: Overview }) {
             <span className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-[var(--viz-muted)]">
               <CalendarClock aria-hidden className="h-3.5 w-3.5" /> Next up
             </span>
-            <span className="text-sm text-[var(--viz-ink-2)]">No Lift session planned. Put one on the plan, or start one from a template in Lift.</span>
+            <span className="text-sm text-[var(--viz-ink-2)]">Nothing planned.</span>
             <span className="text-xs font-medium" style={{ color: 'var(--sport-strength)' }}>Open Plan →</span>
           </Link>
         )}

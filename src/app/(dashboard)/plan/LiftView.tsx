@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
-import { Pencil } from 'lucide-react';
+import { HelpTooltip } from '@kobo/web';
+import { Info, Pencil } from 'lucide-react';
 import ExerciseCard from '@/components/lift/ExerciseCard';
 import ExerciseThumb from '@/components/lift/ExerciseThumb';
 import { loadText, muscleLabel, repsText } from '@/components/lift/format';
@@ -31,10 +32,13 @@ function summary(e: RichExercise, unit: string) {
   return texts.every((t) => t === texts[0]) ? `${working.length} × ${texts[0]}` : texts.join(', ');
 }
 
-function Side({ title, children }: { title: string; children: ReactNode }) {
+function Side({ title, help, children }: { title: string; help?: string; children: ReactNode }) {
   return (
     <section className="rounded-xl border p-4">
-      <h3 className="mb-3 text-sm font-semibold text-[var(--viz-ink)]">{title}</h3>
+      <h3 className="mb-3 flex items-center gap-1 text-sm font-semibold text-[var(--viz-ink)]">
+        {title}
+        {help && <HelpTooltip label={`About ${title}`} icon={<Info aria-hidden />}>{help}</HelpTooltip>}
+      </h3>
       {children}
     </section>
   );
@@ -105,19 +109,18 @@ export default function LiftView({ lift, extra, onChanged, onUnlog, unlogging = 
           </ol>
         </Side>
         {muscles.length > 0 && (
-          <Side title="Muscles">
+          <Side title="Muscles" help="Working sets; a secondary muscle counts half.">
             <ul className="space-y-1.5">
               {muscles.map((m) => (
-                <li key={m.muscle} className="grid grid-cols-[6.5rem_1fr_2.5rem] items-center gap-2 text-xs">
+                <li key={m.muscle} className="grid grid-cols-[6.5rem_1fr_auto] items-center gap-2 text-xs">
                   <span className="truncate text-[var(--viz-ink-2)]">{muscleLabel(m.muscle)}</span>
                   <span className="h-2 rounded-full bg-muted">
                     <span className="block h-full rounded-full" style={{ width: `${(m.sets / top) * 100}%`, background: 'var(--sport-strength)' }} />
                   </span>
-                  <span className="text-right tabular-nums text-[var(--viz-ink)]">{m.sets % 1 ? m.sets.toFixed(1) : m.sets} sets</span>
+                  <span className="whitespace-nowrap text-right tabular-nums text-[var(--viz-ink)]">{m.sets % 1 ? m.sets.toFixed(1) : m.sets} sets</span>
                 </li>
               ))}
             </ul>
-            <p className="mt-2 text-[10px] text-[var(--viz-muted)]">Working sets; a secondary muscle counts half.</p>
           </Side>
         )}
         {extra}

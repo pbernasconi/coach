@@ -54,8 +54,12 @@ export default async function ActivityPage({ params }: { params: Promise<{ id: s
     return (
       <div data-smoke="activity" className="space-y-2">
         <Link href="/" className="text-sm text-muted-foreground underline-offset-4 hover:underline">← Performance</Link>
-        <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-          {id === 'latest' ? 'No Strava activities yet. Connect Strava in Settings.' : `No activity “${id}” in Coach. New Strava activities appear after the next sync.`}
+        <p className="flex flex-wrap items-baseline justify-between gap-2 rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+          {id === 'latest' ? (
+            <>No Strava activities yet. <Link href="/settings" className="text-foreground underline-offset-4 hover:underline">Settings →</Link></>
+          ) : (
+            <>No activity “{id}”. <Link href="/activities/latest" className="text-foreground underline-offset-4 hover:underline">Latest activity →</Link></>
+          )}
         </p>
       </div>
     );

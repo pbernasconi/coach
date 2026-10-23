@@ -6,6 +6,7 @@ import SportIcon from '@/components/SportIcon';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { sport } from '@/lib/sports';
+import { dur } from '@/lib/plan/cells.mjs';
 import type { LibraryItem } from '@/lib/plan/month';
 
 /** Drag data types: a library item id, or a planned workout id (both views read them). */
@@ -39,7 +40,7 @@ export default function WorkoutLibrary({
       <div className="flex items-start justify-between gap-2 px-3 py-2">
         <span>
           <span className="block text-sm font-semibold">Workout library</span>
-          <span className="block text-xs text-muted-foreground">Drag onto a day, or open one to add it</span>
+          <span className="block text-xs text-muted-foreground">Drag onto a day</span>
         </span>
         <button
           type="button"
@@ -86,7 +87,7 @@ export default function WorkoutLibrary({
                   <span className="block truncate text-muted-foreground">
                     {[
                       item.source === 'lift' ? 'Lift template' : sport(item.sport).label,
-                      item.duration ? `${item.duration} min` : null,
+                      item.duration ? dur(item.duration) : null,
                       item.tss ? `${Math.round(item.tss)} TSS` : null,
                       item.uses > 1 ? `used ${item.uses}×` : null,
                     ]

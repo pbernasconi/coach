@@ -72,6 +72,13 @@ test('statGroups: without watch data a run keeps Strava cadence and power', () =
   assert.deepEqual(g[1].footer, ['Power 336 W']);
 });
 
+test('statGroups: with only load scores, the effort card shows them as rows, not an empty box', () => {
+  const g = statGroups({ ...run, watch: null, stats: { ...run.stats, perceivedExertion: null } });
+  const effort = g.find((x) => x.id === 'effort');
+  assert.deepEqual(effort.rows.map((r) => r.key), ['relativeEffort', 'trimp', 'calories']);
+  assert.deepEqual(effort.footer, []);
+});
+
 test('tssNote: method, and the run power caveat', () => {
   assert.equal(tssNote(run), 'Coach TSS from grade-adjusted pace.');
   assert.match(tssNote({ ...run, effort: { ...run.effort, tssMethod: 'power' } }), /cycling FTP \(250 W\)/);

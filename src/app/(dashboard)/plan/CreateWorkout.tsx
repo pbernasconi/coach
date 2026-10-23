@@ -10,6 +10,7 @@ import WorkoutSteps from '@/components/workouts/WorkoutSteps';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { sport } from '@/lib/sports';
+import { dur } from '@/lib/plan/cells.mjs';
 import { EFFORTS, SPORT_IDS, estimateTss } from '@/lib/plan/create.mjs';
 import { BANK, bankWorkout } from '@/lib/workouts/bank.mjs';
 import { clock, totals } from '@/lib/workouts/steps.mjs';
@@ -138,7 +139,6 @@ function Picker({ date, library, onPick, onClose, onAddFromLibrary }: { date: st
                   </span>
                   <span className="min-w-0">
                     <span className="block text-sm font-medium text-[var(--viz-ink)]">{id === 'rest' ? 'Day off' : s.label}</span>
-                    {(id === 'run' || id === 'ride') && <span className="block text-[11px] text-[var(--viz-muted)]">Steps from the coach&apos;s bank</span>}
                   </span>
                 </button>
               );
@@ -175,7 +175,7 @@ function Picker({ date, library, onPick, onClose, onAddFromLibrary }: { date: st
                     <SportIcon id={item.sport} className="h-4 w-4" />
                     <span className="min-w-0 flex-1 truncate text-sm text-[var(--viz-ink)]">{item.title}</span>
                     <span className="shrink-0 text-xs tabular-nums text-[var(--viz-muted)]">
-                      {[item.duration ? toClock(item.duration) : null, item.tss ? `${Math.round(item.tss)} TSS` : null].filter(Boolean).join(' · ')}
+                      {[item.duration ? dur(item.duration) : null, item.tss ? `${Math.round(item.tss)} TSS` : null].filter(Boolean).join(' · ')}
                     </span>
                   </button>
                 </li>
@@ -387,7 +387,6 @@ function Form({ date: day, sportId, onBack, onClose, onCreated, existing, onSave
               <div className="flex flex-wrap items-end gap-3">
                 <h3 className="flex flex-1 items-center gap-1.5 text-sm font-semibold text-[var(--viz-ink)]">
                   <Sparkles aria-hidden className="h-4 w-4" style={{ color: ACCENT }} /> Structure
-                  <span className="font-normal text-[var(--viz-muted)]">from the coach&apos;s bank, for Zwift and Garmin</span>
                 </h3>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -446,7 +445,7 @@ function Form({ date: day, sportId, onBack, onClose, onCreated, existing, onSave
         </div>
         <footer className="flex shrink-0 items-center justify-between gap-2 border-t px-4 py-3 sm:px-6">
           <span className="text-xs tabular-nums text-[var(--viz-muted)]">
-            {!rest && plannedMin ? `${toClock(plannedMin)} planned${autoTss != null || tssText ? ` · ${tssText || autoTss} TSS` : ''}` : ''}
+            {!rest && plannedMin ? `${dur(plannedMin)} planned${autoTss != null || tssText ? ` · ${tssText || autoTss} TSS` : ''}` : ''}
           </span>
           <div className="flex gap-2">
             <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>

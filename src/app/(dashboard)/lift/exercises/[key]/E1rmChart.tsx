@@ -5,13 +5,12 @@ import { formatDay, formatShortDay, formatWeight } from '@/lib/lift-dashboard/fo
 
 export type Point = { day: string; e1rm: number; reps: number | null; weight: number | null };
 
-/** A single-series line of estimated 1RM per session. Up to 640 px wide it is drawn at its real width, so the
- * labels keep their size on a phone; wider, it scales up from 640 as before. Each point has a native tooltip; the
- * table below carries the same numbers. */
+/** A single-series line of estimated 1RM per session, drawn at its real width so the labels keep their size. Each
+ * point has a native tooltip; the table below carries the same numbers. */
 export default function E1rmChart({ points, unit }: { points: Point[]; unit: string }) {
   const [ref, measured] = useMeasure<HTMLDivElement>(640);
-  const width = Math.min(measured, 640);
-  const height = width < 480 ? 180 : 220;
+  const width = Math.max(240, measured);
+  const height = width < 480 ? 180 : 240;
   const pad = { top: 16, right: 16, bottom: 28, left: width < 640 ? 44 : 52 };
   const values = points.map((p) => p.e1rm);
   const lo = Math.min(...values);
@@ -32,7 +31,7 @@ export default function E1rmChart({ points, unit }: { points: Point[]; unit: str
     <div ref={ref}>
       <svg
         viewBox={`0 0 ${width} ${height}`}
-        className="h-auto w-full text-foreground"
+        className="h-auto w-full text-[var(--sport-strength)]"
         role="img"
         aria-label={`Estimated 1RM per session, ${points.length} sessions`}
       >
@@ -61,7 +60,7 @@ export default function E1rmChart({ points, unit }: { points: Point[]; unit: str
             {/* Larger invisible hit target for the tooltip. */}
             <circle cx={x(i)} cy={y(p.e1rm)} r={12} fill="transparent">
               <title>
-                {`${formatDay(p.day)}: ${formatWeight(p.e1rm, unit)} est. 1RM (${formatWeight(p.weight, unit)} x ${p.reps ?? '-'})`}
+                {`${formatDay(p.day)}: ${formatWeight(p.e1rm, unit)} est. 1RM (${formatWeight(p.weight, unit)} × ${p.reps ?? '–'})`}
               </title>
             </circle>
           </g>

@@ -136,7 +136,7 @@ export default function FitnessPanel({ pmc, peaks }: { pmc: Pmc | null; peaks: R
                 <div className="flex items-baseline justify-between gap-1">
                   <span
                     className={`text-lg font-semibold tabular-nums ${r.warn ? 'text-[var(--viz-down)]' : 'text-[var(--viz-ctl)]'}`}
-                    title={r.perWeekText ? `${r.perWeekText} a week · ${r.levelText}` : r.levelText}
+                    title={r.perWeekText ? `${r.perWeekText} · ${r.levelText}` : r.levelText}
                   >
                     {r.warn && <span aria-hidden>▲ </span>}
                     {r.changeText}

@@ -200,7 +200,7 @@ test('detailResponse: every section in the web order, with display text', () => 
   assert.equal(r.header.outdoor, true);
   assert.equal(r.weather.headline, 'Partly cloudy, 14 °C');
   assert.deepEqual(r.equipment.gear, { label: 'Shoes', name: 'Pegasus 41', distanceText: '(412 km)' });
-  assert.deepEqual(r.splits.rows.map((x) => x.label), ['1', '0.2']);
+  assert.deepEqual(r.splits.rows.map((x) => x.label), ['1', '0.23']);
   assert.ok(r.route.points.length <= 500);
   assert.equal(r.sameRoute.rows.length, 2);
   assert.equal(r.sameRoute.rows.find((x) => x.isThis).name, 'This activity');
@@ -220,7 +220,7 @@ test('detailResponse: every section in the web order, with display text', () => 
   assert.equal(r.paceHistogram.bins[r.paceHistogram.avgIndex].label, '5:00');
   assert.deepEqual(r.relativeEffort.stats.map((x) => x.valueText), ['61', '98', '72', '83']);
   assert.equal(r.heartRate.zones.reduce((n, z) => n + z.percent, 0), 100);
-  assert.deepEqual(r.heartRate.zones.map((z) => z.rangeText), ['< 122 bpm', '123–153 bpm', '154–168 bpm', '169–183 bpm', '> 184 bpm']);
+  assert.deepEqual(r.heartRate.zones.map((z) => z.rangeText), ['≤ 122 bpm', '123–153 bpm', '154–168 bpm', '169–183 bpm', '≥ 184 bpm']);
   assert.equal(r.power, null);
   assert.equal(r.laps, null);
   assert.deepEqual(r.bestEfforts.rows[0], { label: '1K', distance: 1000, seconds: 290, prRank: 2, timeText: '4:50', paceText: '4:50 /km', rankText: '2nd best' });
