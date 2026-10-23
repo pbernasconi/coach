@@ -47,7 +47,7 @@ jobs:
   lint:
     # The full static suite on Linux: guard, conformance, swift-format, SwiftLint, Linux logic tests and the
     # non-Swift linters. Fast signal before the macOS build.
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # setup-swift does not support 26.04 yet
     timeout-minutes: 45
     concurrency:
       group: ios-lint-${{ github.ref }}-${{ github.event_name == 'workflow_dispatch' && github.run_id || 'auto' }}
