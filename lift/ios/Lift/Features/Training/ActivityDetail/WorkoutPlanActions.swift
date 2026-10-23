@@ -70,6 +70,7 @@ struct PlannedExercisesCard: View {
                         Text(verbatim: note)
                             .font(theme.font(.footnote))
                             .foregroundStyle(theme.palette.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
                 .accessibilityElement(children: .combine)
