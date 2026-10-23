@@ -79,7 +79,7 @@ export default function HomeWeek({ range, weather }: { range: CalendarRange; wea
                 'group relative flex min-h-32 min-w-0 flex-col gap-1 px-1 pb-1.5 pt-1 transition-colors hover:bg-[var(--viz-band)]',
                 i < 6 && 'border-r',
                 past && 'bg-muted/40',
-                isToday && 'bg-brand-wash ring-2 ring-inset ring-brand/45'
+                isToday && 'bg-primary/[0.04] ring-2 ring-inset ring-primary'
               )}
             >
               {/* The whole day opens its week in Plan; the date, weather and chips sit above this link. */}
