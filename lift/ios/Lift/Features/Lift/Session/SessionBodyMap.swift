@@ -38,7 +38,8 @@ struct SessionBodyBackdrop: View, Equatable {
 
     var body: some View {
         ZStack(alignment: .top) {
-            theme.palette.canvas
+            // The surface, not the canvas: in dark mode the canvas is the sheet's black, and the sheet's edge would vanish.
+            theme.palette.surface
             if let art = BodyMapDrawing.art {
                 VStack(spacing: Space.md) {
                     HStack(spacing: Space.xxl) {
@@ -119,8 +120,8 @@ struct BodyFigureCanvas: View {
     private func color(_ shade: BodyShade) -> Color {
         switch shade {
         case .none: theme.palette.surfaceSunken
-        case .light: theme.palette.accent.opacity(0.32)
-        case .medium: theme.palette.accent.opacity(0.62)
+        case .light: theme.palette.accent.opacity(0.42)
+        case .medium: theme.palette.accent.opacity(0.7)
         case .full: theme.palette.accent
         }
     }
@@ -150,8 +151,8 @@ private struct BodyShadeLegend: View {
 
     var body: some View {
         HStack(spacing: Space.lg) {
-            swatch(theme.palette.accent.opacity(0.32), "Under 2")
-            swatch(theme.palette.accent.opacity(0.62), "2–3.5")
+            swatch(theme.palette.accent.opacity(0.42), "Under 2")
+            swatch(theme.palette.accent.opacity(0.7), "2–3.5")
             swatch(theme.palette.accent, "4+ sets")
         }
         .font(theme.font(.caption))
