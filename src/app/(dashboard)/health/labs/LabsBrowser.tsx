@@ -41,7 +41,7 @@ const ICONS: Record<string, typeof Activity> = {
 };
 
 const anchor = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-const fmtDate = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', year: '2-digit', timeZone: 'UTC' });
+const fmtDate = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', year: '2-digit', timeZone: 'UTC' }).replace(' ', " '");
 
 /** The last two draws as dots on a short line, each dot in its status colour (the row says the status in words). */
 function MiniTrend({ item }: { item: LabItem }) {

@@ -1,5 +1,9 @@
+import { fmtDate } from '@/lib/vitals/health-view.mjs';
 import type { TrainingView } from '@/lib/vitals/garmin-pages';
 import { RATIO_BANDS, ratioLabel } from '@/lib/vitals/garmin-training.mjs';
+
+/** A YYYY-MM-DD as "Oct 22, 2026"; other text as is. */
+const dateText = (d: string) => (/^\d{4}-\d{2}-\d{2}$/.test(d) ? fmtDate(d) : d);
 
 const TONE: Record<string, string> = { good: 'var(--viz-good)', warn: 'var(--color-amber-500)', bad: 'var(--viz-down)', neutral: 'var(--viz-muted)' };
 const r0 = (v: number | null | undefined) => (v == null ? '-' : String(Math.round(v)));
@@ -75,7 +79,7 @@ export default function TrainingStatusCard({ t }: { t: TrainingView }) {
     <section className="space-y-4 rounded-lg border bg-[var(--viz-surface)] p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-lg font-semibold text-[var(--viz-ink)]">Training status</h2>
-        {t.statusDate && <span className="text-xs text-[var(--viz-muted)]">as of {t.statusDate}</span>}
+        {t.statusDate && <span className="text-xs text-[var(--viz-muted)]">as of {dateText(t.statusDate)}</span>}
       </div>
       {empty ? (
         <p className="text-sm text-[var(--viz-muted)]">No training status from Garmin yet. The watch needs about a week of activities with heart rate.</p>

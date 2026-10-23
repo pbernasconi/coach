@@ -11,7 +11,7 @@ type Draw = { date: string; value: number | null; text: string; status: Status }
 const COLOR: Record<Status, string> = { in_range: 'var(--viz-good)', out_of_range: 'var(--viz-down)', other: 'var(--viz-muted)' };
 const LABEL: Record<Status, string> = { in_range: 'In Range', out_of_range: 'Out of Range', other: 'Other' };
 const BAND_COLOR = { above: 'var(--viz-down)', in: 'var(--viz-good)', below: 'var(--viz-down)' } as const;
-const monthYear = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', year: '2-digit', timeZone: 'UTC' });
+const monthYear = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', year: '2-digit', timeZone: 'UTC' }).replace(' ', " '");
 const longDate = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 
 /**

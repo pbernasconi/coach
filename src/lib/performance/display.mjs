@@ -42,9 +42,9 @@ export function paceText(min, km) {
 /** "Oct 19" for a 'YYYY-MM-DD' day. */
 export const shortDate = (d) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
 
-/** "Oct 19, 25" for a 'YYYY-MM-DD' day (the peak table). */
+/** "Oct 19, 2025" for a 'YYYY-MM-DD' day (the peak table; "Oct 19, 25" read as two days). */
 export const shortDateYear = (d) =>
-  new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit', timeZone: 'UTC' });
+  new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 
 /** "Tuesday, October 20" for a 'YYYY-MM-DD' day (the Today header). */
 export const longDate = (d) =>

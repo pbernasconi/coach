@@ -56,7 +56,7 @@ test('peaks: text, best flag, activity ids', () => {
   const p = peaksSection(peaks);
   assert.equal(p.note, 'From Strava streams. Elapsed time for runs, so stops count. 2 activities still to scan.');
   const power = p.power.rows[0].cells;
-  assert.deepEqual(power.all, { value: 320, text: '320 W', subText: null, date: '2025-06-01', dateText: 'Jun 1, 25', activityId: '111', name: 'Climb', best: true });
+  assert.deepEqual(power.all, { value: 320, text: '320 W', subText: null, date: '2025-06-01', dateText: 'Jun 1, 2025', activityId: '111', name: 'Climb', best: true });
   assert.equal(power.d90.best, false);
   assert.equal(power.d90.name, null);
   assert.equal(power.d28, null);
