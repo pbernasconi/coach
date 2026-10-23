@@ -150,9 +150,27 @@ test('liftResponse: main lifts, muscles, sessions, consistency, records', () => 
   assert.ok(body.exercises.items.every((e) => e.exerciseKey && e.detail.includes('sessions')));
 });
 
+test('liftResponse: the simple overview (summary, focus, targeting, progress, one note)', () => {
+  const body = liftResponse({ ...overview(), timeZone: 'UTC', today: TODAY, now: NOW });
+  assert.match(body.summary.text, /^\d of \d sessions? this week$/);
+  assert.ok(body.focus.muscles.length > 0 && body.focus.muscles.every((m) => m.name[0] === m.name[0].toUpperCase()));
+  assert.equal(body.targeting.items.length, body.focus.muscles.length);
+  for (const t of body.targeting.items) {
+    assert.ok(['inRange', 'above', 'onTrack', 'below'].includes(t.status));
+    assert.ok(t.text.includes('done'));
+  }
+  for (const p of body.progress.items) {
+    assert.ok(['up', 'down', 'same'].includes(p.tone));
+    assert.ok(p.points.length <= 12);
+  }
+  assert.ok(body.note.item === null || body.note.item.tone !== 'info');
+});
+
 test('liftResponse: a failed Lift model fails every section, not the response', () => {
   const body = liftResponse({ overview: null, exercises: null, timeZone: 'UTC', today: TODAY, now: NOW });
-  assert.deepEqual(failedSections(body).sort(), ['consistency', 'exercises', 'lifts', 'muscles', 'records', 'sessions', 'tips', 'week']);
+  assert.deepEqual(failedSections(body).sort(), [
+    'consistency', 'exercises', 'focus', 'lifts', 'muscles', 'note', 'progress', 'records', 'sessions', 'summary', 'targeting', 'tips', 'week',
+  ]);
 });
 
 test('liftResponse: no sessions gives the empty state', () => {
