@@ -18,6 +18,7 @@ final class ActivityDetailViewModel {
     /// Protocols only, no defaults, no work (SCR-3).
     init(
         activityID: String,
+        seed: ActivitySeed?,
         data: any AppDataSource,
         router: any Navigating,
         tabs: any TabSwitching,
@@ -25,7 +26,7 @@ final class ActivityDetailViewModel {
         calendar: Calendar
     ) {
         self.tabs = tabs
-        self.state = ActivityDetailState(activityID: activityID)
+        self.state = ActivityDetailState(activityID: activityID, seed: seed)
         self.resource = AppResource(
             path: ActivityDetail.path(activityID),
             source: data,

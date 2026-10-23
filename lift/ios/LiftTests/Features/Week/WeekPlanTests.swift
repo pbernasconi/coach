@@ -44,6 +44,12 @@ import Testing
         return (vm, coachPlan)
     }
 
+    @Test func refreshPulledRefreshesTheCoachPlan() async {
+        let (vm, coachPlan) = await loaded([], plan: [])
+        await vm.send(.refreshPulled)?.value
+        #expect(coachPlan.refreshCount == 1)
+    }
+
     func entries(_ vm: WeekViewModel) -> [[WeekEntry]] {
         guard case .loaded(let days) = vm.state.sessions else { return [] }
         return days.map(\.entries)

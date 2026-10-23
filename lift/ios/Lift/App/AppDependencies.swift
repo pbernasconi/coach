@@ -52,6 +52,8 @@ final class AppDependencies {
     /// The shell's selected tab, for screens that link to another tab (`TabSwitching`), and the screen a link or a
     /// tapped notice opens (`ScreenLinkOpening`).
     let tabs: TabSwitcher
+    /// What the activity list knew about the activity being opened (`ActivitySeed`).
+    let activitySeeds: any ActivitySeeding = ActivitySeeds()
     /// Opens and closes Import from Notes, which the shell shows as a modal page above the tabs.
     let importFlow: ImportFlowPresenter
     /// Opens, closes and undoes `lift://templates` links, which the shell shows as a sheet above the tabs.

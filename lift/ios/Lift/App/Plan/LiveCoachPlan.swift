@@ -82,6 +82,8 @@ final class LiveCoachPlan: CoachPlanProviding {
 
     func refresh() async {
         await loadCacheOnce()
+        // Pull to refresh brings this iPhone up to date too: sets logged on the web or another device come in.
+        if sync.isConfigured { await sync.syncNow() }
         await fetch(from: shownWeek ?? thisWeek)
     }
 

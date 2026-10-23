@@ -15,6 +15,7 @@ struct WeekScreen: View {
     var body: some View {
         WeekContent(state: viewModel.state, send: { viewModel.send($0) })
             .task { await viewModel.run() }
+            .appRefreshable { await viewModel.send(.refreshPulled)?.value }
             .onChange(of: viewModel.state.toast) { _, toast in show(toast) }
             .toastHost(toasts)
     }

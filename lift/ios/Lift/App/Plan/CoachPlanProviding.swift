@@ -13,7 +13,7 @@ protocol CoachPlanProviding: AnyObject {
     /// The Week screen shows the week of `weekStart`: fetches it and the next one when either is not kept yet.
     func show(weekStart: LocalDay) async
 
-    /// Fetches the shown week and the next one now (pull to refresh).
+    /// Syncs this iPhone, then fetches the shown week and the next one now (pull to refresh).
     func refresh() async
 
     /// Runs for as long as the calling task: refreshes after every sync run (launch, foreground, Sync now, writes).

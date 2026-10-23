@@ -132,7 +132,8 @@ final class ActivityMapSheetUITests: XCTestCase {
         app.terminate()
         app.launchArguments = ["-demo", "-tab", "training"]
         app.launch()
-        let row = app.buttons.containing(.staticText, identifier: "Harbour loop").firstMatch
+        // Valley ride: an outdoor activity with its track, so the page opens on its map.
+        let row = app.buttons.containing(.staticText, identifier: "Valley ride").firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 10))
         XCTAssertTrue(app.tabBars.firstMatch.isHittable)
         row.tap()

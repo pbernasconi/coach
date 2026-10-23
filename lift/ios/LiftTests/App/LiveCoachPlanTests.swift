@@ -92,6 +92,15 @@ import Testing
         #expect(client.requests == [nextMonday])
     }
 
+    @Test func refreshSyncsThisIPhoneFirst() async {
+        let sync = FakeSyncing()
+        let client = FakeCoachPlanClient(responses: [monday: body(monday)])
+        let plan = makePlan(client: client, cache: InMemoryCoachPlanCache(), sync: sync)
+        await plan.refresh()
+        #expect(sync.syncNowCount == (sync.isConfigured ? 1 : 0))
+        #expect(client.requests.contains(monday))
+    }
+
     @Test func aFailedFetchKeepsTheKeptPlanAndSaysOffline() async {
         let client = FakeCoachPlanClient(error: .retryable(status: nil))
         let plan = makePlan(client: client, cache: InMemoryCoachPlanCache([monday: body(monday)]))

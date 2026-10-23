@@ -13,24 +13,33 @@ extension View {
     ///     }
     ///     .skeletonPage()
     ///
-    /// - Parameter clock: the time source of the grace period; tests pass a manual clock.
-    public func skeletonPage(clock: any Clock<Duration> = ContinuousClock()) -> some View {
-        modifier(SkeletonPageModifier(clock: clock))
+    /// - Parameters:
+    ///   - waits: `false` shows it at once, for a page whose final layout is already on screen (a sheet that will
+    ///     drop to show a map) and would look empty without it.
+    ///   - clock: the time source of the grace period; tests pass a manual clock.
+    public func skeletonPage(waits: Bool = true, clock: any Clock<Duration> = ContinuousClock()) -> some View {
+        modifier(SkeletonPageModifier(waits: waits, clock: clock))
     }
 }
 
 private struct SkeletonPageModifier: ViewModifier {
+    let waits: Bool
     let clock: any Clock<Duration>
 
     func body(content: Content) -> some View {
-        content
+        let page =
+            content
             .frame(maxWidth: .infinity, alignment: .topLeading)
             .skeletonBreath()
             .allowsHitTesting(false)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(Text("Loading", bundle: .module))
             .accessibilityAddTraits(.updatesFrequently)
-            .loadingGrace(clock: clock)
+        if waits {
+            page.loadingGrace(clock: clock)
+        } else {
+            page
+        }
     }
 }
 

@@ -28,6 +28,8 @@ nonisolated struct ActivitySummary: Decodable, Equatable, Sendable, Identifiable
     var plannedTitle: String?
     var indoor: Bool
     var commute: Bool
+    /// The page leads with a map (not indoors, some distance); missing from older servers.
+    var outdoor: Bool?
 
     var id: String { activityId }
 

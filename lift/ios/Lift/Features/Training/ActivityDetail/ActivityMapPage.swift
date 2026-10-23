@@ -3,48 +3,109 @@ import KoboTokens
 import MapKit
 import SwiftUI
 
-/// An outdoor activity as Strava shows it: the route on a map that fills the screen, under a sheet with the page.
-/// The sheet drops from the top to show the map, rests at three heights, and once fully up its content scrolls under a
-/// solid bar titled with the sport; there the back button turns into a chevron down that lowers the sheet. With the
-/// sheet down the map shows its layers and 3D buttons.
+/// An outdoor activity as Strava shows it: the route on a map that fills the screen, under a sheet with the page. It
+/// opens in this layout from the first frame (the list said the activity is outdoors): the sheet covers the screen with
+/// the name and a skeleton, and drops to show the map once the page has loaded. It rests at three heights; fully up,
+/// its content scrolls under a solid bar titled with the sport, where the back button turns into a chevron down that
+/// lowers the sheet. With the sheet down the map shows its layers and 3D buttons.
 struct ActivityMapPage: View {
-    let route: ActivityRoute
-    let header: ActivityHeader
-    let detail: ActivityDetail
+    /// The route; nil until the page has loaded.
+    let route: ActivityRoute?
     let state: ActivityDetailState
     let send: (ActivityDetailAction) -> Void
-    @State private var detent: BackdropSheetDetent = .medium
+    @State private var detent: BackdropSheetDetent
     @State private var mapType: ActivityMapType = .standard
     @State private var isThreeD = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Shown already loaded (a kept copy): the sheet drops as the page appears, not when the server answers.
+    private let opensLoaded: Bool
+    /// The page's content in place of the skeleton. On a first open it waits until the sheet has dropped, so the drop
+    /// runs with the light skeleton and the content (charts and all) fades in after it.
+    @State private var showsContent: Bool
+
+    init(route: ActivityRoute?, state: ActivityDetailState, send: @escaping (ActivityDetailAction) -> Void) {
+        self.route = route
+        self.state = state
+        self.send = send
+        let isLoaded = state.detail.content.value != nil
+        opensLoaded = isLoaded
+        _detent = State(initialValue: isLoaded ? .medium : .expanded)
+        _showsContent = State(initialValue: isLoaded)
+    }
+
+    private var header: ActivityHeader? { state.detail.content.value?.header?.value }
+    private var isLoaded: Bool { state.detail.content.value != nil }
+    /// Nothing will drop: a failure or "not connected" shows in the sheet at once.
+    private var isSettledWithout: Bool {
+        switch state.detail.content {
+        case .loading, .loaded: false
+        case .empty, .failed: true
+        }
+    }
 
     var body: some View {
-        BackdropSheet(detent: $detent, revealFrom: .expanded) { rest in
+        BackdropSheet(detent: $detent, revealFrom: opensLoaded ? .expanded : nil) { rest in
             ActivityRouteMap(
-                route: route,
-                color: header.sportStyle.color,
+                route: route ?? ActivityRoute(points: []),
+                color: (header?.sportStyle ?? state.seed?.sport ?? .other).color,
                 rest: rest,
                 type: mapType,
                 isThreeD: isThreeD
             )
             .equatable()
         } sheet: {
-            ActivitySections(detail: detail, feedback: state.shownFeedback, save: state.feedback.save, send: send)
-                .pageColumn()
-                .padding(.top, Space.xs)
-                .padding(.bottom, Space.xxl)
+            // The sheet is hosted by UIKit, so the crossfade is set here, on the value, not by the caller's transaction.
+            ZStack(alignment: .top) {
+                if showsContent || isSettledWithout {
+                    content
+                        .transition(Motion.crossFade(reduceMotion: reduceMotion))
+                } else {
+                    ActivityDetailSkeleton(seed: state.seed)
+                        .pageColumn()
+                        .padding(.top, Space.xs)
+                        .transition(Motion.crossFade(reduceMotion: reduceMotion))
+                }
+            }
+            .koboAnimation(.crossfade, value: showsContent || isSettledWithout)
         } overlay: { sheet in
             ActivityMapOverlay(
                 sheet: sheet,
-                title: header.typeText,
+                title: header?.typeText ?? state.seed?.typeText ?? "",
+                isLoaded: showsContent,
                 mapType: $mapType,
                 isThreeD: $isThreeD,
                 onLower: { detent = .medium }
             )
+            .onChange(of: sheet.resting) { _, resting in
+                // The sheet has come to rest after the drop (or wherever a finger left it): now the content.
+                if isLoaded, resting != nil { showsContent = true }
+            }
+        }
+        // The page has loaded: drop the sheet to show the map; if a finger already moved it, show the content now.
+        .onChange(of: isLoaded) { _, loaded in
+            guard loaded else { return }
+            if detent == .expanded { detent = .medium } else { showsContent = true }
         }
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
         .keepsSwipeBack()
         .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
+    }
+
+    private var content: some View {
+            AppResourcePage(
+                state.detail,
+                onRetry: { send(.retryTapped) },
+                onConnect: { send(.connectTapped) },
+                showsFreshness: false
+            ) { detail in
+                ActivitySections(detail: detail, feedback: state.shownFeedback, save: state.feedback.save, send: send)
+            } placeholder: {
+                ActivityDetailSkeleton(seed: state.seed)
+            }
+            .pageColumn()
+            .padding(.top, Space.xs)
+            .padding(.bottom, Space.xxl)
     }
 }
 
@@ -53,6 +114,8 @@ struct ActivityMapPage: View {
 private struct ActivityMapOverlay: View {
     let sheet: BackdropSheetState
     let title: String
+    /// Until the page has loaded, the sheet covers the map: the bar keeps Back and shows no title.
+    let isLoaded: Bool
     @Binding var mapType: ActivityMapType
     @Binding var isThreeD: Bool
     let onLower: () -> Void
@@ -62,7 +125,8 @@ private struct ActivityMapOverlay: View {
 
     /// How far the bar has turned solid: 0 until the sheet's top is near the bar, 1 when it is under it.
     private var barProgress: Double {
-        BackdropSheetMath.unit(Double(sheet.sheetTop), from: Double(sheet.topInset + 96), to: Double(sheet.topInset))
+        guard isLoaded else { return 0 }
+        return BackdropSheetMath.unit(Double(sheet.sheetTop), from: Double(sheet.topInset + 96), to: Double(sheet.topInset))
     }
 
     /// The map's own buttons show once the sheet is most of the way down.

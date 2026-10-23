@@ -18,6 +18,7 @@ struct ActivityDetailContent: View {
 private struct ActivityPage: View {
     let state: ActivityDetailState
     let send: (ActivityDetailAction) -> Void
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var detail: ActivityDetail? { state.detail.content.value }
     private var header: ActivityHeader? { detail?.header?.value }
@@ -27,14 +28,24 @@ private struct ActivityPage: View {
         return route
     }
 
+    /// The map layout: once loaded, when there is a route to lead with; before, when the list said it is outdoors.
+    private var leadsWithMap: Bool {
+        detail == nil ? state.seed?.outdoor == true : heroRoute != nil
+    }
+
     var body: some View {
         Group {
-            if let heroRoute, let header, let detail {
-                ActivityMapPage(route: heroRoute, header: header, detail: detail, state: state, send: send)
+            // The list's guess can be wrong (an outdoor activity whose track Strava has not sent yet): the layout then
+            // crossfades, it does not cut.
+            if leadsWithMap {
+                ActivityMapPage(route: heroRoute, state: state, send: send)
+                    .transition(Motion.crossFade(reduceMotion: reduceMotion))
             } else {
                 ActivityScrollPage(state: state, title: header?.name, send: send)
+                    .transition(Motion.crossFade(reduceMotion: reduceMotion))
             }
         }
+        .koboAnimation(.crossfade, value: leadsWithMap)
         .workoutNeighbours(
             older: String(localized: "Older activity"),
             newer: String(localized: "Newer activity"),
@@ -70,7 +81,7 @@ private struct ActivityScrollPage: View {
             ) { detail in
                 ActivitySections(detail: detail, feedback: state.shownFeedback, save: state.feedback.save, send: send)
             } placeholder: {
-                ActivityDetailSkeleton()
+                ActivityDetailSkeleton(seed: state.seed)
             }
             .pageColumn()
             .padding(.top, Space.sm)
