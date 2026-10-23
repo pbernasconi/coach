@@ -14,7 +14,10 @@ struct WorkoutActivityWidget: Widget {
             let isResting = context.state.isResting(isStale: context.isStale)
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    IslandLeading(state: context.state, isResting: isResting)
+                    IslandLeading(state: context.state)
+                }
+                DynamicIslandExpandedRegion(.center) {
+                    IslandCenter(state: context.state, isResting: isResting)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     IslandTrailing(isResting: isResting, isPaused: context.state.isPaused)
@@ -34,38 +37,49 @@ struct WorkoutActivityWidget: Widget {
     }
 }
 
-/// The expanded island's left: the exercise photo (or the badge) beside the exercise and the set, or what comes
-/// after the rest.
+/// The expanded island's left: only the exercise photo (or the badge). The region is narrow, so the words go in the
+/// centre.
 struct IslandLeading: View {
+    let state: WorkoutActivityAttributes.ContentState
+
+    var body: some View {
+        Group {
+            if let set = state.current, set.still != nil {
+                ExerciseStill(set: set, size: 40)
+            } else {
+                CoachBadge(size: 28)
+            }
+        }
+        .padding(.leading, 4)
+    }
+}
+
+/// The expanded island's centre: the exercise and the set, or what comes after the rest.
+struct IslandCenter: View {
     let state: WorkoutActivityAttributes.ContentState
     let isResting: Bool
 
     var body: some View {
-        HStack(spacing: 10) {
-            if let set = state.current, set.still != nil {
-                ExerciseStill(set: set, size: 36)
-            } else {
-                CoachBadge(size: 26)
-            }
-            VStack(alignment: .leading, spacing: 1) {
-                Text(verbatim: state.current?.exerciseName ?? String(localized: "All sets done"))
-                    .font(.headline)
-                    .lineLimit(1)
-                if let set = state.current {
-                    Group {
-                        if isResting {
-                            Text("Next: \(set.title) · \(set.loadText)")
-                        } else {
-                            Text("\(set.title) · \(state.loggedSets)/\(state.totalSets) sets")
-                        }
+        VStack(alignment: .leading, spacing: 1) {
+            Text(verbatim: state.current?.exerciseName ?? String(localized: "All sets done"))
+                .font(.headline)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+            if let set = state.current {
+                Group {
+                    if isResting {
+                        Text("Next: \(set.title) · \(set.loadText)")
+                    } else {
+                        Text("\(set.title) · \(state.loggedSets)/\(state.totalSets) sets")
                     }
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
                 }
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
             }
         }
-        .padding(.leading, 4)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

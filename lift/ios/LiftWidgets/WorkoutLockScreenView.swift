@@ -5,6 +5,9 @@ import SwiftUI
 /// it, or, while resting, the time rested against the rest's length with Skip. A rest gets an orange "Resting" strip
 /// and a tinted top, so it never reads as a set. Once the rest is over (the content is stale) the set to log is back,
 /// with "Rest over +0:12" in the header. A paused workout says "Paused" in the header.
+///
+/// iOS clips a Lock Screen activity taller than 160 pt, so every state stays near 150 pt: band 26, top about 70,
+/// bar 4, bottom bar about 55.
 struct WorkoutLockScreenView: View {
     @Environment(\.colorScheme) private var colorScheme
     let attributes: WorkoutActivityAttributes
@@ -21,27 +24,27 @@ struct WorkoutLockScreenView: View {
             }
             top
                 .padding(.horizontal, 16)
-                .padding(.top, 13)
-                .padding(.bottom, 12)
+                .padding(.top, 10)
+                .padding(.bottom, 8)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(isResting ? WidgetColors.restTint : .clear)
             WorkoutBar(state: state, isResting: isResting)
             bottomBar
                 .padding(.leading, 16)
                 .padding(.trailing, 12)
-                .padding(.vertical, 10)
+                .padding(.vertical, 8)
                 .background(WidgetColors.bottomBar(for: colorScheme))
         }
     }
 
     @ViewBuilder private var top: some View {
-        VStack(alignment: .leading, spacing: 9) {
+        VStack(alignment: .leading, spacing: 6) {
             if !isResting {
                 WorkoutHeader(attributes: attributes, state: state, isStale: isStale)
             }
             if let set = state.current {
                 HStack(spacing: 12) {
-                    ExerciseStill(set: set, size: 48)
+                    ExerciseStill(set: set, size: 40)
                     CurrentSetSummary(set: set, dots: state.dots, isResting: isResting)
                 }
             } else {
@@ -52,7 +55,7 @@ struct WorkoutLockScreenView: View {
 
     @ViewBuilder private var bottomBar: some View {
         if isResting, let rest = state.rest {
-            RestBar(rest: rest, timerSize: 40)
+            RestBar(rest: rest, timerSize: 34)
         } else if let set = state.current {
             LiftBar(set: set)
         } else {
