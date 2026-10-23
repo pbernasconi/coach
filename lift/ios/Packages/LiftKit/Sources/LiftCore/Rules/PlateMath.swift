@@ -19,36 +19,24 @@ public enum PlateMath {
         return solver.result(units: Double(up) - goal < goal - Double(down) ? up : down)
     }
 
-    /// The plates for `target` that keep as many of the plates on the bar now (`onBar`, one side, from the collar
-    /// outwards) as can stay: going from 45 + 45 to 255 lb adds 10 + 5 rather than swapping to 45 + 35 + 25. Falls back
-    /// to `load(for:using:)` when no load that keeps plates makes the target exactly.
-    public static func load(for target: Weight, using set: PlateSet? = nil, from onBar: [Double]) -> PlateLoad {
+    /// The plates for `target` the way a lifter loads them: as many of the heaviest plate as fit, then the next size
+    /// down (255 lb is 45 + 45 + 10 + 5 a side, not 45 + 35 + 25). Falls back to `load(for:using:)` when that does not
+    /// make the target exactly, as when a size has run out.
+    public static func stacked(for target: Weight, using set: PlateSet? = nil) -> PlateLoad {
         let set = set ?? .standard(target.unit)
         let fresh = load(for: target, using: set)
         guard fresh.isExact else { return fresh }
-        let perSide = (target.converted(to: set.unit).value - set.bar) / 2
-        for kept in stride(from: onBar.count, through: 1, by: -1) {
-            let stay = Array(onBar.prefix(kept))
-            let rest = perSide - stay.reduce(0, +)
-            guard rest >= 0, let left = set.removing(stay) else { continue }
-            let unloaded = PlateSet(unit: set.unit, bar: 0, stock: left.stock)
-            let extra = load(for: Weight(rest * 2, set.unit), using: unloaded)
-            if extra.isExact {
-                return PlateLoad(perSide: stay + extra.perSide, total: fresh.total, isExact: true)
-            }
+        var left = (target.converted(to: set.unit).value - set.bar) / 2
+        var perSide: [Double] = []
+        for stock in set.stock.sorted(by: { $0.size > $1.size }) where stock.size > 0 && stock.pairs != 0 {
+            var count = Int(((left + tolerance) / stock.size).rounded(.down))
+            if let pairs = stock.pairs { count = min(count, pairs) }
+            perSide += Array(repeating: stock.size, count: max(0, count))
+            left -= Double(max(0, count)) * stock.size
         }
-        return fresh
+        return abs(left) < tolerance ? PlateLoad(perSide: perSide, total: fresh.total, isExact: true) : fresh
     }
-}
 
-extension PlateSet {
-    /// This set with one pair of each of `plates` taken out, or nil when it does not have them.
-    func removing(_ plates: [Double]) -> PlateSet? {
-        var stock = self.stock
-        for plate in plates {
-            guard let index = stock.firstIndex(where: { $0.size == plate && $0.pairs != 0 }) else { return nil }
-            stock[index].pairs = stock[index].pairs.map { $0 - 1 }
-        }
-        return PlateSet(unit: unit, bar: bar, stock: stock)
-    }
+    /// Rounding slack for sums of plate sizes such as 1.25.
+    private static let tolerance = 1e-6
 }

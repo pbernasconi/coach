@@ -128,12 +128,7 @@
                 laterSets: 1,
                 rpe: 8.5,
                 note: "Belt on",
-                plates: EditorPlates(
-                    holder: .bar(20),
-                    plateSet: GymSetup.standard.kg.plateSet,
-                    onBar: 85,
-                    onBarPlates: [25, 5, 2.5]
-                )
+                plates: EditorPlates(holder: .bar(20), plateSet: GymSetup.standard.kg.plateSet)
             )
         )
         static let fixtureNoteEditing = WorkoutState(
