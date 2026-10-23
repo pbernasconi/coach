@@ -19,7 +19,7 @@ import { loadActivity, loadActivityContext, type ActivityContext, type ActivityV
 import { loadLiftModel } from '@/lib/lift-dashboard/queries';
 import { sessionDetail } from '@/lib/lift-dashboard/stats.mjs';
 import { richSession, type RichSession } from '@/lib/lift/session';
-import { applyLiftEdit, liftLibrary } from '@/lib/lift/edit-store';
+import { applyLiftEdit, liftLibrary, startPlanLift } from '@/lib/lift/edit-store';
 import type { LiftEdit } from '@/lib/lift/edit.mjs';
 import { loadDay } from '@/lib/vitals/garmin-pages';
 import { dayGlance, type DayGlance } from '@/lib/vitals/day-glance';
@@ -182,11 +182,25 @@ export async function duplicateWorkoutAction(id: string, toDate: string) {
 export async function editLiftAction(sessionId: string, edits: LiftEdit[]): Promise<{ ok: true } | { error: string }> {
   const userId = await user();
   if (!/^[0-9a-f-]{36}$/i.test(String(sessionId)) || !Array.isArray(edits) || edits.length > 200) return { error: 'Bad edit.' };
-  const r = await applyLiftEdit(userId, String(sessionId), edits);
+  const timeZone = await cookieTimeZone();
+  const r = await applyLiftEdit(userId, String(sessionId), edits, { today: todayIn(timeZone), timeZone });
   if ('error' in r) return r;
   revalidatePath('/plan');
   if (r.weeks.length) pushCalendar(userId, r.weeks);
   return { ok: true };
+}
+
+/**
+ * "Log sets" on a strength workout written as text (a home session): makes its Lift session from the coach's
+ * exercises and links it, so each set can be logged here or in Lift.
+ */
+export async function startPlanLiftAction(planId: string): Promise<{ sessionId: string } | { error: string }> {
+  const userId = await user();
+  const { unit } = await loadLiftModel();
+  const r = await startPlanLift(userId, String(planId).slice(0, 64), unit === 'kg' ? 'kg' : 'lb');
+  if ('error' in r) return r;
+  revalidatePath('/plan');
+  return r;
 }
 
 /** The Lift exercise library, for "Add exercise". */

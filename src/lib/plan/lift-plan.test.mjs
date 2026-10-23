@@ -53,3 +53,13 @@ test('mergeDescription keeps the coach note and replaces the old block', () => {
 test('intensityText', () => {
   assert.equal(intensityText({ title: 'Lower', exercises: [squat] }), 'Lower · 1 exercises · 3 sets · Made-up squat 3 × 8 @ 100 lb');
 });
+
+test('a session started from a text workout (no template) is kept unless skipped', () => {
+  const rows = [
+    { id: 'w1', day: '2026-10-24', status: 'planned', liftTemplate: null, liftSessionId: 'started' },
+    { id: 'w2', day: '2026-10-25', status: 'skipped', liftTemplate: null, liftSessionId: 'skippedOne' },
+    { id: 'w3', day: '2026-10-26', status: 'planned', liftTemplate: null, liftSessionId: 'fromTemplate' },
+  ];
+  const entries = planEntries(rows, ['fromTemplate']);
+  assert.deepEqual(entries.map((e) => [e.key, e.remove ?? false]), [['w2', true], ['w3', true]]);
+});

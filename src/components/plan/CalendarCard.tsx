@@ -60,7 +60,7 @@ function PlannedCard({ w, actual, roomy, action, drag }: { w: CalendarWorkout; a
   const missed = w.state === 'missed';
   const skipped = w.state === 'skipped';
   const filled = done || missed || skipped;
-  const pct = w.compliance.ratio != null ? `${Math.round(w.compliance.ratio * 100)} % of planned ${w.compliance.basis === 'tss' ? 'TSS' : 'time'}` : null;
+  const pct = w.compliance.ratio != null ? `${Math.round(w.compliance.ratio * 100)} % of planned ${w.compliance.basis === 'tss' ? 'TSS' : w.compliance.basis === 'sets' ? 'sets' : 'time'}` : null;
   const plannedText = loadText(w.duration, w.tss, dur);
   const doneText = actual ? loadText(actual.min, actual.tss, dur) || dur(0) : w.match?.name ?? null;
   const status = skipped ? skipText(w.skipReason) : `${w.compliance.label}${pct ? ` (${pct})` : ''}`;

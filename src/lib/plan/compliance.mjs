@@ -7,6 +7,8 @@
 //   partial 50–80 % or 120–150 %     (yellow, "Partly done")
 //   off     under 50 % or over 150 % (yellow, "Partly done": still a session done)
 //   done    done, but nothing to compare (green, no ratio)
+//   A strength workout with a Lift session compares working sets logged with sets planned instead: 80 % or more is
+//   good, less is partial ("Partly done"); extra sets never make it partial.
 //   missed  a past day with no match (red, "Not done")
 //   skipped skipped on purpose       (red, "Not done"; the reason is kept, src/lib/plan/skip.mjs)
 //   rest, today, planned             (grey)
@@ -38,8 +40,9 @@ export function levelForRatio(ratio) {
  * @param {{ duration?: number | null, tss?: number | null }} planned  minutes and TSS of the planned workout
  * @param {'done' | 'skipped' | 'missed' | 'today' | 'planned'} state  from matchWeek
  * @param {{ min?: number | null, tss?: number | null } | null} actual  the matched activity, when there is one
- * @param {{ rest?: boolean }} [opts]  rest: the workout is a rest day
- * @returns {{ level: string, label: string, ratio: number | null, basis: 'duration' | 'tss' | null }}
+ * @param {{ rest?: boolean, sets?: { done: number, planned: number } | null }} [opts]  rest: the workout is a rest day;
+ *   sets: the working sets of its Lift session, logged and planned
+ * @returns {{ level: string, label: string, ratio: number | null, basis: 'duration' | 'tss' | 'sets' | null }}
  */
 export function complianceOf(planned, state, actual, opts = {}) {
   const out = (level, ratio = null, basis = null) => ({ level, label: LEVEL_LABEL[level], ratio, basis });
@@ -47,6 +50,11 @@ export function complianceOf(planned, state, actual, opts = {}) {
   if (opts.rest) return out('rest');
   if (state === 'missed') return out('missed');
   if (state !== 'done') return out(state === 'today' ? 'today' : 'planned');
+  const sets = opts.sets;
+  if (sets && positive(sets.planned) && positive(sets.done)) {
+    const ratio = sets.done / sets.planned;
+    return out(ratio >= 0.8 ? 'good' : 'partial', ratio, 'sets');
+  }
   if (!actual) return out('done');
   if (positive(planned.duration) && positive(actual.min)) {
     const ratio = actual.min / planned.duration;

@@ -84,14 +84,31 @@ export function matchActivityId(match) {
 export function matchWeek(workouts, activities, liftSessions, today) {
   const used = new Set();
   const result = new Map();
-  const ordered = [...workouts].sort((a, b) => a.date.localeCompare(b.date) || (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+  const key = (id) => String(id ?? '').toLowerCase();
+  // A Lift session linked to a workout (lift_session_id) is that workout's: no other workout of the day claims it.
+  const linked = new Set(workouts.map((w) => key(w.liftSessionId)).filter(Boolean));
+  // Each workout's own logged session first; then, per day, workouts with no session of their own pick before those
+  // whose session has nothing logged (a fresh lift started in Lift goes to the workout that has none).
+  const own = new Map();
+  for (const w of workouts) {
+    const s = key(w.liftSessionId) && liftSessions.find((x) => x.date === w.date && (x.setsLogged ?? 1) > 0 && key(x.id) === key(w.liftSessionId));
+    if (s) {
+      own.set(w.id, s);
+      used.add(`lift:${s.id}`);
+    }
+  }
+  const ordered = [...workouts].sort(
+    (a, b) => a.date.localeCompare(b.date) || (a.liftSessionId ? 1 : 0) - (b.liftSessionId ? 1 : 0) || (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
+  );
   for (const w of ordered) {
     const sport = sportOf(w);
     let match = null;
     if (w.status !== 'skipped' && sport !== 'rest') {
       if (sport === 'strength') {
         // A session planned in Lift (scripts/lift-plan.mjs) counts only once a set is logged.
-        const lift = liftSessions.find((s) => s.date === w.date && (s.setsLogged ?? 1) > 0 && !used.has(`lift:${s.id}`));
+        const lift =
+          own.get(w.id) ??
+          liftSessions.find((s) => s.date === w.date && (s.setsLogged ?? 1) > 0 && !used.has(`lift:${s.id}`) && !linked.has(key(s.id)));
         if (lift) {
           used.add(`lift:${lift.id}`);
           // The watch records the same lift as a Strava strength activity: claim it too, so it is not shown twice

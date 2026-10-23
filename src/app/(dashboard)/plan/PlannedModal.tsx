@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { ChevronDown, Copy, Pencil } from 'lucide-react';
+import { ChevronDown, Copy, ListChecks, Loader2, Pencil } from 'lucide-react';
+import { toast } from 'sonner';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@kobo/web';
 import SportIcon from '@/components/SportIcon';
 import { totals } from '@/lib/workouts/steps.mjs';
@@ -24,6 +25,9 @@ import { EditWorkout } from './CreateWorkout';
 import SkipWorkout from './SkipWorkout';
 import MarkDone from './MarkDone';
 import { SKIP_LABEL } from '@/lib/plan/skip.mjs';
+import { strengthExercises, strengthNotes } from '@/lib/plan/strength-text.mjs';
+import { startPlanLiftAction } from './actions';
+import { logSetWith } from './useLogSet';
 
 /** Today on this device, as YYYY-MM-DD. */
 const todayLocal = () => new Date().toLocaleDateString('en-CA');
@@ -44,8 +48,13 @@ function liftHero(lift: NonNullable<CalendarWorkout['lift']>): HeroStat[] {
 export default function PlannedModal({ w, onClose, onCopy, wx, onLiftChanged, onEdited, onSkip, onMarkDone }: { w: CalendarWorkout; onClose: () => void; onCopy?: (w: CalendarWorkout) => void; wx?: DayWeather; onLiftChanged?: (date: string) => Promise<void> | void; onEdited?: (days: { from: string; to: string }) => void; onSkip?: (w: CalendarWorkout, reason?: string | null) => void; onMarkDone?: (w: CalendarWorkout, done: boolean) => void }) {
   const [editing, setEditing] = useState(false);
   const targets = zonesFor(w) as { zone: string; label: string; target: string }[];
-  // With the Lift session shown set by set, the text copy of the sets (scripts/lift-plan.mjs) is left out.
-  const text = w.lift && w.description ? w.description.split(LIFT_MARKER)[0].trim() : w.description;
+  // With the Lift session shown set by set, the text copy of the sets (scripts/lift-plan.mjs) and the coach's
+  // exercise lines it was made from are left out.
+  const text = w.lift && w.description ? strengthNotes(w.description.split(LIFT_MARKER)[0].trim()) : w.description;
+  // Sets can be logged here from the workout's day on (a home session done without the phone).
+  const loggable = Boolean(onLiftChanged) && w.status !== 'skipped' && w.date <= todayLocal();
+  const onLog = loggable && w.lift ? logSetWith(w.lift.id, w.lift.unit, () => onLiftChanged!(w.date)) : undefined;
+  const lines = !w.lift && !w.steps && sport(w.sport).id === 'strength' ? (strengthExercises(w.description) as { name: string; sets: number; reps: number; repsMax: number | null }[]) : [];
   const plan = w.steps ? totals(w.steps as never) : null;
   // The coach's reason for the workout (plan imports set it), unless the notes already say it.
   const why = w.sport !== 'rest' && w.why && w.why !== text ? w.why : null;
@@ -121,6 +130,7 @@ export default function PlannedModal({ w, onClose, onCopy, wx, onLiftChanged, on
         {w.lift ? (
           <LiftView
             lift={w.lift}
+            onLog={onLog}
             onChanged={onLiftChanged ? () => onLiftChanged(w.date) : undefined}
             extra={
               <>
@@ -139,6 +149,7 @@ export default function PlannedModal({ w, onClose, onCopy, wx, onLiftChanged, on
           </div>
           <div className="space-y-4">
             {w.steps && <ZoneTime workout={w.steps} />}
+            {lines.length > 0 && <LogSetsCard w={w} lines={lines} start={loggable ? onLiftChanged : undefined} />}
             {effort}
             {why && (w.steps || text) && (
               <PCard title="Why">
@@ -169,5 +180,50 @@ export default function PlannedModal({ w, onClose, onCopy, wx, onLiftChanged, on
         )}
       </div>
     </>
+  );
+}
+
+/**
+ * The exercises of a strength workout written as text, with "Log sets": that makes its Lift session (as the phone's
+ * Start workout does), so each set can be logged with what was really done.
+ */
+function LogSetsCard({ w, lines, start }: { w: CalendarWorkout; lines: { name: string; sets: number; reps: number; repsMax: number | null }[]; start?: (date: string) => Promise<void> | void }) {
+  const [busy, setBusy] = useState(false);
+  async function begin() {
+    if (!start) return;
+    setBusy(true);
+    try {
+      const r = await startPlanLiftAction(w.id);
+      if ('error' in r) toast.error(r.error);
+      else await start(w.date);
+    } catch {
+      toast.error('Could not start logging');
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <PCard title="Sets">
+      <ul className="space-y-1 text-sm">
+        {lines.map((l, i) => (
+          <li key={i} className="flex items-baseline justify-between gap-3">
+            <span className="truncate text-[var(--viz-ink)]">{l.name}</span>
+            <span className="shrink-0 tabular-nums text-[var(--viz-ink-2)]">
+              {l.sets} × {l.repsMax ? `${l.reps}–${l.repsMax}` : l.reps}
+            </span>
+          </li>
+        ))}
+      </ul>
+      {start && (
+        <button
+          type="button"
+          onClick={() => void begin()}
+          disabled={busy}
+          className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
+        >
+          {busy ? <Loader2 aria-hidden className="h-4 w-4 animate-spin" /> : <ListChecks aria-hidden className="h-4 w-4" />} Log sets
+        </button>
+      )}
+    </PCard>
   );
 }

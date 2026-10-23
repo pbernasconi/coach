@@ -3,6 +3,7 @@ import { Check, History, RotateCcw, Timer, Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { RichExercise, RichSet } from '@/lib/lift/session';
 import ExerciseThumb from './ExerciseThumb';
+import LogSetForm, { type LogSet } from './LogSetForm';
 import MiniTrend from '@/components/charts/MiniTrend';
 import { deltaText, exerciseChips, lastTimeDelta, setTile } from '@/lib/lift-dashboard/text.mjs';
 import { loadModeNote, loadText, muscleLabel, num, restText } from './format';
@@ -10,7 +11,8 @@ import { loadModeNote, loadText, muscleLabel, num, restText } from './format';
 const shortDay = (d: string) =>
   new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
 
-type Unlog = { onUnlog?: (setId: string) => void; unlogging?: string | null };
+/** `onLog`: a planned set gets a quick log (reps, weight), for a session done without the phone. */
+type Unlog = { onUnlog?: (setId: string) => void; unlogging?: string | null; onLog?: LogSet };
 
 /** The check on a logged set; with `onUnlog` it is a button that un-logs the set (the icon turns to undo on hover). */
 function LoggedMark({ s, onUnlog, unlogging }: { s: RichSet } & Unlog) {
@@ -30,7 +32,7 @@ function LoggedMark({ s, onUnlog, unlogging }: { s: RichSet } & Unlog) {
   );
 }
 
-function SetTile({ s, loadMode, unit, onUnlog, unlogging }: { s: RichSet; loadMode: string | null; unit: string } & Unlog) {
+function SetTile({ s, loadMode, unit, onUnlog, unlogging, onLog }: { s: RichSet; loadMode: string | null; unit: string } & Unlog) {
   const { target, logged, beatTarget, missedReps } = setTile(s, loadMode, unit);
   const done = s.status === 'done';
   const skipped = s.status === 'skipped';
@@ -70,6 +72,7 @@ function SetTile({ s, loadMode, unit, onUnlog, unlogging }: { s: RichSet; loadMo
       ) : (
         <span className={cn('truncate text-sm font-semibold', skipped ? 'text-[var(--viz-muted)] line-through' : 'text-[var(--viz-ink-2)]')}>{target}</span>
       )}
+      {onLog && s.status === 'planned' && <LogSetForm s={s} loadMode={loadMode} unit={unit} onLog={onLog} />}
       {s.note && <span className="truncate text-[11px] text-[var(--viz-muted)]" title={s.note}>{s.note}</span>}
     </li>
   );
@@ -79,7 +82,7 @@ function SetTile({ s, loadMode, unit, onUnlog, unlogging }: { s: RichSet; loadMo
  * One exercise of a Lift session: the catalog picture (the animation on hover), the muscles, the cue, one tile per
  * set with its target and what was logged, and what came before (last session, best estimated 1RM, trend).
  */
-export default function ExerciseCard({ e, unit, index, onUnlog, unlogging }: { e: RichExercise; unit: string; index: number } & Unlog) {
+export default function ExerciseCard({ e, unit, index, onUnlog, unlogging, onLog }: { e: RichExercise; unit: string; index: number } & Unlog) {
   const h = e.history;
   const delta = lastTimeDelta(e);
   const working = e.sets.filter((s) => s.kind !== 'warmUp');
@@ -128,7 +131,7 @@ export default function ExerciseCard({ e, unit, index, onUnlog, unlogging }: { e
 
           <ol className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
             {e.sets.map((s) => (
-              <SetTile key={s.id} s={s} loadMode={e.loadMode} unit={unit} onUnlog={onUnlog} unlogging={unlogging} />
+              <SetTile key={s.id} s={s} loadMode={e.loadMode} unit={unit} onUnlog={onUnlog} unlogging={unlogging} onLog={onLog} />
             ))}
           </ol>
 

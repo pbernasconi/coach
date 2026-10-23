@@ -73,7 +73,7 @@ async function planRow(userId: string, weekStart: string) {
 async function workoutRows(planId: string) {
   return (await sql`
     SELECT id, scheduled_date, start_time, end_time, title, activity_type, workout_type, intensity, duration, tss,
-           why, description, status, skip_reason, adapted_from, sort_order
+           why, description, status, skip_reason, adapted_from, sort_order, lift_session_id
     FROM training_plan_activities WHERE plan_id = ${planId}
     ORDER BY scheduled_date, sort_order, start_time NULLS LAST`) as Row[];
 }
@@ -136,8 +136,10 @@ export async function loadWeek(userId: string, weekStart: string, today: string)
     activitiesBetween(userId, weekStart, weekEnd),
     liftsBetween(weekStart, weekEnd),
   ]);
-  const base = plan ? (await workoutRows(String(plan.id))).map(toWorkout) : [];
-  const matched = matchWeek(base, activities, lifts, today);
+  const rows = plan ? await workoutRows(String(plan.id)) : [];
+  const base = rows.map(toWorkout);
+  const linked = new Map(rows.map((r) => [String(r.id), r.lift_session_id ? String(r.lift_session_id) : null]));
+  const matched = matchWeek(base.map((w) => ({ ...w, liftSessionId: linked.get(w.id) })), activities, lifts, today);
   const workouts: Workout[] = base.map((w) => {
     const m = matched.get(w.id) as { status: Workout['state']; match: Workout['match'] };
     return { ...w, state: m.status, match: m.match };

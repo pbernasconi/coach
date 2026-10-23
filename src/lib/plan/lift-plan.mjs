@@ -19,11 +19,15 @@ export const LIFT_MARKER = '— Lift session (log each set in Lift) —';
 export function planEntries(rows, ledger, linkedElsewhere = new Set()) {
   const entries = [];
   const keep = new Set();
+  const mine = new Set(ledger);
   for (const r of rows) {
     const wanted = r.status !== 'skipped' && Boolean(r.liftTemplate);
     if (wanted) {
       entries.push({ key: r.id, day: r.day, template: r.liftTemplate, sessionId: r.liftSessionId ?? null });
       if (r.liftSessionId) keep.add(r.liftSessionId);
+    } else if (r.liftSessionId && r.status !== 'skipped' && !mine.has(r.liftSessionId)) {
+      // A session started from the workout's text (the phone's Start workout, the web's Log sets): not this script's.
+      keep.add(r.liftSessionId);
     } else if (r.liftSessionId) {
       entries.push({ key: r.id, day: r.day, sessionId: r.liftSessionId, remove: true });
     }

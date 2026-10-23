@@ -130,7 +130,7 @@ export function sameRouteRows(v, c) {
 export function plannedTexts(p) {
   return {
     plannedText: [p.duration ? `${p.duration} min planned` : null, p.tss ? `${Math.round(p.tss)} TSS planned` : null].filter(Boolean).join(' · '),
-    ratioText: p.compliance.ratio != null ? `${Math.round(p.compliance.ratio * 100)}% of the planned ${p.compliance.basis === 'tss' ? 'TSS' : 'time'}` : null,
+    ratioText: p.compliance.ratio != null ? `${Math.round(p.compliance.ratio * 100)}% of the planned ${p.compliance.basis === 'tss' ? 'TSS' : p.compliance.basis === 'sets' ? 'sets' : 'time'}` : null,
   };
 }
 
