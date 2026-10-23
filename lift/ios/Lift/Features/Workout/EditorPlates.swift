@@ -1,5 +1,6 @@
 import Foundation
 import LiftCore
+import LiftStore
 
 /// The plates behind a set's weight, for the drawing in the set editor: a barbell loaded in total (the bar plus both
 /// sides) or a lift written per side (a plate-loaded machine). Other lifts have none.
