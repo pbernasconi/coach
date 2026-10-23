@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-import { Check, Library, X } from 'lucide-react';
+import { Check, ChevronDown, Library, X } from 'lucide-react';
 import { useHotkeys } from '@/components/hotkeys/HotkeysProvider';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -65,6 +65,7 @@ export default function MonthCalendar({ anchor, openAt, range, bounds, weather, 
   const [createOn, setCreateOn] = useState<string | null>(null);
   const [clip, setClip] = useState<Clip | null>(null);
   const [libraryOpen, setLibraryOpen] = useState(false);
+  const [monthMenu, setMonthMenu] = useState(false);
   const rowCache = useRef(new Map());
 
   const today = data.today;
@@ -301,7 +302,26 @@ export default function MonthCalendar({ anchor, openAt, range, bounds, weather, 
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <h1 className="min-w-[10.5rem] text-2xl font-semibold tracking-tight text-[var(--viz-ink)]" aria-live="polite">{monthTitle(month)}</h1>
+        <div className="relative">
+          <button type="button" onClick={() => setMonthMenu((o) => !o)} aria-expanded={monthMenu} className="-ml-1 inline-flex items-center gap-1 rounded-md px-1 hover:bg-accent">
+            <h1 className="text-2xl font-semibold tracking-tight text-[var(--viz-ink)]" aria-live="polite">{monthTitle(month)}</h1>
+            <ChevronDown aria-hidden className="h-4 w-4 text-[var(--viz-muted)]" />
+          </button>
+          {monthMenu && (
+            <div className="absolute left-0 top-full z-40 mt-1 grid w-72 grid-cols-3 gap-1 rounded-lg border bg-background p-2 text-sm shadow-xl">
+              {Array.from({ length: 12 }, (_, i) => addMonths(month, i - 5)).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => { setMonthMenu(false); goTo(firstWeekOfMonth(m)); }}
+                  className={cn('rounded-md px-2 py-1.5 text-left hover:bg-accent', m === month && 'bg-accent font-semibold')}
+                >
+                  {new Date(`${m}-01T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', year: '2-digit', timeZone: 'UTC' })}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         <span className="hidden items-center gap-3 text-xs text-[var(--viz-muted)] xl:flex">
           {(
             [

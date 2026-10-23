@@ -8,7 +8,7 @@ import type { WeekSummary } from '@/lib/plan/month';
 import { hm, shortDate } from './calendarShared';
 
 /** The week column: fitness, fatigue and form at the end of the week, then done / planned totals and time per sport. */
-export function WeekColumn({ s, monday, today }: { s: WeekSummary | null; monday: string; today: string }) {
+export function WeekColumn({ s, monday, today, pace = null }: { s: WeekSummary | null; monday: string; today: string; pace?: { min: number | null; tss: number | null } | null }) {
   const mode = weekColumnMode(s, today);
   if (!s || mode === 'empty') {
     return (
@@ -49,11 +49,12 @@ export function WeekColumn({ s, monday, today }: { s: WeekSummary | null; monday
       {f && <LoadGrid f={f} title={`On ${shortDate(f.date)}`} />}
       <dl className="grid grid-cols-[auto_1fr] gap-x-2 tabular-nums" title="Done / planned">
         {row('Time', hm(s.done.min), s.planned.min ? hm(s.planned.min) : null)}
-        {s.planned.min > 0 && <WeekBar done={s.done.min} planned={s.planned.min} label="Time" />}
+        {s.planned.min > 0 && <WeekBar done={s.done.min} planned={s.planned.min} label="Time" pace={pace?.min} />}
         {row('TSS', String(s.done.tss), s.planned.tss ? String(s.planned.tss) : null)}
-        {s.planned.tss > 0 && <WeekBar done={s.done.tss} planned={s.planned.tss} label="TSS" />}
+        {s.planned.tss > 0 && <WeekBar done={s.done.tss} planned={s.planned.tss} label="TSS" pace={pace?.tss} />}
         {s.done.km > 0 && row('Dist', `${s.done.km} km`)}
         {s.planned.count > 0 && row('Done', `${s.planned.done}/${s.planned.count}`)}
+        {s.planned.missed > 0 && (<><dt className="text-[var(--plan-missed)]">Not done</dt><dd className="text-right text-[var(--plan-missed)]">{s.planned.missed}</dd></>)}
       </dl>
       {(sports.length > 0 || s.done.liftSessions > 0) && (
         <ul className="mt-auto flex flex-wrap gap-x-2 gap-y-0.5 tabular-nums text-[var(--viz-ink)]">
@@ -77,7 +78,7 @@ export function WeekColumn({ s, monday, today }: { s: WeekSummary | null; monday
 }
 
 /** A thin done / planned bar under a week total (TrainingPeaks' summary column). Full at 100 %; more is still full. */
-export function WeekBar({ done, planned, label, className = 'col-span-2 mb-0.5 mt-px' }: { done: number; planned: number; label: string; className?: string }) {
+export function WeekBar({ done, planned, label, pace = null, className = 'col-span-2 mb-0.5 mt-px' }: { done: number; planned: number; label: string; pace?: number | null; className?: string }) {
   const pct = Math.round((done / planned) * 100);
   return (
     <div
@@ -86,9 +87,12 @@ export function WeekBar({ done, planned, label, className = 'col-span-2 mb-0.5 m
       aria-valuenow={pct}
       aria-valuemin={0}
       aria-valuemax={100}
-      className={`h-1 overflow-hidden rounded-full bg-[var(--viz-grid)] ${className}`}
+      className={`relative h-1 rounded-full bg-[var(--viz-grid)] ${className}`}
     >
       <div className="h-full rounded-full bg-[var(--viz-ink-2)]" style={{ width: `${Math.min(100, pct)}%` }} />
+      {pace != null && pace > 0 && pace < 1 && (
+        <span title="Where the plan is by today" className="absolute -top-0.5 h-2 w-0.5 rounded-full bg-[#fc4c02]" style={{ left: `calc(${pace * 100}% - 1px)` }} />
+      )}
     </div>
   );
 }

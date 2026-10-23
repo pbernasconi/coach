@@ -38,14 +38,28 @@ export const GridWeek = memo(function GridWeek({
           over={over === day.date}
           clip={clip}
           h={h}
+          rest={(week.summary?.planned.count ?? 0) > 0}
         />
       ))}
-      <WeekColumn s={week.summary} monday={week.monday} today={today} />
+      <WeekColumn s={week.summary} monday={week.monday} today={today} pace={paceOf(week, today)} />
     </div>
   );
 });
 
-function DayCell({ day, today, wx, over, clip, h }: { day: Day; today: string; wx?: DayWeather; over: boolean; clip: string | null; h: Handlers }) {
+/** The share of the week's planned time and TSS due by the end of today (the pace mark on the week bars). */
+function paceOf(week: WeekRow, today: string) {
+  if (week.monday > today || addDays(week.monday, 6) < today) return null;
+  let min = 0, tss = 0, dueMin = 0, dueTss = 0;
+  for (const d of week.days) for (const i of d.items) {
+    if (i.kind !== 'planned') continue;
+    min += i.w.duration ?? 0;
+    tss += i.w.tss ?? 0;
+    if (d.date <= today) { dueMin += i.w.duration ?? 0; dueTss += i.w.tss ?? 0; }
+  }
+  return { min: min ? dueMin / min : null, tss: tss ? dueTss / tss : null };
+}
+
+function DayCell({ day, today, wx, over, clip, h, rest }: { day: Day; today: string; wx?: DayWeather; over: boolean; clip: string | null; h: Handlers; rest: boolean }) {
   const d = day.date;
   const { shown, more } = visibleChips(day.items) as { shown: Item[]; more: number };
   return (
@@ -64,6 +78,7 @@ function DayCell({ day, today, wx, over, clip, h }: { day: Day; today: string; w
       className={cn(dayCellClass(d, today), over && 'bg-primary/10 ring-2 ring-inset ring-primary/70')}
     >
       <CalendarDayHead date={d} today={today} weather={wx} health menu={<DayMenu d={d} day={day} clip={clip} h={h} />} />
+      {rest && day.items.length === 0 && <span className="px-1 text-[11px] text-[var(--viz-muted)]">Rest</span>}
       {shown.map((item) => <Chip key={item.key} item={item} h={h} />)}
       {more > 0 && (
         <button

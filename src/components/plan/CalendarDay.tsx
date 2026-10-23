@@ -80,11 +80,12 @@ export function AgendaDayLabel({ date, today }: { date: string; today: string })
   );
 }
 
-/** The classes of a month-grid day cell (past days greyed, today ringed), shared by /plan and the plan review. */
+/** The classes of a month-grid day cell (past days greyed, today marked by an orange top line), shared by /plan and the plan review. */
 export function dayCellClass(date: string, today: string) {
   return cn(
     'plan-day group/day relative flex min-h-0 min-w-0 flex-col gap-0.5 overflow-hidden border-r px-1 pb-1 pt-0.5 transition-colors',
     date < today && 'bg-muted/40',
-    date === today && 'bg-primary/[0.04] ring-2 ring-inset ring-primary'
+    // Today: a thin line in the logo orange across the top, no ring or fill (Paolo, 2026-10-23).
+    date === today && 'shadow-[inset_0_2px_0_#fc4c02]'
   );
 }
