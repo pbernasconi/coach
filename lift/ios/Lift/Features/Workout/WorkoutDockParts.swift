@@ -40,7 +40,8 @@ struct WorkoutDockPanel: View {
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: Radius.xl, style: .continuous)
         shape
-            .fill(fill)
+            .fill(base)
+            .overlay { if isResting { shape.fill(theme.palette.accentSoft) } }  // soft accent is see-through
             .overlay {
                 shape.strokeBorder(
                     isReady ? theme.palette.accent : theme.palette.separator,
@@ -50,9 +51,9 @@ struct WorkoutDockPanel: View {
             .shadow(color: theme.palette.scrim, radius: Space.lg, y: Space.xs)
     }
 
-    private var fill: Color {
-        if isResting { return theme.palette.accentSoft }
-        return colorScheme == .dark ? theme.palette.surfaceRaised : theme.palette.surface
+    /// Opaque, so the set rows never show through.
+    private var base: Color {
+        colorScheme == .dark ? theme.palette.surfaceRaised : theme.palette.surface
     }
 }
 
