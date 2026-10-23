@@ -133,7 +133,7 @@ struct WorkoutDockRest: View {
                         .contentTransition(.numericText(value: Double(rest.elapsed)))
                         .koboAnimation(.state, value: rest.elapsed)
                     Text(verbatim: "/ \(rest.totalText)")
-                        .font(theme.font(.title3).weight(.semibold).monospacedDigit())
+                        .font(theme.font(.title2).weight(.semibold).monospacedDigit())
                         .foregroundStyle(theme.palette.textSecondary)
                 }
                 .accessibilityElement(children: .ignore)
