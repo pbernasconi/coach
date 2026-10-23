@@ -121,32 +121,35 @@ export function mergeByCatalog(biomarkers, catalog) {
 }
 
 /**
- * One row per marker when the same marker comes in under a longer name ("Omega-3 Total / OmegaCheck" from the
- * OmegaCheck panel, "Omega-3 Total" from Function without a range). The row with a reference range leads; the
- * other's draws join its history.
- * @template {{ biomarker: string, refLow: number | null, refHigh: number | null, latest: { collectedOn: string, value?: number | null, valueText?: string | null },
- *   history: { collectedOn: string }[] }} B
+ * One row per marker when the same result comes in twice: once with a reference range ("Omega-3 Total / OmegaCheck"
+ * from the OmegaCheck panel) and once without one ("Omega-3 Total", Function's copy). A row without a range folds
+ * into a ranged row only when the name before " / " matches and the unit, date and reading are the same. Rows that
+ * both have ranges stay apart ("BUN" and "BUN / Creatinine Ratio" are two markers even on equal readings).
+ * @template {{ biomarker: string, unit: string | null, refLow: number | null, refHigh: number | null,
+ *   latest: { collectedOn: string, value?: number | null, valueText?: string | null }, history: { collectedOn: string }[] }} B
  * @param {B[]} biomarkers
  * @returns {B[]}
  */
 export function mergeAliases(biomarkers) {
-  // Same name before " / " and the same latest reading: one result under two names. "BUN" and "BUN / Creatinine
-  // Ratio" share the start but not the reading, so they stay apart.
-  const key = (b) => `${fold(String(b.biomarker).split(' / ')[0])}|${b.latest.collectedOn}|${b.latest.value ?? b.latest.valueText ?? ''}`;
-  const groups = new Map();
-  for (const b of biomarkers) groups.set(key(b), [...(groups.get(key(b)) ?? []), b]);
+  const key = (b) =>
+    `${fold(String(b.biomarker).split(' / ')[0])}|${fold(b.unit ?? '')}|${b.latest.collectedOn}|${b.latest.value ?? b.latest.valueText ?? ''}`;
+  const ranged = (b) => b.refLow !== null || b.refHigh !== null;
+  const leadOf = new Map();
+  for (const b of biomarkers) if (ranged(b) && !leadOf.has(key(b))) leadOf.set(key(b), b);
+  const folded = new Map();
+  for (const b of biomarkers) {
+    const lead = leadOf.get(key(b));
+    if (!ranged(b) && lead) folded.set(lead, [...(folded.get(lead) ?? []), b]);
+  }
   const out = [];
   for (const b of biomarkers) {
-    const g = groups.get(key(b));
-    if (g.length === 1) { out.push(b); continue; }
-    if (g[0] !== b) continue; // the group goes out once
-    const ranged = (x) => x.refLow !== null || x.refHigh !== null;
-    const lead = g.find(ranged) ?? g.reduce((a, x) => (x.latest.collectedOn > a.latest.collectedOn ? x : a));
-    const byDay = new Map(lead.history.map((r) => [r.collectedOn, r]));
-    for (const x of g) for (const r of x.history) if (!byDay.has(r.collectedOn)) byDay.set(r.collectedOn, r);
+    if (!ranged(b) && leadOf.get(key(b))) continue; // shown in its ranged row
+    const extra = folded.get(b);
+    if (!extra) { out.push(b); continue; }
+    const byDay = new Map(b.history.map((r) => [r.collectedOn, r]));
+    for (const x of extra) for (const r of x.history) if (!byDay.has(r.collectedOn)) byDay.set(r.collectedOn, r);
     const history = [...byDay.values()].sort((a, c) => a.collectedOn.localeCompare(c.collectedOn));
-    // The lead's latest status stands when its draw is the newest; a newer draw from the other name leads the history.
-    out.push({ ...lead, history, latest: history[history.length - 1] });
+    out.push({ ...b, history, latest: history[history.length - 1] });
   }
   return out;
 }

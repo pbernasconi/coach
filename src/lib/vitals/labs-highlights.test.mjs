@@ -79,15 +79,15 @@ test('merge by catalog: a row under the catalog name joins the draws under its r
 
 test('merge aliases: one Omega-3 row, the one with a range', () => {
   const r = (collectedOn, status) => ({ collectedOn, value: 4.5, valueText: null, status });
-  const b = (biomarker, refLow, history) => ({ biomarker, category: 'Nutrients', refLow, refHigh: null, latest: history.at(-1), history });
+  const b = (biomarker, refLow, history, unit = '% by wt') => ({ biomarker, category: 'Nutrients', unit, refLow, refHigh: null, latest: history.at(-1), history });
   const merged = mergeAliases([
     b('Omega-3 Total', null, [r('2025-08-01', 'unknown')]),
     b('Iron', 60, [r('2025-08-01', 'in_range')]),
-    b('Blood Urea Nitrogen (BUN)', 7, [{ ...r('2025-08-01', 'in_range'), value: 15 }]),
-    b('Blood Urea Nitrogen (BUN) / Creatinine Ratio', 6, [{ ...r('2025-08-01', 'out_of_range'), value: 28 }]),
+    b('Blood Urea Nitrogen (BUN)', 7, [{ ...r('2025-08-01', 'in_range'), value: 15 }], null),
+    b('Blood Urea Nitrogen (BUN) / Creatinine Ratio', 6, [{ ...r('2025-08-01', 'out_of_range'), value: 15 }], null), // equal reading, still two markers
     b('Omega-3 Total / OmegaCheck', 5.4, [r('2025-08-01', 'out_of_range')]),
   ]);
-  assert.deepEqual(merged.map((m) => m.biomarker), ['Omega-3 Total / OmegaCheck', 'Iron', 'Blood Urea Nitrogen (BUN)', 'Blood Urea Nitrogen (BUN) / Creatinine Ratio']);
-  assert.equal(merged[0].latest.status, 'out_of_range');
-  assert.equal(merged[0].history.length, 1);
+  assert.deepEqual(merged.map((m) => m.biomarker), ['Iron', 'Blood Urea Nitrogen (BUN)', 'Blood Urea Nitrogen (BUN) / Creatinine Ratio', 'Omega-3 Total / OmegaCheck']);
+  assert.equal(merged[3].latest.status, 'out_of_range');
+  assert.equal(merged[3].history.length, 1);
 });
