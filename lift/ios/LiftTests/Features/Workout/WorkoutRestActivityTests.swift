@@ -115,13 +115,13 @@ import Testing
         #expect(vm.state.ready == nextSetReady)
     }
 
-    @Test func restSkipTappedTurnsTheBarToTheNextSet() async {
+    @Test func restSkipTappedTurnsTheDockToTheNextSetWithoutRestOver() async {
         let vm = await resting()
 
         vm.send(.restSkipTapped)
 
         #expect(vm.state.rest == nil)
-        #expect(vm.state.ready == nextSetReady)
+        #expect(vm.state.ready == nil)
         #expect(activity.calls == [restStart, .end])
     }
 

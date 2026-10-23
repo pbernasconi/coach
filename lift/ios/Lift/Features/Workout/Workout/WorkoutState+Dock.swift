@@ -84,6 +84,14 @@ extension WorkoutState {
         return set.id != startedExerciseSetID
     }
 
+    /// The dock shows Finish: every set is done, or the workout is paused.
+    var dockFinishes: Bool {
+        switch dock {
+        case .complete?, .paused?: true
+        default: false
+        }
+    }
+
     /// Sets still planned, for "Finish workout?".
     var plannedSetsLeft: Int {
         guard case .loaded(let workout) = workout else { return 0 }

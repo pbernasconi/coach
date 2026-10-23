@@ -144,7 +144,7 @@ final class WorkoutViewModel {
             defer { state.noteEditor = nil }
             return state.noteEditor.flatMap(saveNote)
         case .restExtendTapped: extendRest()
-        case .restSkipTapped: finishRest(after: state.rest?.setID)
+        case .restSkipTapped: skipRest()
         case .restReadyDismissed: state.ready = nil
         case .howToTapped(let exerciseID, let note):
             router.open(note.map { .exerciseInWorkout(exerciseID, note: $0) } ?? .exercise(exerciseID))
@@ -294,7 +294,15 @@ extension WorkoutViewModel {
         state.rest = rest.extended(by: next.totalSeconds - rest.total)
     }
 
-    /// Zero, or Skip here or on the Lock Screen: the countdown ends everywhere and the bar turns to the next set.
+    /// Skip here: the rest ends everywhere and the dock goes straight to the next set (or "Next exercise"), with no
+    /// "Rest over" strip, since the rest did not run out.
+    private func skipRest() {
+        state.rest = nil
+        state.ready = nil
+        restActivity.end()
+    }
+
+    /// Zero, or Skip on the Lock Screen: the countdown ends everywhere and the bar turns to the next set.
     private func finishRest(after setID: UUID?) {
         state.readyNext(after: setID, at: now())
         restActivity.end()
