@@ -1,6 +1,7 @@
 import Foundation
 import LiftCore
 import LiftStore
+import LiftSync
 import Observation
 
 @Observable
@@ -14,6 +15,14 @@ final class WorkoutSummaryViewModel {
     /// Saving finished workouts to Apple Health; the first summary asks.
     private let health: any WorkoutHealthRecording
     private let days: DayCalendar
+    private let feedbackSaver: WorkoutFeedbackSaver
+    private let now: @Sendable () -> Date
+    /// The check-in opens once, the first time a just-finished session loads.
+    @ObservationIgnored private var hasAskedCheckIn = false
+    /// This session's empty feedback, for the check-in.
+    @ObservationIgnored private var blankFeedback: WorkoutFeedback?
+    /// The save in flight, so a slower earlier answer never overwrites a newer one.
+    @ObservationIgnored private var saveAttempt = 0
     /// Where Apple Health stood when the summary opened, updated by the prompt's answers.
     @ObservationIgnored private var healthStatus = HealthStatus.notSaved
     /// Each library exercise's sets logged before this workout, read once.
@@ -27,6 +36,8 @@ final class WorkoutSummaryViewModel {
         history: any ExerciseHistoryRepository,
         health: any WorkoutHealthRecording,
         router: any Navigating,
+        data: any AppDataSource,
+        now: @escaping @Sendable () -> Date,
         calendar: Calendar
     ) {
         self.sessionID = sessionID
@@ -35,6 +46,8 @@ final class WorkoutSummaryViewModel {
         self.health = health
         self.router = router
         self.days = DayCalendar(calendar: calendar)
+        self.feedbackSaver = WorkoutFeedbackSaver(data: data)
+        self.now = now
     }
 
     /// Observes the session; started by the Screen's `.task` (SCR-4). The earlier history is read once, the first time
@@ -48,6 +61,7 @@ final class WorkoutSummaryViewModel {
                 continue
             }
             state.health = healthRow(detail.session)
+            askCheckIn(detail.session)
             let earlier = await earlierSets(before: detail)
             let unit = detail.session.unitsAtLog
             let summary = WorkoutSummarizer.summarize(detail.domain, earlier: earlier, unit: unit)
@@ -78,8 +92,71 @@ final class WorkoutSummaryViewModel {
             state.health = nil
             healthStatus = .off
             return Task { _ = await health.setEnabled(false) }
+        case .checkIn(let action):
+            return checkIn(action)
+        case .feedbackTapped:
+            guard let feedback = state.feedback ?? blankFeedback else { return nil }
+            state.checkIn = WorkoutCheckIn(feedback: feedback)
+        case .feedbackRetryTapped:
+            guard state.feedbackSave == .failed, let feedback = state.feedback else { return nil }
+            return save(feedback)
         }
         return nil
+    }
+
+    private func checkIn(_ action: WorkoutCheckInAction) -> Task<Void, Never>? {
+        guard var checkIn = state.checkIn else { return nil }
+        switch action {
+        case .effortChanged(let value):
+            guard (1...10).contains(value) else { return nil }
+            checkIn.feedback.rpe = value  // the dial sets, it never clears
+            checkIn.feedback.fromWatch = false
+        case .feelTapped(let value):
+            checkIn.feedback = checkIn.feedback.applying(.feel(value))
+        case .nextTapped:
+            checkIn.step = .feel
+        case .backTapped:
+            checkIn.step = .effort
+        case .skipTapped:
+            state.checkIn = nil
+            return nil
+        case .saveTapped:
+            state.checkIn = nil
+            guard checkIn.canSave, checkIn.feedback != state.feedback else { return nil }
+            return save(checkIn.feedback)
+        }
+        state.checkIn = checkIn
+        return nil
+    }
+
+    /// Shows what was logged at once, then saves it; the row says "Saved" or offers to try again.
+    private func save(_ feedback: WorkoutFeedback) -> Task<Void, Never> {
+        state.feedback = feedback
+        state.feedbackSave = .saving
+        saveAttempt += 1
+        let attempt = saveAttempt
+        let saver = feedbackSaver
+        return Task {
+            let saved = await saver.save(feedback)
+            guard attempt == saveAttempt else { return }
+            state.feedbackSave = saved == nil ? .failed : .saved
+        }
+    }
+
+    /// Opens the check-in once, when the session finished in the last few minutes (the finish brought you here).
+    private func askCheckIn(_ session: SessionRecord) {
+        let id = session.id.uuidString.lowercased()
+        let day = session.day
+        blankFeedback = .blank(
+            item: "lift:\(id)",
+            date: String(format: "%04d-%02d-%02d", day.year, day.month, day.day),
+            title: session.title
+        )
+        guard !hasAskedCheckIn, let finished = session.finishedAt, let blank = blankFeedback else { return }
+        let age = now().timeIntervalSince(finished)
+        guard age >= 0, age < WorkoutCheckInWindow.seconds else { return }
+        hasAskedCheckIn = true
+        state.checkIn = WorkoutCheckIn(feedback: blank)
     }
 
     /// "Saved to Apple Health" once the workout is there; the prompt on a finished workout while Health was never

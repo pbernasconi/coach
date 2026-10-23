@@ -1,5 +1,6 @@
 import Foundation
 import LiftCore
+import LiftSync
 
 /// Everything the workout summary renders. Exclusive states are enums (SCR-6).
 nonisolated struct WorkoutSummaryState: Equatable, Sendable {
@@ -7,6 +8,11 @@ nonisolated struct WorkoutSummaryState: Equatable, Sendable {
     var summary: Loadable<WorkoutSummaryOverview> = .loading
     /// The Apple Health row: the first-finish prompt, or "Saved"; nil shows nothing.
     var health: SummaryHealth?
+    /// The effort and feel sheet, shown right after the workout finishes; nil when closed.
+    var checkIn: WorkoutCheckIn?
+    /// What the check-in logged, for the "How it felt" row; nil before a save.
+    var feedback: WorkoutFeedback?
+    var feedbackSave = WorkoutFeedbackSaveState.idle
 }
 
 /// The summary's Apple Health row.

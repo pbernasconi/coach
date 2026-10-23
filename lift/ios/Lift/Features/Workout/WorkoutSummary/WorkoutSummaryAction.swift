@@ -8,4 +8,10 @@ nonisolated enum WorkoutSummaryAction: Equatable, Sendable {
     case healthAllowTapped
     /// The prompt's close button: saving to Apple Health stays off (Settings turns it on).
     case healthNotNowTapped
+    /// The effort and feel check-in sheet.
+    case checkIn(WorkoutCheckInAction)
+    /// The "How it felt" row: opens the check-in again.
+    case feedbackTapped
+    /// "Not saved · Try again" on the "How it felt" row.
+    case feedbackRetryTapped
 }
