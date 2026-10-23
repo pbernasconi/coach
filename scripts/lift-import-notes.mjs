@@ -10,8 +10,8 @@
  *
  * --file: a notes-import file (an array of sessions, each with exercises and sets; built outside the repo, it holds
  *   personal data and is never committed). Writes the custom exercises it needs, then sessions, session exercises and
- *   sets. Ids are UUID v5 of the file's session ids and positions, so a re-run updates rows in place. Each session's
- *   note starts with "Imported from Apple Notes (notes-import)" (lift_rows has no source column).
+ *   sets. Ids are UUID v5 of the file's session ids and positions, so a re-run updates rows in place. Notes keep only
+ *   what was written about the workout (src/lib/lift/clean-notes.mjs), not the source note or the original lines.
  * --set-muscles: a JSON array [{ "name": "Dead bug", "primary": ["core"], "secondary": [] }]; sets the muscles of the
  *   live library exercise with that name and keeps every other field.
  * Every row is compared with the stored copy (ignoring updatedAt): unchanged rows are skipped; new or changed rows are
@@ -25,6 +25,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import pg from 'pg';
 import { push } from '../src/lib/lift-sync/sync.mjs';
+import { cleanSessionNote } from '../src/lib/lift/clean-notes.mjs';
 import { MAX_CHANGES_PER_PUSH } from '../src/lib/lift-sync/contract.mjs';
 import { buildModel, displayUnit, exerciseDetail, exerciseList, muscleSets, sessionSummaries, topLifts, weeklyVolume } from '../src/lib/lift-dashboard/stats.mjs';
 
@@ -159,10 +160,6 @@ function buildChanges(sessions) {
   for (const session of sessions) {
     const sessionId = uuidV5(`session:${session.id}`);
     const createdAt = session.started_at ?? `${session.date}T12:00:00.000Z`;
-    const src = session.source_notes[0];
-    const noteLines = [`Imported from Apple Notes (notes-import): “${src.title}”, note created ${src.created}, modified ${src.modified}.`];
-    if (session.date_confidence !== 'high') noteLines.push(`Date confidence ${session.date_confidence}: ${session.date_evidence}`);
-    if (session.notes) noteLines.push(session.notes);
     changes.session.push(change('session', {
       id: sessionId,
       day: session.date,
@@ -171,7 +168,8 @@ function buildChanges(sessions) {
       startedAt: session.started_at,
       finishedAt: session.finished_at,
       warmUpNote: null,
-      note: noteLines.join('\n'),
+      // Only what was written about the workout: the source and date evidence stay in the import file.
+      note: cleanSessionNote(session.notes),
       unitsAtLog: 'lb',
       healthWorkoutID: null,
       createdAt,
@@ -190,7 +188,7 @@ function buildChanges(sessions) {
       const tally = new Map();
       for (const m of modes) tally.set(m, (tally.get(m) ?? 0) + 1);
       const seMode = [...tally.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? libraryMode(ex.lift_load_mode);
-      const seNote = [`Note: “${ex.original_name}”`, ex.exercise_note].filter(Boolean).join('; ');
+      const seNote = ex.exercise_note || null;
       changes.sessionExercise.push(change('sessionExercise', {
         id: seId,
         sessionID: sessionId,
