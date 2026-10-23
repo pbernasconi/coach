@@ -594,7 +594,7 @@ parts (a POST); the detail route starts the same fetch itself (see `header.fetch
       "startLocal": "2026-10-17T07:15:54", "day": "2026-10-17", "startText": "Sat, Oct 17 · 7:15 AM",
       "distance": 12010.4, "distanceText": "12.01 km", "movingSeconds": 4038, "durationText": "1:07:18",
       "speed": 2.974, "paceText": "5:36 /km", "speedText": null, "tss": 84, "tssText": "84 TSS",
-      "indoor": false, "commute": false, "plannedTitle": null,
+      "indoor": false, "commute": false, "outdoor": true, "plannedTitle": null,
       "subtitle": "12.01 km · 1:07:18 · 5:36 /km · 84 TSS"
     }
   ],
@@ -608,6 +608,8 @@ parts (a POST); the detail route starts the same fetch itself (see `header.fetch
 - `paceText` for foot sports (run, hike, walk), `speedText` for rides, both `null` otherwise. `distanceText` is
   `null` at 0 m (strength). `tss`/`tssText`: `null` without TSS. `subtitle` joins the texts that are present.
 - `indoor`: Strava's `trainer` flag (Zwift rides often have it `false`). `commute`: Strava's flag.
+- `outdoor`: the activity page will lead with its route on a map (not `trainer`, not a `Virtual*` type, some
+  distance), so the app can open it straight into that layout before the body arrives.
 - `plannedTitle`: the plan workout this activity completed (the calendar's matching, `loadRange`), without its emoji;
   `null` when none. `plannedOk: false`: that lookup failed, so every `plannedTitle` is `null`; the list still shows.
 - Open a row with the detail endpoint below (`activityId`).
