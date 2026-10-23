@@ -33,7 +33,10 @@ export function cleanReview(input) {
  */
 export function summaryBlocks(md) {
   if (!md) return [];
-  const plain = (s) => s.replace(/\*\*/g, '').replace(/`/g, '').trim();
+  const plain = (s) => {
+    const t = s.replace(/\*\*/g, '').replace(/`/g, '').trim();
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  };
   const blocks = [];
   for (const raw of md.split('\n')) {
     const line = raw.trim();
