@@ -50,9 +50,19 @@ nonisolated struct WorkoutActivitySet: Codable, Hashable, Sendable {
     var unit: String
     /// "5" or "8–10"; nil when the set has no reps.
     var reps: String?
+    /// The exercise's photo as a small JPEG (`WorkoutActivityStills`); nil without one.
+    var still: Data?
 }
 
 extension WorkoutActivitySet {
+    /// "100 kg × 5 reps" for the Lock Screen's bottom bar: the reps spelled out after a weight.
+    var loadLine: String {
+        switch (weight, reps) {
+        case (let weight?, let reps?): String(localized: "\(weight) \(unit) × \(reps) reps")
+        default: loadText
+        }
+    }
+
     /// "100 kg × 5", "12 reps" without a weight, "100 kg" without reps; the set's title with neither.
     var loadText: String {
         switch (weight, reps) {
@@ -74,6 +84,12 @@ nonisolated enum WorkoutActivityDot: String, Codable, Hashable, Sendable {
 }
 
 extension RestSnapshot {
+    /// "2:00": the whole rest, beside the time rested.
+    var limitText: String {
+        let seconds = max(0, totalSeconds)
+        return String(format: "%d:%02d", seconds / 60, seconds % 60)
+    }
+
     /// When the rest began, for the progress bar.
     var startsAt: Date { endsAt.addingTimeInterval(-TimeInterval(max(0, totalSeconds))) }
 

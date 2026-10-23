@@ -1,10 +1,12 @@
 import SwiftUI
 
-/// The Lock Screen banner for the whole workout, at the full height a Live Activity gets: the workout and where it
-/// stands, the exercise and set to do now with its dots, the weight or the rest countdown, a bar, then the buttons.
-/// While resting it counts down; once the rest is over (the content is stale) it says so and counts up, with the next
-/// set's load ready to log.
+/// The Lock Screen banner for the whole workout. The top says where the workout stands and shows the exercise with
+/// its photo and set dots; a bar runs edge to edge; the bottom bar holds what to do now: the load with a check to log
+/// it, or, while resting, the time rested against the rest's length with Skip. A rest gets an orange "Resting" strip
+/// and a tinted top, so it never reads as a set. Once the rest is over (the content is stale) the set to log is back,
+/// with "Rest over +0:12" in the header.
 struct WorkoutLockScreenView: View {
+    @Environment(\.colorScheme) private var colorScheme
     let attributes: WorkoutActivityAttributes
     let state: WorkoutActivityAttributes.ContentState
     /// The rest's end has passed (`ActivityViewContext.isStale`).
@@ -13,30 +15,61 @@ struct WorkoutLockScreenView: View {
     private var isResting: Bool { state.isResting(isStale: isStale) }
 
     var body: some View {
+        VStack(spacing: 0) {
+            if isResting {
+                RestBand(state: state)
+            }
+            top
+                .padding(.horizontal, 16)
+                .padding(.top, 13)
+                .padding(.bottom, 12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(isResting ? WidgetColors.restTint : .clear)
+            WorkoutBar(state: state, isResting: isResting)
+            bottomBar
+                .padding(.leading, 16)
+                .padding(.trailing, 12)
+                .padding(.vertical, 10)
+                .background(WidgetColors.bottomBar(for: colorScheme))
+        }
+    }
+
+    @ViewBuilder private var top: some View {
         VStack(alignment: .leading, spacing: 9) {
-            WorkoutHeader(attributes: attributes, state: state)
+            if !isResting {
+                WorkoutHeader(attributes: attributes, state: state, isStale: isStale)
+            }
             if let set = state.current {
-                HStack(alignment: .center, spacing: 12) {
-                    CurrentSetSummary(set: set, dots: state.dots, showsLoad: isResting)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    CurrentSetTrailing(set: set, rest: state.rest, isResting: isResting)
+                HStack(spacing: 12) {
+                    ExerciseStill(set: set, size: 48)
+                    CurrentSetSummary(set: set, dots: state.dots, isResting: isResting)
                 }
-                WorkoutBar(state: state, isResting: isResting)
-                WorkoutButtons(set: set, isResting: isResting)
             } else {
                 WorkoutCompleteRow(state: state)
-                WorkoutBar(state: state, isResting: false)
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+    }
+
+    @ViewBuilder private var bottomBar: some View {
+        if isResting, let rest = state.rest {
+            RestBar(rest: rest, timerSize: 40)
+        } else if let set = state.current {
+            LiftBar(set: set)
+        } else {
+            Text("Finish in Coach")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
     }
 }
 
-/// The badge, "UPPER A" and "Exercise 2 of 5 · 7/18 sets".
+/// The badge, "UPPER A", and "Exercise 2 of 5 · 7/18 sets", or "Rest over +0:12" once the rest has run out.
 struct WorkoutHeader: View {
+    @Environment(\.colorScheme) private var colorScheme
     let attributes: WorkoutActivityAttributes
     let state: WorkoutActivityAttributes.ContentState
+    let isStale: Bool
 
     var body: some View {
         HStack(spacing: 7) {
@@ -46,22 +79,32 @@ struct WorkoutHeader: View {
                 .textCase(.uppercase)
                 .lineLimit(1)
             Spacer(minLength: 8)
-            Text(
-                "Exercise \(state.exerciseNumber) of \(state.exerciseCount) · \(state.loggedSets)/\(state.totalSets) sets"
-            )
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            .monospacedDigit()
-            .lineLimit(1)
+            if isStale, let rest = state.rest {
+                HStack(spacing: 4) {
+                    Text("Rest over")
+                    RestOvertime(rest: rest)
+                }
+                .font(.caption.weight(.bold))
+                .textCase(.uppercase)
+                .foregroundStyle(WidgetColors.accentText(for: colorScheme))
+            } else {
+                Text(
+                    "Exercise \(state.exerciseNumber) of \(state.exerciseCount) · \(state.loggedSets)/\(state.totalSets) sets"
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
+                .lineLimit(1)
+            }
         }
     }
 }
 
-/// "Back squat", then the set dots and "Set 2" (with "· 100 kg × 5" while the big number is the rest).
+/// "Back squat", then the set dots and "Set 2", or "Next: Set 2 · 100 kg × 5" while resting.
 struct CurrentSetSummary: View {
     let set: WorkoutActivitySet
     let dots: [WorkoutActivityDot]
-    let showsLoad: Bool
+    let isResting: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -71,11 +114,11 @@ struct CurrentSetSummary: View {
                 .minimumScaleFactor(0.75)
             HStack(spacing: 8) {
                 SetDots(dots: dots)
-                HStack(spacing: 4) {
-                    Text(verbatim: set.title)
-                    if showsLoad {
-                        Text(verbatim: "·")
-                        LoadText(set: set)
+                Group {
+                    if isResting {
+                        Text("Next: \(set.title) · \(set.loadText)")
+                    } else {
+                        Text(verbatim: set.title)
                     }
                 }
                 .font(.subheadline)
@@ -83,51 +126,11 @@ struct CurrentSetSummary: View {
                 .lineLimit(1)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
-/// The big number on the right: the rest counting down, or the load to lift (with "Rest over +0:12" above it once the
-/// rest has ended).
-struct CurrentSetTrailing: View {
-    @Environment(\.colorScheme) private var colorScheme
-    let set: WorkoutActivitySet
-    let rest: RestSnapshot?
-    let isResting: Bool
-
-    var body: some View {
-        VStack(alignment: .trailing, spacing: 0) {
-            if isResting, let rest {
-                Text("Rest")
-                    .font(.caption2.weight(.bold))
-                    .textCase(.uppercase)
-                    .foregroundStyle(.secondary)
-                RestCountdown(rest: rest)
-                    .font(.system(size: 34, weight: .semibold, design: .rounded))
-                    .foregroundStyle(WidgetColors.accentText(for: colorScheme))
-                    .multilineTextAlignment(.trailing)
-                    .frame(maxWidth: 116, alignment: .trailing)
-            } else {
-                if let rest {
-                    HStack(spacing: 4) {
-                        Text("Rest over")
-                        RestOvertime(rest: rest)
-                    }
-                    .font(.caption2.weight(.bold))
-                    .textCase(.uppercase)
-                    .foregroundStyle(WidgetColors.accentText(for: colorScheme))
-                }
-                LoadText(set: set)
-                    .font(.system(.title2, design: .rounded).weight(.bold))
-                    .monospacedDigit()
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-            }
-        }
-        .fixedSize(horizontal: false, vertical: true)
-    }
-}
-
-/// Every set is logged or skipped: what was done, and a hint to finish in the app.
+/// Every set is logged or skipped: what was done.
 struct WorkoutCompleteRow: View {
     let state: WorkoutActivityAttributes.ContentState
 
@@ -136,7 +139,7 @@ struct WorkoutCompleteRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("All sets done")
                     .font(.title3.weight(.bold))
-                Text("\(state.loggedSets) of \(state.totalSets) sets · Finish in Coach")
+                Text("\(state.loggedSets) of \(state.totalSets) sets")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)

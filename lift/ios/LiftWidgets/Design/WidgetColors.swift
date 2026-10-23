@@ -18,6 +18,17 @@ nonisolated enum WidgetColors {
         scheme == .dark ? rgb(0xF39069) : rgb(0xB8430F)
     }
 
+    /// The top of the Lock Screen banner while resting: the accent, faint.
+    static let restTint = accent.opacity(0.14)
+
+    /// Behind the exercise photo, whose own background is white.
+    static let stillBackground = Color.white
+
+    /// The banner's bottom bar (the load and its check, or the rest and Skip): a lighter panel than the banner.
+    static func bottomBar(for scheme: ColorScheme) -> Color {
+        scheme == .dark ? Color.white.opacity(0.08) : Color.white.opacity(0.75)
+    }
+
     private static func rgb(_ hex: UInt32) -> Color {
         Color(
             red: Double((hex >> 16) & 0xFF) / 255,
