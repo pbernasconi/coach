@@ -65,6 +65,8 @@ struct BarPlates: View {
                     .opacity(loading.isExact ? 0 : 1)
                     .accessibilityHidden(loading.isExact)
             }
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, Space.md)
             .accessibilityElement(children: .combine)
         }
         .padding(.vertical, Space.md)
@@ -73,17 +75,34 @@ struct BarPlates: View {
         .koboAnimation(.state, value: loading)
     }
 
+    /// The change and "from 225 lb" on one line when they fit, else stacked, each wrapping on narrow phones and
+    /// large text.
     private func changeLine(_ change: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: Space.sm) {
-            Text(verbatim: change)
-                .font(theme.font(.headline).monospacedDigit())
-                .foregroundStyle(theme.palette.accentText)
-            if let onBar = loading.onBar {
-                Text(verbatim: WorkoutText.plateChangeFrom(Weight(onBar, unit)))
-                    .font(theme.font(.footnote).monospacedDigit())
-                    .foregroundStyle(theme.palette.textSecondary)
+        let from = loading.onBar.map { WorkoutText.plateChangeFrom(Weight($0, unit)) }
+        return ViewThatFits(in: .horizontal) {
+            HStack(alignment: .firstTextBaseline, spacing: Space.sm) {
+                changeText(change)
+                if let from { fromText(from) }
+            }
+            VStack(spacing: Space.xxs) {
+                changeText(change)
+                if let from { fromText(from) }
             }
         }
+    }
+
+    private func changeText(_ change: String) -> some View {
+        Text(verbatim: change)
+            .font(theme.font(.headline).monospacedDigit())
+            .foregroundStyle(theme.palette.accentText)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private func fromText(_ from: String) -> some View {
+        Text(verbatim: from)
+            .font(theme.font(.footnote).monospacedDigit())
+            .foregroundStyle(theme.palette.textSecondary)
     }
 
     @ViewBuilder private var drawing: some View {
