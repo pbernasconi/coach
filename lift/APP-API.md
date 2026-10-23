@@ -837,8 +837,12 @@ opens it for a planned workout that is not a Lift session. `id` is the Week API 
 ```
 
 - `hero`: planned time, TSS and IF, then done time and TSS once done (as the web's hero row).
-- `workout`: `null` without structured steps. `profile` is the Week API's bars; `ticks` place the time labels along
-  the chart (0…1). `steps` nest one level for repeats. `zones` is the web's "Time in zones" (`null` with no time).
+- `workout`: `null` without structured steps. `profile` is the chart's bars (the Week API's, plus what a tap on one shows,
+  as the web chart's tooltip: `title` "Work · 2 of 6", `lengthText`, `targetText`, `percentText` "95–104% FTP",
+  `timeText` "17:00 → 22:00", `cue`, and `stepId`, the `id` of its row in `steps`). `ticks` place the time labels along
+  the chart (0…1). `steps` nest one level for repeats; each step has an `id`, a plain `label` ("Work") and its `cue`
+  apart. `keyTargets` leave the cue out. `zones` is "Time in zones" as Strava lists it: each zone's `name` (Recovery …
+  VO2 max), `rangeText` ("148–200 W"), `timeText` ("58 min", "" for none) and `percent` (`null` with no time).
 - `done.activityId`: the Strava activity to open (`null` for a Lift match); `done` is `null` until done.
 - `feedback`: from the workout's day on (see "Feedback", item `plan:<id>`); `null` before it, or when it did not load.
 

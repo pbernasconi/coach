@@ -7,7 +7,7 @@ import { plainTitle } from './calendar.mjs';
 import { dur } from './cells.mjs';
 import { LIFT_MARKER } from './lift-plan.mjs';
 import { sportId, notesOf } from './week-api.mjs';
-import { STEP_KIND, clock, flatten, keyTargets, profileBars, stepLength, stepSeconds, stepTarget, stepZone, totals } from '../workouts/steps.mjs';
+import { ANCHORS, STEP_KIND, ZONE_RANGES, clock, flatten, keyTargets, profileBars, stepLength, stepSeconds, stepTarget, stepZone, totals } from '../workouts/steps.mjs';
 
 const ZONES = ['Z1', 'Z2', 'Z3', 'Z4', 'Z5'];
 const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
@@ -26,22 +26,101 @@ export function chartTicks(totalSeconds) {
   return out;
 }
 
-/** The steps as a tree: a step's length, kind (and cue), target and zone; a repeat's "6 ×" and its own steps. */
-export function stepTree(steps, sport) {
-  return (steps ?? []).map((s) =>
-    s.kind === 'repeat'
-      ? { kind: 'repeat', label: `${s.count} ×`, steps: stepTree(s.steps, sport) }
+/**
+ * The steps as a tree: a step's length, kind, target, zone and cue (the coach's words, shown when the step is picked);
+ * a repeat's "6 ×" and its own steps. `id` ties a step to its bars in the chart (`workoutBars`): "3" for a top-level
+ * step, "1.0" for the first step inside the second top-level repeat.
+ */
+export function stepTree(steps, sport, prefix = '') {
+  return (steps ?? []).map((s, i) => {
+    const id = prefix ? `${prefix}.${i}` : String(i);
+    return s.kind === 'repeat'
+      ? { kind: 'repeat', id, label: `${s.count} ×`, steps: stepTree(s.steps, sport, id) }
       : {
           kind: 'step',
+          id,
           length: stepLength(s),
-          label: `${STEP_KIND[s.kind] ?? s.kind}${s.notes ? ` · ${s.notes}` : ''}`,
+          label: STEP_KIND[s.kind] ?? s.kind,
+          cue: s.notes || null,
           target: stepTarget(s),
           zone: stepZone(s, sport),
-        }
-  );
+        };
+  });
 }
 
-/** Planned time in each zone, as the web's "Time in zones" card: Z1–Z5 with the time and a whole percentage. */
+/** The leaf steps in time order, each with the id of its place in the step tree. */
+function leaves(steps, prefix = '') {
+  const out = [];
+  (steps ?? []).forEach((s, i) => {
+    const id = prefix ? `${prefix}.${i}` : String(i);
+    if (s.kind === 'repeat') {
+      for (let r = 1; r <= s.count; r++) for (const leaf of leaves(s.steps, id)) out.push({ ...leaf, rep: leaf.rep ?? `${r} of ${s.count}` });
+    } else out.push({ step: s, id, rep: null });
+  });
+  return out;
+}
+
+/**
+ * The chart's bars with what a tap on one shows, as the web chart's tooltip: the kind and which repeat, the length and
+ * target, the % of FTP or LTHR, when it runs, and the cue. `stepId` ties the bar to its row in the step list.
+ */
+export function workoutBars(w) {
+  const bars = profileBars(w);
+  const anchor = w.sport === 'ride' ? 'FTP' : 'LTHR';
+  let t = 0;
+  return leaves(w.steps).map(({ step, id, rep }, i) => {
+    const bar = bars[i];
+    const start = t;
+    t += bar.seconds;
+    const target = step.target ?? {};
+    const percent = (target.type === 'power' || target.type === 'hr') && target.low != null
+      ? `${target.low}–${target.high}% ${anchor}`
+      : null;
+    return {
+      ...bar,
+      stepId: id,
+      title: [STEP_KIND[step.kind] ?? step.kind, rep].filter(Boolean).join(' · '),
+      lengthText: stepLength(step),
+      targetText: stepTarget(step),
+      percentText: percent,
+      timeText: `${start === 0 ? '0:00' : clock(start)} → ${clock(t)}`,
+      cue: step.notes || null,
+    };
+  });
+}
+
+/** The zones' names, as Strava and the coach's zone table call them. */
+const ZONE_NAMES = { Z1: 'Recovery', Z2: 'Endurance', Z3: 'Tempo', Z4: 'Threshold', Z5: 'VO2 max' };
+
+/**
+ * A zone's range in watts or beats, at the anchors: "< 146 W", "148–199 W", "> 283 W". Each zone runs to where the
+ * next one starts, so the rows meet.
+ */
+export function zoneRange(zone, sport, anchors = ANCHORS) {
+  const key = sport === 'ride' ? 'power' : 'hr';
+  const anchor = sport === 'ride' ? anchors.ftp : anchors.lthr;
+  const unit = sport === 'ride' ? 'W' : 'bpm';
+  const at = (pct) => Math.round((pct / 100) * anchor);
+  const i = ZONES.indexOf(zone);
+  const low = ZONE_RANGES[zone][key][0];
+  const next = ZONES[i + 1];
+  if (i === 0) return `< ${at(ZONE_RANGES[next][key][0])} ${unit}`;
+  if (!next) return `> ${at(low)} ${unit}`;
+  return `${at(low)}–${at(ZONE_RANGES[next][key][0]) - 1} ${unit}`;
+}
+
+/** "58 min", "1 h 05 min", "45 s"; "" for none. */
+function zoneClock(seconds) {
+  if (!seconds) return '';
+  if (seconds < 60) return `${seconds} s`;
+  const m = Math.round(seconds / 60);
+  return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} min`;
+}
+
+/**
+ * Planned time in each zone, as Strava lists it: Z1–Z5, each with its name and its range in watts or beats, the time
+ * and a whole percentage.
+ */
 export function zoneTime(workout) {
   const by = Object.fromEntries(ZONES.map((z) => [z, 0]));
   for (const s of flatten(workout.steps)) by[stepZone(s, workout.sport)] += stepSeconds(s);
@@ -51,8 +130,10 @@ export function zoneTime(workout) {
     basis: workout.sport === 'ride' ? 'by power' : 'by heart rate',
     items: ZONES.map((zone) => ({
       zone,
+      name: ZONE_NAMES[zone],
+      rangeText: zoneRange(zone, workout.sport),
       seconds: by[zone],
-      timeText: by[zone] ? clock(by[zone]).replace(/:00$/, '') : '–',
+      timeText: zoneClock(by[zone]),
       percent: Math.round((by[zone] / total) * 100),
     })),
   };
@@ -93,8 +174,9 @@ export function appWorkout(w, sports) {
     workout: steps
       ? {
           summaryText: `${clock(plan.seconds)} · ${plan.tss} TSS · IF ${plan.if.toFixed(2)}`,
-          keyTargets: keyTargets(steps),
-          profile: profileBars(steps),
+          // The main work in a line each, without the coach's cue (the picked step shows it).
+          keyTargets: keyTargets(steps).map((l) => ({ ...l, text: l.text.split(' · ')[0] })),
+          profile: workoutBars(steps),
           ticks: chartTicks(plan.seconds),
           steps: stepTree(steps.steps, steps.sport),
           zones: zoneTime(steps),
