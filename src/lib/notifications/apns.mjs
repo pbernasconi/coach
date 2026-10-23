@@ -14,6 +14,8 @@
 //                                 after Apple's `timestamp`: then failed, not retryable, and the token stays
 //     400 BadDeviceToken        → sent once more on the other host (the error also means "wrong host"); that host's
 //                                 answer is the outcome, and a second BadDeviceToken is dead
+//     400 TopicDisallowed,      → dead: the build's bundle id is not one this key may push to (a debug build with a
+//         DeviceTokenNotForTopic  placeholder id), so it never gets a push. Registering again turns it back on.
 //     any other rejection       → failed, not retryable, with Apple's `reason` as the code
 // - Missing credentials: every send is failed with NO_CREDENTIALS, not retryable; the token stays.
 
@@ -29,6 +31,8 @@ export const APNS_TOKEN = /^[0-9a-f]{64,200}$/;
 
 const PROVIDER_TOKEN_REASONS = new Set(['ExpiredProviderToken', 'InvalidProviderToken', 'MissingProviderToken']);
 const BAD_DEVICE_TOKEN = 'BadDeviceToken';
+/** Rejections about the device's bundle id: every later send would fail the same way. */
+const WRONG_TOPIC_REASONS = new Set(['TopicDisallowed', 'DeviceTokenNotForTopic']);
 /** Apple sends the 410 `timestamp` in epoch milliseconds; anything smaller is not one. */
 const MIN_TIMESTAMP_MS = 1_000_000_000_000;
 
@@ -197,6 +201,7 @@ export function outcomeFor(m, r, nowMs) {
     const registeredAgain = r.status === 410 && r.timestamp !== undefined && m.registeredAtMs != null && m.registeredAtMs > r.timestamp;
     return registeredAgain ? { status: 'failed', code, retryable: false, apnsId } : { status: 'dead', code, apnsId };
   }
+  if (r.reason && WRONG_TOPIC_REASONS.has(r.reason)) return { status: 'dead', code, apnsId };
   return { status: 'failed', code, retryable: false, apnsId };
 }
 

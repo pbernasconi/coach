@@ -105,6 +105,12 @@ test('Unregistered is dead, unless the device registered again after Apple check
   assert.deepEqual(outcomeFor(message({ registeredAtMs: NOW }), r, NOW), { status: 'failed', code: 'Unregistered', retryable: false, apnsId: null });
 });
 
+test('TopicDisallowed and DeviceTokenNotForTopic are dead: that build never gets a push', () => {
+  for (const reason of ['TopicDisallowed', 'DeviceTokenNotForTopic']) {
+    assert.deepEqual(outcomeFor(message(), { status: 400, reason }, NOW), { status: 'dead', code: reason, apnsId: null });
+  }
+});
+
 test('429 and 5xx are retryable and never dead; Retry-After is read', () => {
   assert.deepEqual(outcomeFor(message(), { status: 429, reason: 'TooManyRequests', retryAfter: '3' }, NOW), {
     status: 'failed', code: 'TooManyRequests', retryable: true, apnsId: null, retryAfterMs: 3000,
