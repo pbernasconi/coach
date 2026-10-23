@@ -118,10 +118,32 @@ public struct ConfirmationAction {
     var buttonRole: ButtonRole? { role == .destructive ? .destructive : nil }
 }
 
+/// How a confirmation is shown.
+public enum ConfirmationStyle: Sendable, Equatable {
+    /// The system confirmation dialog. On iOS 26 it opens as a popover from the view it hangs on, and the popover
+    /// leaves Cancel out (tapping outside cancels).
+    case dialog
+    /// A short bottom sheet: the title and message centred, then the confirm and cancel buttons stacked full width,
+    /// confirm on top. Both buttons always show.
+    case sheet
+}
+
 extension View {
-    /// Shows a system confirmation dialog for `action` while `isPresented` is true. The title is always
-    /// visible, the confirm button carries the destructive role when needed, and Cancel is always present.
-    public func koboConfirm(isPresented: Binding<Bool>, _ action: ConfirmationAction) -> some View {
+    /// Shows a confirmation for `action` while `isPresented` is true. The title is always visible, the confirm button
+    /// carries the destructive role when needed, and Cancel is always offered.
+    @ViewBuilder
+    public func koboConfirm(
+        isPresented: Binding<Bool>,
+        _ action: ConfirmationAction,
+        style: ConfirmationStyle = .dialog
+    ) -> some View {
+        switch style {
+        case .dialog: confirmDialog(isPresented: isPresented, action)
+        case .sheet: sheet(isPresented: isPresented) { ConfirmationSheet(action: action, isPresented: isPresented) }
+        }
+    }
+
+    private func confirmDialog(isPresented: Binding<Bool>, _ action: ConfirmationAction) -> some View {
         confirmationDialog(action.title, isPresented: isPresented, titleVisibility: .visible) {
             Button(role: action.buttonRole, action: action.perform) { action.confirmLabel }
             Button(role: .cancel) {

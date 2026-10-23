@@ -8,6 +8,7 @@ struct PatternsDemo: View {
     let component: CatalogComponent
     @State private var phase = DemoPhase.loaded
     @State private var confirming = false
+    @State private var confirmingSheet = false
 
     var body: some View {
         switch component {
@@ -39,12 +40,26 @@ struct PatternsDemo: View {
             }
             .frame(height: Size.minTouch * 6)
         case .confirm:
-            Button("Delete recipe", role: .destructive) { confirming = true }
-                .buttonStyle(.kobo(.destructive))
-                .koboConfirm(
-                    isPresented: $confirming,
-                    .destructive(title: "Delete this recipe?", confirmLabel: "Delete") {}
-                )
+            HStack(spacing: Space.sm) {
+                Button("Delete recipe", role: .destructive) { confirming = true }
+                    .buttonStyle(.kobo(.destructive))
+                    .koboConfirm(
+                        isPresented: $confirming,
+                        .destructive(title: "Delete this recipe?", confirmLabel: "Delete") {}
+                    )
+                Button("Close order") { confirmingSheet = true }
+                    .buttonStyle(.kobo(.secondary))
+                    .koboConfirm(
+                        isPresented: $confirmingSheet,
+                        ConfirmationAction(
+                            title: "Close this order?",
+                            message: "2 items not packed yet.",
+                            confirmLabel: "Close order",
+                            cancelLabel: "Keep going"
+                        ) {},
+                        style: .sheet
+                    )
+            }
         case .skeletonHeader:
             SkeletonHeader(detailLines: 1).skeletonPage()
         case .skeletonStatGrid:

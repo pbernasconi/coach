@@ -66,7 +66,7 @@ struct WorkoutContent: View {
                 WorkoutDock(phase: dock, introducesExercise: state.dockIntroducesExercise, send: send) {
                     focus($0, proxy)
                 }
-                // On the dock, not the screen: iOS 26 points the dialog at the view it hangs on.
+                // A sheet, not the system dialog: on iOS 26 the dialog is a popover that leaves out "Keep going".
                 .koboConfirm(
                     isPresented: .action(state.isConfirmingFinish) { if !$0 { send(.finishCancelled) } },
                     ConfirmationAction(
@@ -74,7 +74,8 @@ struct WorkoutContent: View {
                         message: "^[\(state.plannedSetsLeft) set](inflect: true) not logged yet. You can still log them after you finish.",
                         confirmLabel: "Finish workout",
                         cancelLabel: "Keep going"
-                    ) { send(.finishConfirmed) }
+                    ) { send(.finishConfirmed) },
+                    style: .sheet
                 )
             }
         }

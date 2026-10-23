@@ -122,7 +122,7 @@ struct WorkoutDockRest: View {
         HStack(alignment: .bottom, spacing: Space.md) {
             VStack(alignment: .leading, spacing: Space.xxs) {
                 if let set = content.current {
-                    Text("Next: \(set.title) · \(set.loadText)")
+                    Text("Next: \(set.loadText)")  // the row above already names the set
                         .font(theme.font(.subheadline))
                         .foregroundStyle(theme.palette.textSecondary)
                         .lineLimit(1)

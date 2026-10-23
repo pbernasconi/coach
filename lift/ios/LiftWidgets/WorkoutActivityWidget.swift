@@ -94,12 +94,16 @@ struct IslandTrailing: View {
                 .font(.caption.weight(.heavy))
                 .textCase(.uppercase)
                 .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .fixedSize()
                 .padding(.trailing, 4)
         } else if isResting {
             Label("Resting", systemImage: "timer")
                 .font(.caption.weight(.heavy))
                 .textCase(.uppercase)
                 .foregroundStyle(WidgetColors.accent)
+                .lineLimit(1)
+                .fixedSize()  // the region is narrow; without this the word wraps a letter pair per line
                 .padding(.trailing, 4)
         }
     }

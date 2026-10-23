@@ -12,14 +12,15 @@ nonisolated enum WorkoutClock {
         max(0, Int(end.timeIntervalSince(start).rounded(.down)))
     }
 
-    /// "04:05" under an hour, "1:02:03" from an hour on.
+    /// "4:05" under an hour, like the rest timer; "1:02:03" from an hour on.
     static func text(seconds: Int) -> String {
         let seconds = max(0, seconds)
         let hours = seconds / 3600
         let minutes = seconds / 60 % 60
         let rest = seconds % 60
-        let mmss = String(format: "%02d:%02d", minutes, rest)
-        return hours > 0 ? "\(hours):\(mmss)" : mmss
+        return hours > 0
+            ? String(format: "%d:%02d:%02d", hours, minutes, rest)
+            : String(format: "%d:%02d", minutes, rest)
     }
 
     /// "4 minutes, 5 seconds", for VoiceOver.
