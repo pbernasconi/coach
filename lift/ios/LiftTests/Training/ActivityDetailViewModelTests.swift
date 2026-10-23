@@ -83,21 +83,6 @@ import Testing
         #expect(tabs.shown == [.settings])
     }
 
-    @Test func mapExpandTappedThenDismissed() async {
-        let (vm, _) = await loaded()
-        vm.send(.mapExpandTapped)
-        #expect(vm.state.destination == .map)
-        vm.send(.destinationDismissed)
-        #expect(vm.state.destination == nil)
-    }
-
-    @Test func mapExpandTappedDoesNothingOverAPanel() async {
-        let (vm, _) = await loaded()
-        vm.send(.panelTapped(.heartRate))
-        vm.send(.mapExpandTapped)
-        #expect(vm.state.destination == .panel(.heartRate))
-    }
-
     @Test func panelTappedOpensThePanel() async {
         let (vm, _) = await loaded()
         vm.send(.panelTapped(.splits))

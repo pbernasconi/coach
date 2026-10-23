@@ -53,4 +53,7 @@ public enum Size {
     public static let iconLg: CGFloat = 24
     public static let thumbnail: CGFloat = 56
     public static let hairline: CGFloat = 0.5
+    /// The handle at the top of a sheet that is dragged (Apple's own sheets).
+    public static let grabberWidth: CGFloat = 36
+    public static let grabberHeight: CGFloat = 5
 }

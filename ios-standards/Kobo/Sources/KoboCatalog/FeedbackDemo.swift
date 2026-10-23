@@ -9,6 +9,7 @@ struct FeedbackDemo: View {
     @State private var toasts = ToastCenter()
     @State private var bannerVisible = true
     @State private var live = true
+    @State private var replay = 0
 
     var body: some View {
         switch component {
@@ -33,6 +34,21 @@ struct FeedbackDemo: View {
             .skeletonBreath()
         case .shimmer:
             Text("Book flights · Due Friday · 30 min").redacted(reason: .placeholder).shimmering()
+        case .skeletonPage:
+            VStack(alignment: .leading, spacing: Space.md) {
+                VStack(alignment: .leading, spacing: Space.md) {
+                    Skeleton(.line, textRole: .headline).frame(maxWidth: Size.minTouch * 4)
+                    Skeleton(.block).frame(height: Size.thumbnail)
+                }
+                .skeletonPage()
+                .id(replay)
+                Button("Replay") { replay += 1 }.buttonStyle(.kobo(.secondary))
+            }
+        case .loadingGrace:
+            VStack(alignment: .leading, spacing: Space.md) {
+                Text("Shown after a short grace").loadingGrace().id(replay)
+                Button("Replay") { replay += 1 }.buttonStyle(.kobo(.secondary))
+            }
         case .loadingState: LoadingState("Loading history")
         case .emptyState:
             EmptyState(symbol: "checklist", title: "No tasks yet", message: "Plan a day to get started.") {

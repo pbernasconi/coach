@@ -60,9 +60,6 @@ final class ActivityDetailViewModel {
             state.axis = axis
         case .paceModeChanged(let mode):
             state.paceMode = mode
-        case .mapExpandTapped:
-            guard state.destination == nil else { return nil }
-            state.destination = .map
         case .panelTapped(let panel):
             state.destination = .panel(panel)
         case .destinationDismissed:

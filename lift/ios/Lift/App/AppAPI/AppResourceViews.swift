@@ -5,18 +5,22 @@ import LiftSync
 import SwiftUI
 
 /// The page body of one App API screen: Kobo's `LoadableView` with the one "Connect Lift to Coach" empty state every
-/// coach screen shares, and the freshness line above the loaded content. Pull to refresh belongs on the scroll view
-/// around it (`appRefreshable`).
+/// coach screen shares, and the freshness line above the loaded content. While it loads it shows `placeholder`, a
+/// skeleton in the page's own layout (`.skeletonPage()`: invisible for a fast load, then a quiet breath); without one,
+/// the generic `AppPageSkeleton`. Pull to refresh belongs on the scroll view around it (`appRefreshable`).
 ///
 ///     AppResourcePage(state.today, onRetry: { send(.retryTapped) }, onConnect: { send(.connectTapped) }) { today in
 ///         TodaySections(today: today)
+///     } placeholder: {
+///         TodaySkeleton()
 ///     }
-struct AppResourcePage<Value: Equatable & Sendable, Loaded: View>: View {
+struct AppResourcePage<Value: Equatable & Sendable, Loaded: View, Placeholder: View>: View {
     private let state: AppResourceState<Value>
     private let onRetry: () -> Void
     private let onConnect: (() -> Void)?
     private let showsFreshness: Bool
     private let loaded: (Value) -> Loaded
+    private let placeholder: Placeholder
 
     /// - Parameters:
     ///   - onConnect: "Open Settings" under the not-connected state (switch to Settings → Sync); none when nil.
@@ -27,13 +31,15 @@ struct AppResourcePage<Value: Equatable & Sendable, Loaded: View>: View {
         onRetry: @escaping () -> Void,
         onConnect: (() -> Void)? = nil,
         showsFreshness: Bool = true,
-        @ViewBuilder loaded: @escaping (Value) -> Loaded
+        @ViewBuilder loaded: @escaping (Value) -> Loaded,
+        @ViewBuilder placeholder: () -> Placeholder
     ) {
         self.state = state
         self.onRetry = onRetry
         self.onConnect = onConnect
         self.showsFreshness = showsFreshness
         self.loaded = loaded
+        self.placeholder = placeholder()
     }
 
     var body: some View {
@@ -44,9 +50,31 @@ struct AppResourcePage<Value: Equatable & Sendable, Loaded: View>: View {
                 }
                 loaded(value)
             }
+        } placeholder: {
+            placeholder
         } empty: {
             AppNotConnectedView(needsReconnect: state.needsReconnect, onConnect: onConnect)
         }
+    }
+}
+
+extension AppResourcePage where Placeholder == AppPageSkeleton {
+    /// A page with the generic skeleton while it loads.
+    init(
+        _ state: AppResourceState<Value>,
+        onRetry: @escaping () -> Void,
+        onConnect: (() -> Void)? = nil,
+        showsFreshness: Bool = true,
+        @ViewBuilder loaded: @escaping (Value) -> Loaded
+    ) {
+        self.init(
+            state,
+            onRetry: onRetry,
+            onConnect: onConnect,
+            showsFreshness: showsFreshness,
+            loaded: loaded,
+            placeholder: { AppPageSkeleton() }
+        )
     }
 }
 

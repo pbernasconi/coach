@@ -20,7 +20,10 @@ struct PatternsDemo: View {
                 LoadableView(phase.state, onRetry: { phase = .loaded }) { items in
                     VStack(alignment: .leading) { ForEach(items) { Text($0.name) } }
                 } placeholder: {
-                    LoadingState("Loading recipes")
+                    VStack(alignment: .leading, spacing: Space.sm) {
+                        ForEach(0..<3) { _ in Skeleton(.line).frame(maxWidth: Size.minTouch * 4) }
+                    }
+                    .skeletonPage()
                 } empty: {
                     LoadableEmptyView("No recipes", systemImage: "fork.knife", message: "Add one from the library.")
                 } failed: { message, retry in
@@ -42,6 +45,20 @@ struct PatternsDemo: View {
                     isPresented: $confirming,
                     .destructive(title: "Delete this recipe?", confirmLabel: "Delete") {}
                 )
+        case .skeletonHeader:
+            SkeletonHeader(detailLines: 1).skeletonPage()
+        case .skeletonStatGrid:
+            VStack(spacing: Space.md) {
+                SkeletonStatGrid(count: 4).koboCard()
+                SkeletonStatGrid(count: 2, style: .tiles)
+            }
+            .skeletonPage()
+        case .skeletonCard:
+            VStack(spacing: Space.md) {
+                SkeletonCard(lines: 0, blockHeight: Size.thumbnail * 2)
+                SkeletonCard(title: .above, lines: 2)
+            }
+            .skeletonPage()
         default: EmptyView()
         }
     }

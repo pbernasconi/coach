@@ -39,8 +39,13 @@ extension Loadable {
 
 /// Renders a `Loadable` with one slot per phase, cross-fading between phases on `Motion.crossfade`
 /// (instant with Reduce Motion). Changes inside `.loaded` do not fade. The standard slots are Kobo's own states, so
-/// they follow the theme: `LoadingState` (a spinner that says so when a wait runs long), `LoadableEmptyView` (an
+/// they follow the theme: `LoadingState` (a quiet spinner that says so when a wait runs long), `LoadableEmptyView` (an
 /// `EmptyState`) and `LoadableFailedView` (an `ErrorState`-style failure that VoiceOver announces).
+///
+/// The placeholder follows `LoadingGrace`: give it `.skeletonPage()` (or use `LoadingState`), and it stays invisible
+/// for `Motion.Duration.loadingGrace`, so a fast load goes straight to the content; once it shows, it stays at least
+/// `Motion.Duration.placeholderHold`, so it never flashes. When content replaces a placeholder that showed, VoiceOver
+/// hears that the layout changed.
 ///
 ///     LoadableView(state.notes, onRetry: { send(.retryTapped) }) { rows in
 ///         NoteList(rows: rows)
@@ -58,11 +63,16 @@ public struct LoadableView<Value: Equatable & Sendable, Loaded: View, Placeholde
     private let placeholder: Placeholder
     private let empty: Empty
     private let failed: (String, LoadableRetry?) -> Failed
+    private let clock: any Clock<Duration>
+    @State private var grace = LoadingGrace.waiting
 
     /// Every slot custom. `failed` receives the message and a retry (nil without `onRetry`).
+    ///
+    /// - Parameter clock: the time source of the placeholder's grace and hold; tests pass a manual clock.
     public init(
         _ state: Loadable<Value>,
         onRetry: (() -> Void)? = nil,
+        clock: any Clock<Duration> = ContinuousClock(),
         @ViewBuilder loaded: @escaping (Value) -> Loaded,
         @ViewBuilder placeholder: () -> Placeholder,
         @ViewBuilder empty: () -> Empty,
@@ -74,22 +84,46 @@ public struct LoadableView<Value: Equatable & Sendable, Loaded: View, Placeholde
         self.placeholder = placeholder()
         self.empty = empty()
         self.failed = failed
+        self.clock = clock
     }
 
     public var body: some View {
         ZStack {
-            switch state {
-            case .loading:
+            if shownPhase == .loading {
                 placeholder.transition(.opacity)
-            case .empty:
-                empty.transition(.opacity)
-            case .loaded(let value):
-                loaded(value).transition(.opacity)
-            case .failed(let message, let retryLabel):
-                failed(message, retry(label: retryLabel)).transition(.opacity)
+            } else {
+                switch state {
+                case .loading:
+                    placeholder.transition(.opacity)
+                case .empty:
+                    empty.transition(.opacity)
+                case .loaded(let value):
+                    loaded(value).transition(.opacity)
+                case .failed(let message, let retryLabel):
+                    failed(message, retry(label: retryLabel)).transition(.opacity)
+                }
             }
         }
-        .koboAnimation(.crossfade, value: state.phase)
+        .koboAnimation(.crossfade, value: shownPhase)
+        .task(id: isTiming) {
+            guard isTiming else { return }
+            grace = .waiting
+            await LoadingGrace.timer(clock: clock) { grace = $0 }
+        }
+        .onChange(of: shownPhase) { old, new in
+            guard old == .loading, new == .loaded || new == .empty, grace.isVisible else { return }
+            AccessibilityNotification.LayoutChanged().post()
+        }
+    }
+
+    /// The phase on screen: the placeholder stays through its hold, even once the value is ready.
+    private var shownPhase: Loadable<Value>.Phase {
+        grace.holdsContent ? .loading : state.phase
+    }
+
+    /// The grace and hold run while loading, and while a placeholder that showed finishes its hold.
+    private var isTiming: Bool {
+        state.phase == .loading || grace.holdsContent
     }
 
     private func retry(label: String?) -> LoadableRetry? {
@@ -140,63 +174,6 @@ where Placeholder == LoadingState, Empty == LoadableEmptyView, Failed == Loadabl
     ) {
         self.init(state, onRetry: onRetry, loaded: loaded) {
             LoadableEmptyView(emptyTitle, systemImage: emptySystemImage)
-        }
-    }
-}
-
-/// The standard failure view: the danger art, "Couldn't load", the message and, when given, a retry button. VoiceOver
-/// announces the title and message when it appears.
-public struct LoadableFailedView: View {
-    private let message: String
-    private let retry: LoadableRetry?
-
-    public init(message: String, retry: LoadableRetry?) {
-        self.message = message
-        self.retry = retry
-    }
-
-    public var body: some View {
-        let title = String(localized: "Couldn't load", bundle: .module)
-        EmptyState(verbatim: title, message: message) {
-            EmptyStateArt(systemImage: "exclamationmark.triangle.fill", tone: .danger)
-        } actions: {
-            if let retry {
-                Button(action: retry.action) { retry.label }
-                    .buttonStyle(.kobo(.primary))
-            }
-        }
-        .onAppear { AccessibilityNotification.Announcement(title + ". " + message).post() }
-    }
-}
-
-/// The standard empty view: an `EmptyState` with an icon, a title and an optional message.
-public struct LoadableEmptyView: View {
-    private enum Copy {
-        case localized(LocalizedStringKey, message: LocalizedStringKey?)
-        case verbatim(String, message: String?)
-    }
-
-    private let copy: Copy
-    private let systemImage: String
-
-    /// An empty view with localized copy.
-    public init(_ title: LocalizedStringKey, systemImage: String = "tray", message: LocalizedStringKey? = nil) {
-        self.copy = .localized(title, message: message)
-        self.systemImage = systemImage
-    }
-
-    /// An empty view whose copy is shown as is (a search term, user data).
-    public init(verbatim title: String, systemImage: String = "tray", message: String? = nil) {
-        self.copy = .verbatim(title, message: message)
-        self.systemImage = systemImage
-    }
-
-    public var body: some View {
-        switch copy {
-        case .localized(let title, let message):
-            EmptyState(symbol: systemImage, title: title, message: message)
-        case .verbatim(let title, let message):
-            EmptyState(symbol: systemImage, verbatim: title, message: message)
         }
     }
 }
