@@ -64,3 +64,15 @@ test('merge by catalog: two result names of one marker become one, with the cata
   assert.equal(merged[1].latest.status, 'in_range'); // Function's status wins over the draw's flag
   assert.equal(merged[2].biomarker, 'Iron'); // not in the catalog: unchanged
 });
+
+test('merge by catalog: a row under the catalog name joins the draws under its result name', () => {
+  const r = (collectedOn) => ({ collectedOn, value: 4.5, valueText: null, status: 'unknown' });
+  const b = (biomarker, history) => ({ biomarker, category: 'Nutrients', latest: history.at(-1), history });
+  const merged = mergeByCatalog(
+    [b('Omega-3 Total', [r('2025-08-01')]), b('Omega-3 Total / OmegaCheck', [r('2026-01-14')])],
+    [{ resultNames: ['Omega-3 Total / OmegaCheck'], name: 'Omega-3 Total', status: 'out_of_range' }]
+  );
+  assert.equal(merged.length, 1);
+  assert.equal(merged[0].latest.status, 'out_of_range');
+  assert.equal(keyIndex(merged[0].biomarker), keyIndex('Omega-3 Total'));
+});
