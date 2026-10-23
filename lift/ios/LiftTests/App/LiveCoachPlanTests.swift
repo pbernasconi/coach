@@ -156,5 +156,6 @@ import Testing
 
         await plan.watchSync()
         #expect(client.requests == [monday, monday])  // this week until the Week screen shows another
+        #expect(sync.syncNowCount == 0)  // a sync here would start the next status, and the next sync, without end
     }
 }

@@ -20,7 +20,7 @@ struct ExerciseServerSections: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Space.section) {
             VStack(alignment: .leading, spacing: Space.sm) {
-                if let freshness { AppFreshnessLine(freshness: freshness) }
+                if let freshness, freshness.isOffline { AppFreshnessLine(freshness: freshness) }
                 AppSectionView(nil, section: stats.stats) { tiles in ExerciseStatTiles(tiles: tiles.items) }
             }
             AppSectionView(nil, section: stats.chart) { chart in

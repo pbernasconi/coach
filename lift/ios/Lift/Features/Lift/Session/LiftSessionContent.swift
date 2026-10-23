@@ -15,8 +15,7 @@ struct LiftSessionContent: View {
             AppResourcePage(
                 state.detail,
                 onRetry: { send(.retryTapped) },
-                onConnect: { send(.connectTapped) },
-                showsFreshness: false
+                onConnect: { send(.connectTapped) }
             ) { detail in
                 LiftSessionSections(detail: detail, state: state, send: send)
             } placeholder: {

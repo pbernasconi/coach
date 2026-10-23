@@ -96,8 +96,7 @@ struct ActivityMapPage: View {
             AppResourcePage(
                 state.detail,
                 onRetry: { send(.retryTapped) },
-                onConnect: { send(.connectTapped) },
-                showsFreshness: false
+                onConnect: { send(.connectTapped) }
             ) { detail in
                 ActivitySections(
                     detail: detail,
