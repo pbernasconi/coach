@@ -18,7 +18,7 @@ struct WeekSessionRow: View {
         ) {
             HStack(alignment: .firstTextBaseline, spacing: Space.sm) {
                 Text(verbatim: session.title)
-                    .font(theme.font(.body).weight(.semibold))
+                    .font(theme.font(.callout).weight(.semibold))
                     .foregroundStyle(theme.palette.textPrimary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 WeekStatusMark(status: session.isDone ? .done : .planned, label: String(localized: "Done"))
@@ -32,7 +32,7 @@ struct WeekSessionRow: View {
                     .foregroundStyle(theme.palette.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 Text(verbatim: SessionText.sets(logged: session.loggedSets, total: session.totalSets))
-                    .font(theme.font(.headline).monospacedDigit())
+                    .font(theme.font(.callout).weight(.semibold).monospacedDigit())
                     .foregroundStyle(theme.palette.textPrimary)
             }
         }

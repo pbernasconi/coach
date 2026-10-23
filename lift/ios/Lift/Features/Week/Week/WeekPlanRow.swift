@@ -15,7 +15,7 @@ struct WeekPlanRow: View {
         WeekCard(status: item.cardStatus, sport: item.sport.color, action: { send(.planItemTapped(item.id)) }) {
             HStack(alignment: .firstTextBaseline, spacing: Space.sm) {
                 Text(verbatim: item.title)
-                    .font(theme.font(.body).weight(.semibold))
+                    .font(theme.font(.callout).weight(.semibold))
                     .foregroundStyle(theme.palette.textPrimary)
                     .strikethrough(item.state == .skipped)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -31,8 +31,13 @@ struct WeekPlanRow: View {
             }
             if !item.profile.isEmpty {
                 // Close to the card's bottom edge: most of the card's bottom padding goes under the bars.
-                ProfileStrip(segments: item.profile, color: theme.palette.textTertiary, accessibilityLabel: "Intervals")
-                    .padding(.bottom, -(Space.md - Space.xs))
+                ProfileStrip(
+                    segments: item.profile,
+                    color: theme.palette.textTertiary,
+                    height: Space.md,
+                    accessibilityLabel: "Intervals"
+                )
+                .padding(.bottom, -(Space.sm - Space.xxs))
             }
         }
         // One element: "Ride: Sweet spot 3 × 12", then "1:00:00, 30.0 km, 70 TSS, Today".

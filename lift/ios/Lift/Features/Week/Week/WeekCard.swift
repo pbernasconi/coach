@@ -11,9 +11,10 @@ nonisolated enum WeekCardStatus: Equatable, Sendable {
     case notDone
 }
 
-/// The surface of one Week workout, styled as the web plan's chips: a done, partly done or not done card is filled with
-/// a light tint of its status colour; a planned one is a plain surface card with a dashed outline. The left edge is the sport's
-/// colour (faded while planned). The status is also an icon and a word inside the card, never colour alone.
+/// One Week workout as a row of its day's card (`WeekDayGroup`), styled as the web plan's chips but quieter: a done,
+/// partly done or not done row has a faint tint of its status colour; a planned one is the plain surface. The left edge
+/// is the sport's colour (faded while planned). The day's card draws the border and the lines between rows. The status
+/// is also an icon inside the row, never colour alone.
 struct WeekCard<Content: View>: View {
     @Environment(\.koboTheme) private var theme
     let status: WeekCardStatus
@@ -23,53 +24,87 @@ struct WeekCard<Content: View>: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(alignment: .leading, spacing: Space.sm) { content() }
-                .padding(Space.md)
+            VStack(alignment: .leading, spacing: Space.xs) { content() }
+                .padding(.vertical, Space.sm)
+                .padding(.horizontal, Space.md)
                 .padding(.leading, Space.xxs)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background { background }
-                .contentShape(shape)
+                .contentShape(Rectangle())
         }
-        .buttonStyle(.pressFeedback(.scale, in: shape))
+        .buttonStyle(.pressFeedback(.highlight))
     }
 
-    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: Radius.md, style: .continuous) }
-
-    /// The fill (none while planned) and the sport edge, clipped to the card's shape so the edge follows its corners,
-    /// then the border on top: solid in the status colour, or dashed while planned.
+    /// The surface, the status tint on top (none while planned), and the sport edge.
     private var background: some View {
         ZStack(alignment: .leading) {
-            if let tone {
-                theme.palette.surface
-                tone.soft
-            } else {
-                theme.palette.surface
+            theme.palette.surface
+            if let tone = status.tone(in: theme.palette) {
+                tone.soft.opacity(WeekCardStatus.tintStrength)
             }
             Rectangle()
                 .fill(status == .planned ? sport.opacity(0.45) : sport)
                 .frame(width: Space.xs)
                 .frame(maxHeight: .infinity)
         }
-        .clipShape(shape)
-        .overlay {
-            if let tone {
-                shape.strokeBorder(tone.ink.opacity(0.45), lineWidth: Size.hairline * 2)
-            } else {
-                shape.strokeBorder(
-                    theme.palette.textTertiary,
-                    style: StrokeStyle(lineWidth: Size.hairline * 2, dash: [Space.xs, Space.xs])
-                )
-            }
+    }
+}
+
+extension WeekCardStatus {
+    /// How much of the status colour's soft fill a row takes. Under half, so the sport edge and the mark lead.
+    static let tintStrength = 0.45
+
+    /// The status colours: none while planned.
+    func tone(in palette: Palette) -> StatusColors? {
+        switch self {
+        case .planned: nil
+        case .done: palette.success
+        case .partlyDone: palette.warning
+        case .notDone: palette.danger
         }
     }
+}
 
-    private var tone: StatusColors? {
-        switch status {
-        case .planned: nil
-        case .done: theme.palette.success
-        case .partlyDone: theme.palette.warning
-        case .notDone: theme.palette.danger
+/// One day's workouts as one card: its rows stacked, clipped to a rounded shape, with a hairline between rows. The
+/// border is a faint status colour for a day with one done or not done workout, neutral for a day with several, and
+/// dashed while everything that day is still planned.
+struct WeekDayGroup<Content: View>: View {
+    @Environment(\.koboTheme) private var theme
+    let statuses: [WeekCardStatus]
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        VStack(spacing: 0) { content() }
+            .clipShape(shape)
+            .overlay { border }
+    }
+
+    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: Radius.sm, style: .continuous) }
+
+    @ViewBuilder private var border: some View {
+        if statuses.allSatisfy({ $0 == .planned }) {
+            shape.strokeBorder(
+                theme.palette.textTertiary.opacity(0.7),
+                style: StrokeStyle(lineWidth: Size.hairline * 2, dash: [Space.xs, Space.xs])
+            )
+        } else if statuses.count == 1, let tone = statuses[0].tone(in: theme.palette) {
+            shape.strokeBorder(tone.ink.opacity(0.2), lineWidth: Size.hairline * 2)
+        } else {
+            shape.strokeBorder(theme.palette.separator, lineWidth: Size.hairline * 2)
         }
+    }
+}
+
+/// The line between two rows of a day's card, starting after the sport edge.
+struct WeekRowDivider: View {
+    @Environment(\.koboTheme) private var theme
+
+    var body: some View {
+        Rectangle()
+            .fill(theme.palette.separator)
+            .frame(height: Size.hairline)
+            .padding(.leading, Space.xs)
+            .accessibilityHidden(true)
     }
 }
 
@@ -108,7 +143,7 @@ struct WeekStat: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: Space.xxs) {
             Text(verbatim: text ?? "–")
-                .font(theme.font(.headline).monospacedDigit())
+                .font(theme.font(.callout).weight(.semibold).monospacedDigit())
                 .foregroundStyle(text == nil ? theme.palette.textTertiary : theme.palette.textPrimary)
             if let unit {
                 Text(verbatim: unit)
