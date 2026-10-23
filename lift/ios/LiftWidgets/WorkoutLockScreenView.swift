@@ -40,7 +40,7 @@ struct WorkoutHeader: View {
 
     var body: some View {
         HStack(spacing: 7) {
-            CoachBadge(size: 18)
+            LiftBadge(size: 18)
             Text(verbatim: attributes.title)
                 .font(.caption.weight(.bold))
                 .textCase(.uppercase)

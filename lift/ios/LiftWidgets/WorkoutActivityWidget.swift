@@ -48,7 +48,7 @@ struct IslandLeading: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            CoachBadge(size: 26)
+            LiftBadge(size: 26)
             VStack(alignment: .leading, spacing: 1) {
                 Text(verbatim: state.current?.exerciseName ?? String(localized: "All sets done"))
                     .font(.headline)
