@@ -67,7 +67,7 @@ import Testing
 
         vm.send(.workoutOptionsTapped)
 
-        #expect(vm.state.options == .workout(title: "Lower A"))
+        #expect(vm.state.options == .workout(title: "Lower A", hasNote: false))
     }
 
     @Test func exerciseOptionsTappedOpensThatExercisesOptions() async {

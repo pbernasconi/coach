@@ -76,34 +76,6 @@ import Testing
         #expect(rows(vm).map(\.reps) == ["5", "5", "5"])
     }
 
-    @Test func runShowsLastTimesNoteFromTheLatestEarlierSession() async {
-        let history = FakeExerciseHistoryRepository(emissions: [
-            [
-                entry(id: 2, on: lastWeekDay, reps: [5], kg: 95, note: "Felt heavy"),
-                entry(id: 4, on: Fixtures.monday.adding(days: -14), reps: [5], kg: 90, note: "Older"),
-            ]
-        ])
-        let vm = makeViewModel(current, history: history)
-
-        await vm.run()
-
-        #expect(firstExercise(vm)?.lastNote == "Felt heavy")
-    }
-
-    @Test func runLeavesOutLastTimesNoteWhenItMatchesThisSessionsNote() async {
-        var detail = current
-        detail.items[0].exercise.note = "Deep squat"
-        let history = FakeExerciseHistoryRepository(emissions: [
-            [entry(id: 2, on: lastWeekDay, reps: [5], kg: 95, note: "Deep squat")]
-        ])
-        let vm = makeViewModel(detail, history: history)
-
-        await vm.run()
-
-        #expect(firstExercise(vm)?.lastNote == nil)
-        #expect(firstExercise(vm)?.note == "Deep squat")
-    }
-
     @Test func runLeavesPreviousEmptyWithoutAnEarlierSession() async {
         let history = FakeExerciseHistoryRepository(emissions: [
             [entry(id: 1, on: Fixtures.monday, reps: [5], kg: 100)]

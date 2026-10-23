@@ -4,8 +4,8 @@ import LiftStore
 
 /// The Workout screen's options sheets: the workout's own, or one exercise's.
 nonisolated enum WorkoutOptions: Equatable, Sendable {
-    /// Save as template and Discard workout.
-    case workout(title: String)
+    /// Add or edit the workout's note, Save as template and Discard workout.
+    case workout(title: String, hasNote: Bool)
     case exercise(WorkoutExerciseOptions)
 }
 

@@ -36,7 +36,8 @@ nonisolated enum WorkoutAction: Equatable, Sendable {
     /// The close button on the "rest over" bar: hides it without logging anything.
     case restReadyDismissed
     /// The How to button or the thumbnail beside an exercise name: opens the library exercise's detail.
-    case howToTapped(exerciseID: UUID)
+    /// How to: the library exercise's page, with this workout's note for it at the top.
+    case howToTapped(exerciseID: UUID, note: String?)
     /// An exercise section with a catalog entry appeared: load its still once.
     case thumbnailNeeded(catalogID: String)
     /// "Add exercise": opens the exercise picker for this session.

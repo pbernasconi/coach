@@ -28,6 +28,9 @@ nonisolated struct ExerciseDetailState: Equatable, Sendable {
     var serverPoint: ExerciseServerPoint?
     /// Whether the coach's sessions after the first `ExerciseServerSections.shownSessions` are open.
     var isServerSessionsExpanded = false
+    /// The coach's note for this exercise in the workout the page was opened from ("Weight in each hand"); nil
+    /// elsewhere.
+    var workoutNote: String?
 
     /// The coach's numbers once they loaded with their chart. They are the source of truth then: the local progress
     /// chart and history hide, so there are never two competing charts. Nil while loading, offline with nothing kept,

@@ -51,6 +51,9 @@ private struct ExerciseDetailBody: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Space.section) {
             ExerciseMediaView(item: item, media: state.media, animation: state.animation)
+            if let note = state.workoutNote {
+                ExerciseWorkoutNote(note: note)
+            }
             if let stats = state.serverStats {
                 ExerciseServerSections(
                     stats: stats,
@@ -131,5 +134,21 @@ private struct ExerciseServerOnlyBody: View {
         )
         .padding(.top, Space.sm)
         .padding(.bottom, Space.xxl)
+    }
+}
+
+/// The coach's note for this exercise in the open workout ("Weight in each hand. First set can be 10 @ 45").
+private struct ExerciseWorkoutNote: View {
+    @Environment(\.koboTheme) private var theme
+    let note: String
+
+    var body: some View {
+        CardSection("In this workout") {
+            Text(verbatim: note)
+                .font(theme.font(.subheadline))
+                .foregroundStyle(theme.palette.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
     }
 }

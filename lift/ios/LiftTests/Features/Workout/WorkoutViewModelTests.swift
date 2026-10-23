@@ -244,10 +244,11 @@ import Testing
         let vm = makeViewModel(planned, sets: recorder(planned))
         await vm.run()
 
-        let task = vm.send(.howToTapped(exerciseID: Fixtures.squat.id))
+        let task = vm.send(.howToTapped(exerciseID: Fixtures.squat.id, note: nil))
+        vm.send(.howToTapped(exerciseID: Fixtures.squat.id, note: "Deep squat"))
 
         #expect(task == nil)
-        #expect(router.opened == [.exercise(Fixtures.squat.id)])
+        #expect(router.opened == [.exercise(Fixtures.squat.id), .exerciseInWorkout(Fixtures.squat.id, note: "Deep squat")])
     }
 
     @Test func runRestTimerCountsDownOnTheInjectedClock() async {

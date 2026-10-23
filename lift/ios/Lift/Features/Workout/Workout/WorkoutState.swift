@@ -71,11 +71,9 @@ nonisolated struct WorkoutExercise: Equatable, Sendable, Identifiable {
     var catalogID: String?
     /// The unit of the weight column ("KG" or "LB" in the column header).
     var unit: WeightUnit = .kg
-    /// What was written about the exercise ("Elbows in"), without a next-time line `progression` already shows.
+    /// What was written about the exercise ("Elbows in"), without a next-time line `progression` already shows. It shows
+    /// on the exercise's How to page, not in the list.
     var note: String?
-    /// What was written about it last time ("Felt heavy"), so this session can act on it; nil when nothing was, or when
-    /// it is the same text as `note` (a template cue both sessions started with).
-    var lastNote: String?
 }
 
 /// One set row.

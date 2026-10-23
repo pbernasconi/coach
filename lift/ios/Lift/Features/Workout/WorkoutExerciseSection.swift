@@ -73,8 +73,9 @@ struct WorkoutExerciseSection: View {
                     hint(exercise.progression, symbol: "arrow.up.right", color: theme.palette.accentText)
                 }
             }
-            WorkoutExerciseNotes(name: exercise.name, note: exercise.note, lastNote: exercise.lastNote) {
-                send(.exerciseNoteTapped(exercise.id))
+            // The note shows on the How to page; an exercise without one keeps it here. Add or edit it from "…".
+            if exercise.libraryID == nil, let note = exercise.note {
+                WorkoutExerciseNote(name: exercise.name, note: note) { send(.exerciseNoteTapped(exercise.id)) }
             }
         }
     }
@@ -107,7 +108,7 @@ struct WorkoutExerciseSection: View {
                 "info",
                 verbatimAccessibilityLabel: String(localized: "How to \(exercise.name)"),
                 style: .tinted
-            ) { send(.howToTapped(exerciseID: libraryID)) }
+            ) { send(.howToTapped(exerciseID: libraryID, note: exercise.note)) }
         }
     }
 
@@ -118,7 +119,7 @@ struct WorkoutExerciseSection: View {
                 .onAppear { send(.thumbnailNeeded(catalogID: catalogID)) }
             if let libraryID = exercise.libraryID {
                 Button {
-                    send(.howToTapped(exerciseID: libraryID))
+                    send(.howToTapped(exerciseID: libraryID, note: exercise.note))
                 } label: {
                     still
                 }

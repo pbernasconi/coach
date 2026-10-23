@@ -141,7 +141,8 @@ final class WorkoutViewModel {
         case .restExtendTapped: extendRest()
         case .restSkipTapped: finishRest(after: state.rest?.setID)
         case .restReadyDismissed: state.ready = nil
-        case .howToTapped(let exerciseID): router.open(.exercise(exerciseID))
+        case .howToTapped(let exerciseID, let note):
+            router.open(note.map { .exerciseInWorkout(exerciseID, note: $0) } ?? .exercise(exerciseID))
         case .thumbnailNeeded(let catalogID): return loadThumbnail(catalogID)
         case .workoutOptionsTapped, .exerciseOptionsTapped, .optionsDismissed: state.options = options(for: action)
         default: return sendSession(action)

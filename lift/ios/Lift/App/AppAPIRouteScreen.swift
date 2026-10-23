@@ -19,7 +19,7 @@ struct AppAPIRouteScreen: View {
             LiftSessionRoute(sessionID: sessionID, dependencies: dependencies, router: router, toasts: toasts)
                 .id(route)
         case .liftExercise(let key):
-            LiftExerciseRoute(exerciseKey: key, dependencies: dependencies, router: router)
+            LiftExerciseRoute(exerciseKey: key, workoutNote: nil, dependencies: dependencies, router: router)
         case .liftWeekly:
             LiftWeeklyRoute(dependencies: dependencies, router: router)
         case .plannedWorkout(let id):

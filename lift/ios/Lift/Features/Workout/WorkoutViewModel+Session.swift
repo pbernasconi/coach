@@ -69,7 +69,8 @@ extension WorkoutViewModel {
     func options(for action: WorkoutAction) -> WorkoutOptions? {
         guard let detail else { return nil }
         switch action {
-        case .workoutOptionsTapped: return .workout(title: detail.session.title)
+        case .workoutOptionsTapped:
+            return .workout(title: detail.session.title, hasNote: NoteText.normalized(detail.session.note) != nil)
         case .exerciseOptionsTapped(let id):
             return WorkoutExerciseOptions(detail: detail, exerciseID: id).map { .exercise($0) }
         default: return nil

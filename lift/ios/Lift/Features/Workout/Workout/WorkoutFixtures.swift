@@ -64,8 +64,7 @@
                 set(23, 3, reps: "5", kg: "87.5", previous: "4 × 85"),
             ],
             libraryID: ExerciseLibrary.seedID(1),
-            catalogID: "0043",
-            lastNote: "Felt heavy, left knee sore"
+            catalogID: "0043"
         )
 
         private static let romanian = WorkoutExercise(

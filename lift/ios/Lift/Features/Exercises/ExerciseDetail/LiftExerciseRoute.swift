@@ -5,6 +5,8 @@ import SwiftUI
 /// the coach's numbers alone. `.exercise(id)` comes here too, so both routes show one screen.
 struct LiftExerciseRoute: View {
     let exerciseKey: String
+    /// The coach's note for this exercise in the workout it was opened from; nil elsewhere.
+    let workoutNote: String?
     let dependencies: AppDependencies
     let router: any Navigating
 
@@ -13,6 +15,7 @@ struct LiftExerciseRoute: View {
             viewModel: ExerciseDetailViewModel(
                 exerciseID: LiftLinks.libraryID(fromKey: exerciseKey),
                 exerciseKey: exerciseKey,
+                workoutNote: workoutNote,
                 exercises: dependencies.exercises,
                 history: dependencies.history,
                 catalog: dependencies.catalog,

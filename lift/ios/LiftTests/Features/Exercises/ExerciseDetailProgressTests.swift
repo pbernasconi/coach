@@ -16,6 +16,7 @@ import Testing
         ExerciseDetailViewModel(
             exerciseID: squatID,
             exerciseKey: LiftLinks.key(forLibraryID: squatID),
+            workoutNote: nil,
             exercises: FakeExerciseRepository(emissions: [ExerciseLibrary.seed]),
             history: FakeExerciseHistoryRepository(emissions: [entries]),
             catalog: FakeExerciseCatalog(),
