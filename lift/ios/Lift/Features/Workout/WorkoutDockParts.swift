@@ -28,8 +28,9 @@ struct WorkoutDockDots: View {
     }
 }
 
-/// The dock's opaque, raised panel. Light mode: a white card with a soft shadow over the grey canvas. Dark mode:
-/// the raised grey, a tone above the set cards, since a shadow does not read on black. A hairline edges both; once the
+/// The dock's opaque, raised panel: full width, rounded only at the top, and run down under the home indicator to
+/// the bottom of the screen. Light mode: white with a soft shadow cast upwards over the grey canvas. Dark mode: the
+/// raised grey, a tone above the set cards, since a shadow does not read on black. A hairline edges both; once the
 /// rest is over the edge turns the accent orange. While resting the panel takes the accent's soft tint.
 struct WorkoutDockPanel: View {
     @Environment(\.koboTheme) private var theme
@@ -37,8 +38,14 @@ struct WorkoutDockPanel: View {
     var isReady = false
     var isResting = false
 
+    static let shape = UnevenRoundedRectangle(
+        topLeadingRadius: Radius.xl,
+        topTrailingRadius: Radius.xl,
+        style: .continuous
+    )
+
     var body: some View {
-        let shape = RoundedRectangle(cornerRadius: Radius.xl, style: .continuous)
+        let shape = Self.shape
         shape
             .fill(base)
             .overlay { if isResting { shape.fill(theme.palette.accentSoft) } }  // soft accent is see-through
@@ -48,7 +55,7 @@ struct WorkoutDockPanel: View {
                     lineWidth: isReady ? Size.hairline * 3 : Size.hairline
                 )
             }
-            .shadow(color: theme.palette.scrim, radius: Space.lg, y: Space.xs)
+            .shadow(color: theme.palette.scrim, radius: Space.lg, y: -Space.xs)
     }
 
     /// Opaque, so the set rows never show through.

@@ -53,7 +53,7 @@ struct SetRow: View {
         .frame(maxWidth: .infinity, minHeight: Size.minTouch, alignment: .leading)
         .background(rest != nil ? theme.palette.accentSoft.opacity(RestingRow.washOpacity) : .clear)
         .koboAnimation(.state, value: rest != nil)
-        .overlay(alignment: .top) { Separator(leadingInset: SetGridWidth.inset) }
+        .overlay(alignment: .top) { Separator() }  // edge to edge of the card
         .contextMenu {
             if item.status == .planned {
                 Button("Skip set", systemImage: "forward", action: onSkip)
@@ -68,7 +68,7 @@ struct SetRow: View {
                 Text(verbatim: item.badge)
                     .font(theme.font(.subheadline).weight(.semibold).monospacedDigit())
                     .foregroundStyle(badgeColor)
-                    .frame(width: badgeWidth)
+                    .frame(width: badgeWidth, alignment: .leading)  // on the card's inset, like the exercise name
                 Group {
                     if let rest {
                         Text("Rest \(rest.elapsedText) / \(rest.totalText)")

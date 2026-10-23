@@ -50,6 +50,8 @@ protocol Navigating: AnyObject {
     func open(_ route: AppRoute)
     /// Closes the screen on top of the stack, as the back button does.
     func back()
+    /// Closes every pushed screen, back to the tab's own first screen (home).
+    func backToRoot()
 }
 
 /// The navigation path of one tab. Owned by the tab's view; handed to ViewModels as `any Navigating`.
@@ -69,5 +71,9 @@ final class TabRouter: Navigating {
     func back() {
         guard !path.isEmpty else { return }
         path.removeLast()
+    }
+
+    func backToRoot() {
+        path.removeAll()
     }
 }

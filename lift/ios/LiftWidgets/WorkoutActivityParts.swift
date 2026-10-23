@@ -104,27 +104,26 @@ struct WorkoutBar: View {
     }
 }
 
-/// The orange strip on top of a rest: "RESTING", then the sets done.
+/// The header of a rest: an orange "RESTING" chip, then the sets done. A chip, not a strip across the top edge: the
+/// Lock Screen draws a dark rim round the banner that shows as a line over a bright strip.
 struct RestBand: View {
     let state: WorkoutActivityAttributes.ContentState
 
     var body: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "timer")
-                .accessibilityHidden(true)
-            Text("Resting")
-                .fontWeight(.heavy)
+        HStack(spacing: 7) {
+            Label("Resting", systemImage: "timer")
+                .font(.caption.weight(.heavy))
                 .textCase(.uppercase)
+                .foregroundStyle(WidgetColors.ink)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background(WidgetColors.accent, in: Capsule())
             Spacer(minLength: 8)
             Text("\(state.loggedSets)/\(state.totalSets) sets")
+                .font(.caption)
+                .foregroundStyle(.secondary)
                 .monospacedDigit()
         }
-        .font(.footnote.weight(.semibold))
-        .foregroundStyle(WidgetColors.ink)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 5)
-        .frame(maxWidth: .infinity)
-        .background(WidgetColors.accent)
     }
 }
 

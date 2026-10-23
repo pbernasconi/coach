@@ -7,6 +7,7 @@ import Foundation
 final class RecordingNavigator: Navigating {
     private(set) var opened: [AppRoute] = []
     private(set) var backCount = 0
+    private(set) var backToRootCount = 0
 
     func open(_ route: AppRoute) {
         opened.append(route)
@@ -14,5 +15,9 @@ final class RecordingNavigator: Navigating {
 
     func back() {
         backCount += 1
+    }
+
+    func backToRoot() {
+        backToRootCount += 1
     }
 }

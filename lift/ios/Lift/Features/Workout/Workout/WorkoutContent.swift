@@ -61,8 +61,8 @@ struct WorkoutContent: View {
         .navigationTitle(Text(verbatim: title))
         .navigationBarTitleDisplayMode(.inline)
         .workoutOptions(state: state, send: send)
-        // Glass style: no bar material behind it. The dock brings its own opaque panel.
-        .pinnedFooter(style: .glass, isPresented: state.dock != nil) {
+        // Not a pinnedFooter: the dock runs edge to edge and down to the bottom of the screen, and brings its own panel.
+        .safeAreaInset(edge: .bottom, spacing: 0) {
             if let dock = state.dock {
                 WorkoutDock(phase: dock, introducesExercise: state.dockIntroducesExercise, send: send) {
                     focus($0, proxy)

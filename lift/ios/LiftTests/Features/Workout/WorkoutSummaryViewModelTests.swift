@@ -11,6 +11,9 @@ import Testing
 @Suite struct WorkoutSummaryViewModelTests {
     let router = RecordingNavigator()
     let health = RecordingHealthRecorder()
+    let appData = FakeAppData()
+    /// A minute after the finish below, so the check-in opens.
+    let clock = ManualNow(ManualNow.start.addingTimeInterval(1_860))
 
     /// Monday: three squat sets logged, the first at 09:00 and the last at 09:30, then finished.
     var detail: SessionDetail {
@@ -42,6 +45,8 @@ import Testing
             history: history,
             health: health,
             router: router,
+            data: appData,
+            now: { [clock] in clock() },
             calendar: SessionBuilder.calendar
         )
 
@@ -67,6 +72,8 @@ import Testing
             history: FakeExerciseHistoryRepository(emissions: [[]]),
             health: health,
             router: router,
+            data: appData,
+            now: { [clock] in clock() },
             calendar: SessionBuilder.calendar
         )
 
@@ -75,18 +82,21 @@ import Testing
         #expect(vm.state.summary == .empty)
     }
 
-    @Test func doneTappedGoesBack() {
+    @Test func doneTappedGoesHome() {
         let vm = WorkoutSummaryViewModel(
             sessionID: detail.id,
             sessions: FakeSessionDetailRepository(emissions: []),
             history: FakeExerciseHistoryRepository(emissions: []),
             health: health,
             router: router,
+            data: appData,
+            now: { [clock] in clock() },
             calendar: SessionBuilder.calendar
         )
 
         #expect(vm.send(.doneTapped) == nil)
-        #expect(router.backCount == 1)
+        #expect(router.backToRootCount == 1)
+        #expect(router.backCount == 0)
     }
 
     func summary(health status: HealthStatus, saved: Bool = false) async -> WorkoutSummaryViewModel {
@@ -99,6 +109,8 @@ import Testing
             history: FakeExerciseHistoryRepository(emissions: [[]]),
             health: health,
             router: router,
+            data: appData,
+            now: { [clock] in clock() },
             calendar: SessionBuilder.calendar
         )
         await vm.run()
@@ -132,5 +144,78 @@ import Testing
 
         #expect(health.calls == [.setEnabled(false)])
         #expect(vm.state.health == nil)
+    }
+
+    // MARK: The check-in
+
+    @Test func aFreshFinishOpensTheCheckInOnce() async {
+        let vm = await summary(health: .on)
+
+        #expect(vm.state.checkIn?.step == .effort)
+        #expect(vm.state.checkIn?.feedback.item == "lift:\(detail.id.uuidString.lowercased())")
+        #expect(vm.state.checkIn?.feedback.date == "2026-03-02")
+        #expect(vm.state.checkIn?.feedback.rpe == nil)
+    }
+
+    @Test func aSummaryOpenedLaterDoesNotAsk() async {
+        clock.advance(seconds: WorkoutCheckInWindow.seconds)
+
+        #expect(await summary(health: .on).state.checkIn == nil)
+    }
+
+    @Test func effortThenFeelThenSaveSendsBoth() async throws {
+        let vm = await summary(health: .on)
+
+        vm.send(.checkIn(.effortChanged(7)))
+        vm.send(.checkIn(.effortChanged(11)))  // off the dial: ignored
+        vm.send(.checkIn(.nextTapped))
+        #expect(vm.state.checkIn?.step == .feel)
+        vm.send(.checkIn(.feelTapped(4)))
+        await vm.send(.checkIn(.saveTapped))?.value
+
+        #expect(vm.state.checkIn == nil)
+        #expect(vm.state.feedback?.rpe == 7)
+        #expect(vm.state.feedback?.feel == 4)
+        #expect(vm.state.feedbackSave == .saved)
+        #expect(appData.puts.map(\.path) == ["api/app/feedback"])
+        let body = try #require(appData.puts.first?.body)
+        let json = try JSONSerialization.jsonObject(with: body) as? [String: Any]
+        #expect(json?["rpe"] as? Int == 7)
+        #expect(json?["feel"] as? Int == 4)
+    }
+
+    @Test func skipClosesWithoutSaving() async {
+        let vm = await summary(health: .on)
+
+        vm.send(.checkIn(.effortChanged(5)))
+        #expect(vm.send(.checkIn(.skipTapped)) == nil)
+
+        #expect(vm.state.checkIn == nil)
+        #expect(vm.state.feedback == nil)
+        #expect(appData.puts.isEmpty)
+    }
+
+    @Test func aFailedSaveCanBeTriedAgain() async {
+        let vm = await summary(health: .on)
+        appData.putResult = .failure(.retryable(status: nil))
+
+        vm.send(.checkIn(.effortChanged(6)))
+        await vm.send(.checkIn(.saveTapped))?.value
+        #expect(vm.state.feedbackSave == .failed)
+
+        appData.putResult = nil
+        await vm.send(.feedbackRetryTapped)?.value
+
+        #expect(vm.state.feedbackSave == .saved)
+        #expect(appData.puts.count == 2)
+    }
+
+    @Test func feedbackTappedOpensTheCheckInAgain() async {
+        let vm = await summary(health: .on)
+        vm.send(.checkIn(.skipTapped))
+
+        vm.send(.feedbackTapped)
+
+        #expect(vm.state.checkIn?.step == .effort)
     }
 }

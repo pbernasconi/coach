@@ -76,6 +76,36 @@ public struct WorkoutFeedback: Decodable, Equatable, Sendable {
         rpeScale = try container.decode([RPEStep].self, forKey: .rpeScale)
     }
 
+    /// Nothing logged yet, with the server's scales (src/lib/plan/feedback.mjs), for a check-in made before the coach
+    /// has sent this workout's feedback block: right after a workout finishes in Lift.
+    public static func blank(item: String, date: String, title: String?, planActivityId: String? = nil) -> WorkoutFeedback {
+        WorkoutFeedback(
+            item: item,
+            date: date,
+            title: title,
+            planActivityId: planActivityId,
+            feelLabels: standardFeelLabels,
+            rpeScale: standardRPEScale
+        )
+    }
+
+    /// The feel scale, 1 to 5, as the server's FEEL_LABELS.
+    public static let standardFeelLabels = ["Very weak", "Weak", "Normal", "Strong", "Very strong"]
+
+    /// The RPE scale (modified Borg CR-10), as the server's RPE_SCALE.
+    public static let standardRPEScale: [RPEStep] = [
+        ("Very easy", "Barely any effort."),
+        ("Easy", "Could go all day."),
+        ("Moderate", "Comfortable, full sentences."),
+        ("Somewhat hard", "Breathing deeper, still chatty."),
+        ("Hard", "Short sentences only."),
+        ("Hard", "Steady focus needed."),
+        ("Very hard", "A few words at a time."),
+        ("Extremely hard", "Very challenging, intense focus."),
+        ("Near max", "Could not keep it up much longer."),
+        ("Max effort", "Nothing left."),
+    ].enumerated().map { RPEStep(value: $0.offset + 1, label: $0.element.0, detail: $0.element.1) }
+
     /// The word for the logged feel, or nil.
     public var feelLabel: String? {
         guard let feel, feelLabels.indices.contains(feel - 1) else { return nil }

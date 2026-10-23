@@ -2,12 +2,12 @@ import SwiftUI
 
 /// The Lock Screen banner for the whole workout. The top says where the workout stands and shows the exercise with
 /// its photo and set dots; a bar runs edge to edge; the bottom bar holds what to do now: the load with a check to log
-/// it, or, while resting, the time rested against the rest's length with Skip. A rest gets an orange "Resting" strip
+/// it, or, while resting, the time rested against the rest's length with Skip. A rest gets an orange "Resting" chip
 /// and a tinted top, so it never reads as a set. Once the rest is over (the content is stale) the set to log is back,
 /// with "Rest over +0:12" in the header. A paused workout says "Paused" in the header.
 ///
-/// iOS clips a Lock Screen activity taller than 160 pt, so every state stays near 150 pt: band 26, top about 70,
-/// bar 4, bottom bar about 55.
+/// iOS clips a Lock Screen activity taller than 160 pt, so every state stays near 155 pt: top about 93 (header or
+/// Resting chip, exercise row), bar 4, bottom bar about 57.
 struct WorkoutLockScreenView: View {
     @Environment(\.colorScheme) private var colorScheme
     let attributes: WorkoutActivityAttributes
@@ -19,16 +19,15 @@ struct WorkoutLockScreenView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if isResting {
-                RestBand(state: state)
-            }
             top
                 .padding(.horizontal, 16)
                 .padding(.top, 10)
                 .padding(.bottom, 8)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(isResting ? WidgetColors.restTint : .clear)
+            // On the bottom bar's panel, so no strip of the system background shows above or below the bar.
             WorkoutBar(state: state, isResting: isResting)
+                .background(WidgetColors.bottomBar(for: colorScheme))
             bottomBar
                 .padding(.leading, 16)
                 .padding(.trailing, 12)
@@ -39,7 +38,9 @@ struct WorkoutLockScreenView: View {
 
     @ViewBuilder private var top: some View {
         VStack(alignment: .leading, spacing: 6) {
-            if !isResting {
+            if isResting {
+                RestBand(state: state)
+            } else {
                 WorkoutHeader(attributes: attributes, state: state, isStale: isStale)
             }
             if let set = state.current {
