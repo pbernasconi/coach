@@ -1,22 +1,19 @@
 import Link from 'next/link';
 import type { DexaView } from '@/lib/vitals/dexa-queries';
+import { dexaCaption, dexaChange, fmtDate } from '@/lib/vitals/health-view.mjs';
 
 type Measure = DexaView['measures'][number];
 
-const fmtDate = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 const fmt = (v: number | null, digits: number) => (v === null ? '-' : v.toFixed(digits));
+const TONE = { good: 'var(--viz-good)', bad: 'var(--viz-down)', neutral: 'var(--viz-muted)' } as const;
 
 /** A change with its sign as a glyph, colored by whether it went the good way. Never color alone (the glyph). */
 function Change({ m, value, label }: { m: Measure; value: number | null; label: string }) {
-  if (value === null) return null;
-  const flat = Math.abs(value) < 10 ** -m.digits / 2;
-  const good = m.better === null || flat ? null : (value < 0) === (m.better === 'down');
-  const color = good === null ? 'var(--viz-muted)' : good ? 'var(--viz-good)' : 'var(--viz-down)';
-  const glyph = flat ? '→' : value > 0 ? '▲' : '▼';
+  const c = dexaChange(m, value, label);
+  if (!c) return null;
   return (
-    <span className="whitespace-nowrap tabular-nums" style={{ color }}>
-      {glyph} {fmt(Math.abs(value), m.digits)}
-      {m.unit === '%' ? ' pts' : m.unit ? ` ${m.unit}` : ''} <span className="text-[var(--viz-muted)]">{label}</span>
+    <span className="whitespace-nowrap tabular-nums" style={{ color: TONE[c.tone] }}>
+      {c.glyph} {c.amountText} <span className="text-[var(--viz-muted)]">{label}</span>
     </span>
   );
 }
@@ -70,9 +67,7 @@ export default function DexaSection({ dexa }: { dexa: DexaView }) {
           )}
         </div>
         <p className="text-sm text-muted-foreground">
-          {latest
-            ? `DEXA scans from BodySpec. ${scans.length} ${scans.length === 1 ? 'scan' : 'scans'}; latest ${fmtDate(latest.scanDate)}${latest.location ? ` at ${latest.location}` : ''}.`
-            : 'DEXA scans from BodySpec: body fat, visceral (belly) fat and lean mass per arm.'}
+          {dexaCaption(dexa)}
         </p>
       </div>
       {!latest ? (

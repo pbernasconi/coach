@@ -1,7 +1,7 @@
 # App API
 
-Read-only JSON for the Lift iPhone app: the web's Today, Trends, Activity and Lift pages, and the state of Settings'
-connections (not Health; Settings' edits stay on the web).
+Read-only JSON for the Lift iPhone app: the web's Today, Trends, Activity, Lift and Health pages, and the state of
+Settings' connections (Settings' edits stay on the web).
 Server-side first: the server computes every number, state and label with the same functions as the web page, and
 the phone shows them. The phone does not port web logic. Change this file first, then both sides. The week plan has
 its own contract: `WEEK-API.md`.
@@ -19,7 +19,7 @@ its own contract: `WEEK-API.md`.
 - Display text is ready to show: every number the phone shows has a `…Text` field next to the raw value (the raw
   value is for charts and sorting). Units follow the web (metric; lift weights in the web's display unit).
 - Links between screens are ids the phone can open with another endpoint (`activityId`, `sessionId`,
-  `exerciseKey`), never web URLs. Web-only links (Health, Settings, edits) are left out.
+  `exerciseKey`), never web URLs. Web-only links (the Health subpages, Settings, edits) are left out.
 - Payload: keep each response under about 100 KB. Long series are downsampled on the server.
 - Each route is in the deploy health check (`runChecks()` in `src/lib/health.ts`), like `/api/lift/week`.
 
@@ -964,3 +964,109 @@ the web Settings page also uses, so both say the same.
   in `summary` when they are off.
 - `coach.nextEvent` is `null` with no event in the next year; `targetsText` is `null` when the targets failed.
 
+### Health: `GET /api/app/health?tz=&days=30|90`
+
+The web's Health page (`src/app/(dashboard)/health/page.tsx`) for the phone's Today tab: the Garmin line, the
+readiness verdict, the vitals row, the board's trends, body (weight and the latest DEXA scan) and a Labs summary.
+Clinician notes, the day pages, Training and the full lab report stay on the web. Loader `loadAppHealth`
+(`src/lib/vitals/app-health.ts`), shape `healthResponse` (`src/lib/vitals/app-health.mjs`), text and maths from
+`src/lib/vitals/health-view.mjs`, which the web's VitalsSummary, HealthBoard, DexaSection and LabsSection also use.
+`days`: `90`, anything else is `30` (the web's two ranges). At most about 38 KB at 90 days (every metric on every
+day); a real body is smaller.
+
+```json
+{
+  "generatedAt": "2026-10-22T20:00:00.000Z", "today": "2026-10-22", "days": 30,
+  "status": { "ok": true, "connected": true, "text": "Garmin: synced 6 h ago, through Oct 22",
+    "nightText": "last night 6:50 asleep", "nightIn": true, "warning": null },
+  "readiness": { "ok": true, "status": "ok", "label": "One flag",
+    "text": "One signal is off. Keep the plan, but watch how the session feels.",
+    "flags": ["HRV (RMSSD) 7-day 44 ms is below the 60-day baseline 51 ms"] },
+  "vitals": {
+    "ok": true,
+    "summaryText": "Outside your normal: HRV low, Sleep low",
+    "items": [
+      { "key": "hrv", "label": "HRV", "valueText": "38", "unit": "ms", "footText": "normal 48–56", "staleText": null,
+        "status": "below", "isOff": true, "range": { "low": 48.3, "high": 55.9, "value": 38, "min": 38, "max": 63.5 } },
+      { "key": "sleep", "label": "Sleep", "valueText": "6:50", "unit": "h", "footText": "normal 7:01–7:39", "staleText": null,
+        "status": "below", "isOff": true, "range": { "low": 421.3, "high": 459.3, "value": 410, "min": 383.2, "max": 497.4 } },
+      { "key": "weight", "label": "Weight", "valueText": "83.6", "unit": "kg", "footText": "trend 83.9 · ▼ 0.07/wk",
+        "staleText": null, "status": null, "isOff": false, "range": null }
+    ]
+  },
+  "trends": {
+    "ok": true,
+    "items": [
+      { "key": "hrv", "label": "HRV", "unit": "ms", "latestText": "38", "latestDate": "2026-10-22",
+        "normalText": "normal 48–56 ms", "compareText": "30d 52 · 90d 52", "recordedText": "30/30 nights",
+        "points": [{ "date": "2026-10-21", "value": 54.4 }, { "date": "2026-10-22", "value": 38 }],
+        "band": { "low": 48.3, "high": 55.9 }, "goal": null, "isOff": true },
+      { "key": "sleep", "label": "Sleep", "unit": "h", "latestText": "6:50", "latestDate": "2026-10-22",
+        "normalText": "normal 7:01–7:39 h", "compareText": "30d 7:20 · 90d 7:20", "recordedText": "30/30 nights",
+        "points": [{ "date": "2026-10-22", "value": 410 }], "band": { "low": 421.3, "high": 459.3 },
+        "goal": { "value": 450, "label": "goal 7:30" }, "isOff": true },
+      { "key": "weight", "label": "Weight", "unit": "kg", "latestText": "83.6", "latestDate": "2026-10-22",
+        "normalText": null, "compareText": null, "recordedText": "30/30 days",
+        "points": [{ "date": "2026-10-22", "value": 83.6 }], "trendLine": [{ "date": "2026-10-22", "value": 83.88 }],
+        "band": null, "goal": null, "isOff": false }
+    ]
+  },
+  "body": {
+    "ok": true,
+    "weight": { "kg": 83.6, "valueText": "83.6", "unit": "kg", "date": "2026-10-22", "dateText": "Oct 22",
+      "trendText": "trend 83.9 · ▼ 0.07/wk", "change4w": -0.68, "change4wText": "▼ 0.7 kg in 4 weeks" },
+    "dexa": {
+      "scanDate": "2026-09-15", "dateText": "Sep 15, 2026", "location": "San Francisco", "scanCount": 2,
+      "measures": [
+        { "key": "bodyFatPct", "label": "Body fat", "value": 18.4, "valueText": "18.4", "unit": "%",
+          "changeText": "▼ 0.7 pts since last", "tone": "good" },
+        { "key": "leanMassKg", "label": "Lean mass", "value": 65.3, "valueText": "65.3", "unit": "kg",
+          "changeText": "▲ 0.7 kg since last", "tone": "good" }
+      ]
+    }
+  },
+  "labs": {
+    "ok": true, "drawDate": "2026-09-01", "drawDateText": "Sep 1, 2026", "drawCount": 2,
+    "counts": { "total": 62, "inRange": 60, "outOfRange": 2, "noRange": 0 },
+    "items": [
+      { "name": "Apolipoprotein B", "valueText": "104", "unit": "mg/dL", "rangeText": "≤ 90", "status": "out_of_range",
+        "statusText": "Out of range" }
+    ],
+    "moreCount": 0
+  },
+  "emptyText": null
+}
+```
+
+- `status`: `text` is the web's Garmin line (`garminLine`); `nightText` is last night's sleep, `"no watch last night"` or
+  `"waiting for last night's sleep"` (show those two in amber: `nightIn` is false), `null` when Garmin is not set up.
+  `warning`: `{ level: "warn" | "error", text }` or `null` (info-level warnings are left out, as on the web).
+  `{ "ok": false }` when the Garmin status failed to load.
+- `readiness.status`: `good | ok | low | unknown`; `label` and `text` (one sentence) are the web's verdict; `flags`:
+  the reasons, may be empty.
+- `vitals.items`, always in this order: `hrv`, `rhr`, `sleep`, `score`, `bb`, `ready`, `stress`, `weight`.
+  `valueText` is `null` when there is no value (show "–"); `footText` is `"normal 48–56"`, `"building normal"` (under
+  14 days of history), `"No data"`, or for weight the trend. `staleText`: the value's day ("Oct 19") when it is older
+  than yesterday (show it after the foot in amber), else `null`. `status`: `below | above | inRange | null` against
+  the normal range (mean ± 1 SD of the 60 days before the value); `isOff` is true only in the bad direction (HRV,
+  sleep, sleep score, Body Battery, readiness low; resting HR, stress high), and only then is the value red.
+  `range`: the range bar, `null` without a normal range (always for weight): draw a track from `min` to `max`, shade
+  `low`–`high`, and a tick at `value`. Sleep values are minutes. `summaryText`: `"All within your normal"` or
+  `"Outside your normal: …"`. `items` is empty (and `summaryText` `null`) when there are no Garmin samples.
+- `trends.items`, in this order: `hrv`, `rhr`, `sleep`, `sleepScore`, `bbHigh`, `readiness`, `stress`, `steps`,
+  `weight`, `vo2max`. `points`: only the days with a value in the last `days` days, oldest first (≤ 90; sleep in
+  minutes, steps as a count, 1 decimal, weight 2). `band`: the normal range (`null` for steps, weight and VO2max, or
+  under 14 days); `normalText` says the same. `goal`: a dashed target line, or `null`. `latestText`: the newest point
+  in the window, formatted as the vitals. `compareText`: the 30- and 90-day averages, `null` for weight and VO2max.
+  `recordedText`: days with a value of the days synced. `trendLine` (weight only): the smoothed trend
+  (`weight-trend.mjs`) on each weigh-in day; draw it as the line and `points` as dots. `isOff` as in `vitals`.
+- `body.weight`: the newest weigh-in (in the window plus the 60 days before it) or `null`. `change4wText`: against
+  the last weigh-in 28 or more days before it, `null` without one. `body.dexa`: the newest BodySpec scan or `null`;
+  `measures` in this order when present: body fat, lean mass, visceral fat, fat mass. `changeText` is since the scan
+  before (`null` on a first scan), `tone`: `good | bad | neutral` (lower fat and higher lean mass are good).
+  `{ "ok": false }` when either the board or the DEXA loader failed.
+- `labs`: the newest draw (`drawDate` `null` with no results), counts of the latest result of every biomarker
+  (`inRange` includes optimal; `noRange` has no reference range), and the out-of-range biomarkers (at most 8, by
+  category then name; `moreCount` the rest). `rangeText`: the reference range ("30–100", "≤ 90", "≥ 40") or `null`.
+- `emptyText`: one sentence when there is no health data at all (no Garmin samples, no weight, no DEXA scan, no lab
+  result), else `null`. Show it in place of the sections.

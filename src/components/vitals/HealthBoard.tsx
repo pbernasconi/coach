@@ -5,12 +5,10 @@ import type { Board } from '@/lib/vitals/garmin-pages';
 import CoverageStrip from './CoverageStrip';
 import DayChart from './DayChart';
 import { STAGE_STYLE } from './stages';
+import { boardChart, boardFoot, hm, rhrInfo, weightAside } from '@/lib/vitals/health-view.mjs';
 
-const hm = (m: number) => `${Math.floor(Math.round(m) / 60)}:${String(Math.round(m) % 60).padStart(2, '0')}`;
 const int = (v: number | null, unit = '') => (v === null ? null : `${Math.round(v)}${unit}`);
 const dec = (v: number | null, unit = '') => (v === null ? null : `${v.toFixed(1)}${unit}`);
-/** Where each metric should ideally be: the Lean & Strong plan's 7.5 h of sleep, Garmin's own bands, 10k steps. */
-const GOALS = { sleepMin: 450, sleepScore: 80, bodyBattery: 75, readiness: 75, stress: 25, steps: 10000, intensityPerDay: 150 / 7 };
 const STATUS_COLOR: Record<number, string> = { 1: 'var(--viz-down)', 2: 'var(--viz-down)', 3: 'var(--color-amber-500)' }; // Poor, Low, Unbalanced
 
 /**
@@ -24,17 +22,9 @@ export default function HealthBoard({ b }: { b: Board }) {
   const rhrNormal = b.stats.rhr.normal;
   const sleepTop = Math.max(8, ...s.sleep.map((v, i) => Math.ceil(((v ?? 0) + (s.awake[i] ?? 0)) / 240) * 4));
   const sleepTicks = Array.from({ length: sleepTop / 4 + 1 }, (_, i) => i * 240);
-  // Days that can have a value: the window minus the days not synced yet.
-  const synced = b.days.filter((d) => b.coverage[d] !== 'pending').length;
-  const recorded = (v: (number | null)[], noun = 'days') => `${v.filter((x) => x !== null).length}/${synced} ${noun}`;
-  const foot = (v: (number | null)[], key: keyof Board['trend'], fmt: (x: number) => string, noun?: string) => {
-    const t = b.trend[key];
-    return {
-      recorded: recorded(v, noun),
-      compare: t && t.avg30 !== null && t.avg90 !== null ? `30d ${fmt(t.avg30)} · 90d ${fmt(t.avg90)}` : null,
-    };
-  };
-  const r0 = (x: number) => String(Math.round(x));
+  const foot = (key: string) => boardFoot(b, key);
+  const info = (key: string) => boardChart(key).info;
+  const goal = (key: string) => boardChart(key).goal;
   const soft = (c: string) => `color-mix(in oklab, ${c} 72%, var(--viz-surface))`;
 
   return (
@@ -43,9 +33,9 @@ export default function HealthBoard({ b }: { b: Board }) {
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         <DayChart
           {...common}
-          title="Sleep"
-          foot={foot(s.sleep, 'sleep', hm, 'nights')}
-          goal={{ value: GOALS.sleepMin, label: 'goal 7:30' }}
+          title={boardChart('sleep').title}
+          foot={foot('sleep')}
+          goal={goal('sleep')}
           info={<>Time asleep, filed under the morning you wake up. Stacked: {(['deep', 'light', 'rem', 'awake'] as const).map((k) => STAGE_STYLE[k].label).join(', ')}.</>}
           kind="stack"
           stack={(['deep', 'light', 'rem', 'awake'] as const).map((k) => ({ values: s[k], color: STAGE_STYLE[k].color, label: k }))}
@@ -55,9 +45,9 @@ export default function HealthBoard({ b }: { b: Board }) {
         />
         <DayChart
           {...common}
-          title="HRV"
-          foot={foot(s.hrv, 'hrv', r0, 'nights')}
-          info="Overnight average (RMSSD, ms). Shaded: Garmin's balanced range for you. Amber and red dots: unbalanced or low nights."
+          title={boardChart('hrv').title}
+          foot={foot('hrv')}
+          info={info('hrv')}
           kind="line"
           values={s.hrv}
           band={{ low: s.hrvLow, high: s.hrvHigh }}
@@ -66,9 +56,9 @@ export default function HealthBoard({ b }: { b: Board }) {
         />
         <DayChart
           {...common}
-          title="Resting HR"
-          foot={foot(s.rhr, 'rhr', r0)}
-          info={rhrNormal ? `Beats per minute. Shaded: your normal, ${Math.round(rhrNormal.low)}–${Math.round(rhrNormal.high)} bpm (60 days).` : 'Beats per minute.'}
+          title={boardChart('rhr').title}
+          foot={foot('rhr')}
+          info={rhrInfo(rhrNormal)}
           kind="line"
           values={s.rhr}
           band={rhrNormal ? { low: rhrNormal.low, high: rhrNormal.high } : null}
@@ -77,10 +67,10 @@ export default function HealthBoard({ b }: { b: Board }) {
         />
         <DayChart
           {...common}
-          title="Sleep score"
-          foot={foot(s.sleepScore, 'sleepScore', r0, 'nights')}
-          goal={{ value: GOALS.sleepScore, label: 'good 80' }}
-          info="Garmin's 0–100 score for the night. 80+ good, 60–79 fair, under 60 poor."
+          title={boardChart('sleepScore').title}
+          foot={foot('sleepScore')}
+          goal={goal('sleepScore')}
+          info={info('sleepScore')}
           kind="bar"
           values={s.sleepScore}
           yFloor={0}
@@ -90,10 +80,10 @@ export default function HealthBoard({ b }: { b: Board }) {
         />
         <DayChart
           {...common}
-          title="Body Battery"
-          foot={foot(s.bbHigh, 'bbHigh', r0)}
-          goal={{ value: GOALS.bodyBattery, label: 'charged 75' }}
-          info="Each bar runs from the day's lowest to its highest Body Battery (0–100)."
+          title={boardChart('bbHigh').title}
+          foot={foot('bbHigh')}
+          goal={goal('bbHigh')}
+          info={info('bbHigh')}
           kind="range"
           values={s.bbHigh}
           low={s.bbLow}
@@ -104,10 +94,10 @@ export default function HealthBoard({ b }: { b: Board }) {
         />
         <DayChart
           {...common}
-          title="Training readiness"
-          foot={foot(s.readiness, 'readiness', r0)}
-          goal={{ value: GOALS.readiness, label: 'high 75' }}
-          info="Garmin's morning score (0–100): 75+ high, 50–74 moderate, 25–49 low."
+          title={boardChart('readiness').title}
+          foot={foot('readiness')}
+          goal={goal('readiness')}
+          info={info('readiness')}
           kind="bar"
           values={s.readiness}
           yFloor={0}
@@ -117,10 +107,10 @@ export default function HealthBoard({ b }: { b: Board }) {
         />
         <DayChart
           {...common}
-          title="Stress"
-          foot={foot(s.stress, 'stress', r0)}
-          goal={{ value: GOALS.stress, label: 'rest < 25' }}
-          info="Garmin's all-day average stress (0–100). Under 25 is rest."
+          title={boardChart('stress').title}
+          foot={foot('stress')}
+          goal={goal('stress')}
+          info={info('stress')}
           kind="bar"
           values={s.stress}
           yFloor={0}
@@ -129,9 +119,9 @@ export default function HealthBoard({ b }: { b: Board }) {
         />
         <DayChart
           {...common}
-          title="Respiration"
-          foot={foot(s.respiration, 'respiration', (x) => x.toFixed(1), 'nights')}
-          info="Average breaths per minute while asleep."
+          title={boardChart('respiration').title}
+          foot={foot('respiration')}
+          info={info('respiration')}
           kind="line"
           values={s.respiration}
           color="var(--viz-cadence)"
@@ -139,10 +129,10 @@ export default function HealthBoard({ b }: { b: Board }) {
         />
         <DayChart
           {...common}
-          title="Intensity minutes"
-          foot={foot(s.intensity, 'intensity', r0)}
-          goal={{ value: GOALS.intensityPerDay, label: '150/wk pace' }}
-          info="Moderate minutes plus vigorous minutes counted twice, as Garmin does. The weekly goal is 150."
+          title={boardChart('intensity').title}
+          foot={foot('intensity')}
+          goal={goal('intensity')}
+          info={info('intensity')}
           kind="bar"
           values={s.intensity}
           yFloor={0}
@@ -152,9 +142,9 @@ export default function HealthBoard({ b }: { b: Board }) {
         />
         <DayChart
           {...common}
-          title="Steps"
-          foot={foot(s.steps, 'steps', (x) => `${(Math.round(x / 100) / 10).toFixed(1)}k`)}
-          goal={{ value: GOALS.steps, label: '10k' }}
+          title={boardChart('steps').title}
+          foot={foot('steps')}
+          goal={goal('steps')}
           kind="bar"
           values={s.steps}
           yFloor={0}
@@ -164,20 +154,20 @@ export default function HealthBoard({ b }: { b: Board }) {
         />
         <DayChart
           {...common}
-          title="Weight"
-          info="Dots: each scale reading. Line: the trend, a smoothed average that moves 10% of the way to each new reading per day, so a salty dinner barely shifts it."
+          title={boardChart('weight').title}
+          info={info('weight')}
           kind="line"
           watchless
           values={s.weight}
           trend={s.weightTrend}
           color="var(--viz-muted)"
           readout={(i) => dec(s.weight[i], ' kg')}
-          aside={b.stats.weight.trend ? `trend ${b.stats.weight.trend.text}${b.stats.weight.trend.rate ? ` · ${b.stats.weight.trend.rate.text}` : ''}` : undefined}
+          aside={weightAside(b.stats.weight.trend)}
         />
         <DayChart
           {...common}
-          title="VO2max"
-          info="Estimated by the watch after outdoor runs (mL/kg/min)."
+          title={boardChart('vo2max').title}
+          info={info('vo2max')}
           kind="line"
           connect
           watchless

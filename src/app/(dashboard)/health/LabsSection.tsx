@@ -1,28 +1,19 @@
 import Link from 'next/link';
 import { HelpTooltip } from '@kobo/web';
 import { ChevronDown, Info } from 'lucide-react';
-import type { Biomarker, LabCategory, LabReading } from '@/lib/vitals/queries';
+import type { Biomarker, LabCategory } from '@/lib/vitals/queries';
 import { slug } from '@/lib/vitals/function-catalog.mjs';
 import { pickHighlights, trend } from '@/lib/vitals/labs-highlights.mjs';
 
-const fmtDate = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
-const shortDate = (d: string) => `${new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' })} '${d.slice(2, 4)}`;
-const num = (v: number) => (Math.abs(v) >= 100 ? String(Math.round(v)) : String(+v.toPrecision(3)));
-const reading = (r: LabReading) => r.valueText ?? (r.value === null ? '-' : num(r.value));
+import { LAB_STATUS, fmtDate, labRangeText as rangeText, labReading as reading, labTrendView } from '@/lib/vitals/health-view.mjs';
 
 const STATUS = {
-  out_of_range: { label: 'Out of range', color: 'var(--viz-down)' },
-  in_range: { label: 'In range', color: 'var(--viz-ink-2)' },
-  optimal: { label: 'Optimal', color: 'var(--viz-good)' },
-  unknown: { label: 'No range', color: 'var(--viz-muted)' },
+  out_of_range: { ...LAB_STATUS.out_of_range, color: 'var(--viz-down)' },
+  in_range: { ...LAB_STATUS.in_range, color: 'var(--viz-ink-2)' },
+  optimal: { ...LAB_STATUS.optimal, color: 'var(--viz-good)' },
+  unknown: { ...LAB_STATUS.unknown, color: 'var(--viz-muted)' },
 } as const;
-
-function rangeText(low: number | null, high: number | null) {
-  if (low !== null && high !== null) return `${num(low)}–${num(high)}`;
-  if (low !== null) return `≥ ${num(low)}`;
-  if (high !== null) return `≤ ${num(high)}`;
-  return null;
-}
+const TONE = { good: 'var(--viz-good)', bad: 'var(--viz-down)', neutral: 'var(--viz-muted)' } as const;
 
 /**
  * The latest value on a scale with the reference range (gray) and the optimal range (green) behind it. Earlier
@@ -60,14 +51,12 @@ function RangeBar({ b }: { b: Biomarker }) {
 
 /** The change since the previous draw: glyph and size, green toward the optimal range, red away from it. */
 function Trend({ b }: { b: Biomarker }) {
-  const t = trend(b);
+  const t = labTrendView(trend(b));
   if (!t) return <span className="text-xs text-[var(--viz-muted)]">-</span>;
-  const flat = Math.abs(t.delta) < Math.abs(t.previous) * 0.005;
-  const color = flat || t.better === null ? 'var(--viz-muted)' : t.better ? 'var(--viz-good)' : 'var(--viz-down)';
   return (
-    <span className="whitespace-nowrap text-xs tabular-nums" style={{ color }} title={`${num(t.previous)} on ${fmtDate(t.previousOn)}`}>
-      {flat ? '→' : t.delta > 0 ? '▲' : '▼'} {flat ? 'steady' : num(Math.abs(t.delta))}{' '}
-      <span className="text-[var(--viz-muted)]">vs {shortDate(t.previousOn)}</span>
+    <span className="whitespace-nowrap text-xs tabular-nums" style={{ color: TONE[t.tone] }} title={t.titleText}>
+      {t.glyph} {t.amountText}{' '}
+      <span className="text-[var(--viz-muted)]">{t.sinceText}</span>
     </span>
   );
 }
