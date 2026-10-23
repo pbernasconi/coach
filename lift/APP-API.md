@@ -294,6 +294,34 @@ Weights are in the web's display unit `unit` (`kg | lb`: the unit most logged se
 Errors: a malformed `id` or `key` `400`; an unknown session, or an exercise with no logged sets, `404 {"error":"not
 found"}` (also `latest` with no sessions).
 
+**The simple overview** (the phone's Lift tab; `focus.mjs`, shared with `/lift`). Five sections, each `{ ok }` on its own,
+next to the older ones (kept until every phone has the new build):
+
+```json
+"summary": { "ok": true, "text": "1 of 2 sessions this week", "done": 1, "target": 2, "progress": 0.5,
+  "next": { "sessionId": "…", "date": "2026-10-23", "title": "Upper (dumbbells)", "whenText": "Fri, Oct 23", "detail": "8 exercises · 24 sets planned" },
+  "nextEmptyText": "No Lift session planned." },
+"focus": { "ok": true, "source": "training", "muscles": [{ "muscle": "biceps", "name": "Biceps" }],
+  "lifts": [{ "exerciseKey": "id-…", "name": "Back squat" }] },
+"targeting": { "ok": true, "caption": "Hard sets this week · aim 10–20", "band": { "min": 10, "max": 20 }, "scaleMax": 24,
+  "items": [{ "muscle": "biceps", "name": "Biceps", "done": 3, "planned": 4, "status": "below", "text": "3 done · 4 planned",
+    "label": "…", "sessions": [{ "sessionId": "…", "dayText": "Fri", "title": "Arms", "sets": 4, "setsText": "4 sets", "done": false }] }],
+  "emptyText": "…" },
+"progress": { "ok": true, "caption": "Estimated 1RM · last 8 weeks",
+  "items": [{ "exerciseKey": "id-…", "name": "Back squat", "e1rm": 117.3, "e1rmText": "117 kg", "change": 0.06,
+    "changeText": "+6% since Sep 28", "tone": "up", "points": [{ "date": "2026-09-28", "e1rm": 110.5 }], "prText": "PR Oct 19", "emptyText": null }],
+  "emptyText": "…" },
+"note": { "ok": true, "item": { "id": "gap", "tone": "warn", "title": "…", "body": "…", "link": null } }
+```
+
+- `focus.source`: `settings` when Coach Settings has `liftFocus { muscles[], lifts[] }` (catalog muscle names and
+  `exerciseKey`s), else `training`: the 4 muscles with the most hard sets in the last 4 weeks plus this week's plan, and
+  the 4 lifts with a weight done most in 12 weeks.
+- `targeting.items[].status`: `inRange | above` (done already), `onTrack` (done + planned reaches 10), `below`.
+  `sessions`: this week's sessions that give the muscle sets, done or planned.
+- `progress`: the last 8 weeks of each focus lift's best e1RM per session (at most 12 points); `tone` `up | down | same`.
+- `note.item`: the first coach note that is not plain information, or `null`.
+
 **Links.** `sessionId`: a lower-case session id, for `/api/app/lift/sessions/{id}` (a planned one too; the phone opens
 its own workout screen for a session it has and that is not finished). `exerciseKey`: `id-<library id>` or
 `name-<lower-case name>`, for `/api/app/lift/exercises/{key}`.
