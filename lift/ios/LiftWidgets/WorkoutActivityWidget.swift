@@ -13,9 +13,6 @@ struct WorkoutActivityWidget: Widget {
         } dynamicIsland: { context in
             let isResting = context.state.isResting(isStale: context.isStale)
             return DynamicIsland {
-                DynamicIslandExpandedRegion(.leading) {
-                    IslandLeading(state: context.state)
-                }
                 DynamicIslandExpandedRegion(.center) {
                     IslandCenter(state: context.state, isResting: isResting)
                 }
@@ -37,29 +34,27 @@ struct WorkoutActivityWidget: Widget {
     }
 }
 
-/// The expanded island's left: only the exercise photo (or the badge). The region is narrow, so the words go in the
-/// centre.
-struct IslandLeading: View {
-    let state: WorkoutActivityAttributes.ContentState
-
-    var body: some View {
-        Group {
-            if let set = state.current, set.still != nil {
-                ExerciseStill(set: set, size: 40)
-            } else {
-                CoachBadge(size: 28)
-            }
-        }
-        .padding(.leading, 4)
-    }
-}
-
-/// The expanded island's centre: the exercise and the set, or what comes after the rest.
+/// The expanded island's centre: the exercise photo (or the badge) beside the exercise and the set, or what comes
+/// after the rest. There is no leading region: the system keeps its width even when its content is small, which
+/// pushes the words away from the photo.
 struct IslandCenter: View {
     let state: WorkoutActivityAttributes.ContentState
     let isResting: Bool
 
     var body: some View {
+        HStack(spacing: 10) {
+            if let set = state.current, set.still != nil {
+                ExerciseStill(set: set, size: 40)
+            } else {
+                CoachBadge(size: 28)
+            }
+            words
+        }
+        .padding(.leading, 4)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var words: some View {
         VStack(alignment: .leading, spacing: 1) {
             Text(verbatim: state.current?.exerciseName ?? String(localized: "All sets done"))
                 .font(.headline)
