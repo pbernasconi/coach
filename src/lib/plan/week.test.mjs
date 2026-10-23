@@ -170,3 +170,9 @@ test('tired never swaps a quality session with a long session', () => {
 test('ok changes nothing', () => {
   assert.deepEqual(adaptForFeel(week(), 'ok', MON), []);
 });
+
+test('matchWeek: a workout marked done by hand is done with no activity', () => {
+  const ws = [w('calf', 0, 'Home calf raises', { workoutType: 'strength', intensity: 'strength', duration: 15, status: 'done' })];
+  const r = matchWeek(ws, [], [], day(3)).get('calf');
+  assert.deepEqual([r.status, r.match], ['done', null]);
+});

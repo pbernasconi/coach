@@ -2,7 +2,7 @@
 // node --test can run it (week.test.mjs).
 //
 // A workout here: { id, date: 'YYYY-MM-DD', title, sport, workoutType, intensity, duration (min), tss,
-// description, status: 'planned' | 'skipped', adaptedFrom: object | null, sortOrder }.
+// description, status: 'planned' | 'skipped' | 'done' (done = marked done by hand), adaptedFrom: object | null, sortOrder }.
 
 const DAY_MS = 86_400_000;
 
@@ -112,6 +112,7 @@ export function matchWeek(workouts, activities, liftSessions, today) {
     let status;
     if (match) status = 'done';
     else if (w.status === 'skipped') status = 'skipped';
+    else if (w.status === 'done') status = 'done';
     else if (sport === 'rest') status = w.date < today ? 'done' : w.date === today ? 'today' : 'planned';
     else if (w.date < today) status = 'missed';
     else if (w.date === today) status = 'today';

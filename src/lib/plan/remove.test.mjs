@@ -36,3 +36,11 @@ test('a skip changes the status and state at once; an unskip shows as planned', 
   const back = applyChange(skipped, { id: 'a', status: 'planned' });
   assert.deepEqual([back[0].status, back[0].state], ['planned', 'planned']);
 });
+
+test('mark done shows done at once; undo puts a hand-marked workout back to planned', () => {
+  const list = [{ id: 'a', date: '2026-10-22', status: 'planned', state: 'missed', compliance: { level: 'missed' } }];
+  const done = applyChange(list, { id: 'a', status: 'done' });
+  assert.deepEqual([done[0].status, done[0].state, done[0].compliance.level], ['done', 'done', 'done']);
+  const back = applyChange(done, { id: 'a', status: 'planned' });
+  assert.deepEqual([back[0].status, back[0].state], ['planned', 'planned']);
+});

@@ -29,7 +29,7 @@ export function weeksAfterRemove(date) {
  *
  * @template {{ id: string, date: string }} W
  * @param {W[]} list
- * @param {{ id: string, date?: string, remove?: boolean, status?: 'planned' | 'skipped' }} change
+ * @param {{ id: string, date?: string, remove?: boolean, status?: 'planned' | 'skipped' | 'done', skipReason?: string | null }} change
  * @returns {W[]}
  */
 export function applyChange(list, change) {
@@ -41,7 +41,11 @@ export function applyChange(list, change) {
       const compliance = w.compliance ? { level: 'skipped', label: 'Not done', ratio: null, basis: null } : w.compliance;
       return { ...w, status: 'skipped', state: 'skipped', skipReason: change.skipReason ?? null, ...(compliance && { compliance }) };
     }
-    if (change.status) return { ...w, status: change.status, skipReason: null, state: w.state === 'skipped' ? 'planned' : w.state };
+    if (change.status === 'done') {
+      const compliance = w.compliance && w.state !== 'done' ? { level: 'done', label: 'Done', ratio: null, basis: null } : w.compliance;
+      return { ...w, status: 'done', state: 'done', skipReason: null, ...(compliance && { compliance }) };
+    }
+    if (change.status) return { ...w, status: change.status, skipReason: null, state: w.state === 'skipped' || (w.status === 'done' && !w.match) ? 'planned' : w.state };
     return w;
   });
 }
