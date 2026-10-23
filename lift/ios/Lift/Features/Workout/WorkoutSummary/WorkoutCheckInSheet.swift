@@ -49,11 +49,12 @@ struct WorkoutCheckInSheet: View {
                     .labelStyle(.titleAndIcon)
             }
             Spacer(minLength: Space.sm)
+            Button("Skip") { send(.skipTapped) }
+        }
+        .overlay {  // centred on the sheet, whatever buttons sit either side
             Text("\(stepNumber) of 2")
                 .font(theme.font(.footnote).monospacedDigit())
                 .foregroundStyle(theme.palette.textTertiary)
-            Spacer(minLength: Space.sm)
-            Button("Skip") { send(.skipTapped) }
         }
         .font(theme.font(.body))
         .foregroundStyle(theme.palette.accentText)
@@ -250,7 +251,7 @@ struct EffortDial: View {
 
     private var gradient: AngularGradient {
         AngularGradient(
-            colors: [theme.palette.info.ink, theme.palette.success.ink, theme.palette.warning.ink, theme.palette.accent, theme.palette.danger.ink],
+            colors: [theme.palette.info.ink, theme.palette.accent, theme.palette.danger.ink],
             center: .center,
             startAngle: .degrees(EffortDialMath.start),
             endAngle: .degrees(EffortDialMath.start + EffortDialMath.sweep)
@@ -312,13 +313,13 @@ nonisolated enum EffortDialMath {
     }
 }
 
-/// The effort's colour, as the "How did it feel" card's meter: 1–3 easy, 4–5 moderate, 6–7 hard, 8–10 very hard.
+/// The effort's colour along the dial's gradient: 1–3 easy (blue), 4–7 hard (the accent orange), 8–10 very hard
+/// (red).
 nonisolated enum EffortTone {
     @MainActor static func color(_ value: Int, theme: Theme) -> Color {
         switch value {
         case ...3: theme.palette.info.ink
-        case 4...5: theme.palette.success.ink
-        case 6...7: theme.palette.warning.ink
+        case 4...7: theme.palette.accentText
         default: theme.palette.danger.ink
         }
     }
