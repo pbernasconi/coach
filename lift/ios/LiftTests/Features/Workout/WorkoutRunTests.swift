@@ -64,6 +64,15 @@ import Testing
         #expect(exercise.sets.map(\.status) == [.done, .planned, .planned])
     }
 
+    @Test func aFinishedWorkoutHasNoWarmUp() async {
+        var finished = SessionBuilder.session(id: 1, on: Fixtures.monday, done: 3, planned: 0)
+        finished.session.finishedAt = ManualNow.start
+
+        let (vm, _) = await run([finished])
+
+        #expect(exercise(vm)?.warmUp == nil)
+    }
+
     @Test func runShowsEmptyOnceTheSessionIsGone() async {
         let planned = SessionBuilder.session(id: 1, on: Fixtures.monday, done: 0, planned: 3)
 

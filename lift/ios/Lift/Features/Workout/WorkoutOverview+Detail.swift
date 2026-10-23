@@ -23,7 +23,13 @@ extension WorkoutOverview {
             totalSets: sets.count,
             exercises: detail.items.map { item in
                 let last = item.exercise.exerciseID.flatMap { previous[$0] }
-                return WorkoutExercise(item: item, unit: detail.session.unitsAtLog, previous: last, gym: gym)
+                return WorkoutExercise(
+                    item: item,
+                    unit: detail.session.unitsAtLog,
+                    previous: last,
+                    gym: gym,
+                    isFinished: detail.session.finishedAt != nil
+                )
             },
             note: detail.session.note,
             warmUpNote: detail.session.warmUpNote,
@@ -39,13 +45,14 @@ extension WorkoutOverview {
 }
 
 extension WorkoutExercise {
-    init(item: SessionDetail.Item, unit: WeightUnit, previous: PreviousSets?, gym: GymSetup) {
+    /// A finished workout shows results and "Next time", not how to warm up.
+    init(item: SessionDetail.Item, unit: WeightUnit, previous: PreviousSets?, gym: GymSetup, isFinished: Bool = false) {
         let exercise = item.exercise
         let working = item.sets.filter { $0.kind == .working }
         let heaviest = working.compactMap(\.target.weight).max { $0.value < $1.value }
         let plateSet = gym[heaviest?.unit ?? unit].plateSet
         let isBarbell = exercise.equipment == .barbell && exercise.loadMode == .total
-        let barbellWeight = isBarbell ? heaviest : nil
+        let barbellWeight = isBarbell && !isFinished ? heaviest : nil
         let shared = working.first.map(\.target).flatMap { first in
             working.allSatisfy { $0.target == first } ? first : nil
         }
