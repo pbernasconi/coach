@@ -59,3 +59,33 @@ test('steps as a tree, zone time and chart ticks', () => {
   assert.deepEqual(chartTicks(1860).map((t) => t.text), ['0', '15', '30']);
   assert.equal(longDayText('2026-10-21'), 'Wednesday, October 21');
 });
+
+test('each bar says what a tap shows, and which step row it belongs to', () => {
+  const bars = appWorkout(workout(), sports).workout.profile;
+  assert.equal(bars[0].stepId, '0');
+  assert.equal(bars[0].title, 'Warm-up');
+  assert.equal(bars[0].timeText, '0:00 → 10:00');
+  assert.equal(bars[0].percentText, '55–65% FTP');
+  assert.equal(bars[3].stepId, '1.0');
+  assert.equal(bars[3].title, 'Work · 2 of 3');
+  assert.equal(bars[3].timeText, '17:00 → 22:00');
+  assert.equal(bars[4].percentText, null, 'an open target has no %');
+});
+
+test('steps carry their cue apart from their label; key targets leave the cue out', () => {
+  const withCue = { ...ride, steps: [{ ...ride.steps[0], notes: 'Easy, building.' }, ride.steps[1], { kind: 'work', duration: { type: 'time', s: 900 }, target: { type: 'power', unit: 'pct_ftp', low: 70, high: 75 }, notes: 'Steady.' }] };
+  const page = appWorkout(workout({ steps: withCue }), sports);
+  assert.deepEqual([page.workout.steps[0].label, page.workout.steps[0].cue, page.workout.steps[0].id], ['Warm-up', 'Easy, building.', '0']);
+  assert.equal(page.workout.steps[1].steps[0].id, '1.0');
+  assert.ok(page.workout.keyTargets.every((l) => !l.text.includes('Steady.')));
+});
+
+test('time in zones names each zone and gives its range, as Strava', () => {
+  const zones = zoneTime(ride);
+  assert.deepEqual(zones.items.map((z) => z.name), ['Recovery', 'Endurance', 'Tempo', 'Threshold', 'VO2 max']);
+  assert.equal(zones.items[0].rangeText, '< 148 W');
+  assert.equal(zones.items[1].rangeText, '148–200 W');
+  assert.equal(zones.items[4].rangeText, '> 284 W');
+  assert.ok(zones.items.some((z) => z.timeText.endsWith('min')));
+  assert.ok(zones.items.filter((z) => z.seconds === 0).every((z) => z.timeText === ''));
+});
