@@ -38,7 +38,7 @@ nonisolated struct ExerciseReorder: Equatable, Sendable, Identifiable {
                     name: exercise.name,
                     detail: logged > 0
                         ? String(localized: "\(logged) of \(total) sets logged")
-                        : String(localized: "^[\(total) set](inflect: true)"),
+                        : String(AttributedString(localized: "^[\(total) set](inflect: true)").characters),
                     isCurrent: exercise.sets.contains { $0.id == currentSetID }
                 )
             }

@@ -3,7 +3,8 @@ import SwiftUI
 
 /// A row of equal-width chips for one-tap values, such as the amounts around the current one or common counts.
 /// The chip matching `selection` is highlighted; a value not in the row highlights none. At accessibility text sizes
-/// the chips wrap instead of squeezing. The row is one container named by `title`; each chip carries the selected trait.
+/// the chips wrap; when the titles do not fit in one row, they take two even rows. They never squeeze to "…". The
+/// row is one container named by `title`; each chip carries the selected trait.
 ///
 ///     QuickPickRow("Guests", values: [1, 2, 4, 6, 8], selection: $guests) { "\($0)" }
 ///     QuickPickRow(verbatim: recipe.name, values: amounts, selection: $amount, format: .number)
@@ -84,12 +85,21 @@ public struct QuickPickRow<Value: Hashable & Sendable>: View {
             if dynamicTypeSize.isAccessibilitySize {
                 FlowLayout(spacing: Space.xs, lineSpacing: 0) { chips }
             } else {
-                HStack(spacing: Space.xs) { chips }
+                // One row while every title fits in full; otherwise two even rows, so "6.5" never truncates to "…".
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: Space.xs) { chips }
+                    LazyVGrid(columns: twoRowColumns, spacing: Space.xs) { chips }
+                }
             }
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(title)
         .koboFeedback(feedback, trigger: selection.wrappedValue)
+    }
+
+    /// Equal columns for the chips in two rows: five columns for nine or ten values.
+    private var twoRowColumns: [GridItem] {
+        Array(repeating: GridItem(.flexible(), spacing: Space.xs), count: max(1, (items.count + 1) / 2))
     }
 
     private var chips: some View {
