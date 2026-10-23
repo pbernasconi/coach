@@ -9,6 +9,7 @@ let n = 0;
 const uuid = () => `00000000-0000-4000-8000-${String(++n).padStart(12, '0')}`;
 const library = [
   { id: 'L1', name: 'Standing Calf Raise', aliases: '[]', equipment: 'bodyweight', loadMode: 'bodyweight', isArchived: 0, deletedAt: null },
+  { id: 'M1', name: 'Seated calf raise', aliases: '[]', equipment: 'machine', loadMode: 'total', isArchived: 0, deletedAt: null },
   { id: 'L2', name: 'Romanian deadlift', aliases: JSON.stringify(['rdl']), equipment: 'barbell', loadMode: 'total', isArchived: 0, deletedAt: null },
 ];
 const TEXT = `Achilles, at home, bodyweight on a step. One time only.
@@ -21,6 +22,8 @@ test('names match by words, plurals and aliases', () => {
   assert.equal(findInLibrary('standing calf raises', library)?.id, 'L1');
   assert.equal(findInLibrary('RDL', library)?.id, 'L2');
   assert.equal(findInLibrary('Bent-knee calf raise', library), null);
+  // A bodyweight line never takes the gym's loaded exercise of the same name.
+  assert.equal(findInLibrary('Seated calf raise', library), null);
   assert.deepEqual(equipmentOf('Dumbbell row'), { equipment: 'dumbbell', loadMode: 'perHand' });
   assert.deepEqual(equipmentOf('Bent-knee calf raise'), { equipment: 'bodyweight', loadMode: 'bodyweight' });
 });

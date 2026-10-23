@@ -1,5 +1,5 @@
 import { sql } from '@/db';
-import { mergeDescription, intensityText } from '@/lib/plan/lift-plan.mjs';
+import { LIFT_MARKER, mergeDescription, intensityText } from '@/lib/plan/lift-plan.mjs';
 import { push } from '@/lib/lift-sync/sync.mjs';
 import { drizzleLiftRepository } from '@/lib/lift-sync/drizzle-repository';
 import { strengthExercises } from '@/lib/plan/strength-text.mjs';
@@ -116,7 +116,8 @@ export async function startPlanLift(userId: string, planId: string, unit: 'kg' |
     title: plainTitle(w.title ?? 'Strength'),
     day: w.day,
     unit,
-    exercises: strengthExercises(w.description),
+    // The coach's lines only: below the marker is the Lift copy of a session made before (it would add them twice).
+    exercises: strengthExercises((w.description ?? '').split(LIFT_MARKER)[0]),
     library: library.map((r) => r.payload),
     catalogId: catalogIdByName,
   });
@@ -134,4 +135,47 @@ export async function startPlanLift(userId: string, planId: string, unit: 'kg' |
     return again?.lift_session_id ? { sessionId: String(again.lift_session_id).toLowerCase() } : { error: 'The workout changed; try again.' };
   }
   return { sessionId };
+}
+
+/**
+ * Logs one set of a planned strength workout written as text, from the workout window's set table. `at` names the set:
+ * its id once the session exists, else its exercise and set number in the coach's order; the first log makes the
+ * session (startPlanLift). Returns the Mondays of the plan weeks that changed, or the problem.
+ */
+export async function logPlanSet(
+  userId: string,
+  planId: string,
+  at: { setId: string } | { exercise: number; set: number },
+  log: { reps: number; weight?: number | null },
+  unit: 'kg' | 'lb',
+  when: { today?: string; timeZone?: string }
+): Promise<{ weeks: string[] } | { error: string }> {
+  if ('setId' in at) {
+    // A set of a session shown already (linked, or matched by day): log it there, and link that session if the
+    // workout has none yet, instead of making another.
+    const [own] = (await sql`
+      SELECT lower(se.payload->>'sessionID') AS session_id FROM lift_rows st
+      JOIN lift_rows se ON se.entity = 'sessionExercise' AND se.id = (st.payload->>'sessionExerciseID')::uuid
+      WHERE st.entity = 'set' AND st.id = ${at.setId}::uuid`) as { session_id: string | null }[];
+    if (!own?.session_id) return { error: 'That set is not there.' };
+    await linkLiftSession(userId, planId, own.session_id);
+    return applyLiftEdit(userId, own.session_id, [{ type: 'logSet', setId: at.setId, reps: log.reps, unit, ...(log.weight !== undefined && { weight: log.weight }) }], when);
+  }
+  const started = await startPlanLift(userId, planId, unit);
+  if ('error' in started) return started;
+  let setId: string | null = null;
+  if (!setId) {
+    const rows = await sessionRows(started.sessionId);
+    if (!rows) return { error: 'The Lift session is not there.' };
+    const ex = rows.exercises.filter((e) => !e.deletedAt).sort((a, b) => Number(a.position) - Number(b.position))[(at as { exercise: number }).exercise];
+    const sets = ex
+      ? rows.sets
+          .filter((x) => !x.deletedAt && x.kind !== 'warmUp' && String(x.sessionExerciseID).toLowerCase() === String(ex.id).toLowerCase())
+          .sort((a, b) => Number(a.position) - Number(b.position))
+      : [];
+    setId = sets[(at as { set: number }).set]?.id ? String(sets[(at as { set: number }).set].id) : null;
+    if (!setId) return { error: 'That set is not in the session.' };
+  }
+  const edit: LiftEdit = { type: 'logSet', setId, reps: log.reps, unit, ...(log.weight !== undefined && { weight: log.weight }) };
+  return applyLiftEdit(userId, started.sessionId, [edit], when);
 }

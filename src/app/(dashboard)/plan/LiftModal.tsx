@@ -14,7 +14,6 @@ import LiftView, { liftStats } from './LiftView';
 import ResetLift from './ResetLift';
 import { editLiftAction, liftPreviewAction } from './actions';
 import { liftHref } from './ItemPreview';
-import { logSetWith } from './useLogSet';
 import { Description, Failed, Header, Hero, Loading, OpenButton, PlanTable, longDay, useLoad } from './ModalParts';
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -99,14 +98,6 @@ export default function LiftModal({ id, planned, watch = null, onClose, onLiftCh
         <LiftView
           lift={d}
           onUnlog={onLiftChanged ? unlog : undefined}
-          onLog={
-            onLiftChanged
-              ? logSetWith(d.id, unit, async () => {
-                  setVersion((v) => v + 1);
-                  await onLiftChanged(d.day);
-                })
-              : undefined
-          }
           unlogging={unlogging}
           extra={
             <>

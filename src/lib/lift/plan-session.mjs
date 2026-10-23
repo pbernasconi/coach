@@ -29,10 +29,18 @@ function list(v) {
   }
 }
 
-/** The library exercise with this name or alias, or null. Archived ones count: Lift keeps their history. */
+/** Equipment only a gym has: a home session's line never means it unless it says so. */
+const GYM_ONLY = new Set(['machine', 'cable']);
+
+/**
+ * The library exercise with this name or alias, or null. Archived ones count: Lift keeps their history. A name with
+ * no equipment in it ("Standing calf raise") never takes a gym-only exercise of the same name (the machine calf
+ * raise), so home sets stay out of that history.
+ */
 export function findInLibrary(name, library) {
   const key = nameKey(name);
-  const alive = library.filter((e) => !e.deletedAt);
+  const plain = equipmentOf(name).equipment === 'bodyweight';
+  const alive = library.filter((e) => !e.deletedAt && !(plain && GYM_ONLY.has(String(e.equipment))));
   return (
     alive.find((e) => nameKey(e.name) === key && !Number(e.isArchived)) ??
     alive.find((e) => nameKey(e.name) === key) ??

@@ -7,7 +7,6 @@ import ExerciseCard from '@/components/lift/ExerciseCard';
 import ExerciseThumb from '@/components/lift/ExerciseThumb';
 import { loadText, muscleLabel, repsText } from '@/components/lift/format';
 import { plannedVolume, sessionMuscles, sessionState, type RichExercise, type RichSession } from '@/lib/lift/session';
-import type { LogSet } from '@/components/lift/LogSetForm';
 import LiftEditor from './LiftEditor';
 
 // The Lift session in the item modal, planned or done: the session page's exercise cards (picture, muscles, sets,
@@ -50,9 +49,8 @@ const jump = (id: string) => document.getElementById(`ex-${id}`)?.scrollIntoView
 
 /**
  * `onUnlog`: un-logs a logged or skipped set (a tap logged by mistake); `unlogging` is the set being saved.
- * `onLog`: logs a planned set from here (a session done without the phone).
  */
-export default function LiftView({ lift, extra, onChanged, onUnlog, unlogging = null, onLog }: { lift: RichSession; extra?: ReactNode; onChanged?: () => Promise<void> | void; onUnlog?: (setId: string) => void; unlogging?: string | null; onLog?: LogSet }) {
+export default function LiftView({ lift, extra, onChanged, onUnlog, unlogging = null }: { lift: RichSession; extra?: ReactNode; onChanged?: () => Promise<void> | void; onUnlog?: (setId: string) => void; unlogging?: string | null }) {
   const unit = lift.unit;
   const [editing, setEditing] = useState(false);
   // A finished session is edited in Lift; a planned or started one can change here (logged sets stay).
@@ -79,7 +77,7 @@ export default function LiftView({ lift, extra, onChanged, onUnlog, unlogging = 
             )}
             {lift.exercises.length === 0 && <p className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">No exercises in this session.</p>}
             {lift.exercises.map((e, i) => (
-              <ExerciseCard key={e.id} e={e} unit={unit} index={i} onUnlog={onUnlog} unlogging={unlogging} onLog={onLog} />
+              <ExerciseCard key={e.id} e={e} unit={unit} index={i} onUnlog={onUnlog} unlogging={unlogging} />
             ))}
           </>
         )}
