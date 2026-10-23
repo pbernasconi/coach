@@ -1,6 +1,10 @@
+import { fmtDate } from '@/lib/vitals/health-view.mjs';
 import Link from 'next/link';
 import type { RecoveryToday as Recovery } from '@/lib/vitals/garmin-pages';
 import { hrvStatusLabel } from '@/lib/vitals/garmin-training.mjs';
+
+/** A YYYY-MM-DD as "Oct 22, 2026"; other text as is. */
+const dateText = (d: string) => (/^\d{4}-\d{2}-\d{2}$/.test(d) ? fmtDate(d) : d);
 
 // Garmin's own bands for its 0-100 scores.
 const READINESS: [number, string][] = [[95, 'Prime'], [75, 'High'], [50, 'Moderate'], [25, 'Low'], [0, 'Poor']];
@@ -68,7 +72,7 @@ export default function RecoveryToday({ r }: { r: Recovery }) {
           <Item
             label="Training status"
             value={r.trainingStatus?.label ?? '-'}
-            note={r.trainingStatus && r.trainingStatus.date !== r.today ? `as of ${r.trainingStatus.date}` : null}
+            note={r.trainingStatus && r.trainingStatus.date !== r.today ? `as of ${dateText(r.trainingStatus.date)}` : null}
             tone={r.trainingStatus?.tone as keyof typeof TONE | undefined}
           />
           <Item

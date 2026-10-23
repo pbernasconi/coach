@@ -1,8 +1,9 @@
-import { TREND_MEASURES, type FullScan } from '@/lib/vitals/dexa.mjs';
+import { TREND_MEASURES, shownDiff, type FullScan } from '@/lib/vitals/dexa.mjs';
 import Delta from './Delta';
 
 const KEYS = ['fatPct', 'vatKg', 'leanKg', 'armsLeanKg', 'almi', 'totalKg'];
-const monthYear = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', year: '2-digit', timeZone: 'UTC' });
+// "Apr '25", as on the DEXA progress page ("Apr 25" read as a day).
+const monthYear = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', year: '2-digit', timeZone: 'UTC' }).replace(' ', " '");
 
 /** The headline measures of one scan, each with its change since the scan before and since the first scan. */
 export default function HeadlineTiles({ scan, previous, first }: { scan: FullScan; previous: FullScan | null; first: FullScan | null }) {
@@ -11,7 +12,8 @@ export default function HeadlineTiles({ scan, previous, first }: { scan: FullSca
     const diff = (other: FullScan | null) => {
       if (!other || other === scan) return null;
       const then = m.get(other);
-      return value === null || then === null ? null : value - then;
+      // From the shown values, so "21.8 → 22.2" reads 0.4.
+      return shownDiff(value, then, m.digits);
     };
     const before = previous && previous !== scan ? m.get(previous) : null;
     return { ...m, value, before, sincePrevious: diff(previous), sinceFirst: first !== previous ? diff(first) : null };

@@ -1,7 +1,11 @@
 'use client';
 
+import { fmtDate } from '@/lib/vitals/health-view.mjs';
 import { useState } from 'react';
 import { useMeasure } from '@/components/charts/useMeasure';
+
+/** A YYYY-MM-DD as "Oct 22, 2026"; other text as is. */
+const dateText = (d: string) => (/^\d{4}-\d{2}-\d{2}$/.test(d) ? fmtDate(d) : d);
 
 /**
  * A small trend for a tile, scaled to its own min and max (unlike Sparkline, which starts at 0, so small changes
@@ -44,7 +48,7 @@ export default function MiniTrend({ points, display, height = 34, accent = 'var(
         <circle cx={x(points[i].date)} cy={y(points[i].value)} r={3.5} fill={hover === null ? accent : 'var(--viz-ink-2)'} stroke="var(--viz-surface)" strokeWidth={2} />
       </svg>
       <div className="flex justify-between text-[10px] text-[var(--viz-muted)]">
-        <span>{hover === null ? `since ${points[0].date}` : points[i].date}</span>
+        <span>{hover === null ? `since ${dateText(points[0].date)}` : dateText(points[i].date)}</span>
         <span className="tabular-nums">{hover === null ? '' : display[i]}</span>
       </div>
     </div>

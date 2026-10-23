@@ -14,6 +14,9 @@ import { fmtPace, fmtTime } from '@/lib/vitals/garmin-training.mjs';
 import { loadTraining, type Pt, type TrainingView } from '@/lib/vitals/garmin-pages';
 import HealthTrendChart from '../HealthTrendChart';
 
+/** A YYYY-MM-DD as "Oct 22, 2026"; other text as is. */
+const dateText = (d: string) => (/^\d{4}-\d{2}-\d{2}$/.test(d) ? fmtDate(d) : d);
+
 export const metadata: Metadata = { title: 'Training' };
 
 export const dynamic = 'force-dynamic';
@@ -169,7 +172,7 @@ function TrainingBody({ t, today }: { t: TrainingView; today: string }) {
       <section className="space-y-3">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="text-xl font-semibold tracking-tight">Personal records</h2>
-          {t.recordsDate && <span className="text-xs text-muted-foreground">from Garmin, {t.recordsDate}</span>}
+          {t.recordsDate && <span className="text-xs text-muted-foreground">from Garmin, {dateText(t.recordsDate)}</span>}
         </div>
         {t.records.length === 0 ? (
           <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">No personal records from Garmin yet.</p>
@@ -179,7 +182,7 @@ function TrainingBody({ t, today }: { t: TrainingView; today: string }) {
               <li key={p.key} className="min-w-0 rounded-lg border bg-[var(--viz-surface)] px-3 py-3 sm:px-4">
                 <div className="text-xs text-[var(--viz-muted)]">{p.label}</div>
                 <div className="text-lg font-semibold tabular-nums text-[var(--viz-ink)]">{p.value}</div>
-                <div className="truncate text-[11px] text-[var(--viz-ink-2)]">{[p.date, p.activity].filter(Boolean).join(' · ') || ' '}</div>
+                <div className="truncate text-[11px] text-[var(--viz-ink-2)]">{[p.date && dateText(p.date), p.activity].filter(Boolean).join(' · ') || ' '}</div>
               </li>
             ))}
           </ul>
