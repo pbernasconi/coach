@@ -12,9 +12,12 @@
   contain-intrinsic-size: auto var(--plan-row, 13.5rem);
 }
 /* Agenda weeks have no content-visibility: their heights vary, and a guessed height that changes once a week
-   renders moved the view (phones opened weeks above today). */
+   renders moved the view (phones opened weeks above today). Phones scroll freely, with no snap: the view opens at
+   today's day, inside a week, and a snap pulled it back up to the week's start when the scroll area was tall. */
+@media (max-width: 767px) {
+  .plan-scroller { scroll-snap-type: none; }
+}
 .plan-agenda-week {
-  scroll-snap-align: start;
   scroll-margin-top: var(--plan-head, 2rem);
 }
 /* The day's "+" add button stays hidden while a workout card in that day is hovered (MonthGrid.tsx). */
