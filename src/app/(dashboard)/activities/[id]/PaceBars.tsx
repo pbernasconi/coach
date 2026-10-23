@@ -51,16 +51,20 @@ export default function PaceBars({ splits, laps, series, layout, color }: { spli
   const plotW = width - M.left - M.right;
   const y = (v: number) => M.top + PH - ((Math.min(hi, Math.max(lo, v)) - lo) / (hi - lo)) * PH;
   const total = bars.reduce((n, b) => n + Math.max(0, b.width), 0) || 1;
-  let acc = 0;
-  const geo = bars.map((b) => {
-    const x0 = M.left + (acc / total) * plotW;
-    acc += Math.max(0, b.width);
-    return { x0, x1: M.left + (acc / total) * plotW };
-  });
+  const geo = bars.reduce<{ x0: number; x1: number; acc: number }[]>((out, b) => {
+    const from = out.length ? out[out.length - 1].acc : 0;
+    const acc = from + Math.max(0, b.width);
+    out.push({ x0: M.left + (from / total) * plotW, x1: M.left + (acc / total) * plotW, acc });
+    return out;
+  }, []);
   const fmt = (v: number) => (foot ? pace(v) : kmh(v));
   const ticks = [lo + (hi - lo) * 0.2, lo + (hi - lo) * 0.55, lo + (hi - lo) * 0.9];
   const unit = foot ? '/km' : 'km/h';
-  const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+  // Bars: weighted by each bar's time, so a 40 m last split does not count as much as a full km (for pace that is
+  // distance over time, the activity's own average).
+  const weighted = bars.map((b) => ({ v: valueOf(b), t: b.time })).filter((x): x is { v: number; t: number } => typeof x.v === 'number' && x.t > 0);
+  const wt = weighted.reduce((n, x) => n + x.t, 0);
+  const avg = mode !== 'smoothed' && wt > 0 ? weighted.reduce((n, x) => n + x.v * x.t, 0) / wt : vals.reduce((a, b) => a + b, 0) / vals.length;
   const H = M.top + PH + M.bottom;
 
   const linePath =

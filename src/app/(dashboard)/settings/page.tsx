@@ -14,7 +14,7 @@ import { FlaskConical, Weight } from 'lucide-react';
 import { loadThresholdSources } from '@/lib/strava-sync/thresholds.mjs';
 import { resolveThresholds } from '@/lib/strava-sync/tss.mjs';
 import SectionError from '@/components/SectionError';
-import { InlineNotice } from '@kobo/web';
+import { HelpTooltip, InlineNotice } from '@kobo/web';
 import { loadBodyspecStatus } from '@/lib/vitals/bodyspec-api';
 import { connectionsFrom } from '@/lib/settings/connections.mjs';
 import { BodyspecSyncButton, CoachingNotesForm, LocationForm, StravaSyncButton, TargetsForm, ThresholdsForm, type ThresholdView } from './SettingsControls';
@@ -116,26 +116,23 @@ function Connection({
 }
 
 /** A titled group of settings (Connections, Training, Coach). */
-function Group({ id, title, description, children }: { id: string; title: string; description: string; children: React.ReactNode }) {
+function Group({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
   return (
     <section id={id} className="scroll-mt-24 space-y-3">
-      <div>
-        <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
-        <p className="text-sm text-muted-foreground">{description}</p>
-      </div>
+      <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
       {children}
     </section>
   );
 }
 
-/** A card inside a group: a header with a title, a short help line and an optional action, then the body. */
+/** A card inside a group: a header with a title, its help behind an (i) and an optional action, then the body. */
 function Panel({ id, title, help, action, children }: { id: string; title: string; help: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
     <section id={id} className="scroll-mt-24 rounded-lg border bg-card">
       <header className="flex items-start justify-between gap-4 border-b px-4 py-3">
-        <div className="min-w-0">
+        <div className="flex min-w-0 items-center gap-1.5">
           <h3 className="text-sm font-semibold">{title}</h3>
-          <p className="text-xs text-muted-foreground">{help}</p>
+          <HelpTooltip label={`About ${title}`} side="right">{help}</HelpTooltip>
         </div>
         {action}
       </header>
@@ -222,10 +219,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
 
       <div className="min-w-0 space-y-8">
         <div className="flex flex-wrap items-end justify-between gap-2">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
-            <p className="text-sm text-muted-foreground">Connections, events, goals and how Coach plans your week.</p>
-          </div>
+          <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
           <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs ${attention ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground'}`}>
             <span className={`h-1.5 w-1.5 rounded-full ${attention ? 'bg-amber-500' : 'bg-emerald-500'}`} aria-hidden />
             {attentionText}
@@ -234,7 +228,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
 
         {notice && <InlineNotice tone={notice.tone} title={notice.title} />}
 
-        <Group id="connections" title="Connections" description="Where Coach gets your activities, workouts, sleep and calendar.">
+        <Group id="connections" title="Connections">
           <ul className="divide-y rounded-lg border bg-card">
             <Connection
               logo={<StravaLogo />}
@@ -370,7 +364,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           </ul>
         </Group>
 
-        <Group id="training" title="Training" description="What you train for. Today shows the progress; /plan builds each week toward it.">
+        <Group id="training" title="Training">
           <Panel id="events" title="Events" help="Races and target days. A is the main event of the season; B and C are build-up events.">
             {events.ok ? <EventsEditor upcoming={events.value.upcoming} past={events.value.past} /> : <SectionError label="Events" />}
           </Panel>
@@ -385,7 +379,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           </Panel>
         </Group>
 
-        <Group id="coach" title="Coach" description="How Coach writes your plan.">
+        <Group id="coach" title="Coach">
           <Panel id="preferences" title="Coaching preferences" help="Weekly structure and rules in Markdown. /plan and /check-in read them; change them here, not in a chat.">
             <CoachingNotesForm notes={coachingNotes} />
           </Panel>

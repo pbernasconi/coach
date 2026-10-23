@@ -11,7 +11,7 @@ export default function MainLifts({ lifts, unit, today }: { lifts: MainLift[]; u
     <section className="rounded-xl border bg-card" aria-labelledby="main-lifts">
       <div className="flex flex-wrap items-baseline justify-between gap-2 border-b px-4 py-3">
         <h2 id="main-lifts" className="font-semibold">Main lifts</h2>
-        <span className="text-xs text-[var(--viz-muted)]">estimated 1RM per session · hover for the top set, click to open it</span>
+        <span className="text-xs text-[var(--viz-muted)]">Estimated 1RM per session</span>
       </div>
       {lifts.length === 0 ? (
         <p className="p-4 text-sm text-[var(--viz-muted)]">No lifts in the last 12 weeks.</p>

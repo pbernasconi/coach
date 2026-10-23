@@ -78,7 +78,7 @@ export default function DashboardNav() {
         </Sheet>
 
         {/* Logo */}
-        <Link href="/" className="mr-6 flex items-center gap-2 rounded-md" aria-label="Coach, home">
+        <Link href="/" className="mr-6 flex items-center gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-brand-wash" aria-label="Coach, home">
           <CoachMark />
           <span className="text-[15px] font-semibold tracking-tight">Coach</span>
         </Link>
@@ -93,7 +93,8 @@ export default function DashboardNav() {
               title={`${link.label} · press ${keyOf(link.href)}`}
               aria-keyshortcuts={keyOf(link.href)}
               className={cn(
-                'relative flex items-center px-3 transition-colors hover:text-foreground',
+                'relative flex items-center rounded-md px-3 transition-colors outline-none hover:text-foreground',
+                'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
                 'after:absolute after:inset-x-3 after:-bottom-px after:h-0.5 after:rounded-full after:bg-brand after:opacity-0 after:transition-opacity',
                 isActive(link.href) ? 'font-medium text-foreground after:opacity-100' : 'text-muted-foreground',
               )}

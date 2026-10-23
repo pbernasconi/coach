@@ -58,11 +58,11 @@ export default async function TrendsPage() {
   return (
     <div className="space-y-6" data-smoke="trends">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="space-y-1">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wide text-[var(--viz-muted)]">Last 12 weeks</p>
           <h1 className="text-2xl font-semibold tracking-tight">Trends</h1>
-          <p className="text-muted-foreground">The last 12 weeks: Strava, Lift and your plan.</p>
         </div>
-        <Link href="/" className="text-sm underline underline-offset-4">← Today</Link>
+        <Link href="/" className="text-sm font-medium text-brand-ink underline-offset-4 hover:underline">← Today</Link>
       </div>
       {perf.ok ? <PerformanceView perf={perf.value} today={today} strengthTarget={targets.strength} /> : <SectionError label="Performance" />}
       {pmc.ok ? <RampRates ramp={pmc.value.ramp} /> : <SectionError label="Ramp rates" />}

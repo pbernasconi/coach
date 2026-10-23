@@ -102,6 +102,9 @@ function TrainingBody({ t, today }: { t: TrainingView; today: string }) {
     );
   }
   const r0 = (v: number) => String(Math.round(v));
+  // The score charts share an axis that starts at the first score (at least 90 days, at most a year), not a mostly empty year.
+  const firstScore = [t.endurance.series[0]?.date, t.hill.series[0]?.date].filter((d): d is string => !!d).sort()[0];
+  const scoresFrom = firstScore ? [from, [firstScore, addDays(today, -89)].sort()[0]].sort()[1] : from;
   return (
     <>
       <TrainingStatusCard t={t} />
@@ -113,16 +116,18 @@ function TrainingBody({ t, today }: { t: TrainingView; today: string }) {
             title="Endurance score"
             subtitle={t.endurance.latest?.classification ?? ""}
             points={t.endurance.series}
-            from={from}
+            from={scoresFrom}
             to={today}
+            maxGapDays={10}
             unit="points"
           />
           <HealthTrendChart
             title="Hill score"
-            subtitle={t.hill.latest ? `Strength ${t.hill.latest.strength ?? '-'} · endurance ${t.hill.latest.endurance ?? '-'} (of 100).` : 'Climbing strength and endurance, of 100.'}
+            subtitle={t.hill.latest ? `Strength ${t.hill.latest.strength ?? '-'} · endurance ${t.hill.latest.endurance ?? '-'} (of 100)` : ''}
             points={t.hill.series}
-            from={from}
+            from={scoresFrom}
             to={today}
+            maxGapDays={10}
             unit="points"
           />
         </div>

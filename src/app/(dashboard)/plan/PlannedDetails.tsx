@@ -77,6 +77,13 @@ export function Structure({ workout, notes }: { workout: StructuredWorkout; note
   );
 }
 
+/** "25 min", "2h 35m": one style across the row (a mix of "25 min" and "2:35:00" read badly). */
+const zoneDur = (s: number) => {
+  if (s < 60) return `${Math.round(s)} s`;
+  const m = Math.round(s / 60);
+  return m < 60 ? `${m} min` : `${Math.floor(m / 60)}h${m % 60 ? ` ${String(m % 60).padStart(2, '0')}m` : ''}`;
+};
+
 /** Planned time in each zone, as one bar and a row of minutes. */
 export function ZoneTime({ workout }: { workout: StructuredWorkout }) {
   const flat = flatten(workout.steps as never[]) as Step[];
@@ -97,7 +104,7 @@ export function ZoneTime({ workout }: { workout: StructuredWorkout }) {
               <span className="h-2 w-2 shrink-0 rounded-sm" style={{ background: ZONE_COLOR[z] }} />
               {z}
             </span>
-            <span className="block font-semibold tabular-nums text-[var(--viz-ink)]">{by[z] ? (by[z] < 3600 && by[z] % 60 === 0 ? `${by[z] / 60} min` : clock(by[z])) : '–'}</span>
+            <span className="block font-semibold tabular-nums text-[var(--viz-ink)]">{by[z] ? zoneDur(by[z]) : '–'}</span>
             <span className="block tabular-nums text-[var(--viz-muted)]">{Math.round((by[z] / total) * 100)}%</span>
           </li>
         ))}

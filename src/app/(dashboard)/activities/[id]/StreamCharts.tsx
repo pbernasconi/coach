@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { ChartTooltip, LegendItem } from '@/components/charts/ChartTooltip';
+import { ChartTooltip } from '@/components/charts/ChartTooltip';
 import { niceTicks, useMeasure } from '@/components/charts/useMeasure';
 import { duration } from '@/lib/activity/format.mjs';
 import { smooth } from '@/lib/activity/streams.mjs';
@@ -37,6 +37,8 @@ function percentile(vs: number[], p: number) {
   return s[Math.min(s.length - 1, Math.max(0, Math.floor(p * (s.length - 1))))];
 }
 
+const MIN_SPAN: Record<string, number> = { cad: 12, hr: 20, temp: 6, watts: 60, speed: 6 };
+
 /** The y range of a panel: robust for pace (stops make huge paces), padded min–max for the rest. */
 function domain(p: Panel) {
   const vs = [...p.values, ...(p.overlay?.values ?? [])].filter((v): v is number => typeof v === 'number');
@@ -44,6 +46,9 @@ function domain(p: Panel) {
   let lo = p.invert ? percentile(vs, 0.02) : Math.min(...vs);
   let hi = p.invert ? percentile(vs, 0.98) : Math.max(...vs);
   if (p.area) lo = Math.min(lo, hi - 10);
+  // A floor on the span, so a steady stream (cadence 173–175 spm, a flat 15 °C) reads flat, not as a zigzag.
+  const minSpan = Math.max(1e-6, MIN_SPAN[p.key] ?? 0);
+  if (hi - lo < minSpan) { const mid = (lo + hi) / 2; lo = mid - minSpan / 2; hi = mid + minSpan / 2; }
   if (hi - lo < 1e-6) { lo -= 1; hi += 1; }
   const pad = (hi - lo) * 0.08;
   return { lo: p.area ? lo - pad : lo - pad, hi: hi + pad };
@@ -313,12 +318,6 @@ export default function StreamCharts({
         {at != null && rows.length > 0 && <ChartTooltip x={x(at)} y={M.top + HEAD} width={width} title={title} rows={rows} />}
       </div>
       {shown.length === 0 && <p className="text-sm text-[var(--viz-muted)]">Every stream is off. Turn one on above.</p>}
-      {panels.some((p) => p.overlay) && (
-        <div className="mt-2 flex flex-wrap gap-3">
-          <LegendItem color={sportColor} label="Pace" shape="line" />
-          <LegendItem color="var(--viz-gap)" label="Grade-adjusted pace (GAP)" shape="line" />
-        </div>
-      )}
     </div>
   );
 }

@@ -37,7 +37,7 @@ export default function PerformanceView({ perf, today, strengthTarget = 2 }: { p
             foot={
               t.delta ? (
                 <span className="text-[var(--viz-muted)]">
-                  <span className={t.delta.up ? 'text-[var(--viz-up)]' : 'text-[var(--viz-down)]'}>{t.delta.text}</span> vs the 4 weeks before
+                  <span className={t.delta.flat ? 'text-[var(--viz-ink-2)]' : t.delta.up ? 'text-[var(--viz-up)]' : 'text-[var(--viz-down)]'}>{t.delta.text}</span> vs the 4 weeks before
                 </span>
               ) : (
                 <span className="text-[var(--viz-muted)]">{t.foot}</span>

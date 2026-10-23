@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   daysAgoText, loadTiles, rampTiles, recoveryRows, decimalText, delta, e1rmText, goalView, headerChips, hoursSeries, hoursText, last4Tiles, liftChangeText,
   longDate, minutesText, muscleRows, paceText, peakText, performanceTiles, projectionCaption, rampCell, readinessBand,
-  setsText, signed, sportDetail, staleText, todayDone, todayItemText, todayWorkouts, weekRow, weightChange,
+  setsText, signed, sportDetail, staleText, todayDone, todayItemText, todayWorkouts, todayUnplanned, chipTitle, weekRow, weightChange,
 } from './display.mjs';
 
 const week = (over) => ({ week: '2026-10-12', hours: 5.5, runKm: 20, runMin: 110, rideKm: 60, rideHours: 2.25, strength: 2, tss: 310.4, planned: 8, done: 6, sports: {}, ...over });
@@ -54,8 +54,10 @@ test('stale banner, projection caption', () => {
   assert.equal(staleText('2026-10-14', '2026-10-20'), null);
   assert.equal(staleText(null, '2026-10-20'), null);
   const days = [{ date: '2026-10-20', ctl: 60, atl: 70, tsb: -10, tss: 50, projected: false }, { date: '2026-11-01', ctl: 62.4, atl: 50, tsb: 4.6, tss: 0, projected: true }];
-  assert.equal(projectionCaption({ days, plannedTss: 520, estimatedWorkouts: 1 }), 'Projection to 2026-11-01: 520 planned TSS, fitness 62, form +5. 1 planned workout has no TSS; estimated from duration and intensity.');
+  assert.equal(projectionCaption({ days, plannedTss: 520, estimatedWorkouts: 1 }), 'Projection to Nov 1: 520 planned TSS, fitness 62, form +5. 1 planned workout has no TSS; estimated from duration and intensity.');
   assert.equal(projectionCaption({ days: days.slice(0, 1), plannedTss: 0, estimatedWorkouts: 0 }), null);
+  const withPlan = [days[0], { date: '2026-10-25', ctl: 61, atl: 60, tsb: 1, tss: 90, projected: true }, days[1]];
+  assert.equal(projectionCaption({ days: withPlan, plannedTss: 90, estimatedWorkouts: 0 }), 'Projection to Nov 1: 90 planned TSS, fitness 62, form +5. The plan ends Oct 25; rest after that.');
 });
 
 test('weeks: last-4 tiles, trend tiles, table rows', () => {
@@ -63,15 +65,16 @@ test('weeks: last-4 tiles, trend tiles, table rows', () => {
   const last4 = weeks.slice(4, 8);
   const tiles = last4Tiles(last4, 2);
   assert.deepEqual(tiles.map((t) => t.valueText), ['26:00 h', '80 km', '240 km', '8 of 8']);
-  assert.equal(tiles[0].noteText, '6.5 h a week');
+  assert.equal(tiles[0].noteText, '6:30 h a week');
   assert.equal(tiles[1].noteText, '5:30 /km');
   assert.equal(last4Tiles([week({ runKm: 0 })], 2)[1].noteText, 'no runs');
-  assert.deepEqual(delta(26, 10), { pct: 160, up: true, text: '▲ 160%' });
+  assert.deepEqual(delta(26, 10), { pct: 160, up: true, flat: false, text: '▲ 160%' });
+  assert.deepEqual(delta(10.02, 10), { pct: 0, up: true, flat: true, text: '0%' });
   assert.equal(delta(5, 0), null);
   const perf = { weeks, load: Array.from({ length: 14 }, (_, i) => ({ date: `2026-10-${String(i + 6).padStart(2, '0')}`, ctl: 50 + i, atl: 60, tsb: -8 + i, tss: 40 })) };
   const t = performanceTiles(perf, '2026-10-19', 2);
   assert.deepEqual(t.map((x) => x.key), ['hours', 'run', 'ride', 'form']);
-  assert.equal(t[0].valueText, '26:00');
+  assert.equal(t[0].valueText, '26:00 h');
   assert.equal(t[0].delta.text, '▲ 160%');
   assert.equal(t[0].spark.values.length, 9);
   assert.equal(t[1].foot, 'Pace 5:30/km');
@@ -167,4 +170,16 @@ test('fitness panel: load tiles, recovery rows and ramp tiles', () => {
 
   const r = rampTiles([{ days: 7, from: 76, to: 70, change: -6.2, perWeek: -6.2 }, null, null, { days: 365, from: 88, to: 70, change: -18, perWeek: -0.3 }]);
   assert.deepEqual(r.map((x) => [x.title, x.changeText]), [['Last 7 days', '\u22126'], ['Last 28 days', '–'], ['Last 90 days', '–'], ['Last 365 days', '\u221218']]);
+});
+
+test('today unplanned and chip titles', () => {
+  const a = { id: '7', sport: 'run', name: 'Easy run', km: 9.14, min: 48, tss: 33.4 };
+  assert.deepEqual(todayUnplanned([{ kind: 'planned', key: 'w-1', w: {}, actual: null }, { kind: 'activity', key: 'a-7', a }]), [
+    { key: 'a-7', sport: 'run', name: 'Easy run', text: '48m · 9.1 km · 33 TSS', href: '/activities/7' },
+  ]);
+  assert.deepEqual(todayUnplanned([{ kind: 'lift', key: 'l-s', l: { id: 's', name: 'Upper A', setsLogged: 18 }, a: null }])[0].text, '18 sets');
+  const plain = (t) => t;
+  assert.equal(chipTitle({ kind: 'planned', w: { title: 'VO2 run 5x3', duration: 55, tss: 52 }, actual: null }, plain), 'VO2 run 5x3 · Planned 55m · 52 TSS');
+  assert.equal(chipTitle({ kind: 'planned', w: { title: 'VO2 run', duration: 55 }, actual: a }, plain), 'VO2 run · Done 48m · 9.1 km · 33 TSS');
+  assert.equal(chipTitle({ kind: 'activity', a }, plain), 'Easy run · 48m · 9.1 km · 33 TSS');
 });

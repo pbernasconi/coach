@@ -97,6 +97,7 @@ export default function PlanReviewDialog({
         count: sessions.length,
         done: 0,
         missed: 0,
+        skipped: 0,
       },
       fitness: outlook?.end ? { date: weekEnd, ...outlook.end } : null,
     };

@@ -50,7 +50,7 @@ test('weekSummary totals the week, leaving out commutes, rest and skipped workou
   assert.equal(s.done.tss, 91);
   assert.deepEqual(s.done.bySport, { ride: 60, run: 45 });
   assert.equal(s.done.liftSessions, 1);
-  assert.deepEqual(s.planned, { min: 135, tss: 135, count: 2, done: 1, missed: 1 });
+  assert.deepEqual(s.planned, { min: 135, tss: 135, count: 2, done: 1, missed: 1, skipped: 1 });
   assert.deepEqual(s.fitness, { date: '2026-10-21', ctl: 62, atl: 58, tsb: 3 });
 });
 

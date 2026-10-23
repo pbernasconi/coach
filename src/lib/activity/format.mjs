@@ -49,12 +49,11 @@ export function signed(n, digits = 0) {
 export const HR_ZONE_NAMES = ['Endurance', 'Moderate', 'Tempo', 'Threshold', 'Anaerobic'];
 export const POWER_ZONE_NAMES = ['Active Recovery', 'Endurance', 'Tempo', 'Threshold', 'VO2 Max', 'Anaerobic', 'Neuromuscular'];
 
-/** A zone range as text: '122–153', '182+'. */
-/** A zone's range as Strava shows it: "< 122", "123–153", "> 183" (an edge value belongs to the lower zone). */
+/** A zone's range with no gaps between zones: "≤ 122", "123–153", "≥ 184" (an edge value belongs to the lower zone). */
 export function zoneRange(min, max, unit = '') {
   const u = unit ? ` ${unit}` : '';
-  if (max === -1 || max == null) return `> ${min + 1}${u}`;
-  if (!min) return `< ${max}${u}`;
+  if (max === -1 || max == null) return `≥ ${min + 1}${u}`;
+  if (!min) return `≤ ${max}${u}`;
   return `${min + 1}–${max}${u}`;
 }
 

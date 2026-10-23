@@ -8,7 +8,8 @@ import { cellItems } from '@/lib/plan/cells.mjs';
 import type { CalendarRange } from '@/lib/plan/month';
 import type { DayWeather } from '@/lib/plan/weather';
 import { addDays } from '@/lib/plan/week.mjs';
-import { todayWorkouts } from '@/lib/performance/display.mjs';
+import { chipTitle, todayUnplanned, todayWorkouts } from '@/lib/performance/display.mjs';
+import { ArrowUpRight, Check } from 'lucide-react';
 import TodayWorkout from './TodayWorkout';
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -31,6 +32,7 @@ export default function HomeWeek({ range, weather }: { range: CalendarRange; wea
     return { date, items };
   });
   const { items: todays, emptyText } = todayWorkouts(range);
+  const extras = todayUnplanned(days.find((d) => d.date === today)?.items ?? []);
   const skipped = range.workouts.filter((w) => w.date === today && w.status === 'skipped');
   const planHref = `/plan?week=${monday}`;
   const openHref = (key: string) => `${planHref}&open=${encodeURIComponent(key)}`;
@@ -45,6 +47,21 @@ export default function HomeWeek({ range, weather }: { range: CalendarRange; wea
 
       <div className="divide-y border-t bg-[var(--viz-surface)]">
         {todays.map((w) => <TodayWorkout key={w.id} w={w} href={openHref(`w-${w.id}`)} />)}
+        {extras.map((x) => (
+          <div key={x.key} className="flex flex-wrap items-center gap-x-3 gap-y-1 border-l-4 border-l-[var(--viz-good)] px-4 py-2 text-sm" data-done="unplanned">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--viz-muted)]">Today</span>
+            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--viz-good)] px-2 py-0.5 text-[11px] font-semibold text-white">
+              <Check aria-hidden className="h-3 w-3" strokeWidth={3} />
+              Unplanned
+            </span>
+            <Link href={x.href} className="inline-flex min-w-0 items-center gap-1.5 font-medium hover:underline hover:underline-offset-4">
+              <SportIcon id={x.sport} className="h-3.5 w-3.5" />
+              <span className="truncate">{x.name}</span>
+              <ArrowUpRight aria-hidden className="h-3 w-3 shrink-0 text-[var(--viz-muted)]" />
+            </Link>
+            <span className="text-xs font-semibold tabular-nums text-[var(--viz-ink)]">{x.text}</span>
+          </div>
+        ))}
         {todays.length === 0 && (
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 text-sm">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--viz-muted)]">Today</span>
@@ -99,7 +116,7 @@ export default function HomeWeek({ range, weather }: { range: CalendarRange; wea
                 {wx && <span className="hidden min-w-0 lg:inline"><WeatherBadge w={wx} date={date} compact /></span>}
               </span>
               {items.map((item) => (
-                <div key={item.key} className="relative z-10">
+                <div key={item.key} className="relative z-10" title={chipTitle(item as never, plainTitle) || undefined}>
                   <CalendarCard item={item} action={{ href: openHref(item.key) }} />
                 </div>
               ))}

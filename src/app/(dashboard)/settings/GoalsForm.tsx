@@ -17,7 +17,7 @@ const toRow = (g: Goal): Row => ({
 // 16 px text on a phone: iOS zooms the page into a smaller input on focus.
 const input = 'h-10 w-full min-w-0 rounded-md border bg-background px-2 text-base md:h-8 md:text-sm';
 // Kind, title, baseline, target, unit, start, deadline, remove.
-const COLS = 'lg:grid-cols-[9rem_minmax(0,1fr)_4.5rem_4.5rem_4.5rem_8.5rem_8.5rem_2rem]';
+const COLS = 'lg:grid-cols-[13rem_minmax(0,1fr)_4.5rem_4.5rem_4.5rem_8.5rem_8.5rem_2rem]';
 
 /** Edits the milestone goals. Pace is "m:ss" per km; the other kinds are numbers in their unit. */
 export default function GoalsForm({ goals }: { goals: Goal[] }) {
@@ -35,9 +35,13 @@ export default function GoalsForm({ goals }: { goals: Goal[] }) {
       return;
     }
     start(async () => {
-      await saveGoalsAction(out);
-      setSaved(rows);
-      toast.success('Goals saved');
+      try {
+        await saveGoalsAction(out);
+        setSaved(rows);
+        toast.success('Goals saved');
+      } catch {
+        toast.error('Goals not saved. Try again.');
+      }
     });
   }
 
@@ -105,7 +109,7 @@ export default function GoalsForm({ goals }: { goals: Goal[] }) {
           size="sm"
           variant="outline"
           type="button"
-          onClick={() => setRows([...rows, { id: Math.random().toString(36).slice(2, 10), kind: 'ride_km', title: '', target: '', baseline: '0', start: '', deadline: '' }])}
+          onClick={() => setRows([...rows, { id: Math.random().toString(36).slice(2, 10), kind: 'ride_km', title: '', target: '', baseline: '0', start: new Date().toLocaleDateString('en-CA'), deadline: '' }])}
         >
           <Plus /> Add goal
         </Button>

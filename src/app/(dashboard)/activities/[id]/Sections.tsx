@@ -1,3 +1,5 @@
+import { HelpTooltip } from '@kobo/web';
+import { Info } from 'lucide-react';
 import Link from 'next/link';
 import { Fragment, type ReactNode } from 'react';
 import SectionError from '@/components/SectionError';
@@ -195,7 +197,10 @@ function SameRoute({ v, c }: { v: ActivityView; c: ActivityContext | null }) {
   const foot = v.layout === 'run';
   return (
     <div>
-      <h3 className="mb-2 text-sm font-semibold">{foot ? 'Runs' : 'Activities'} on this route <span className="font-normal text-[var(--viz-muted)]">same start within 250 m, distance within 10 %, fastest first</span></h3>
+      <h3 className="mb-2 flex items-center gap-1 text-sm font-semibold">
+        {foot ? 'Runs' : 'Activities'} on this route
+        <HelpTooltip label="About this route" icon={<Info aria-hidden />}>Same start within 250 m, distance within 10 %. Fastest first.</HelpTooltip>
+      </h3>
       <div className="overflow-x-auto rounded-lg border">
         <table className="w-full text-sm">
           <thead className="text-xs text-[var(--viz-muted)]"><tr><th className="px-3 py-1.5 text-left font-medium">Date</th><th className="px-2 py-1.5 text-left font-medium">Name</th><th className={th}>Distance</th><th className={th}>Time</th><th className={`${th} pr-3`}>{foot ? 'Pace' : 'Speed'}</th></tr></thead>
@@ -314,7 +319,7 @@ export function ActivityBody({ v, context, contextFailed, color }: { v: Activity
         <Card id="power" title="Power" note={v.effort.ftp ? `FTP ${v.effort.ftp} W` : undefined}>
           {v.powerCurve.length > 1 && (
             <div className="rounded-lg border bg-[var(--viz-surface)] p-4">
-              <h3 className="mb-2 text-sm font-semibold">Power curve <span className="font-normal text-[var(--viz-muted)]">best average power for each duration</span></h3>
+              <h3 className="mb-2 text-sm font-semibold">Power curve</h3>
               <PowerCurve points={v.powerCurve} ftp={v.effort.ftp} />
             </div>
           )}
@@ -388,7 +393,7 @@ export function ActivityBody({ v, context, contextFailed, color }: { v: Activity
       )}
 
       <p className="text-xs text-[var(--viz-muted)]">
-        Data: Strava (activity, streams, laps, segments, zones), Open-Meteo (weather), OpenStreetMap (place, map tiles by OpenFreeMap). GAP: Minetti&apos;s cost of running on a grade; Strava&apos;s own GAP in the splits.
+        Strava · Open-Meteo · OpenStreetMap · OpenFreeMap · GAP: Minetti
       </p>
     </>
   );

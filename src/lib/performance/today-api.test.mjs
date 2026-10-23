@@ -107,7 +107,7 @@ test('fitness: rounded days, open-ended zones, the latest actual day', () => {
   assert.deepEqual(f.zones[3], { label: 'Overreaching', from: null, to: -30, shade: false });
   assert.deepEqual(f.now, { date: '2026-10-20', ctl: 61.4, atl: 72.1, tsb: -10.6, zone: 'Productive' });
   assert.deepEqual(f.events, [{ id: '7', name: 'Haute Route', date: '2026-10-21', priority: 'A' }]);
-  assert.equal(f.caption, 'Projection to 2026-10-21: no workouts planned, so it shows rest, fitness 61, form -5.');
+  assert.equal(f.caption, 'Projection to Oct 21: no workouts planned, so it shows rest, fitness 61, form -5.');
 });
 
 test('a main lift row', () => {

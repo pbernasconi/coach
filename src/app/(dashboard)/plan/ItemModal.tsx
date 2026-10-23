@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
+import { cn } from '@/lib/utils';
 import type { CalendarWorkout } from '@/lib/plan/month';
 import type { DayWeather } from '@/lib/plan/weather';
 import type { Item } from './ItemPreview';
@@ -65,7 +66,11 @@ export default function ItemModal({ item, onClose, onStep, canStep, onCopy, weat
             e.preventDefault();
             (e.currentTarget as HTMLElement).focus();
           }}
-          className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-background shadow-2xl outline-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-[0.98] sm:inset-auto sm:left-1/2 sm:top-1/2 sm:h-[min(52rem,calc(100dvh-3rem))] sm:w-[min(76rem,calc(100vw-3rem))] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:border"
+          className={cn(
+            'fixed inset-0 z-50 flex flex-col overflow-hidden bg-background shadow-2xl outline-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-[0.98] sm:inset-auto sm:left-1/2 sm:top-1/2 sm:w-[min(76rem,calc(100vw-3rem))] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:border',
+            // A rest day is a title and a note: the window fits it instead of a full-height empty sheet.
+            planned?.sport === 'rest' && !activityId && !liftId ? 'sm:max-h-[min(52rem,calc(100dvh-3rem))] sm:w-[min(40rem,calc(100vw-3rem))]' : 'sm:h-[min(52rem,calc(100dvh-3rem))]',
+          )}
         >
           {activityId ? (
             <ActivityModal key={`a-${activityId}`} id={activityId} planned={planned} onClose={onClose} />

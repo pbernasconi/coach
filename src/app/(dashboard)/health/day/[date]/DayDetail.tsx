@@ -9,6 +9,8 @@ const H = 3600_000;
 const hm = (m: number | null | undefined) => (m == null ? '-' : `${Math.floor(Math.round(m) / 60)}:${String(Math.round(m) % 60).padStart(2, '0')}`);
 const clock = (t: number) => new Date(t).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'UTC' });
 const r0 = (v: number | null | undefined) => (v == null ? '-' : Math.round(v).toLocaleString('en-US'));
+/** A rounded value with its unit, or a bare dash when there is no value (never "- ms"). */
+const ru = (v: number | null | undefined, unit: string) => (v == null ? '-' : `${r0(v)} ${unit}`);
 
 function Card({ title, children, note }: { title: string; children: React.ReactNode; note?: React.ReactNode }) {
   return (
@@ -71,10 +73,10 @@ export default function DayDetail({ d }: { d: DayView }) {
     <div className="space-y-4">
       <Card title="Sleep" note={s?.start && s?.end ? `${clock(s.start)} – ${clock(s.end)}` : 'The night that ends on this day'}>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <Stat label="Asleep" value={`${hm(sleepTotal)} h`} sub={s?.awakeCount != null ? `${s.awakeCount} times awake` : null} />
+          <Stat label="Asleep" value={sleepTotal == null ? '-' : `${hm(sleepTotal)} h`} sub={s?.awakeCount != null ? `${s.awakeCount} times awake` : null} />
           <Stat label="Sleep score" value={score == null ? '-' : String(Math.round(score))} sub={words(s?.quality ?? null)} />
           <Stat label="Avg sleep stress" value={r0(s?.avgStress ?? v.sleep_avg_stress)} />
-          <Stat label="Resting HR" value={`${r0(s?.restingHr ?? v.resting_hr_bpm)} bpm`} sub={v.sleep_avg_hr_bpm != null ? `sleep avg ${r0(v.sleep_avg_hr_bpm)} bpm` : null} />
+          <Stat label="Resting HR" value={ru(s?.restingHr ?? v.resting_hr_bpm, 'bpm')} sub={v.sleep_avg_hr_bpm != null ? `sleep avg ${r0(v.sleep_avg_hr_bpm)} bpm` : null} />
         </div>
         {mins && (
           <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[var(--viz-ink-2)]">
@@ -108,10 +110,10 @@ export default function DayDetail({ d }: { d: DayView }) {
 
       <Card title="Overnight HRV" note={d.hrv?.status ? `Status: ${words(d.hrv.status)}` : hrvStatusLabel(v.hrv_status ?? null) ? `Status: ${hrvStatusLabel(v.hrv_status)}` : undefined}>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <Stat label="Overnight average" value={`${r0(d.hrv?.lastNightAvg ?? v.hrv_night_avg_ms)} ms`} sub="RMSSD" />
-          <Stat label="Highest 5 min" value={`${r0(d.hrv?.lastNight5MinHigh)} ms`} />
-          <Stat label="7-day average" value={`${r0(d.hrv?.weeklyAvg ?? v.hrv_weekly_avg_ms)} ms`} />
-          <Stat label="Balanced range" value={hrvBand ? `${r0(hrvBand.low)}–${r0(hrvBand.high)}` : '-'} sub="Garmin's baseline for you" />
+          <Stat label="Overnight average" value={ru(d.hrv?.lastNightAvg ?? v.hrv_night_avg_ms, 'ms')} sub="RMSSD" />
+          <Stat label="Highest 5 min" value={ru(d.hrv?.lastNight5MinHigh, 'ms')} />
+          <Stat label="7-day average" value={ru(d.hrv?.weeklyAvg ?? v.hrv_weekly_avg_ms, 'ms')} />
+          <Stat label="Balanced range" value={hrvBand ? `${r0(hrvBand.low)}–${r0(hrvBand.high)}` : '-'} sub="Garmin baseline" />
         </div>
         <TimeChart
           title="HRV readings"
@@ -202,7 +204,7 @@ export default function DayDetail({ d }: { d: DayView }) {
             sub={moderate != null || vigorous != null ? `${r0(moderate)} moderate · ${r0(vigorous)} vigorous (×2)` : null}
           />
           <Stat label="Floors climbed" value={r0(sum?.floors ?? v.floors_climbed)} />
-          <Stat label="Active energy" value={`${r0(sum?.activeKcal ?? v.active_energy_kcal)} kcal`} sub={sum?.distanceKm != null ? `${sum.distanceKm.toFixed(1)} km moved` : null} />
+          <Stat label="Active energy" value={ru(sum?.activeKcal ?? v.active_energy_kcal, 'kcal')} sub={sum?.distanceKm != null ? `${sum.distanceKm.toFixed(1)} km moved` : null} />
         </div>
         {steps != null && goal ? (
           <div className="relative h-2.5 rounded-full bg-[var(--viz-band)]" role="img" aria-label={`${r0(steps)} of ${r0(goal)} steps`}>

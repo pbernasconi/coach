@@ -1,7 +1,11 @@
 import Link from 'next/link';
 import { ArrowUpRight } from 'lucide-react';
 import SportIcon from '@/components/SportIcon';
-import WorkoutChart, { ZONE_COLOR } from '@/components/workouts/WorkoutChart';
+import WorkoutChart from '@/components/workouts/WorkoutChart';
+
+// WorkoutChart's ZONE_COLOR, copied: this is a server component, and a value imported from a 'use client' module
+// arrives here as a client reference, so ZONE_COLOR[zone] was undefined and the zone bars had no colour.
+const ZONE_COLOR: Record<string, string> = { Z1: '#9ca3af', Z2: '#3b82f6', Z3: '#22c55e', Z4: '#f59e0b', Z5: '#ef4444' };
 import { plainTitle } from '@/lib/plan/calendar.mjs';
 import { todayDone, todayItemText } from '@/lib/performance/display.mjs';
 import { levelStyle } from '@/components/plan/ComplianceMark';

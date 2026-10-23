@@ -46,7 +46,7 @@ export type LoadRow = { date: string; ctl: number; atl: number; tsb: number };
 export type WeekSummary = {
   monday: string;
   done: { min: number; km: number; tss: number; count: number; liftSessions: number; bySport: Record<string, number> };
-  planned: { min: number; tss: number; count: number; done: number; missed: number };
+  planned: { min: number; tss: number; count: number; done: number; missed: number; skipped: number };
   fitness: LoadRow | null;
 };
 

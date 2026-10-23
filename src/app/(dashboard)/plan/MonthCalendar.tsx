@@ -66,6 +66,23 @@ export default function MonthCalendar({ anchor, openAt, range, bounds, weather, 
   const [clip, setClip] = useState<Clip | null>(null);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [monthMenu, setMonthMenu] = useState(false);
+  const monthMenuRef = useRef<HTMLDivElement>(null);
+  // The month menu closes on Escape and on a click anywhere outside it.
+  useEffect(() => {
+    if (!monthMenu) return;
+    const down = (e: PointerEvent) => {
+      if (!monthMenuRef.current?.contains(e.target as Node)) setMonthMenu(false);
+    };
+    const key = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMonthMenu(false);
+    };
+    document.addEventListener('pointerdown', down);
+    document.addEventListener('keydown', key);
+    return () => {
+      document.removeEventListener('pointerdown', down);
+      document.removeEventListener('keydown', key);
+    };
+  }, [monthMenu]);
   const rowCache = useRef(new Map());
 
   const today = data.today;
@@ -316,7 +333,7 @@ export default function MonthCalendar({ anchor, openAt, range, bounds, weather, 
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <div className="relative">
+        <div ref={monthMenuRef} className="relative">
           <button type="button" onClick={() => setMonthMenu((o) => !o)} aria-expanded={monthMenu} className="-ml-1 inline-flex items-center gap-1 rounded-md px-1 hover:bg-accent">
             <h1 className="text-2xl font-semibold tracking-tight text-[var(--viz-ink)]" aria-live="polite">{monthTitle(month)}</h1>
             <ChevronDown aria-hidden className="h-4 w-4 text-[var(--viz-muted)]" />

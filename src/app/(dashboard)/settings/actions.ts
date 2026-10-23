@@ -51,12 +51,15 @@ export async function revealLiftToken(): Promise<string | null> {
   return process.env.LIFT_SYNC_TOKEN ?? null;
 }
 
-export async function saveTargetsAction(t: Targets) {
+/** Saves the weekly targets, clamped to sane ranges, and returns what was saved so the form shows it. */
+export async function saveTargetsAction(t: Targets): Promise<Targets> {
   const id = await owner();
   const clean = (v: unknown, max: number) => Math.min(max, Math.max(0, Math.round(Number(v) * 10) / 10 || 0));
-  await saveTargets(id, { runKm: clean(t.runKm, 300), rideHours: clean(t.rideHours, 40), strength: clean(t.strength, 7) });
+  const out = { runKm: clean(t.runKm, 300), rideHours: clean(t.rideHours, 40), strength: clean(t.strength, 7) };
+  await saveTargets(id, out);
   clearCache('status');
   revalidatePath('/', 'layout');
+  return out;
 }
 
 /** Lift's sync state, for the Connect Lift card to watch while the iPhone connects. */

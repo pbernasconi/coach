@@ -18,7 +18,7 @@ const duration = (m: number) => `${Math.floor(Math.round(m) / 60)}:${String(Math
  * band shades the 60-day baseline (mean ± 1 SD). Hover or arrow keys read a day; the tooltip can add extra rows.
  */
 export default function HealthTrendChart({
-  title, subtitle, points, from, to, unit, decimals = 0, kind = 'line', format = 'number', band, details, linkDays = false,
+  title, subtitle, points, from, to, unit, decimals = 0, kind = 'line', format = 'number', band, details, linkDays = false, maxGapDays = 3,
 }: {
   title: string;
   subtitle: string;
@@ -32,6 +32,7 @@ export default function HealthTrendChart({
   band?: { low: number; high: number; label: string } | null;
   details?: Record<string, TooltipRow[]>;
   linkDays?: boolean; // a click or Enter on a day opens /health/day/<date>
+  maxGapDays?: number; // a longer gap between points breaks the line (scores Garmin updates weekly use more)
 }) {
   const router = useRouter();
   const [ref, width] = useMeasure<HTMLDivElement>(320);
@@ -64,7 +65,7 @@ export default function HealthTrendChart({
   const segments: Point[][] = [];
   for (const p of points) {
     const seg = segments.at(-1);
-    if (seg && t(p.date) - t(seg[seg.length - 1].date) <= 3 * DAY) seg.push(p);
+    if (seg && t(p.date) - t(seg[seg.length - 1].date) <= maxGapDays * DAY) seg.push(p);
     else segments.push([p]);
   }
   const path = (seg: Point[]) => seg.map((p, i) => `${i ? 'L' : 'M'}${x(p.date).toFixed(1)},${y(p.value).toFixed(1)}`).join('');

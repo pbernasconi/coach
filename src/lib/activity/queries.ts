@@ -215,10 +215,11 @@ async function readActivity(userId: string, id: string): Promise<ActivityView | 
     }).map((x) => ({ index: x.index, distance: x.distance, moving: x.moving, elapsed: x.elapsed, speed: x.moving ? x.distance / x.moving : null, gapSpeed: x.gapSpeed, elevDiff: x.elevDiff, hr: x.hr }));
     splitsSource = splitList.length ? 'streams' : null;
   }
-  // Strava's split GAP is missing on splits stored before it was kept: fill it from the streams.
-  if (foot && gapFull && time && splitList.some((x) => x.gapSpeed == null) && s.distance) {
+  // One GAP model per page: with streams, the splits' GAP is the same Minetti GAP as the hero, laps and charts
+  // (Strava's own split GAP differs from it). Strava's is kept only when there are no streams.
+  if (foot && gapFull && time && splitsSource === 'strava' && s.distance) {
     const fromStreams = splitsFromStreams({ distance: s.distance as number[], time, velocity: s.velocity_smooth ?? undefined, grade: s.grade_smooth ?? undefined, moving: movingFlags });
-    splitList = splitList.map((x, i) => ({ ...x, gapSpeed: x.gapSpeed ?? fromStreams[i]?.gapSpeed ?? null }));
+    splitList = splitList.map((x, i) => ({ ...x, gapSpeed: fromStreams[i]?.gapSpeed ?? x.gapSpeed }));
   }
   const lapList: Lap[] = laps.map((r) => {
     const si = num(r.start_index);

@@ -101,7 +101,10 @@ export function projectionCaption(pmc) {
   const est = pmc.estimatedWorkouts > 0
     ? ` ${pmc.estimatedWorkouts} planned ${pmc.estimatedWorkouts === 1 ? 'workout has' : 'workouts have'} no TSS; estimated from duration and intensity.`
     : '';
-  return `Projection to ${end.date}: ${planned}, fitness ${Math.round(end.ctl)}, form ${end.tsb > 0 ? '+' : ''}${Math.round(end.tsb)}.${est}`;
+  // Past the last planned workout the projection is rest, so form climbs; say where the plan stops.
+  const lastPlanned = pmc.days.filter((d) => d.projected && d.tss > 0).at(-1)?.date ?? null;
+  const restAfter = lastPlanned && lastPlanned < end.date ? ` The plan ends ${shortDate(lastPlanned)}; rest after that.` : '';
+  return `Projection to ${shortDate(end.date)}: ${planned}, fitness ${Math.round(end.ctl)}, form ${end.tsb > 0 ? '+' : ''}${Math.round(end.tsb)}.${restAfter}${est}`;
 }
 
 // ---- Weeks (Today's last 4 weeks, Trends' tiles and table) ----
@@ -121,7 +124,7 @@ export function lastWeeks(weeks, currentWeek) {
 export function last4Tiles(last4, strengthTarget) {
   const hours = sum(last4, 'hours');
   return [
-    { key: 'time', label: 'Time · 4 weeks', valueText: `${hoursText(hours)} h`, noteText: `${(hours / 4).toFixed(1)} h a week`, sport: null },
+    { key: 'time', label: 'Time · 4 weeks', valueText: `${hoursText(hours)} h`, noteText: `${hoursText(hours / 4)} h a week`, sport: null },
     { key: 'run', label: 'Run', valueText: `${Math.round(sum(last4, 'runKm'))} km`, noteText: paceText(sum(last4, 'runMin'), sum(last4, 'runKm')) ? `${paceText(sum(last4, 'runMin'), sum(last4, 'runKm'))} /km` : 'no runs', sport: 'run' },
     { key: 'ride', label: 'Ride', valueText: `${Math.round(sum(last4, 'rideKm'))} km`, noteText: `${hoursText(sum(last4, 'rideHours'))} h`, sport: 'ride' },
     { key: 'strength', label: 'Strength', valueText: `${sum(last4, 'strength')} of ${strengthTarget * 4}`, noteText: 'sessions', sport: 'strength' },
@@ -133,7 +136,8 @@ export function delta(now, before) {
   if (!before) return null;
   const pct = Math.round(((now - before) / before) * 100);
   const up = pct >= 0;
-  return { pct, up, text: `${up ? '▲' : '▼'} ${Math.abs(pct)}%` };
+  // No change has no arrow ("▲ 0%" reads as a gain).
+  return { pct, up, flat: pct === 0, text: pct === 0 ? '0%' : `${up ? '▲' : '▼'} ${Math.abs(pct)}%` };
 }
 
 /**
@@ -150,7 +154,7 @@ export function performanceTiles(perf, currentWeek, strengthTarget) {
   const runPace = paceText(sum(last4, 'runMin'), sum(last4, 'runKm'));
   return [
     {
-      key: 'hours', label: 'Hours, last 4 weeks', valueText: hoursText(sum(last4, 'hours')),
+      key: 'hours', label: 'Hours, last 4 weeks', valueText: `${hoursText(sum(last4, 'hours'))} h`,
       delta: delta(sum(last4, 'hours'), sum(prev4, 'hours')), foot: 'Moving time',
       spark: { values: weeks.map((w) => w.hours), labels, texts: weeks.map((w) => `${hoursText(w.hours)} h`) }, sport: null,
     },
@@ -165,7 +169,7 @@ export function performanceTiles(perf, currentWeek, strengthTarget) {
       spark: { values: weeks.map((w) => w.rideHours), labels, texts: weeks.map((w) => `${hoursText(w.rideHours)} h`) }, sport: 'ride',
     },
     {
-      key: 'form', label: 'Form today', valueText: lastLoad ? signed(lastLoad.tsb) : '-',
+      key: 'form', label: 'Form today', valueText: lastLoad ? signed(lastLoad.tsb).replace('-', '\u2212') : '–',
       delta: null,
       foot: `${lastLoad ? `${zoneOf(lastLoad.tsb)} · fitness ${Math.round(lastLoad.ctl)}` : 'No load data'} · strength ${sum(last4, 'strength')}/${strengthTarget * 4}`,
       spark: { values: weeklyLoad.map((p) => p.ctl), labels: weeklyLoad.map((p) => p.date), texts: weeklyLoad.map((p) => `fitness ${Math.round(p.ctl)}`) }, sport: null,
@@ -359,6 +363,45 @@ export function todayDone(w, plannedTss = null) {
     href,
     name: m?.name || null,
   };
+}
+
+/**
+ * What was done today that was not planned (an unmatched activity or Lift session in today's cell): one line each
+ * for the Today card, "48m · 9.1 km · 33 TSS", with where it opens.
+ * @param {{ kind: string, key: string, a?: { id: string, sport: string, name: string, km: number, min: number, tss: number | null } | null,
+ *   l?: { id: string, name: string, setsLogged: number } }[]} items  today's calendar cell (cellItems)
+ */
+export function todayUnplanned(items) {
+  return items.flatMap((it) => {
+    if (it.kind === 'activity' && it.a) {
+      const a = it.a;
+      const text = [dur(a.min), a.km >= 0.5 ? `${a.km.toFixed(1)} km` : null, a.tss ? `${Math.round(a.tss)} TSS` : null].filter(Boolean).join(' · ');
+      return [{ key: it.key, sport: a.sport, name: a.name || 'Activity', text, href: `/activities/${a.id}` }];
+    }
+    if (it.kind === 'lift' && it.l) {
+      const text = [it.a ? dur(it.a.min) : null, `${it.l.setsLogged} sets`].filter(Boolean).join(' · ');
+      return [{ key: it.key, sport: 'strength', name: it.l.name, text, href: `/lift/sessions/${it.l.id}` }];
+    }
+    return [];
+  });
+}
+
+/**
+ * The full text of a week-strip chip, for its hover title: the chip itself truncates in a narrow day.
+ * @param {{ kind: string, w?: { title: string, duration?: number | null, tss?: number | null }, actual?: { name: string, sport: string, km: number, min: number, tss: number | null } | null, a?: { name: string, sport: string, km: number, min: number, tss: number | null } | null,
+ *   l?: { name: string, setsLogged: number } }} item
+ * @param {(t: string) => string} plain  plainTitle (calendar.mjs)
+ */
+export function chipTitle(item, plain) {
+  const a = (item.kind === 'planned' ? item.actual : item.a) ?? null;
+  const done = a ? [dur(a.min), a.km >= 0.5 ? `${a.km.toFixed(1)} km` : null, a.tss ? `${Math.round(a.tss)} TSS` : null].filter(Boolean).join(' · ') : '';
+  if (item.kind === 'planned' && item.w) {
+    const planned = [item.w.duration ? dur(item.w.duration) : null, item.w.tss ? `${Math.round(item.w.tss)} TSS` : null].filter(Boolean).join(' · ');
+    return [plain(item.w.title), done ? `Done ${done}` : planned ? `Planned ${planned}` : null].filter(Boolean).join(' · ');
+  }
+  if (item.kind === 'lift' && item.l) return [item.l.name, `${item.l.setsLogged} sets`, a ? dur(a.min) : null].filter(Boolean).join(' · ');
+  if (a) return [a.name, done].filter(Boolean).join(' · ');
+  return '';
 }
 
 // ---- Today: the Fitness panel (right column) ----

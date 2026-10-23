@@ -32,7 +32,7 @@ test('the whole response', () => {
     lift: { ok: false },
   });
   assert.equal(r.performance.ok, true);
-  assert.deepEqual(r.performance.tiles.map((t) => t.valueText), ['10:00', '20 km', '4:00 h', '-10']);
+  assert.deepEqual(r.performance.tiles.map((t) => t.valueText), ['10:00 h', '20 km', '4:00 h', '\u221210']);
   assert.deepEqual(r.performance.tiles[0].delta, null, 'no weeks before: no delta');
   assert.equal(r.performance.tiles[0].footText, 'Moving time');
   assert.equal(r.performance.tiles[3].footText, 'Neutral · fitness 60 · strength 2/8');

@@ -75,9 +75,14 @@ export function TargetsForm({ targets }: { targets: Targets }) {
       onSubmit={(e) => {
         e.preventDefault();
         start(async () => {
-          await saveTargetsAction(t);
-          setSaved(t);
-          toast.success('Targets saved');
+          try {
+            const out = await saveTargetsAction(t);
+            setT(out);
+            setSaved(out);
+            toast.success('Targets saved');
+          } catch {
+            toast.error('Targets not saved. Try again.');
+          }
         });
       }}
     >
@@ -101,10 +106,13 @@ const paceSeconds = (text: string) => {
 
 /** FTP, LTHR per sport, resting HR and threshold pace for TSS. An empty field uses the automatic value shown. */
 export function ThresholdsForm({ view }: { view: ThresholdView }) {
-  const [own, setOwn] = useState<Record<keyof ThresholdInput, string>>({
+  const initial = {
     ftp: view.ftp.own?.toString() ?? '', runLthr: view.runLthr.own?.toString() ?? '', rideLthr: view.rideLthr.own?.toString() ?? '',
     restingHr: view.restingHr.own?.toString() ?? '', runPaceS: paceText(view.runPaceS.own),
-  });
+  };
+  const [saved, setSaved] = useState<Record<keyof ThresholdInput, string>>(initial);
+  const [own, setOwn] = useState<Record<keyof ThresholdInput, string>>(initial);
+  const changed = (Object.keys(own) as (keyof ThresholdInput)[]).some((k) => own[k].trim() !== saved[k].trim());
   const [pending, start] = useTransition();
   const field = (key: keyof ThresholdInput, label: string, unit: string) => {
     const auto = key === 'runPaceS' ? paceText(view[key].auto) : view[key].auto?.toString() ?? '';
@@ -131,16 +139,26 @@ export function ThresholdsForm({ view }: { view: ThresholdView }) {
       onSubmit={(e) => {
         e.preventDefault();
         const num = (v: string) => (v.trim() === '' ? null : Number(v));
+        const bad = (['ftp', 'rideLthr', 'runLthr', 'restingHr'] as const).find((k) => { const n = num(own[k]); return n != null && !(n > 0); });
+        if (bad) {
+          toast.error('Thresholds take positive numbers, or an empty field for the automatic value.');
+          return;
+        }
         const pace = own.runPaceS.trim() === '' ? null : paceSeconds(own.runPaceS);
         if (own.runPaceS.trim() !== '' && pace == null) {
           toast.error('Write the threshold pace as m:ss, for example 4:48.');
           return;
         }
         start(async () => {
-          const msg = await saveThresholdsAction({
-            ftp: num(own.ftp), runLthr: num(own.runLthr), rideLthr: num(own.rideLthr), restingHr: num(own.restingHr), runPaceS: pace,
-          });
-          toast.success(msg);
+          try {
+            const msg = await saveThresholdsAction({
+              ftp: num(own.ftp), runLthr: num(own.runLthr), rideLthr: num(own.rideLthr), restingHr: num(own.restingHr), runPaceS: pace,
+            });
+            setSaved(own);
+            toast.success(msg);
+          } catch {
+            toast.error('Thresholds not saved. Try again.');
+          }
         });
       }}
     >
@@ -149,7 +167,7 @@ export function ThresholdsForm({ view }: { view: ThresholdView }) {
       {field('runLthr', 'Running threshold HR', 'bpm')}
       {field('runPaceS', 'Threshold run pace', '/km')}
       {field('restingHr', 'Resting HR', 'bpm')}
-      <Button size="sm" type="submit" disabled={pending}>{pending ? 'Recomputing TSS…' : 'Save and recompute TSS'}</Button>
+      <Button size="sm" type="submit" disabled={pending || !changed}>{pending ? 'Recomputing TSS…' : 'Save and recompute TSS'}</Button>
     </form>
   );
 }

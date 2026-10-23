@@ -154,10 +154,9 @@ function Overview({ page }: { page: DexaPage }) {
         {images.length ? (
           <ImageStrip scans={scans.map((s) => ({ resultId: s.resultId, scanDate: s.scanDate, fatPct: s.totals.fatPct }))} images={images.map((f) => ({ id: f.id, resultId: f.resultId, view: f.view }))} />
         ) : (
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-dashed border-[var(--viz-axis)] p-5">
-            <p className="max-w-xl text-sm text-[var(--viz-ink-2)]">
-              No scan images yet. Upload your BodySpec PDF reports: Coach takes the body scan out of each one and files it under its scan.
-            </p>
+          // An uploaded BodySpec PDF report has its body scan images taken out and filed under the scan.
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-dashed border-[var(--viz-axis)] px-5 py-3">
+            <p className="text-sm text-[var(--viz-ink-2)]">No scan images yet. Upload BodySpec PDF reports to add them.</p>
             <UploadFiles label="Upload reports" />
           </div>
         )}

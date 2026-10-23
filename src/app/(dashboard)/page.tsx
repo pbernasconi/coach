@@ -120,6 +120,7 @@ export default async function HomePage() {
               ))}
             </section>
           )}
+          {goals.ok ? <GoalsCard goals={goals.value} /> : <SectionError label="Goals" />}
         </div>
         <div className="min-w-0 space-y-5">
           <RecoveryCard recovery={r} today={today} />
@@ -127,8 +128,6 @@ export default async function HomePage() {
           <LeanStrong body={body} lift={lift} strength={{ done: thisWeek?.strength ?? 0, target: targets.strength }} />
         </div>
       </div>
-
-      {goals.ok ? <GoalsCard goals={goals.value} /> : <SectionError label="Goals" />}
 
       <nav className="flex flex-wrap gap-x-5 gap-y-2 text-sm" aria-label="More">
         <Link href="/trends#peaks" className="text-brand-ink underline-offset-4 hover:underline">Peak performances →</Link>
