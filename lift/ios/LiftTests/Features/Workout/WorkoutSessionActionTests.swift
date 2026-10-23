@@ -48,6 +48,7 @@ import Testing
             history: FakeExerciseHistoryRepository(emissions: [[]]),
             health: health,
             gym: InMemoryGymSettings(.standard),
+            preferences: InMemoryWorkoutSettings(),
             now: SessionBuilder.now,
             calendar: SessionBuilder.calendar
         )

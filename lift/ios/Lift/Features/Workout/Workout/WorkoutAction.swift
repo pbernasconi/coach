@@ -42,7 +42,8 @@ nonisolated enum WorkoutAction: Equatable, Sendable {
     case thumbnailNeeded(catalogID: String)
     /// "Add exercise": opens the exercise picker for this session.
     case addExerciseTapped
-    /// The "…" in the navigation bar: Save as template and Discard workout.
+    /// The "…" in the navigation bar: the workout menu (Pause, Reorder, Add exercise, Settings, note, template, Finish,
+    /// Discard).
     case workoutOptionsTapped
     /// An exercise's "…": move it or remove it.
     case exerciseOptionsTapped(UUID)
@@ -68,4 +69,25 @@ nonisolated enum WorkoutAction: Equatable, Sendable {
     case discardedToastShown
     /// A new template from this session's exercises, named like it.
     case saveAsTemplateTapped
+    /// "Pause workout" in the workout menu: the clock stops and a running rest ends.
+    case pauseTapped
+    /// "Resume" on the dock or in the workout menu: the clock runs again; the pause is left out of the length.
+    case resumeTapped
+    /// "Reorder exercises" in the workout menu: opens the reorder sheet.
+    case reorderTapped
+    /// An exercise dragged to a new place in the reorder sheet.
+    case reorderMoved(from: IndexSet, to: Int)
+    /// Done on the reorder sheet: saves the new order.
+    case reorderDoneTapped
+    case reorderDismissed
+    /// "Workout settings" in the workout menu: opens the settings sheet.
+    case settingsTapped
+    case settingsTitleChanged(String)
+    /// The start time picked in Workout settings; saved at once.
+    case settingsStartChanged(Date)
+    /// A default for every workout changed in Workout settings (rest, alert, screen); saved at once.
+    case settingsPreferencesChanged(WorkoutPreferences)
+    /// Done on Workout settings: saves the name.
+    case settingsDoneTapped
+    case settingsDismissed
 }

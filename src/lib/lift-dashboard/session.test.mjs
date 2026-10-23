@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildModel, sessionDetail } from './stats.mjs';
+import { buildModel, sessionDetail, workoutMinutes } from './stats.mjs';
 
 // Synthetic data only.
 const BENCH = 'BBBBBBBB-0000-0000-0000-000000000001';
@@ -57,4 +57,18 @@ test('sessionDetail: latest is the newest logged session; a planned session open
   assert.equal(planned.olderId, 's-old');
   assert.equal(sessionDetail(model(), 'nope', 'kg'), null);
   assert.equal(sessionDetail(buildModel({ exercises: [], sessions: [], sessionExercises: [], sets: [] }), 'latest', 'kg'), null);
+});
+
+test('a workout length leaves out the time it was paused', () => {
+  const session = { startedAt: '2026-10-20T16:00:00.000Z', finishedAt: '2026-10-20T16:55:00.000Z' };
+  assert.equal(workoutMinutes(session), 55);
+  assert.equal(workoutMinutes({ ...session, pausedSeconds: 600 }), 45);
+  assert.equal(workoutMinutes({ ...session, finishedAt: null }), null);
+  const model = buildModel({
+    sessions: [{ id: 'S1', day: '2026-10-20', title: 'Lower', ...session, pausedSeconds: 300 }],
+    sessionExercises: [],
+    sets: [],
+    exercises: [],
+  });
+  assert.equal(model.sessions.get('s1').pausedSeconds, 300);
 });

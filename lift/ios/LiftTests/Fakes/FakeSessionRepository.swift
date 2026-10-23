@@ -99,6 +99,14 @@ nonisolated final class FakeSessionRepository: SessionRepository {
         throw AppError(.unknown, detail: "not used")
     }
 
+    func changeTime(sessionID _: UUID, _: SessionTimeChange) async throws -> SessionRecord {
+        throw AppError(.unknown, detail: "not used")
+    }
+
+    func rename(sessionID _: UUID, title _: String) async throws -> SessionRecord {
+        throw AppError(.unknown, detail: "not used")
+    }
+
     func saveNote(sessionID _: UUID, note _: String?) async throws -> SessionRecord {
         throw AppError(.unknown, detail: "not used")
     }

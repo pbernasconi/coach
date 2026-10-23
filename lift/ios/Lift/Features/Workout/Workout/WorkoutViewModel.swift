@@ -20,6 +20,8 @@ final class WorkoutViewModel {
     private let previousSets: PreviousSetsLoader
     /// The gym's bars and plates, for plates per side, warm-ups and the weight step; read each time the session shows.
     private let gym: any GymPreference
+    /// The defaults for every workout (Workout settings): rest after each set, its length, alerts, the screen.
+    private let preferences: any WorkoutPreferenceStore
     private let days: DayCalendar
     private let now: @Sendable () -> Date  // today, and when a rest ran out
     /// The latest session from the store; the source for the editor, Add set and rest times.
@@ -46,6 +48,7 @@ final class WorkoutViewModel {
         history: any ExerciseHistoryRepository,
         health: any WorkoutHealthRecording,
         gym: any GymPreference,
+        preferences: any WorkoutPreferenceStore,
         now: @escaping @Sendable () -> Date,
         calendar: Calendar
     ) {
@@ -65,6 +68,7 @@ final class WorkoutViewModel {
         self.catalog = catalog
         self.previousSets = PreviousSetsLoader(history: history)
         self.gym = gym
+        self.preferences = preferences
         self.days = DayCalendar(calendar: calendar)
         self.now = now
     }
@@ -92,6 +96,7 @@ final class WorkoutViewModel {
 
     private func show(_ detail: SessionDetail) {
         let today = days.day(of: now())
+        state.preferences = preferences.preferences
         state.workout = .loaded(
             WorkoutOverview(detail: detail, days: days, previous: state.previous, gym: gym.setup, today: today)
         )
@@ -145,6 +150,27 @@ final class WorkoutViewModel {
             router.open(note.map { .exerciseInWorkout(exerciseID, note: $0) } ?? .exercise(exerciseID))
         case .thumbnailNeeded(let catalogID): return loadThumbnail(catalogID)
         case .workoutOptionsTapped, .exerciseOptionsTapped, .optionsDismissed: state.options = options(for: action)
+        case .reorderTapped, .settingsTapped, .reorderMoved, .reorderDismissed, .settingsTitleChanged, .settingsDismissed:
+            state.applyMenu(action, preferences: preferences.preferences, now: now())
+        case .reorderDoneTapped, .settingsDoneTapped:
+            defer { state.applyMenu(action, preferences: preferences.preferences, now: now()) }  // closes the sheet
+            return sendSession(action)
+        case .settingsStartChanged(let date):
+            state.settings?.startedAt = date
+            return changeStart(to: date)
+        case .settingsPreferencesChanged(let changed):
+            preferences.preferences = changed
+            state.preferences = changed
+            state.settings?.preferences = changed
+        case .pauseTapped:
+            state.options = nil
+            state.rest = nil  // a pause ends the rest, here and on the Lock Screen, with no "rest over" bar
+            state.ready = nil
+            restActivity.end()
+            return sendSession(action)
+        case .resumeTapped:
+            state.options = nil
+            return sendSession(action)
         default: return sendSession(action)
         }
         return nil
@@ -163,12 +189,13 @@ final class WorkoutViewModel {
             return nil
         }
         inFlight.insert(id)
-        let restSeconds = detail.restSeconds(afterLogging: id)
+        let restSeconds = detail.restSeconds(afterLogging: id, preferences: preferences.preferences)
         let activity = isPlanned ? state.restActivity(afterLogging: id) : nil
         return Task {
             defer { inFlight.remove(id) }
             do {
                 if isPlanned {
+                    await resumeIfPaused()  // logging a set while paused picks the workout up again
                     _ = try await sets.log(setID: id)
                     startRest(seconds: restSeconds, activity: activity, setID: id)
                     await startIfNeeded()

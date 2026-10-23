@@ -23,12 +23,20 @@ import Testing
         return detail
     }
 
-    func makeCenter(_ emissions: [SessionDetail?], sets: RecordingSetRepository? = nil) -> WorkoutActivityCenter {
+    func makeCenter(
+        _ emissions: [SessionDetail?],
+        sets: RecordingSetRepository? = nil,
+        sessions: FakeSessionDetailRepository? = nil,
+        preferences: WorkoutPreferences = WorkoutPreferences(),
+        restAlerts: any RestAlerting = NoRestAlerts()
+    ) -> WorkoutActivityCenter {
         WorkoutActivityCenter(
-            sessions: FakeSessionDetailRepository(emissions: emissions),
+            sessions: sessions ?? FakeSessionDetailRepository(emissions: emissions),
             sets: sets ?? RecordingSetRepository(result: started.items[0].sets[0]),
             presenter: presenter,
             gym: InMemoryGymSettings(.standard),
+            preferences: InMemoryWorkoutSettings(preferences),
+            restAlerts: restAlerts,
             calendar: SessionBuilder.calendar,
             now: { [now] in now() }
         )
@@ -257,5 +265,75 @@ import Testing
         await center.settle()
 
         #expect(presenter.calls == [.end])
+    }
+
+    // MARK: Workout settings and pausing
+
+    @Test func turnedOffInWorkoutSettingsItShowsNothing() async {
+        let center = makeCenter([started], preferences: WorkoutPreferences.with { $0.showsLiveActivity = false })
+
+        center.showWorkout(started.id)
+        await center.settle()
+
+        #expect(presenter.calls.isEmpty)
+    }
+
+    @Test func doneUsesTheDefaultRestForAnExerciseWithoutOne() async {
+        var detail = started
+        detail.items[0].exercise.restSeconds = nil
+        let center = makeCenter([detail], preferences: WorkoutPreferences.with { $0.defaultRestSeconds = 150 })
+        center.showWorkout(detail.id)
+        await center.settle()
+
+        await center.logSet(sets[1].id, in: detail.id)
+
+        #expect(center.currentRest()?.totalSeconds == 150)
+    }
+
+    @Test func doneStartsNoRestWhenWorkoutSettingsTurnItOff() async {
+        let center = makeCenter([started], preferences: WorkoutPreferences.with { $0.startsRest = false })
+        center.showWorkout(started.id)
+        await center.settle()
+
+        await center.logSet(sets[1].id, in: started.id)
+
+        #expect(center.currentRest() == nil)
+    }
+
+    @Test func doneOnAPausedWorkoutResumesItFirst() async {
+        var paused = started
+        paused.session.pausedAt = ManualNow.start
+        let sessions = FakeSessionDetailRepository(emissions: [paused])
+        let center = makeCenter([paused], sessions: sessions)
+        center.showWorkout(paused.id)
+        await center.settle()
+        #expect(presenter.shown?.pausedAt == ManualNow.start)
+
+        await center.logSet(sets[1].id, in: paused.id)
+
+        #expect(sessions.calls == [.changeTime(paused.id, .resume)])
+    }
+
+    @Test func everyRestChangeReachesTheRestAlert() async {
+        let alerts = RecordingRestAlerts()
+        let center = makeCenter([started], restAlerts: alerts)
+        center.showWorkout(started.id)
+        await center.settle()
+
+        await center.logSet(sets[1].id, in: started.id)
+        await center.skipRest()
+
+        let end = ManualNow.start.addingTimeInterval(90)
+        #expect(alerts.ends.contains(end))
+        #expect(alerts.ends.last == .some(nil))
+    }
+}
+
+/// Records each rest end `WorkoutActivityCenter` reports.
+final class RecordingRestAlerts: RestAlerting {
+    private(set) var ends: [Date?] = []
+
+    func restChanged(endsAt: Date?, nextSet _: String?) {
+        ends.append(endsAt)
     }
 }

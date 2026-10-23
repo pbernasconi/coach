@@ -42,7 +42,7 @@ extension LiveSessionRepository {
             guard let detail = try SessionQueries.detail(db, id: sessionID) else {
                 throw AppError(.notFound, detail: "session \(sessionID)")
             }
-            var session = detail.session
+            var session = detail.session.resumed(at: stamp)  // a paused workout finishes with the pause left out
             let firstLogged = detail.items.flatMap(\.sets).filter { $0.status == .done }.compactMap(\.completedAt).min()
             session.startedAt = session.startedAt ?? firstLogged
             session.finishedAt = stamp

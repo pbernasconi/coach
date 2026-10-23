@@ -9,6 +9,7 @@ public enum SyncPayload {
     /// Columns that hold dates in every synced table.
     static let dateColumns: Set = [
         "createdAt", "updatedAt", "deletedAt", "startedAt", "finishedAt", "completedAt", "dayMovedAt",
+        "pausedAt",
     ]
 
     /// Columns that hold UUIDs (blobs locally, strings on the wire).

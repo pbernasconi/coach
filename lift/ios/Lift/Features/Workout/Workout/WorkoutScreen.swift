@@ -1,9 +1,11 @@
 import KoboComponents
 import SwiftUI
+import UIKit
 
 /// Owns the ViewModel; renders Content; starts reads (SCR-2, SCR-4). Runs the rest countdown for each new rest and
 /// shows the ViewModel's toasts through the tab's Kobo `ToastCenter`, whose Undo action goes back through `send`. The
-/// tab owns the center, so "Workout discarded" and its Undo stay up after the page closes.
+/// tab owns the center, so "Workout discarded" and its Undo stay up after the page closes. While the workout runs the
+/// screen stays awake, when Workout settings say so.
 struct WorkoutScreen: View {
     @State private var viewModel: WorkoutViewModel
     private let toasts: ToastCenter
@@ -18,6 +20,10 @@ struct WorkoutScreen: View {
             .task { await viewModel.run() }
             .task(id: viewModel.state.rest?.run) { await viewModel.runRestTimer() }
             .onChange(of: viewModel.state.toast) { _, toast in show(toast) }
+            .onChange(of: viewModel.state.keepsScreenAwake, initial: true) { _, awake in
+                UIApplication.shared.isIdleTimerDisabled = awake
+            }
+            .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
     }
 
     private func show(_ toast: WorkoutToast?) {

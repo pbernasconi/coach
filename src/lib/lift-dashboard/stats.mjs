@@ -112,6 +112,19 @@ export function exerciseKey(sessionExercise) {
  */
 
 /**
+ * The minutes a session took, start to finish with its pauses left out; null without both times or when the
+ * finish is not after the start.
+ * @param {{ startedAt: string | null, finishedAt: string | null, pausedSeconds?: number }} session
+ */
+export function workoutMinutes(session) {
+  const started = toDate(session.startedAt);
+  const finished = toDate(session.finishedAt);
+  if (!started || !finished || finished <= started) return null;
+  const seconds = (finished.getTime() - started.getTime()) / 1000 - (session.pausedSeconds ?? 0);
+  return Math.max(0, Math.round(seconds / 60));
+}
+
+/**
  * Joins sessions -> session exercises -> sets, dropping anything deleted or orphaned.
  * @param {LiftData} data
  */
@@ -127,6 +140,8 @@ export function buildModel(data) {
       title: str(s.title) ?? '',
       startedAt: str(s.startedAt),
       finishedAt: str(s.finishedAt),
+      // Seconds the workout was paused (Lift schema v9); older rows have none.
+      pausedSeconds: Math.max(0, num(s.pausedSeconds) ?? 0),
       note: sessionNote(s.note),
       unit: /** @type {Unit} */ (s.unitsAtLog === 'lb' ? 'lb' : 'kg'),
     });
@@ -495,7 +510,7 @@ export function sessionDetail(model, id, unit) {
   const session = model.sessions.get(summary.id);
   const started = toDate(session.startedAt);
   const finished = toDate(session.finishedAt);
-  const minutes = started && finished && finished > started ? Math.round((finished.getTime() - started.getTime()) / 60000) : null;
+  const minutes = workoutMinutes(session);
 
   /** @type {Map<string, { id: string, key: string, name: string, note: string | null, loadMode: string | null, restSeconds: number | null, catalogId: string | null, equipment: string | null, primary: string[], secondary: string[], position: number, volume: number, setsLogged: number, sets: FlatSet[], history: ReturnType<typeof exerciseHistory> }>} */
   const groups = new Map();

@@ -36,6 +36,7 @@ import Testing
             history: FakeExerciseHistoryRepository(emissions: [[]]),
             health: RecordingHealthRecorder(),
             gym: InMemoryGymSettings(.standard),
+            preferences: InMemoryWorkoutSettings(),
             now: SessionBuilder.now,
             calendar: SessionBuilder.calendar
         )
@@ -121,6 +122,25 @@ import Testing
         #expect(finished.clockPhase == .finished)
         #expect(finished.durationText == "52:10")
         #expect(finished.dayLine.hasSuffix("Finished · 52:10"))
+    }
+
+    @Test func aPauseStopsTheClockAndLeavesTheDurationOut() {
+        let days = DayCalendar(calendar: SessionBuilder.calendar)
+        var detail = planned
+        detail.session.startedAt = ManualNow.start
+        detail.session.pausedSeconds = 120
+        detail.session.pausedAt = ManualNow.start.addingTimeInterval(600)
+        let paused = WorkoutOverview(detail: detail, days: days, previous: [:], gym: .standard)
+        #expect(paused.isPaused)
+        #expect(paused.clockPhase == .paused(elapsed: 480))
+
+        detail.session.pausedAt = nil
+        let resumed = WorkoutOverview(detail: detail, days: days, previous: [:], gym: .standard)
+        #expect(resumed.clockPhase == .running(since: ManualNow.start.addingTimeInterval(120)))
+
+        detail.session.finishedAt = ManualNow.start.addingTimeInterval(52 * 60 + 10)
+        let finished = WorkoutOverview(detail: detail, days: days, previous: [:], gym: .standard)
+        #expect(finished.durationText == "50:10")
     }
 
     @Test func theFirstLoggedSetStartsTheClockBeforeTheStartIsStored() {

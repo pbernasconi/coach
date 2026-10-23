@@ -17,7 +17,7 @@ struct WorkoutActivityWidget: Widget {
                     IslandLeading(state: context.state, isResting: isResting)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    IslandTrailing(isResting: isResting)
+                    IslandTrailing(isResting: isResting, isPaused: context.state.isPaused)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     IslandBottom(state: context.state, isResting: isResting)
@@ -69,12 +69,19 @@ struct IslandLeading: View {
     }
 }
 
-/// The expanded island's right: "Resting" while resting, so the rest never reads as a set.
+/// The expanded island's right: "Resting" while resting, so the rest never reads as a set, or "Paused".
 struct IslandTrailing: View {
     let isResting: Bool
+    let isPaused: Bool
 
     var body: some View {
-        if isResting {
+        if isPaused, !isResting {
+            Label("Paused", systemImage: "pause.fill")
+                .font(.caption.weight(.heavy))
+                .textCase(.uppercase)
+                .foregroundStyle(.secondary)
+                .padding(.trailing, 4)
+        } else if isResting {
             Label("Resting", systemImage: "timer")
                 .font(.caption.weight(.heavy))
                 .textCase(.uppercase)

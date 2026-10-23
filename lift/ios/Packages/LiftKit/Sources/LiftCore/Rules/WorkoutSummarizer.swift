@@ -37,7 +37,7 @@ public enum WorkoutSummarizer {
         guard let start = session.startedAt ?? stamps.min(), let end = session.finishedAt ?? stamps.max() else {
             return nil
         }
-        let seconds = end.timeIntervalSince(start)
+        let seconds = end.timeIntervalSince(start) - TimeInterval(session.pausedSeconds)
         return seconds > 0 ? seconds : nil
     }
 }

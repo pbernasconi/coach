@@ -3,9 +3,10 @@ import KoboTokens
 import SwiftUI
 
 extension View {
-    /// The workout's "…" in the navigation bar and the two options sheets: the workout's (Add or Edit note, Save as
-    /// template, Discard workout) and one exercise's (Add set, Add or Edit note, Move up, Move down, Remove). Every choice applies at once; removing and discarding
-    /// offer Undo in a toast instead of asking first (product rule).
+    /// The workout's "…" in the navigation bar and the two options sheets: the workout's (Pause or Resume, Reorder
+    /// exercises, Add or Edit note, Workout settings, Save as template, Discard workout) and one exercise's (Add set,
+    /// Add or Edit note, Move up, Move down, Remove). Every choice applies at once; removing and discarding offer Undo
+    /// in a toast instead of asking first (product rule).
     func workoutOptions(state: WorkoutState, send: @escaping (WorkoutAction) -> Void) -> some View {
         modifier(WorkoutOptionsSheets(state: state, send: send))
     }
@@ -36,11 +37,24 @@ private struct WorkoutOptionsSheets: ViewModifier {
                 message: nil
             ) {
                 if case .workout(_, let hasNote) = shown {
+                    if case .loaded(let workout) = state.workout, workout.startedAt != nil, !workout.isFinished {
+                        if workout.isPaused {
+                            ActionSheetItem("Resume workout", systemImage: "play.fill") { send(.resumeTapped) }
+                        } else {
+                            ActionSheetItem("Pause workout", systemImage: "pause.fill") { send(.pauseTapped) }
+                        }
+                    }
+                    if case .loaded(let workout) = state.workout, workout.exercises.count > 1 {
+                        ActionSheetItem("Reorder exercises", systemImage: "arrow.up.arrow.down") {
+                            send(.reorderTapped)
+                        }
+                    }
                     if hasNote {
                         ActionSheetItem("Edit note", systemImage: "square.and.pencil") { send(.sessionNoteTapped) }
                     } else {
                         ActionSheetItem("Add note", systemImage: "square.and.pencil") { send(.sessionNoteTapped) }
                     }
+                    ActionSheetItem("Workout settings", systemImage: "gearshape") { send(.settingsTapped) }
                     ActionSheetItem("Save as template", systemImage: "square.and.arrow.down") {
                         send(.saveAsTemplateTapped)
                     }

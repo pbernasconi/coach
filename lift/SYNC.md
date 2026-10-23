@@ -55,6 +55,11 @@ server as `LIFT_SYNC_TOKEN` and stored on the iPhone in the Keychain. Wrong or m
   the linked plan workout to the session's `day` only when this stamp is newer than the workout's last change on the
   server (`WEEK-API.md`, "Phone behaviour"); the server's own session pushes (web moves, `lift-plan.mjs`) keep the
   stored value. Payloads from builds before v8 omit the key, which reads as `null`: those phones never move the plan.
+- `session.pausedAt` and `session.pausedSeconds` (schema v9): a paused workout's pause start (ISO 8601 with `Z`, or
+  `null` while it runs) and the whole seconds of earlier pauses (an integer, 0 when never paused). Resuming or
+  finishing adds the running pause to `pausedSeconds` and clears `pausedAt`. A workout's length is its finish minus
+  its start minus `pausedSeconds` (the web's `workoutMinutes`). Payloads from builds before v9 omit both keys, which
+  read as never paused.
 - Notes: `session.note`, `sessionExercise.note` and `set.note` (text or `null`) are written by the Notes import and
   typed in the Workout screen. They are plain columns; an edit is a normal `update` of the row.
 - At most 500 changes per request.

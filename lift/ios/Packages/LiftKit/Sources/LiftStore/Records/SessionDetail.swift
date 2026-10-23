@@ -43,7 +43,8 @@ public struct SessionDetail: Hashable, Sendable, Identifiable {
             unitsAtLog: session.unitsAtLog,
             createdAt: session.createdAt,
             updatedAt: session.updatedAt,
-            deletedAt: session.deletedAt
+            deletedAt: session.deletedAt,
+            pausedSeconds: session.pausedSeconds
         )
     }
 }

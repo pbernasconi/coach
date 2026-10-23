@@ -37,6 +37,8 @@ final class AppDependencies {
     private let baseInfo: AppInfo
     /// The gym's bars, plates and collars; the Workout screen and planned barbell loads read it.
     let gym: any GymPreference
+    /// Workout settings: the rest after each set, rest alerts, the screen and the Live Activity.
+    let workoutPreferences: any WorkoutPreferenceStore
     /// The clipboard, for the import flow's Paste button.
     let pasteboard: any TextPasteboard
     /// The local changes waiting to be pushed; the sync coordinator watches its count.
@@ -86,6 +88,7 @@ final class AppDependencies {
         info: AppInfo,
         units: any UnitPreference,
         gym: any GymPreference,
+        workoutPreferences: any WorkoutPreferenceStore,
         pasteboard: any TextPasteboard,
         outbox: any OutboxRepository,
         sync: any Syncing,
@@ -111,6 +114,7 @@ final class AppDependencies {
         self.baseInfo = info
         self.units = units
         self.gym = gym
+        self.workoutPreferences = workoutPreferences
         self.pasteboard = pasteboard
         self.outbox = outbox
         self.sync = sync

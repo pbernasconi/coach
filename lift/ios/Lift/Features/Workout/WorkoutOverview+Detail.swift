@@ -31,7 +31,9 @@ extension WorkoutOverview {
             startedAt: startedAt,
             finishedAt: detail.session.finishedAt,
             isPastDay: today.map { detail.session.day < $0 } ?? false,
-            isFutureDay: today.map { detail.session.day > $0 } ?? false
+            isFutureDay: today.map { detail.session.day > $0 } ?? false,
+            pausedAt: detail.session.pausedAt,
+            pausedSeconds: detail.session.pausedSeconds
         )
     }
 }
@@ -107,12 +109,17 @@ extension WorkoutExercise {
 }
 
 extension SessionDetail {
-    /// The rest after logging `setID`: its exercise's rest (or the default), or 0 when no other planned set is left in
-    /// the session, since the workout is done.
-    func restSeconds(afterLogging setID: UUID) -> Int {
+    /// The rest after logging `setID`: its exercise's rest (or `defaultSeconds`, from Workout settings), or 0 when no
+    /// other planned set is left in the session, since the workout is done.
+    func restSeconds(afterLogging setID: UUID, defaultSeconds: Int = RestTimer.defaultSeconds) -> Int {
         let isLast = !items.contains { item in item.sets.contains { $0.status == .planned && $0.id != setID } }
         guard !isLast, case (let item, _)? = find(setID: setID) else { return 0 }
-        return item.exercise.restSeconds ?? RestTimer.defaultSeconds
+        return item.exercise.restSeconds ?? defaultSeconds
+    }
+
+    /// The rest after logging `setID` as Workout settings have it: none when rests do not start after each set.
+    func restSeconds(afterLogging setID: UUID, preferences: WorkoutPreferences) -> Int {
+        preferences.startsRest ? restSeconds(afterLogging: setID, defaultSeconds: preferences.defaultRestSeconds) : 0
     }
 
     /// The set with `setID` and the exercise it belongs to, or nil when the session has no such set.

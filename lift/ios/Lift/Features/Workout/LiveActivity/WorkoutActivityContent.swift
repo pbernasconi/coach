@@ -52,7 +52,8 @@ extension WorkoutActivityAttributes.ContentState {
             loggedSets: sets.count(where: { $0.status != .planned }),
             totalSets: sets.count,
             rest: rest,
-            nextExercise: index.flatMap { exercises.indices.contains($0 + 1) ? exercises[$0 + 1].name : nil }
+            nextExercise: index.flatMap { exercises.indices.contains($0 + 1) ? exercises[$0 + 1].name : nil },
+            pausedAt: overview.isPaused ? overview.pausedAt : nil
         )
     }
 }
