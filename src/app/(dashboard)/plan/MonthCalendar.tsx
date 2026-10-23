@@ -3,8 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-import { Check, ChevronDown, ChevronUp, Library, X } from 'lucide-react';
-import LegendPopover from '@/components/plan/LegendPopover';
+import { Check, ChevronDown, Library, X } from 'lucide-react';
 import { useHotkeys } from '@/components/hotkeys/HotkeysProvider';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -39,7 +38,8 @@ type Props = {
   range: CalendarRange; // the first weeks loaded (anchor ± 4 weeks)
   bounds: DataBounds;
   weather: Record<string, DayWeather>;
-  placeName: string;
+  /** The Coach bar (CoachPlanner), shown on the title row. */
+  coach?: React.ReactNode;
   library: LibraryItem[];
   timeZone: string; // the zone the server used for "today" (the tz cookie)
   /** An item key (w-, a- or l-) to open in the modal on load: ?open= from links on the home page. */
@@ -53,7 +53,7 @@ type Props = {
  *
  * Week rows have a fixed height and are memoized: a scroll, a load or an edit re-renders only the weeks it changed.
  */
-export default function MonthCalendar({ anchor, openAt, range, bounds, weather, placeName, library, timeZone, openItem }: Props) {
+export default function MonthCalendar({ anchor, openAt, range, bounds, weather, coach, library, timeZone, openItem }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const {
@@ -65,6 +65,7 @@ export default function MonthCalendar({ anchor, openAt, range, bounds, weather, 
   const [createOn, setCreateOn] = useState<string | null>(null);
   const [clip, setClip] = useState<Clip | null>(null);
   const [libraryOpen, setLibraryOpen] = useState(false);
+  const [monthMenu, setMonthMenu] = useState(false);
   const rowCache = useRef(new Map());
 
   const today = data.today;
@@ -299,9 +300,28 @@ export default function MonthCalendar({ anchor, openAt, range, bounds, weather, 
   }, [weeks]);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <h1 className="min-w-[10.5rem] text-2xl font-semibold tracking-tight text-[var(--viz-ink)]" aria-live="polite">{monthTitle(month)}</h1>
+        <div className="relative">
+          <button type="button" onClick={() => setMonthMenu((o) => !o)} aria-expanded={monthMenu} className="-ml-1 inline-flex items-center gap-1 rounded-md px-1 hover:bg-accent">
+            <h1 className="text-2xl font-semibold tracking-tight text-[var(--viz-ink)]" aria-live="polite">{monthTitle(month)}</h1>
+            <ChevronDown aria-hidden className="h-4 w-4 text-[var(--viz-muted)]" />
+          </button>
+          {monthMenu && (
+            <div className="absolute left-0 top-full z-40 mt-1 grid w-72 grid-cols-3 gap-1 rounded-lg border bg-background p-2 text-sm shadow-xl">
+              {Array.from({ length: 12 }, (_, i) => addMonths(month, i - 5)).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => { setMonthMenu(false); goTo(firstWeekOfMonth(m)); }}
+                  className={cn('rounded-md px-2 py-1.5 text-left hover:bg-accent', m === month && 'bg-accent font-semibold')}
+                >
+                  {new Date(`${m}-01T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', year: '2-digit', timeZone: 'UTC' })}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         <span className="hidden items-center gap-3 text-xs text-[var(--viz-muted)] xl:flex">
           {(
             [
@@ -321,20 +341,14 @@ export default function MonthCalendar({ anchor, openAt, range, bounds, weather, 
             <span className="h-3.5 w-6 rounded-[4px] border border-dashed border-[var(--viz-axis)]" /> Planned
           </span>
         </span>
-        <div className="ml-auto flex items-center gap-1.5">
+        {coach && <div className="order-last w-full min-w-0 md:order-none md:ml-auto md:w-auto md:flex-1 md:max-w-2xl">{coach}</div>}
+        <div className="ml-auto flex items-center gap-1.5 md:ml-0">
           {library.length > 0 && (
             <Button variant={libraryOpen ? 'secondary' : 'outline'} onClick={() => setLibraryOpen((o) => !o)} aria-expanded={libraryOpen}>
               <Library aria-hidden className="mr-1.5 h-4 w-4" /> Library
             </Button>
           )}
-          <Button variant="outline" size="icon" aria-label="Previous month" onClick={() => goTo(firstWeekOfMonth(addMonths(month, -1)))}>
-            <ChevronUp className="h-4 w-4" />
-          </Button>
           <Button variant="outline" onClick={() => goTo(topWeekFor(thisWeek, bounds.earliest), true, thisWeek)}>Today</Button>
-          <Button variant="outline" size="icon" aria-label="Next month" onClick={() => goTo(firstWeekOfMonth(addMonths(month, 1)))}>
-            <ChevronDown className="h-4 w-4" />
-          </Button>
-          <LegendPopover placeName={placeName} />
         </div>
       </div>
 
@@ -351,7 +365,7 @@ export default function MonthCalendar({ anchor, openAt, range, bounds, weather, 
 
           {/* Grid: tablet and desktop */}
           <div ref={gridRef} className="hidden md:block">
-            <div className={cn(COLS, 'sticky top-0 z-20 h-8 border-b bg-background/95 text-[10px] font-semibold uppercase tracking-wider text-[var(--viz-muted)] backdrop-blur')}>
+            <div className={cn(COLS, 'sticky top-0 z-20 h-8 border-b bg-background/95 text-[11px] font-semibold uppercase tracking-wider text-[var(--viz-muted)] backdrop-blur')}>
               {WEEKDAYS.map((d) => <div key={d} className="flex items-center px-2">{d}</div>)}
               <div className="flex items-center border-l px-2">Week</div>
             </div>

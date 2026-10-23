@@ -293,6 +293,88 @@ function recordsSection(o) {
   };
 }
 
+/** @param {Overview} o */
+function summarySection(o) {
+  const done = o.thisWeek.sessions;
+  const next = o.upcoming[0] ?? null;
+  return {
+    text: `${done} of ${o.strengthTarget} ${o.strengthTarget === 1 ? 'session' : 'sessions'} this week`,
+    done,
+    target: o.strengthTarget,
+    progress: Math.min(1, done / Math.max(1, o.strengthTarget)),
+    next: next
+      ? { sessionId: next.id, date: next.day, title: next.title || 'Lift session', whenText: nextWhen(next.day, o.today), detail: plannedText(next) }
+      : null,
+    nextEmptyText: 'No Lift session planned.',
+  };
+}
+
+/** @param {Overview} o */
+function focusSection(o) {
+  return {
+    source: o.focus.source,
+    muscles: o.focus.muscles.map((m) => ({ muscle: m, name: muscleName(m) })),
+    lifts: o.focus.lifts.map((l) => ({ exerciseKey: l.key, name: l.name })),
+  };
+}
+
+/** @param {Overview} o */
+function targetingSection(o) {
+  const items = o.focus.targeting.map((t) => {
+    const name = muscleName(t.muscle);
+    return {
+      muscle: t.muscle,
+      name,
+      done: t.done,
+      planned: t.planned,
+      status: t.status,
+      text: t.planned ? `${fmtSets(t.done)} done · ${fmtSets(t.planned)} planned` : `${fmtSets(t.done)} done`,
+      label: `${name}: ${fmtSets(t.done)} sets done and ${fmtSets(t.planned)} planned this week, aim ${MUSCLE_BAND.min} to ${MUSCLE_BAND.max}`,
+      sessions: t.sessions.map((s) => ({
+        sessionId: s.id,
+        dayText: fmtDay(s.day, { weekday: 'short' }),
+        title: s.title || 'Lift session',
+        sets: s.sets,
+        setsText: `${fmtSets(s.sets)} ${s.sets === 1 ? 'set' : 'sets'}`,
+        done: s.done,
+      })),
+    };
+  });
+  return {
+    caption: `Hard sets this week · aim ${MUSCLE_BAND.min}–${MUSCLE_BAND.max}`,
+    band: MUSCLE_BAND,
+    scaleMax: Math.max(24, ...items.map((i) => i.done + i.planned)),
+    items,
+    emptyText: 'Log a session to see which muscles this week works.',
+  };
+}
+
+/** @param {Overview} o */
+function progressSection(o) {
+  return {
+    caption: 'Estimated 1RM · last 8 weeks',
+    items: o.focus.progress.map((p) => ({
+      exerciseKey: p.key,
+      name: p.name,
+      e1rm: p.e1rm === null ? null : r1(p.e1rm),
+      e1rmText: p.e1rm === null ? '–' : `${Math.round(p.e1rm)} ${o.unit}`,
+      change: p.change === null ? null : r3(p.change),
+      changeText: p.change === null ? null : `${p.change >= 0 ? '+' : '−'}${Math.abs(Math.round(p.change * 100))}% since ${fmtDay(p.since ?? o.today)}`,
+      tone: p.change === null || Math.abs(p.change) < 0.005 ? 'same' : p.change > 0 ? 'up' : 'down',
+      points: p.points.map((pt) => ({ date: pt.day, e1rm: r1(pt.e1rm) })),
+      prText: p.prDay ? `PR ${fmtDay(p.prDay)}` : null,
+      emptyText: p.points.length < 2 ? (p.points.length ? 'One session so far' : 'Not done in 8 weeks') : null,
+    })),
+    emptyText: 'No lifts with a weight yet.',
+  };
+}
+
+/** The one coach note worth a line, or none. @param {Overview} o */
+function noteSection(o) {
+  const t = o.tips.find((tip) => tip.tone !== 'info') ?? null;
+  return { item: t ? { id: t.id, tone: t.tone, title: t.title, body: t.body, link: appLink(t.href) } : null };
+}
+
 /**
  * The whole GET /api/app/lift response from what the /lift page computes. `overview`/`exercises` null: the model
  * failed to load, so every section is `{ ok: false }`.
@@ -307,6 +389,11 @@ export function liftResponse({ overview: o, exercises, timeZone, today, now }) {
     today,
     unit: o?.unit ?? null,
     empty: o && o.totals.sessions === 0 ? { title: 'No sessions yet', body: 'Sessions appear here after the Lift app syncs.' } : null,
+    summary: part('summary', summarySection),
+    focus: part('focus', focusSection),
+    targeting: part('targeting', targetingSection),
+    progress: part('progress', progressSection),
+    note: part('note', noteSection),
     week: part('week', weekSection),
     tips: part('tips', tipsSection),
     lifts: part('lifts', liftsSection),

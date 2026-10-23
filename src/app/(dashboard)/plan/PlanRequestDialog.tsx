@@ -209,12 +209,13 @@ export default function PlanRequestDialog({
                   onClick={() => toggleDay(d)}
                   title={note}
                   className={cn(
-                    'flex min-w-0 flex-col items-start rounded-md border px-1.5 py-1 text-left transition-colors disabled:opacity-40',
+                    'flex min-w-0 flex-col items-start overflow-hidden rounded-md border px-1.5 py-1 text-left transition-colors disabled:opacity-40',
                     off ? 'border-rose-300 bg-rose-50 dark:border-rose-900 dark:bg-rose-950/40' : 'hover:bg-accent'
                   )}
                 >
-                  <span className="flex w-full items-center justify-between gap-1">
-                    <span className={cn('text-[10px] font-semibold uppercase tracking-wide text-[var(--viz-muted)]', off && 'text-rose-700 line-through dark:text-rose-300')}>
+                  {/* Phones stack the weather under the date: seven chips leave ~45 px each. */}
+                  <span className="flex w-full flex-col items-start gap-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-1">
+                    <span className={cn('whitespace-nowrap text-[10px] font-semibold uppercase tracking-wide text-[var(--viz-muted)]', off && 'text-rose-700 line-through dark:text-rose-300')}>
                       {DOW[i]} <span className="text-[var(--viz-ink)]">{Number(d.slice(8))}</span>
                     </span>
                     {wx && <WeatherIcon w={wx} />}

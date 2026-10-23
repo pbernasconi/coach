@@ -12,11 +12,11 @@ nonisolated enum OutcomeEntrance {
     /// The scale the words and the facts start from.
     static let contentStartScale: Double = 0.98
     /// The disc starts a little after the halo.
-    static let discDelay: TimeInterval = 0.04
+    static let discDelay: TimeInterval = 0.03
     /// The check starts to draw while the disc settles.
-    static let drawDelay: TimeInterval = 0.13
+    static let drawDelay: TimeInterval = 0.08
     /// The words and the facts start after the check.
-    static let contentDelay: TimeInterval = 0.17
+    static let contentDelay: TimeInterval = 0.1
 
     /// The scale of a part. Reduce Motion never scales.
     static func scale(from start: Double, isShown: Bool, reduceMotion: Bool) -> Double {

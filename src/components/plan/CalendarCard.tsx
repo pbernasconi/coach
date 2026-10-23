@@ -25,7 +25,7 @@ export type CardAction = { href: string } | { onClick: (e: React.MouseEvent<HTML
 /** Drag handlers for a planned card that can be moved to another day (/plan only). */
 export type CardDrag = Pick<React.HTMLAttributes<HTMLDivElement>, 'onDragStart' | 'onDragEnd'>;
 
-const cardBase = 'plan-chip group/chip relative flex min-w-0 flex-col justify-center rounded-[5px] border border-l-[3px] px-1.5 text-[11px] leading-[15px]';
+const cardBase = 'plan-chip group/chip relative flex min-w-0 flex-col justify-center rounded-[5px] border border-l-[3px] px-2 text-[12px] leading-4';
 const actionBase = 'block min-w-0 rounded-[4px] text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
 /**
@@ -65,6 +65,9 @@ function PlannedCard({ w, actual, roomy, action, drag }: { w: CalendarWorkout; a
   const doneText = actual ? loadText(actual.min, actual.tss, dur) || dur(0) : w.match?.name ?? null;
   const status = skipped ? skipText(w.skipReason) : `${w.compliance.label}${pct ? ` (${pct})` : ''}`;
   const draggable = Boolean(drag) && !done;
+  // Done with a matched activity: what was done leads (time, distance, TSS), the plan is a small line under it.
+  const showDone = done && Boolean(actual);
+  const doneParts = actual ? [dur(actual.min), actual.km >= 0.5 ? `${actual.km} km` : null, actual.tss ? `${Math.round(actual.tss)} TSS` : null].filter(Boolean) : [];
   return (
     <div
       draggable={draggable}
@@ -72,7 +75,7 @@ function PlannedCard({ w, actual, roomy, action, drag }: { w: CalendarWorkout; a
       onDragEnd={draggable ? drag?.onDragEnd : undefined}
       className={cn(
         cardBase,
-        roomy ? 'py-1.5' : w.steps ? 'h-[60px] shrink-0' : 'h-[40px] shrink-0',
+        roomy ? 'py-1.5' : showDone ? 'h-[62px] shrink-0' : w.steps ? 'h-[70px] shrink-0' : 'h-[46px] shrink-0',
         filled ? 'plan-done shadow-sm' : 'plan-upcoming border-dashed border-[var(--viz-axis)] shadow-sm',
         draggable && 'cursor-grab hover:shadow-md active:cursor-grabbing'
       )}
@@ -80,16 +83,13 @@ function PlannedCard({ w, actual, roomy, action, drag }: { w: CalendarWorkout; a
     >
       <Action action={action}>
         <span className="flex min-w-0 items-center gap-1">
-          <SportIcon id={w.sport} className={cn('h-3 w-3', !filled && 'opacity-70')} />
+          <SportIcon id={w.sport} className={cn('h-3.5 w-3.5', !filled && 'opacity-70')} />
           <span className={cn('min-w-0 flex-1 truncate font-medium', filled ? 'text-[var(--viz-ink)]' : 'text-[var(--viz-ink-2)]')}>{plainTitle(w.title)}</span>
           <ComplianceMark level={w.compliance.level} title={status} tooltip={false} />
         </span>
         <span className={cn('block truncate tabular-nums', filled ? 'text-[var(--viz-ink-2)]' : 'text-[var(--viz-muted)]')}>
-          {done && actual ? (
-            <>
-              {doneText}
-              {plannedText && <span className="text-[var(--viz-muted)]"> / {plannedText}</span>}
-            </>
+          {showDone ? (
+            <span className="font-semibold text-[var(--viz-ink)]">{doneParts.join(' · ') || doneText}</span>
           ) : skipped ? (
             skipText(w.skipReason)
           ) : missed ? (
@@ -98,7 +98,8 @@ function PlannedCard({ w, actual, roomy, action, drag }: { w: CalendarWorkout; a
             plannedText || sport(w.sport).label
           )}
         </span>
-        {w.steps && <MiniWorkoutChart workout={w.steps} className={cn('mt-1 block w-full text-[var(--viz-ink-2)]', roomy ? 'h-6' : 'h-5')} />}
+        {showDone && plannedText && <span className="block truncate text-[11px] tabular-nums text-[var(--viz-muted)]">P: {plannedText}</span>}
+        {w.steps && !showDone && <MiniWorkoutChart workout={w.steps} className={cn('mt-1 block w-full text-[var(--viz-ink-2)]', roomy ? 'h-6' : 'h-5')} />}
       </Action>
     </div>
   );
@@ -108,12 +109,12 @@ function ActivityCard({ a, roomy, action }: { a: CalendarActivity; roomy: boolea
   const text = [dur(a.min), a.km >= 0.5 ? `${a.km} km` : null, a.tss ? `${Math.round(a.tss)} TSS` : null].filter(Boolean).join(' · ');
   return (
     <div
-      className={cn(cardBase, roomy ? 'py-1.5' : 'h-[40px] shrink-0', 'plan-done shadow-sm hover:shadow-md')}
+      className={cn(cardBase, roomy ? 'py-1.5' : 'h-[46px] shrink-0', 'plan-done shadow-sm hover:shadow-md')}
       style={{ borderLeftColor: sport(a.sport).color, '--chip-tint': 'var(--plan-good)' } as React.CSSProperties}
     >
       <Action action={action}>
         <span className="flex min-w-0 items-center gap-1">
-          <SportIcon id={a.sport} className="h-3 w-3" />
+          <SportIcon id={a.sport} className="h-3.5 w-3.5" />
           <span className="min-w-0 flex-1 truncate font-medium text-[var(--viz-ink)]">{a.name || sport(a.sport).label}</span>
           <ComplianceMark level="done" title="Completed, not planned" tooltip={false} />
         </span>
@@ -128,12 +129,12 @@ function LiftCard({ l, a, roomy, action }: { l: CalendarLift; a: CalendarActivit
   const watch = a ? loadText(a.min, a.tss, dur) : '';
   return (
     <div
-      className={cn(cardBase, roomy ? 'py-1.5' : 'h-[40px] shrink-0', 'plan-done shadow-sm hover:shadow-md')}
+      className={cn(cardBase, roomy ? 'py-1.5' : 'h-[46px] shrink-0', 'plan-done shadow-sm hover:shadow-md')}
       style={{ borderLeftColor: sport('strength').color, '--chip-tint': 'var(--plan-good)' } as React.CSSProperties}
     >
       <Action action={action}>
         <span className="flex min-w-0 items-center gap-1">
-          <Dumbbell aria-hidden className="h-3 w-3 shrink-0" style={{ color: sport('strength').color }} />
+          <Dumbbell aria-hidden className="h-3.5 w-3.5 shrink-0" style={{ color: sport('strength').color }} />
           <span className="min-w-0 flex-1 truncate font-medium text-[var(--viz-ink)]">{l.name}</span>
           <ComplianceMark level="done" title="Logged in Lift" tooltip={false} />
         </span>

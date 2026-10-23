@@ -75,7 +75,7 @@ export function planningContext(x) {
       id: 'volume',
       label: `Last ${full.length} weeks`,
       value: avgMin > 0 ? `${hours(avgMin)} / wk` : `${r0(avgTss)} TSS / wk`,
-      note: avgMin > 0 ? `${r0(avgTss)} TSS · ${r0(avg(full.map((w) => w.sessions)) ?? 0)} sessions` : null,
+      note: avgMin > 0 ? `${r0(avgTss)} TSS · ${r0(avg(full.map((w) => w.sessions)) ?? 0)} sessions / wk` : null,
       tone: 'neutral',
     });
   }
@@ -96,8 +96,9 @@ export function planningContext(x) {
     });
   }
 
+  // One logged session is too few to say how sessions feel.
   const felt = x.feedback.filter((f) => f.feel != null || f.rpe != null);
-  if (felt.length) {
+  if (felt.length >= 2) {
     const feel = avg(felt.filter((f) => f.feel != null).map((f) => /** @type {number} */ (f.feel)));
     const rpe = avg(felt.filter((f) => f.rpe != null).map((f) => /** @type {number} */ (f.rpe)));
     const value = feel != null ? ['Very weak', 'Weak', 'Normal', 'Strong', 'Very strong'][Math.round(feel) - 1] : `RPE ${rpe?.toFixed(1)}`;
@@ -133,7 +134,8 @@ export function planningContext(x) {
   }
 
   const weekEnd = addDays(x.weekStart, 6);
-  const inWeek = x.calendar.filter((c) => c.date >= x.weekStart && c.date <= weekEnd);
+  // Birthdays don't take time out of a week.
+  const inWeek = x.calendar.filter((c) => c.date >= x.weekStart && c.date <= weekEnd && !/birthday/i.test(c.title));
   const busyMin = inWeek.filter((c) => !c.allDay).reduce((n, c) => n + c.minutes, 0);
   const allDay = inWeek.filter((c) => c.allDay);
   if (inWeek.length) {

@@ -1,6 +1,7 @@
 # App API
 
-Read-only JSON for the Lift iPhone app: the web's Today, Trends, Activity and Lift pages (not Health, not Settings).
+Read-only JSON for the Lift iPhone app: the web's Today, Trends, Activity and Lift pages, and the state of Settings'
+connections (not Health; Settings' edits stay on the web).
 Server-side first: the server computes every number, state and label with the same functions as the web page, and
 the phone shows them. The phone does not port web logic. Change this file first, then both sides. The week plan has
 its own contract: `WEEK-API.md`.
@@ -89,8 +90,10 @@ web page also uses. About 17 KB (the fitness chart is about 13 KB of it).
   "body": {
     "ok": true,
     "weight": { "date": "2026-10-19", "kg": 78.4, "text": "78.4", "unit": "kg", "change4w": -1.2,
-                "changeText": "▼ 1.2 kg", "changeTone": "good", "noteText": "in 4 weeks · -0.30 kg a week" },
-    "series": [{ "date": "2026-08-01", "kg": 79.7 }, { "date": "2026-10-19", "kg": 78.4 }],
+                "changeText": "▼ 0.26 kg/wk", "changeTone": "good", "noteText": "Trend 78.9 kg · ▼ 1.2 kg in 4 weeks" },
+    "trend": { "kg": 78.9, "text": "78.9", "rate": { "kgPerWeek": -0.26, "text": "▼ 0.26 kg/wk", "tone": "good" },
+               "offKg": -0.5, "swingKg": 0.6, "noteText": "Today is 0.5 kg under your trend, …" },
+    "series": [{ "date": "2026-08-01", "kg": 79.7, "trendKg": 79.92 }, { "date": "2026-10-19", "kg": 78.4, "trendKg": 78.9 }],
     "bodyFat": 14.3,
     "bodyFatText": "14.3 %",
     "emptyText": null
@@ -148,8 +151,11 @@ Field rules:
   `events`: A events get a label, B and C a thin line. `caption`: `null` without a projection.
 - `last4Weeks.tiles`: the 4 complete weeks before this one; `[]` when there are none. `sport`: the tile's dot color
   (a `design/sports.json` id), `null` for ink.
-- `body`: weight is in kg (the scale's unit), to 0.1. `series`: the last 12 weeks for the trend line (scaled to its
-  own range). `weight: null` with `emptyText` when there is no reading in 12 weeks; `bodyFatText` "–" without one.
+- `body`: weight is in kg (the scale's unit), to 0.1. `trend`: as the weigh-in's (`null` without a reading in 12
+  weeks). `weight.changeText` / `changeTone`: the trend's rate, or the trend's 4-week change before there is a rate;
+  `change4w` is the trend's change over 4 weeks. `series`: each reading in the last 12 weeks with `trendKg`, the trend
+  line (scaled to its own range). `weight: null` with `emptyText` when there is no reading in 12 weeks; `bodyFatText`
+  "–" without one.
 - `lift.arms.rows`: biceps and triceps hard sets this week against `band`. `lift.mainLifts`: the 4 exercises done most
   in 12 weeks, e1RM per session (`points`, in `unit`); `sparkText` "1 session" when there is one point (no line).
   `tone` of the change: `good` (up), `bad` (down), `null`. `mainLifts: []` with `mainLiftsEmptyText` when none.
@@ -293,6 +299,34 @@ Weights are in the web's display unit `unit` (`kg | lb`: the unit most logged se
 
 Errors: a malformed `id` or `key` `400`; an unknown session, or an exercise with no logged sets, `404 {"error":"not
 found"}` (also `latest` with no sessions).
+
+**The simple overview** (the phone's Lift tab; `focus.mjs`, shared with `/lift`). Five sections, each `{ ok }` on its own,
+next to the older ones (kept until every phone has the new build):
+
+```json
+"summary": { "ok": true, "text": "1 of 2 sessions this week", "done": 1, "target": 2, "progress": 0.5,
+  "next": { "sessionId": "…", "date": "2026-10-23", "title": "Upper (dumbbells)", "whenText": "Fri, Oct 23", "detail": "8 exercises · 24 sets planned" },
+  "nextEmptyText": "No Lift session planned." },
+"focus": { "ok": true, "source": "training", "muscles": [{ "muscle": "biceps", "name": "Biceps" }],
+  "lifts": [{ "exerciseKey": "id-…", "name": "Back squat" }] },
+"targeting": { "ok": true, "caption": "Hard sets this week · aim 10–20", "band": { "min": 10, "max": 20 }, "scaleMax": 24,
+  "items": [{ "muscle": "biceps", "name": "Biceps", "done": 3, "planned": 4, "status": "below", "text": "3 done · 4 planned",
+    "label": "…", "sessions": [{ "sessionId": "…", "dayText": "Fri", "title": "Arms", "sets": 4, "setsText": "4 sets", "done": false }] }],
+  "emptyText": "…" },
+"progress": { "ok": true, "caption": "Estimated 1RM · last 8 weeks",
+  "items": [{ "exerciseKey": "id-…", "name": "Back squat", "e1rm": 117.3, "e1rmText": "117 kg", "change": 0.06,
+    "changeText": "+6% since Sep 28", "tone": "up", "points": [{ "date": "2026-09-28", "e1rm": 110.5 }], "prText": "PR Oct 19", "emptyText": null }],
+  "emptyText": "…" },
+"note": { "ok": true, "item": { "id": "gap", "tone": "warn", "title": "…", "body": "…", "link": null } }
+```
+
+- `focus.source`: `settings` when Coach Settings has `liftFocus { muscles[], lifts[] }` (catalog muscle names and
+  `exerciseKey`s), else `training`: the 4 muscles with the most hard sets in the last 4 weeks plus this week's plan, and
+  the 4 lifts with a weight done most in 12 weeks.
+- `targeting.items[].status`: `inRange | above` (done already), `onTrack` (done + planned reaches 10), `below`.
+  `sessions`: this week's sessions that give the muscle sets, done or planned.
+- `progress`: the last 8 weeks of each focus lift's best e1RM per session (at most 12 points); `tone` `up | down | same`.
+- `note.item`: the first coach note that is not plain information, or `null`.
 
 **Links.** `sessionId`: a lower-case session id, for `/api/app/lift/sessions/{id}` (a planned one too; the phone opens
 its own workout screen for a session it has and that is not finished). `exerciseKey`: `id-<library id>` or
@@ -594,7 +628,7 @@ parts (a POST); the detail route starts the same fetch itself (see `header.fetch
       "startLocal": "2026-10-17T07:15:54", "day": "2026-10-17", "startText": "Sat, Oct 17 · 7:15 AM",
       "distance": 12010.4, "distanceText": "12.01 km", "movingSeconds": 4038, "durationText": "1:07:18",
       "speed": 2.974, "paceText": "5:36 /km", "speedText": null, "tss": 84, "tssText": "84 TSS",
-      "indoor": false, "commute": false, "plannedTitle": null,
+      "indoor": false, "commute": false, "outdoor": true, "plannedTitle": null,
       "subtitle": "12.01 km · 1:07:18 · 5:36 /km · 84 TSS"
     }
   ],
@@ -608,6 +642,8 @@ parts (a POST); the detail route starts the same fetch itself (see `header.fetch
 - `paceText` for foot sports (run, hike, walk), `speedText` for rides, both `null` otherwise. `distanceText` is
   `null` at 0 m (strength). `tss`/`tssText`: `null` without TSS. `subtitle` joins the texts that are present.
 - `indoor`: Strava's `trainer` flag (Zwift rides often have it `false`). `commute`: Strava's flag.
+- `outdoor`: the activity page will lead with its route on a map (not `trainer`, not a `Virtual*` type, some
+  distance), so the app can open it straight into that layout before the body arrives.
 - `plannedTitle`: the plan workout this activity completed (the calendar's matching, `loadRange`), without its emoji;
   `null` when none. `plannedOk: false`: that lookup failed, so every `plannedTitle` is `null`; the list still shows.
 - Open a row with the detail endpoint below (`activityId`).
@@ -837,16 +873,66 @@ last day with a weight. `404` when that day has no weight.
     { "id": "previous", "label": "Since yesterday", "kg": -0.3, "text": "▼ 0.3 kg", "tone": "good", "noteText": "83.5 kg on Oct 21" },
     { "id": "4w", "label": "4 weeks", "kg": -1.4, "text": "▼ 1.4 kg", "tone": "good", "noteText": "-0.35 kg a week" }
   ],
-  "series": [{ "date": "2026-09-22", "kg": 84.6 }, { "date": "2026-10-22", "kg": 83.2 }],
+  "trend": {
+    "kg": 83.52, "text": "83.5", "rate": { "kgPerWeek": -0.26, "text": "▼ 0.26 kg/wk", "tone": "good" },
+    "offKg": -0.3, "swingKg": 0.4,
+    "noteText": "Today is 0.3 kg under your trend, inside your normal ±0.4 kg day-to-day swing. Read the line, not the dot."
+  },
+  "series": [{ "date": "2026-09-22", "kg": 84.6, "trendKg": 84.31 }, { "date": "2026-10-22", "kg": 83.2, "trendKg": 83.52 }],
   "source": "renpho", "recordedAt": "2026-10-22T14:05:00.000Z",
   "newerDate": null, "olderDate": "2026-10-21"
 }
 ```
 
 - `weight.kg` 2 decimals, `text` 1 decimal. `bodyFat`: `null` when the day has none.
-- `changes`: `previous` against the last earlier weigh-in at any distance, `4w` against the last weigh-in 28 or
-  more days before (the web's Health card). Either is left out when there is nothing to compare. `tone`: `good`
+- `changes`: `previous` against the last earlier weigh-in at any distance, `4w`: the trend's change since the last
+  weigh-in 28 or more days before (as Today's `change4w`). Either is left out when there is nothing to compare. `tone`: `good`
   (down), `bad` (up), `neutral`; the goal is losing fat (COACH.md).
-- `series`: every weigh-in in the 12 weeks up to `date`, oldest first, 1 decimal.
+- `trend` (`src/lib/vitals/weight-trend.mjs`, the format every weight view uses): an average that moves 10% of
+  the way to each day's reading (a gap of n days moves it as n daily steps), started 4 weeks before the series.
+  `rate`: the trend's slope over the last 14 days in kg a week, `null` with less than a week of readings; `tone` as
+  `changes`, `neutral` under 0.05. `offKg`: reading minus trend. `swingKg`: 1.5 × the root mean square of reading minus
+  trend over 4 weeks, at least 0.3, `null` with fewer than 5 readings. `noteText`: one sentence on where the reading
+  sits against the trend and the swing, `null` on a first reading.
+- `series`: every weigh-in in the 12 weeks up to `date`, oldest first, `kg` to 1 decimal, `trendKg` (the trend
+  through that reading) to 2.
 - `source`: the sample's source (`renpho`, `garmin`, `apple_health`, …). `recordedAt`: when the day's weight was
   stored. `newerDate` / `olderDate`: the next and previous days with a weight, `null` at the ends.
+
+### Settings: `GET /api/app/settings?tz=`
+
+The server's half of the phone's Settings page: every connection's state and the coach's targets and next event. The
+phone adds what is its own (this iPhone's sync, Apple Health, units, plates, practice mode). Read-only; edits stay on
+the web. Loader `loadAppSettings` (`src/lib/settings/app-settings.ts`), shape `settingsResponse`
+(`src/lib/settings/app-settings.mjs`); the rows come from `connectionsFrom` (`src/lib/settings/connections.mjs`), which
+the web Settings page also uses, so both say the same.
+
+```json
+{
+  "generatedAt": "2026-10-22T20:00:00.000Z",
+  "connections": {
+    "ok": true,
+    "summary": { "attention": 1, "total": 5, "level": "error", "text": "1 of 5 needs attention" },
+    "items": [
+      { "id": "strava", "name": "Strava", "state": "connected", "level": "ok", "statusText": "Synced 2 h ago",
+        "detailText": "Newest activity Oct 22", "note": null, "lastSyncedAt": "2026-10-22T18:00:00Z", "required": true },
+      { "id": "garmin", "name": "Garmin", "state": "off", "level": "error", "statusText": "Login expired",
+        "detailText": "Sleep and HRV through Oct 20", "note": "Log in to Garmin again on your Mac (scripts/garmin).",
+        "lastSyncedAt": "2026-10-20T17:00:00Z", "required": true }
+    ]
+  },
+  "coach": {
+    "ok": true,
+    "targetsText": "35 km run · 4 h ride · 2 strength a week",
+    "nextEvent": { "name": "Harbour marathon", "dateText": "Dec 6", "countdownText": "In 6 wk 3 d", "priority": "A" }
+  }
+}
+```
+
+- `items`, in this order: `strava`, `garmin`, `calendar`, `lift`, `bodyspec`, `function`, `scale`.
+- `state`: `connected | attention | error | off`; `level`: `ok | info | warn | error` (the dot's colour).
+- `statusText` is the row's value; `detailText` and `note` are one short line each or `null` (`note` says what is
+  wrong or what to do, never a command to paste). `required: false` rows (Function Health, the scale) do not count
+  in `summary` when they are off.
+- `coach.nextEvent` is `null` with no event in the next year; `targetsText` is `null` when the targets failed.
+

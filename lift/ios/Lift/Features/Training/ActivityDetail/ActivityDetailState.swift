@@ -30,8 +30,6 @@ nonisolated enum ActivityPanel: String, Hashable, Identifiable, Sendable {
 nonisolated struct ActivityDetailState: Equatable, Sendable {
     /// What is shown over the page.
     enum Destination: Equatable, Sendable {
-        /// The route on a map that fills the screen and pans and zooms.
-        case map
         /// A page of full charts or tables.
         case panel(ActivityPanel)
     }
@@ -43,6 +41,8 @@ nonisolated struct ActivityDetailState: Equatable, Sendable {
 
     /// The id the page was opened with (a Strava id, or `latest`).
     var activityID: String
+    /// What the list knew, for the first frame; nil when the page opened from a link.
+    var seed: ActivitySeed?
     var detail = AppResourceState<ActivityDetail>()
     var axis: AnalysisAxis = .distance
     /// The pace bars' mode key (`splits`, `laps`, `smoothed`); the first the server sends when `nil`.

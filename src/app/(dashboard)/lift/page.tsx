@@ -7,7 +7,7 @@ import { exerciseList } from '@/lib/lift-dashboard/stats.mjs';
 import { cookieTimeZone } from '@/lib/plan/timezone';
 import { todayIn } from '@/lib/plan/week.mjs';
 import { load, safe } from '@/lib/safe';
-import { DEFAULT_TARGETS, loadTargets } from '@/lib/status';
+import { DEFAULT_TARGETS, loadLiftFocus, loadTargets } from '@/lib/status';
 import { loadBody } from '@/lib/vitals/garmin-pages';
 import WeekHero from './WeekHero';
 import MainLifts from './MainLifts';
@@ -34,13 +34,14 @@ const RECENT = 3;
 export default async function LiftOverviewPage() {
   const userId = await ownerForSignedInUser();
   const today = todayIn(await cookieTimeZone());
-  const [targets, body] = await Promise.all([
+  const [targets, body, focus] = await Promise.all([
     userId ? safe('targets', () => loadTargets(userId), DEFAULT_TARGETS) : DEFAULT_TARGETS,
     userId ? safe('body', () => loadBody(userId, today), null) : null,
+    userId ? safe('lift focus', () => loadLiftFocus(userId), null) : null,
   ]);
   const loaded = await load('Lift', async () => {
     const { model, unit } = await loadLiftModel();
-    const overview = liftOverview(model, unit, today, { strengthTarget: targets.strength, weightKg: body?.weight?.value ?? null }) as Overview;
+    const overview = liftOverview(model, unit, today, { strengthTarget: targets.strength, weightKg: body?.weight?.value ?? null, focus }) as Overview;
     // Catalog pictures (the iPhone app's own), for the lift cards and the records.
     for (const l of overview.lifts) {
       const m = exerciseMedia(l.catalogId);

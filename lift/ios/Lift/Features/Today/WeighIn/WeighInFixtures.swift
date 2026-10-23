@@ -11,6 +11,8 @@
                     content: WeighInDemoBody.value.map { .loaded($0) } ?? .loading,
                     freshness: AppFreshness(text: "Updated 9:41 AM", isOffline: false)
                 ),
+                chart: WeighInDemoBody.value.flatMap { WeighInChart.make($0, days: DayCalendar(calendar: .current)) },
+                timeText: "7:12 AM",
                 neighbours: [
                     WeighInNeighbour(
                         side: .earlier,
@@ -26,6 +28,8 @@
                 first.bodyFat = nil
                 first.changes = []
                 first.series = Array(body.series.suffix(1))
+                first.trend?.rate = nil
+                first.trend?.noteText = nil
                 first.olderDate = nil
                 first.source = nil
                 return first

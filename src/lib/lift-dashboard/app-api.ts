@@ -1,6 +1,6 @@
 import { richSession } from '@/lib/lift/session';
 import { load, safe } from '@/lib/safe';
-import { DEFAULT_TARGETS, loadTargets } from '@/lib/status';
+import { DEFAULT_TARGETS, loadLiftFocus, loadTargets } from '@/lib/status';
 import { loadBody } from '@/lib/vitals/garmin-pages';
 import { loadAppActivity } from '@/lib/activity/app-api';
 import { appRoute } from '@/lib/app-api/route';
@@ -20,15 +20,16 @@ import { exerciseDetail, exerciseList, weeklyVolume } from './stats.mjs';
 
 /** GET /api/app/lift: the /lift overview. A failed Lift model gives `{ ok: false }` sections, not an error. */
 export async function loadAppLift(userId: string, today: string, timeZone: string, now = new Date()) {
-  const [targets, body] = await Promise.all([
+  const [targets, body, focus] = await Promise.all([
     safe('targets', () => loadTargets(userId), DEFAULT_TARGETS),
     safe('body', () => loadBody(userId, today), null),
+    safe('lift focus', () => loadLiftFocus(userId), null),
   ]);
   const loaded = await safe(
     'app lift',
     async () => {
       const { model, unit } = await loadLiftModel();
-      const overview = liftOverview(model, unit, today, { strengthTarget: targets.strength, weightKg: body?.weight?.value ?? null });
+      const overview = liftOverview(model, unit, today, { strengthTarget: targets.strength, weightKg: body?.weight?.value ?? null, focus });
       return { overview, exercises: exerciseList(model, unit) };
     },
     null

@@ -31,9 +31,18 @@ struct WorkoutSessionEdits {
         return nil
     }
 
-    /// Stamps the start now; a session already started or finished stays as it is.
-    func start() async throws -> WorkoutToast.Kind? {
-        _ = try await sessions.start(sessionID: sessionID)
+    /// Stamps the start now; a session already started or finished stays as it is. With `movingTo`, the session moves
+    /// to that day first (a workout planned for a later day, done today).
+    func start(movingTo day: LocalDay? = nil) async throws -> WorkoutToast.Kind? {
+        var moved: RescheduleUndo?
+        if let day { moved = try await sessions.reschedule(sessionID, .move(to: day)) }
+        do {
+            _ = try await sessions.start(sessionID: sessionID)
+        } catch {
+            // A failed start leaves the workout on its planned day.
+            if let moved { try? await sessions.undo(moved) }
+            throw error
+        }
         return nil
     }
 

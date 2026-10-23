@@ -4,11 +4,12 @@ import { useState } from 'react';
 import { useMeasure } from './useMeasure';
 
 /** One point: `label` (usually a date) and `text` (the value, formatted) show on hover. */
-export type MiniPoint = { value: number; label: string; text: string };
+export type MiniPoint = { value: number; label: string; text: string; dot?: number };
 
 /**
  * A small trend line (or filled area) scaled to its own range, with a hover readout: a guide line, the point, and a
  * small "label · value" box. Server components pass the text already formatted (they cannot pass a formatter).
+ * A point's `dot` draws a small muted dot at that value under the line (weight: each reading under its trend).
  */
 export default function MiniTrend({
   points, color, height = 40, area = false, lastDot = false, label, className,
@@ -25,8 +26,9 @@ export default function MiniTrend({
   const [hover, setHover] = useState<number | null>(null);
   if (points.length < 2) return <div className={className} style={{ height }} aria-hidden />;
   const vals = points.map((p) => p.value);
-  const lo = Math.min(...vals);
-  const hi = Math.max(...vals);
+  const dots = points.map((p) => p.dot).filter((v): v is number => v != null);
+  const lo = Math.min(...vals, ...dots);
+  const hi = Math.max(...vals, ...dots);
   const pad = area ? (hi - lo || 1) * 0.15 : 0;
   const inset = 3;
   const last = points.length - 1;
@@ -50,6 +52,7 @@ export default function MiniTrend({
         }}
         onPointerLeave={() => setHover(null)}
       >
+        {points.map((p, i) => (p.dot == null ? null : <circle key={i} cx={x(i)} cy={y(p.dot)} r={1.6} fill="var(--viz-muted)" opacity={0.7} />))}
         {area && <path d={`${line}L${x(last)},${height}L${x(0)},${height}Z`} fill={color} opacity={0.18} />}
         <path d={line} fill="none" stroke={color} strokeWidth={area ? 1.5 : 1.75} strokeLinejoin="round" strokeLinecap="round" />
         {lastDot && hover == null && <circle cx={x(last)} cy={y(vals[last])} r={2.75} fill={color} />}

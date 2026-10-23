@@ -38,6 +38,8 @@ struct WorkoutScreen: View {
             viewModel.send(.discardedToastShown)
         case .savedAsTemplate(let name):
             toasts.show(Toast(verbatim: String(localized: "Saved as template \(name)")))
+        case .plannedLater(let day):
+            toasts.show(Toast(verbatim: String(localized: "Planned for \(day). Tap Start workout to do it today.")))
         case .failed:
             toasts.show(Toast("Could not save. Try again.", tone: .danger))
         }

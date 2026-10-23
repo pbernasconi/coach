@@ -22,7 +22,7 @@
    "tss": 71,
    "tssText": "71 TSS",
    "indoor": false,
-   "commute": false,
+   "commute": false, "outdoor": true,
    "plannedTitle": null,
    "subtitle": "9.64 km · 52:50 · 5:29 /km · 71 TSS"
   },
@@ -45,7 +45,7 @@
    "tss": 142,
    "tssText": "142 TSS",
    "indoor": false,
-   "commute": false,
+   "commute": false, "outdoor": true,
    "plannedTitle": null,
    "subtitle": "65.40 km · 2:15:00 · 29.1 km/h · 142 TSS"
   },
@@ -68,7 +68,7 @@
    "tss": null,
    "tssText": null,
    "indoor": false,
-   "commute": false,
+   "commute": false, "outdoor": false,
    "plannedTitle": null,
    "subtitle": "55:00"
   },
@@ -91,7 +91,7 @@
    "tss": 88,
    "tssText": "88 TSS",
    "indoor": false,
-   "commute": false,
+   "commute": false, "outdoor": true,
    "plannedTitle": null,
    "subtitle": "11.20 km · 3:26:40 · 18:31 /km · 88 TSS"
   },
@@ -114,7 +114,7 @@
    "tss": 64,
    "tssText": "64 TSS",
    "indoor": true,
-   "commute": false,
+   "commute": false, "outdoor": false,
    "plannedTitle": null,
    "subtitle": "30.00 km · 1:00:00 · 30.0 km/h · 64 TSS"
   },
@@ -137,7 +137,7 @@
    "tss": null,
    "tssText": null,
    "indoor": false,
-   "commute": false,
+   "commute": false, "outdoor": true,
    "plannedTitle": null,
    "subtitle": "3.10 km · 36:40 · 11:54 /km"
   },
@@ -160,7 +160,7 @@
    "tss": 71,
    "tssText": "71 TSS",
    "indoor": false,
-   "commute": false,
+   "commute": false, "outdoor": true,
    "plannedTitle": null,
    "subtitle": "9.64 km · 52:50 · 5:29 /km · 71 TSS"
   },
@@ -183,7 +183,7 @@
    "tss": 142,
    "tssText": "142 TSS",
    "indoor": false,
-   "commute": false,
+   "commute": false, "outdoor": true,
    "plannedTitle": null,
    "subtitle": "65.40 km · 2:15:00 · 29.1 km/h · 142 TSS"
   },
@@ -206,7 +206,7 @@
    "tss": null,
    "tssText": null,
    "indoor": false,
-   "commute": false,
+   "commute": false, "outdoor": false,
    "plannedTitle": null,
    "subtitle": "55:00"
   },
@@ -229,7 +229,7 @@
    "tss": 88,
    "tssText": "88 TSS",
    "indoor": false,
-   "commute": false,
+   "commute": false, "outdoor": true,
    "plannedTitle": null,
    "subtitle": "11.20 km · 3:26:40 · 18:31 /km · 88 TSS"
   }

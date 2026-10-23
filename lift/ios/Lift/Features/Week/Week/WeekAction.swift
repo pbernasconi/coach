@@ -39,4 +39,6 @@ nonisolated enum WeekAction: Equatable, Sendable {
     case newTemplateTapped
     /// A coach plan item tapped: opens its workout page, the activity, or the Lift session.
     case planItemTapped(String)
+    /// Pull to refresh: sync this iPhone, then fetch the coach's plan for the weeks on screen.
+    case refreshPulled
 }

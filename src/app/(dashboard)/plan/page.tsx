@@ -50,14 +50,13 @@ export default async function PlanPage({ searchParams }: { searchParams: Promise
   const openAt = weekAnchor ?? openWeek(monthParam, today, bounds.earliest);
   return (
     <div data-smoke="plan">
-      <CoachPlanner initial={proposal} thisWeek={mondayOf(today)} nextWeek={addDays(mondayOf(today), 7)} today={today} outlook={outlook} weather={weather} />
       <MonthCalendar
         anchor={anchor}
         openAt={openAt}
         range={range}
         bounds={bounds}
         weather={weather}
-        placeName={place.name}
+        coach={<CoachPlanner initial={proposal} thisWeek={mondayOf(today)} nextWeek={addDays(mondayOf(today), 7)} today={today} outlook={outlook} weather={weather} />}
         library={library}
         timeZone={timeZone}
         openItem={openParam && ITEM.test(openParam) ? openParam : undefined}

@@ -307,6 +307,9 @@ export function listRow(r, plannedTitle, typeLabel) {
     name: String(r.name ?? 'Activity'),
     sport,
     sportType,
+    // Whether the page will lead with a map, so the app can open straight into that layout (the route itself is
+    // only in the page's body). The same rule as `isOutdoor`, with a distance in place of the track.
+    outdoor: !r.trainer && !/^Virtual/i.test(sportType) && distance > 0,
     typeText: typeLabel(sportType),
     startLocal,
     day: startLocal.slice(0, 10),

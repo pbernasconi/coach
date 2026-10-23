@@ -58,7 +58,11 @@ export default function VitalsSummary({ r, b }: { r: Readiness; b: Board }) {
       stat: { ...st.weight, normal: null, status: null },
       fmt: (x) => x.toFixed(1),
       unit: 'kg',
-      foot: !st.weight.latest ? undefined : `${fmtDay(st.weight.latest.date)}${st.weight.change28 === null ? '' : ' · '}` + (st.weight.change28 === null ? '' : `${st.weight.change28 > 0 ? '+' : st.weight.change28 < 0 ? '−' : '±'}${Math.abs(st.weight.change28).toFixed(1)} in 4 wk`),
+      foot: !st.weight.latest
+        ? undefined
+        : st.weight.trend
+          ? [`trend ${st.weight.trend.text}`, st.weight.trend.rate?.text.replace(' kg/wk', '/wk')].filter(Boolean).join(' · ')
+          : fmtDay(st.weight.latest.date),
     },
   ];
   const isOff = (c: { bad?: 'low' | 'high'; stat: Stat }) => (c.bad === 'low' && c.stat.status === 'below') || (c.bad === 'high' && c.stat.status === 'above');

@@ -24,7 +24,7 @@ struct WeekSessionList: View {
             .onChange(of: selectedDay) { _, day in
                 guard let day else { return }
                 // No anchor: scroll only as far as needed to show the row.
-                withAnimation(reduceMotion ? nil : .snappy) { proxy.scrollTo(day) }
+                withKoboAnimation(.navigate, reduceMotion: reduceMotion) { proxy.scrollTo(day) }
             }
         }
     }
@@ -32,7 +32,7 @@ struct WeekSessionList: View {
     @ViewBuilder private var content: some View {
         switch state.sessions {
         case .loading:
-            LoadingState()
+            ListLoadingSkeleton(rows: 5)
         case .empty:
             WeekFirstRunState(send: send)
         case .failed:

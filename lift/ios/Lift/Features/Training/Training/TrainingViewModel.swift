@@ -14,6 +14,7 @@ final class TrainingViewModel {
 
     private let data: any AppDataSource
     private let router: any Navigating
+    private let seeds: any ActivitySeeding
     private let tabs: any TabSwitching
     private let list: AppResource<ActivityListPage>
     private let trends: AppResource<TrendsResponse>
@@ -28,10 +29,12 @@ final class TrainingViewModel {
         data: any AppDataSource,
         router: any Navigating,
         tabs: any TabSwitching,
+        seeds: any ActivitySeeding,
         now: @escaping @Sendable () -> Date,
         calendar: Calendar,
         segment: TrainingSegment
     ) {
+        self.seeds = seeds
         let days = DayCalendar(calendar: calendar)
         self.data = data
         self.router = router
@@ -56,6 +59,9 @@ final class TrainingViewModel {
         case .segmentChanged(let segment):
             state.segment = segment
         case .activityTapped(let id):
+            if let summary = state.rows.first(where: { $0.id == id }) {
+                seeds.remember(summary)
+            }
             router.open(.activity(id))
         case .loadMoreTapped:
             return loadMore()

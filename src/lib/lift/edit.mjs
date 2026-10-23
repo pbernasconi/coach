@@ -13,8 +13,10 @@
  *   | { type: 'moveExercise', sessionExerciseId: string, dir: -1 | 1 }
  *   | { type: 'exerciseNote', sessionExerciseId: string, note: string | null }
  *   | { type: 'addExercise', exerciseId: string, sets: number, reps: number | null, weight: number | null, unit?: 'kg' | 'lb' }
+ *   | { type: 'resetSession' }
+ *   | { type: 'unlogSet', setId: string }
  * )} LiftEdit
- * @typedef {{ entity: 'sessionExercise' | 'set', op: 'insert' | 'update' | 'delete', payload: Row }} LiftChange
+ * @typedef {{ entity: 'session' | 'sessionExercise' | 'set', op: 'insert' | 'update' | 'delete', payload: Row }} LiftChange
  */
 
 const LB_PER_KG = 1 / 0.45359237;
@@ -39,7 +41,8 @@ const newId = (uuid) => uuid().toUpperCase();
 
 /**
  * The changes for `edits` on one session, or { error }. A finished session, a logged set and a set or exercise of
- * another session are refused. Weights and reps must be 0–2000 and 1–200.
+ * another session are refused. The one exception is `resetSession`, alone: it takes a session logged by mistake back
+ * to planned (every set planned with no actuals, no start or finish), finished or not. Weights and reps must be 0–2000 and 1–200.
  * @param {SessionRows} rows
  * @param {LiftEdit[]} edits
  * @param {{ now?: Date, uuid?: () => string }} [opts]
@@ -50,6 +53,10 @@ export function planLiftEdit(rows, edits, opts = {}) {
   const uuid = opts.uuid ?? (() => crypto.randomUUID());
   const { session } = rows;
   if (!session || !alive(session)) return { error: 'The Lift session is not there.' };
+  if (edits.length === 1 && edits[0]?.type === 'resetSession') return resetSession(rows, now);
+  if (edits.some((e) => e?.type === 'resetSession')) return { error: 'Reset the session on its own.' };
+  if (edits.length === 1 && edits[0]?.type === 'unlogSet') return unlogSet(rows, edits[0].setId, now);
+  if (edits.some((e) => e?.type === 'unlogSet')) return { error: 'Un-log a set on its own.' };
   if (session.finishedAt) return { error: 'The session is finished; edit it in Lift.' };
 
   // Working copies, so later edits see earlier ones; `touched` keeps the change for each row once.
@@ -212,9 +219,67 @@ export function planLiftEdit(rows, edits, opts = {}) {
       return { error: 'Unknown edit.' };
     }
   }
-  // Parents before children, so the phone never sees a set without its exercise.
-  const changes = [...touched.values()].sort((a, b) => (a.entity === b.entity ? 0 : a.entity === 'sessionExercise' ? -1 : 1));
-  return { changes, after: { exercises: ordered(), sets: [...sets.values()] } };
+  return { changes: parentsFirst([...touched.values()]), after: { exercises: ordered(), sets: [...sets.values()] } };
+}
+
+const DEPTH = { session: 0, sessionExercise: 1, set: 2 };
+
+/** Parents before children, so the phone never sees a set without its exercise. */
+const parentsFirst = (changes) => changes.sort((a, b) => DEPTH[a.entity] - DEPTH[b.entity]);
+
+/**
+ * The changes that un-log one set (a tap logged by mistake): the set back to planned with no completedAt, like Lift's
+ * own un-log (its values stay as the next log's prefill). Works on a finished session too. When nothing is left
+ * logged, the session loses its start and finish, so it reads as planned again everywhere.
+ * @param {SessionRows} rows
+ * @param {string} setId
+ * @param {Date} now
+ */
+function unlogSet(rows, setId, now) {
+  const { session } = rows;
+  const exercises = rows.exercises.filter(alive);
+  const ids = new Set(exercises.map((e) => String(e.id).toLowerCase()));
+  const mine = rows.sets.filter((s) => alive(s) && ids.has(String(s.sessionExerciseID).toLowerCase()));
+  const set = mine.find((s) => same(s.id, setId));
+  if (!set) return { error: 'That set is not in this session.' };
+  /** @type {LiftChange[]} */
+  const changes = [];
+  let next = set;
+  if (set.status !== 'planned') {
+    next = { ...set, status: 'planned', completedAt: null, updatedAt: stamp(set, now) };
+    changes.push({ entity: 'set', op: 'update', payload: next });
+  }
+  const sets = rows.sets.filter(alive).map((s) => (s === set ? next : s));
+  const anyLogged = mine.some((s) => s !== set && s.status !== 'planned');
+  if (!anyLogged && (session.startedAt || session.finishedAt)) {
+    changes.push({ entity: 'session', op: 'update', payload: { ...session, startedAt: null, finishedAt: null, updatedAt: stamp(session, now) } });
+  }
+  return { changes: parentsFirst(changes), after: { exercises, sets } };
+}
+
+/**
+ * The changes that take a session back to planned: each logged or skipped set to planned with no actuals and no
+ * completedAt, and the session with no startedAt or finishedAt. Targets, exercises and notes stay.
+ * @param {SessionRows} rows
+ * @param {Date} now
+ */
+function resetSession(rows, now) {
+  const { session } = rows;
+  const exercises = rows.exercises.filter(alive);
+  const ids = new Set(exercises.map((e) => String(e.id).toLowerCase()));
+  /** @type {LiftChange[]} */
+  const changes = [];
+  const sets = rows.sets.filter(alive).map((s) => {
+    if (!ids.has(String(s.sessionExerciseID).toLowerCase())) return s;
+    if (s.status === 'planned' && s.completedAt == null && s.actualReps == null && s.actualWeight == null) return s;
+    const next = { ...s, status: 'planned', completedAt: null, actualReps: null, actualWeight: null, rpe: null, updatedAt: stamp(s, now) };
+    changes.push({ entity: 'set', op: 'update', payload: next });
+    return next;
+  });
+  if (session.startedAt || session.finishedAt) {
+    changes.push({ entity: 'session', op: 'update', payload: { ...session, startedAt: null, finishedAt: null, updatedAt: stamp(session, now) } });
+  }
+  return { changes: parentsFirst(changes), after: { exercises, sets } };
 }
 
 /**

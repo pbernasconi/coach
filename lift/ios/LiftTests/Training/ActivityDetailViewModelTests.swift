@@ -18,6 +18,7 @@ import Testing
         let data = RoutedAppData([Self.path: answer])
         let vm = ActivityDetailViewModel(
             activityID: "9000000102",
+            seed: nil,
             data: data,
             router: router,
             tabs: tabs,
@@ -81,21 +82,6 @@ import Testing
         let (vm, _) = await loaded()
         vm.send(.connectTapped)
         #expect(tabs.shown == [.settings])
-    }
-
-    @Test func mapExpandTappedThenDismissed() async {
-        let (vm, _) = await loaded()
-        vm.send(.mapExpandTapped)
-        #expect(vm.state.destination == .map)
-        vm.send(.destinationDismissed)
-        #expect(vm.state.destination == nil)
-    }
-
-    @Test func mapExpandTappedDoesNothingOverAPanel() async {
-        let (vm, _) = await loaded()
-        vm.send(.panelTapped(.heartRate))
-        vm.send(.mapExpandTapped)
-        #expect(vm.state.destination == .panel(.heartRate))
     }
 
     @Test func panelTappedOpensThePanel() async {

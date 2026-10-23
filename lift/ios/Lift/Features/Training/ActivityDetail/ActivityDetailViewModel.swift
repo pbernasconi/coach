@@ -18,6 +18,7 @@ final class ActivityDetailViewModel {
     /// Protocols only, no defaults, no work (SCR-3).
     init(
         activityID: String,
+        seed: ActivitySeed?,
         data: any AppDataSource,
         router: any Navigating,
         tabs: any TabSwitching,
@@ -25,7 +26,7 @@ final class ActivityDetailViewModel {
         calendar: Calendar
     ) {
         self.tabs = tabs
-        self.state = ActivityDetailState(activityID: activityID)
+        self.state = ActivityDetailState(activityID: activityID, seed: seed)
         self.resource = AppResource(
             path: ActivityDetail.path(activityID),
             source: data,
@@ -60,9 +61,6 @@ final class ActivityDetailViewModel {
             state.axis = axis
         case .paceModeChanged(let mode):
             state.paceMode = mode
-        case .mapExpandTapped:
-            guard state.destination == nil else { return nil }
-            state.destination = .map
         case .panelTapped(let panel):
             state.destination = .panel(panel)
         case .destinationDismissed:

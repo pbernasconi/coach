@@ -61,7 +61,7 @@ private struct HistorySessions: View {
     var body: some View {
         switch weeks {
         case .loading:
-            LoadingState()
+            ListLoadingSkeleton(rows: 6, showsLeading: false)
         case .empty:
             EmptyState(
                 symbol: "clock.arrow.circlepath",

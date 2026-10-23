@@ -5,7 +5,8 @@ import LiftStore
 extension WorkoutOverview {
     /// The screen's view of a stored session, with hints worked out by the LiftCore rules on the gym's plates and
     /// each set's values last time from `previous` (by library exercise id).
-    /// `today` marks a session on an earlier day (opened from History): it gets no Start button.
+    /// `today` marks a session on an earlier day (opened from History): it gets no Start button. It also marks one on a
+    /// later day, which logs nothing until Start moves it to today.
     init(
         detail: SessionDetail,
         days: DayCalendar,
@@ -29,7 +30,8 @@ extension WorkoutOverview {
             started: startedAt.map(days.started(at:)),
             startedAt: startedAt,
             finishedAt: detail.session.finishedAt,
-            isPastDay: today.map { detail.session.day < $0 } ?? false
+            isPastDay: today.map { detail.session.day < $0 } ?? false,
+            isFutureDay: today.map { detail.session.day > $0 } ?? false
         )
     }
 }

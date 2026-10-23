@@ -19,6 +19,8 @@ struct LiftSessionContent: View {
                 showsFreshness: false
             ) { detail in
                 LiftSessionSections(detail: detail, state: state, send: send)
+            } placeholder: {
+                LiftSessionSkeleton()
             }
             .pageColumn()
             .padding(.top, Space.sm)

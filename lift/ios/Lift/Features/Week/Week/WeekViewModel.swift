@@ -95,6 +95,9 @@ final class WeekViewModel {
             return changeWeek(to: offset)
         case .calendarToggled:
             state.calendar = state.calendar == .week ? .month : .week
+        case .refreshPulled:
+            let coachPlan = coachPlan
+            return Task { await coachPlan.refresh() }
         case .sessionTapped(let id):
             router.open(WeekLinks.session(summary(id), id: id, coachIsOn: plan.status != .off))
         case .sessionOptionsTapped(let id):

@@ -21,7 +21,8 @@ extension CatalogComponent {
             .fields
         case .searchField, .highlightedText:
             .search
-        case .toast, .skeleton, .shimmer, .loadingState, .emptyState, .emptyStateArt, .errorState,
+        case .toast, .skeleton, .shimmer, .skeletonPage, .loadingGrace, .loadingState, .emptyState, .emptyStateArt,
+            .errorState,
             .noticeBanner,
             .statusPill, .pulse:
             .feedback
@@ -35,7 +36,7 @@ extension CatalogComponent {
             .zoneBars, .profileStrip, .heatmap, .dataTable, .routeMap:
             .charts
         case .card, .listRow, .listSection, .keyValueList, .sectionHeader, .separator, .collapsible,
-            .pinnedFooter,
+            .pinnedFooter, .backdropSheet,
             .sheetHeader, .dayStrip, .segmentedProgress, .miniPlayerBar, .tileGrid:
             .layout
         case .appHeader, .headerButton, .headerProfileButton, .countBadge, .tabShell, .textLink:
@@ -49,7 +50,7 @@ extension CatalogComponent {
             .maskedValue,
             .revealableValue, .deferredRow:
             .utilities
-        case .loadableView, .screenScaffold, .confirm:
+        case .loadableView, .screenScaffold, .confirm, .skeletonHeader, .skeletonStatGrid, .skeletonCard:
             .patterns
         case .listRowSkeleton, .loadMoreFooter, .loadableSection, .loadableCaptionSection,
             .sectionEmptyCard:

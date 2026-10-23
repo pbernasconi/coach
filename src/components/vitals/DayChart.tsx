@@ -34,6 +34,8 @@ export type DayChartProps = {
   ticks?: number[]; // fixed y ticks, lowest first (overrides yFloor and yCeil)
   height?: number;
   connect?: boolean; // line: join readings across empty days (sparse metrics such as weight)
+  trend?: V[]; // line: a smoothed trend drawn as the line; the readings become dots (weight)
+  trendColor?: string;
   watchless?: boolean; // the metric does not come from the watch: no hatching for days it was off
   /** Under the chart: how many days have a value ("26/30 nights"), and the 30-day against the 90-day average. */
   foot?: { recorded: string; compare?: string | null };
@@ -63,6 +65,7 @@ export default function DayChart(p: DayChartProps) {
   const push = (v: V) => v !== null && Number.isFinite(v) && all.push(v);
   if (p.kind === 'stack') p.days.forEach((_, i) => push((p.stack ?? []).reduce((a, s) => a + (s.values[i] ?? 0), 0) || null));
   else (p.values ?? []).forEach(push);
+  (p.trend ?? []).forEach(push);
   (p.low ?? []).forEach(push);
   if (p.band) p.days.forEach((_, i) => { push(at(p.band!.low, i)); push(at(p.band!.high, i)); });
   if (p.goal) push(p.goal.value);
@@ -182,7 +185,18 @@ export default function DayChart(p: DayChartProps) {
           {!hasData && (
             <text x={M.left + plotW / 2} y={M.top + plotH / 2} textAnchor="middle" dy="0.32em" className="fill-[var(--viz-muted)] text-[11px]">No data</text>
           )}
+          {p.kind === 'line' && p.trend && (
+            <path
+              d={p.trend.flatMap((v, i) => (v === null ? [] : [[cx(i), y(v)]])).map(([px, py], k) => `${k ? 'L' : 'M'}${px.toFixed(1)},${py.toFixed(1)}`).join('')}
+              fill="none"
+              stroke={p.trendColor ?? 'var(--coach-accent)'}
+              strokeWidth={2}
+              strokeLinejoin="round"
+              strokeLinecap="round"
+            />
+          )}
           {p.kind === 'line' &&
+            !p.trend &&
             segs.map((s) =>
               s.length > 1 ? (
                 <path
@@ -200,7 +214,7 @@ export default function DayChart(p: DayChartProps) {
             (p.values ?? []).map((v, i) => {
               if (v === null) return null;
               const c = p.pointColor?.(i);
-              const lone = !segs.some((s) => s.length > 1 && s.includes(i));
+              const lone = Boolean(p.trend) || !segs.some((s) => s.length > 1 && s.includes(i));
               if (!c && !lone && i !== last && i !== p.hover) return null;
               return <circle key={i} cx={cx(i)} cy={y(v)} r={i === p.hover || i === last ? 3.2 : n > 45 ? 1.6 : 2.2} fill={c ?? p.color ?? 'var(--viz-ctl)'} stroke="var(--viz-surface)" strokeWidth={i === p.hover || i === last ? 1.5 : 0.5} />;
             })}

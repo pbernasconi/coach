@@ -45,6 +45,16 @@ export async function loadTargets(userId: string): Promise<Targets> {
   return { ...DEFAULT_TARGETS, ...Object.fromEntries(Object.entries(t).filter(([, v]) => typeof v === 'number' && v >= 0)) };
 }
 
+/** The Lift focus picked in Coach Settings (users.settings.liftFocus), or null: the overview then reads it from the training. */
+export async function loadLiftFocus(userId: string): Promise<{ muscles: string[]; lifts: string[] } | null> {
+  const [u] = (await sql`SELECT settings -> 'liftFocus' AS f FROM users WHERE id = ${userId}`) as Row[];
+  const f = (u?.f ?? null) as { muscles?: unknown; lifts?: unknown } | null;
+  if (!f) return null;
+  const list = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && x.length > 0) : []);
+  const focus = { muscles: list(f.muscles), lifts: list(f.lifts) };
+  return focus.muscles.length || focus.lifts.length ? focus : null;
+}
+
 /** Coaching preferences (goals, weekly structure, rules) as Markdown; /plan reads them through the profile. */
 export async function loadCoachingNotes(userId: string): Promise<string> {
   const [u] = (await sql`SELECT settings ->> 'coachingNotes' AS notes FROM users WHERE id = ${userId}`) as Row[];

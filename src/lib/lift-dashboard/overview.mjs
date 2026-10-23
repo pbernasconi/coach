@@ -5,6 +5,7 @@
 // with the numbers that triggered it; nothing is generated.
 
 import { MUSCLE_TARGET, convert, epley, exerciseList, isCountedSet, muscleSets, sessionSummaries, weekStart } from './stats.mjs';
+import { liftFocus } from './focus.mjs';
 
 const DAY_MS = 86_400_000;
 /** @param {string} a @param {string} b */
@@ -61,9 +62,10 @@ export function personalRecords(model, unit) {
  * @param {ReturnType<typeof import('./stats.mjs').buildModel>} model
  * @param {'kg' | 'lb'} unit
  * @param {string} today
- * @param {{ strengthTarget?: number, weightKg?: number | null, weeks?: number }} [options]
+ * @param {{ strengthTarget?: number, weightKg?: number | null, weeks?: number, focus?: { muscles?: string[], lifts?: string[] } | null }} [options]
+ *   focus: Coach Settings' `liftFocus`; without it the focus comes from the training (focus.mjs).
  */
-export function liftOverview(model, unit, today, { strengthTarget = 2, weightKg = null, weeks: weekCount = 16 } = {}) {
+export function liftOverview(model, unit, today, { strengthTarget = 2, weightKg = null, weeks: weekCount = 16, focus: focusSetting = null } = {}) {
   const monday = weekStart(today);
   const all = sessionSummaries(model, unit, { planned: true });
   // Logged sessions up to today; anything dated later is a plan, even with a set ticked by mistake.
@@ -253,6 +255,7 @@ export function liftOverview(model, unit, today, { strengthTarget = 2, weightKg 
     prs: prs.filter((r) => r.day <= today).slice(0, 8),
     ready,
     tips,
+    focus: liftFocus(model, { today, monday, sessions: all, lifts, setting: focusSetting }),
     totals: { sessions: logged.length, exercises: exerciseList(model, unit).length, volume: logged.reduce((n, s) => n + s.volume, 0) },
     band: MUSCLE_TARGET,
   };

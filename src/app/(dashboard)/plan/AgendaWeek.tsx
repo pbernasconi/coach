@@ -33,7 +33,7 @@ export const AgendaWeek = memo(function AgendaWeek({
       <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b bg-[var(--viz-surface)] px-3 py-2">
         <span className="text-sm font-semibold text-[var(--viz-ink)]">Week of {shortDate(week.monday)}</span>
         {s && weekColumnMode(s, today) === 'empty' && week.monday > today && <span className="text-[11px] text-[var(--viz-muted)]">No plan</span>}
-        {s && weekColumnMode(s, today) !== 'empty' && <WeekTotals s={s} />}
+        {s && weekColumnMode(s, today) !== 'empty' && <WeekTotals s={s} bars={week.monday <= today} />}
       </header>
       {days.length === 0 ? (
         <p className="px-3 py-3 text-xs text-[var(--viz-muted)]">Nothing this week.</p>

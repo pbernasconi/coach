@@ -13,6 +13,7 @@ struct ActivitySections: View {
     let feedback: WorkoutFeedback?
     let save: WorkoutFeedbackSaveState
     let send: (ActivityDetailAction) -> Void
+    @State private var showsAll = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: Space.section) {
@@ -25,6 +26,23 @@ struct ActivitySections: View {
             if let feedback {
                 WorkoutFeedbackCard(feedback: feedback, save: save) { send(.feedback($0)) }
             }
+            if showsAll {
+                ActivityLowerSections(detail: detail, send: send)
+            }
+        }
+        // The charts and tables come one frame after the top, so the page's first frame (and the map sheet's drop)
+        // is not held up by work that starts below the fold.
+        .task { showsAll = true }
+    }
+}
+
+/// Everything under "How did it feel": the chart cards, the splits, the load, the best efforts and segments.
+private struct ActivityLowerSections: View {
+    let detail: ActivityDetail
+    let send: (ActivityDetailAction) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Space.section) {
             OptionalSection(nil, detail.analysis) { analysis in
                 ActivityChartCards(analysis: analysis, detail: detail, send: send)
             }

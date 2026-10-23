@@ -4,7 +4,7 @@ import KoboTokens
 import LiftSync
 import SwiftUI
 
-/// The latest weight with its 4-week change and 12-week trend line, and body fat.
+/// The latest weight with the trend's rate and 12-week trend line (the weigh-in screen's format), and body fat.
 struct TodayBodyView: View {
     @Environment(\.koboTheme) private var theme
     @Environment(\.dynamicTypeSize) private var typeSize
@@ -27,10 +27,10 @@ struct TodayBodyView: View {
                             .foregroundStyle(theme.palette.textSecondary)
                     }
                     Sparkline(
-                        values: reading.series.map(\.kg),
+                        values: reading.series.map { $0.trendKg ?? $0.kg },
                         style: .area,
                         format: { $0.formatted(.number.precision(.fractionLength(1))) },
-                        accessibilityLabel: "Weight, last 12 weeks"
+                        accessibilityLabel: "Weight trend, last 12 weeks"
                     )
                 }
                 .layoutPriority(1)

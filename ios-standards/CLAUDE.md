@@ -48,7 +48,7 @@ plainly that the simulator tests were not run.
 - **ViewModel `init`:** takes protocols, has no default arguments, and does no work.
 - **States that exclude each other are enums** (`Loadable`, `Destination?`), never Boolean flags side by side.
 - **Route arguments:** a Screen with route arguments gets `.id(route)` where it is created.
-- **Tab bar:** only on a tab's root. Pushed pages hide it with `.detailPage()`, applied once in the shell (NAV-4).
+- **Tab bar:** only on a tab's root. Pushed pages hide it with `.detailPages(arePushed:)` on each stack's root, driven by its path (NAV-4).
 
 ## Hard bans (the guard script enforces these)
 

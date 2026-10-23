@@ -16,6 +16,8 @@ import Testing
     let planned = SessionBuilder.session(id: 1, on: Fixtures.monday, done: 0, planned: 2)
     /// The same, on the day before today (opened from History).
     let yesterday = SessionBuilder.session(id: 2, on: Fixtures.monday.adding(days: -1), done: 0, planned: 2)
+    /// The same, planned for the day after today.
+    let tomorrow = SessionBuilder.session(id: 4, on: Fixtures.monday.adding(days: 1), done: 0, planned: 2)
 
     typealias Loaded = (WorkoutViewModel, FakeSessionDetailRepository, RecordingSetRepository)
 
@@ -154,6 +156,37 @@ import Testing
 
         #expect(sets.calls == [.log(yesterday.items[0].sets[0].id)])
         #expect(sessions.calls.isEmpty)
+    }
+
+    // MARK: Later days
+
+    @Test func aSetsCheckOnALaterDaysWorkoutLogsNothingAndSaysWhy() async {
+        let (vm, sessions, sets) = await loaded(tomorrow)
+
+        let task = vm.send(.setLogTapped(tomorrow.items[0].sets[0].id))
+
+        #expect(task == nil)
+        #expect(sets.calls.isEmpty)
+        #expect(sessions.calls.isEmpty)
+        #expect(vm.state.toast?.kind == .plannedLater(day: "Tuesday, March 3"))
+    }
+
+    @Test func startOnALaterDaysWorkoutMovesItToTodayThenStartsIt() async {
+        let (vm, sessions, _) = await loaded(tomorrow)
+
+        await vm.send(.startTapped)?.value
+
+        #expect(sessions.calls == [.reschedule(tomorrow.id, .move(to: Fixtures.monday)), .start(tomorrow.id)])
+    }
+
+    @Test func aLaterDaysWorkoutAlreadyStartedLogsAsUsual() async {
+        var started = tomorrow
+        started.session.startedAt = ManualNow.start
+        let (vm, _, sets) = await loaded(started)
+
+        await vm.send(.setLogTapped(started.items[0].sets[0].id))?.value
+
+        #expect(sets.calls == [.log(started.items[0].sets[0].id)])
     }
 
     @Test func noRestAfterTheLastPlannedSet() async {

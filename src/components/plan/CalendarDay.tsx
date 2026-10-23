@@ -33,18 +33,18 @@ export function CalendarDayHead({
   const past = date < today;
   const isToday = date === today;
   return (
-    <div className="flex h-5 shrink-0 items-center gap-1">
+    <div className="flex h-6 shrink-0 items-center gap-1">
       {weekdayLabel && !isToday && <span className="pl-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--viz-muted)]">{weekday(date)}</span>}
       <span
         className={cn(
-          'inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold tabular-nums',
+          'inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-[13px] font-semibold tabular-nums',
           isToday ? 'bg-primary text-primary-foreground' : past ? 'text-[var(--viz-muted)]' : 'text-[var(--viz-ink)]'
         )}
       >
         {date.slice(8) === '01' && !weekdayLabel && <span className="mr-1 uppercase tracking-wide">{monthShort(date)}</span>}
         {Number(date.slice(8))}
       </span>
-      {isToday && <span className="text-[10px] font-semibold uppercase tracking-wide text-brand-ink">Today</span>}
+      {isToday && <span className="text-[11px] font-semibold uppercase tracking-wide text-brand-ink">Today</span>}
       {health && past && (
         <HealthBadge
           date={date}
@@ -80,11 +80,12 @@ export function AgendaDayLabel({ date, today }: { date: string; today: string })
   );
 }
 
-/** The classes of a month-grid day cell (past days greyed, today ringed), shared by /plan and the plan review. */
+/** The classes of a month-grid day cell (past days greyed, today marked by an orange top line), shared by /plan and the plan review. */
 export function dayCellClass(date: string, today: string) {
   return cn(
     'plan-day group/day relative flex min-h-0 min-w-0 flex-col gap-0.5 overflow-hidden border-r px-1 pb-1 pt-0.5 transition-colors',
     date < today && 'bg-muted/40',
-    date === today && 'bg-primary/[0.04] ring-2 ring-inset ring-primary'
+    // Today: a thin line in the logo orange across the top, no ring or fill (Paolo, 2026-10-23).
+    date === today && 'shadow-[inset_0_2px_0_var(--k-brand)]'
   );
 }

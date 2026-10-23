@@ -31,10 +31,10 @@ struct TabStack: View {
                 router: router,
                 options: options
             )
+            // Every pushed page hides the tab bar (a detail page), for the whole app: driven from the root by the path.
+            .detailPages(arePushed: !router.path.isEmpty)
             .navigationDestination(for: AppRoute.self) { route in
-                // Every pushed page hides the tab bar (a detail page), for the whole app.
                 RouteScreen(route: route, dependencies: dependencies, router: router, toasts: toasts)
-                    .detailPage()
             }
         }
         .toastHost(toasts)
@@ -78,6 +78,7 @@ struct TabRootScreen: View {
                     data: dependencies.appData,
                     router: router,
                     tabs: dependencies.tabs,
+                    seeds: dependencies.activitySeeds,
                     now: dependencies.now,
                     calendar: dependencies.calendar,
                     segment: options.trainingSegment

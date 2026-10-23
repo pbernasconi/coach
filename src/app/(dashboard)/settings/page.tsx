@@ -15,6 +15,7 @@ import { resolveThresholds } from '@/lib/strava-sync/tss.mjs';
 import SectionError from '@/components/SectionError';
 import { InlineNotice } from '@kobo/web';
 import { loadBodyspecStatus } from '@/lib/vitals/bodyspec-api';
+import { connectionsFrom } from '@/lib/settings/connections.mjs';
 import { BodyspecSyncButton, CoachingNotesForm, LocationForm, StravaSyncButton, TargetsForm, ThresholdsForm, type ThresholdView } from './SettingsControls';
 import { BodyspecLogo, GarminLogo, GoogleCalendarLogo, LiftLogo, StravaLogo } from './BrandLogos';
 import ConnectLift from './ConnectLift';
@@ -177,11 +178,10 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     load('BodySpec', () => loadBodyspecStatus(userId)),
   ]);
 
-  const levelOf = (source: Warning['source']): Level =>
-    status.warnings.find((w) => w.source === source && w.level === 'error')?.level ??
-    status.warnings.find((w) => w.source === source && w.level === 'warn')?.level ??
-    status.warnings.find((w) => w.source === source)?.level ??
-    'ok';
+  // One source for every connection's state, shared with the phone's Settings (GET /api/app/settings).
+  const connections = connectionsFrom({ status, bodyspec: bodyspec.ok ? bodyspec.value : null, now: Date.now() });
+  const byId = Object.fromEntries(connections.items.map((c) => [c.id, c]));
+  const levelOf = (id: string): Level => byId[id]?.level ?? 'ok';
   // The Lift row shows Lift's own state, so Lift's info note is left out.
   const notes = (source: Warning['source']) => status.warnings.filter((w) => w.source === source && !(source === 'lift' && w.level === 'info'));
 
@@ -204,15 +204,14 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const fn = status.functionSync;
 
   const garmin = status.garmin;
-  const garminOk = garmin.connected && garmin.status !== 'auth_failed';
-  const liftConnected = Boolean(status.lift.lastChangeAt);
-  const newestCalendarSync = status.calendars.map((c) => c.lastSyncedAt).filter(Boolean).sort().at(-1) ?? null;
+  const isOn = (id: string) => byId[id]?.state !== 'off';
+  const garminOk = isOn('garmin');
+  const liftConnected = isOn('lift');
+  const newestCalendarSync = byId.calendar?.lastSyncedAt ?? null;
   const bs = bodyspec.ok ? bodyspec.value : null;
-  const bodyspecLevel: Level = !bs || bs.status === 'auth_failed' || bs.status === 'error' ? 'error' : 'ok';
-  const connected = { strava: status.strava.connected, lift: liftConnected, calendar: status.calendars.length > 0, garmin: garminOk, bodyspec: Boolean(bs?.connected) };
-  const attention =
-    (['strava', 'lift', 'calendar', 'garmin'] as const).filter((s) => !connected[s] || ['warn', 'error'].includes(levelOf(s))).length +
-    (connected.bodyspec && bodyspecLevel === 'ok' ? 0 : 1);
+  const bodyspecLevel = levelOf('bodyspec');
+  const connected = { strava: isOn('strava'), lift: liftConnected, calendar: isOn('calendar'), garmin: garminOk, bodyspec: isOn('bodyspec') };
+  const { attention, text: attentionText } = connections.summary;
   const button = 'inline-flex h-10 items-center rounded-md border px-3 text-xs font-medium shadow-sm hover:bg-accent md:h-8';
 
   return (
@@ -227,7 +226,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           </div>
           <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs ${attention ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground'}`}>
             <span className={`h-1.5 w-1.5 rounded-full ${attention ? 'bg-amber-500' : 'bg-emerald-500'}`} aria-hidden />
-            {attention ? `${attention} of 5 connections need attention` : 'All 5 connections are healthy'}
+            {attentionText}
           </span>
         </div>
 
