@@ -35,7 +35,7 @@ const input = (over = {}) => ({
   week: ok({ today: '2026-10-20', workouts: [{ id: 42, date: '2026-10-20', title: '🏋️ Heavy lift', sport: 'strength', status: 'planned', state: 'today', startTime: '13:30', duration: 60, liftSessionId: 'CA4F' }] }),
   pmc: ok(pmc),
   lift: ok(lift),
-  body: ok({ weight: { date: '2026-10-19', value: 78.44 }, change4w: -1.2, bodyFat: { date: '2026-10-19', value: 14.25 }, series: [{ date: '2026-10-01', value: 79.66 }] }),
+  body: ok({ weight: { date: '2026-10-19', value: 78.44 }, change4w: -1.2, bodyFat: { date: '2026-10-19', value: 14.25 }, series: [{ date: '2026-10-01', value: 79.66, trend: 79.214 }], trend: { kg: 78.9, text: '78.9', rate: { kgPerWeek: -0.26, text: '▼ 0.26 kg/wk', tone: 'good' }, offKg: -0.5, swingKg: 0.6, noteText: 'Today is 0.5 kg under your trend.' } }),
   goals: ok([]),
   recovery: { hasData: true, readiness: { value: 80 }, sleepMin: null, sleepScore: null, hrvStatus: null },
   ...over,
@@ -57,8 +57,11 @@ test('the whole response: every section ok, display text ready', () => {
   assert.equal(r.fitness.ok, true);
   assert.deepEqual(r.last4Weeks.tiles.map((t) => t.valueText), ['6:00 h', '0 km', '100 km', '2 of 8']);
   assert.equal(r.body.weight.text, '78.4');
-  assert.equal(r.body.weight.changeText, '▼ 1.2 kg');
-  assert.equal(r.body.weight.noteText, 'in 4 weeks · -0.30 kg a week');
+  assert.equal(r.body.weight.changeText, '▼ 0.26 kg/wk');
+  assert.equal(r.body.weight.changeTone, 'good');
+  assert.equal(r.body.weight.noteText, 'Trend 78.9 kg · ▼ 1.2 kg in 4 weeks');
+  assert.deepEqual(r.body.series, [{ date: '2026-10-01', kg: 79.7, trendKg: 79.21 }]);
+  assert.equal(r.body.trend.text, '78.9');
   assert.equal(r.body.bodyFatText, '14.3 %');
   assert.deepEqual(r.lift.arms.rows, [{ muscle: 'biceps', sets: 5.5, setsText: '5.5' }, { muscle: 'triceps', sets: 0, setsText: '0' }]);
   assert.deepEqual(r.lift.strength, { done: 1, target: 2, text: '1 / 2 this week' });
@@ -83,7 +86,7 @@ test('a failed loader fails only its section', () => {
 test('empty states', () => {
   const r = todayResponse(input({
     week: ok({ today: '2026-10-20', workouts: [] }),
-    body: ok({ weight: null, change4w: null, bodyFat: null, series: [] }),
+    body: ok({ weight: null, change4w: null, bodyFat: null, series: [], trend: null }),
     lift: ok({ ...lift, top: [], hasData: false, last: null, next: null, daysSince: null, prs: 0 }),
     perf: ok({ weeks: [], load: [], latestActivity: '2026-10-01' }),
   }));

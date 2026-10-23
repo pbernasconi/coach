@@ -48,6 +48,7 @@ export default function LeanStrong({
 }) {
   const sets = (m: string) => lift?.thisWeek.find((r) => r.muscle.toLowerCase() === m)?.sets ?? 0;
   const change = weightChange(body?.change4w ?? null);
+  const rate = body?.trend?.rate ?? null;
   return (
     <aside className="flex flex-col overflow-hidden rounded-lg border bg-card" aria-labelledby="lean-strong">
       <div className="flex items-baseline justify-between border-b px-4 py-3">
@@ -64,7 +65,17 @@ export default function LeanStrong({
               <span className="text-sm text-[var(--viz-muted)]">kg</span>
             </span>
             <span className="text-xs tabular-nums text-[var(--viz-ink-2)]">
-              {change ? (
+              {body.trend ? (
+                <>
+                  Trend {body.trend.text} kg
+                  {rate && (
+                    <>
+                      {' · '}
+                      <span className={rate.tone === 'good' ? 'text-[var(--viz-good)]' : rate.tone === 'bad' ? 'text-[var(--viz-down)]' : ''}>{rate.text}</span>
+                    </>
+                  )}
+                </>
+              ) : change ? (
                 <>
                   <span className={change.tone === 'good' ? 'text-[var(--viz-good)]' : 'text-[var(--viz-down)]'}>{change.text}</span>{' '}
                   in 4 weeks · {change.perWeekText}
@@ -74,11 +85,11 @@ export default function LeanStrong({
               )}
             </span>
             <MiniTrend
-              points={body.series.map((p) => ({ value: p.value, label: shortDate(p.date), text: `${p.value.toFixed(1)} kg` }))}
-              color="var(--viz-ink)"
+              points={body.series.map((p) => ({ value: p.trend, dot: p.value, label: shortDate(p.date), text: `${p.value.toFixed(1)} kg · trend ${p.trend.toFixed(1)}` }))}
+              color="var(--coach-accent)"
               height={56}
               lastDot
-              label="Weight, 7-day average, last 12 weeks"
+              label="Weight readings and trend, last 12 weeks"
             />
             <span className="flex justify-between text-xs">
               <span className="text-[var(--viz-muted)]">Body fat</span>

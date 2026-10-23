@@ -40,6 +40,25 @@ import Testing
         #expect(vm.state.weighIn.content.value?.weight.text == "83.2")
         #expect(vm.state.neighbours.map(\.side) == [.earlier])
         #expect(vm.state.neighbours.first?.day == PlainDay(LocalDay(year: 2026, month: 10, day: 21)))
+        #expect(vm.state.chart?.points.map(\.kg) == [84.6, 83.2])
+        #expect(vm.state.chart?.points.last?.trendKg == 83.52)
+        #expect(vm.state.timeText != nil)
+    }
+
+    @Test func theChartPadsItsRangeAndNeedsTwoReadings() throws {
+        let days = DayCalendar(calendar: SessionBuilder.calendar)
+        let weighIn = try JSONDecoder().decode(AppWeighIn.self, from: body)
+        let chart = try #require(WeighInChart.make(weighIn, days: days))
+        #expect(chart.range.lowerBound < 83.2)
+        #expect(chart.range.upperBound > 84.6)
+        #expect(chart.accessibilitySummary.contains("83.5"))
+        let first = try JSONDecoder().decode(AppWeighIn.self, from: Data(AppAPISamples.weighInFirst.utf8))
+        #expect(WeighInChart.make(first, days: days) == nil)
+    }
+
+    @Test func heroLabelNamesTheTimeWhenKnown() {
+        #expect(WeighInText.heroLabel("7:12 AM") == "Weighed at 7:12 AM")
+        #expect(WeighInText.heroLabel(nil) == "Weight")
     }
 
     @Test func runLoadsOnce() async {

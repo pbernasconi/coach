@@ -57,7 +57,16 @@ final class WeighInViewModel {
         isLoading = true
         defer { isLoading = false }
         await resource.load(current: state.weighIn) { state.weighIn = $0 }
-        state.neighbours = neighbours(of: state.weighIn.content.value)
+        let weighIn = state.weighIn.content.value
+        state.chart = weighIn.flatMap { WeighInChart.make($0, days: days) }
+        state.timeText = weighIn?.recordedAt.flatMap(Self.recordedDate).map(days.timeTitle(of:))
+        state.neighbours = neighbours(of: weighIn)
+    }
+
+    /// The server's "2026-10-22T14:05:00.000Z", with or without the fraction.
+    private static func recordedDate(_ text: String) -> Date? {
+        (try? Date(text, strategy: Date.ISO8601FormatStyle(includingFractionalSeconds: true)))
+            ?? (try? Date(text, strategy: .iso8601))
     }
 
     private func neighbours(of weighIn: AppWeighIn?) -> [WeighInNeighbour] {

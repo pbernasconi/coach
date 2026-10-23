@@ -2,7 +2,7 @@ import Foundation
 
 public struct TodayBody: Decodable, Equatable, Sendable {
     public var weight: TodayWeight?
-    /// The last 12 weeks of weight, for the trend line.
+    /// Each reading in the last 12 weeks with its trend, for the trend line.
     public var series: [WeightPoint]
     public var bodyFatText: String?
     /// Set when there is no weight in 12 weeks.
@@ -14,16 +14,19 @@ public struct TodayWeight: Decodable, Equatable, Sendable {
     /// "78.4".
     public var text: String
     public var unit: String
-    /// "▼ 1.2 kg".
+    /// The trend's rate, "▼ 0.26 kg/wk" (or the 4-week change, "▼ 1.2 kg", before there is a rate).
     public var changeText: String?
     public var changeTone: AppTone?
-    /// "in 4 weeks · -0.30 kg a week".
+    /// "Trend 78.9 kg · ▼ 1.2 kg in 4 weeks".
     public var noteText: String?
 }
 
 public struct WeightPoint: Decodable, Equatable, Sendable {
     public var date: PlainDay
+    /// The scale's reading.
     public var kg: Double
+    /// The trend through this reading; nil from servers that predate it.
+    public var trendKg: Double?
 }
 
 public struct TodayLift: Decodable, Equatable, Sendable {
