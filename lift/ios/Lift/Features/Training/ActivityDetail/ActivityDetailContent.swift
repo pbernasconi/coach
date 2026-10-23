@@ -77,8 +77,7 @@ private struct ActivityScrollPage: View {
             AppResourcePage(
                 state.workout,
                 onRetry: { send(.retryTapped) },
-                onConnect: { send(.connectTapped) },
-                showsFreshness: false
+                onConnect: { send(.connectTapped) }
             ) { workout in
                 if let activity = workout.activity {
                     ActivitySections(

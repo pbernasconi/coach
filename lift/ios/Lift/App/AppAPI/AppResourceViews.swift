@@ -5,7 +5,7 @@ import LiftSync
 import SwiftUI
 
 /// The page body of one App API screen: Kobo's `LoadableView` with the one "Connect this iPhone to Coach" empty state every
-/// coach screen shares, and the freshness line above the loaded content. While it loads it shows `placeholder`, a
+/// coach screen shares, and the offline line above the loaded content while it shows a kept copy. While it loads it shows `placeholder`, a
 /// skeleton in the page's own layout (`.skeletonPage()`: invisible for a fast load, then a quiet breath); without one,
 /// the generic `AppPageSkeleton`. Pull to refresh belongs on the scroll view around it (`appRefreshable`).
 ///
@@ -18,26 +18,21 @@ struct AppResourcePage<Value: Equatable & Sendable, Loaded: View, Placeholder: V
     private let state: AppResourceState<Value>
     private let onRetry: () -> Void
     private let onConnect: (() -> Void)?
-    private let showsFreshness: Bool
     private let loaded: (Value) -> Loaded
     private let placeholder: Placeholder
 
     /// - Parameters:
     ///   - onConnect: "Open Settings" under the not-connected state (switch to Settings → Sync); none when nil.
-    ///   - showsFreshness: the "Updated 1:05 PM" line; a page whose data does not change hides it (the offline line
-    ///     still shows).
     init(
         _ state: AppResourceState<Value>,
         onRetry: @escaping () -> Void,
         onConnect: (() -> Void)? = nil,
-        showsFreshness: Bool = true,
         @ViewBuilder loaded: @escaping (Value) -> Loaded,
         @ViewBuilder placeholder: () -> Placeholder
     ) {
         self.state = state
         self.onRetry = onRetry
         self.onConnect = onConnect
-        self.showsFreshness = showsFreshness
         self.loaded = loaded
         self.placeholder = placeholder()
     }
@@ -45,7 +40,7 @@ struct AppResourcePage<Value: Equatable & Sendable, Loaded: View, Placeholder: V
     var body: some View {
         LoadableView(state.content, onRetry: onRetry) { value in
             VStack(alignment: .leading, spacing: Space.section) {
-                if let freshness = state.freshness, showsFreshness || freshness.isOffline {
+                if let freshness = state.freshness, freshness.isOffline {
                     AppFreshnessLine(freshness: freshness)
                 }
                 loaded(value)
@@ -64,14 +59,12 @@ extension AppResourcePage where Placeholder == AppPageSkeleton {
         _ state: AppResourceState<Value>,
         onRetry: @escaping () -> Void,
         onConnect: (() -> Void)? = nil,
-        showsFreshness: Bool = true,
         @ViewBuilder loaded: @escaping (Value) -> Loaded
     ) {
         self.init(
             state,
             onRetry: onRetry,
             onConnect: onConnect,
-            showsFreshness: showsFreshness,
             loaded: loaded,
             placeholder: { AppPageSkeleton() }
         )
@@ -102,7 +95,7 @@ struct AppNotConnectedView: View {
     }
 }
 
-/// "Updated 1:05 PM", or "Offline · updated 1:05 PM" with the offline glyph.
+/// "Offline · updated 1:05 PM" with the offline glyph. Fresh data shows no line.
 struct AppFreshnessLine: View {
     @Environment(\.koboTheme) private var theme
     let freshness: AppFreshness
@@ -111,11 +104,11 @@ struct AppFreshnessLine: View {
         Label {
             Text(verbatim: freshness.text)
         } icon: {
-            Image(systemName: freshness.isOffline ? "wifi.slash" : "checkmark.icloud")
+            Image(systemName: "wifi.slash")
                 .accessibilityHidden(true)
         }
         .font(theme.font(.caption))
-        .foregroundStyle(freshness.isOffline ? theme.palette.textSecondary : theme.palette.textTertiary)
+        .foregroundStyle(theme.palette.textSecondary)
     }
 }
 

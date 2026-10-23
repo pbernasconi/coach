@@ -87,9 +87,12 @@ final class LiveCoachPlan: CoachPlanProviding {
         await fetch(from: shownWeek ?? thisWeek)
     }
 
+    /// After each sync, fetches the plan again. It never syncs itself: a sync here would end in a new status, and
+    /// that status would start the next sync, without end.
     func watchSync() async {
         for await status in sync.statusUpdates() where status.phase != .syncing {
-            await refresh()
+            await loadCacheOnce()
+            await fetch(from: shownWeek ?? thisWeek)
         }
     }
 
