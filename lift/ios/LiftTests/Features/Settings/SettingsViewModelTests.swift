@@ -56,6 +56,16 @@ import Testing
         #expect(settings.coach.value?.nextEvent?.name == "Harbour marathon")
     }
 
+    @Test func linkingThePhoneLoadsTheConnections() async {
+        let data = RoutedAppData([AppSettings.path: RoutedAppData.demo("app-settings")])
+        sync.hasTokenAnswers = [false, true]
+        sync.statuses = [SyncStatus(phase: .idle, lastSyncedAt: nil)]
+        let vm = makeViewModel(data: data)
+        await vm.run()
+        // Once on open, and again when a lift://sync link stored the token.
+        #expect(data.fetched.filter { $0 == AppSettings.path }.count == 2)
+    }
+
     @Test func refreshPulledSyncsAndReadsTheConnectionsAgain() async {
         let data = RoutedAppData([AppSettings.path: RoutedAppData.demo("app-settings")])
         let vm = makeViewModel(data: data)
