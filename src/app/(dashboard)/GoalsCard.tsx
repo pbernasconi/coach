@@ -14,8 +14,8 @@ const BAR: Record<GoalProgress['status'], string> = {
   on_track: 'bg-emerald-500',
   behind: 'bg-amber-500',
   missed: 'bg-rose-500',
-  open: 'bg-[var(--viz-ink-2)]',
-  not_started: 'bg-[var(--viz-ink-2)]',
+  open: 'bg-brand',
+  not_started: 'bg-[var(--viz-muted)]',
 };
 
 const BADGE: Record<GoalProgress['status'], string> = {
