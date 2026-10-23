@@ -1,14 +1,16 @@
 # App API
 
-Read-only JSON for the Lift iPhone app: the web's Today, Trends, Activity, Lift and Health pages, and the state of
-Settings' connections (Settings' edits stay on the web).
+JSON for the Lift iPhone app: the web's Today, Trends, Activity, Lift and Health pages, and the state of Settings'
+connections (Settings' edits stay on the web). The writes are few: how a workout felt, a workout's status, and its Lift
+session.
 Server-side first: the server computes every number, state and label with the same functions as the web page, and
 the phone shows them. The phone does not port web logic. Change this file first, then both sides. The week plan has
 its own contract: `WEEK-API.md`.
 
 ## Shared rules
 
-- Prefix `/api/app/…`, `GET` only. Auth: `Authorization: Bearer <LIFT_SYNC_TOKEN>` with `isAuthorized` from
+- Prefix `/api/app/…`. Reads are `GET`; the writes ("Feedback", "Workout status", "Workout Lift session", push
+  devices) take a JSON body of 16 KB at most (`appWrite`). Auth: `Authorization: Bearer <LIFT_SYNC_TOKEN>` with `isAuthorized` from
   `src/lib/lift-sync/auth.mjs`; wrong or missing token `401 {"error":"unauthorized"}`. The proxy (`src/proxy.ts`) already treats
   `/api/app/*` as machine routes (no Clerk). The owner is `ownerId()` (`src/lib/plan/queries.ts`).
 - `?tz=` IANA zone (invalid or missing: `America/Los_Angeles`) decides "today". Days are plain `YYYY-MM-DD`.
@@ -832,7 +834,8 @@ opens it for a planned workout that is not a Lift session. `id` is the Week API 
     "zones": { "basis": "by power", "items": [{ "zone": "Z1", "seconds": 600, "timeText": "10", "percent": 11 }] }
   },
   "intensity": null, "notes": "Coach notes (the text above the Lift session block)",
-  "liftSessionId": null, "done": { "activityId": "16234567890", "name": "Morning Ride" }
+  "liftSessionId": null, "done": { "activityId": "16234567890", "name": "Morning Ride" },
+  "exercises": []
 }
 ```
 
@@ -843,6 +846,11 @@ opens it for a planned workout that is not a Lift session. `id` is the Week API 
   the chart (0…1). `steps` nest one level for repeats; each step has an `id`, a plain `label` ("Work") and its `cue`
   apart. `keyTargets` leave the cue out. `zones` is "Time in zones" as Strava lists it: each zone's `name` (Recovery …
   VO2 max), `rangeText` ("148–200 W"), `timeText` ("58 min", "" for none) and `percent` (`null` with no time).
+- `exercises`: a strength workout's exercises, read from the coach's text by `strengthExercises`
+  (`src/lib/plan/strength-text.mjs`), so the phone can start a Lift session with them: `{ name, sets, reps, repsMax,
+  note }` per line with sets × reps ("1) Standing calf raise 3x15: 3 s up" → name "Standing calf raise", 3 × 15, note
+  "3 s up"). `[]` with structured steps, once a Lift session is linked, or when no line has sets × reps. With
+  exercises, `notes` leaves their lines out (`strengthNotes`), so the page says each once.
 - `done.activityId`: the Strava activity to open (`null` for a Lift match); `done` is `null` until done.
 - `feedback`: from the workout's day on (see "Feedback", item `plan:<id>`); `null` before it, or when it did not load.
 
@@ -886,6 +894,23 @@ session, activity and planned workout bodies carry it as `feedback`:
 Body: `{ "item", "date", "title", "planActivityId", "feel", "rpe", "comment" }` (the three values `null` to clear
 them). It answers with the saved block. Errors: `400 {"error":"…"}` for a bad item, date, feel (1–5 whole) or RPE
 (1–10 whole); a comment is trimmed to 2,000 characters. All three empty deletes the row.
+
+### Workout status: `PUT /api/app/plan/{id}/status?tz=`
+
+The web's Mark done, Skip and their undo (`setDone`, `setSkipped` in `src/lib/plan/queries.ts`): a home session with
+no activity can be done by hand. Body `{ "status": "done" | "planned" | "skipped", "reason": null }` (`reason`, a
+skip's why, as the web's: tired, sick, sore, busy, travel, other). It answers with the workout, as `GET
+/api/app/workouts/plan-<id>`, and pushes the week to Google Calendar after the answer. A skip of today's workout for
+fatigue eases the week, as on the web. Errors: `400` for a bad id or status, `404` for no such workout.
+
+### Workout Lift session: `PUT /api/app/plan/{id}/lift-session?tz=`
+
+The Lift session the phone started for a planned workout ("Start workout" with its `exercises`), stored as
+`training_plan_activities.lift_session_id`, so the Week tab, the workout page and the web show the two as one. Body
+`{ "sessionId": "<Lift session UUID>" }`. The session row itself arrives with the next sync push; until then the
+workout reads as planned. A logged set makes it done (`matchWeek`). It answers with the workout. Errors: `400` for a
+bad id or UUID, `404` for no such workout, `409` when the workout already has another session (the phone opens that
+one). The same id again is a `200`.
 
 ### Weigh-in: `GET /api/app/weigh-ins/{date | latest}`
 
