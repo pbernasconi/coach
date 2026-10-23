@@ -188,10 +188,14 @@ import Testing
         #expect(vm.state.isExercisesExpanded)
     }
 
-    @Test func weekDayMarkersFollowTheServerState() {
-        #expect(LiftWeekDays.marker("done") == .done(.accent))
-        #expect(LiftWeekDays.marker("planned") == .planned(.accent))
-        #expect(LiftWeekDays.marker("none") == .none)
+    @Test func theSimpleOverviewDecodes() async throws {
+        let (vm, _) = await loaded([RoutedAppData.demo("app-lift")])
+        let overview = try #require(vm.state.overview.content.value)
+        #expect(overview.summary?.value?.text == "1 of 2 sessions this week")
+        let targeting = try #require(overview.targeting?.value)
+        #expect(targeting.items.map(\.name) == ["Quads", "Back", "Chest", "Biceps"])
+        #expect(targeting.items.first?.sessions.first?.done == true)
+        #expect(overview.progress?.value?.items.isEmpty == false)
     }
 
     @Test func plainDaysBecomeTheStartOfThatDay() {

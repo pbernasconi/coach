@@ -7,6 +7,11 @@ nonisolated struct LiftOverview: Decodable, Equatable, Sendable {
     var unit: String
     /// Not nil when no session is logged: shown in place of every section.
     var empty: LiftEmpty?
+    /// The simple overview the page shows; nil from a server that does not send them yet.
+    var summary: AppSection<LiftSummary>?
+    var targeting: AppSection<LiftTargeting>?
+    var progress: AppSection<LiftProgress>?
+    var note: AppSection<LiftNote>?
     var week: AppSection<LiftWeek>
     var tips: AppSection<LiftTips>
     var lifts: AppSection<LiftMainLifts>
