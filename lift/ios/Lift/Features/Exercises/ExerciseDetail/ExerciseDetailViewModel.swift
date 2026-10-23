@@ -35,6 +35,7 @@ final class ExerciseDetailViewModel {
     init(
         exerciseID: UUID?,
         exerciseKey: String,
+        workoutNote: String?,
         exercises: any ExerciseRepository,
         history: any ExerciseHistoryRepository,
         catalog: any ExerciseCatalogProviding,
@@ -54,6 +55,7 @@ final class ExerciseDetailViewModel {
         self.progress = ExerciseProgressTracker(days: days, unit: unit)
         self.router = router
         self.server = AppResource(path: LiftLinks.exercisePath(exerciseKey), source: data, now: now, days: days)
+        state.workoutNote = workoutNote
     }
 
     /// Observes the exercise and its history, and loads the coach's numbers; started by the Screen's `.task` (SCR-4).

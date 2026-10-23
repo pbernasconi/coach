@@ -25,6 +25,7 @@ import Testing
         let vm = ExerciseDetailViewModel(
             exerciseID: exerciseID,
             exerciseKey: key,
+            workoutNote: nil,
             exercises: FakeExerciseRepository(emissions: [ExerciseLibrary.seed]),
             history: FakeExerciseHistoryRepository(emissions: [entries]),
             catalog: FakeExerciseCatalog(),

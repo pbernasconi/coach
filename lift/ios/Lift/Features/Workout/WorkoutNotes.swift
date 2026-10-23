@@ -2,8 +2,8 @@ import KoboComponents
 import KoboTokens
 import SwiftUI
 
-/// What was written for the whole session, under the Workout header: its warm-up, then its note (typed here or from an
-/// imported Apple Note). Tapping the note edits it; without one, "Add note" opens the editor.
+/// What was written for the whole session, under the Workout header: its warm-up, then its note. Tapping the note
+/// edits it; "Add note" is in the workout's "…".
 struct WorkoutSessionNotes: View {
     @Environment(\.koboTheme) private var theme
     @ScaledMetric(relativeTo: .footnote) private var iconWidth = Size.iconSm
@@ -12,79 +12,57 @@ struct WorkoutSessionNotes: View {
     let onEdit: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Space.xxs) {
-            if let warmUpNote {
-                line(String(localized: "Warm-up: \(warmUpNote)"), symbol: "flame")
-            }
-            if let note {
-                Button(action: onEdit) {
-                    line(note, symbol: "quote.bubble")
-                        .frame(maxWidth: .infinity, minHeight: Size.minTouch, alignment: .leading)
-                        .contentShape(.rect)
+        if warmUpNote != nil || note != nil {
+            VStack(alignment: .leading, spacing: Space.xxs) {
+                if let warmUpNote {
+                    NoteLine(text: String(localized: "Warm-up: \(warmUpNote)"), symbol: "flame", iconWidth: iconWidth)
                 }
-                .buttonStyle(.pressFeedback)
-                .accessibilityLabel(Text("Workout note: \(note)"))
-                .accessibilityHint(Text("Edits the note"))
-            } else {
-                Button("Add note", systemImage: "square.and.pencil", action: onEdit)
-                    .buttonStyle(.kobo(.plain, size: .compact, width: .inline))
-                    .accessibilityLabel(Text("Add workout note"))
+                if let note {
+                    Button(action: onEdit) {
+                        NoteLine(text: note, symbol: "quote.bubble", iconWidth: iconWidth)
+                            .frame(maxWidth: .infinity, minHeight: Size.minTouch, alignment: .leading)
+                            .contentShape(.rect)
+                    }
+                    .buttonStyle(.pressFeedback)
+                    .accessibilityLabel(Text("Workout note: \(note)"))
+                    .accessibilityHint(Text("Edits the note"))
+                }
             }
-        }
-        .font(theme.font(.footnote))
-        .foregroundStyle(theme.palette.textSecondary)
-    }
-
-    private func line(_ text: String, symbol: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: Space.xs) {
-            Image(systemName: symbol)
-                .symbolVariant(.fill)
-                .imageScale(.small)
-                .frame(width: iconWidth)
-                .accessibilityHidden(true)
-            Text(verbatim: text)
-                .multilineTextAlignment(.leading)
-                .fixedSize(horizontal: false, vertical: true)
+            .font(theme.font(.footnote))
+            .foregroundStyle(theme.palette.textSecondary)
         }
     }
 }
 
-/// What was written about one exercise, under its header: last time's note first ("Last time: felt heavy"), so this
-/// session can act on it, then this session's note. Tapping the note edits it; without one, "Add note" opens the editor.
-struct WorkoutExerciseNotes: View {
+/// The note of an exercise with no How to page, under its header. Tapping it edits it.
+struct WorkoutExerciseNote: View {
     @Environment(\.koboTheme) private var theme
     @ScaledMetric(relativeTo: .footnote) private var iconWidth = Size.iconSm
     let name: String
-    let note: String?
-    let lastNote: String?
+    let note: String
     let onEdit: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Space.xxs) {
-            if let lastNote {
-                line(String(localized: "Last time: \(lastNote)"), symbol: "clock.arrow.circlepath")
-                    .accessibilityElement(children: .combine)
-            }
-            if let note {
-                Button(action: onEdit) {
-                    line(note, symbol: "quote.bubble")
-                        .frame(maxWidth: .infinity, minHeight: Size.minTouch, alignment: .leading)
-                        .contentShape(.rect)
-                }
-                .buttonStyle(.pressFeedback)
-                .accessibilityLabel(Text("Note on \(name): \(note)"))
-                .accessibilityHint(Text("Edits the note"))
-            } else {
-                Button("Add note", systemImage: "square.and.pencil", action: onEdit)
-                    .buttonStyle(.kobo(.plain, size: .compact, width: .inline))
-                    .accessibilityLabel(Text("Add note on \(name)"))
-            }
+        Button(action: onEdit) {
+            NoteLine(text: note, symbol: "quote.bubble", iconWidth: iconWidth)
+                .frame(maxWidth: .infinity, minHeight: Size.minTouch, alignment: .leading)
+                .contentShape(.rect)
         }
+        .buttonStyle(.pressFeedback)
         .font(theme.font(.footnote))
         .foregroundStyle(theme.palette.textSecondary)
+        .accessibilityLabel(Text("Note on \(name): \(note)"))
+        .accessibilityHint(Text("Edits the note"))
     }
+}
 
-    private func line(_ text: String, symbol: String) -> some View {
+/// One note line: a small symbol, then the text.
+private struct NoteLine: View {
+    let text: String
+    let symbol: String
+    let iconWidth: CGFloat
+
+    var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: Space.xs) {
             Image(systemName: symbol)
                 .symbolVariant(.fill)

@@ -34,6 +34,15 @@ struct RouteScreen: View {
         case .exercise(let exerciseID):
             LiftExerciseRoute(
                 exerciseKey: LiftLinks.key(forLibraryID: exerciseID),
+                workoutNote: nil,
+                dependencies: dependencies,
+                router: router
+            )
+            .id(route)
+        case .exerciseInWorkout(let exerciseID, let note):
+            LiftExerciseRoute(
+                exerciseKey: LiftLinks.key(forLibraryID: exerciseID),
+                workoutNote: note,
                 dependencies: dependencies,
                 router: router
             )

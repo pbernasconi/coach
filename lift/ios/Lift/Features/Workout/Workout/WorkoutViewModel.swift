@@ -120,7 +120,7 @@ final class WorkoutViewModel {
         case .setSkipTapped(let id): skip(id)
         case .setRemoveTapped(let id): remove(id)
         case .removeUndoTapped(let id): write { try await $0.restore(setID: id) }
-        case .addSetTapped(let exerciseID): addSet(to: exerciseID)
+        case .addSetTapped(let exerciseID): addSetFromOptions(exerciseID)
         default: sendLocal(action)
         }
     }
@@ -141,7 +141,8 @@ final class WorkoutViewModel {
         case .restExtendTapped: extendRest()
         case .restSkipTapped: finishRest(after: state.rest?.setID)
         case .restReadyDismissed: state.ready = nil
-        case .howToTapped(let exerciseID): router.open(.exercise(exerciseID))
+        case .howToTapped(let exerciseID, let note):
+            router.open(note.map { .exerciseInWorkout(exerciseID, note: $0) } ?? .exercise(exerciseID))
         case .thumbnailNeeded(let catalogID): return loadThumbnail(catalogID)
         case .workoutOptionsTapped, .exerciseOptionsTapped, .optionsDismissed: state.options = options(for: action)
         default: return sendSession(action)
@@ -216,6 +217,12 @@ final class WorkoutViewModel {
     }
 
     /// The session's or one exercise's note editor; any other sheet closes first.
+    /// "Add set" in the exercise's "…": the sheet closes and the set is added.
+    private func addSetFromOptions(_ exerciseID: UUID) -> Task<Void, Never>? {
+        state.options = nil
+        return addSet(to: exerciseID)
+    }
+
     private func openNote(_ action: WorkoutAction) {
         guard let detail, let editor = NoteEditor(opening: action, in: detail) else { return }
         state.editor = nil
