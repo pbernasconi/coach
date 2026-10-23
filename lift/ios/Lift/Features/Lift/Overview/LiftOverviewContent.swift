@@ -3,8 +3,8 @@ import KoboTokens
 import LiftSync
 import SwiftUI
 
-/// Dumb view: the coach's Lift page section by section, as the web's /lift shows it (SCR-2). A coach tip that points at
-/// a section scrolls there.
+/// Dumb view (SCR-2): the Lift tab's overview, kept short (focus, targeting, progress); the full lists are in History
+/// and Exercises. A coach note that points at the muscles scrolls there.
 struct LiftOverviewContent: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let state: LiftOverviewState
@@ -35,8 +35,9 @@ struct LiftOverviewContent: View {
     }
 }
 
-/// The sections in the web's order; each `{ok}` section fails alone. With nothing logged yet, the server's empty text
-/// stands in for all of them.
+/// The simple overview, top to bottom: this week in one line and the next session, the focus muscles and how this
+/// week's sessions target them, the focus lifts' progress, and at most one coach note. Each `{ok}` section fails
+/// alone. With nothing logged yet, the server's empty text stands in for all of them.
 struct LiftOverviewSections: View {
     let overview: LiftOverview
     let state: LiftOverviewState
@@ -47,26 +48,18 @@ struct LiftOverviewSections: View {
             if let empty = overview.empty {
                 EmptyState(symbol: "dumbbell", verbatim: empty.title, message: empty.body)
             } else {
-                AppSectionView(nil, section: overview.week) { week in LiftWeekHero(week: week, send: send) }
-                if overview.tips.value?.items.isEmpty != true {
-                    AppSectionView("Coach notes", section: overview.tips) { tips in LiftTipsView(tips: tips, send: send)
-                    }
+                if let summary = overview.summary {
+                    AppSectionView(nil, section: summary) { LiftWeekLine(summary: $0, send: send) }
                 }
-                AppSectionView("Main lifts", section: overview.lifts) { lifts in
-                    LiftMainLiftsView(lifts: lifts, send: send)
+                if let targeting = overview.targeting {
+                    AppSectionView("Focus this week", section: targeting) { LiftTargetingView(targeting: $0, send: send) }
+                        .id(LiftOverviewSection.muscles)
                 }
-                AppSectionView("Muscles", section: overview.muscles) { LiftMusclesView(muscles: $0) }
-                    .id(LiftOverviewSection.muscles)
-                AppSectionView("Sessions", section: overview.sessions) { sessions in
-                    LiftSessionsView(sessions: sessions, isExpanded: state.isOlderSessionsExpanded, send: send)
+                if let progress = overview.progress {
+                    AppSectionView("Progress", section: progress) { LiftProgressView(progress: $0, send: send) }
                 }
-                .id(LiftOverviewSection.sessions)
-                AppSectionView("Consistency", section: overview.consistency) { LiftConsistencyView(consistency: $0) }
-                    .id(LiftOverviewSection.consistency)
-                AppSectionView("Records", section: overview.records) { LiftRecordsView(records: $0, send: send) }
-                    .id(LiftOverviewSection.records)
-                AppSectionView("Exercises", section: overview.exercises) { exercises in
-                    LiftExerciseIndexView(exercises: exercises, isExpanded: state.isExercisesExpanded, send: send)
+                if let note = overview.note?.value?.item {
+                    LiftTipsView(tips: LiftTips(title: "", items: [note]), send: send)
                 }
             }
         }
