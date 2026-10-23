@@ -119,3 +119,32 @@ export function mergeByCatalog(biomarkers, catalog) {
     return { ...newest, latest, history: [...history.slice(0, -1), latest] };
   });
 }
+
+/**
+ * One row per marker when the same marker comes in under a longer name ("Omega-3 Total / OmegaCheck" from the
+ * OmegaCheck panel, "Omega-3 Total" from Function without a range). The row with a reference range leads; the
+ * other's draws join its history.
+ * @template {{ biomarker: string, refLow: number | null, refHigh: number | null, latest: { collectedOn: string },
+ *   history: { collectedOn: string }[] }} B
+ * @param {B[]} biomarkers
+ * @returns {B[]}
+ */
+export function mergeAliases(biomarkers) {
+  const base = (name) => fold(String(name).split(' / ')[0]);
+  const groups = new Map();
+  for (const b of biomarkers) groups.set(base(b.biomarker), [...(groups.get(base(b.biomarker)) ?? []), b]);
+  const out = [];
+  for (const b of biomarkers) {
+    const g = groups.get(base(b.biomarker));
+    if (g.length === 1) { out.push(b); continue; }
+    if (g[0] !== b) continue; // the group goes out once
+    const ranged = (x) => x.refLow !== null || x.refHigh !== null;
+    const lead = g.find(ranged) ?? g.reduce((a, x) => (x.latest.collectedOn > a.latest.collectedOn ? x : a));
+    const byDay = new Map(lead.history.map((r) => [r.collectedOn, r]));
+    for (const x of g) for (const r of x.history) if (!byDay.has(r.collectedOn)) byDay.set(r.collectedOn, r);
+    const history = [...byDay.values()].sort((a, c) => a.collectedOn.localeCompare(c.collectedOn));
+    // The lead's latest status stands when its draw is the newest; a newer draw from the other name leads the history.
+    out.push({ ...lead, history, latest: history[history.length - 1] });
+  }
+  return out;
+}

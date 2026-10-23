@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { keyIndex, mergeByCatalog, pickHighlights, trend } from './labs-highlights.mjs';
+import { keyIndex, mergeAliases, mergeByCatalog, pickHighlights, trend } from './labs-highlights.mjs';
 
 const bm = (biomarker, status = 'in_range', extra = {}) => ({ biomarker, latest: { status }, ...extra });
 
@@ -75,4 +75,17 @@ test('merge by catalog: a row under the catalog name joins the draws under its r
   assert.equal(merged.length, 1);
   assert.equal(merged[0].latest.status, 'out_of_range');
   assert.equal(keyIndex(merged[0].biomarker), keyIndex('Omega-3 Total'));
+});
+
+test('merge aliases: one Omega-3 row, the one with a range', () => {
+  const r = (collectedOn, status) => ({ collectedOn, value: 4.5, valueText: null, status });
+  const b = (biomarker, refLow, history) => ({ biomarker, category: 'Nutrients', refLow, refHigh: null, latest: history.at(-1), history });
+  const merged = mergeAliases([
+    b('Omega-3 Total', null, [r('2025-08-01', 'unknown')]),
+    b('Iron', 60, [r('2025-08-01', 'in_range')]),
+    b('Omega-3 Total / OmegaCheck', 5.4, [r('2025-08-01', 'out_of_range')]),
+  ]);
+  assert.deepEqual(merged.map((m) => m.biomarker), ['Omega-3 Total / OmegaCheck', 'Iron']);
+  assert.equal(merged[0].latest.status, 'out_of_range');
+  assert.equal(merged[0].history.length, 1);
 });

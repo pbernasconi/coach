@@ -3,7 +3,7 @@ import { toDay } from '@/lib/db-time.mjs';
 import { cached } from '@/lib/data-cache';
 import { addDays, hrvMetricOf, readinessFrom, seriesOf, type ReadinessSummary, type SampleRow } from './readiness.mjs';
 import type { LabStatus } from './labs.mjs';
-import { mergeByCatalog } from './labs-highlights.mjs';
+import { mergeAliases, mergeByCatalog } from './labs-highlights.mjs';
 import { garminStatusFrom, type GarminStatus } from './garmin.mjs';
 import { garminConnection } from './repository';
 
@@ -91,7 +91,7 @@ export async function loadLabs(userId: string): Promise<{ categories: LabCategor
     };
   });
   // One row per Function biomarker with Function's status, as on /health/labs.
-  const biomarkers = mergeByCatalog(perName, catalog.map((c) => ({ resultNames: c.result_names ?? [], name: c.name, status: c.status })));
+  const biomarkers = mergeAliases(mergeByCatalog(perName, catalog.map((c) => ({ resultNames: c.result_names ?? [], name: c.name, status: c.status }))));
   const groups = new Map<string, Biomarker[]>();
   for (const b of biomarkers) groups.set(b.category, [...(groups.get(b.category) ?? []), b]);
   const categories = [...groups.entries()]
