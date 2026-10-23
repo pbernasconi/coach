@@ -114,9 +114,10 @@ struct WorkoutExerciseOptionsButton: View {
     }
 }
 
-/// Under the exercises: Add exercise, then Finish workout, or View summary once finished.
+/// Under the exercises: Add exercise, then Finish workout (unless the dock offers it), or View summary once finished.
 struct WorkoutFooterActions: View {
     let workout: WorkoutOverview
+    let showsFinish: Bool
     let send: (WorkoutAction) -> Void
 
     var body: some View {
@@ -126,7 +127,7 @@ struct WorkoutFooterActions: View {
             if workout.isFinished {
                 Button("View summary", systemImage: "chart.bar") { send(.summaryTapped) }
                     .buttonStyle(.kobo(.secondary, width: .full))
-            } else {
+            } else if showsFinish {
                 Button("Finish workout", systemImage: "checkmark") { send(.finishTapped) }
                     .buttonStyle(.kobo(.primary, width: .full))
             }

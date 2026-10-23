@@ -106,6 +106,12 @@ import Testing
         #expect(!state([.planned, .planned, .planned]).dockIntroducesExercise)
     }
 
+    @Test func theDockFinishesOnlyOnceEverySetIsDone() {
+        #expect(state([.done, .done, .done]).dockFinishes)
+        #expect(!state([.done, .planned, .planned]).dockFinishes)
+        #expect(!state([.planned, .planned, .planned], started: false).dockFinishes)
+    }
+
     @Test func plannedSetsLeftCountsWhatFinishWouldLeave() {
         #expect(state([.done, .skipped, .planned]).plannedSetsLeft == 1)
         #expect(state([.done, .done, .done]).plannedSetsLeft == 0)
