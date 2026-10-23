@@ -7,7 +7,7 @@ import { plainTitle } from './calendar.mjs';
 import { dur } from './cells.mjs';
 import { LIFT_MARKER } from './lift-plan.mjs';
 import { sportId, notesOf } from './week-api.mjs';
-import { strengthExercises } from './strength-text.mjs';
+import { strengthExercises, strengthNotes } from './strength-text.mjs';
 import { ANCHORS, STEP_KIND, ZONE_RANGES, clock, flatten, keyTargets, profileBars, stepLength, stepSeconds, stepTarget, stepZone, totals } from '../workouts/steps.mjs';
 
 const ZONES = ['Z1', 'Z2', 'Z3', 'Z4', 'Z5'];
@@ -153,6 +153,8 @@ export function appWorkout(w, sports) {
   const doneMin = done ? num(w.actual?.min) ?? (done.source === 'lift' ? num(w.lift?.minutes) : null) : null;
   const doneTss = done ? num(w.actual?.tss) : null;
   const text = w.lift && w.description ? String(w.description).split(LIFT_MARKER)[0].trim() || null : notesOf(w.description);
+  // Strength without a Lift session: the exercises in the coach's text, so the phone can start one with them.
+  const exercises = !steps && !w.liftSessionId ? strengthExercises(text) : [];
   const hero = [
     { label: 'Planned time', valueText: w.duration ? dur(w.duration) : '–', unit: null },
     num(w.tss) != null && { label: 'Planned TSS', valueText: String(Math.round(w.tss)), unit: null },
@@ -184,9 +186,9 @@ export function appWorkout(w, sports) {
         }
       : null,
     intensity: w.intensity ?? null,
-    notes: text,
-    // Strength without a Lift session: the exercises in the coach's text, so the phone can start one with them.
-    exercises: !steps && !w.liftSessionId ? strengthExercises(text) : [],
+    // Without the exercise lines when `exercises` lists them, so the page says each once.
+    notes: exercises.length ? strengthNotes(text) : text,
+    exercises,
     liftSessionId: w.liftSessionId ? String(w.liftSessionId).toLowerCase() : null,
     done: done
       ? {

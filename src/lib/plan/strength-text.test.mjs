@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { strengthExercises } from './strength-text.mjs';
+import { strengthExercises, strengthNotes } from './strength-text.mjs';
 
 const CALVES = `Achilles, at home, bodyweight on a step. One time only.
 1) Standing calf raise 3x15: 3 s up, 3 s down, full range (heels below the step). Too easy: 3x8 on one leg.
@@ -35,4 +35,13 @@ test('a line with no sets and reps, or no name, is not an exercise', () => {
   assert.deepEqual(strengthExercises('90 s rest.\n3x10\nRest 2:00'), []);
   assert.deepEqual(strengthExercises(null), []);
   assert.deepEqual(strengthExercises(''), []);
+});
+
+test('the notes keep the text around the exercises, without the exercise lines', () => {
+  assert.equal(
+    strengthNotes(CALVES),
+    'Achilles, at home, bodyweight on a step. One time only.\n90 s rest. Pain up to 5/10 is OK; it must be gone by the next morning.'
+  );
+  assert.equal(strengthNotes('1) Push-up 3x10'), null);
+  assert.equal(strengthNotes(null), null);
 });

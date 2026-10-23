@@ -849,7 +849,8 @@ opens it for a planned workout that is not a Lift session. `id` is the Week API 
 - `exercises`: a strength workout's exercises, read from the coach's text by `strengthExercises`
   (`src/lib/plan/strength-text.mjs`), so the phone can start a Lift session with them: `{ name, sets, reps, repsMax,
   note }` per line with sets × reps ("1) Standing calf raise 3x15: 3 s up" → name "Standing calf raise", 3 × 15, note
-  "3 s up"). `[]` with structured steps, once a Lift session is linked, or when no line has sets × reps.
+  "3 s up"). `[]` with structured steps, once a Lift session is linked, or when no line has sets × reps. With
+  exercises, `notes` leaves their lines out (`strengthNotes`), so the page says each once.
 - `done.activityId`: the Strava activity to open (`null` for a Lift match); `done` is `null` until done.
 - `feedback`: from the workout's day on (see "Feedback", item `plan:<id>`); `null` before it, or when it did not load.
 

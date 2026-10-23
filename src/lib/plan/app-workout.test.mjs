@@ -94,6 +94,7 @@ test('a strength workout lists the exercises in its text, until a Lift session i
   const text = '1) Standing calf raise 3x15: slow.\n90 s rest.';
   const page = appWorkout(workout({ steps: null, sport: 'strength', description: text }), sports);
   assert.deepEqual(page.exercises, [{ name: 'Standing calf raise', sets: 3, reps: 15, repsMax: null, note: 'Slow.' }]);
+  assert.equal(page.notes, '90 s rest.');
   const linked = appWorkout(workout({ steps: null, sport: 'strength', description: text, liftSessionId: 'abc' }), sports);
   assert.deepEqual(linked.exercises, []);
   assert.deepEqual(appWorkout(workout(), sports).exercises, []);

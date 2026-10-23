@@ -72,3 +72,18 @@ function cleanNote(rest) {
 
 /** @param {string} s */
 const capital = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+
+/**
+ * The coach's text without the exercise lines `strengthExercises` reads, so the page does not say them twice: the
+ * rest of the text ("Achilles, at home…", "90 s rest."), or null when nothing is left.
+ * @param {string | null | undefined} text
+ * @returns {string | null}
+ */
+export function strengthNotes(text) {
+  if (!text) return null;
+  const kept = String(text)
+    .split(/\r?\n/)
+    .map((line) => line.split(PART_BREAK).filter((part) => !exerciseOf(part)).join(' ').trim())
+    .filter(Boolean);
+  return kept.length ? kept.join('\n') : null;
+}
