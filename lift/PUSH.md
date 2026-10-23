@@ -118,6 +118,8 @@ works for both APNs hosts; each device is sent to the host its `environment` nam
 
 - Token auth: an ES256 JWT, reused for 50 minutes, minted again when APNs says `ExpiredProviderToken`.
 - `410 Unregistered` turns the device off, unless it registered again after APNs' timestamp.
+- `TopicDisallowed` and `DeviceTokenNotForTopic` turn the device off: its bundle id (a debug build's placeholder,
+  say) can't get pushes from this key. It comes back on if it registers again.
   `BadDeviceToken` is tried once on the other host (a build signed for the other environment), then turned off.
 - `429` and `5xx` are retried up to 3 times (1 s, 4 s; `Retry-After` when sent, at most 10 s).
 - A notice's status: `sent` (every device took it), `partial`, `failed`, `no_devices`, `muted`.
