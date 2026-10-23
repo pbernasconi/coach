@@ -13,9 +13,6 @@ struct WorkoutActivityWidget: Widget {
         } dynamicIsland: { context in
             let isResting = context.state.isResting(isStale: context.isStale)
             return DynamicIsland {
-                DynamicIslandExpandedRegion(.center) {
-                    IslandCenter(state: context.state, isResting: isResting)
-                }
                 DynamicIslandExpandedRegion(.trailing) {
                     IslandTrailing(isResting: isResting, isPaused: context.state.isPaused)
                 }
@@ -34,10 +31,10 @@ struct WorkoutActivityWidget: Widget {
     }
 }
 
-/// The expanded island's centre: the exercise photo (or the badge) beside the exercise and the set, or what comes
-/// after the rest. There is no leading region: the system keeps its width even when its content is small, which
-/// pushes the words away from the photo.
-struct IslandCenter: View {
+/// The first row of the expanded island's bottom: the exercise photo (or the badge) beside the exercise and the set,
+/// or what comes after the rest. It sits in the full-width bottom region: .leading keeps its width away from the words
+/// and .center is only as wide as the camera.
+struct IslandNow: View {
     let state: WorkoutActivityAttributes.ContentState
     let isResting: Bool
 
@@ -50,7 +47,6 @@ struct IslandCenter: View {
             }
             words
         }
-        .padding(.leading, 4)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -104,18 +100,18 @@ struct IslandTrailing: View {
     }
 }
 
-/// The expanded island's bottom: the load and its check, or the rest bar, the time rested and Skip.
+/// The expanded island's bottom: the exercise and set, then the load and its check, or the rest bar, the time rested
+/// and Skip.
 struct IslandBottom: View {
     let state: WorkoutActivityAttributes.ContentState
     let isResting: Bool
 
     var body: some View {
-        Group {
+        VStack(spacing: 8) {
+            IslandNow(state: state, isResting: isResting)
             if isResting, let rest = state.rest {
-                VStack(spacing: 8) {
-                    WorkoutBar(state: state, isResting: true)
-                    RestBar(rest: rest, timerSize: 34)
-                }
+                WorkoutBar(state: state, isResting: true)
+                RestBar(rest: rest, timerSize: 34)
             } else if let set = state.current {
                 LiftBar(set: set)
             } else {
