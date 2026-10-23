@@ -26,10 +26,6 @@ nonisolated struct WorkoutSummaryOverview: Equatable, Sendable {
     var duration: String?
     /// "9".
     var sets: String
-    /// "4,250".
-    var volume: String
-    /// "kg".
-    var unit: String
     var bests: [WorkoutBestItem]
 }
 

@@ -57,8 +57,6 @@ final class WorkoutSummaryViewModel {
                     dayTitle: days.longTitle(of: detail.session.day),
                     duration: summary.duration.map(WorkoutSummaryText.duration),
                     sets: "\(summary.setsLogged)",
-                    volume: WorkoutSummaryText.volume(summary.volume),
-                    unit: unit.rawValue,
                     bests: summary.bests.map { WorkoutSummaryText.best($0, unit: unit) }
                 )
             )

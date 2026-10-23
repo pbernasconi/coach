@@ -9,8 +9,6 @@
             dayTitle: "Thursday, 5 March",
             duration: "52 min",
             sets: "8",
-            volume: "4,370",
-            unit: "kg",
             bests: [
                 WorkoutBestItem(
                     id: "squat",

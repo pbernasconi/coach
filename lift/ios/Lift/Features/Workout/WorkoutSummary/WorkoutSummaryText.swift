@@ -9,11 +9,6 @@ nonisolated enum WorkoutSummaryText {
         return Duration.seconds(minutes * 60).formatted(.units(allowed: [.hours, .minutes], width: .abbreviated))
     }
 
-    /// "4,250": whole numbers.
-    static func volume(_ weight: Weight) -> String {
-        weight.value.formatted(.number.precision(.fractionLength(0)))
-    }
-
     /// One exercise's records as one row: the headline is the heavier set when there is one, otherwise the estimate;
     /// the detail is the set behind it and the estimated 1RM, "65 kg × 5 · est. 1RM 76 kg (was 73)".
     static func best(_ best: PersonalBest, unit: WeightUnit) -> WorkoutBestItem {
