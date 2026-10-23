@@ -3,18 +3,20 @@ import LiftCore
 import LiftSync
 import Observation
 
+/// The Today tab: today's planned workouts, then the web's Health page. It shows what the server sends.
 @Observable
 final class TodayViewModel {
     private(set) var state = TodayState()
 
-    private let resource: AppResource<AppToday>
+    private let data: any AppDataSource
+    private let today: AppResource<AppToday>
     private let coachPlan: any CoachPlanProviding
     private let router: any Navigating
     private let tabs: any TabSwitching
+    private let now: @Sendable () -> Date
     private let days: DayCalendar
     /// The kept week plan, for the detail sheet of a planned workout.
     @ObservationIgnored private var plan = CoachPlanSnapshot.off
-    @ObservationIgnored private var isLoading = false
 
     /// Protocols only, no defaults, no work (SCR-3).
     init(
@@ -28,14 +30,16 @@ final class TodayViewModel {
     ) {
         let days = DayCalendar(calendar: calendar)
         self.days = days
-        self.resource = AppResource(path: AppToday.path, source: data, now: now, days: days)
+        self.data = data
+        self.now = now
+        self.today = AppResource(path: AppToday.path, source: data, now: now, days: days)
         self.coachPlan = coachPlan
         self.router = router
         self.tabs = tabs
         state.anchor = anchor
     }
 
-    /// Loads the page and follows the week plan; started by the Screen's `.task` (SCR-4).
+    /// Loads both pages and follows the week plan; started by the Screen's `.task` (SCR-4).
     func run() async {
         await withDiscardingTaskGroup { group in
             group.addTask { await self.load() }
@@ -47,32 +51,48 @@ final class TodayViewModel {
         for await snapshot in coachPlan.snapshots() { plan = snapshot }
     }
 
+    /// Today's plan and the health page, side by side.
     private func load() async {
-        guard !isLoading else { return }
-        isLoading = true
-        defer { isLoading = false }
-        let calendar = days.calendar
-        await resource.load(current: state.today) { new in
-            let fitness = new.content.value?.fitness.value
-            if fitness != state.today.content.value?.fitness.value || (fitness != nil && state.fitness == nil) {
-                state.fitness = fitness.map { TodayFitnessChart($0, calendar: calendar) }
-            }
-            state.today = new
+        async let plan: Void = loadToday()
+        async let health: Void = loadHealth()
+        _ = await (plan, health)
+    }
+
+    private func loadToday() async {
+        await today.load(current: state.today) { state.today = $0 }
+    }
+
+    /// The health page for the shown window. An answer for a window no longer shown is dropped.
+    private func loadHealth() async {
+        let range = state.range
+        let resource = AppResource<AppHealth>(
+            path: AppHealth.path,
+            source: data,
+            now: now,
+            days: days,
+            query: range.query
+        )
+        await resource.load(current: state.health) { update in
+            guard state.range == range else { return }
+            state.health = update
         }
     }
 
     @discardableResult
     func send(_ action: TodayAction) -> Task<Void, Never>? {
         switch action {
-        case .refreshPulled, .retryTapped:
-            if action == .retryTapped { state.today.content = .loading }
+        case .refreshPulled:
             return Task { await load() }
+        case .retryTapped:
+            state.today.content = .loading
+            state.health.content = .loading
+            return Task { await load() }
+        case .trendRangeChanged(let range):
+            guard range != state.range else { return nil }
+            state.range = range
+            return Task { await loadHealth() }
         case .lineItemTapped(let id):
             openLineItem(id)
-        case .mainLiftTapped(let key):
-            router.open(.liftExercise(key))
-        case .liftSessionTapped(let id):
-            router.open(LiftLinks.session(id))
         case .planActivityTapped(let id):
             state.destination = nil
             router.open(.activity(id))

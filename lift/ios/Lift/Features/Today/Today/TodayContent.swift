@@ -1,9 +1,11 @@
 import KoboComponents
+import KoboPatterns
 import KoboTokens
 import LiftSync
 import SwiftUI
 
-/// Dumb view: the date header, then the coach's Today page section by section, and the plan item sheet (SCR-2).
+/// Dumb view: the date and Garmin lines, today's plan, then the web's Health page section by section, and the plan item
+/// sheet (SCR-2).
 struct TodayContent: View {
     let state: TodayState
     let send: (TodayAction) -> Void
@@ -11,9 +13,9 @@ struct TodayContent: View {
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                AppResourcePage(state.today, onRetry: { send(.retryTapped) }, onConnect: { send(.connectTapped) }) {
-                    today in
-                    TodaySections(today: today, fitness: state.fitness, send: send)
+                AppResourcePage(state.health, onRetry: { send(.retryTapped) }, onConnect: { send(.connectTapped) }) {
+                    health in
+                    TodaySections(today: state.today.content.value, health: health, range: state.range, send: send)
                 } placeholder: {
                     TodaySkeleton()
                 }
@@ -21,9 +23,10 @@ struct TodayContent: View {
                 .padding(.top, Space.sm)
                 .padding(.bottom, Space.xxl)
             }
-            .onChange(of: state.today.content.phase, initial: true) { _, phase in
-                guard phase == .loaded, let anchor = state.anchor else { return }
-                proxy.scrollTo(anchor, anchor: anchor == .end ? .bottom : .top)
+            .onChange(of: isSettled, initial: true) { _, settled in
+                guard settled, let anchor = state.anchor else { return }
+                // One turn later, once the loaded sections are laid out.
+                Task { proxy.scrollTo(anchor, anchor: anchor == .end ? .bottom : .top) }
             }
         }
         .screenCanvas()
@@ -32,27 +35,39 @@ struct TodayContent: View {
             send(.destinationDismissed)
         }
     }
+
+    /// Both pages are in (today's plan may have failed): an anchor scroll no longer moves.
+    private var isSettled: Bool {
+        state.health.content.phase == .loaded && state.today.content.phase != .loading
+    }
 }
 
-/// The page's sections in the web's order. Each `{ok}` section fails alone.
+/// The page's sections in the web Health page's order, after today's plan. Each `{ok}` section fails alone.
 struct TodaySections: View {
-    let today: AppToday
-    /// The fitness chart's data, worked out once per body.
-    let fitness: TodayFitnessChart?
+    /// Today's date line and plan; nil until it loads (or when it failed: the health page still shows).
+    let today: AppToday?
+    let health: AppHealth
+    let range: HealthRange
     let send: (TodayAction) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: Space.section) {
-            TodayHeaderView(dateText: today.dateText, header: today.header, stale: today.stale)
-            AppSectionView("Planned today", section: today.todayLine) { line in TodayLineView(line: line, send: send) }
-            AppSectionView("Fitness", section: today.fitness) { _ in
-                if let fitness { TodayFitnessView(chart: fitness) }
+            TodayHeaderView(dateText: today?.dateText, status: health.status.value)
+            if let line = today?.todayLine {
+                AppSectionView("Planned today", section: line) { line in TodayLineView(line: line, send: send) }
             }
-            .id(TodayAnchor.fitness)
-            AppSectionView("Last 4 weeks", section: today.last4Weeks) { tiles in TodayTilesView(tiles: tiles.tiles) }
-            AppSectionView("Body", section: today.body) { body in TodayBodyView(reading: body) }
-            AppSectionView("Lift", section: today.lift) { lift in TodayLiftView(lift: lift, send: send) }
-            AppSectionView("Goals", section: today.goals) { goals in TodayGoalsView(goals: goals) }
+            if let empty = health.emptyText {
+                SectionEmptyCard(verbatim: empty, systemImage: "heart.text.square")
+            } else {
+                AppSectionView("Readiness", section: health.readiness) { TodayReadinessCard(readiness: $0) }
+                AppSectionView("Vitals", section: health.vitals) { TodayVitalsView(vitals: $0) }
+                AppSectionView("Trends", section: health.trends) { trends in
+                    TodayTrendsView(trends: trends, range: range) { send(.trendRangeChanged($0)) }
+                }
+                .id(TodayAnchor.trends)
+                AppSectionView("Body", section: health.body) { TodayBodyView(reading: $0) }
+                AppSectionView("Labs", section: health.labs) { TodayLabsView(labs: $0) }
+            }
             Color.clear.frame(height: 0).id(TodayAnchor.end)
         }
     }
