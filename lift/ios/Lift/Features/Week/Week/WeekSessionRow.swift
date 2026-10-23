@@ -3,7 +3,7 @@ import KoboTokens
 import SwiftUI
 
 /// One Lift session as a Week card: its title, then the strength icon with its exercises and sets. A done session is
-/// a green card with a "Done" check, as on the web; a planned one a dashed outline. A long press on a planned one
+/// a green card with a "Done" check, as on the web; a planned one a solid grey outline. A long press on a planned one
 /// opens the lift sheet (move, push to next week, change, remove). A tap opens the workout.
 struct WeekSessionRow: View {
     @Environment(\.koboTheme) private var theme
