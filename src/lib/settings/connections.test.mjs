@@ -31,7 +31,7 @@ test('connectionsFrom: all healthy', () => {
   assert.equal(items[0].statusText, 'Synced 2 h ago');
   assert.equal(items[0].detailText, 'Newest activity Oct 22');
   assert.equal(items[3].detailText, '57 sessions');
-  assert.deepEqual(summary, { attention: 0, total: 5, level: 'ok', text: 'All 5 connections are healthy' });
+  assert.deepEqual(summary, { attention: 0, total: 5, level: 'ok', text: 'All 5 required connections are healthy' });
 });
 
 test('connectionsFrom: Strava off, Garmin expired, BodySpec unreadable', () => {

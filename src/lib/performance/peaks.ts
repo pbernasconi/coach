@@ -1,6 +1,6 @@
 import { sql } from '@/db';
 import { addDays } from '@/lib/plan/week.mjs';
-import { bestByWindow, PEAK_WINDOWS, POWER_DURATIONS, RUN_DISTANCES, recentPeaks } from './peaks.mjs';
+import { bestByWindow, FASTEST_RUN_S_PER_KM, PEAK_WINDOWS, POWER_DURATIONS, RUN_DISTANCES, recentPeaks } from './peaks.mjs';
 
 export type PeakCell = { value: number; date: string; activityId: string; name?: string } | null;
 export type PeakWindowKey = 'all' | 'd90' | 'd28';
@@ -76,6 +76,7 @@ export async function loadRecentPeaks(userId: string, today: string, { days = 28
       FROM activity_peaks p
       JOIN strava_activities a ON a.user_id = p.user_id AND a.strava_activity_id = p.strava_activity_id
       WHERE p.user_id = ${userId} AND a.start_date_local::date <= ${today}::date
+        AND (p.metric <> 'run' OR p.value / (p.span / 1000.0) >= ${FASTEST_RUN_S_PER_KM})
     )
     SELECT r.metric, r.span, r.value, r.strava_activity_id, r.name, to_char(r.day, 'YYYY-MM-DD') AS day,
            c.all_better::int AS all_better, c.year_better::int AS year_better, c.d90_better::int AS d90_better

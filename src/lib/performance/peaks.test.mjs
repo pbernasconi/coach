@@ -214,3 +214,11 @@ test('recent peaks: widest top-3 window, newest first, at most the limit', () =>
   // A peak from last year cannot be ranked "this year".
   assert.equal(recentPeaks([row({ date: '2025-12-30', rankYear: 1 })], '2026-01-05').length, 0);
 });
+
+test('bestByWindow skips a run effort faster than 2:50/km (a GPS jump)', () => {
+  const rows = [
+    { metric: 'run', span: 1000, value: 143, date: '2024-06-11', activityId: 'gps' },
+    { metric: 'run', span: 1000, value: 235, date: '2026-10-01', activityId: 'real' },
+  ];
+  assert.equal(bestByWindow(rows, '2026-10-22').run[1000].all.activityId, 'real');
+});

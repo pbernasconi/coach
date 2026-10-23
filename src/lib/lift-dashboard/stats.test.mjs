@@ -100,3 +100,10 @@ test('exerciseHistory: the last session before a day, the best e1RM and the tren
   // Nothing before the first session.
   assert.equal(exerciseHistory(m, `id-${SQUAT.toLowerCase()}`, 'kg', '2026-10-13', 's1').last, null);
 });
+
+test('sessionNote drops the Apple Notes import lines', async () => {
+  const { sessionNote } = await import('./stats.mjs');
+  assert.equal(sessionNote('Imported from Apple Notes (notes-import): “Workout C”, note created 2026-09-02.\nDate confidence low: x\nFelt strong'), 'Felt strong');
+  assert.equal(sessionNote('Imported from Apple Notes (notes-import): “Workout C”.'), null);
+  assert.equal(sessionNote('Good day'), 'Good day');
+});

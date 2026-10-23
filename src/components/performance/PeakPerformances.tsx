@@ -1,3 +1,5 @@
+import { Info } from 'lucide-react';
+import { HelpTooltip } from '@kobo/web';
 import { RUN_DISTANCES } from '@/lib/performance/peaks.mjs';
 import { peakText, shortDateYear as fmtDate } from '@/lib/performance/display.mjs';
 import type { PeakCell, PeakPerformances as Peaks, PeakRow } from '@/lib/performance/peaks';
@@ -76,11 +78,11 @@ export default function PeakPerformances({ peaks }: { peaks: Peaks }) {
   return (
     <section className="rounded-lg border bg-[var(--viz-surface)] p-4">
       <div className="mb-3">
-        <h2 className="font-semibold text-[var(--viz-ink)]">Peak performances</h2>
-        <p className="text-xs text-[var(--viz-muted)]">
-          From Strava streams. Elapsed time for runs, so stops count.
-          {peaks.pending > 0 && ` ${peaks.pending} activities still to scan.`}
-        </p>
+        <h2 className="inline-flex items-center gap-1.5 font-semibold text-[var(--viz-ink)]">
+          Peak performances
+          <HelpTooltip label="About peak performances" icon={<Info aria-hidden />}>From Strava streams. Elapsed time for runs, so stops count.</HelpTooltip>
+        </h2>
+        {peaks.pending > 0 && <p className="text-xs text-[var(--viz-muted)]">{peaks.pending} activities still to scan.</p>}
       </div>
       <div className="grid gap-6 md:grid-cols-2">
         <Table

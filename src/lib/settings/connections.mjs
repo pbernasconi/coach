@@ -152,7 +152,7 @@ export function connectionsFrom({ status, bodyspec, now }) {
       attention,
       total: required.length,
       level: attention ? (level === 'ok' ? 'warn' : level) : 'ok',
-      text: attention ? `${attention} of ${required.length} ${attention === 1 ? 'needs' : 'need'} attention` : `All ${required.length} connections are healthy`,
+      text: attention ? `${attention} of ${required.length} ${attention === 1 ? 'needs' : 'need'} attention` : `All ${required.length} required connections are healthy`,
     },
   };
 }

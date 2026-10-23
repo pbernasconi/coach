@@ -1,6 +1,7 @@
 // @ts-check
 // BodySpec DEXA scans: the API's result sections mapped to a dexa_scans row, and the view /health shows. Pure, so
 // it is tested without the API or a database (bodyspec.test.mjs). The API calls are in bodyspec-api.ts.
+import { shownDiff } from './dexa.mjs';
 
 /** The result sections Coach reads, by their API path (/api/v1/users/me/results/{id}/dexa/<section>). */
 export const SECTIONS = /** @type {const} */ (['scan-info', 'composition', 'visceral-fat', 'bone-density', 'percentiles', 'rmr']);
@@ -121,15 +122,13 @@ export function dexaView(scans) {
   const latest = ordered.at(-1) ?? null;
   const previous = ordered.length > 1 ? ordered[ordered.length - 2] : null;
   const first = ordered.length > 1 ? ordered[0] : null;
-  /** @param {number | null} a @param {number | null} b */
-  const diff = (a, b) => (a === null || b === null ? null : a - b);
   const measures = MEASURES.map((m) => {
     const value = latest ? measure(latest, m.key) : null;
     return {
       ...m,
       value,
-      sincePrevious: previous ? diff(value, measure(previous, m.key)) : null,
-      sinceFirst: first && first !== previous ? diff(value, measure(first, m.key)) : null,
+      sincePrevious: previous ? shownDiff(value, measure(previous, m.key), m.digits) : null,
+      sinceFirst: first && first !== previous ? shownDiff(value, measure(first, m.key), m.digits) : null,
       series: ordered.map((s) => ({ date: s.scanDate, value: measure(s, m.key) })),
     };
   });

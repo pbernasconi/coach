@@ -220,7 +220,7 @@ test('sessionResponse: hero and exercise cards, as the session page', () => {
   assert.equal(curl.sets[1].rpeText, 'RPE 8.5');
   assert.equal(curl.sets[2].rpeText, null);
   assert.equal(curl.lastTime.sessionId, 's2');
-  assert.equal(curl.lastTime.deltaText, '+2.5 kg vs last');
+  assert.equal(curl.lastTime.deltaText, '+5 kg vs last'); // lifted 37.5 against 32.5 (the target was 35)
   assert.deepEqual(curl.lastTime.sets, ['32.5 kg × 10']);
   assert.equal(curl.best.text, '43 kg');
   assert.deepEqual(curl.trend.values, [40, 43.3]);

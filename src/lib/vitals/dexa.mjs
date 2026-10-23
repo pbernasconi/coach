@@ -13,6 +13,12 @@ const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
 const obj = (v) => (v && typeof v === 'object' && !Array.isArray(v) ? /** @type {Record<string, any>} */ (v) : {});
 /** @param {number | null} a @param {number | null} b */
 const sub = (a, b) => (a === null || b === null ? null : a - b);
+/** a − b of the two values rounded to `digits`, as shown on the page. @param {number | null} a @param {number | null} b @param {number} digits */
+export const shownDiff = (a, b, digits) => {
+  if (a === null || b === null) return null;
+  const f = 10 ** digits;
+  return (Math.round(a * f) - Math.round(b * f)) / f;
+};
 /** @param {number | null} a @param {number | null} b */
 const add = (a, b) => (a === null || b === null ? null : a + b);
 /** @param {number | null} v @param {number} d */
@@ -253,8 +259,9 @@ export function dexaTrends(scans) {
     return {
       ...m,
       value,
-      sincePrevious: previous ? sub(value, get(previous)) : null,
-      sinceFirst: first && first !== previous ? sub(value, get(first)) : null,
+      // From the shown (rounded) values, so "21.8 → 22.2" reads as 0.4 and not 0.5.
+      sincePrevious: previous ? shownDiff(value, get(previous), m.digits) : null,
+      sinceFirst: first && first !== previous ? shownDiff(value, get(first), m.digits) : null,
       series: ordered.map((s) => ({ date: s.scanDate, resultId: s.resultId, value: get(s) })),
     };
   });

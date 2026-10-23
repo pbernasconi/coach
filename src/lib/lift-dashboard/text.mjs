@@ -200,11 +200,13 @@ export function topTarget(e) {
 }
 
 /**
- * Today's top target against last time's heaviest set: the difference, or null when either is missing.
+ * This session's heaviest working set (what was lifted once any set is logged, else the top target) against last
+ * time's heaviest set: the difference, or null when either is missing.
  * @param {{ sets: TextSet[], history: { last: { sets: { weight: number | null }[] } | null } }} e
  */
 export function lastTimeDelta(e) {
-  const top = topTarget(e);
+  const lifted = e.sets.filter((s) => s.kind !== 'warmUp' && s.status === 'done' && s.weight != null).map((s) => /** @type {number} */ (s.weight));
+  const top = lifted.length ? Math.max(...lifted) : topTarget(e);
   const lastTop = e.history.last ? Math.max(...e.history.last.sets.map((s) => s.weight ?? 0)) : null;
   return top != null && lastTop ? top - lastTop : null;
 }

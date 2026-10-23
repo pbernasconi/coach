@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ChevronLeft, ChevronRight, Dumbbell } from 'lucide-react';
@@ -14,6 +15,8 @@ import { cookieTimeZone } from '@/lib/plan/timezone';
 import { load } from '@/lib/safe';
 import { cn } from '@/lib/utils';
 import ResetLift from '@/app/(dashboard)/plan/ResetLift';
+
+export const metadata: Metadata = { title: 'Lift session' };
 
 export const dynamic = 'force-dynamic';
 
