@@ -3,7 +3,7 @@ import KoboTokens
 import SwiftUI
 
 extension View {
-    /// The workout's "…" in the navigation bar and the two options sheets: the workout's (Pause or Resume, Reorder
+    /// The workout's pause button and "…" in the navigation bar, and the two options sheets: the workout's (Reorder
     /// exercises, Add or Edit note, Workout settings, Save as template, Discard workout) and one exercise's (Add set,
     /// Add or Edit note, Move up, Move down, Remove). Every choice applies at once; removing and discarding offer Undo
     /// in a toast instead of asking first (product rule).
@@ -15,6 +15,7 @@ extension View {
 /// Keeps the last options while a sheet slides away, so its rows do not empty out during the dismissal; that copy is
 /// presentation state only.
 private struct WorkoutOptionsSheets: ViewModifier {
+    @Environment(\.koboTheme) private var theme
     let state: WorkoutState
     let send: (WorkoutAction) -> Void
     @State private var shown: WorkoutOptions?
@@ -22,6 +23,18 @@ private struct WorkoutOptionsSheets: ViewModifier {
     func body(content: Content) -> some View {
         content
             .toolbar {
+                if case .loaded(let workout) = state.workout, workout.startedAt != nil, !workout.isFinished {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        // Pause up top; once paused it resumes (orange), and the dock offers Finish.
+                        if workout.isPaused {
+                            Button("Resume workout", systemImage: "play.fill") { send(.resumeTapped) }
+                                .tint(theme.palette.accent)
+                                .buttonStyle(.borderedProminent)
+                        } else {
+                            Button("Pause workout", systemImage: "pause.fill") { send(.pauseTapped) }
+                        }
+                    }
+                }
                 if case .loaded = state.workout {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button("Workout options", systemImage: "ellipsis") { send(.workoutOptionsTapped) }
@@ -37,13 +50,6 @@ private struct WorkoutOptionsSheets: ViewModifier {
                 message: nil
             ) {
                 if case .workout(_, let hasNote) = shown {
-                    if case .loaded(let workout) = state.workout, workout.startedAt != nil, !workout.isFinished {
-                        if workout.isPaused {
-                            ActionSheetItem("Resume workout", systemImage: "play.fill") { send(.resumeTapped) }
-                        } else {
-                            ActionSheetItem("Pause workout", systemImage: "pause.fill") { send(.pauseTapped) }
-                        }
-                    }
                     if case .loaded(let workout) = state.workout, workout.exercises.count > 1 {
                         ActionSheetItem("Reorder exercises", systemImage: "arrow.up.arrow.down") {
                             send(.reorderTapped)

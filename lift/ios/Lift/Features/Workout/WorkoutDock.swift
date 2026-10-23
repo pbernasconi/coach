@@ -2,12 +2,15 @@ import KoboComponents
 import KoboTokens
 import SwiftUI
 
-/// The workout's card, pinned to the bottom of the Workout screen the whole time it runs, laid out like the Lock
-/// Screen's Live Activity: the clock and where the workout stands, the exercise and set to do now with its dots, the
-/// load or the rest countdown, a bar, then the one action that matters now (Log set, +30s and Skip, or Finish). Before
-/// the start it is one big Start workout. It only draws; the ViewModel owns the clock and the rest.
+/// The workout's card, pinned to the bottom of the Workout screen the whole time it runs. It shows where the workout
+/// stands and never edits a set: the clock and sets done, the exercise and set to do now with its dots and load, and
+/// the one action that matters now on the right (Log set, Start, Resume, Finish workout), with the lesser one (Skip,
+/// Finish) on the left. A rest, a rest that ran out and a pause each get a strip across the top, so they never read as
+/// a set. Before the start it is one big Start workout. It only draws; the ViewModel owns the clock and the rest.
 struct WorkoutDock: View {
     let phase: WorkoutDockPhase
+    /// The set to do now opens a new exercise: "Next exercise", with Start.
+    var introducesExercise = false
     let send: (WorkoutAction) -> Void
     /// Scrolls the page to a set.
     let onFocus: (UUID) -> Void
@@ -20,7 +23,13 @@ struct WorkoutDock: View {
                 .padding(.bottom, Space.xs)
         case .lifting, .resting, .ready, .complete, .paused:
             if let content = phase.content {
-                WorkoutDockCard(phase: phase, content: content, send: send, onFocus: onFocus)
+                WorkoutDockCard(
+                    phase: phase,
+                    content: content,
+                    introducesExercise: introducesExercise,
+                    send: send,
+                    onFocus: onFocus
+                )
             }
         }
     }
@@ -30,25 +39,46 @@ private struct WorkoutDockCard: View {
     @Environment(\.koboTheme) private var theme
     let phase: WorkoutDockPhase
     let content: WorkoutActivityAttributes.ContentState
+    let introducesExercise: Bool
     let send: (WorkoutAction) -> Void
     let onFocus: (UUID) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Space.sm) {
-            WorkoutDockHeader(content: content, phase: phase)
-            Button {
-                if let id = content.current?.id { onFocus(id) }
-            } label: {
-                WorkoutDockNow(phase: phase, content: content)
+        VStack(alignment: .leading, spacing: 0) {
+            WorkoutDockBand(phase: phase)
+            VStack(alignment: .leading, spacing: Space.sm) {
+                if showsHeader { WorkoutDockHeader(content: content, phase: phase) }
+                Button {
+                    if let id = content.current?.id { onFocus(id) }
+                } label: {
+                    WorkoutDockNow(phase: phase, content: content, introducesExercise: introducesExercise)
+                }
+                .buttonStyle(.plain)
+                .accessibilityHint(Text("Scrolls to the set"))
+                if case .resting(_, let rest, _) = phase {
+                    WorkoutDockRest(content: content, rest: rest, send: send)
+                } else {
+                    WorkoutDockButtons(
+                        phase: phase,
+                        content: content,
+                        introducesExercise: introducesExercise,
+                        send: send
+                    )
+                }
             }
-            .buttonStyle(.plain)
-            .accessibilityHint(Text("Scrolls to the set"))
-            bar
-            WorkoutDockButtons(phase: phase, content: content, send: send)
+            .padding(.horizontal, Space.cardInset)
+            .padding(.vertical, Space.md)
         }
-        .padding(.horizontal, Space.cardInset)
-        .padding(.vertical, Space.md)
-        .background { WorkoutDockPanel(isReady: isReady) }
+        .clipShape(RoundedRectangle(cornerRadius: Radius.xl, style: .continuous))  // the strip's corners
+        .background { WorkoutDockPanel(isReady: isReady, isResting: isResting) }
+    }
+
+    /// The clock line, while lifting and once all is done; a strip takes its place otherwise.
+    private var showsHeader: Bool {
+        switch phase {
+        case .lifting, .complete: true
+        case .start, .resting, .ready, .paused: false
+        }
     }
 
     private var isReady: Bool {
@@ -56,18 +86,14 @@ private struct WorkoutDockCard: View {
         return false
     }
 
-    /// The rest filling up while resting, else the sets logged.
-    @ViewBuilder private var bar: some View {
-        if case .resting(_, let rest, _) = phase {
-            InlineProgress(value: Double(rest.elapsed), total: Double(rest.total), accessibilityLabel: "Rest")
-        } else {
-            InlineProgress(value: content.progress, accessibilityLabel: "Sets logged")
-        }
+    private var isResting: Bool {
+        if case .resting = phase { return true }
+        return false
     }
 }
 
-/// "⏱ 12:34" on the left (or "Paused · 12:34", stopped), "Exercise 1 of 3 · 3/12 sets" on the right. The clock reads
-/// the time from the timeline each second and works out the elapsed time from the start, so it never drifts.
+/// "⏱ 12:34" on the left, "Exercise 1 of 3 · 3/12 sets" on the right. The clock reads the time from the timeline each
+/// second and works out the elapsed time from the start, so it never drifts.
 private struct WorkoutDockHeader: View {
     @Environment(\.koboTheme) private var theme
     let content: WorkoutActivityAttributes.ContentState
@@ -75,17 +101,7 @@ private struct WorkoutDockHeader: View {
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: Space.sm) {
-            if case .paused(_, let elapsed) = phase {
-                Label {
-                    Text("Paused · \(WorkoutClock.text(seconds: elapsed))")
-                } icon: {
-                    Image(systemName: "pause.fill").accessibilityHidden(true)
-                }
-                .font(theme.font(.subheadline).weight(.semibold).monospacedDigit())
-                .foregroundStyle(theme.palette.textSecondary)
-                .accessibilityLabel(Text("Workout paused"))
-                .accessibilityValue(Text(verbatim: WorkoutClock.spoken(seconds: elapsed)))
-            } else if let since = phase.since {
+            if let since = phase.since {
                 TimelineView(.periodic(from: since, by: 1)) { context in
                     let seconds = WorkoutClock.seconds(from: since, to: context.date)
                     Label {
@@ -101,25 +117,40 @@ private struct WorkoutDockHeader: View {
                 }
             }
             Spacer(minLength: Space.sm)
-            Text("Exercise \(content.exerciseNumber) of \(content.exerciseCount) · \(content.loggedSets)/\(content.totalSets) sets")
-                .font(theme.font(.footnote).monospacedDigit())
-                .foregroundStyle(theme.palette.textSecondary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
+            Text(
+                "Exercise \(content.exerciseNumber) of \(content.exerciseCount) · \(content.loggedSets)/\(content.totalSets) sets"
+            )
+            .font(theme.font(.footnote).monospacedDigit())
+            .foregroundStyle(theme.palette.textSecondary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
         }
     }
 }
 
-/// The exercise and set to do now ("Back squat", dots, "Set 2"), and on the right the big number: the rest counting
-/// down, or the load to lift ("Rest over +0:12" above it once the rest ended).
+/// The exercise and set to do now ("Back squat", dots, "Set 2"), with "Next exercise" above it when it opens a new
+/// one; on the right the load to lift, or a plain check once every set is done.
 private struct WorkoutDockNow: View {
     @Environment(\.koboTheme) private var theme
     let phase: WorkoutDockPhase
     let content: WorkoutActivityAttributes.ContentState
+    let introducesExercise: Bool
 
     var body: some View {
         HStack(alignment: .center, spacing: Space.md) {
+            if case .complete = phase {
+                Image(systemName: "checkmark")
+                    .font(theme.font(.title).weight(.bold))
+                    .foregroundStyle(theme.palette.accentText)
+                    .accessibilityHidden(true)
+            }
             VStack(alignment: .leading, spacing: Space.xxs) {
+                if introducesExercise {
+                    Text("Next exercise")
+                        .font(theme.font(.caption).weight(.bold))
+                        .textCase(.uppercase)
+                        .foregroundStyle(theme.palette.accentText)
+                }
                 Text(verbatim: content.current?.exerciseName ?? String(localized: "All sets done"))
                     .font(theme.font(.title2).weight(.bold))
                     .foregroundStyle(theme.palette.textPrimary)
@@ -134,99 +165,67 @@ private struct WorkoutDockNow: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            trailing
+            if let set = content.current, !isResting {
+                Text(verbatim: set.loadText)
+                    .font(theme.font(.title).weight(.bold).monospacedDigit())
+                    .foregroundStyle(theme.palette.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
         }
         .contentShape(Rectangle())
     }
 
-    /// "Set 2", with the load while the big number is the rest; the next exercise once all is done.
+    private var isResting: Bool {
+        if case .resting = phase { return true }
+        return false
+    }
+
+    /// "Set 2"; "18 of 18 sets" once all is done.
     private var subtitle: String {
         guard let set = content.current else {
             return String(localized: "\(content.loggedSets) of \(content.totalSets) sets")
         }
-        if case .resting = phase { return "\(set.title) · \(set.loadText)" }
         return set.title
-    }
-
-    @ViewBuilder private var trailing: some View {
-        switch phase {
-        case .resting(_, let rest, _):
-            VStack(alignment: .trailing, spacing: 0) {
-                Text("Rest")
-                    .font(theme.font(.caption).weight(.bold))
-                    .textCase(.uppercase)
-                    .foregroundStyle(theme.palette.textSecondary)
-                Text(verbatim: rest.clockText)
-                    .font(theme.font(.largeTitle).weight(.semibold).monospacedDigit())
-                    .foregroundStyle(rest.remaining <= 10 ? theme.palette.accentText : theme.palette.textPrimary)
-                    .contentTransition(.numericText(value: Double(rest.remaining)))
-                    .koboAnimation(.state, value: rest.remaining)
-            }
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(Text("\(rest.remaining) of \(rest.total) seconds of rest left"))
-            .accessibilityAddTraits(.updatesFrequently)
-        case .lifting, .ready, .paused:
-            if let set = content.current {
-                VStack(alignment: .trailing, spacing: 0) {
-                    if case .ready(_, let ready, _) = phase {
-                        Text("Rest over +\(ready.since, style: .timer)")
-                            .font(theme.font(.caption).weight(.bold))
-                            .textCase(.uppercase)
-                            .monospacedDigit()
-                            .foregroundStyle(theme.palette.accentText)
-                    }
-                    Text(verbatim: set.loadText)
-                        .font(theme.font(.title).weight(.bold).monospacedDigit())
-                        .foregroundStyle(theme.palette.textPrimary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                }
-            }
-        case .complete:
-            Image(systemName: "checkmark.circle.fill")
-                .font(theme.font(.largeTitle))
-                .foregroundStyle(theme.palette.success.ink)
-                .accessibilityHidden(true)
-        case .start:
-            EmptyView()
-        }
     }
 }
 
-/// The action that matters now: Log set (and Skip), +30s and Skip rest, Resume (and Finish), or Finish workout.
+/// The action that matters now on the right, wide, with the lesser one on the left: Skip and Log set (or Start on a
+/// new exercise), Finish and Resume, or Finish workout alone.
 private struct WorkoutDockButtons: View {
     let phase: WorkoutDockPhase
     let content: WorkoutActivityAttributes.ContentState
+    let introducesExercise: Bool
     let send: (WorkoutAction) -> Void
 
     var body: some View {
         HStack(spacing: Space.sm) {
             switch phase {
-            case .resting:
-                Button("+30s") { send(.restExtendTapped) }
-                    .buttonStyle(.kobo(.secondary, width: .full))
-                    .accessibilityLabel(Text("Add 30 seconds"))
-                Button("Skip rest") { send(.restSkipTapped) }
-                    .buttonStyle(.kobo(.tonal, width: .full))
             case .lifting, .ready:
                 if let set = content.current {
-                    Button("Log set", systemImage: "checkmark") { send(.setLogTapped(set.id)) }
-                        .buttonStyle(.kobo(.primary, width: .full))
-                        .accessibilityLabel(Text("Log \(set.exerciseName), \(set.title)"))
                     Button("Skip") { send(.setSkipTapped(set.id)) }
                         .buttonStyle(.kobo(.tonal))
                         .accessibilityLabel(Text("Skip \(set.title)"))
+                    if introducesExercise {
+                        Button("Start") { send(.exerciseStartTapped(setID: set.id)) }
+                            .buttonStyle(.kobo(.primary, width: .full))
+                            .accessibilityLabel(Text("Start \(set.exerciseName)"))
+                    } else {
+                        Button("Log set", systemImage: "checkmark") { send(.setLogTapped(set.id)) }
+                            .buttonStyle(.kobo(.primary, width: .full))
+                            .accessibilityLabel(Text("Log \(set.exerciseName), \(set.title)"))
+                    }
                 }
             case .complete:
-                Button("Finish workout", systemImage: "flag.checkered") { send(.finishTapped) }
+                Button("Finish workout") { send(.finishTapped) }
                     .buttonStyle(.kobo(.primary, width: .full))
             case .paused:
+                Button("Finish") { send(.finishTapped) }
+                    .buttonStyle(.kobo(.secondary))
+                    .accessibilityLabel(Text("Finish workout"))
                 Button("Resume", systemImage: "play.fill") { send(.resumeTapped) }
                     .buttonStyle(.kobo(.primary, width: .full))
-                Button("Finish") { send(.finishTapped) }
-                    .buttonStyle(.kobo(.tonal))
-                    .accessibilityLabel(Text("Finish workout"))
-            case .start:
+            case .start, .resting:
                 EmptyView()
             }
         }

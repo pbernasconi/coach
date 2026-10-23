@@ -59,6 +59,9 @@ nonisolated struct RestTimer: Equatable, Sendable {
     /// The time left as "1:30" or "0:05".
     var clockText: String { Self.clock(remaining) }
 
+    /// The time rested so far as "0:36", counting up against `totalText`.
+    var elapsedText: String { Self.clock(elapsed) }
+
     /// The whole rest as "2:00", shown as "of 2:00" beside the time left.
     var totalText: String { Self.clock(total) }
 

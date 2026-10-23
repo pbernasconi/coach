@@ -122,7 +122,7 @@ struct RestBand: View {
         .font(.footnote.weight(.semibold))
         .foregroundStyle(WidgetColors.ink)
         .padding(.horizontal, 16)
-        .padding(.vertical, 7)
+        .padding(.vertical, 5)
         .frame(maxWidth: .infinity)
         .background(WidgetColors.accent)
     }
@@ -163,7 +163,7 @@ struct LiftBar: View {
             Button(intent: LogSetIntent()) {
                 Image(systemName: "checkmark")
                     .font(.title3.weight(.bold))
-                    .frame(width: 44, height: 44)
+                    .frame(width: 40, height: 40)
                     .foregroundStyle(WidgetColors.ink)
                     .background(WidgetColors.accent, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
@@ -179,18 +179,26 @@ struct RestBar: View {
     let rest: RestSnapshot
     let timerSize: CGFloat
 
+    private var elapsed: Text {
+        Text(timerInterval: rest.interval, countsDown: false)
+            .font(.system(size: timerSize, weight: .bold, design: .rounded))
+            .foregroundStyle(WidgetColors.accentText(for: colorScheme))
+    }
+
+    private var limit: Text {
+        Text(verbatim: "/ \(rest.limitText)")
+            .font(.system(.title3, design: .rounded).weight(.semibold))
+            .foregroundStyle(.secondary)
+    }
+
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 6) {
-            RestElapsed(rest: rest)
-                .font(.system(size: timerSize, weight: .bold, design: .rounded))
-                .foregroundStyle(WidgetColors.accentText(for: colorScheme))
-                .lineLimit(1)
-                .frame(maxWidth: timerSize * 2.6, alignment: .leading)
-            Text(verbatim: "/ \(rest.limitText)")
-                .font(.system(.title3, design: .rounded).weight(.semibold))
+        HStack(alignment: .center, spacing: 6) {
+            // One Text, so "/ 2:00" sits right after the time: a timer Text alone takes the width of its longest value.
+            Text("\(elapsed) \(limit)")
                 .monospacedDigit()
-                .foregroundStyle(.secondary)
-            Spacer(minLength: 8)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .frame(maxWidth: .infinity, alignment: .leading)
             Button(intent: SkipRestIntent()) {
                 Text("Skip")
                     .font(.headline)
@@ -198,7 +206,7 @@ struct RestBar: View {
             }
             .buttonStyle(.borderedProminent)
             .buttonBorderShape(.capsule)
-            .controlSize(.large)
+            .controlSize(.regular)
             .tint(WidgetColors.accent)
             .foregroundStyle(WidgetColors.ink)
             .accessibilityLabel(Text("Skip rest"))

@@ -13,9 +13,6 @@ struct WorkoutActivityWidget: Widget {
         } dynamicIsland: { context in
             let isResting = context.state.isResting(isStale: context.isStale)
             return DynamicIsland {
-                DynamicIslandExpandedRegion(.leading) {
-                    IslandLeading(state: context.state, isResting: isResting)
-                }
                 DynamicIslandExpandedRegion(.trailing) {
                     IslandTrailing(isResting: isResting, isPaused: context.state.isPaused)
                 }
@@ -34,38 +31,46 @@ struct WorkoutActivityWidget: Widget {
     }
 }
 
-/// The expanded island's left: the exercise photo (or the badge) beside the exercise and the set, or what comes
-/// after the rest.
-struct IslandLeading: View {
+/// The first row of the expanded island's bottom: the exercise photo (or the badge) beside the exercise and the set,
+/// or what comes after the rest. It sits in the full-width bottom region: .leading keeps its width away from the words
+/// and .center is only as wide as the camera.
+struct IslandNow: View {
     let state: WorkoutActivityAttributes.ContentState
     let isResting: Bool
 
     var body: some View {
         HStack(spacing: 10) {
             if let set = state.current, set.still != nil {
-                ExerciseStill(set: set, size: 36)
+                ExerciseStill(set: set, size: 40)
             } else {
-                CoachBadge(size: 26)
+                CoachBadge(size: 28)
             }
-            VStack(alignment: .leading, spacing: 1) {
-                Text(verbatim: state.current?.exerciseName ?? String(localized: "All sets done"))
-                    .font(.headline)
-                    .lineLimit(1)
-                if let set = state.current {
-                    Group {
-                        if isResting {
-                            Text("Next: \(set.title) · \(set.loadText)")
-                        } else {
-                            Text("\(set.title) · \(state.loggedSets)/\(state.totalSets) sets")
-                        }
+            words
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var words: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(verbatim: state.current?.exerciseName ?? String(localized: "All sets done"))
+                .font(.headline)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+            if let set = state.current {
+                Group {
+                    if isResting {
+                        Text("Next: \(set.title) · \(set.loadText)")
+                    } else {
+                        Text("\(set.title) · \(state.loggedSets)/\(state.totalSets) sets")
                     }
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
                 }
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
             }
         }
-        .padding(.leading, 4)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -80,29 +85,33 @@ struct IslandTrailing: View {
                 .font(.caption.weight(.heavy))
                 .textCase(.uppercase)
                 .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .fixedSize()
                 .padding(.trailing, 4)
         } else if isResting {
             Label("Resting", systemImage: "timer")
                 .font(.caption.weight(.heavy))
                 .textCase(.uppercase)
                 .foregroundStyle(WidgetColors.accent)
+                .lineLimit(1)
+                .fixedSize()  // the region is narrow; without this the word wraps a letter pair per line
                 .padding(.trailing, 4)
         }
     }
 }
 
-/// The expanded island's bottom: the load and its check, or the rest bar, the time rested and Skip.
+/// The expanded island's bottom: the exercise and set, then the load and its check, or the rest bar, the time rested
+/// and Skip.
 struct IslandBottom: View {
     let state: WorkoutActivityAttributes.ContentState
     let isResting: Bool
 
     var body: some View {
-        Group {
+        VStack(spacing: 8) {
+            IslandNow(state: state, isResting: isResting)
             if isResting, let rest = state.rest {
-                VStack(spacing: 8) {
-                    WorkoutBar(state: state, isResting: true)
-                    RestBar(rest: rest, timerSize: 34)
-                }
+                WorkoutBar(state: state, isResting: true)
+                RestBar(rest: rest, timerSize: 34)
             } else if let set = state.current {
                 LiftBar(set: set)
             } else {

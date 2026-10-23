@@ -20,8 +20,10 @@ nonisolated enum RestingRow {
 }
 
 /// One set in the grid: its badge, the same set last time, weight and reps pills that open the editor (which never
-/// logs), and a check that logs it in one tap (or un-logs it). Skip and Remove sit in the context menu (Remove is also in the editor). At accessibility
-/// sizes the row stacks, so nothing is cut off.
+/// logs), and a check that logs it in one tap (or un-logs it). Skip and Remove sit in the context menu (Remove is also
+/// in the editor). While a rest runs before this set, its check is a ring filling through the rest and "Rest 0:36 /
+/// 2:00" takes the place of last time, so the rest adds no height. At accessibility sizes the row stacks, so nothing
+/// is cut off.
 struct SetRow: View {
     @Environment(\.koboTheme) private var theme
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -30,8 +32,9 @@ struct SetRow: View {
     @ScaledMetric(relativeTo: .body) private var repsWidth = SetGridWidth.reps
     let item: WorkoutSetItem
     let unit: WeightUnit
-    /// The rest running now follows this set: the row gets a soft accent wash so the eye finds it.
-    let isResting: Bool
+    /// The rest running now, before this set (the set to do next); nil on every other row. The row gets a soft accent
+    /// wash so the eye finds it.
+    let rest: RestTimer?
     let onLog: () -> Void
     let onEdit: () -> Void
     let onSkip: () -> Void
@@ -48,8 +51,8 @@ struct SetRow: View {
         .padding(.horizontal, SetGridWidth.inset)
         .padding(.vertical, Space.xxs)
         .frame(maxWidth: .infinity, minHeight: Size.minTouch, alignment: .leading)
-        .background(isResting ? theme.palette.accentSoft.opacity(RestingRow.washOpacity) : .clear)
-        .koboAnimation(.state, value: isResting)
+        .background(rest != nil ? theme.palette.accentSoft.opacity(RestingRow.washOpacity) : .clear)
+        .koboAnimation(.state, value: rest != nil)
         .overlay(alignment: .top) { Separator(leadingInset: SetGridWidth.inset) }
         .contextMenu {
             if item.status == .planned {
@@ -66,11 +69,20 @@ struct SetRow: View {
                     .font(theme.font(.subheadline).weight(.semibold).monospacedDigit())
                     .foregroundStyle(badgeColor)
                     .frame(width: badgeWidth)
-                Text(verbatim: item.previous ?? "—")
-                    .font(theme.font(.subheadline).monospacedDigit())
-                    .foregroundStyle(theme.palette.textSecondary)
-                    .lineLimit(1)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                Group {
+                    if let rest {
+                        Text("Rest \(rest.elapsedText) / \(rest.totalText)")
+                            .font(theme.font(.subheadline).weight(.bold).monospacedDigit())
+                            .foregroundStyle(theme.palette.accentText)
+                    } else {
+                        Text(verbatim: item.previous ?? "—")
+                            .font(theme.font(.subheadline).monospacedDigit())
+                            .foregroundStyle(theme.palette.textSecondary)
+                    }
+                }
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(Text(verbatim: item.title))
@@ -131,7 +143,15 @@ struct SetRow: View {
         .accessibilityHint(Text("Edit weight and reps"))
     }
 
-    private var check: some View {
+    @ViewBuilder private var check: some View {
+        if let rest, item.status == .planned {
+            RestRingCheck(rest: rest, label: logLabel, action: onLog)
+        } else {
+            logCheck
+        }
+    }
+
+    private var logCheck: some View {
         IconButton(
             item.status == .skipped ? "forward.fill" : "checkmark",
             verbatimAccessibilityLabel: logLabel,
@@ -177,6 +197,36 @@ struct SetRow: View {
 
     private var logLabel: String {
         item.status == .planned ? String(localized: "Log \(item.title)") : String(localized: "Undo \(item.title)")
+    }
+}
+
+/// The check of the set after a running rest: a ring that fills as the rest goes by, with the check inside. A tap
+/// logs the set, like the plain check.
+private struct RestRingCheck: View {
+    @Environment(\.koboTheme) private var theme
+    @ScaledMetric(relativeTo: .body) private var size = Size.minTouch
+    let rest: RestTimer
+    let label: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            ProgressRing(
+                progress: rest.total > 0 ? Double(rest.elapsed) / Double(rest.total) : 0,
+                lineWidth: Space.xs,
+                trackColor: theme.palette.accentSoft,
+                verbatimAccessibilityLabel: label
+            ) {
+                Image(systemName: "checkmark")
+                    .font(theme.font(.subheadline).weight(.bold))
+                    .foregroundStyle(theme.palette.textSecondary)
+            }
+            .frame(width: size, height: size)
+            .contentShape(Circle())
+        }
+        .buttonStyle(.pressFeedback(.highlight, in: Circle()))
+        .accessibilityLabel(Text(verbatim: label))
+        .accessibilityValue(Text("Rested \(rest.elapsedText) of \(rest.totalText)"))
     }
 }
 

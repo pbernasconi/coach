@@ -26,13 +26,14 @@ import Testing
     func makeCenter(
         _ emissions: [SessionDetail?],
         sets: RecordingSetRepository? = nil,
+        setRepository: (any SetRepository)? = nil,
         sessions: FakeSessionDetailRepository? = nil,
         preferences: WorkoutPreferences = WorkoutPreferences(),
         restAlerts: any RestAlerting = NoRestAlerts()
     ) -> WorkoutActivityCenter {
         WorkoutActivityCenter(
             sessions: sessions ?? FakeSessionDetailRepository(emissions: emissions),
-            sets: sets ?? RecordingSetRepository(result: started.items[0].sets[0]),
+            sets: setRepository ?? sets ?? RecordingSetRepository(result: started.items[0].sets[0]),
             presenter: presenter,
             gym: InMemoryGymSettings(.standard),
             preferences: InMemoryWorkoutSettings(preferences),
@@ -114,6 +115,31 @@ import Testing
         let rest = RestSnapshot(endsAt: ManualNow.start.addingTimeInterval(90), totalSeconds: 90, setID: sets[1].id)
         #expect(presenter.shown?.rest == rest)
         #expect(center.currentRest() == rest)
+    }
+
+    @Test func doneSetsTheRestBeforeTheSetIsWritten() async {
+        // The open Workout screen asks for the rest as soon as it sees the logged set, so it must be there already.
+        let box = CenterBox()
+        let peeking = PeekingSetRepository(base: RecordingSetRepository(result: sets[1])) {
+            box.restAtWrite = box.center?.currentRest()
+        }
+        let center = makeCenter([started], setRepository: peeking)
+        box.center = center
+        center.showWorkout(started.id)
+        await center.settle()
+
+        await center.logSet(sets[1].id, in: started.id)
+
+        #expect(box.restAtWrite?.setID == sets[1].id)
+    }
+
+    @Test func aFailedDoneLeavesNoRest() async {
+        let failing = RecordingSetRepository(result: sets[1], error: AppError(.server))
+        let center = await showing(sets: failing)
+
+        await center.logSet(sets[1].id, in: started.id)
+
+        #expect(center.currentRest() == nil)
     }
 
     @Test func theButtonsActOnTheSetShown() async {
@@ -336,4 +362,11 @@ final class RecordingRestAlerts: RestAlerting {
     func restChanged(endsAt: Date?, nextSet _: String?) {
         ends.append(endsAt)
     }
+}
+
+/// Holds the center for a peek that runs while it writes.
+@MainActor
+private final class CenterBox {
+    var center: WorkoutActivityCenter?
+    var restAtWrite: RestSnapshot?
 }

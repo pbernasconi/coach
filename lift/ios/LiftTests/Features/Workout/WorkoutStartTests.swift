@@ -81,7 +81,7 @@ import Testing
         await vm.send(.setLogTapped(planned.items[0].sets[0].id))?.value
         #expect(vm.state.rest != nil)
 
-        await vm.send(.finishTapped)?.value
+        await vm.send(.finishConfirmed)?.value
 
         #expect(vm.state.rest == nil)
         #expect(vm.state.ready == nil)
@@ -93,8 +93,8 @@ import Testing
 
     @Test(
         arguments: [
-            (0, "00:00"), (5, "00:05"), (65, "01:05"), (599, "09:59"), (3_599, "59:59"), (3_600, "1:00:00"),
-            (3_723, "1:02:03"), (-4, "00:00"),
+            (0, "0:00"), (5, "0:05"), (65, "1:05"), (599, "9:59"), (3_599, "59:59"), (3_600, "1:00:00"),
+            (3_723, "1:02:03"), (-4, "0:00"),
         ] as [(Int, String)]
     )
     func clockText(seconds: Int, text: String) {

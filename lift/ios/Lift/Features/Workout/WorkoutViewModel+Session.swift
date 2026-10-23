@@ -41,7 +41,7 @@ extension WorkoutViewModel {
             let day = today
             let moveTo = detail.session.day > day && detail.session.startedAt == nil ? day : nil
             return { try await $0.start(movingTo: moveTo) }
-        case .finishTapped:
+        case .finishTapped, .finishConfirmed:
             send(.restSkipTapped)  // a finished workout has no rest left, here or on the Lock Screen,
             send(.restReadyDismissed)  // and no "rest over" bar for a next set
             return { try await $0.finish() }

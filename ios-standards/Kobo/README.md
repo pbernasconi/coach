@@ -76,7 +76,7 @@ header band and its hairline; the canvas and separator by default).
 | Overlays | `KoboSheet` + `.koboSheet`, `.koboActionSheet`, `ModalPage` + `.koboModalPage`, `InputModal`, `InfoButton`, `InfoSheet`, `.itemSheet` |
 | QuickActions | `ActionChipRow`, `ActionCircle`, `SetupChecklistCard`, `SuggestionCard`, `SummaryStrip`, `TonalCardRow` |
 | Utilities | `AccessibilitySizeReader`, `WideWindowReader`, `AdaptiveColumns`, `HoldsLastValue`, `MaskedValue`, `RevealableValue`, `DeferredRow`, `.pageGutter()`, `.readableWidth()`, `.screenCanvas()`, `.onArrival` |
-| Patterns | `Loadable` + `LoadableView`, `ScreenScaffold`, `.koboConfirm`, `StateGallery`, `.previewMatrix()` |
+| Patterns | `Loadable` + `LoadableView`, `ScreenScaffold`, `.koboConfirm` (system dialog, or `style: .sheet` for stacked buttons), `StateGallery`, `.previewMatrix()` |
 | Lists | `ListRowSkeleton`, `LoadMoreFooter`, `LoadableSection`, `LoadableCaptionSection`, `SectionEmptyCard`, `.koboRefreshable` |
 | Flows | `FlowStep`, `ProgressFlowStep`, `ValueStep`, `StepIndicator`, `ReviewScaffold`, `ReviewSection`, `ReviewRow`, `ReviewDisclosure`, `OutcomeScaffold`, `PrimerPage`, `UpdateGateScreen`, `FormFocus` |
 
