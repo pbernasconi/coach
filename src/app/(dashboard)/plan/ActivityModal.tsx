@@ -326,7 +326,7 @@ function Conditions({ v, c }: { v: ActivityView; c: ActivityContext | null }) {
         {items.map(([label, value]) => (
           <div key={label} className="min-w-0">
             <dt className="text-[11px] text-[var(--viz-muted)]">{label}</dt>
-            <dd className="truncate text-[15px] font-semibold tabular-nums text-[var(--viz-ink)]">{value}</dd>
+            <dd className="text-[15px] font-semibold leading-snug tabular-nums text-[var(--viz-ink)]">{value}</dd>
           </div>
         ))}
       </dl>

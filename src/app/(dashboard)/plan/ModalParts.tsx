@@ -51,7 +51,7 @@ export function Header({ icon, title, sub, right, onClose }: { icon: ReactNode; 
       <span className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-full bg-muted">{icon}</span>
       <div className="min-w-0 flex-1">
         <Dialog.Title className="truncate text-lg font-bold tracking-tight text-[var(--viz-ink)] sm:text-xl">{title}</Dialog.Title>
-        <p className="truncate text-xs text-[var(--viz-muted)] sm:text-sm">{sub}</p>
+        <p className="text-pretty text-xs text-[var(--viz-muted)] sm:text-sm">{sub}</p>
       </div>
       <div className="flex shrink-0 items-center gap-2">
         {right}

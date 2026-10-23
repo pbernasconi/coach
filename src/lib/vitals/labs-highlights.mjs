@@ -82,3 +82,38 @@ export function trend(b) {
   const better = d0 === null || d1 === null || d0 === d1 ? null : d1 < d0;
   return { delta, previous: prev.value, previousOn: prev.collectedOn, better };
 }
+
+/**
+ * One biomarker per Function biomarker, as on /health/labs. Function can report one marker under two result names
+ * ("Omega-3 Total" and "Omega-3 Total / OmegaCheck"): their draws merge under the newest name. The latest reading
+ * takes Function's own status for the marker, so the out-of-range count matches the full report.
+ * @template {{ biomarker: string, latest: { collectedOn: string, status: string }, history: { collectedOn: string, status: string }[] }} B
+ * @param {B[]} biomarkers one per lab_results name
+ * @param {{ resultNames: string[], status: string }[]} catalog lab_biomarkers rows (source 'function')
+ * @returns {B[]}
+ */
+export function mergeByCatalog(biomarkers, catalog) {
+  const entryOf = new Map();
+  for (const c of catalog) for (const nm of c.resultNames ?? []) if (!entryOf.has(nm)) entryOf.set(nm, c);
+  const groups = new Map();
+  const out = [];
+  for (const b of biomarkers) {
+    const c = entryOf.get(b.biomarker);
+    if (!c) { out.push(b); continue; }
+    if (!groups.has(c)) { groups.set(c, []); out.push(c); }
+    groups.get(c).push(b);
+  }
+  return out.map((x) => {
+    const members = groups.get(x);
+    if (!members) return x;
+    const newest = members.reduce((a, m) => (m.latest.collectedOn > a.latest.collectedOn ? m : a));
+    const byDay = new Map();
+    for (const m of members) for (const r of m.history) if (m === newest || !byDay.has(r.collectedOn)) byDay.set(r.collectedOn, r);
+    const history = [...byDay.values()].sort((a, c) => a.collectedOn.localeCompare(c.collectedOn));
+    const last = history[history.length - 1];
+    const status =
+      x.status === 'out_of_range' ? 'out_of_range' : x.status === 'other' ? 'unknown' : last.status === 'out_of_range' ? 'in_range' : last.status;
+    const latest = { ...last, status };
+    return { ...newest, latest, history: [...history.slice(0, -1), latest] };
+  });
+}

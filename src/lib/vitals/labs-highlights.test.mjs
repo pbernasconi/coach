@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { keyIndex, pickHighlights, trend } from './labs-highlights.mjs';
+import { keyIndex, mergeByCatalog, pickHighlights, trend } from './labs-highlights.mjs';
 
 const bm = (biomarker, status = 'in_range', extra = {}) => ({ biomarker, latest: { status }, ...extra });
 
@@ -39,4 +39,28 @@ test('trend: change since the previous numeric draw, judged against the optimal 
   // No optimal range: the reference range decides.
   assert.equal(trend({ refLow: 10, refHigh: 20, optimalLow: null, optimalHigh: null, history: hist(5, 8) }).better, true);
   assert.equal(trend({ refLow: null, refHigh: null, optimalLow: null, optimalHigh: null, history: hist(5, 8) }).better, null);
+});
+
+test('merge by catalog: two result names of one marker become one, with the catalog status', () => {
+  const r = (collectedOn, status = 'in_range') => ({ collectedOn, value: 4.5, valueText: null, status });
+  const b = (biomarker, history) => ({ biomarker, category: 'Nutrients', latest: history.at(-1), history });
+  const merged = mergeByCatalog(
+    [
+      b('Omega-3 Total', [r('2025-08-01')]),
+      b('Omega-3 Total / OmegaCheck', [r('2026-01-10')]),
+      b('Sodium', [r('2026-01-10', 'out_of_range')]),
+      b('Iron', [r('2026-01-10')]),
+    ],
+    [
+      { resultNames: ['Omega-3 Total', 'Omega-3 Total / OmegaCheck'], status: 'out_of_range' },
+      { resultNames: ['Sodium'], status: 'in_range' },
+    ]
+  );
+  assert.equal(merged.length, 3);
+  assert.equal(merged[0].biomarker, 'Omega-3 Total / OmegaCheck');
+  assert.deepEqual(merged[0].history.map((h) => h.collectedOn), ['2025-08-01', '2026-01-10']);
+  assert.equal(merged[0].latest.status, 'out_of_range');
+  assert.equal(merged[0].history.at(-1), merged[0].latest);
+  assert.equal(merged[1].latest.status, 'in_range'); // Function's status wins over the draw's flag
+  assert.equal(merged[2].biomarker, 'Iron'); // not in the catalog: unchanged
 });
