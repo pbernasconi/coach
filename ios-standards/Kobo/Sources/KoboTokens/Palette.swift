@@ -10,6 +10,10 @@ public struct Palette: Sendable, Equatable {
     public var accentSoft: Color
     /// Accent used as text on the canvas; darker than `accent` in light mode to keep 4.5:1.
     public var accentText: Color
+    /// A brand-tinted surface for a bar or header band; the canvas in palettes without one.
+    public var accentWash: Color
+    /// The hairline under or around `accentWash`; the separator in palettes without a wash.
+    public var accentWashSeparator: Color
 
     // Surfaces (depth by tone, not borders)
     public var canvas: Color
@@ -37,6 +41,8 @@ public struct Palette: Sendable, Equatable {
         onAccent: Color,
         accentSoft: Color,
         accentText: Color,
+        accentWash: Color,
+        accentWashSeparator: Color,
         canvas: Color,
         surface: Color,
         surfaceRaised: Color,
@@ -53,6 +59,7 @@ public struct Palette: Sendable, Equatable {
         neutral: StatusColors
     ) {
         self.accent = accent; self.onAccent = onAccent; self.accentSoft = accentSoft; self.accentText = accentText
+        self.accentWash = accentWash; self.accentWashSeparator = accentWashSeparator
         self.canvas = canvas; self.surface = surface; self.surfaceRaised = surfaceRaised
         self.surfaceSunken = surfaceSunken; self.separator = separator; self.scrim = scrim
         self.textPrimary = textPrimary; self.textSecondary = textSecondary; self.textTertiary = textTertiary

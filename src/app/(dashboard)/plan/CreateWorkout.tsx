@@ -17,8 +17,8 @@ import type { CalendarWorkout, LibraryItem } from '@/lib/plan/month';
 import type { StructuredWorkout } from '@/lib/plan/queries';
 import { createWorkoutAction, updateWorkoutAction } from './actions';
 
-/** Strava's orange, as in the item modal. */
-const ACCENT = '#fc4c02';
+/** The brand (the logo orange), as in the item modal. */
+const ACCENT = 'var(--k-brand)';
 
 const longDay = (d: string) =>
   new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
@@ -366,7 +366,7 @@ function Form({ date: day, sportId, onBack, onClose, onCreated, existing, onSave
                         onClick={() => setEffort(k)}
                         className={cn(
                           'h-9 rounded-md border px-2.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                          effort === k ? 'border-transparent text-white' : 'text-[var(--viz-ink-2)] hover:bg-accent'
+                          effort === k ? 'border-transparent text-on-brand' : 'text-[var(--viz-ink-2)] hover:bg-accent'
                         )}
                         style={effort === k ? { background: ACCENT } : undefined}
                       >
@@ -450,7 +450,7 @@ function Form({ date: day, sportId, onBack, onClose, onCreated, existing, onSave
           </span>
           <div className="flex gap-2">
             <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-            <Button type="submit" disabled={saving} className="text-white hover:opacity-90" style={{ background: ACCENT }}>
+            <Button type="submit" disabled={saving}>
               {saving ? (existing ? 'Saving…' : 'Adding…') : existing ? 'Save' : 'Add workout'}
             </Button>
           </div>

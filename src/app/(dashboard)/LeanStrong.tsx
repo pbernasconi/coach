@@ -53,7 +53,7 @@ export default function LeanStrong({
     <aside className="flex flex-col overflow-hidden rounded-lg border bg-card" aria-labelledby="lean-strong">
       <div className="flex items-baseline justify-between border-b px-4 py-3">
         <h2 id="lean-strong" className="font-semibold">Lean and strong</h2>
-        <Link href="/lift" className="text-xs text-[var(--viz-muted)] hover:text-foreground">Lift →</Link>
+        <Link href="/lift" className="text-xs text-brand-ink underline-offset-4 hover:underline">Lift →</Link>
       </div>
 
       <Link href="/health" className="flex flex-col gap-1.5 border-b px-4 py-4 transition-colors hover:bg-[var(--viz-band)]">

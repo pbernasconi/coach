@@ -121,7 +121,7 @@ export default function PlanRequestDialog({
       footer={
         <>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button disabled={pending} onClick={send} className="bg-[#fc4c02] text-white hover:opacity-90">{pending ? 'Sending…' : 'Plan it'}</Button>
+          <Button disabled={pending} onClick={send}>{pending ? 'Sending…' : 'Plan it'}</Button>
         </>
       }
     >
@@ -137,7 +137,7 @@ export default function PlanRequestDialog({
             type="button"
             aria-pressed={week === id}
             onClick={() => setWeek(id)}
-            className={cn('h-8 rounded-md px-3 text-sm', week === id ? 'bg-foreground text-background' : 'text-[var(--viz-ink-2)] hover:bg-accent')}
+            className={cn('h-8 rounded-md px-3 text-sm', week === id ? 'bg-brand-soft font-medium text-brand-ink' : 'text-[var(--viz-ink-2)] hover:bg-accent')}
           >
             {label}
           </button>

@@ -8,7 +8,7 @@ extension WorkoutActivityAttributes.ContentState {
     }
 }
 
-/// The current exercise's sets as dots: amber when logged, an amber ring on the set to do now, faint when skipped or
+/// The current exercise's sets as dots: orange when logged, an orange ring on the set to do now, faint when skipped or
 /// still planned. Like the set rows in the app, read left to right.
 struct SetDots: View {
     let dots: [WorkoutActivityDot]

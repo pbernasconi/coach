@@ -30,7 +30,7 @@ struct SetRow: View {
     @ScaledMetric(relativeTo: .body) private var repsWidth = SetGridWidth.reps
     let item: WorkoutSetItem
     let unit: WeightUnit
-    /// The rest running now follows this set: the row gets a soft amber wash so the eye finds it.
+    /// The rest running now follows this set: the row gets a soft accent wash so the eye finds it.
     let isResting: Bool
     let onLog: () -> Void
     let onEdit: () -> Void

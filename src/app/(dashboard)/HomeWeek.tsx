@@ -40,7 +40,7 @@ export default function HomeWeek({ range, weather }: { range: CalendarRange; wea
         <h2 id="home-week" className="font-semibold">
           <Link href={planHref} className="hover:underline hover:underline-offset-4">This week</Link>
         </h2>
-        <Link href={planHref} className="text-xs text-[var(--viz-muted)] hover:text-foreground">Open Plan →</Link>
+        <Link href={planHref} className="text-xs font-medium text-brand-ink hover:underline hover:underline-offset-4">Open Plan →</Link>
       </div>
 
       <div className="divide-y border-t bg-[var(--viz-surface)]">

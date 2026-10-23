@@ -61,6 +61,7 @@ The package ships TypeScript source. A Next.js app adds it to `transpilePackages
 | Kobo (SwiftUI) | Kobo web utility |
 | --- | --- |
 | `accent`, `onAccent`, `accentSoft`, `accentText` | `bg-brand`, `text-on-brand`, `bg-brand-soft`, `text-brand-ink` |
+| (web only) a brand-tinted surface and its border | `bg-brand-wash`, `border-brand-wash-line` |
 | `canvas`, `surface`, `surfaceRaised`, `surfaceSunken` | `bg-canvas`, `bg-surface`, `bg-surface-raised`, `bg-surface-sunken` |
 | `separator`, `scrim` | `border-line`, `bg-scrim` (plus `border-line-strong` for field borders) |
 | `textPrimary`, `textSecondary`, `textTertiary` | `text-ink`, `text-ink-muted`, `text-ink-faint` |
@@ -118,6 +119,6 @@ node scripts/conformance.mjs --self-test
 - **One use in an app.** The coach app uses only `InlineNotice` (in `SectionError`) so far.
 - **Bundle size.** Import from `@kobo/web` and let the bundler drop what a page does not use (`sideEffects` is
   CSS only). `PasswordRequirements` brings the zxcvbn dictionaries into any page that uses it.
-- **Contrast is not checked by a script.** The values come from Kobo. Add a
-  contrast gate before you add a brand.
-- **No visual tests.** The catalog is checked by eye in light, dark and the amber brand, at desktop and phone width.
+- **Contrast is checked for the coach brand only** (`tests/brandContrast.test.ts`). The other values come from Kobo. Add a
+  brand there when you add one.
+- **No visual tests.** The catalog is checked by eye in light, dark and the amber and coach brands, at desktop and phone width.

@@ -80,6 +80,7 @@ struct SelectionFieldsDemo: View {
         [
             ThemeChoice("default", title: "Default", theme: .system),
             ThemeChoice("amber", title: "Amber", theme: .amber),
+            ThemeChoice("coach", verbatim: "Coach", theme: .coach),
             ThemeChoice("flat", verbatim: "Flat", theme: Theme(palette: .amber, surfaceStyle: .solid)),
         ]
     }

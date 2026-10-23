@@ -85,7 +85,7 @@ export function Choice<T extends string | number>({
             onClick={() => onChange(value === o.id ? null : o.id)}
             className={cn(
               'inline-flex h-8 items-center gap-1.5 rounded-md border px-2.5 text-sm transition-colors',
-              value === o.id ? 'border-transparent bg-[#fc4c02] text-white' : 'hover:bg-accent'
+              value === o.id ? 'border-transparent bg-brand text-on-brand' : 'hover:bg-accent'
             )}
           >
             {o.label}

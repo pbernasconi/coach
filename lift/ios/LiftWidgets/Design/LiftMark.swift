@@ -36,7 +36,7 @@ nonisolated struct BarbellShape: Shape {
     }
 }
 
-/// Lift's app icon in small: the dark barbell on an amber rounded square.
+/// Lift's app icon in small: the dark barbell on an orange rounded square.
 struct LiftBadge: View {
     var size: CGFloat = 22
 

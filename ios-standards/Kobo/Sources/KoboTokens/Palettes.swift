@@ -16,19 +16,42 @@ extension Palette {
         accentText: Color(light: Color(hex: 0x8F5F00), dark: Color(hex: 0xFFC21A))
     )
 
+    /// Coach orange: a warm orange accent with dark ink on top (white on it would be only 3.2:1), orange text that
+    /// darkens in light mode and lightens in dark mode to keep 4.5:1, and a peach wash for a brand bar or header band.
+    public static let coach = Palette.make(
+        accent: Color(hex: 0xEB6834),
+        onAccent: Color(hex: 0x1A0F08),
+        accentText: Color(light: Color(hex: 0xB8430F), dark: Color(hex: 0xF39069)),
+        accentSoft: Color(light: Color(hex: 0xEB6834, opacity: 0.14), dark: Color(hex: 0xEB6834, opacity: 0.22)),
+        accentWash: Color(light: Color(hex: 0xFBF2EC), dark: Color(hex: 0x1E1612)),
+        accentWashSeparator: Color(light: Color(hex: 0xF0DFD3), dark: Color(hex: 0x33261F))
+    )
+
     /// Builds a full palette from an accent. Surfaces, text and status colours are shared iOS-native values;
-    /// only the brand roles change between apps.
-    public static func make(accent: Color, onAccent: Color, accentText: Color) -> Palette {
-        Palette(
+    /// only the brand roles change between apps. `accentSoft` defaults to the accent at 18%; without a wash,
+    /// `accentWash` is the canvas and `accentWashSeparator` the separator.
+    public static func make(
+        accent: Color,
+        onAccent: Color,
+        accentText: Color,
+        accentSoft: Color? = nil,
+        accentWash: Color? = nil,
+        accentWashSeparator: Color? = nil
+    ) -> Palette {
+        let canvas = Color(light: Color(hex: 0xF2F2F7), dark: Color(hex: 0x000000))
+        let separator = Color(light: Color(hex: 0x3C3C43, opacity: 0.16), dark: Color(hex: 0x545458, opacity: 0.55))
+        return Palette(
             accent: accent,
             onAccent: onAccent,
-            accentSoft: accent.opacity(0.18),
+            accentSoft: accentSoft ?? accent.opacity(0.18),
             accentText: accentText,
-            canvas: Color(light: Color(hex: 0xF2F2F7), dark: Color(hex: 0x000000)),
+            accentWash: accentWash ?? canvas,
+            accentWashSeparator: accentWashSeparator ?? separator,
+            canvas: canvas,
             surface: Color(light: Color(hex: 0xFFFFFF), dark: Color(hex: 0x1C1C1E)),
             surfaceRaised: Color(light: Color(hex: 0xEBEBF0), dark: Color(hex: 0x2C2C2E)),
             surfaceSunken: Color(light: Color(hex: 0xDEDEE3), dark: Color(hex: 0x3A3A3C)),
-            separator: Color(light: Color(hex: 0x3C3C43, opacity: 0.16), dark: Color(hex: 0x545458, opacity: 0.55)),
+            separator: separator,
             scrim: Color(light: Color.black.opacity(0.22), dark: Color.black.opacity(0.48)),
             textPrimary: Color(light: .black, dark: .white),
             textSecondary: Color(light: Color(hex: 0x3C3C43, opacity: 0.80), dark: Color(hex: 0xEBEBF5, opacity: 0.66)),

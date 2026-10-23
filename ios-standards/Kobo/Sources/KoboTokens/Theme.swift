@@ -22,6 +22,7 @@ public struct Theme: Sendable, Equatable {
 
     public static let system = Theme(palette: .system)
     public static let amber = Theme(palette: .amber, typography: .system)
+    public static let coach = Theme(palette: .coach, typography: .system)
 
     public func font(_ role: Typography.Role) -> Font { typography.font(role) }
 }

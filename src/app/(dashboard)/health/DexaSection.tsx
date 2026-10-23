@@ -64,7 +64,7 @@ export default function DexaSection({ dexa }: { dexa: DexaView }) {
             <Link href="/health/dexa" className="hover:underline">Body composition</Link>
           </h2>
           {latest && (
-            <Link href="/health/dexa" className="text-sm text-muted-foreground hover:text-foreground">
+            <Link href="/health/dexa" className="text-sm text-brand-ink underline-offset-4 hover:underline">
               Body map, regions and every scan →
             </Link>
           )}

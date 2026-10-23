@@ -44,7 +44,7 @@ export function CalendarDayHead({
         {date.slice(8) === '01' && !weekdayLabel && <span className="mr-1 uppercase tracking-wide">{monthShort(date)}</span>}
         {Number(date.slice(8))}
       </span>
-      {isToday && <span className="text-[11px] font-semibold uppercase tracking-wide text-primary">Today</span>}
+      {isToday && <span className="text-[11px] font-semibold uppercase tracking-wide text-brand-ink">Today</span>}
       {health && past && (
         <HealthBadge
           date={date}
@@ -65,7 +65,7 @@ export function AgendaDayLabel({ date, today }: { date: string; today: string })
   const isToday = date === today;
   return (
     <div className="w-9 shrink-0 text-center">
-      <span className={cn('block text-[10px] font-semibold uppercase tracking-wide', isToday ? 'text-primary' : 'text-[var(--viz-muted)]')}>
+      <span className={cn('block text-[10px] font-semibold uppercase tracking-wide', isToday ? 'text-brand-ink' : 'text-[var(--viz-muted)]')}>
         {isToday ? 'Today' : weekday(date)}
       </span>
       <span
@@ -86,6 +86,6 @@ export function dayCellClass(date: string, today: string) {
     'plan-day group/day relative flex min-h-0 min-w-0 flex-col gap-0.5 overflow-hidden border-r px-1 pb-1 pt-0.5 transition-colors',
     date < today && 'bg-muted/40',
     // Today: a thin line in the logo orange across the top, no ring or fill (Paolo, 2026-10-23).
-    date === today && 'shadow-[inset_0_2px_0_#fc4c02]'
+    date === today && 'shadow-[inset_0_2px_0_var(--k-brand)]'
   );
 }

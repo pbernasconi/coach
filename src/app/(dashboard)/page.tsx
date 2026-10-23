@@ -131,9 +131,9 @@ export default async function HomePage() {
       {goals.ok ? <GoalsCard goals={goals.value} /> : <SectionError label="Goals" />}
 
       <nav className="flex flex-wrap gap-x-5 gap-y-2 text-sm" aria-label="More">
-        <Link href="/trends#peaks" className="text-[var(--viz-muted)] hover:text-foreground">Peak performances →</Link>
-        <Link href="/trends" className="text-[var(--viz-muted)] hover:text-foreground">Every week and ramp rates →</Link>
-        <Link href="/trends#lift" className="text-[var(--viz-muted)] hover:text-foreground">Sets per muscle →</Link>
+        <Link href="/trends#peaks" className="text-brand-ink underline-offset-4 hover:underline">Peak performances →</Link>
+        <Link href="/trends" className="text-brand-ink underline-offset-4 hover:underline">Every week and ramp rates →</Link>
+        <Link href="/trends#lift" className="text-brand-ink underline-offset-4 hover:underline">Sets per muscle →</Link>
       </nav>
     </div>
   );

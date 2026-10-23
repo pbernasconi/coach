@@ -25,8 +25,9 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+    // The navbar's wash (--k-brand-wash of the coach brand in Kobo's tokens.css), so the browser bar continues it.
+    { media: "(prefers-color-scheme: light)", color: "#fbf2ec" },
+    { media: "(prefers-color-scheme: dark)", color: "#1e1612" },
   ],
 };
 
@@ -48,7 +49,7 @@ export default function RootLayout({
 }>) {
   if (!clerkConfigured) {
     return (
-      <html lang="en">
+      <html lang="en" data-brand="coach">
         <body className={`${geistSans.variable} ${geistMono.variable} antialiased p-8`}>
           <h1 className="text-xl font-semibold">Coach</h1>
           <p className="mt-2 text-sm">
@@ -58,9 +59,12 @@ export default function RootLayout({
       </html>
     );
   }
+  // The brand (the logo orange) goes on <html>, so dialogs and menus in portals get it too.
   return (
-    <ClerkProvider>
-      <html lang="en" suppressHydrationWarning>
+    // Clerk's sign-in and account buttons take the brand fill too. Its variables need colour values, not CSS
+    // variables: these are --k-brand and --k-on-brand of the coach brand.
+    <ClerkProvider appearance={{ variables: { colorPrimary: '#eb6834', colorPrimaryForeground: '#1a0f08' } }}>
+      <html lang="en" data-brand="coach" suppressHydrationWarning>
         <head>
           {/* The colour tokens switch on the .dark class; follow the system setting, before paint and on change. */}
           <script dangerouslySetInnerHTML={{ __html: DARK_MODE_SCRIPT }} />

@@ -9,8 +9,8 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { withTimeout } from '@/lib/plan/scroll.mjs';
 
-/** Strava's orange, for the active tab and the main button. */
-const ACCENT = '#fc4c02';
+/** The brand (the logo orange), for the active tab and the main button. */
+const ACCENT = 'var(--k-brand)';
 
 export const longDay = (d: string) =>
   new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
@@ -69,7 +69,7 @@ export function Header({ icon, title, sub, right, onClose }: { icon: ReactNode; 
 
 export function OpenButton({ href, label }: { href: string; label: string }) {
   return (
-    <Button asChild size="sm" className="hidden text-white hover:opacity-90 sm:inline-flex" style={{ background: ACCENT }}>
+    <Button asChild size="sm" className="hidden text-on-brand hover:opacity-90 sm:inline-flex" style={{ background: ACCENT }}>
       <Link href={href}>
         {label} <ArrowUpRight aria-hidden className="ml-1 h-4 w-4" />
       </Link>

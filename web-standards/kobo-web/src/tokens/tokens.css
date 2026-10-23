@@ -11,7 +11,7 @@
  *   @source "../node_modules/@kobo/web/src";
  *
  * Dark mode: put `class="dark"` (or `data-theme="dark"`) on <html>.
- * Brand: put `data-brand="amber"` on <html>. The default brand is the neutral system blue. Put it on <html>, not on an
+ * Brand: put `data-brand="amber"` (or `"coach"`) on <html>. The default brand is the neutral system blue. Put it on <html>, not on an
  * inner element: dialogs and menus render in a portal under <body>, outside any inner element.
  */
 
@@ -27,6 +27,9 @@
   --k-on-brand: #ffffff;
   --k-brand-soft: rgb(10 132 255 / 0.14);
   --k-brand-ink: #0058d0;
+  /* A soft surface tinted by the brand (a header, a highlighted panel), and its border. A brand can set exact values. */
+  --k-brand-wash: color-mix(in srgb, var(--k-brand) 7%, var(--k-surface));
+  --k-brand-wash-line: color-mix(in srgb, var(--k-brand) 16%, var(--k-surface));
 
   /* Surfaces: depth by tone, not by borders. */
   --k-canvas: #f2f2f7;
@@ -89,6 +92,8 @@
   --k-on-brand: #ffffff;
   --k-brand-soft: rgb(10 132 255 / 0.22);
   --k-brand-ink: #6cb4ff;
+  --k-brand-wash: color-mix(in srgb, var(--k-brand) 9%, var(--k-canvas));
+  --k-brand-wash-line: color-mix(in srgb, var(--k-brand) 20%, var(--k-canvas));
 
   --k-canvas: #000000;
   --k-surface: #1c1c1e;
@@ -146,12 +151,37 @@
   --k-ring: #ffc21a;
 }
 
+/* Coach: the logo orange. White on it is only 3.2:1, so text on a brand fill is a dark ink (5.9:1), as with amber.
+   The ring is the ink shade: the fill itself is below 3:1 on the wash. */
+[data-brand='coach'],
+[data-brand='coach'] .print-root {
+  --k-brand: #eb6834;
+  --k-on-brand: #1a0f08;
+  --k-brand-soft: rgb(235 104 52 / 0.14);
+  --k-brand-ink: #b8430f;
+  --k-brand-wash: #fbf2ec;
+  --k-brand-wash-line: #f0dfd3;
+  --k-ring: #b8430f;
+}
+.dark [data-brand='coach'],
+.dark[data-brand='coach'],
+[data-theme='dark'] [data-brand='coach'],
+[data-theme='dark'][data-brand='coach'] {
+  --k-brand-soft: rgb(235 104 52 / 0.22);
+  --k-brand-ink: #f39069;
+  --k-brand-wash: #1e1612;
+  --k-brand-wash-line: #33261f;
+  --k-ring: #f39069;
+}
+
 /* ── Tailwind theme ─────────────────────────────────────────────────────────────────────────────── */
 @theme inline {
   --color-brand: var(--k-brand);
   --color-on-brand: var(--k-on-brand);
   --color-brand-soft: var(--k-brand-soft);
   --color-brand-ink: var(--k-brand-ink);
+  --color-brand-wash: var(--k-brand-wash);
+  --color-brand-wash-line: var(--k-brand-wash-line);
 
   --color-canvas: var(--k-canvas);
   --color-surface: var(--k-surface);

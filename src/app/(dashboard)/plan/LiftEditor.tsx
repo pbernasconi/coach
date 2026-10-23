@@ -11,7 +11,6 @@ import type { LiftEdit } from '@/lib/lift/edit.mjs';
 import type { RichExercise, RichSession } from '@/lib/lift/session';
 import { editLiftAction, liftLibraryAction } from './actions';
 
-const ACCENT = '#fc4c02';
 const cell = 'h-8 w-full rounded-md border bg-background px-2 text-right text-sm tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:bg-muted/50 disabled:text-[var(--viz-muted)]';
 const iconBtn = 'grid h-8 w-8 place-items-center rounded-md text-[var(--viz-muted)] hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-30 disabled:hover:bg-transparent';
 
@@ -54,7 +53,7 @@ export default function LiftEditor({ lift, onChanged, onDone }: { lift: RichSess
         </span>
         <span className="flex items-center gap-2">
           {busy && <Loader2 aria-label="Saving" className="h-4 w-4 animate-spin text-[var(--viz-muted)]" />}
-          <Button size="sm" onClick={onDone} className="text-white hover:opacity-90" style={{ background: ACCENT }}>
+          <Button size="sm" onClick={onDone}>
             <Check aria-hidden className="mr-1 h-4 w-4" /> Done
           </Button>
         </span>
@@ -229,7 +228,7 @@ function AddExercise({ unit, busy, run }: { unit: string; busy: boolean; run: (e
         <label className="space-y-1 text-xs text-[var(--viz-ink-2)]">Sets<input inputMode="numeric" value={sets} onChange={(e) => setSets(e.target.value)} className={cell} /></label>
         <label className="space-y-1 text-xs text-[var(--viz-ink-2)]">Reps<input inputMode="numeric" value={reps} onChange={(e) => setReps(e.target.value)} className={cell} /></label>
         <label className="space-y-1 text-xs text-[var(--viz-ink-2)]">Weight ({unit})<input inputMode="decimal" value={weight} onChange={(e) => setWeight(e.target.value)} placeholder="–" className={cell} /></label>
-        <Button type="button" disabled={busy || !chosen} onClick={() => void add()} className="text-white hover:opacity-90" style={{ background: ACCENT }}>
+        <Button type="button" disabled={busy || !chosen} onClick={() => void add()}>
           Add
         </Button>
       </div>

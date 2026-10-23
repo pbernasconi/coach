@@ -91,7 +91,7 @@ export function WeekBar({ done, planned, label, pace = null, className = 'col-sp
     >
       <div className="h-full rounded-full bg-[var(--viz-ink-2)]" style={{ width: `${Math.min(100, pct)}%` }} />
       {pace != null && pace > 0 && pace < 1 && (
-        <span title="Where the plan is by today" className="absolute -top-0.5 h-2 w-0.5 rounded-full bg-[#fc4c02]" style={{ left: `calc(${pace * 100}% - 1px)` }} />
+        <span title="Where the plan is by today" className="absolute -top-0.5 h-2 w-0.5 rounded-full bg-brand" style={{ left: `calc(${pace * 100}% - 1px)` }} />
       )}
     </div>
   );
