@@ -302,9 +302,12 @@ extension WorkoutViewModel {
         restActivity.end()
     }
 
-    /// Zero, or Skip on the Lock Screen: the countdown ends everywhere and the bar turns to the next set.
+    /// Zero, or Skip on the Lock Screen: the countdown ends everywhere and the bar turns to the next set. "Rest over"
+    /// counts from the rest's end, as on the Lock Screen, not from the tick that noticed it (ticks stop in the
+    /// background, so that tick can come much later).
     private func finishRest(after setID: UUID?) {
-        state.readyNext(after: setID, at: now())
+        let now = now()
+        state.readyNext(after: setID, at: min(restActivity.rest?.endsAt ?? now, now))
         restActivity.end()
     }
 }

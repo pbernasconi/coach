@@ -154,6 +154,15 @@ import Testing
         #expect(activity.calls == [restStart, .end])
     }
 
+    @Test func restOverCountsFromTheRestsEndAfterTheBackground() async {
+        let vm = await resting()
+        now.advance(seconds: 120)  // back 30 s after the 90 s rest ran out
+
+        await vm.runRestTimer()
+
+        #expect(vm.state.ready?.since == ManualNow.start.addingTimeInterval(90))
+    }
+
     @Test func runShowsTheWorkoutOnTheLockScreen() async {
         let vm = makeViewModel(planned)
 
