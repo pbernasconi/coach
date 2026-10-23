@@ -125,13 +125,13 @@ export function useCalendarScroll({ openAt, phoneAt, range, bounds }: {
     }
   }, [resumeSnap]);
 
-  // The scroll area fills the window under the nav and the header row.
+  // The scroll area fills the window under the nav and the header row (less the page's 8px bottom padding).
   useLayoutEffect(() => {
     const measure = () => {
       const el = scrollerRef.current;
       if (!el) return;
       const top = el.getBoundingClientRect().top + window.scrollY;
-      setHeight(Math.max(360, Math.round(window.innerHeight - top - 16)));
+      setHeight(Math.max(360, Math.round(window.innerHeight - top - 8)));
     };
     measure();
     window.addEventListener('resize', measure);

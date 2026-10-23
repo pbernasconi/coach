@@ -49,7 +49,9 @@ export function WeekColumn({ s, monday, today }: { s: WeekSummary | null; monday
       {f && <LoadGrid f={f} title={`On ${shortDate(f.date)}`} />}
       <dl className="grid grid-cols-[auto_1fr] gap-x-2 tabular-nums" title="Done / planned">
         {row('Time', hm(s.done.min), s.planned.min ? hm(s.planned.min) : null)}
+        {s.planned.min > 0 && <WeekBar done={s.done.min} planned={s.planned.min} label="Time" />}
         {row('TSS', String(s.done.tss), s.planned.tss ? String(s.planned.tss) : null)}
+        {s.planned.tss > 0 && <WeekBar done={s.done.tss} planned={s.planned.tss} label="TSS" />}
         {s.done.km > 0 && row('Dist', `${s.done.km} km`)}
         {s.planned.count > 0 && row('Done', `${s.planned.done}/${s.planned.count}`)}
       </dl>
@@ -70,6 +72,23 @@ export function WeekColumn({ s, monday, today }: { s: WeekSummary | null; monday
           )}
         </ul>
       )}
+    </div>
+  );
+}
+
+/** A thin done / planned bar under a week total (TrainingPeaks' summary column). Full at 100 %; more is still full. */
+export function WeekBar({ done, planned, label, className = 'col-span-2 mb-0.5 mt-px' }: { done: number; planned: number; label: string; className?: string }) {
+  const pct = Math.round((done / planned) * 100);
+  return (
+    <div
+      role="meter"
+      aria-label={`${label}: ${pct} % of the plan`}
+      aria-valuenow={pct}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      className={`h-1 overflow-hidden rounded-full bg-[var(--viz-grid)] ${className}`}
+    >
+      <div className="h-full rounded-full bg-[var(--viz-ink-2)]" style={{ width: `${Math.min(100, pct)}%` }} />
     </div>
   );
 }
@@ -96,12 +115,18 @@ function LoadGrid({ f, title }: { f: { ctl: number; atl: number; tsb: number }; 
   );
 }
 
-/** The week's totals on one line, done / planned (the phone agenda's week header; the plan review shows `plannedOnly`). */
-export function WeekTotals({ s, plannedOnly = false }: { s: WeekSummary; plannedOnly?: boolean }) {
+/** The week's totals on one line, done / planned (the phone agenda's week header; the plan review shows `plannedOnly`). `bars`: a done / planned bar under each. */
+export function WeekTotals({ s, plannedOnly = false, bars = false }: { s: WeekSummary; plannedOnly?: boolean; bars?: boolean }) {
   return (
     <span className="flex flex-wrap gap-x-3 text-[11px] tabular-nums">
-      <span><span className="text-[var(--viz-muted)]">Time </span><span className="text-[var(--viz-ink)]">{plannedOnly ? hm(s.planned.min) : `${hm(s.done.min)}${s.planned.min ? ` / ${hm(s.planned.min)}` : ''}`}</span></span>
-      <span><span className="text-[var(--viz-muted)]">TSS </span><span className="text-[var(--viz-ink)]">{plannedOnly ? s.planned.tss : `${s.done.tss}${s.planned.tss ? ` / ${s.planned.tss}` : ''}`}</span></span>
+      <span className="inline-flex flex-col">
+        <span><span className="text-[var(--viz-muted)]">Time </span><span className="text-[var(--viz-ink)]">{plannedOnly ? hm(s.planned.min) : `${hm(s.done.min)}${s.planned.min ? ` / ${hm(s.planned.min)}` : ''}`}</span></span>
+        {bars && !plannedOnly && s.planned.min > 0 && <WeekBar done={s.done.min} planned={s.planned.min} label="Time" className="mt-0.5" />}
+      </span>
+      <span className="inline-flex flex-col">
+        <span><span className="text-[var(--viz-muted)]">TSS </span><span className="text-[var(--viz-ink)]">{plannedOnly ? s.planned.tss : `${s.done.tss}${s.planned.tss ? ` / ${s.planned.tss}` : ''}`}</span></span>
+        {bars && !plannedOnly && s.planned.tss > 0 && <WeekBar done={s.done.tss} planned={s.planned.tss} label="TSS" className="mt-0.5" />}
+      </span>
       {s.fitness && (
         <span title="Form (TSB) at the end of the week">
           <span className="text-[var(--viz-muted)]">Form </span>
