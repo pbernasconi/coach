@@ -161,6 +161,7 @@ test('liftResponse: the simple overview (summary, focus, targeting, progress, on
   }
   for (const p of body.progress.items) {
     assert.ok(['up', 'down', 'same'].includes(p.tone));
+    assert.ok(!p.changeText || !/[+−]0%/.test(p.changeText), 'no "+0%"');
     assert.ok(p.points.length <= 12);
   }
   assert.ok(body.note.item === null || body.note.item.tone !== 'info');
