@@ -39,7 +39,7 @@ export default function DashboardNav() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+    <header className="sticky top-0 z-50 w-full border-b border-[var(--nav-border)] bg-[var(--nav-bg)] backdrop-blur">
       <div className={cn(PAGE_FRAME, 'flex h-14 items-center gap-2')}>
         {/* Mobile menu button */}
         <Sheet open={open} onOpenChange={setOpen}>

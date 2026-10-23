@@ -107,6 +107,13 @@
    sport or a status colour. */
 :root {
   --coach-accent: #eb6834;
+  /* The top navbar: a faint wash of the logo orange, so the header stands apart from the page. */
+  --nav-bg: rgb(251 242 236 / 0.92);
+  --nav-border: #f0dfd3;
+}
+.dark {
+  --nav-bg: rgb(30 22 18 / 0.92);
+  --nav-border: #33261f;
 }
 
 /* Sport tokens: one per sport, copied from design/sports.json (src/lib/sports.test.mjs checks that they
