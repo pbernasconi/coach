@@ -22,7 +22,9 @@ struct TrendsPerformanceSection: View {
     private func tileView(_ tile: TrendsPerformance.Tile) -> some View {
         // The server's text carries its own arrow ("▼ 7%"): colour only, no error glyph.
         let delta = tile.delta.map { StatDelta.textOnly(verbatim: $0.text, tone: $0.tone.kobo) }
-        let color = tile.sport.flatMap(Sport.init(rawValue:))?.color ?? theme.palette.accent
+        // A tile without a sport (hours, fitness) stays neutral: the brand orange is also the run colour, so an orange
+        // line beside the run tile would read as a run.
+        let color = tile.sport.flatMap(Sport.init(rawValue:))?.color ?? theme.palette.textSecondary
         return StatTile(verbatim: tile.label, value: tile.valueText, delta: delta) {
             VStack(alignment: .leading, spacing: Space.xxs) {
                 if let foot = tile.footText {

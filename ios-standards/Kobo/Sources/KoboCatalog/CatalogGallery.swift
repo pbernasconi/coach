@@ -18,7 +18,9 @@ public struct CatalogGallery: View {
     @State private var appearance = CatalogAppearance.system
     @State private var largeText = false
 
-    public init(themes: [(name: String, theme: Theme)] = [("System", .system), ("Amber", .amber)]) {
+    public init(
+        themes: [(name: String, theme: Theme)] = [("System", .system), ("Amber", .amber), ("Coach", .coach)]
+    ) {
         self.themes = themes.enumerated().map {
             CatalogTheme(id: $0.offset, name: $0.element.name, theme: $0.element.theme)
         }

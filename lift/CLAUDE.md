@@ -18,7 +18,7 @@ lift/
 │   │   │                   server), SyncCoordinator (launch, foreground, outbox growth), SyncServer (LiftSyncBaseURL)
 │   │   │                   Health/: Apple Health (HealthRecorder over HealthWorkoutStore; LiveHealthWorkoutStore
 │   │   │                   saves with HKWorkoutBuilder; DisabledHealthRecorder for demo and -fresh), HealthSettings
-│   │   ├── Design/         LiftTheme: Theme.lift / Palette.lift (amber); the only place with hex colours
+│   │   ├── Design/         LiftTheme: Theme.lift / Palette.lift (Kobo's Coach orange, `.coach`); the only place with hex colours
 │   │   ├── Features/<Feature>/<Screen>/   the eight-file screen set: Week, History, Exercises, Settings, Workout
 │   │   │                                  (with its finish summary), Catalog (browse the bundled exercise
 │   │   │                                  catalog, catalog detail), Templates (the list, the template editor and

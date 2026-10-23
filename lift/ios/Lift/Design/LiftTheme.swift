@@ -1,14 +1,11 @@
 import KoboTokens
 import SwiftUI
 
-// ios-guard: allow hex literals — this is Lift's token file.
 extension Palette {
-    /// Lift's brand: a warm amber accent with dark ink on top. Amber text darkens in light mode to keep 4.5:1.
-    static let lift = Palette.make(
-        accent: Color(hex: 0xFFC21A),
-        onAccent: Color(hex: 0x1A1300),
-        accentText: Color(light: Color(hex: 0x8F5F00), dark: Color(hex: 0xFFC21A))
-    )
+    /// Lift's brand is the Coach orange, the web app's primary: Kobo's `.coach` palette (accent #EB6834 with dark ink
+    /// #1A0F08 on top, orange text #B8430F light / #F39069 dark, a peach wash). `WidgetColors` and `ShareColors` repeat
+    /// these values for the extensions, which do not link Kobo; change them together.
+    static let lift = Palette.coach
 }
 
 extension Theme {

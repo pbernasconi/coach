@@ -49,7 +49,15 @@ ScreenScaffold("Week") {
 ```
 
 A brand is one value: `Palette.make(accent:onAccent:accentText:)` builds a full palette from an accent, and
-`Theme(palette:surfaceStyle:)` picks glass or solid controls.
+`Theme(palette:surfaceStyle:)` picks glass or solid controls. `make` also takes an optional `accentSoft` (the tinted
+fill; the accent at 18% by default) and `accentWash` / `accentWashSeparator` (a brand-tinted surface for a bar or
+header band and its hairline; the canvas and separator by default).
+
+| Palette / Theme | Accent | On accent | Accent text (light / dark) | Soft | Wash (light / dark) |
+| --- | --- | --- | --- | --- | --- |
+| `.system` | `#0A84FF` | white | `#0058D0` / `#6CB4FF` | 18% | canvas |
+| `.amber` | `#FFC21A` | `#1A1300` | `#8F5F00` / `#FFC21A` | 18% | canvas |
+| `.coach` | `#EB6834` | `#1A0F08` | `#B8430F` / `#F39069` | 14% / 22% | `#FBF2EC` / `#1E1612`, line `#F0DFD3` / `#33261F` |
 
 ## What's inside
 

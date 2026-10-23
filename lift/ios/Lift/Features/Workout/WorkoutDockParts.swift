@@ -30,7 +30,7 @@ struct WorkoutDockDots: View {
 
 /// The dock's opaque, raised panel. Light mode: a white card with a soft shadow over the grey canvas. Dark mode:
 /// the raised grey, a tone above the set cards, since a shadow does not read on black. A hairline edges both; once the
-/// rest is over the edge turns amber.
+/// rest is over the edge turns the accent orange.
 struct WorkoutDockPanel: View {
     @Environment(\.koboTheme) private var theme
     @Environment(\.colorScheme) private var colorScheme
