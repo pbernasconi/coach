@@ -12,7 +12,7 @@ export const SYSTEM_NOTIFICATION_EVENTS = {
     payload: testPayload,
     idempotencyKey: (p) => `system.test:${p.nonce}`,
     title: () => 'Coach test',
-    body: () => 'Push notifications work. Tap to open Today in Lift.',
+    body: () => 'Push notifications work. Tap to open Today in Coach.',
     destination: () => ({ kind: 'today' }),
     collapseKey: () => 'system.test',
     threadKey: () => 'system',

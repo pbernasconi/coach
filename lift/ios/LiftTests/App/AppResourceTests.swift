@@ -65,7 +65,7 @@ import Testing
     @Test(arguments: [
         (SyncTransportError.retryable(status: 500), "Coach could not be reached. Pull down to try again."),
         (.rejected(status: 404), "Coach has nothing here."),
-        (.invalidResponse, "Coach sent something Lift cannot read."),
+        (.invalidResponse, "Coach sent something this app cannot read."),
     ])
     func aFailureWithNothingKeptSaysWhy(error: SyncTransportError, message: String) async {
         let last = await run(FakeAppData([.failure(error)])).last
@@ -74,7 +74,7 @@ import Testing
 
     @Test func aBodyLiftCannotReadFails() async {
         let last = await run(FakeAppData([.success(Data("{}".utf8))])).last
-        #expect(last?.content == .failed(message: "Coach sent something Lift cannot read."))
+        #expect(last?.content == .failed(message: "Coach sent something this app cannot read."))
     }
 
     @Test func aRefusedTokenIsNotConnectedAndAsksToReconnect() async {

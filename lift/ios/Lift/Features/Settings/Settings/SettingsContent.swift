@@ -58,7 +58,7 @@ private struct SettingsFooter: View {
 
     var body: some View {
         VStack(spacing: Space.xs) {
-            Text(verbatim: "Lift \(version) · \(stored)")
+            Text(verbatim: "Coach \(version) · \(stored)")
                 .font(theme.font(.footnote))
                 .foregroundStyle(theme.palette.textTertiary)
             Button("Acknowledgements") { send(.acknowledgementsTapped) }

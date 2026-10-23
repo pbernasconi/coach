@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Lift</string>
+	<string>Coach</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -38,9 +38,9 @@
 	<key>LiftSyncBaseURL</key>
 	<string>$(LIFT_SYNC_BASE_URL)</string>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Lift does not read your Health data. It only saves the workouts you finish.</string>
+	<string>Coach does not read your Health data. It only saves the workouts you finish.</string>
 	<key>NSHealthUpdateUsageDescription</key>
-	<string>Lift saves each workout you finish to Apple Health as strength training, with its start and end time.</string>
+	<string>Coach saves each workout you finish to Apple Health as strength training, with its start and end time.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>UILaunchScreen</key>

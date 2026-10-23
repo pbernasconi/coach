@@ -96,9 +96,9 @@ struct AppResource<Value: Decodable & Equatable & Sendable> {
     /// Plain words for a failed fetch (ERR-1).
     nonisolated static func message(for error: any Error) -> String {
         switch error as? SyncTransportError {
-        case .unauthorized: String(localized: "Coach refused the sync token. Connect Lift again in Settings.")
+        case .unauthorized: String(localized: "Coach refused the sync token. Connect again in Settings.")
         case .rejected(404): String(localized: "Coach has nothing here.")
-        case .invalidResponse: String(localized: "Coach sent something Lift cannot read.")
+        case .invalidResponse: String(localized: "Coach sent something this app cannot read.")
         default: String(localized: "Coach could not be reached. Pull down to try again.")
         }
     }

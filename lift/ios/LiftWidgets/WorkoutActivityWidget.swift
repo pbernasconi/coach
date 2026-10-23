@@ -28,7 +28,7 @@ struct WorkoutActivityWidget: Widget {
                 BarbellShape()
                     .fill(WidgetColors.accent)
                     .frame(width: 24, height: 10)
-                    .accessibilityLabel(Text("Lift"))
+                    .accessibilityLabel(Text("Workout"))
             } compactTrailing: {
                 IslandCompactTrailing(
                     state: context.state,
@@ -179,7 +179,7 @@ struct IslandMinimal: View {
             BarbellShape()
                 .fill(WidgetColors.accent)
                 .frame(width: 20, height: 9)
-                .accessibilityLabel(Text("Lift"))
+                .accessibilityLabel(Text("Workout"))
         }
     }
 }
