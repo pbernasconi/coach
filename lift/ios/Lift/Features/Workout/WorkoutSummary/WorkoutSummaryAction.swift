@@ -2,7 +2,7 @@ import Foundation
 
 /// Every user intent on the workout summary, named for what happened (SCR-1).
 nonisolated enum WorkoutSummaryAction: Equatable, Sendable {
-    /// Done: back to the workout.
+    /// Done: back to the home screen.
     case doneTapped
     /// "Save to Apple Health" on the first summary: asks Health, then saves this workout and later ones.
     case healthAllowTapped

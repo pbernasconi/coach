@@ -6,8 +6,10 @@ import SwiftUI
 /// stands and never edits a set: the clock and sets done, the exercise and set to do now with its dots and load, and
 /// the one action that matters now on the right (Log set, Start, Resume, Finish workout), with the lesser one (Skip,
 /// Finish) on the left. A rest, a rest that ran out and a pause each get a strip across the top, so they never read as
-/// a set. Before the start it is one big Start workout. It only draws; the ViewModel owns the clock and the rest.
+/// a set. The card runs full width and flush with the bottom of the screen. Before the start it is one big floating
+/// Liquid Glass Start workout, low over the home indicator. It only draws; the ViewModel owns the clock and the rest.
 struct WorkoutDock: View {
+    @Environment(\.koboTheme) private var theme
     let phase: WorkoutDockPhase
     /// The set to do now opens a new exercise: "Next exercise", with Start.
     var introducesExercise = false
@@ -18,9 +20,20 @@ struct WorkoutDock: View {
     var body: some View {
         switch phase {
         case .start:
-            Button("Start workout", systemImage: "play.fill") { send(.startTapped) }
-                .buttonStyle(.kobo(.primary, width: .full))
-                .padding(.bottom, Space.xs)
+            // Prominent glass, tinted the accent: Apple's style for a floating primary action. The glass brings its
+            // own depth and press response; it sits a little into the bottom safe area, close to the home indicator.
+            Button { send(.startTapped) } label: {
+                Label("Start workout", systemImage: "play.fill")
+                    .font(theme.font(.headline))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, Space.xs)
+            }
+            .buttonStyle(.glassProminent)
+            .buttonBorderShape(.capsule)
+            .controlSize(.large)
+            .tint(theme.palette.accent)
+            .padding(.horizontal, Space.gutter)
+            .padding(.bottom, -Space.md)
         case .lifting, .resting, .ready, .complete, .paused:
             if let content = phase.content {
                 WorkoutDockCard(
@@ -69,8 +82,8 @@ private struct WorkoutDockCard: View {
             .padding(.horizontal, Space.cardInset)
             .padding(.vertical, Space.md)
         }
-        .clipShape(RoundedRectangle(cornerRadius: Radius.xl, style: .continuous))  // the strip's corners
-        .background { WorkoutDockPanel(isReady: isReady, isResting: isResting) }
+        .clipShape(WorkoutDockPanel.shape)  // the strip's corners
+        .background { WorkoutDockPanel(isReady: isReady, isResting: isResting).ignoresSafeArea(edges: .bottom) }
     }
 
     /// The clock line, while lifting and once all is done; a strip takes its place otherwise.

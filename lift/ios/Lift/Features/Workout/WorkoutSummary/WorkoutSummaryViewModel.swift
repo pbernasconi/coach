@@ -67,7 +67,7 @@ final class WorkoutSummaryViewModel {
     func send(_ action: WorkoutSummaryAction) -> Task<Void, Never>? {
         switch action {
         case .doneTapped:
-            router.back()
+            router.backToRoot()  // the workout is over: home, not back to its sets
         case .healthAllowTapped:
             guard state.health == .ask else { return nil }
             state.health = nil  // "Saved to Apple Health" shows once the workout is saved

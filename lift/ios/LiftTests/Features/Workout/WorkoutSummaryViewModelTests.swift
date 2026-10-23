@@ -75,7 +75,7 @@ import Testing
         #expect(vm.state.summary == .empty)
     }
 
-    @Test func doneTappedGoesBack() {
+    @Test func doneTappedGoesHome() {
         let vm = WorkoutSummaryViewModel(
             sessionID: detail.id,
             sessions: FakeSessionDetailRepository(emissions: []),
@@ -86,7 +86,8 @@ import Testing
         )
 
         #expect(vm.send(.doneTapped) == nil)
-        #expect(router.backCount == 1)
+        #expect(router.backToRootCount == 1)
+        #expect(router.backCount == 0)
     }
 
     func summary(health status: HealthStatus, saved: Bool = false) async -> WorkoutSummaryViewModel {

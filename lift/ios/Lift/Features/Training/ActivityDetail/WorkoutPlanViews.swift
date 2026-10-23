@@ -4,8 +4,8 @@ import LiftSync
 import SwiftUI
 
 /// A workout still to do: its plan, as the web's workout window shows it. The header with its status, the numbers, the
-/// workout (main work, interval chart, steps), the time in each zone, the coach's notes, "How did it feel" from the
-/// workout's day on, and the Lift session when Lift has it.
+/// workout (main work, interval chart, steps), the time in each zone, the coach's notes, "How did it feel" once the
+/// workout is done, and the Lift session when Lift has it.
 struct WorkoutPlanSections: View {
     @Environment(\.koboTheme) private var theme
     let workout: AppPlannedWorkout
@@ -26,7 +26,7 @@ struct WorkoutPlanSections: View {
                 }
                 .koboCard()
             }
-            if let feedback, workout.state != "planned" {
+            if let feedback, workout.state == "done" {  // nothing to rate before it's done
                 WorkoutFeedbackCard(feedback: feedback, save: save) { send(.feedback($0)) }
             }
             WorkoutPlanCards(workout: workout)

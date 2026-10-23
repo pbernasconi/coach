@@ -173,7 +173,7 @@ private struct SetGridHeader: View {
 
     var body: some View {
         HStack(spacing: Space.sm) {
-            Text("Set").frame(width: badgeWidth)
+            Text("Set").frame(width: badgeWidth, alignment: .leading)
             Text("Previous").frame(maxWidth: .infinity, alignment: .leading)
             Text(verbatim: unit.rawValue).frame(width: weightWidth)
             Text("Reps").frame(width: repsWidth)
