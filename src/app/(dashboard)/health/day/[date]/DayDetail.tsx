@@ -91,7 +91,7 @@ export default function DayDetail({ d }: { d: DayView }) {
         <Hypnogram stages={stages} from={sleepFrom} to={sleepTo} legend={!mins} />
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
           <TimeChart title="Heart rate in sleep" points={s?.hr ?? []} from={sleepFrom} to={sleepTo} unit="bpm" color="var(--viz-down)" empty="No sleep heart rate." height={120} />
-          <TimeChart title="Stress in sleep" points={s?.stress ?? []} from={sleepFrom} to={sleepTo} unit="stress" kind="bars" yMin={0} yMax={100} color="var(--color-amber-500)" empty="No sleep stress." height={120} />
+          <TimeChart title="Stress in sleep" points={s?.stress ?? []} from={sleepFrom} to={sleepTo} unit="stress" kind="bars" yMin={0} yMax={100} color="var(--color-amber-500)" empty="No sleep stress." avg={s?.avgStress ?? v.sleep_avg_stress} height={120} />
           <TimeChart
             title="Blood oxygen (SpO2)"
             points={s?.spo2 ?? []}

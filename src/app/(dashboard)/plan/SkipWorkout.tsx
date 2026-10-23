@@ -26,7 +26,7 @@ export default function SkipWorkout({ w, onSkip }: { w: CalendarWorkout; onSkip:
           <Ban aria-hidden className="h-3.5 w-3.5" /> Skip
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="z-[60]">
+      <DropdownMenuContent align="end" className="z-[60] data-[state=closed]:animate-none!">
         <DropdownMenuLabel>Why?</DropdownMenuLabel>
         {(SKIP_REASONS as string[]).map((r) => (
           <DropdownMenuItem key={r} onSelect={() => onSkip(w, r)}>

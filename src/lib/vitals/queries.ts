@@ -3,6 +3,7 @@ import { toDay } from '@/lib/db-time.mjs';
 import { cached } from '@/lib/data-cache';
 import { addDays, hrvMetricOf, readinessFrom, seriesOf, type ReadinessSummary, type SampleRow } from './readiness.mjs';
 import type { LabStatus } from './labs.mjs';
+import { mergeByCatalog } from './labs-highlights.mjs';
 import { garminStatusFrom, type GarminStatus } from './garmin.mjs';
 import { garminConnection } from './repository';
 
@@ -61,18 +62,20 @@ export const STATUS_RANK: Record<LabStatus, number> = { out_of_range: 0, unknown
 
 /** Lab results grouped by category; out-of-range biomarkers first, and categories with any out of range first. */
 export async function loadLabs(userId: string): Promise<{ categories: LabCategory[]; draws: string[] }> {
-  const rows = (await sql`
+  const [rows, catalog] = await Promise.all([sql`
     SELECT to_char(collected_on, 'YYYY-MM-DD') AS collected_on, biomarker, category, value::float8 AS value, value_text, unit,
            ref_low::float8 AS ref_low, ref_high::float8 AS ref_high, optimal_low::float8 AS optimal_low,
            optimal_high::float8 AS optimal_high, status
-    FROM lab_results WHERE user_id = ${userId} ORDER BY biomarker, collected_on`) as {
+    FROM lab_results WHERE user_id = ${userId} ORDER BY biomarker, collected_on`,
+    sql`SELECT result_names, status FROM lab_biomarkers WHERE user_id = ${userId} AND source = 'function'`,
+  ]) as [{
     collected_on: string; biomarker: string; category: string | null; value: number | null; value_text: string | null;
     unit: string | null; ref_low: number | null; ref_high: number | null; optimal_low: number | null; optimal_high: number | null;
     status: LabStatus;
-  }[];
+  }[], { result_names: string[] | null; status: string }[]];
   const byName = new Map<string, typeof rows>();
   for (const r of rows) byName.set(r.biomarker, [...(byName.get(r.biomarker) ?? []), r]);
-  const biomarkers: Biomarker[] = [...byName.values()].map((rs) => {
+  const perName: Biomarker[] = [...byName.values()].map((rs) => {
     const last = rs[rs.length - 1];
     const history = rs.map((r) => ({ collectedOn: r.collected_on, value: r.value, valueText: r.value_text, status: r.status }));
     return {
@@ -87,6 +90,8 @@ export async function loadLabs(userId: string): Promise<{ categories: LabCategor
       history,
     };
   });
+  // One row per Function biomarker with Function's status, as on /health/labs.
+  const biomarkers = mergeByCatalog(perName, catalog.map((c) => ({ resultNames: c.result_names ?? [], status: c.status })));
   const groups = new Map<string, Biomarker[]>();
   for (const b of biomarkers) groups.set(b.category, [...(groups.get(b.category) ?? []), b]);
   const categories = [...groups.entries()]

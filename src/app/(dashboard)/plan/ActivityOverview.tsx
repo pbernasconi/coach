@@ -92,7 +92,7 @@ export function StatGrid({ v }: { v: ActivityView }) {
     v.effort.trimp != null && ['TRIMP', String(v.effort.trimp)],
     v.effort.tss != null && st.moving > 0 && ['TSS per hour', String(Math.round(v.effort.tss / (st.moving / 3600)))],
     st.perceivedExertion != null && ['Perceived exertion', `${st.perceivedExertion}/10`],
-    st.avgTemp != null && ['Temperature', `${Math.round(st.avgTemp)} °C`],
+    st.avgTemp != null && ['Watch temp', `${Math.round(st.avgTemp)} °C`],
   ].filter(Boolean) as [string, string][];
   return (
     <Card title="Stats" note={v.effort.tssMethod ? `TSS ${tssMethodLabel(v.effort.tssMethod)}` : undefined}>

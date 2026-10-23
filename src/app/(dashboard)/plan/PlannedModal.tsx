@@ -74,7 +74,8 @@ export default function PlannedModal({ w, onClose, onCopy, wx, onLiftChanged, on
                     <Pencil aria-hidden className="h-3.5 w-3.5" /> Edit <ChevronDown aria-hidden className="h-3 w-3 opacity-60" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="z-[60]">
+                {/* No close animation: while a menu fades out it still takes Escape, so a quick second Escape didn't close the window. */}
+                <DropdownMenuContent align="end" className="z-[60] data-[state=closed]:animate-none!">
                   {onEdited && (
                     <DropdownMenuItem onSelect={() => setEditing(true)}>
                       <Pencil aria-hidden className="h-3.5 w-3.5" /> Edit workout

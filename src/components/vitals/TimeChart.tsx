@@ -16,7 +16,7 @@ const hourLabel = (t: number) => new Date(t).toLocaleTimeString('en-US', { hour:
  * under the plot (Body Battery events). Hover or arrow keys read a point.
  */
 export default function TimeChart({
-  title, subtitle, points, from, to, unit, color = 'var(--viz-ctl)', kind = 'line', yMin, yMax, band, events, gapMin = 20, height = 140, empty,
+  title, subtitle, points, from, to, unit, color = 'var(--viz-ctl)', kind = 'line', yMin, yMax, band, events, gapMin = 20, height = 140, empty, avg: givenAvg,
 }: {
   title: string;
   subtitle?: string;
@@ -33,12 +33,13 @@ export default function TimeChart({
   gapMin?: number;
   height?: number;
   empty: string; // shown when there are no points
+  avg?: number | null; // the source's own average (Garmin's sleep stress), so the chart and the tile agree
 }) {
   const [ref, width] = useMeasure<HTMLDivElement>(320);
   const [hover, setHover] = useState<number | null>(null);
   const pts = points.filter((p) => p.t >= from && p.t <= to);
   const evs = (events ?? []).filter((e) => e.end >= from && e.start <= to);
-  const M = { top: 8, right: 10, bottom: 20 + (evs.length ? 18 : 0), left: 36 };
+  const M = { top: 8, right: 10, bottom: 20 + (evs.length ? 12 : 0), left: 36 }; // events: a track of bars, named in the list below
   const plotW = width - M.left - M.right;
   const plotH = height - M.top - 20;
   const span = Math.max(1, to - from);
@@ -81,7 +82,7 @@ export default function TimeChart({
     const jump = Math.max(1, Math.round(pts.length / 48));
     setHover((i) => Math.min(pts.length - 1, Math.max(0, (i ?? pts.length - 1) + (e.key === 'ArrowLeft' ? -jump : jump))));
   }
-  const avg = values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
+  const avg = !values.length ? null : givenAvg != null ? givenAvg : values.reduce((a, b) => a + b, 0) / values.length;
 
   return (
     <div className="rounded-lg border bg-[var(--viz-surface)] p-4">
@@ -149,11 +150,6 @@ export default function TimeChart({
                 <g key={`${e.start}-${e.label}`}>
                   <rect x={a} y={yy} width={w} height={8} rx={2} fill="var(--viz-axis)" />
                   <title>{`${e.label}, ${clock(e.start)}–${clock(e.end)}${e.impact !== null ? `, Body Battery ${e.impact > 0 ? '+' : ''}${e.impact}` : ''}`}</title>
-                  {w > 44 && (
-                    <text x={a + 3} y={yy + 16} className="fill-[var(--viz-muted)] text-[9px]">
-                      {e.label}{e.impact !== null ? ` ${e.impact > 0 ? '+' : ''}${e.impact}` : ''}
-                    </text>
-                  )}
                 </g>
               );
             })}
