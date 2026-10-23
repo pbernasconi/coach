@@ -152,7 +152,7 @@ export function buildModel(data) {
   for (const e of data.exercises) {
     const id = lowerId(e.id);
     if (id && !isDeleted(e) && str(e.name)) libraryNames.set(`id-${id}`, str(e.name));
-    if (id && !isDeleted(e)) library.set(`id-${id}`, { catalogId: str(e.catalogID), equipment: str(e.equipment) });
+    if (id && !isDeleted(e)) library.set(`id-${id}`, { name: str(e.name), catalogId: str(e.catalogID), equipment: str(e.equipment) });
   }
   const sessionExercises = new Map();
   for (const se of data.sessionExercises) {
@@ -451,6 +451,23 @@ export function exerciseDetail(model, key, unit, bestCount = 10) {
     bestSets,
     e1rmOverTime,
   };
+}
+
+/**
+ * What an exercise key names, whether or not a set of it is logged yet: its name and the catalog entry behind its
+ * picture. A key in the library or in any session (a planned one too) is known; anything else is null.
+ * @param {ReturnType<typeof buildModel>} model
+ * @param {string} key
+ * @returns {{ key: string, name: string, catalogId: string | null } | null}
+ */
+export function exerciseInfo(model, key) {
+  const lib = model.library.get(key);
+  let name = lib?.name ?? null;
+  if (!name) {
+    for (const se of model.sessionExercises.values()) if (se.key === key) name = se.name;
+  }
+  if (!name) return null;
+  return { key, name, catalogId: lib?.catalogId ?? null };
 }
 
 /**

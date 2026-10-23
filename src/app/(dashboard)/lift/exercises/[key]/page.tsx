@@ -5,7 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { StatCard } from '@/components/stat-card';
 import { loadLiftModel } from '@/lib/lift-dashboard/queries';
-import { exerciseDetail } from '@/lib/lift-dashboard/stats.mjs';
+import { exerciseDetail, exerciseInfo } from '@/lib/lift-dashboard/stats.mjs';
+import { exerciseMedia, type ExerciseMedia } from '@/lib/lift/catalog';
+import ExerciseThumb from '@/components/lift/ExerciseThumb';
 import { formatWeight } from '@/lib/lift-dashboard/format';
 import { bestSetText } from '@/lib/lift-dashboard/app-api.mjs';
 import ResponsiveDay from '@/components/ResponsiveDay';
@@ -18,17 +20,38 @@ export const dynamic = 'force-dynamic';
 export default async function LiftExercisePage({ params }: { params: Promise<{ key: string }> }) {
   const { key } = await params;
   const { model, unit } = await loadLiftModel();
-  const detail = exerciseDetail(model, decodeURIComponent(key), unit);
-  if (!detail) notFound();
+  const exerciseKey = decodeURIComponent(key);
+  const info = exerciseInfo(model, exerciseKey);
+  if (!info) notFound();
+  const media = exerciseMedia(info.catalogId);
+  const detail = exerciseDetail(model, exerciseKey, unit);
+  const header = <ExerciseHeader name={detail?.name ?? info.name} media={media} />;
+
+  // Planned in a session but not logged yet: what it is and how to do it, and no numbers.
+  if (!detail) {
+    return (
+      <div className="space-y-6">
+        {header}
+        <Card>
+          <CardHeader>
+            <CardTitle>No sets logged yet</CardTitle>
+            {media && <CardDescription>How to do it, from the Lift exercise library.</CardDescription>}
+          </CardHeader>
+          {media && media.steps.length > 0 && (
+            <CardContent>
+              <ol className="list-decimal space-y-1.5 pl-5 text-sm">
+                {media.steps.map((step, i) => <li key={i}>{step}</li>)}
+              </ol>
+            </CardContent>
+          )}
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div>
-        <Link href="/lift" className="text-sm text-muted-foreground hover:underline">
-          Back to overview
-        </Link>
-        <h2 className="text-2xl font-semibold mt-1">{detail.name}</h2>
-      </div>
+      {header}
 
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <StatCard title="Sessions" value={String(detail.sessions)} />
@@ -103,6 +126,20 @@ export default async function LiftExercisePage({ params }: { params: Promise<{ k
           </Table>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+function ExerciseHeader({ name, media }: { name: string; media: ExerciseMedia | null }) {
+  return (
+    <div className="flex items-end gap-4">
+      {media?.image && <ExerciseThumb image={media.image} gif={media.gif} name={name} size="md" />}
+      <div>
+        <Link href="/lift" className="text-sm text-muted-foreground hover:underline">
+          Back to overview
+        </Link>
+        <h2 className="text-2xl font-semibold mt-1">{name}</h2>
+      </div>
     </div>
   );
 }

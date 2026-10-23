@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildModel, exerciseHistory, muscleSets, sessionDetail, sessionSummaries, topLifts, weeklyVolume } from './stats.mjs';
+import { buildModel, exerciseDetail, exerciseHistory, exerciseInfo, muscleSets, sessionDetail, sessionSummaries, topLifts, weeklyVolume } from './stats.mjs';
 
 const SQUAT = 'AAAAAAAA-0000-0000-0000-000000000001';
 const ROW = 'AAAAAAAA-0000-0000-0000-000000000002';
@@ -106,4 +106,18 @@ test('sessionNote drops the Apple Notes import lines', async () => {
   assert.equal(sessionNote('Imported from Apple Notes (notes-import): “Workout C”, note created 2026-09-02.\nDate confidence low: x\nFelt strong'), 'Felt strong');
   assert.equal(sessionNote('Imported from Apple Notes (notes-import): “Workout C”.'), null);
   assert.equal(sessionNote('Good day'), 'Good day');
+});
+
+test('exerciseInfo knows an exercise that is only planned, which exerciseDetail does not (nothing logged)', () => {
+  const d = data();
+  const CALF = 'AAAAAAAA-0000-0000-0000-000000000003';
+  d.exercises.push({ id: CALF, name: 'Seated calf raise', catalogID: '0594', deletedAt: null });
+  d.sessionExercises.push({ id: 'e5', sessionID: 's2', exerciseID: CALF, displayName: 'Seated calf raise', deletedAt: null });
+  d.sets.push({ id: 'q', sessionExerciseID: 'e5', targetReps: 15, unit: 'lb', kind: 'working', status: 'planned', deletedAt: null });
+  const m = buildModel(d);
+  const key = `id-${CALF.toLowerCase()}`;
+  assert.equal(exerciseDetail(m, key, 'kg'), null);
+  assert.deepEqual(exerciseInfo(m, key), { key, name: 'Seated calf raise', catalogId: '0594' });
+  assert.deepEqual(exerciseInfo(m, 'name-plank'), { key: 'name-plank', name: 'Plank', catalogId: null });
+  assert.equal(exerciseInfo(m, 'name-nothing'), null);
 });
