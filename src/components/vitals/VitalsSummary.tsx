@@ -60,7 +60,9 @@ export default function VitalsSummary({ r, b }: { r: Readiness; b: Board }) {
       unit: 'kg',
       foot: !st.weight.latest
         ? undefined
-        : [fmtDay(st.weight.latest.date), st.weight.trend && `trend ${st.weight.trend.text}`, st.weight.trend?.rate?.text].filter(Boolean).join(' · '),
+        : st.weight.trend
+          ? [`trend ${st.weight.trend.text}`, st.weight.trend.rate?.text.replace(' kg/wk', '/wk')].filter(Boolean).join(' · ')
+          : fmtDay(st.weight.latest.date),
     },
   ];
   const isOff = (c: { bad?: 'low' | 'high'; stat: Stat }) => (c.bad === 'low' && c.stat.status === 'below') || (c.bad === 'high' && c.stat.status === 'above');

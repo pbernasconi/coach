@@ -46,7 +46,8 @@ export function weighInResponse(input) {
   const upTo = input.weights.filter((w) => w.date <= input.date);
   const from = new Date(Date.parse(`${input.date}T00:00:00Z`) - 83 * 864e5).toISOString().slice(0, 10);
   const trend = weightTrend(upTo);
-  const four = latestWithChange(upTo, 28);
+  // The 4-week change is the trend's, as on Today and the web, so it agrees with the rate.
+  const four = latestWithChange((trend?.points ?? []).map((p) => ({ date: p.date, value: p.trend })), 28);
   const changes = [];
   if (input.previous) {
     const days = Math.round((Date.parse(`${input.date}T00:00:00Z`) - Date.parse(`${input.previous.date}T00:00:00Z`)) / 864e5);

@@ -26,7 +26,7 @@ test('a day with a weight: the weight, body fat, the change since the last weigh
     r.changes.map((c) => [c.id, c.label, c.text, c.tone]),
     [
       ['previous', 'Since yesterday', '▼ 0.3 kg', 'good'],
-      ['4w', '4 weeks', '▼ 1.4 kg', 'good'],
+      ['4w', '4 weeks', '▼ 1.1 kg', 'good'],
     ]
   );
   assert.equal(r.changes[0].noteText, '83.5 kg on Oct 21');

@@ -856,8 +856,8 @@ last day with a weight. `404` when that day has no weight.
 ```
 
 - `weight.kg` 2 decimals, `text` 1 decimal. `bodyFat`: `null` when the day has none.
-- `changes`: `previous` against the last earlier weigh-in at any distance, `4w` against the last weigh-in 28 or
-  more days before (the web's Health card). Either is left out when there is nothing to compare. `tone`: `good`
+- `changes`: `previous` against the last earlier weigh-in at any distance, `4w`: the trend's change since the last
+  weigh-in 28 or more days before (as Today's `change4w`). Either is left out when there is nothing to compare. `tone`: `good`
   (down), `bad` (up), `neutral`; the goal is losing fat (COACH.md).
 - `trend` (`src/lib/vitals/weight-trend.mjs`, the format every weight view uses): an average that moves 10% of
   the way to each day's reading (a gap of n days moves it as n daily steps), started 4 weeks before the series.
