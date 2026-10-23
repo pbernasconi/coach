@@ -35,6 +35,7 @@ import { appActivityResponse, loadAppActivities, loadAppActivity } from '@/lib/a
 import { GET as appActivities } from '@/app/api/app/activities/route';
 import { GET as appToday } from '@/app/api/app/today/route';
 import { GET as appTrends } from '@/app/api/app/trends/route';
+import { GET as appSettings } from '@/app/api/app/settings/route';
 import { GET as appWeighIn } from '@/app/api/app/weigh-ins/[date]/route';
 import { loadAppToday, loadAppTrends } from '@/lib/performance/app-pages';
 
@@ -213,6 +214,10 @@ export async function runChecks(now = new Date(), { migrations = true }: { migra
       }),
       await check('/api/app/trends', async () => {
         const res = await appTrends(new Request('http://health.local/api/app/trends?tz=America/Los_Angeles', auth));
+        if (res.status !== 200) throw new Error(`status ${res.status}: ${(await res.text()).slice(0, 200)}`);
+      }),
+      await check('/api/app/settings', async () => {
+        const res = await appSettings(new Request('http://health.local/api/app/settings?tz=America/Los_Angeles', auth));
         if (res.status !== 200) throw new Error(`status ${res.status}: ${(await res.text()).slice(0, 200)}`);
       }),
       // The screen a weigh-in push opens. 404 only when no weight was ever stored.

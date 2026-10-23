@@ -1,6 +1,7 @@
 # App API
 
-Read-only JSON for the Lift iPhone app: the web's Today, Trends, Activity and Lift pages (not Health, not Settings).
+Read-only JSON for the Lift iPhone app: the web's Today, Trends, Activity and Lift pages, and the state of Settings'
+connections (not Health; Settings' edits stay on the web).
 Server-side first: the server computes every number, state and label with the same functions as the web page, and
 the phone shows them. The phone does not port web logic. Change this file first, then both sides. The week plan has
 its own contract: `WEEK-API.md`.
@@ -852,3 +853,41 @@ last day with a weight. `404` when that day has no weight.
 - `series`: every weigh-in in the 12 weeks up to `date`, oldest first, 1 decimal.
 - `source`: the sample's source (`renpho`, `garmin`, `apple_health`, …). `recordedAt`: when the day's weight was
   stored. `newerDate` / `olderDate`: the next and previous days with a weight, `null` at the ends.
+
+### Settings: `GET /api/app/settings?tz=`
+
+The server's half of the phone's Settings page: every connection's state and the coach's targets and next event. The
+phone adds what is its own (this iPhone's sync, Apple Health, units, plates, practice mode). Read-only; edits stay on
+the web. Loader `loadAppSettings` (`src/lib/settings/app-settings.ts`), shape `settingsResponse`
+(`src/lib/settings/app-settings.mjs`); the rows come from `connectionsFrom` (`src/lib/settings/connections.mjs`), which
+the web Settings page also uses, so both say the same.
+
+```json
+{
+  "generatedAt": "2026-10-22T20:00:00.000Z",
+  "connections": {
+    "ok": true,
+    "summary": { "attention": 1, "total": 5, "level": "error", "text": "1 of 5 needs attention" },
+    "items": [
+      { "id": "strava", "name": "Strava", "state": "connected", "level": "ok", "statusText": "Synced 2 h ago",
+        "detailText": "Newest activity Oct 22", "note": null, "lastSyncedAt": "2026-10-22T18:00:00Z", "required": true },
+      { "id": "garmin", "name": "Garmin", "state": "off", "level": "error", "statusText": "Login expired",
+        "detailText": "Sleep and HRV through Oct 20", "note": "Log in to Garmin again on your Mac (scripts/garmin).",
+        "lastSyncedAt": "2026-10-20T17:00:00Z", "required": true }
+    ]
+  },
+  "coach": {
+    "ok": true,
+    "targetsText": "35 km run · 4 h ride · 2 strength a week",
+    "nextEvent": { "name": "Harbour marathon", "dateText": "Dec 6", "countdownText": "In 6 wk 3 d", "priority": "A" }
+  }
+}
+```
+
+- `items`, in this order: `strava`, `garmin`, `calendar`, `lift`, `bodyspec`, `function`, `scale`.
+- `state`: `connected | attention | error | off`; `level`: `ok | info | warn | error` (the dot's colour).
+- `statusText` is the row's value; `detailText` and `note` are one short line each or `null` (`note` says what is
+  wrong or what to do, never a command to paste). `required: false` rows (Function Health, the scale) do not count
+  in `summary` when they are off.
+- `coach.nextEvent` is `null` with no event in the next year; `targetsText` is `null` when the targets failed.
+
