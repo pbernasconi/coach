@@ -16,7 +16,7 @@ export const KEY_MARKERS = [
   { name: 'Insulin', names: ['insulin'] },
   { name: 'hs-CRP', names: ['hscrp'] },
   { name: 'Homocysteine', names: ['homocysteine'] },
-  { name: 'Omega-3 Index', names: ['omega3index', 'omega3total', 'omega3'] },
+  { name: 'Omega-3 Index', names: ['omega3index', 'omega3total', 'omega3totalomegacheck', 'omega3'] },
   { name: 'Vitamin D (25-OH)', names: ['vitamind25oh'] },
   { name: 'Vitamin B12', names: ['vitaminb12'] },
   { name: 'APOE genotype', names: ['apoegenotype', 'apoe', 'apolipoproteine'] },
@@ -89,16 +89,18 @@ export function trend(b) {
  * takes Function's own status for the marker, so the out-of-range count matches the full report.
  * @template {{ biomarker: string, latest: { collectedOn: string, status: string }, history: { collectedOn: string, status: string }[] }} B
  * @param {B[]} biomarkers one per lab_results name
- * @param {{ resultNames: string[], status: string }[]} catalog lab_biomarkers rows (source 'function')
+ * @param {{ resultNames: string[], name?: string | null, status: string }[]} catalog lab_biomarkers rows (source 'function')
  * @returns {B[]}
  */
 export function mergeByCatalog(biomarkers, catalog) {
   const entryOf = new Map();
-  for (const c of catalog) for (const nm of c.resultNames ?? []) if (!entryOf.has(nm)) entryOf.set(nm, c);
+  // By its result names, and by its own name: a row can carry Function's display name ("Omega-3 Total") when the
+  // draw's result name is another ("Omega-3 Total / OmegaCheck").
+  for (const c of catalog) for (const nm of [...(c.resultNames ?? []), c.name]) if (nm && !entryOf.has(fold(nm))) entryOf.set(fold(nm), c);
   const groups = new Map();
   const out = [];
   for (const b of biomarkers) {
-    const c = entryOf.get(b.biomarker);
+    const c = entryOf.get(fold(b.biomarker));
     if (!c) { out.push(b); continue; }
     if (!groups.has(c)) { groups.set(c, []); out.push(c); }
     groups.get(c).push(b);

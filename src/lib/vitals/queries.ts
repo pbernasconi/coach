@@ -67,12 +67,12 @@ export async function loadLabs(userId: string): Promise<{ categories: LabCategor
            ref_low::float8 AS ref_low, ref_high::float8 AS ref_high, optimal_low::float8 AS optimal_low,
            optimal_high::float8 AS optimal_high, status
     FROM lab_results WHERE user_id = ${userId} ORDER BY biomarker, collected_on`,
-    sql`SELECT result_names, status FROM lab_biomarkers WHERE user_id = ${userId} AND source = 'function'`,
+    sql`SELECT name, result_names, status FROM lab_biomarkers WHERE user_id = ${userId} AND source = 'function'`,
   ]) as [{
     collected_on: string; biomarker: string; category: string | null; value: number | null; value_text: string | null;
     unit: string | null; ref_low: number | null; ref_high: number | null; optimal_low: number | null; optimal_high: number | null;
     status: LabStatus;
-  }[], { result_names: string[] | null; status: string }[]];
+  }[], { name: string | null; result_names: string[] | null; status: string }[]];
   const byName = new Map<string, typeof rows>();
   for (const r of rows) byName.set(r.biomarker, [...(byName.get(r.biomarker) ?? []), r]);
   const perName: Biomarker[] = [...byName.values()].map((rs) => {
@@ -91,7 +91,7 @@ export async function loadLabs(userId: string): Promise<{ categories: LabCategor
     };
   });
   // One row per Function biomarker with Function's status, as on /health/labs.
-  const biomarkers = mergeByCatalog(perName, catalog.map((c) => ({ resultNames: c.result_names ?? [], status: c.status })));
+  const biomarkers = mergeByCatalog(perName, catalog.map((c) => ({ resultNames: c.result_names ?? [], name: c.name, status: c.status })));
   const groups = new Map<string, Biomarker[]>();
   for (const b of biomarkers) groups.set(b.category, [...(groups.get(b.category) ?? []), b]);
   const categories = [...groups.entries()]
