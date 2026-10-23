@@ -78,13 +78,13 @@ function DayCell({ day, today, wx, over, clip, h, rest }: { day: Day; today: str
       className={cn(dayCellClass(d, today), over && 'bg-primary/10 ring-2 ring-inset ring-primary/70')}
     >
       <CalendarDayHead date={d} today={today} weather={wx} health menu={<DayMenu d={d} day={day} clip={clip} h={h} />} />
-      {rest && day.items.length === 0 && <span className="px-1 text-[11px] text-[var(--viz-muted)]">Rest</span>}
+      {rest && day.items.length === 0 && <span className="px-1 text-[12px] text-[var(--viz-muted)]">Rest</span>}
       {shown.map((item) => <Chip key={item.key} item={item} h={h} />)}
       {more > 0 && (
         <button
           type="button"
           onClick={(e) => h.open({ kind: 'day', date: d }, e.currentTarget)}
-          className="rounded px-1 text-left text-[11px] font-medium text-[var(--viz-ink-2)] hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="rounded px-1 text-left text-[12px] font-medium text-[var(--viz-ink-2)] hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           +{more} more
         </button>

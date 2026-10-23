@@ -12,17 +12,17 @@ export function WeekColumn({ s, monday, today, pace = null }: { s: WeekSummary |
   const mode = weekColumnMode(s, today);
   if (!s || mode === 'empty') {
     return (
-      <div className="border-l bg-[var(--viz-surface)] px-2 py-1.5 text-[11px] text-[var(--viz-muted)]">
+      <div className="border-l bg-[var(--viz-surface)] px-2 py-1.5 text-[12px] text-[var(--viz-muted)]">
         {monday > today ? 'No plan' : ''}
       </div>
     );
   }
   if (mode === 'planned') {
     return (
-      <div className="flex min-w-0 flex-col gap-1.5 overflow-hidden border-l bg-[var(--viz-surface)] px-2 py-1.5 text-[11px] leading-4" aria-label={`Week of ${shortDate(monday)}, planned`}>
+      <div className="flex min-w-0 flex-col gap-1.5 overflow-hidden border-l bg-[var(--viz-surface)] px-2 py-1.5 text-[12px] leading-[18px]" aria-label={`Week of ${shortDate(monday)}, planned`}>
         {/* A projection (the plan review): fitness, fatigue and form at the end of the week if done as planned. */}
         {s.fitness && <LoadGrid f={s.fitness} title="End of week, if done as planned" />}
-        <div className="text-[9px] font-semibold uppercase tracking-wider text-[var(--viz-muted)]">Planned</div>
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--viz-muted)]">Planned</div>
         <dl className="grid grid-cols-[auto_1fr] gap-x-2 tabular-nums">
           <dt className="text-[var(--viz-muted)]">Time</dt>
           <dd className="text-right text-[var(--viz-ink)]">{hm(s.planned.min)}</dd>
@@ -45,7 +45,7 @@ export function WeekColumn({ s, monday, today, pace = null }: { s: WeekSummary |
     </>
   );
   return (
-    <div className="flex min-w-0 flex-col gap-1.5 overflow-hidden border-l bg-[var(--viz-surface)] px-2 py-1.5 text-[11px] leading-4" aria-label={`Week of ${shortDate(monday)}`}>
+    <div className="flex min-w-0 flex-col gap-1.5 overflow-hidden border-l bg-[var(--viz-surface)] px-2 py-1.5 text-[12px] leading-[18px]" aria-label={`Week of ${shortDate(monday)}`}>
       {f && <LoadGrid f={f} title={`On ${shortDate(f.date)}`} />}
       <dl className="grid grid-cols-[auto_1fr] gap-x-2 tabular-nums" title="Done / planned">
         {row('Time', hm(s.done.min), s.planned.min ? hm(s.planned.min) : null)}
@@ -60,14 +60,14 @@ export function WeekColumn({ s, monday, today, pace = null }: { s: WeekSummary |
         <ul className="mt-auto flex flex-wrap gap-x-2 gap-y-0.5 tabular-nums text-[var(--viz-ink)]">
           {sports.map(([id, m]) => (
             <li key={id} className="inline-flex items-center gap-0.5" title={sport(id).label}>
-              <SportIcon id={id} className="h-3 w-3" />
+              <SportIcon id={id} className="h-3.5 w-3.5" />
               <span className="sr-only">{sport(id).label}</span>
               {hm(m)}
             </li>
           ))}
           {s.done.liftSessions > 0 && (
             <li className="inline-flex items-center gap-0.5" title="Lift sessions">
-              <Dumbbell aria-hidden className="h-3 w-3" style={{ color: sport('strength').color }} />
+              <Dumbbell aria-hidden className="h-3.5 w-3.5" style={{ color: sport('strength').color }} />
               {s.done.liftSessions}
             </li>
           )}
@@ -108,7 +108,7 @@ function LoadGrid({ f, title }: { f: { ctl: number; atl: number; tsb: number }; 
     <div className="grid grid-cols-3 gap-1" title={title}>
       {load.map(([full, short, value, color]) => (
         <div key={short} title={full} className="min-w-0">
-          <div className="flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-[var(--viz-muted)]">
+          <div className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--viz-muted)]">
             <span className="h-0.5 w-2 shrink-0 rounded-full" style={{ background: color }} />
             {short}
           </div>
@@ -122,7 +122,7 @@ function LoadGrid({ f, title }: { f: { ctl: number; atl: number; tsb: number }; 
 /** The week's totals on one line, done / planned (the phone agenda's week header; the plan review shows `plannedOnly`). `bars`: a done / planned bar under each. */
 export function WeekTotals({ s, plannedOnly = false, bars = false }: { s: WeekSummary; plannedOnly?: boolean; bars?: boolean }) {
   return (
-    <span className="flex flex-wrap gap-x-3 text-[11px] tabular-nums">
+    <span className="flex flex-wrap gap-x-3 text-[12px] tabular-nums">
       <span className="inline-flex flex-col">
         <span><span className="text-[var(--viz-muted)]">Time </span><span className="text-[var(--viz-ink)]">{plannedOnly ? hm(s.planned.min) : `${hm(s.done.min)}${s.planned.min ? ` / ${hm(s.planned.min)}` : ''}`}</span></span>
         {bars && !plannedOnly && s.planned.min > 0 && <WeekBar done={s.done.min} planned={s.planned.min} label="Time" className="mt-0.5" />}

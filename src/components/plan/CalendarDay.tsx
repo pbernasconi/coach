@@ -33,18 +33,18 @@ export function CalendarDayHead({
   const past = date < today;
   const isToday = date === today;
   return (
-    <div className="flex h-5 shrink-0 items-center gap-1">
+    <div className="flex h-6 shrink-0 items-center gap-1">
       {weekdayLabel && !isToday && <span className="pl-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--viz-muted)]">{weekday(date)}</span>}
       <span
         className={cn(
-          'inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold tabular-nums',
+          'inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-[13px] font-semibold tabular-nums',
           isToday ? 'bg-primary text-primary-foreground' : past ? 'text-[var(--viz-muted)]' : 'text-[var(--viz-ink)]'
         )}
       >
         {date.slice(8) === '01' && !weekdayLabel && <span className="mr-1 uppercase tracking-wide">{monthShort(date)}</span>}
         {Number(date.slice(8))}
       </span>
-      {isToday && <span className="text-[10px] font-semibold uppercase tracking-wide text-primary">Today</span>}
+      {isToday && <span className="text-[11px] font-semibold uppercase tracking-wide text-primary">Today</span>}
       {health && past && (
         <HealthBadge
           date={date}
