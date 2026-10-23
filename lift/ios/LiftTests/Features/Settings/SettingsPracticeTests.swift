@@ -18,7 +18,9 @@ import Testing
             health: RecordingHealthRecorder(status: .notSaved),
             units: InMemoryUnitSettings(.kg),
             practice: practice,
+            data: FakeAppData(),
             now: { ManualNow.start },
+            calendar: SessionBuilder.calendar,
             router: RecordingNavigator()
         )
     }

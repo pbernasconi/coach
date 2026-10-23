@@ -3,7 +3,8 @@ import KoboTokens
 import LiftCore
 import SwiftUI
 
-/// Dumb view: units, where the data lives, Apple Health, sync, and the app version (SCR-2).
+/// Dumb view (SCR-2), short and in order of use: the coach's side and every connection (from the server), this
+/// iPhone's sync and Apple Health, training settings, practice mode, and the version at the foot.
 struct SettingsContent: View {
     let state: SettingsState
     let send: (SettingsAction) -> Void
@@ -11,32 +12,25 @@ struct SettingsContent: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Space.section) {
-                ListSection(
-                    "Units",
-                    footer: "New workouts and templates use it. Past workouts keep the unit they were logged in."
-                ) {
+                SettingsCoachSections(remote: state.remote, send: send)
+                SettingsPhoneSection(section: state.sync, health: state.health, send: send)
+                ListSection("Training", footer: "Past workouts keep the unit they were logged in.") {
                     SegmentedPicker(
                         "Weight unit",
                         selection: .action(state.unit) { send(.unitSelected($0)) },
                         options: [
-                            ChoiceOption(WeightUnit.kg, title: "Kilograms (kg)"),
-                            ChoiceOption(WeightUnit.lb, title: "Pounds (lb)"),
+                            ChoiceOption(WeightUnit.kg, title: "kg"),
+                            ChoiceOption(WeightUnit.lb, title: "lb"),
                         ]
                     )
                     .padding(.vertical, Space.sm)
                     .pageGutter()
+                    ListRow(verbatim: String(localized: "Plates and bars"), action: { send(.platesTapped) }) {
+                        SettingsIcon(symbol: "scalemass.fill", tone: .accent)
+                    }
                 }
-                ListSection("Barbell", footer: "Plates per side and warm-ups on the Workout screen use these.") {
-                    ListRow("Plates and bars", action: { send(.platesTapped) })
-                }
-                dataSection
-                SettingsHealthSection(status: state.health, send: send)
-                SettingsSyncSection(section: state.sync, send: send)
                 SettingsPracticeSection(section: state.practice, send: send)
-                ListSection("About") {
-                    ListRow("Version", value: state.version)
-                    ListRow("Acknowledgements", action: { send(.acknowledgementsTapped) })
-                }
+                SettingsFooter(version: state.version, dataSource: state.dataSource, send: send)
             }
             .pageColumn()
             .padding(.bottom, Space.xxl)
@@ -53,26 +47,32 @@ struct SettingsContent: View {
             TokenEditorButtons(editor: editor, send: send)
         }
     }
+}
 
-    @ViewBuilder
-    private var dataSection: some View {
-        switch state.dataSource {
-        case .device:
-            ListSection("Data") {
-                ListRow("Stored", value: String(localized: "On this iPhone"))
-            }
-        case .demo:
-            ListSection("Data", footer: "Demo data is made up and is not saved.") {
-                ListRow("Stored", value: String(localized: "Demo data"))
-            }
-        case .fresh:
-            ListSection("Data", footer: "This launch starts empty and is not saved.") {
-                ListRow("Stored", value: String(localized: "Not saved"))
-            }
-        case .practice:
-            ListSection("Data", footer: "Sample workouts, kept apart from your log.") {
-                ListRow("Stored", value: String(localized: "Practice data"))
-            }
+/// The foot of the page: the version and where the data lives in one small line, and the acknowledgements.
+private struct SettingsFooter: View {
+    @Environment(\.koboTheme) private var theme
+    let version: String
+    let dataSource: AppInfo.DataSource
+    let send: (SettingsAction) -> Void
+
+    var body: some View {
+        VStack(spacing: Space.xs) {
+            Text(verbatim: "Lift \(version) · \(stored)")
+                .font(theme.font(.footnote))
+                .foregroundStyle(theme.palette.textTertiary)
+            Button("Acknowledgements") { send(.acknowledgementsTapped) }
+                .buttonStyle(.kobo(.plain, size: .compact))
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var stored: String {
+        switch dataSource {
+        case .device: String(localized: "On this iPhone")
+        case .demo: String(localized: "Demo data, not saved")
+        case .fresh: String(localized: "Not saved")
+        case .practice: String(localized: "Practice data")
         }
     }
 }

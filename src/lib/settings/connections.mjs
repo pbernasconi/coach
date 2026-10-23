@@ -112,7 +112,7 @@ export function connectionsFrom({ status, bodyspec, now }) {
   const liftNote = warnings.find((/** @type {{ source: string, level: Level, text: string }} */ w) => w.source === 'lift' && w.level !== 'info');
   add({
     id: 'lift', name: 'Lift', connected: Boolean(lift.lastChangeAt), level: liftNote?.level ?? 'ok', required: true,
-    statusText: lift.lastChangeAt ? `Last change ${agoText(lift.lastChangeAt, now)}` : 'Not synced yet',
+    statusText: lift.lastChangeAt ? `Synced ${agoText(lift.lastChangeAt, now)}` : 'Not synced yet',
     detailText: `${lift.sessions} ${lift.sessions === 1 ? 'session' : 'sessions'}`,
     note: liftNote?.text ?? null, lastSyncedAt: lift.lastChangeAt,
   });

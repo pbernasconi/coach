@@ -11,5 +11,6 @@ struct SettingsScreen: View {
     var body: some View {
         SettingsContent(state: viewModel.state, send: { viewModel.send($0) })
             .task { await viewModel.run() }
+            .appRefreshable { await viewModel.send(.refreshPulled)?.value }
     }
 }

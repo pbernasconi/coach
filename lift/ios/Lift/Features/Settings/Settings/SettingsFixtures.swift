@@ -1,4 +1,5 @@
 #if DEBUG
+    import Foundation
     import LiftCore
 
     /// Named states for previews and snapshots. Fake data only (TEST-8).
@@ -10,6 +11,17 @@
             sync: .available(SyncSummary(status: "Synced 2 min ago", isSyncing: false, hasToken: true)),
             health: .on
         )
+        /// With the server's half loaded from the made-up demo body: the coach's side and every connection.
+        static var fixtureConnected: SettingsState {
+            var state = fixtureDefault
+            if let url = Bundle.main.url(forResource: "app-settings", withExtension: "json"),
+                let data = try? Data(contentsOf: url),
+                let settings = try? JSONDecoder().decode(AppSettings.self, from: data)
+            {
+                state.remote.content = .loaded(settings)
+            }
+            return state
+        }
         /// Apple Health on in Lift but not allowed in Health.
         static let fixtureHealthDenied = SettingsState(
             unit: .kg,

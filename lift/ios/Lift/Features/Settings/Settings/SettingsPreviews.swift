@@ -14,6 +14,9 @@
     }
 
     #Preview("Default") { SettingsPreview(state: .fixtureDefault) }
+    #Preview("Connected") { SettingsPreview(state: .fixtureConnected) }
+    #Preview("Connected, dark") { SettingsPreview(state: .fixtureConnected).preferredColorScheme(.dark) }
+    #Preview("Connected, AX3") { SettingsPreview(state: .fixtureConnected).dynamicTypeSize(.accessibility3) }
     #Preview("Dark") { SettingsPreview(state: .fixtureDefault).preferredColorScheme(.dark) }
     #Preview("Pounds") { SettingsPreview(state: .fixturePounds) }
     #Preview("Health not allowed") { SettingsPreview(state: .fixtureHealthDenied) }

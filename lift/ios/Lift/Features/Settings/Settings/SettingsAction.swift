@@ -22,4 +22,8 @@ nonisolated enum SettingsAction: Equatable, Sendable {
     case healthToggled(Bool)
     /// The Practice mode switch: sample workouts in their own database, or back to the log.
     case practiceModeToggled(Bool)
+    /// Pull to refresh: sync this iPhone and read the connections again.
+    case refreshPulled
+    /// "Try again" under the connections when they could not be read.
+    case retryTapped
 }

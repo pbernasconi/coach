@@ -26,7 +26,7 @@ struct SettingsPracticeSection: View {
 
     private var footer: LocalizedStringKey {
         section.isOn
-            ? "Turn it off to go back to your log. Turning it on again starts over with new sample workouts."
-            : "Try Lift with sample workouts. Nothing done in practice mode reaches your log, sync or Apple Health."
+            ? "Turning it on again starts over with new sample workouts."
+            : "Sample workouts that never reach your log, sync or Apple Health."
     }
 }

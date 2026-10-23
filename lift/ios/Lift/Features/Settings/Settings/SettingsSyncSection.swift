@@ -2,40 +2,64 @@ import KoboComponents
 import KoboTokens
 import SwiftUI
 
-/// The Sync section: status, "Sync now" and the token row, or a note when this data or build never syncs.
-struct SettingsSyncSection: View {
+/// This iPhone: how its sync with Coach stands (with Sync now and the token), and saving workouts to Apple Health.
+/// Demo and practice data never sync and never reach Health: one row says so.
+struct SettingsPhoneSection: View {
     let section: SyncSection
+    let health: HealthStatus
     let send: (SettingsAction) -> Void
 
     var body: some View {
+        ListSection("This iPhone", footer: footer) {
+            syncRows
+            if health.canToggle {
+                ToggleRow(
+                    verbatim: String(localized: "Save to Apple Health"),
+                    subtitle: HealthText.status(health),
+                    systemImage: "heart",
+                    isOn: .action(health.isOn) { send(.healthToggled($0)) }
+                )
+            } else {
+                ListRow(verbatim: String(localized: "Apple Health"), value: HealthText.status(health)) {
+                    SettingsIcon(symbol: "heart", tone: .danger)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private var syncRows: some View {
         switch section {
         case .demo:
-            ListSection("Sync", footer: "Demo and practice data are never synced.") {
-                ListRow("Status", value: String(localized: "Off"))
+            ListRow(verbatim: String(localized: "Sync with Coach"), value: String(localized: "Off")) {
+                SettingsIcon(symbol: "arrow.triangle.2.circlepath", tone: .info)
             }
         case .unavailable:
-            ListSection("Sync", footer: "This build of Lift has no sync server.") {
-                ListRow("Status", value: String(localized: "Not set up"))
+            ListRow(verbatim: String(localized: "Sync with Coach"), value: String(localized: "Not set up")) {
+                SettingsIcon(symbol: "arrow.triangle.2.circlepath", tone: .info)
             }
         case .available(let summary):
-            ListSection(
-                "Sync",
-                footer: "Sends your workouts to your coach web app. Logging never waits for the network."
-            ) {
-                ListRow("Status", value: summary.status)
-                ListRow("Sync now", action: { send(.syncNowTapped) }) {
-                    EmptyView()
-                } trailing: {
-                    Image(systemName: "arrow.triangle.2.circlepath")
-                        .accessibilityHidden(true)
-                }
-                .disabled(!summary.canSyncNow)
-                ListRow(
-                    "Sync token",
-                    value: summary.hasToken ? String(localized: "Saved") : String(localized: "Not set"),
-                    action: { send(.tokenRowTapped) }
-                )
+            ListRow(verbatim: String(localized: "Sync with Coach"), subtitle: summary.status) {
+                SettingsIcon(symbol: "arrow.triangle.2.circlepath", tone: .info)
+            } trailing: {
+                Button("Sync now") { send(.syncNowTapped) }
+                    .buttonStyle(.kobo(.tonal, size: .compact))
+                    .disabled(!summary.canSyncNow)
             }
+            ListRow(
+                verbatim: String(localized: "Sync token"),
+                value: summary.hasToken ? String(localized: "Saved") : String(localized: "Not set"),
+                action: { send(.tokenRowTapped) }
+            ) {
+                SettingsIcon(symbol: "key.fill", tone: .neutral)
+            }
+        }
+    }
+
+    private var footer: LocalizedStringKey? {
+        switch section {
+        case .demo: "Demo and practice data never sync or reach Apple Health."
+        case .unavailable: "This build of Lift has no sync server."
+        case .available: nil
         }
     }
 }
