@@ -84,7 +84,9 @@ Honor:
 - **Ski touring (Nov–Jun):** a ski tour can replace the long ride as the weekend long aerobic day. When the ski goal needs peaks, offer the weekend to a tour (`ski-tour`).
 - **Aerobic days:** 30–90 min Z1/Z2, with 6 × 6–8 s bike sprints or 4–6 × 20 s run strides, ≥3 min rest between.
 - **2 strength sessions** separated by ≥24h: `Heavy barbell` (lower + pull) and `Upper (dumbbells)` at home;
-  `Hotel gym (dumbbells)` replaces either one when traveling. **Never a heavy lift on the same day as a workout** (Paolo's rule; it overrides the PDF). Put the heavy lift on an aerobic day; the hotel lift can follow an aerobic day or travel.
+  `Hotel gym (dumbbells)` replaces either one when traveling. Short weeks (travel, newborn): a **home mini session**
+  from PLAN-STRUCTURE ("Home mini sessions") keeps the floor; copy its numbered lines into `description` as written
+  (no `liftTemplate`) so each set can be logged. **Never a heavy lift on the same day as a workout** (Paolo's rule; it overrides the PDF). Put the heavy lift on an aerobic day; the hotel lift can follow an aerobic day or travel.
 
 **Heat / weather is training load**
 - Compare the destination's temps to what he's adapted to (SF is 12–22°C). A jump of >8°C means he is NOT heat-adapted.
@@ -136,7 +138,7 @@ Write the draft `plans/YYYY-MM-DD.json` (local and gitignored: an input, not a r
       "start": "YYYY-MM-DDTHH:MM:SS",
       "end": "YYYY-MM-DDTHH:MM:SS",
       "timeZone": "America/Los_Angeles",
-      "workoutType": "ride-threshold-a|ride-threshold-b|ride-vo2-a|ride-vo2-b|ride-tempo|run-threshold-a|run-threshold-b|run-vo2-a|run-vo2-b|run-tempo|run-test-10k|strength-heavy|strength-dumbbell|run-easy|run-long|ride-z2|ride-long|ski-tour|recovery|swim|yoga",
+      "workoutType": "ride-threshold-a|ride-threshold-b|ride-vo2-a|ride-vo2-b|ride-tempo|run-threshold-a|run-threshold-b|run-vo2-a|run-vo2-b|run-tempo|run-test-10k|strength-heavy|strength-dumbbell|strength-home|mobility|run-easy|run-long|ride-z2|ride-long|ski-tour|recovery|swim|yoga",
       "tss": 0,
       "intensity": "VO2 A: 5×3 min Z5 @ 300–320 W",
       "liftTemplate": "Heavy barbell | Upper (dumbbells) | Hotel gym (dumbbells) — strength workouts only, the exact Lift template name",
