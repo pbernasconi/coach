@@ -192,7 +192,10 @@ export function setTile(s, loadMode, unit) {
   const done = s.status === 'done';
   const logged = done ? [loadText(s.weight, loadMode, unit), `× ${s.reps ?? '?'}`].filter(Boolean).join(' ') : null;
   const beatTarget = done && s.weight != null && s.target.weight != null && s.weight > s.target.weight;
-  return { target, logged, beatTarget };
+  // Fewer reps than the target asked for (the low end of a range): a missed set, not a green one.
+  const minReps = s.target.reps ?? s.target.repMin ?? null;
+  const missedReps = done && s.reps != null && minReps != null && s.reps < minReps;
+  return { target, logged, beatTarget, missedReps };
 }
 
 /** The heaviest target load of the working sets, to compare with last time. @param {{ sets: TextSet[] }} e */
