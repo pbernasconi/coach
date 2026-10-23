@@ -46,7 +46,7 @@ struct WorkoutSummaryContent: View {
     }
 }
 
-/// The day, then duration (when known), sets and volume as tiles: in one row while they fit, stacked at large text
+/// The day, then duration (when known) and sets as tiles: in one row while they fit, stacked at large text
 /// sizes.
 private struct SummaryNumbers: View {
     @Environment(\.koboTheme) private var theme
@@ -69,7 +69,6 @@ private struct SummaryNumbers: View {
             StatTile(label: "Duration", value: duration)
         }
         StatTile(label: "Sets logged", value: summary.sets)
-        StatTile(verbatim: String(localized: "Volume"), value: summary.volume, unit: summary.unit)
     }
 }
 

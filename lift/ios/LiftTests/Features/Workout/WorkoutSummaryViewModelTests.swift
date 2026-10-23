@@ -54,7 +54,6 @@ import Testing
         #expect(summary.title == "Lower A")
         #expect(summary.duration == WorkoutSummaryText.duration(1_800))
         #expect(summary.sets == "3")
-        #expect(summary.volume == WorkoutSummaryText.volume(.kg(1_575)))
         // One row for the squat: 105 kg beats 100 kg, and 105 × 7/6 = 122.5 beats 100 × 7/6 = 116.67 (116.5).
         #expect(summary.bests.map(\.value) == ["105 kg"])
         #expect(summary.bests.map(\.detail) == ["105 kg × 5 · est. 1RM 122.5 kg (was 116.5)"])
