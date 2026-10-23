@@ -21,4 +21,6 @@ nonisolated enum ActivityDetailAction: Equatable, Sendable {
     case connectTapped
     /// The "How did it feel" card.
     case feedback(WorkoutFeedbackAction)
+    /// "Open session": the Lift session that completed a planned strength workout.
+    case liftSessionTapped(String)
 }

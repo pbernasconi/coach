@@ -9,6 +9,8 @@ import SwiftUI
 /// one the server could not load shows its own line.
 struct ActivitySections: View {
     let detail: ActivityDetail
+    /// What the coach planned for it: its cards follow "How did it feel". Nil for an activity done without a plan.
+    var plan: AppPlannedWorkout?
     /// "How did it feel", under the numbers; nil hides it.
     let feedback: WorkoutFeedback?
     let save: WorkoutFeedbackSaveState
@@ -26,6 +28,7 @@ struct ActivitySections: View {
             if let feedback {
                 WorkoutFeedbackCard(feedback: feedback, save: save) { send(.feedback($0)) }
             }
+            if let plan { WorkoutPlanCards(workout: plan) }
             if showsAll {
                 ActivityLowerSections(detail: detail, send: send)
             }

@@ -99,7 +99,13 @@ struct ActivityMapPage: View {
                 onConnect: { send(.connectTapped) },
                 showsFreshness: false
             ) { detail in
-                ActivitySections(detail: detail, feedback: state.shownFeedback, save: state.feedback.save, send: send)
+                ActivitySections(
+                    detail: detail,
+                    plan: state.plan,
+                    feedback: state.shownFeedback,
+                    save: state.feedback.save,
+                    send: send
+                )
             } placeholder: {
                 ActivityDetailSkeleton(seed: state.seed)
             }

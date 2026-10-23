@@ -41,7 +41,7 @@ private struct ActivityPage: View {
                 ActivityMapPage(route: heroRoute, state: state, send: send)
                     .transition(Motion.crossFade(reduceMotion: reduceMotion))
             } else {
-                ActivityScrollPage(state: state, title: header?.name, send: send)
+                ActivityScrollPage(state: state, title: header?.name ?? state.plan?.title, send: send)
                     .transition(Motion.crossFade(reduceMotion: reduceMotion))
             }
         }
@@ -65,7 +65,8 @@ private struct ActivityPage: View {
     }
 }
 
-/// The page with no map: it loads, and scrolls under the bar, which shows the name once the header has gone.
+/// The page with no map: it loads, and scrolls under the bar, which shows the name once the header has gone. A workout
+/// still to do shows its plan; a done one what was done, with the plan's cards in it.
 private struct ActivityScrollPage: View {
     let state: ActivityDetailState
     let title: String?
@@ -74,12 +75,22 @@ private struct ActivityScrollPage: View {
     var body: some View {
         ScrollView {
             AppResourcePage(
-                state.detail,
+                state.workout,
                 onRetry: { send(.retryTapped) },
                 onConnect: { send(.connectTapped) },
                 showsFreshness: false
-            ) { detail in
-                ActivitySections(detail: detail, feedback: state.shownFeedback, save: state.feedback.save, send: send)
+            ) { workout in
+                if let activity = workout.activity {
+                    ActivitySections(
+                        detail: activity,
+                        plan: workout.plan,
+                        feedback: state.shownFeedback,
+                        save: state.feedback.save,
+                        send: send
+                    )
+                } else if let plan = workout.plan {
+                    WorkoutPlanSections(workout: plan, feedback: state.shownFeedback, save: state.feedback.save, send: send)
+                }
             } placeholder: {
                 ActivityDetailSkeleton(seed: state.seed)
             }

@@ -5,7 +5,7 @@
     /// Named states for previews and the demo gallery. Fake data only (TEST-8).
     extension ActivityDetailState {
         static var fixtureRun: ActivityDetailState {
-            ActivityDetailState(activityID: "9000000102", detail: TrainingSamples.loaded(TrainingSamples.run))
+            ActivityDetailState(ref: "strava-9000000102", detail: TrainingSamples.loaded(TrainingSamples.run))
         }
 
         static var fixtureRunByTime: ActivityDetailState {
@@ -16,18 +16,18 @@
         }
 
         static var fixtureRide: ActivityDetailState {
-            ActivityDetailState(activityID: "9000000103", detail: TrainingSamples.loaded(TrainingSamples.ride))
+            ActivityDetailState(ref: "strava-9000000103", detail: TrainingSamples.loaded(TrainingSamples.ride))
         }
 
         static var fixturePending: ActivityDetailState {
-            ActivityDetailState(activityID: "9000000104", detail: TrainingSamples.loaded(TrainingSamples.pending))
+            ActivityDetailState(ref: "strava-9000000104", detail: TrainingSamples.loaded(TrainingSamples.pending))
         }
 
-        static var fixtureLoading: ActivityDetailState { ActivityDetailState(activityID: "9000000102") }
+        static var fixtureLoading: ActivityDetailState { ActivityDetailState(ref: "strava-9000000102") }
 
         static var fixtureFailed: ActivityDetailState {
-            var state = ActivityDetailState(activityID: "9000000102")
-            state.detail.content = .failed(message: "Coach has nothing here.")
+            var state = ActivityDetailState(ref: "strava-9000000102")
+            state.workout.content = .failed(message: "Coach has nothing here.")
             return state
         }
     }

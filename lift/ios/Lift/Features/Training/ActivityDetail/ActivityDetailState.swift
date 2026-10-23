@@ -26,7 +26,8 @@ nonisolated enum ActivityPanel: String, Hashable, Identifiable, Sendable {
     var id: String { rawValue }
 }
 
-/// Everything the activity page renders. Exclusive states are enums (SCR-6).
+/// Everything the workout page renders: one workout, planned and done as one (`WorkoutDetail`). Exclusive states are
+/// enums (SCR-6).
 nonisolated struct ActivityDetailState: Equatable, Sendable {
     /// What is shown over the page.
     enum Destination: Equatable, Sendable {
@@ -39,19 +40,55 @@ nonisolated struct ActivityDetailState: Equatable, Sendable {
         if case .panel(let panel) = destination { panel } else { nil }
     }
 
-    /// The id the page was opened with (a Strava id, or `latest`).
-    var activityID: String
-    /// What the list knew, for the first frame; nil when the page opened from a link.
+    /// The workout the page was opened with: `plan-<id>` or `strava-<id>` (also `strava-latest`).
+    var ref: String
+    /// What the list knew, for the first frame; nil when the page opened from a link or the plan.
     var seed: ActivitySeed?
-    var detail = AppResourceState<ActivityDetail>()
+    var workout = AppResourceState<WorkoutDetail>()
     var axis: AnalysisAxis = .distance
     /// The pace bars' mode key (`splits`, `laps`, `smoothed`); the first the server sends when `nil`.
     var paceMode: String?
     var destination: Destination?
     var feedback = WorkoutFeedbackEdit()
 
+    init(ref: String, seed: ActivitySeed? = nil, detail: AppResourceState<ActivityDetail>? = nil) {
+        self.ref = ref
+        self.seed = seed
+        if let detail { self.detail = detail }
+    }
+
+    /// The done half as the activity views read it; `.empty` while there is none (a workout still to do).
+    var detail: AppResourceState<ActivityDetail> {
+        get {
+            let content: KoboPatterns.Loadable<ActivityDetail> =
+                switch workout.content {
+                case .loading: .loading
+                case .empty: .empty
+                case .failed(let message, let retryLabel): .failed(message: message, retryLabel: retryLabel)
+                case .loaded(let w): w.activity.map { .loaded($0) } ?? .empty
+                }
+            return AppResourceState(content: content, freshness: workout.freshness, needsReconnect: workout.needsReconnect)
+        }
+        set {
+            workout = AppResourceState(
+                content: newValue.content.map { WorkoutDetail(activity: $0) },
+                freshness: newValue.freshness,
+                needsReconnect: newValue.needsReconnect
+            )
+        }
+    }
+
+    /// The planned half: what the coach planned, nil for a workout done without a plan.
+    var plan: AppPlannedWorkout? { workout.content.value?.plan }
+
+    /// Loaded, and planned but not done yet: the page shows the plan.
+    var isPlanOnly: Bool {
+        guard let w = workout.content.value else { return false }
+        return w.activity == nil && w.plan != nil
+    }
+
     /// The card's feedback: the edited copy, else the body's.
     var shownFeedback: WorkoutFeedback? {
-        feedback.shown(detail.content.value?.feedback)
+        feedback.shown(workout.content.value?.feedback)
     }
 }

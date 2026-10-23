@@ -10,14 +10,20 @@ import Testing
 @Suite struct ActivityDetailViewModelTests {
     let router = RecordingNavigator()
     let tabs = RecordingTabs()
-    static let path = ActivityDetail.path("9000000102")
+    static let ref = WorkoutDetail.stravaRef("9000000102")
+    static let path = WorkoutDetail.path(ref)
 
-    func loaded(_ answer: Result<Data, SyncTransportError> = RoutedAppData.demo("app-activities-id"))
-        async -> (ActivityDetailViewModel, RoutedAppData)
-    {
+    /// The demo workout body for `ref`, as the demo data builds it from the demo activity and plan.
+    static func demoWorkout(_ ref: String = ref) async -> Result<Data, SyncTransportError> {
+        guard let data = await DemoAppData.workout(ref, in: .main) else { return .failure(.invalidResponse) }
+        return .success(data)
+    }
+
+    func loaded(_ answer: Result<Data, SyncTransportError>? = nil) async -> (ActivityDetailViewModel, RoutedAppData) {
+        let answer = if let answer { answer } else { await Self.demoWorkout() }
         let data = RoutedAppData([Self.path: answer])
         let vm = ActivityDetailViewModel(
-            activityID: "9000000102",
+            ref: Self.ref,
             seed: nil,
             data: data,
             router: router,
@@ -39,7 +45,7 @@ import Testing
     @Test func retryTappedLoadsAfterAFailure() async {
         let (vm, data) = await loaded(.failure(.rejected(status: 404)))
         #expect(vm.state.detail.content == .failed(message: "Coach has nothing here."))
-        data.answers[Self.path] = RoutedAppData.demo("app-activities-id")
+        data.answers[Self.path] = await Self.demoWorkout()
         await vm.send(.retryTapped)?.value
         #expect(vm.state.detail.content.value != nil)
     }
@@ -117,6 +123,30 @@ import Testing
         #expect(vm.state.feedback.save == .saved)
         #expect(data.puts == ["api/app/feedback"])
     }
+
+    @Test func aPlanWorkoutStillToDoShowsItsPlan() async {
+        let ref = WorkoutDetail.planRef("de300000-0000-4000-8000-0000000000aa")
+        let data = RoutedAppData([WorkoutDetail.path(ref): await Self.demoWorkout(ref)])
+        let vm = ActivityDetailViewModel(
+            ref: ref,
+            seed: nil,
+            data: data,
+            router: router,
+            tabs: tabs,
+            now: SessionBuilder.now,
+            calendar: SessionBuilder.calendar
+        )
+        await vm.run()
+        #expect(vm.state.isPlanOnly)
+        #expect(vm.state.plan?.title == "Sweet spot 3 × 12")
+        #expect(vm.state.detail.content.value == nil)
+    }
+
+    @Test func liftSessionTappedOpensTheSession() async {
+        let (vm, _) = await loaded()
+        vm.send(.liftSessionTapped("DE300000-0000-4000-8000-000000000100"))
+        #expect(router.opened.count == 1)
+    }
 }
 
 /// The splits' bar lengths.
@@ -133,4 +163,6 @@ import Testing
         let got = SplitBarMath.fraction(speed, of: speeds)
         #expect(got.map { ($0 * 1000).rounded() } == expected.map { ($0 * 1000).rounded() })
     }
+
 }
+

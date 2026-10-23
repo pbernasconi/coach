@@ -3,42 +3,16 @@ import KoboTokens
 import LiftSync
 import SwiftUI
 
-/// Dumb view: one planned workout as the web's workout window shows it (SCR-2). The header with its status, the
-/// numbers, the workout (main work, interval chart, steps), the time in each zone, the coach's notes, and links to the
-/// activity or Lift session that completed it.
-struct PlannedWorkoutContent: View {
-    let state: PlannedWorkoutState
-    let send: (PlannedWorkoutAction) -> Void
-
-    var body: some View {
-        ScrollView {
-            AppResourcePage(
-                state.workout,
-                onRetry: { send(.retryTapped) },
-                onConnect: { send(.connectTapped) },
-                showsFreshness: false
-            ) { workout in
-                PlannedWorkoutSections(workout: workout, feedback: state.shownFeedback, save: state.feedback.save, send: send)
-            } placeholder: {
-                PlannedWorkoutSkeleton()
-            }
-            .pageColumn()
-            .padding(.top, Space.sm)
-            .padding(.bottom, Space.xxl)
-        }
-        .workoutBarTitle(state.workout.content.value?.title)
-        .screenCanvas()
-        .workoutFeedbackComment(state.feedback, comment: state.shownFeedback?.comment) { send(.feedback($0)) }
-    }
-}
-
-private struct PlannedWorkoutSections: View {
+/// A workout still to do: its plan, as the web's workout window shows it. The header with its status, the numbers, the
+/// workout (main work, interval chart, steps), the time in each zone, the coach's notes, "How did it feel" from the
+/// workout's day on, and the Lift session when Lift has it.
+struct WorkoutPlanSections: View {
     @Environment(\.koboTheme) private var theme
     let workout: AppPlannedWorkout
     /// "How did it feel", under the numbers once the workout is done; nil hides it.
     let feedback: WorkoutFeedback?
     let save: WorkoutFeedbackSaveState
-    let send: (PlannedWorkoutAction) -> Void
+    let send: (ActivityDetailAction) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: Space.section) {
@@ -49,9 +23,31 @@ private struct PlannedWorkoutSections: View {
                 }
                 .koboCard()
             }
-            if workout.state == "done", let feedback {
+            if let feedback, workout.state != "planned" {
                 WorkoutFeedbackCard(feedback: feedback, save: save) { send(.feedback($0)) }
             }
+            WorkoutPlanCards(workout: workout)
+            links
+        }
+    }
+
+    @ViewBuilder private var links: some View {
+        if let session = workout.liftSessionId {
+            ListSection {
+                ListRow("Open session", action: { send(.liftSessionTapped(session)) })
+            }
+        }
+    }
+}
+
+/// The plan's own cards: the workout structure and its time in zones, the intensity, the coach's notes. On a done
+/// workout they sit under what was done, so planned and done read as one page.
+struct WorkoutPlanCards: View {
+    @Environment(\.koboTheme) private var theme
+    let workout: AppPlannedWorkout
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Space.section) {
             if let structure = workout.workout {
                 PlannedStructureCard(structure: structure)
                 if let zones = structure.zones {
@@ -74,7 +70,6 @@ private struct PlannedWorkoutSections: View {
             if let notes = workout.notes {
                 textCard("Coach notes", notes)
             }
-            links
         }
     }
 
@@ -86,29 +81,11 @@ private struct PlannedWorkoutSections: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
-
-    @ViewBuilder private var links: some View {
-        let activity = workout.done?.activityId
-        if activity != nil || workout.liftSessionId != nil {
-            ListSection {
-                if let activity {
-                    ListRow(
-                        verbatim: String(localized: "Open activity"),
-                        subtitle: workout.done?.name,
-                        action: { send(.activityTapped(activity)) }
-                    )
-                }
-                if let session = workout.liftSessionId {
-                    ListRow("Open session", action: { send(.sessionTapped(session)) })
-                }
-            }
-        }
-    }
 }
 
 /// The shared workout header: the sport and when, the title, the status, and "Changed for how you feel" when the
 /// coach adapted it.
-private struct PlannedWorkoutHeader: View {
+struct PlannedWorkoutHeader: View {
     @Environment(\.koboTheme) private var theme
     let workout: AppPlannedWorkout
 

@@ -4,20 +4,21 @@ import LiftCore
 import LiftSync
 import Observation
 
-/// One activity's page (lift/APP-API.md, "Detail"). It shows what the server sends, section by section.
+/// One workout's page, planned and done as one (lift/APP-API.md, "Workout"). It shows what the server sends.
 @Observable
 final class ActivityDetailViewModel {
     private(set) var state: ActivityDetailState
 
-    private let resource: AppResource<ActivityDetail>
+    private let resource: AppResource<WorkoutDetail>
     private let feedbackSaver: WorkoutFeedbackSaver
     private let router: any Navigating
     private let tabs: any TabSwitching
     @ObservationIgnored private var isLoading = false
 
     /// Protocols only, no defaults, no work (SCR-3).
+    /// - Parameter ref: the workout, `WorkoutDetail.planRef(_:)` or `WorkoutDetail.stravaRef(_:)`.
     init(
-        activityID: String,
+        ref: String,
         seed: ActivitySeed?,
         data: any AppDataSource,
         router: any Navigating,
@@ -26,9 +27,9 @@ final class ActivityDetailViewModel {
         calendar: Calendar
     ) {
         self.tabs = tabs
-        self.state = ActivityDetailState(activityID: activityID, seed: seed)
+        self.state = ActivityDetailState(ref: ref, seed: seed)
         self.resource = AppResource(
-            path: ActivityDetail.path(activityID),
+            path: WorkoutDetail.path(ref),
             source: data,
             now: now,
             days: DayCalendar(calendar: calendar)
@@ -47,7 +48,7 @@ final class ActivityDetailViewModel {
     func send(_ action: ActivityDetailAction) -> Task<Void, Never>? {
         switch action {
         case .retryTapped:
-            state.detail.content = .loading
+            state.workout.content = .loading
             return Task { await load() }
         case .refreshPulled:
             return Task { await load() }
@@ -67,6 +68,8 @@ final class ActivityDetailViewModel {
             state.destination = nil
         case .connectTapped:
             tabs.show(.settings)
+        case .liftSessionTapped(let id):
+            router.open(LiftLinks.session(id))
         case .feedback(let action):
             return saveFeedback(action)
         }
@@ -75,7 +78,7 @@ final class ActivityDetailViewModel {
 
     /// One action on "How did it feel": the shared flow decides, and a save runs on the App API.
     private func saveFeedback(_ action: WorkoutFeedbackAction) -> Task<Void, Never>? {
-        guard let pending = state.feedback.handle(action, loaded: state.detail.content.value?.feedback) else {
+        guard let pending = state.feedback.handle(action, loaded: state.workout.content.value?.feedback) else {
             return nil
         }
         let saver = feedbackSaver
@@ -89,6 +92,6 @@ final class ActivityDetailViewModel {
         guard !isLoading else { return }
         isLoading = true
         defer { isLoading = false }
-        await resource.load(current: state.detail) { state.detail = $0 }
+        await resource.load(current: state.workout) { state.workout = $0 }
     }
 }
