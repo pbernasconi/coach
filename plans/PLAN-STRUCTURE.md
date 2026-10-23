@@ -105,6 +105,58 @@ Zones: prescribe by HR for all but Z5 (HR needs ~5 min at wattage to settle); ca
 - Explosive: box split jump 3 × 5, box jump from seated × 3 (unweighted)
 - Main: hamstring curl (ball) or single-leg DB RDL 3 × 8; pistol squat 3 × 8 (band-assisted OK); single-leg calf raise 3 × 8
 
+### Home mini sessions (no gym; from the coach's TrainingPeaks library)
+
+Short bodyweight / dumbbell sessions for home: prehab for the knees and Achilles, mobility after long days, and the
+strength floor on travel or newborn weeks. They are not a third lift: use one on an aerobic or rest day, or in place of
+a lift when the week is short. No Lift template: the exercise lines below ARE the session. Write them into the
+workout's `description` exactly in this form (`1) Name 3x8: cue`), one per line, so Coach can make the Lift session
+from them and every set can be logged (web "Log sets", phone Start workout). Holds and foam rolling stay plain lines
+(no `NxM`), so they are not counted as sets. `activityType` strength; `workoutType` `strength-home` or `mobility`.
+
+**Running Knee Strength** (coach's, ~40 min, 30 sets). Knees and calves for running.
+1) Dumbbell Bulgarian split squat 3x8: each leg.
+2) Step-up with knee raise 3x8: each leg.
+3) Dumbbell seated single-leg calf raise 3x10: heavy weight, each leg.
+4) Elevated single-leg calf raise 3x12: bodyweight, off a step, knee bent (soleus).
+5) 90-90 3x10: hip switches.
+6) Forward step down 3x8: each leg; a lateral step down also works.
+7) Copenhagen plank 3x8: each side.
+8) Kettlebell goblet squat 3x6: heels raised, get deep; kettlebell or barbell for weight.
+9) Single-leg Romanian deadlift 3x8: each leg, weight to the outside of the foot.
+10) Single-leg box squat 3x8: each leg.
+
+**Mobility** (coach's, ~45 min, 31 sets). After long rides/runs or a stiff week.
+Optional foam roll, 5 min: quads and hip flexors, glutes and IT band, calves, back and shoulders (1 min each).
+1) World's greatest stretch 1x5: each side, slow.
+2) Sumo squat to hamstring stretch 1x8
+3) Shoulder CARs 1x5: each direction.
+Stability, twice through:
+4) 90-90 2x10
+5) Single-leg Romanian deadlift 2x8: each leg, bodyweight.
+6) Wall slides 2x15
+7) Side-lying windmill 2x10: each side.
+8) Glute bridge march 2x8: each leg.
+Mobility stretch, twice through: couch stretch 1 min each side, pigeon stretch 1 min each side.
+9) Thread the needle 2x10: each side.
+10) Lying cactus stretch 2x10
+Circuit: forearm plank 2 rounds of 45 s, side plank 2 rounds of 45 s each side.
+11) Dead bug 2x10: each side.
+
+**Knee & calf mini** (15 min, cut from Running Knee Strength; the default on a busy or newborn week).
+1) Elevated single-leg calf raise 3x12: knee bent, off a step.
+2) Standing calf raise 3x15: off a step, 3 s up, 3 s down.
+3) Forward step down 3x8: each leg.
+4) Copenhagen plank 2x8: each side.
+
+**Mobility mini** (15 min, cut from Mobility; after a long ride or a travel day).
+Couch stretch 1 min each side, pigeon stretch 1 min each side.
+1) World's greatest stretch 1x5: each side.
+2) 90-90 2x10
+3) Glute bridge march 2x8: each leg.
+4) Thread the needle 2x10: each side.
+5) Dead bug 2x10: each side.
+
 ## Paolo's zone anchors (FTP 265 W, LTHR 168, max ~182+; FTP was 280 W until 2026-10-20)
 
 | Zone | HR | Power |

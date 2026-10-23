@@ -176,3 +176,28 @@ test('matchWeek: a workout marked done by hand is done with no activity', () => 
   const r = matchWeek(ws, [], [], day(3)).get('calf');
   assert.deepEqual([r.status, r.match], ['done', null]);
 });
+
+test('matchWeek: a workout claims its own linked Lift session; another workout never takes it', () => {
+  const ws = [
+    w('upper', 0, 'Strength — Upper', { workoutType: 'strength', sortOrder: 0 }),
+    w('calf', 0, 'Home calf raises', { workoutType: 'strength', sortOrder: 1, liftSessionId: 'CALF' }),
+  ];
+  const lifts = [{ id: 'calf', date: day(0), name: 'Home calf raises', setsLogged: 2 }, { id: 'up', date: day(0), name: 'Upper A', setsLogged: 18 }];
+  const result = matchWeek(ws, [], lifts, day(2));
+  assert.equal(result.get('upper').match.id, 'up');
+  assert.equal(result.get('calf').match.id, 'calf');
+  // With only the other session logged, the linked workout stays unmatched.
+  const only = matchWeek(ws, [], [lifts[1]], day(2));
+  assert.equal(only.get('upper').match.id, 'up');
+  assert.equal(only.get('calf').match, null);
+});
+
+test('matchWeek: a fresh session goes to the workout with no session of its own, whatever the order', () => {
+  const ws = [
+    w('calf', 0, 'Home calf raises', { workoutType: 'strength', sortOrder: 0, liftSessionId: 'calf' }),
+    w('upper', 0, 'Strength — Upper', { workoutType: 'strength', sortOrder: 1 }),
+  ];
+  const result = matchWeek(ws, [], [{ id: 'up', date: day(0), name: 'Upper A', setsLogged: 18 }], day(2));
+  assert.equal(result.get('upper').match.id, 'up');
+  assert.equal(result.get('calf').match, null);
+});

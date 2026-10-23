@@ -15,6 +15,7 @@
  *   | { type: 'addExercise', exerciseId: string, sets: number, reps: number | null, weight: number | null, unit?: 'kg' | 'lb' }
  *   | { type: 'resetSession' }
  *   | { type: 'unlogSet', setId: string }
+ *   | { type: 'logSet', setId: string, reps: number, weight?: number | null, unit?: 'kg' | 'lb' }
  * )} LiftEdit
  * @typedef {{ entity: 'session' | 'sessionExercise' | 'set', op: 'insert' | 'update' | 'delete', payload: Row }} LiftChange
  */
@@ -45,7 +46,8 @@ const newId = (uuid) => uuid().toUpperCase();
  * to planned (every set planned with no actuals, no start or finish), finished or not. Weights and reps must be 0–2000 and 1–200.
  * @param {SessionRows} rows
  * @param {LiftEdit[]} edits
- * @param {{ now?: Date, uuid?: () => string }} [opts]
+ * @param {{ now?: Date, uuid?: () => string, today?: string, timeZone?: string }} [opts] today and timeZone: the user's
+ *   day ('YYYY-MM-DD') and zone, for `logSet`
  * @returns {{ changes: LiftChange[] } | { error: string }}
  */
 export function planLiftEdit(rows, edits, opts = {}) {
@@ -57,6 +59,8 @@ export function planLiftEdit(rows, edits, opts = {}) {
   if (edits.some((e) => e?.type === 'resetSession')) return { error: 'Reset the session on its own.' };
   if (edits.length === 1 && edits[0]?.type === 'unlogSet') return unlogSet(rows, edits[0].setId, now);
   if (edits.some((e) => e?.type === 'unlogSet')) return { error: 'Un-log a set on its own.' };
+  if (edits.length >= 1 && edits.every((e) => e?.type === 'logSet')) return logSets(rows, edits, now, opts.today, opts.timeZone);
+  if (edits.some((e) => e?.type === 'logSet')) return { error: 'Log sets on their own.' };
   if (session.finishedAt) return { error: 'The session is finished; edit it in Lift.' };
 
   // Working copies, so later edits see earlier ones; `touched` keeps the change for each row once.
@@ -255,6 +259,81 @@ function unlogSet(rows, setId, now) {
     changes.push({ entity: 'session', op: 'update', payload: { ...session, startedAt: null, finishedAt: null, updatedAt: stamp(session, now) } });
   }
   return { changes: parentsFirst(changes), after: { exercises, sets } };
+}
+
+/** Noon of `day` in the IANA zone `timeZone` (UTC noon for a bad zone), as an ISO instant. */
+export function noonIn(day, timeZone) {
+  const utcNoon = Date.parse(`${day}T12:00:00.000Z`);
+  try {
+    const parts = Object.fromEntries(
+      new Intl.DateTimeFormat('en-US', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
+        .formatToParts(utcNoon)
+        .map((p) => [p.type, p.value])
+    );
+    const shown = Date.parse(`${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:00.000Z`);
+    return new Date(utcNoon - (shown - utcNoon)).toISOString();
+  } catch {
+    return new Date(utcNoon).toISOString();
+  }
+}
+
+/**
+ * When a set logged from the web happened: now for a session of today (or with no day), else noon of the session's
+ * day in the user's time zone, so a session logged the morning after still reads as done on its own day.
+ * @param {Row} session
+ * @param {Date} now
+ * @param {string | undefined} today
+ * @param {string} [timeZone]
+ */
+export function loggedAt(session, now, today, timeZone = 'UTC') {
+  const day = typeof session.day === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(session.day) ? session.day : null;
+  if (!day || !today || day >= today) return now.toISOString();
+  return noonIn(day, timeZone);
+}
+
+/**
+ * The changes that log sets after the fact (a home session done without the phone): each set done with its reps and
+ * weight (the target weight when none is given), and a session never started is started and finished, so it reads as
+ * done in Lift and on the calendar (one in progress on the phone today stays in progress). Sets not logged stay planned, which makes the workout partly done. Works on a finished
+ * session too (a set added later). A logged set can be logged again with new numbers.
+ * @param {SessionRows} rows
+ * @param {Extract<LiftEdit, { type: 'logSet' }>[]} edits
+ * @param {Date} now
+ * @param {string | undefined} today
+ * @param {string | undefined} timeZone
+ */
+function logSets(rows, edits, now, today, timeZone) {
+  const { session } = rows;
+  const ids = new Set(rows.exercises.filter(alive).map((e) => String(e.id).toLowerCase()));
+  const sets = new Map(rows.sets.filter((s) => alive(s) && ids.has(String(s.sessionExerciseID).toLowerCase())).map((s) => [String(s.id).toLowerCase(), s]));
+  const at = loggedAt(session, now, today, timeZone);
+  /** @type {LiftChange[]} */
+  const changes = [];
+  for (const e of edits) {
+    const key = String(e.setId).toLowerCase();
+    const s = sets.get(key);
+    if (!s) return { error: 'That set is not in this session.' };
+    const reps = Math.round(Number(e.reps));
+    if (!(reps >= 1 && reps <= 200)) return { error: 'The reps must be 1 to 200.' };
+    let weight = s.targetWeight ?? null;
+    if (e.weight !== undefined) {
+      if (e.weight !== null && !(typeof e.weight === 'number' && Number.isFinite(e.weight) && e.weight >= 0 && e.weight <= 2000)) {
+        return { error: 'The weight must be 0 to 2000.' };
+      }
+      weight = toUnit(e.weight, e.unit, s.unit);
+    }
+    const next = { ...s, status: 'done', actualReps: reps, actualWeight: weight, completedAt: s.completedAt ?? at, updatedAt: stamp(s, now) };
+    sets.set(key, next);
+    changes.push({ entity: 'set', op: 'update', payload: next });
+  }
+  // Never started: done after the fact, so started and finished. Started on the phone today: still in progress there.
+  const past = Boolean(today && typeof session.day === 'string' && session.day < today);
+  if (!session.startedAt || (!session.finishedAt && past)) {
+    const start = session.startedAt ?? at;
+    const finish = Date.parse(at) >= Date.parse(start) ? at : start;
+    changes.push({ entity: 'session', op: 'update', payload: { ...session, startedAt: start, finishedAt: finish, updatedAt: stamp(session, now) } });
+  }
+  return { changes: parentsFirst(changes), after: { exercises: rows.exercises.filter(alive), sets: rows.sets.filter(alive).map((s) => sets.get(String(s.id).toLowerCase()) ?? s) } };
 }
 
 /**

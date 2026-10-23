@@ -52,3 +52,13 @@ test('labels name the level', () => {
   assert.equal(complianceOf({ duration: 60 }, 'done', { min: 60 }).label, 'Done');
   assert.equal(complianceOf({ duration: 60 }, 'missed', null).label, 'Not done');
 });
+
+test('a Lift session compares sets logged with sets planned', () => {
+  // Home calf raises: 3 + 3 sets planned, 2 logged.
+  assert.deepEqual(complianceOf({ duration: 15 }, 'done', null, { sets: { done: 2, planned: 6 } }), { level: 'partial', label: 'Partly done', ratio: 2 / 6, basis: 'sets' });
+  assert.equal(complianceOf({ duration: 15 }, 'done', { min: 15 }, { sets: { done: 5, planned: 6 } }).level, 'good');
+  // Extra sets are still done; nothing logged (marked done by hand) has nothing to compare.
+  assert.equal(complianceOf({}, 'done', null, { sets: { done: 8, planned: 6 } }).level, 'good');
+  assert.equal(complianceOf({}, 'done', null, { sets: { done: 0, planned: 6 } }).level, 'done');
+  assert.equal(complianceOf({}, 'missed', null, { sets: { done: 0, planned: 6 } }).level, 'missed');
+});

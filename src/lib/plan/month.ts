@@ -9,7 +9,7 @@ import { complianceOf } from './compliance.mjs';
 import { libraryFrom, monthWeeks, weekSummary } from './calendar.mjs';
 import { addDays, matchActivityId, matchWeek, mondayOf, sportOf, sportOfStrava } from './week.mjs';
 
-export type Compliance = { level: string; label: string; ratio: number | null; basis: 'duration' | 'tss' | null };
+export type Compliance = { level: string; label: string; ratio: number | null; basis: 'duration' | 'tss' | 'sets' | null };
 
 export type CalendarActivity = {
   id: string;
@@ -151,7 +151,8 @@ export async function loadRange(userId: string, fromMonday: string, toMonday: st
 
   const base = planRows.map(toWorkout);
   const imported = new Set(planRows.filter((r) => r.source_key).map((r) => String(r.id)));
-  const matched = matchWeek(base, activities, lifts, today) as Map<string, { status: Workout['state']; match: Workout['match'] }>;
+  const linkedIds = new Map(planRows.map((r) => [String(r.id), r.lift_session_id ? String(r.lift_session_id) : null]));
+  const matched = matchWeek(base.map((w) => ({ ...w, liftSessionId: linkedIds.get(w.id) })), activities, lifts, today) as Map<string, { status: Workout['state']; match: Workout['match'] }>;
   const byStrava = new Map(activities.map((a) => [a.id, a]));
   const linked = new Map(planRows.map((r) => [String(r.id), r.lift_session_id ? String(r.lift_session_id) : null]));
   const syncOf = new Map(
@@ -171,7 +172,10 @@ export async function loadRange(userId: string, fromMonday: string, toMonday: st
     const actId = matchActivityId(m.match);
     const act = actId ? byStrava.get(actId) : null;
     const actual = m.match ? { min: act?.min ?? null, tss: act?.tss ?? null, km: act?.km || null } : null;
-    const compliance = complianceOf(w, m.status, actual, { rest: sportOf(w) === 'rest' }) as Compliance;
+    // A Lift session is measured by its working sets: 2 of 6 logged is partly done, whatever the watch timed.
+    const working = liftDetail?.exercises.flatMap((e) => e.sets.filter((s) => s.kind !== 'warmUp')) ?? [];
+    const sets = working.length ? { done: working.filter((s) => s.status === 'done').length, planned: working.length } : null;
+    const compliance = complianceOf(w, m.status, actual, { rest: sportOf(w) === 'rest', sets }) as Compliance;
     return { ...w, state: m.status, match: m.match, actual, compliance, imported: imported.has(w.id), lift: liftDetail, liftSessionId: linked.get(w.id) ?? null, syncs: syncOf.get(w.id) ?? {} };
   });
 

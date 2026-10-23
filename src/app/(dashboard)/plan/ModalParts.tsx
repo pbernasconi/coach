@@ -81,7 +81,7 @@ export function OpenButton({ href, label }: { href: string; label: string }) {
 /** The plan status as a chip for the header: icon, label, and the share of the plan done. */
 export function StatusChip({ level, ratio, basis }: { level: string; ratio: number | null; basis: string | null }) {
   return (
-    <span className="hidden items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs sm:inline-flex" title={ratio != null ? `${Math.round(ratio * 100)}% of the planned ${basis === 'tss' ? 'TSS' : 'time'}` : undefined}>
+    <span className="hidden items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs sm:inline-flex" title={ratio != null ? `${Math.round(ratio * 100)}% of the planned ${basis === 'tss' ? 'TSS' : basis === 'sets' ? 'sets' : 'time'}` : undefined}>
       <ComplianceMark level={level} showLabel />
       {ratio != null && <span className="tabular-nums text-[var(--viz-muted)]">{Math.round(ratio * 100)}%</span>}
     </span>

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { planLiftEdit, planShape, stamp, toUnit } from './edit.mjs';
+import { noonIn, planLiftEdit, planShape, stamp, toUnit } from './edit.mjs';
 
 // Synthetic rows only.
 const T0 = '2026-10-20T10:00:00.000Z';
@@ -109,4 +109,45 @@ test('un-logging one of two logged sets keeps the session started; un-log goes a
   assert.deepEqual(r.changes.map((c) => c.entity), ['set']);
   assert.ok(planLiftEdit(two, [{ type: 'unlogSet', setId: 'C3' }, { type: 'addSet', sessionExerciseId: E1 }], { now: NOW }).error);
   assert.ok(planLiftEdit(two, [{ type: 'unlogSet', setId: 'nope' }], { now: NOW }).error);
+});
+
+test('logSet logs reps (target weight by default) and starts and finishes the session', () => {
+  const r = planLiftEdit(rows(), [{ type: 'logSet', setId: 'c1', reps: 20 }, { type: 'logSet', setId: 'C2', reps: 18, weight: 45, unit: 'kg' }], { now: NOW, today: '2026-10-20' });
+  const sets = r.changes.filter((c) => c.entity === 'set').map((c) => [c.payload.id, c.payload.status, c.payload.actualReps, c.payload.actualWeight, c.payload.completedAt]);
+  assert.deepEqual(sets, [['C1', 'done', 20, 100, NOW.toISOString()], ['C2', 'done', 18, 99.2, NOW.toISOString()]]);
+  const session = r.changes.find((c) => c.entity === 'session');
+  assert.equal(r.changes[0].entity, 'session');
+  assert.deepEqual([session.payload.startedAt, session.payload.finishedAt], [NOW.toISOString(), NOW.toISOString()]);
+});
+
+test('logSet on a past day stamps the session day, works on a finished session, refuses bad reps', () => {
+  const past = rows();
+  past.session.day = '2026-10-19';
+  const r = planLiftEdit(past, [{ type: 'logSet', setId: 'C1', reps: 20, weight: null }], { now: NOW, today: '2026-10-20' });
+  const set = r.changes.find((c) => c.entity === 'set').payload;
+  assert.deepEqual([set.actualWeight, set.completedAt], [null, '2026-10-19T12:00:00.000Z']);
+  assert.equal(r.changes.find((c) => c.entity === 'session').payload.finishedAt, '2026-10-19T12:00:00.000Z');
+  const done = rows();
+  done.session.startedAt = T0;
+  done.session.finishedAt = T0;
+  const again = planLiftEdit(done, [{ type: 'logSet', setId: 'C2', reps: 5 }], { now: NOW });
+  assert.deepEqual(again.changes.map((c) => c.entity), ['set']);
+  assert.ok(planLiftEdit(rows(), [{ type: 'logSet', setId: 'C1', reps: 0 }], { now: NOW }).error);
+  assert.ok(planLiftEdit(rows(), [{ type: 'logSet', setId: 'nope', reps: 5 }], { now: NOW }).error);
+  assert.ok(planLiftEdit(rows(), [{ type: 'logSet', setId: 'C1', reps: 5 }, { type: 'addSet', sessionExerciseId: E1 }], { now: NOW }).error);
+});
+
+test('logSet leaves a session in progress on the phone today running', () => {
+  const live = rows();
+  live.session.day = '2026-10-20';
+  live.session.startedAt = T0;
+  const r = planLiftEdit(live, [{ type: 'logSet', setId: 'C1', reps: 8 }], { now: NOW, today: '2026-10-20' });
+  assert.deepEqual(r.changes.map((c) => c.entity), ['set']);
+});
+
+test('noonIn is local noon of the day', () => {
+  assert.equal(noonIn('2026-10-22', 'America/Los_Angeles'), '2026-10-22T19:00:00.000Z');
+  assert.equal(noonIn('2026-12-22', 'America/Los_Angeles'), '2026-12-22T20:00:00.000Z');
+  assert.equal(noonIn('2026-10-22', 'Europe/Zurich'), '2026-10-22T10:00:00.000Z');
+  assert.equal(noonIn('2026-10-22', 'Not/AZone'), '2026-10-22T12:00:00.000Z');
 });

@@ -69,3 +69,15 @@ export type WithMedia<T extends { exercises: { catalogId: string | null }[] }> =
 export function withMedia<T extends { exercises: { catalogId: string | null }[] }>(detail: T): WithMedia<T> {
   return { ...detail, exercises: detail.exercises.map((e) => ({ ...e, media: exerciseMedia(e.catalogId) })) };
 }
+
+const nameOf = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+const BY_NAME = new Map<string, string | null>();
+for (const e of data.exercises) {
+  const key = nameOf(e.name);
+  BY_NAME.set(key, BY_NAME.has(key) ? null : e.id);
+}
+
+/** The catalog id of the one entry with exactly this name ("Standing Calf Raise"), for a new library exercise's picture. */
+export function catalogIdByName(name: string): string | null {
+  return BY_NAME.get(nameOf(name)) ?? null;
+}
