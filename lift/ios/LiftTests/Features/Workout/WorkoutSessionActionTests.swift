@@ -129,11 +129,43 @@ import Testing
         #expect(vm.state.toast == nil)
     }
 
-    @Test func finishTappedFinishesAndOpensTheSummaryWithoutLoggingAnything() async {
+    @Test func finishTappedWithSetsLeftAsksFirst() async {
         let (vm, sessions) = await loaded()
 
-        let first = vm.send(.finishTapped)
-        let second = vm.send(.finishTapped)  // a double tap finishes once
+        #expect(vm.send(.finishTapped) == nil)
+
+        #expect(vm.state.isConfirmingFinish)
+        #expect(vm.state.plannedSetsLeft == 2)
+        #expect(sessions.calls.isEmpty)
+    }
+
+    @Test func finishCancelledKeepsTheWorkoutGoing() async {
+        let (vm, sessions) = await loaded()
+        vm.send(.finishTapped)
+
+        vm.send(.finishCancelled)
+
+        #expect(!vm.state.isConfirmingFinish)
+        #expect(sessions.calls.isEmpty)
+    }
+
+    @Test func finishTappedWithEverySetDoneFinishesWithoutAsking() async {
+        var done = detail
+        for index in done.items[0].sets.indices { done.items[0].sets[index].status = .done }
+        let (vm, sessions) = await loaded(sessions: FakeSessionDetailRepository(emissions: [done]))
+
+        await vm.send(.finishTapped)?.value
+
+        #expect(!vm.state.isConfirmingFinish)
+        #expect(sessions.calls == [.finish(detail.id)])
+    }
+
+    @Test func finishConfirmedFinishesAndOpensTheSummaryWithoutLoggingAnything() async {
+        let (vm, sessions) = await loaded()
+        vm.send(.finishTapped)
+
+        let first = vm.send(.finishConfirmed)
+        let second = vm.send(.finishConfirmed)  // a double tap finishes once
         await first?.value
 
         #expect(second == nil)
@@ -147,7 +179,7 @@ import Testing
             sessions: FakeSessionDetailRepository(emissions: [detail], writeError: AppError(.unknown))
         )
 
-        await vm.send(.finishTapped)?.value
+        await vm.send(.finishConfirmed)?.value
 
         #expect(router.opened.isEmpty)
         #expect(vm.state.toast?.kind == .failed)

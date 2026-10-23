@@ -42,8 +42,7 @@ nonisolated enum WorkoutAction: Equatable, Sendable {
     case thumbnailNeeded(catalogID: String)
     /// "Add exercise": opens the exercise picker for this session.
     case addExerciseTapped
-    /// The "…" in the navigation bar: the workout menu (Pause, Reorder, Add exercise, Settings, note, template, Finish,
-    /// Discard).
+    /// The "…" in the navigation bar: the workout menu (Reorder, note, Settings, template, Discard).
     case workoutOptionsTapped
     /// An exercise's "…": move it or remove it.
     case exerciseOptionsTapped(UUID)
@@ -57,8 +56,15 @@ nonisolated enum WorkoutAction: Equatable, Sendable {
     /// "Start workout" on a session nobody started: stamps the start now, and the header clock runs from it. Logging
     /// the first set starts it too.
     case startTapped
-    /// Marks the session finished (planned sets stay planned) and opens its summary.
+    /// Finish: with every set done, marks the session finished and opens its summary; with sets still planned, asks
+    /// "Finish workout?" first.
     case finishTapped
+    /// "Finish workout" in that question: finishes (planned sets stay planned, to log later) and opens the summary.
+    case finishConfirmed
+    /// "Keep going", or the question was dismissed.
+    case finishCancelled
+    /// "Start" on the dock's "Next exercise": the dock turns to Log set for its first set.
+    case exerciseStartTapped(setID: UUID)
     /// "View summary" on a finished session.
     case summaryTapped
     /// Removes the session at once; the toast offers Undo. The only destructive path on this screen.
@@ -69,9 +75,10 @@ nonisolated enum WorkoutAction: Equatable, Sendable {
     case discardedToastShown
     /// A new template from this session's exercises, named like it.
     case saveAsTemplateTapped
-    /// "Pause workout" in the workout menu: the clock stops and a running rest ends.
+    /// The pause button in the top bar: the clock stops and a running rest ends.
     case pauseTapped
-    /// "Resume" on the dock or in the workout menu: the clock runs again; the pause is left out of the length.
+    /// "Resume" on the dock or the top bar's button while paused: the clock runs again; the pause is left out of the
+    /// length.
     case resumeTapped
     /// "Reorder exercises" in the workout menu: opens the reorder sheet.
     case reorderTapped

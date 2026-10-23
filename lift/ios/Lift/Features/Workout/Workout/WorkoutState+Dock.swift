@@ -7,13 +7,13 @@ nonisolated enum WorkoutDockPhase: Equatable, Sendable {
     case start
     /// Lifting: the set to do now, with Log set.
     case lifting(WorkoutActivityAttributes.ContentState, since: Date)
-    /// Resting after a set: the countdown, +30s and Skip.
+    /// Resting after a set: the time rested against the rest's length, and Skip.
     case resting(WorkoutActivityAttributes.ContentState, RestTimer, since: Date)
     /// The rest ran out: the next set, with how long ago it ended.
     case ready(WorkoutActivityAttributes.ContentState, RestReady, since: Date)
     /// Every set is logged or skipped: Finish workout.
     case complete(WorkoutActivityAttributes.ContentState, since: Date)
-    /// Paused from the workout menu: the clock stopped at `elapsed` seconds, with Resume and Finish.
+    /// Paused from the top bar: the clock stopped at `elapsed` seconds, with Finish and Resume.
     case paused(WorkoutActivityAttributes.ContentState, elapsed: Int)
 
     /// The Live Activity's view of the workout; nil before the start.
@@ -59,6 +59,35 @@ extension WorkoutState {
             let content = workout.dockContent(currentSetID: workout.currentSetID(after: nil))
             return content.current == nil ? .complete(content, since: since) : .lifting(content, since: since)
         }
+    }
+}
+
+/// The running rest and the set it comes before, for that set's row (its check fills as a ring).
+nonisolated struct SetRowRest: Equatable, Sendable {
+    var setID: UUID
+    var timer: RestTimer
+}
+
+extension WorkoutState {
+    /// The rest running now and the set to do after it; nil while no rest runs.
+    var setRowRest: SetRowRest? {
+        guard case .resting(let content, let rest, _)? = dock, let setID = content.current?.id else { return nil }
+        return SetRowRest(setID: setID, timer: rest)
+    }
+
+    /// The dock is on the first set of an exercise that follows a finished one, and Start was not tapped for it yet:
+    /// it says "Next exercise" and offers Start.
+    var dockIntroducesExercise: Bool {
+        guard case .lifting(let content, _)? = dock, let set = content.current, content.loggedSets > 0,
+            content.dots.first == .current, content.dots.dropFirst().allSatisfy({ $0 == .planned })
+        else { return false }
+        return set.id != startedExerciseSetID
+    }
+
+    /// Sets still planned, for "Finish workout?".
+    var plannedSetsLeft: Int {
+        guard case .loaded(let workout) = workout else { return 0 }
+        return workout.exercises.flatMap(\.sets).count(where: { $0.status == .planned })
     }
 }
 

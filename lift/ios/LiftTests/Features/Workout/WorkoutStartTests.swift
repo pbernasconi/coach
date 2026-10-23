@@ -81,7 +81,7 @@ import Testing
         await vm.send(.setLogTapped(planned.items[0].sets[0].id))?.value
         #expect(vm.state.rest != nil)
 
-        await vm.send(.finishTapped)?.value
+        await vm.send(.finishConfirmed)?.value
 
         #expect(vm.state.rest == nil)
         #expect(vm.state.ready == nil)

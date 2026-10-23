@@ -171,6 +171,14 @@ final class WorkoutViewModel {
         case .resumeTapped:
             state.options = nil
             return sendSession(action)
+        case .finishTapped where state.plannedSetsLeft > 0:
+            state.options = nil
+            state.isConfirmingFinish = true  // sets are left: ask first
+        case .finishConfirmed:
+            state.isConfirmingFinish = false
+            return sendSession(action)
+        case .finishCancelled: state.isConfirmingFinish = false
+        case .exerciseStartTapped(let setID): state.startedExerciseSetID = setID
         default: return sendSession(action)
         }
         return nil

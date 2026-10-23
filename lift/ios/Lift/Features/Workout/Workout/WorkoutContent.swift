@@ -1,4 +1,5 @@
 import KoboComponents
+import KoboPatterns
 import KoboTokens
 import SwiftUI
 
@@ -50,7 +51,7 @@ struct WorkoutContent: View {
                 WorkoutBody(
                     workout: workout,
                     thumbnails: state.thumbnails,
-                    restingSetID: state.rest?.setID,
+                    rest: state.setRowRest,
                     send: send
                 )
             }
@@ -62,11 +63,22 @@ struct WorkoutContent: View {
         // Glass style: no bar material behind it. The dock brings its own opaque panel.
         .pinnedFooter(style: .glass, isPresented: state.dock != nil) {
             if let dock = state.dock {
-                WorkoutDock(phase: dock, send: send) { focus($0, proxy) }
+                WorkoutDock(phase: dock, introducesExercise: state.dockIntroducesExercise, send: send) {
+                    focus($0, proxy)
+                }
             }
         }
         .modifier(WorkoutEditorSheets(state: state, send: send))
         .workoutMenuSheets(state: state, send: send)
+        .koboConfirm(
+            isPresented: .action(state.isConfirmingFinish) { if !$0 { send(.finishCancelled) } },
+            ConfirmationAction(
+                title: "Finish workout?",
+                message: "^[\(state.plannedSetsLeft) set](inflect: true) not logged yet. You can still log them after you finish.",
+                confirmLabel: "Finish workout",
+                cancelLabel: "Keep going"
+            ) { send(.finishConfirmed) }
+        )
     }
 
     /// The "rest over" state, while its set is still planned (not logged, skipped or removed some other way).
@@ -129,8 +141,8 @@ private struct WorkoutBody: View {
     @Environment(\.koboTheme) private var theme
     let workout: WorkoutOverview
     let thumbnails: [String: MediaImage]
-    /// The set the running rest follows, highlighted in its section.
-    let restingSetID: UUID?
+    /// The running rest and the set it comes before.
+    let rest: SetRowRest?
     let send: (WorkoutAction) -> Void
 
     var body: some View {
@@ -154,7 +166,7 @@ private struct WorkoutBody: View {
                 WorkoutExerciseSection(
                     exercise: exercise,
                     thumbnail: exercise.catalogID.map { thumbnails[$0] ?? .loading },
-                    restingSetID: restingSetID,
+                    rest: rest,
                     send: send
                 )
             }

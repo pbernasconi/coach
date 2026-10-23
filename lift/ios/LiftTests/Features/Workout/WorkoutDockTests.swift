@@ -87,4 +87,27 @@ import Testing
         noWeight.weight = nil
         #expect(noWeight.loadText == "5 reps")
     }
+
+    @Test func theRestRingsTheCheckOfTheSetAfterIt() {
+        var resting = state([.done, .planned, .planned])
+        resting.rest = RestTimer(run: 1, seconds: 90, setID: .fixture(11))
+
+        #expect(resting.setRowRest == SetRowRest(setID: .fixture(12), timer: RestTimer(run: 1, seconds: 90, setID: .fixture(11))))
+        #expect(state([.done, .planned, .planned]).setRowRest == nil)
+    }
+
+    @Test func theFirstSetOfTheNextExerciseOffersStartOnce() {
+        var next = state([.done, .done, .planned])
+        #expect(next.dockIntroducesExercise)
+
+        next.startedExerciseSetID = .fixture(21)
+        #expect(!next.dockIntroducesExercise)
+        #expect(!state([.done, .planned, .planned]).dockIntroducesExercise)
+        #expect(!state([.planned, .planned, .planned]).dockIntroducesExercise)
+    }
+
+    @Test func plannedSetsLeftCountsWhatFinishWouldLeave() {
+        #expect(state([.done, .skipped, .planned]).plannedSetsLeft == 1)
+        #expect(state([.done, .done, .done]).plannedSetsLeft == 0)
+    }
 }

@@ -28,6 +28,10 @@ nonisolated struct WorkoutState: Equatable, Sendable {
     var settings: WorkoutSettingsSheet?
     /// The defaults for every workout, as last read: the rest haptics and keeping the screen awake follow them.
     var preferences = WorkoutPreferences()
+    /// "Finish workout?" is asked: Finish was tapped with sets still planned.
+    var isConfirmingFinish = false
+    /// The first set of the exercise whose "Next exercise" Start was tapped; the dock then offers Log set for it.
+    var startedExerciseSetID: UUID?
 }
 
 /// The session header and its exercises in order.
