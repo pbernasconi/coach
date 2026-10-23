@@ -12,11 +12,14 @@ struct WorkoutPlanSections: View {
     /// "How did it feel", under the numbers once the workout is done; nil hides it.
     let feedback: WorkoutFeedback?
     let save: WorkoutFeedbackSaveState
+    /// "Start workout" and "Mark done".
+    var write = PlanWrite.idle
     let send: (ActivityDetailAction) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: Space.section) {
             PlannedWorkoutHeader(workout: workout)
+            WorkoutPlanActions(workout: workout, write: write, send: send)
             if !workout.hero.isEmpty {
                 WorkoutStatGrid(items: workout.hero, id: \.label) { stat in
                     WorkoutStatCell(label: stat.label, value: stat.valueText, unit: stat.unit)
@@ -68,7 +71,9 @@ struct WorkoutPlanCards: View {
                     }
                 }
             }
-            if let intensity = workout.intensity, workout.workout == nil {
+            if let exercises = workout.exercises, !exercises.isEmpty {
+                PlannedExercisesCard(exercises: exercises)
+            } else if let intensity = workout.intensity, workout.workout == nil {
                 textCard("Intensity", intensity)
             }
             if let notes = workout.notes {

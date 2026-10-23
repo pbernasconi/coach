@@ -11,6 +11,12 @@ final class ActivityDetailViewModel {
 
     private let resource: AppResource<WorkoutDetail>
     private let feedbackSaver: WorkoutFeedbackSaver
+    /// Nil where a Lift session cannot be started (demo pages, previews).
+    private let starter: PlannedSessionStarter?
+    private let data: any AppDataSource
+    private let coachPlan: any CoachPlanProviding
+    private let now: @Sendable () -> Date
+    private let calendar: Calendar
     private let router: any Navigating
     private let tabs: any TabSwitching
     @ObservationIgnored private var isLoading = false
@@ -21,6 +27,8 @@ final class ActivityDetailViewModel {
         ref: String,
         seed: ActivitySeed?,
         data: any AppDataSource,
+        starter: PlannedSessionStarter?,
+        coachPlan: any CoachPlanProviding,
         router: any Navigating,
         tabs: any TabSwitching,
         now: @escaping @Sendable () -> Date,
@@ -36,6 +44,11 @@ final class ActivityDetailViewModel {
         )
         self.router = router
         self.feedbackSaver = WorkoutFeedbackSaver(data: data)
+        self.starter = starter
+        self.data = data
+        self.coachPlan = coachPlan
+        self.now = now
+        self.calendar = calendar
     }
 
     /// Started by the Screen's `.task`; cancelled when the view goes away (SCR-4).
@@ -72,8 +85,52 @@ final class ActivityDetailViewModel {
             router.open(LiftLinks.session(id))
         case .feedback(let action):
             return saveFeedback(action)
+        case .startWorkoutTapped:
+            return startWorkout()
+        case .doneToggled(let done):
+            return setDone(done)
         }
         return nil
+    }
+
+    /// A Lift session with the coach's exercises, opened at once; the page reads the link back behind it.
+    private func startWorkout() -> Task<Void, Never>? {
+        guard let starter, !state.planWrite.isRunning, let plan = state.plan, plan.liftSessionId == nil,
+            !(plan.exercises ?? []).isEmpty
+        else { return nil }
+        state.planWrite = .starting
+        let today = LocalDay(now(), calendar: calendar)
+        return Task {
+            do {
+                let id = try await starter.start(plan, today: today)
+                state.planWrite = .idle
+                router.open(.workout(id))
+                await load()
+            } catch {
+                AppLog.sync.error("Workout not started: \(String(describing: error), privacy: .public)")
+                state.planWrite = .failed(String(localized: "Could not start the workout. Try again."))
+            }
+        }
+    }
+
+    /// The web's Mark done: the server answers with the workout, and the Week tab reads its plan again.
+    private func setDone(_ done: Bool) -> Task<Void, Never>? {
+        guard !state.planWrite.isRunning, let plan = state.plan else { return nil }
+        state.planWrite = .saving
+        let data = data
+        let coachPlan = coachPlan
+        return Task {
+            do {
+                let body = try JSONEncoder().encode(["status": done ? "done" : "planned"])
+                _ = try await data.put(AppPlannedWorkout.statusPath(plan.id), body: body)
+                state.planWrite = .idle
+                await load()
+                await coachPlan.refresh()
+            } catch {
+                AppLog.sync.error("Workout status not saved: \(String(describing: error), privacy: .public)")
+                state.planWrite = .failed(AppResource<WorkoutDetail>.message(for: error))
+            }
+        }
     }
 
     /// One action on "How did it feel": the shared flow decides, and a save runs on the App API.

@@ -88,7 +88,13 @@ private struct ActivityScrollPage: View {
                         send: send
                     )
                 } else if let plan = workout.plan {
-                    WorkoutPlanSections(workout: plan, feedback: state.shownFeedback, save: state.feedback.save, send: send)
+                    WorkoutPlanSections(
+                        workout: plan,
+                        feedback: state.shownFeedback,
+                        save: state.feedback.save,
+                        write: state.planWrite,
+                        send: send
+                    )
                 }
             } placeholder: {
                 ActivityDetailSkeleton(seed: state.seed)

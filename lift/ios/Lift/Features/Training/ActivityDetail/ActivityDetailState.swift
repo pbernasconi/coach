@@ -26,6 +26,16 @@ nonisolated enum ActivityPanel: String, Hashable, Identifiable, Sendable {
     var id: String { rawValue }
 }
 
+/// A write on the planned workout: none, one running, or one that failed (its words).
+nonisolated enum PlanWrite: Equatable, Sendable {
+    case idle
+    case starting
+    case saving
+    case failed(String)
+
+    var isRunning: Bool { self == .starting || self == .saving }
+}
+
 /// Everything the workout page renders: one workout, planned and done as one (`WorkoutDetail`). Exclusive states are
 /// enums (SCR-6).
 nonisolated struct ActivityDetailState: Equatable, Sendable {
@@ -50,6 +60,8 @@ nonisolated struct ActivityDetailState: Equatable, Sendable {
     var paceMode: String?
     var destination: Destination?
     var feedback = WorkoutFeedbackEdit()
+    /// "Start workout" and "Mark done" on a planned workout.
+    var planWrite = PlanWrite.idle
 
     init(ref: String, seed: ActivitySeed? = nil, detail: AppResourceState<ActivityDetail>? = nil) {
         self.ref = ref
