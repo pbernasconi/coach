@@ -4,7 +4,7 @@ import SwiftUI
 
 extension View {
     /// The workout's "…" in the navigation bar and the two options sheets: the workout's (Add or Edit note, Save as
-    /// template, Discard workout) and one exercise's (Add or Edit note, Move up, Move down, Remove). Every choice applies at once; removing and discarding
+    /// template, Discard workout) and one exercise's (Add set, Add or Edit note, Move up, Move down, Remove). Every choice applies at once; removing and discarding
     /// offer Undo in a toast instead of asking first (product rule).
     func workoutOptions(state: WorkoutState, send: @escaping (WorkoutAction) -> Void) -> some View {
         modifier(WorkoutOptionsSheets(state: state, send: send))
@@ -48,6 +48,7 @@ private struct WorkoutOptionsSheets: ViewModifier {
                         send(.discardTapped)
                     }
                 } else if case .exercise(let exercise) = shown {
+                    ActionSheetItem("Add set", systemImage: "plus") { send(.addSetTapped(exerciseID: exercise.id)) }
                     if exercise.hasNote {
                         ActionSheetItem("Edit note", systemImage: "square.and.pencil") {
                             send(.exerciseNoteTapped(exercise.id))

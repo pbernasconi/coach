@@ -5,7 +5,7 @@ import SwiftUI
 
 /// One exercise on the Workout screen: a compact header (thumbnail, name and working target, which open the exercise's
 /// page), one-line warm-up, plates and progression hints, then the set grid with last time's
-/// sets, and Add set as the grid's last row. The header and the grid's card edge sit on the page keyline; the grid is a
+/// sets (Add set is in the exercise's "…"). The header and the grid's card edge sit on the page keyline; the grid is a
 /// grouped card (a set of editable fields) with its column header inside it, so the column titles, the rows and Add set
 /// share the card's inset.
 struct WorkoutExerciseSection: View {
@@ -38,7 +38,6 @@ struct WorkoutExerciseSection: View {
                     )
                     .id(item.id)
                 }
-                AddSetRow { send(.addSetTapped(exerciseID: exercise.id)) }
             } header: {
                 EmptyView()
             }
@@ -191,16 +190,3 @@ private struct SetGridHeader: View {
     }
 }
 
-/// "Add set" as the grid's last row: inside the card, on its inset, behind the same hairline as the set rows.
-private struct AddSetRow: View {
-    let action: () -> Void
-
-    var body: some View {
-        Button("Add set", systemImage: "plus", action: action)
-            .buttonStyle(.kobo(.plain, size: .compact, width: .inline))
-            .frame(maxWidth: .infinity, minHeight: Size.minTouch, alignment: .leading)
-            .padding(.horizontal, SetGridWidth.inset)
-            .padding(.vertical, Space.xxs)
-            .overlay(alignment: .top) { Separator(leadingInset: SetGridWidth.inset) }
-    }
-}
