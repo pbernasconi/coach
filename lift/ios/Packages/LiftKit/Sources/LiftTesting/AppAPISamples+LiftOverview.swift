@@ -22,7 +22,7 @@ extension AppAPISamples {
             ],
             "next": { "sessionId": "ca4f651b-98c7-4765-83a9-07ab74435d69", "date": "2026-10-20", "title": "Heavy barbell",
                       "whenText": "Next up · today", "detail": "9 exercises · 25 sets planned" },
-            "nextEmptyText": "No Lift session planned. Put one on the plan, or start one from a template in Lift."
+            "nextEmptyText": "No Lift session planned. Put one on the plan, or start one from a template in the app."
           },
           "tips": {
             "ok": true, "title": "Coach notes",

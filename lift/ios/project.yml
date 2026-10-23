@@ -63,7 +63,7 @@ targets:
     info:
       path: Lift/Info.plist
       properties:
-        CFBundleDisplayName: Lift
+        CFBundleDisplayName: Coach
         # XcodeGen's default Info.plist hard-codes "1.0" and "1"; these follow the build settings, so TestFlight's
         # CURRENT_PROJECT_VERSION (the workflow run number) is the uploaded build number.
         # CI never uploads below App Store Connect's highest version or reuses a build number (asc-builds.py --next).
@@ -75,10 +75,10 @@ targets:
         ITSAppUsesNonExemptEncryption: false
         # Shown in the Health permission sheet, which opens after the first finished workout's prompt.
         NSHealthUpdateUsageDescription: >-
-          Lift saves each workout you finish to Apple Health as strength training, with its start and end time.
+          Coach saves each workout you finish to Apple Health as strength training, with its start and end time.
         # Required by App Store validation because the HealthKit entitlement is present; Lift only writes workouts.
         NSHealthShareUsageDescription: >-
-          Lift does not read your Health data. It only saves the workouts you finish.
+          Coach does not read your Health data. It only saves the workouts you finish.
         LiftSyncBaseURL: $(LIFT_SYNC_BASE_URL)
         LiftAppGroup: $(LIFT_APP_GROUP)
         # lift://import opens Import from Notes; lift://templates opens the template link review (AppLink.swift).
@@ -105,7 +105,7 @@ targets:
     info:
       path: LiftWidgets/Info.plist
       properties:
-        CFBundleDisplayName: Lift
+        CFBundleDisplayName: Coach
         CFBundleShortVersionString: $(MARKETING_VERSION)   # must match the app's (see the Lift target)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LiftAppGroup: $(LIFT_APP_GROUP)
@@ -129,7 +129,7 @@ targets:
     info:
       path: LiftShare/Info.plist
       properties:
-        CFBundleDisplayName: Lift
+        CFBundleDisplayName: Coach
         CFBundleShortVersionString: $(MARKETING_VERSION)   # must match the app's (see the Lift target)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LiftAppGroup: $(LIFT_APP_GROUP)

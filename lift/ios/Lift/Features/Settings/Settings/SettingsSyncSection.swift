@@ -58,7 +58,7 @@ struct SettingsPhoneSection: View {
     private var footer: LocalizedStringKey? {
         switch section {
         case .demo: "Demo and practice data never sync or reach Apple Health."
-        case .unavailable: "This build of Lift has no sync server."
+        case .unavailable: "This build of Coach has no sync server."
         case .available: nil
         }
     }

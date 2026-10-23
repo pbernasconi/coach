@@ -34,7 +34,7 @@
             var overview = fixtureOverview
             overview?.empty = LiftEmpty(
                 title: "No sessions yet",
-                body: "Log a workout in Lift and your progress shows up here."
+                body: "Log a workout and your progress shows up here."
             )
             return loaded(overview)
         }()

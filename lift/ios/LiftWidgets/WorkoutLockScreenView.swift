@@ -40,7 +40,7 @@ struct WorkoutHeader: View {
 
     var body: some View {
         HStack(spacing: 7) {
-            LiftBadge(size: 18)
+            CoachBadge(size: 18)
             Text(verbatim: attributes.title)
                 .font(.caption.weight(.bold))
                 .textCase(.uppercase)
@@ -136,7 +136,7 @@ struct WorkoutCompleteRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("All sets done")
                     .font(.title3.weight(.bold))
-                Text("\(state.loggedSets) of \(state.totalSets) sets · Finish in Lift")
+                Text("\(state.loggedSets) of \(state.totalSets) sets · Finish in Coach")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)

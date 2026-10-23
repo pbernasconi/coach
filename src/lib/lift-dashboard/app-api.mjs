@@ -108,7 +108,7 @@ function weekSection(o) {
     next: next
       ? { sessionId: next.id, date: next.day, title: next.title || 'Lift session', whenText: `Next up · ${nextWhen(next.day, o.today)}`, detail: plannedText(next) }
       : null,
-    nextEmptyText: 'No Lift session planned. Put one on the plan, or start one from a template in Lift.',
+    nextEmptyText: 'No Lift session planned. Put one on the plan, or start one from a template in the app.',
   };
 }
 

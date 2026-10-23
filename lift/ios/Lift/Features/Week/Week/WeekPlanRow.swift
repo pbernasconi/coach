@@ -45,7 +45,7 @@ struct WeekPlanRow: View {
         .accessibilityLabel(Text(verbatim: "\(item.sport.label): \(item.title)"))
         .accessibilityValue(Text(verbatim: spoken))
         .accessibilityHint(
-            item.liftSessionId == nil ? Text("Shows the workout's details") : Text("Opens the Lift session")
+            item.liftSessionId == nil ? Text("Shows the workout's details") : Text("Opens the lifting session")
         )
     }
 

@@ -16,7 +16,7 @@ struct RootView: View {
             AppShell(dependencies: dependencies, options: options, push: push)
                 .id(launcher.generation)
         case .failed:
-            ErrorState(title: "Lift could not open its data", message: "Close Lift and open it again.")
+            ErrorState(title: "Coach could not open its data", message: "Close Coach and open it again.")
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .screenCanvas()
         }

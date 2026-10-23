@@ -31,7 +31,7 @@ nonisolated enum ImportOutcomeCopy {
             }
         }
         if case .failed = outcome.ending {
-            lines.append(String(localized: "Lift could not save the rest. Try importing the remaining workouts again."))
+            lines.append(String(localized: "Coach could not save the rest. Try importing the remaining workouts again."))
         }
         return lines.joined(separator: " ")
     }

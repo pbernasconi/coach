@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// The barbell from Lift's app icon, as a shape: a bar with end caps and two plates a side. The proportions are the
-/// icon's (1024 pt artwork, the barbell spanning 724 × 300 pt), so it reads as the same mark at any size.
+/// A barbell, as a shape: the Dynamic Island's workout glyph, a bar with end caps and two plates a side. The
+/// proportions come from the old Lift icon (1024 pt artwork, the barbell spanning 724 × 300 pt).
 nonisolated struct BarbellShape: Shape {
     /// Width over height of the mark.
     static let aspectRatio: CGFloat = 724 / 300
@@ -36,17 +36,45 @@ nonisolated struct BarbellShape: Shape {
     }
 }
 
-/// Lift's app icon in small: the dark barbell on an orange rounded square.
-struct LiftBadge: View {
+/// The Coach mark from the app icon (src/app/icon.svg): a "C" ring and the dot, in the icon's 32 pt artwork.
+nonisolated struct CoachRingShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        let scale = min(rect.width, rect.height) / 32
+        let origin = CGPoint(x: rect.midX - 16 * scale, y: rect.midY - 16 * scale)
+        // The arc of radius 7.6 around (16, 16), from (21.09, 10.35) the long way round to (21.09, 21.65).
+        var ring = Path()
+        ring.addArc(
+            center: CGPoint(x: 16, y: 16), radius: 7.6,
+            startAngle: .degrees(-48), endAngle: .degrees(48), clockwise: true
+        )
+        return ring
+            .strokedPath(StrokeStyle(lineWidth: 3, lineCap: .round))
+            .applying(CGAffineTransform(scaleX: scale, y: scale).translatedBy(x: origin.x / scale, y: origin.y / scale))
+    }
+}
+
+/// The dot beside the ring, in the same 32 pt artwork.
+nonisolated struct CoachDotShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        let scale = min(rect.width, rect.height) / 32
+        let center = CGPoint(x: rect.midX + 7.6 * scale, y: rect.midY)
+        let r = 1.9 * scale
+        return Path(ellipseIn: CGRect(x: center.x - r, y: center.y - r, width: 2 * r, height: 2 * r))
+    }
+}
+
+/// The app icon in small: the white ring and orange dot on a dark rounded square.
+struct CoachBadge: View {
     var size: CGFloat = 22
 
     var body: some View {
-        RoundedRectangle(cornerRadius: size * 0.26, style: .continuous)
-            .fill(WidgetColors.accent)
+        RoundedRectangle(cornerRadius: size * 0.235, style: .continuous)
+            .fill(WidgetColors.iconTile)
             .overlay {
-                BarbellShape()
-                    .fill(WidgetColors.ink)
-                    .padding(size * 0.16)
+                ZStack {
+                    CoachRingShape().fill(.white)
+                    CoachDotShape().fill(WidgetColors.accent)
+                }
             }
             .frame(width: size, height: size)
             .accessibilityHidden(true)

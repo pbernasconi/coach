@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- The app icon's source: the Coach mark from src/app/icon.svg, full-bleed (iOS rounds the corners).
+       Render at 1024 px with no alpha into Lift/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png:
+       python3 -c "import cairosvg; cairosvg.svg2png(url='AppIcon.svg', write_to='a.png', output_width=1024, output_height=1024)"
+       convert a.png -background '#141413' -alpha remove -alpha off -strip PNG24:AppIcon.png -->
+  <rect width="32" height="32" fill="#141413"/>
+  <path d="M21.09 10.35A7.6 7.6 0 1 0 21.09 21.65" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="23.6" cy="16" r="1.9" fill="#eb6834"/>
+</svg>

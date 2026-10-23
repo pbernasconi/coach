@@ -45,7 +45,7 @@ nonisolated enum TemplateLinkText {
         case .unreadable:
             (String(localized: "This link can't be read"), String(localized: "Ask for the link again."))
         case .newerVersion:
-            (String(localized: "This link needs a newer Lift"), String(localized: "Update Lift, then open it again."))
+            (String(localized: "This link needs a newer Coach app"), String(localized: "Update Coach, then open it again."))
         case .empty:
             (String(localized: "This link has no templates"), String(localized: "Ask for the link again."))
         case .tooLarge:

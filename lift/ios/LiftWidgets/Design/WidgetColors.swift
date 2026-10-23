@@ -7,8 +7,11 @@ nonisolated enum WidgetColors {
     /// The orange accent: the progress bars, the Dynamic Island timer, the Done button and the badge.
     static let accent = rgb(0xEB6834)
 
-    /// The dark ink on orange: the Done button's label and the badge's barbell (5.9:1; white would be 3.2:1).
+    /// The dark ink on orange: the Done button's label (5.9:1; white would be 3.2:1).
     static let ink = rgb(0x1A0F08)
+
+    /// The app icon's dark tile, behind the badge's white ring (Design/AppIcon.svg).
+    static let iconTile = rgb(0x141413)
 
     /// Orange for text on the Lock Screen: darker in light mode and lighter in dark mode to keep 4.5:1 contrast.
     static func accentText(for scheme: ColorScheme) -> Color {

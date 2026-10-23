@@ -11,7 +11,7 @@ struct ShareNoteView: View {
             content
                 .padding(20)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                .navigationTitle(Text("Import to Lift"))
+                .navigationTitle(Text("Import to Coach"))
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar { toolbar }
         }
@@ -26,7 +26,7 @@ struct ShareNoteView: View {
                 .frame(maxWidth: .infinity, minHeight: 120)
         case .ready(let text):
             VStack(alignment: .leading, spacing: 12) {
-                Text("Lift opens this note in Import from Notes, where you check the workouts before importing them.")
+                Text("Coach opens this note in Import from Notes, where you check the workouts before importing them.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 ShareNotePreview(text: text)
@@ -34,7 +34,7 @@ struct ShareNoteView: View {
         case .sent:
             message(
                 symbol: "checkmark.circle.fill",
-                title: Text("Sent to Lift"),
+                title: Text("Sent to Coach"),
                 detail: Text("Open Lift to review the workouts and import them.")
             )
         case .noText:
@@ -46,7 +46,7 @@ struct ShareNoteView: View {
         case .unavailable:
             message(
                 symbol: "exclamationmark.triangle.fill",
-                title: Text("Lift could not receive the note"),
+                title: Text("Coach could not receive the note"),
                 detail: Text("Copy the note and paste it in Lift: History, then Import from Notes.")
             )
         }

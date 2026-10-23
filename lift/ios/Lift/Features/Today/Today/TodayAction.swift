@@ -14,7 +14,7 @@ nonisolated enum TodayAction: Equatable, Sendable {
     case liftSessionTapped(String)
     /// "Open activity" in a planned workout's sheet: the matched Strava activity.
     case planActivityTapped(String)
-    /// "Open Settings" under "Connect Lift to Coach": the Settings tab, where Sync is.
+    /// "Open Settings" under "Connect this iPhone to Coach": the Settings tab, where Sync is.
     case connectTapped
     case destinationDismissed
 }

@@ -4,7 +4,7 @@ import KoboTokens
 import LiftSync
 import SwiftUI
 
-/// The page body of one App API screen: Kobo's `LoadableView` with the one "Connect Lift to Coach" empty state every
+/// The page body of one App API screen: Kobo's `LoadableView` with the one "Connect this iPhone to Coach" empty state every
 /// coach screen shares, and the freshness line above the loaded content. While it loads it shows `placeholder`, a
 /// skeleton in the page's own layout (`.skeletonPage()`: invisible for a fast load, then a quiet breath); without one,
 /// the generic `AppPageSkeleton`. Pull to refresh belongs on the scroll view around it (`appRefreshable`).
@@ -87,10 +87,10 @@ struct AppNotConnectedView: View {
     var body: some View {
         EmptyState(
             symbol: needsReconnect ? "arrow.triangle.2.circlepath" : "link.badge.plus",
-            title: needsReconnect ? "Connect Lift to Coach again" : "Connect Lift to Coach",
+            title: needsReconnect ? "Connect this iPhone to Coach again" : "Connect this iPhone to Coach",
             message: needsReconnect
-                ? "Coach did not accept Lift's sync token. Connect Lift again in Settings, under Sync."
-                : "Your coach's plan and numbers show here once Lift syncs. Connect it in Settings, under Sync."
+                ? "Coach did not accept this iPhone's sync token. Connect again in Settings, under Sync."
+                : "Your coach's plan and numbers show here once this iPhone syncs. Connect it in Settings, under Sync."
         ) {
             if let onConnect {
                 Button("Open Settings", systemImage: "gearshape", action: onConnect)

@@ -28,7 +28,7 @@ struct WorkoutActivityWidget: Widget {
                 BarbellShape()
                     .fill(WidgetColors.accent)
                     .frame(width: 24, height: 10)
-                    .accessibilityLabel(Text("Lift"))
+                    .accessibilityLabel(Text("Workout"))
             } compactTrailing: {
                 IslandCompactTrailing(
                     state: context.state,
@@ -48,7 +48,7 @@ struct IslandLeading: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            LiftBadge(size: 26)
+            CoachBadge(size: 26)
             VStack(alignment: .leading, spacing: 1) {
                 Text(verbatim: state.current?.exerciseName ?? String(localized: "All sets done"))
                     .font(.headline)
@@ -179,7 +179,7 @@ struct IslandMinimal: View {
             BarbellShape()
                 .fill(WidgetColors.accent)
                 .frame(width: 20, height: 9)
-                .accessibilityLabel(Text("Lift"))
+                .accessibilityLabel(Text("Workout"))
         }
     }
 }

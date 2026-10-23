@@ -22,7 +22,7 @@ nonisolated enum HealthText {
         case .unavailable: String(localized: "Not available on this device")
         case .off: String(localized: "Off")
         case .notAsked: String(localized: "Asks when you finish a workout")
-        case .denied: String(localized: "Not allowed. Allow Lift in Settings › Health › Data Access & Devices.")
+        case .denied: String(localized: "Not allowed. Allow Coach in Settings › Health › Data Access & Devices.")
         case .on: String(localized: "On")
         }
     }
