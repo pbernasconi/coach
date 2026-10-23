@@ -260,9 +260,9 @@ struct EffortDial: View {
     /// The arc from the bottom left, `fraction` of the way round to the bottom right.
     private func arc(to fraction: Double) -> some Shape {
         Circle()
+            .inset(by: EffortDialMetrics.line / 2)
             .trim(from: 0, to: EffortDialMath.sweep / 360 * fraction)
             .rotation(.degrees(EffortDialMath.start))
-            .inset(by: EffortDialMetrics.line / 2)
     }
 
     private func isFilled(_ step: Int) -> Bool {
