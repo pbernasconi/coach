@@ -126,8 +126,9 @@ export function healthResponse({ now, days, today, garmin, readiness, board, dex
       ? {
           ok: true,
           summaryText: hasSamples ? outliersText(cells) : null,
+          // A metric with no reading (no weigh-ins yet) is left out, not shown as "–".
           items: hasSamples
-            ? cells.map((c) => ({
+            ? cells.filter((c) => c.hasValue).map((c) => ({
                 key: c.key,
                 label: c.label,
                 valueText: c.hasValue ? c.valueText : null,
@@ -141,7 +142,7 @@ export function healthResponse({ now, days, today, garmin, readiness, board, dex
             : [],
         }
       : { ok: false },
-    trends: b ? { ok: true, items: hasSamples ? trendItems(b) : [] } : { ok: false },
+    trends: b ? { ok: true, items: hasSamples ? trendItems(b).filter((t) => t.points.length > 0) : [] } : { ok: false },
     body:
       b && dexa.ok
         ? {
