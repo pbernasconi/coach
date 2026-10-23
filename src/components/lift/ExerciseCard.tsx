@@ -31,14 +31,15 @@ function LoggedMark({ s, onUnlog, unlogging }: { s: RichSet } & Unlog) {
 }
 
 function SetTile({ s, loadMode, unit, onUnlog, unlogging }: { s: RichSet; loadMode: string | null; unit: string } & Unlog) {
-  const { target, logged, beatTarget } = setTile(s, loadMode, unit);
+  const { target, logged, beatTarget, missedReps } = setTile(s, loadMode, unit);
   const done = s.status === 'done';
   const skipped = s.status === 'skipped';
   return (
     <li
       className={cn(
         'flex min-w-0 flex-col gap-0.5 rounded-lg border px-3 py-2 tabular-nums',
-        done && 'border-[color-mix(in_oklab,var(--viz-good)_45%,transparent)] bg-[color-mix(in_oklab,var(--viz-good)_7%,transparent)]',
+        done && !missedReps && 'border-[color-mix(in_oklab,var(--viz-good)_45%,transparent)] bg-[color-mix(in_oklab,var(--viz-good)_7%,transparent)]',
+        missedReps && 'border-[color-mix(in_oklab,var(--viz-warn)_45%,transparent)] bg-[color-mix(in_oklab,var(--viz-warn)_7%,transparent)]',
         skipped && 'opacity-60',
         s.kind === 'warmUp' && 'border-dashed'
       )}
@@ -62,6 +63,7 @@ function SetTile({ s, loadMode, unit, onUnlog, unlogging }: { s: RichSet; loadMo
           <span className="truncate text-sm font-semibold text-[var(--viz-ink)]">
             {logged}
             {beatTarget && <span className="ml-1 text-xs font-medium text-[var(--viz-up)]">↑</span>}
+            {missedReps && <span className="ml-1 text-xs font-medium text-[var(--viz-warn)]" title="Fewer reps than the target">↓</span>}
           </span>
           <span className="truncate text-[11px] text-[var(--viz-muted)]">target {target}</span>
         </>

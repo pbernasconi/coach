@@ -13,7 +13,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     WHERE a.id = ${id} AND p.user_id = ${userId}`) as { title: string; description: string | null; steps: StructuredWorkout | null }[];
   const w = rows[0]?.steps;
   if (!w || w.sport !== 'ride') return new Response('No structured ride', { status: 404 });
-  const name = String(rows[0].title).replace(/[^\p{L}\p{N} _-]+/gu, '').trim().replace(/\s+/g, '_') || 'workout';
+  const name = String(rows[0].title).replace(/×/g, 'x').replace(/′/g, 'min').replace(/″/g, 's').replace(/[^\p{L}\p{N} _-]+/gu, '').trim().replace(/\s+/g, '_') || 'workout';
   return new Response(toZwo({ ...w, name: `Coach ${w.name}` } as never, { description: rows[0].description ?? '' }), {
     headers: { 'content-type': 'application/xml; charset=utf-8', 'content-disposition': `attachment; filename="${name}.zwo"` },
   });
