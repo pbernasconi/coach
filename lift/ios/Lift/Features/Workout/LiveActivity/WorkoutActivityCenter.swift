@@ -127,19 +127,22 @@ final class WorkoutActivityCenter: RestActivityController {
     func logSet(_ setID: UUID, in sessionID: UUID) async {
         await load(sessionID)
         guard case (let item, let set)? = detail?.find(setID: setID), set.status == .planned else { return }
+        let settings = preferences.preferences
+        let seconds = settings.startsRest ? item.exercise.restSeconds ?? settings.defaultRestSeconds : 0
+        let endsAt = now().addingTimeInterval(TimeInterval(seconds))
+        let before = rest
+        // The rest is set before the write: the open Workout screen asks for it as soon as it sees the logged set.
+        rest = seconds > 0 ? RestSnapshot(endsAt: endsAt, totalSeconds: seconds, setID: setID) : nil
         do {
             if detail?.session.pausedAt != nil { _ = try await sessions.changeTime(sessionID: sessionID, .resume) }
             _ = try await sets.log(setID: setID)
         } catch {
+            rest = before
             AppLog.rest.error(
                 "Logging a set from the Lock Screen failed: \(String(describing: error), privacy: .private)"
             )
             return
         }
-        let settings = preferences.preferences
-        let seconds = settings.startsRest ? item.exercise.restSeconds ?? settings.defaultRestSeconds : 0
-        let endsAt = now().addingTimeInterval(TimeInterval(seconds))
-        rest = seconds > 0 ? RestSnapshot(endsAt: endsAt, totalSeconds: seconds, setID: setID) : nil
         focus = nil
         received(await latest(sessionID))
         await publishNow()
