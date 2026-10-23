@@ -20,16 +20,21 @@ export function plannedVolume(s) {
   return v;
 }
 
-/** Sets per muscle for the session: 1 per working set for a primary muscle, 0.5 for a secondary; most first. @param {{ exercises: StatExercise[] }} s */
+/**
+ * Sets per muscle for the session: 1 per working set for a primary muscle, 0.5 for a secondary; most first. A finished
+ * session counts only the sets that were done, like /lift's hard sets; an open one counts every set not skipped.
+ * @param {{ exercises: StatExercise[], finishedAt?: string | null }} s
+ */
 export function sessionMuscles(s) {
   /** @type {Map<string, number>} */
   const totals = new Map();
+  const finished = Boolean(s.finishedAt);
   for (const e of s.exercises) {
-    const sets = e.sets.filter((x) => x.kind !== 'warmUp' && x.status !== 'skipped').length;
+    const sets = e.sets.filter((x) => x.kind !== 'warmUp' && (finished ? x.status === 'done' : x.status !== 'skipped')).length;
     for (const m of e.primary) totals.set(m, (totals.get(m) ?? 0) + sets);
     for (const m of e.secondary) totals.set(m, (totals.get(m) ?? 0) + sets / 2);
   }
-  return [...totals.entries()].map(([muscle, sets]) => ({ muscle, sets })).sort((a, b) => b.sets - a.sets || a.muscle.localeCompare(b.muscle));
+  return [...totals.entries()].filter(([, sets]) => sets > 0).map(([muscle, sets]) => ({ muscle, sets })).sort((a, b) => b.sets - a.sets || a.muscle.localeCompare(b.muscle));
 }
 
 /**
