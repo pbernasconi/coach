@@ -43,6 +43,7 @@ struct BodyMuscleCallout: View {
     let info: BodyMuscleInfo
     let onClose: () -> Void
     @Environment(\.koboTheme) private var theme
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         HStack(alignment: .top, spacing: Space.md) {
@@ -80,8 +81,18 @@ struct BodyMuscleCallout: View {
             .padding(.top, -Space.md)
             .padding(.trailing, -Space.md)
         }
-        .koboCard()
+        .padding(Space.cardInset)
+        .background {
+            // Raised, not the page's surface: the card floats over the body, and in dark mode the two would merge.
+            RoundedRectangle(cornerRadius: Radius.lg, style: .continuous)
+                .fill(colorScheme == .dark ? theme.palette.surfaceRaised : theme.palette.surface)
+                .shadow(color: shadow, radius: Space.md)
+        }
         .accessibilityElement(children: .combine)
+    }
+
+    private var shadow: Color {
+        colorScheme == .dark ? .clear : theme.palette.textPrimary.opacity(0.12)
     }
 
     private var setsLabel: String {

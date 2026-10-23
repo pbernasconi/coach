@@ -49,7 +49,7 @@ struct SessionBodyBackdrop: View, Equatable {
             theme.palette.surface
             if let art = BodyMapDrawing.art {
                 VStack(spacing: Space.sm) {
-                    HStack(spacing: Space.lg) {
+                    HStack(spacing: gap) {
                         figure(art.front)
                         figure(art.back)
                     }
@@ -57,8 +57,10 @@ struct SessionBodyBackdrop: View, Equatable {
                     BodyShadeLegend(showsHint: isInteractive)
                         .opacity(selected == nil ? 1 : 0)
                 }
-                .padding(.top, top)
+                // Centred between the bar and the sheet: with the sheet down the width sets the size, not the height.
                 .frame(maxWidth: .infinity)
+                .frame(height: max(0, rest.top(shown) - top - Space.md))
+                .padding(.top, top)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(Text("Muscles worked: \(musclesText ?? "")"))
             }
@@ -96,6 +98,9 @@ struct SessionBodyBackdrop: View, Equatable {
         }
     }
 
+    /// Between the figures and at the screen's edges; tighter with the sheet down, where the width is the limit.
+    private var gap: CGFloat { isInteractive ? Space.md : Space.lg }
+
     /// Just below the bar (the top inset already includes it).
     private var top: CGFloat { rest.topInset + Space.sm }
 
@@ -105,7 +110,7 @@ struct SessionBodyBackdrop: View, Equatable {
         let legend = isInteractive ? Space.xxxl + Space.lg : Space.xl + Space.sm
         let tall = rest.top(shown) - top - legend - Space.lg
         let aspect = CGFloat(art.front.bounds.width / art.front.bounds.height)
-        let wide = (rest.size.width - Space.lg * 3) / 2 / aspect
+        let wide = (rest.size.width - gap * 3) / 2 / aspect
         return max(0, min(tall, wide))
     }
 }
