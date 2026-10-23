@@ -10,6 +10,7 @@ Coach is the only source of truth; every client reads or writes through these ro
 | `POST /api/lift/sync/push` | `Bearer LIFT_SYNC_TOKEN` | Lift | Outbox changes (lift/SYNC.md) |
 | `GET /api/lift/sync/pull?cursor=&limit=` | `Bearer LIFT_SYNC_TOKEN` | Lift | Changes since a cursor (lift/SYNC.md) |
 | `POST/DELETE /api/app/push/devices`, `POST /api/app/push/opened`, `GET/PUT /api/app/push/preferences`, `POST /api/app/push/test` | `Bearer LIFT_SYNC_TOKEN` | Lift | Push notifications: the device token, taps, the category switches, a test push (lift/PUSH.md) |
+| `GET /api/app/health?tz=&days=30\|90` | `Bearer LIFT_SYNC_TOKEN` | Lift | The Health page for the Today tab: Garmin line, readiness, vitals, trends, body, labs (lift/APP-API.md, "Health") |
 | `PUT /api/app/feedback` | `Bearer LIFT_SYNC_TOKEN` | Lift | How a workout felt: feel, RPE, comment (workout_feedback; lift/APP-API.md, "Feedback") |
 | `POST /api/lift/enroll` | one-time code | Lift | `{ code }` → `{ token }`; codes come from Settings → Lift (`lift://sync?code=…`, 15 min, single use) |
 | `GET/POST /api/webhooks/strava` | Strava verify token / athlete id | Strava | Subscription check; a new or edited activity is stored in full at once (detail, streams, weather, TSS: `src/lib/strava-sync/ingest.mjs`), then the workout notice; delete |

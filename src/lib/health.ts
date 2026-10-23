@@ -38,6 +38,8 @@ import { GET as appTrends } from '@/app/api/app/trends/route';
 import { GET as appSettings } from '@/app/api/app/settings/route';
 import { GET as appWorkout } from '@/app/api/app/workouts/[ref]/route';
 import { GET as appWeighIn } from '@/app/api/app/weigh-ins/[date]/route';
+import { GET as appHealth } from '@/app/api/app/health/route';
+import { loadAppHealth } from '@/lib/vitals/app-health';
 import { loadAppToday, loadAppTrends } from '@/lib/performance/app-pages';
 
 export type Check = { name: string; ok: boolean; ms: number; error?: string };
@@ -133,6 +135,14 @@ export async function runChecks(now = new Date(), { migrations = true }: { migra
       const failed = Object.entries(await loadAppTrends(userId, today, 'America/Los_Angeles', now)).filter(([, x]) => (x as { ok?: boolean })?.ok === false);
       if (failed.length) throw new Error(`sections failed: ${failed.map(([k]) => k).join(', ')}`);
     }),
+    // GET /api/app/health (the Lift app's Today tab, from /health): both ranges; a failed section fails here.
+    check('app health', async () => {
+      for (const days of [30, 90]) {
+        const body = await loadAppHealth(userId, today, days, now.getTime());
+        const failed = Object.entries(body).filter(([, x]) => (x as { ok?: boolean })?.ok === false).map(([k]) => k);
+        if (failed.length) throw new Error(`${days}d sections failed: ${failed.join(', ')}`);
+      }
+    }),
     check('lift', async () => {
       const { model, unit } = await loadLiftModel();
       muscleSets(model, monday, addDays(monday, 6));
@@ -211,6 +221,10 @@ export async function runChecks(now = new Date(), { migrations = true }: { migra
     checks.push(
       await check('/api/app/today', async () => {
         const res = await appToday(new Request('http://health.local/api/app/today?tz=America/Los_Angeles', auth));
+        if (res.status !== 200) throw new Error(`status ${res.status}: ${(await res.text()).slice(0, 200)}`);
+      }),
+      await check('/api/app/health', async () => {
+        const res = await appHealth(new Request('http://health.local/api/app/health?tz=America/Los_Angeles&days=90', auth));
         if (res.status !== 200) throw new Error(`status ${res.status}: ${(await res.text()).slice(0, 200)}`);
       }),
       await check('/api/app/trends', async () => {
