@@ -55,7 +55,10 @@ struct ActivityRouteMap: View, Equatable {
         .mapStyle(mapStyle)
         .mapControlVisibility(.hidden)
         .accessibilityLabel(Text("Route map"))
-        .onAppear { frame(for: .medium, animated: false) }
+        .onAppear { frame(for: rest.detent ?? .medium, animated: false) }
+        // The route came with the page, while the sheet still covers the map: frame it at once, so the drop shows it
+        // in place.
+        .onChange(of: route) { _, _ in frame(for: .medium, animated: false) }
         .onChange(of: rest.detent) { _, detent in
             if let detent, detent != .expanded { frame(for: detent, animated: true) }
         }

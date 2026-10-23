@@ -16,6 +16,7 @@ struct AppAPIRouteScreen: View {
             ActivityDetailScreen(
                 viewModel: ActivityDetailViewModel(
                     activityID: id,
+                    seed: dependencies.activitySeeds.seed(for: id),
                     data: dependencies.appData,
                     router: router,
                     tabs: dependencies.tabs,

@@ -22,11 +22,14 @@ import Testing
         return RoutedAppData(answers)
     }
 
+    let seeds = ActivitySeeds()
+
     func loaded(_ data: RoutedAppData? = nil, segment: TrainingSegment = .activities) async -> TrainingViewModel {
         let vm = TrainingViewModel(
             data: data ?? makeData(),
             router: router,
             tabs: tabs,
+            seeds: seeds,
             now: SessionBuilder.now,
             calendar: SessionBuilder.calendar,
             segment: segment
@@ -61,6 +64,8 @@ import Testing
         let vm = await loaded()
         vm.send(.activityTapped("9000000102"))
         #expect(router.opened == [.activity("9000000102")])
+        // The page gets what the list knew, so it opens in its final layout.
+        #expect(seeds.seed(for: "9000000102")?.name == vm.state.rows.first { $0.id == "9000000102" }?.name)
     }
 
     @Test func loadMoreTappedAppendsTheNextPageUntilTheEnd() async {

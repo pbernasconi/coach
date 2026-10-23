@@ -18,6 +18,7 @@ import Testing
         let data = RoutedAppData([Self.path: answer])
         let vm = ActivityDetailViewModel(
             activityID: "9000000102",
+            seed: nil,
             data: data,
             router: router,
             tabs: tabs,

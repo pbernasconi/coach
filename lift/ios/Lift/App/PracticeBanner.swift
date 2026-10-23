@@ -10,15 +10,20 @@ nonisolated enum PracticeBanner: StackableBanner {
 }
 
 extension View {
-    /// Shows `PracticeBanner` above the content while `isOn`, with a Turn off button.
+    /// Shows `PracticeBanner` above the content while `isOn`, with a Turn off button. It goes over the tab view in a
+    /// stack, not as a safe-area inset: the tabs' navigation bars do not see an inset on the tab view, so their large
+    /// titles drew over the banner. In the stack the tab view starts under the banner, and so do its bars.
     func practiceBanner(isOn: Bool, turnOff: @escaping () -> Void) -> some View {
-        bannerStack(isOn ? [PracticeBanner.on] : []) { _ in
-            SystemNotice(
-                "Practice mode: sample workouts, nothing is saved to your log",
-                symbol: "graduationcap",
-                tone: .info,
-                action: BannerAction("Turn off", perform: turnOff)
-            )
+        VStack(spacing: 0) {
+            BannerStack(isOn ? [PracticeBanner.on] : []) { _ in
+                SystemNotice(
+                    "Practice mode: sample workouts, nothing is saved to your log",
+                    symbol: "graduationcap",
+                    tone: .info,
+                    action: BannerAction("Turn off", perform: turnOff)
+                )
+            }
+            self
         }
     }
 }

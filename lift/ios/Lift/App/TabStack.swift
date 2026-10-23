@@ -78,6 +78,7 @@ struct TabRootScreen: View {
                     data: dependencies.appData,
                     router: router,
                     tabs: dependencies.tabs,
+                    seeds: dependencies.activitySeeds,
                     now: dependencies.now,
                     calendar: dependencies.calendar,
                     segment: options.trainingSegment
