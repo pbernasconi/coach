@@ -3,6 +3,11 @@ public enum BodyRegion: String, CaseIterable, Sendable {
     case chest, deltoids, biceps, triceps, forearm, abs, obliques, quadriceps, adductors, calves, tibialis
     case trapezius, upperBack, lowerBack, gluteal, hamstring
     case outline
+
+    /// The muscle this area shows; nil for areas no tracked muscle covers (adductors, shins, the outline).
+    public var muscle: Muscle? {
+        Muscle.allCases.first { $0.bodyRegions.contains(self) }
+    }
 }
 
 /// How strongly a muscle is shaded: by the sets that worked it, counted as /lift counts them (1 for a working set's main

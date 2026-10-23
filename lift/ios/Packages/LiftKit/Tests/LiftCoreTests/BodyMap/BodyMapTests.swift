@@ -46,6 +46,14 @@ import Testing
         }
     }
 
+    @Test func eachAreaLeadsBackToItsMuscle() {
+        for muscle in Muscle.allCases {
+            #expect(muscle.bodyRegions.allSatisfy { $0.muscle == muscle })
+        }
+        #expect(BodyRegion.adductors.muscle == nil)
+        #expect(BodyRegion.outline.muscle == nil)
+    }
+
     @Test func sessionShadesTakeTheStrongerShade() {
         let shades = BodyMapShading.shades(sets: [.back: 4, .core: 1, .chest: 0])
         #expect(shades[.upperBack] == .full)
