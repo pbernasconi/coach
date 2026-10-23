@@ -56,30 +56,20 @@ nonisolated enum WorkoutText {
         return String(localized: "Warm-up: \(ramp) \(unit.rawValue)")
     }
 
-    /// "45 · 45 · 10 · 5 a side", or "Empty bar" / "No plates" when the weight needs none.
-    static func platesPerSide(_ loading: PlateLoading) -> String {
+    /// Under the drawing: "45 bar + 105 a side", "105 a side" on a machine, "Empty bar" or "No plates".
+    static func platesSummary(_ loading: PlateLoading) -> String {
         guard !loading.perSide.isEmpty else {
             return loading.holder == .sleeve ? String(localized: "No plates") : String(localized: "Empty bar")
         }
-        return String(localized: "\(loading.perSide.map(number).joined(separator: " · ")) a side")
-    }
-
-    /// "Add 10 + 5 a side", "Take off 10 + 5 a side" or "Take off 10, add 25 a side"; nil when nothing changes.
-    static func plateChange(_ change: PlateChange) -> String? {
-        let off = change.remove.map(number).joined(separator: " + ")
-        let on = change.add.map(number).joined(separator: " + ")
-        return switch (change.remove.isEmpty, change.add.isEmpty) {
-        case (true, true): nil
-        case (true, false): String(localized: "Add \(on) a side")
-        case (false, true): String(localized: "Take off \(off) a side")
-        case (false, false): String(localized: "Take off \(off), add \(on) a side")
+        let side = number(loading.perSide.reduce(0, +))
+        return switch loading.holder {
+        case .bar(let bar): String(localized: "\(number(bar)) bar + \(side) a side")
+        case .sleeve: String(localized: "\(side) a side")
         }
     }
 
-    /// "from 225 lb": the weight loaded now.
-    static func plateChangeFrom(_ weight: Weight) -> String {
-        String(localized: "from \(self.weight(weight))")
-    }
+    /// A plate's label inside the drawing: "45", "2.5".
+    static func plateLabel(_ plate: Double) -> String { number(plate) }
 
     /// "45 lb bar", under the drawing's bar.
     static func barLabel(_ bar: Double, unit: WeightUnit) -> String {
@@ -91,14 +81,11 @@ nonisolated enum WorkoutText {
         String(localized: "Your plates make \(self.weight(weight))")
     }
 
-    /// The drawing for VoiceOver: "Plates a side: 45, 45, 10, 5. Add 10 + 5 a side."
+    /// The drawing for VoiceOver: "Plates a side: 45, 45, 10, 5."
     static func platesAccessibility(_ loading: PlateLoading) -> String {
-        let plates =
-            loading.perSide.isEmpty
-            ? platesPerSide(loading)
+        loading.perSide.isEmpty
+            ? platesSummary(loading)
             : String(localized: "Plates a side: \(loading.perSide.map(number).joined(separator: ", "))")
-        guard let change = loading.change.flatMap(plateChange) else { return plates }
-        return "\(plates). \(change)."
     }
 
     /// The next session's target as plain numbers, or nil when there is nothing to judge from.

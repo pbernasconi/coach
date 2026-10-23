@@ -109,7 +109,7 @@ import Testing
             lastTime: nil,
             laterSets: 2
         )
-        expected.plates = EditorPlates(holder: .bar(20), plateSet: GymSetup.standard.kg.plateSet, onBar: nil)
+        expected.plates = EditorPlates(holder: .bar(20), plateSet: GymSetup.standard.kg.plateSet)
         #expect(vm.state.editor == expected)
         #expect(vm.state.editor?.hasChanges == false)
     }

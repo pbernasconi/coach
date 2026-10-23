@@ -140,12 +140,6 @@ extension SessionDetail.Item {
         sets.prefix(while: { $0.id != set.id }).count(where: { $0.kind == set.kind }) + 1
     }
 
-    /// The weights of the sets logged before `set`, in order: how the bar was loaded up to `set`.
-    func loggedBefore(_ set: SetRecord) -> [Weight] {
-        sets.prefix(while: { $0.id != set.id }).filter { $0.status == .done }
-            .compactMap { $0.actualWeight ?? $0.target.weight }
-    }
-
     /// The planned sets of the same kind after `set`, in order.
     func laterPlanned(after set: SetRecord) -> [SetRecord] {
         sets.drop(while: { $0.id != set.id }).dropFirst().filter { $0.kind == set.kind && $0.status == .planned }
@@ -195,7 +189,7 @@ extension SetEditor {
             laterSets: item.laterPlanned(after: set).count,
             step: Self.step(for: item.exercise, unit: set.unit, gym: gym)
         )
-        plates = EditorPlates.make(for: item.exercise, unit: set.unit, gym: gym, logged: item.loggedBefore(set))
+        plates = EditorPlates.make(for: item.exercise, unit: set.unit, gym: gym)
     }
 
     /// The weight stepper's step: two of the lightest plate for a barbell loaded in total, otherwise 2.5 kg or 5 lb.

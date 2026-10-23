@@ -6,49 +6,25 @@ import Testing
 
 @testable import Lift
 
-/// The set editor's plate drawing: which plates a weight needs, what changes from the set before, and its labels.
+/// The set editor's plate drawing: which plates a weight needs, heaviest first, and the line under it.
 /// Made-up gyms only (TEST-8).
 @Suite struct EditorPlatesTests {
-    static let bar = EditorPlates(
-        holder: .bar(45),
-        plateSet: GymSetup.standard.lb.plateSet,
-        onBar: 225,
-        onBarPlates: [45, 45]
-    )
+    static let bar = EditorPlates(holder: .bar(45), plateSet: GymSetup.standard.lb.plateSet)
 
-    @Test func addsPlatesOntoWhatIsLoaded() throws {
+    @Test func loadsHeaviestFirst() {
         let loading = Self.bar.loading(for: 255)
 
         #expect(loading.perSide == [45, 45, 10, 5])
-        #expect(loading.change?.add == [10, 5])
-        #expect(loading.change?.remove == [])
         #expect(loading.isExact)
-        #expect(WorkoutText.plateChange(try #require(loading.change)) == "Add 10 + 5 a side")
-        #expect(WorkoutText.platesPerSide(loading) == "45 · 45 · 10 · 5 a side")
+        #expect(WorkoutText.platesSummary(loading) == "45 bar + 105 a side")
+        #expect(WorkoutText.platesAccessibility(loading) == "Plates a side: 45, 45, 10, 5")
     }
 
-    @Test func takesPlatesOffGoingDown() throws {
-        var plates = Self.bar
-        plates.onBar = 255
-        plates.onBarPlates = [45, 45, 10, 5]
-
-        let loading = plates.loading(for: 225)
-
-        #expect(loading.change?.remove == [10, 5])
-        #expect(WorkoutText.plateChange(try #require(loading.change)) == "Take off 10 + 5 a side")
+    @Test func labelsEveryPlate() {
+        #expect([45, 2.5].map(WorkoutText.plateLabel) == ["45", "2.5"])
     }
 
-    @Test func noChangeLineBeforeTheFirstSetOrWhenNothingChanges() {
-        var plates = Self.bar
-        plates.onBar = nil
-        #expect(plates.loading(for: 225).change == nil)
-
-        plates.onBar = 225
-        let same = plates.loading(for: 225)
-        #expect(same.change.flatMap(WorkoutText.plateChange) == nil)
-    }
-
-    @Test func eachLoggedSetLoadsOnTheOneBefore() throws {
+    @Test func makesPlatesOnlyForPlateLoadedLifts() {
         var exercise = SessionExerciseRecord(
             id: UUID(),
             sessionID: UUID(),
@@ -59,17 +35,15 @@ import Testing
         )
         exercise.equipment = .barbell
         exercise.loadMode = .total
+        #expect(EditorPlates.make(for: exercise, unit: .lb, gym: .standard)?.holder == .bar(45))
 
-        let plates = try #require(
-            EditorPlates.make(for: exercise, unit: .lb, gym: .standard, logged: [.lb(225), .lb(255)])
-        )
-
-        #expect(plates.onBar == 255)
-        #expect(plates.onBarPlates == [45, 45, 10, 5])
+        exercise.equipment = .dumbbell
+        exercise.loadMode = .perHand
+        #expect(EditorPlates.make(for: exercise, unit: .lb, gym: .standard) == nil)
     }
 
     @Test func emptyBarAndWeightsThePlatesCannotMake() {
-        #expect(WorkoutText.platesPerSide(Self.bar.loading(for: 45)) == "Empty bar")
+        #expect(WorkoutText.platesSummary(Self.bar.loading(for: 45)) == "Empty bar")
 
         let odd = Self.bar.loading(for: 252)
         #expect(!odd.isExact)
@@ -79,15 +53,13 @@ import Testing
     @Test func aPlateLoadedMachineCountsOneSide() {
         let sleeve = EditorPlates(
             holder: .sleeve,
-            plateSet: PlateSet(unit: .lb, bar: 0, stock: GymSetup.standard.lb.plateSet.stock),
-            onBar: 135,
-            onBarPlates: [45, 45, 45]
+            plateSet: PlateSet(unit: .lb, bar: 0, stock: GymSetup.standard.lb.plateSet.stock)
         )
 
         let loading = sleeve.loading(for: 180)
 
         #expect(loading.perSide == [45, 45, 45, 45])
         #expect(loading.loaded == 180)
-        #expect(loading.change?.add == [45])
+        #expect(WorkoutText.platesSummary(loading) == "180 a side")
     }
 }
