@@ -20,22 +20,18 @@ struct WorkoutDock: View {
     var body: some View {
         switch phase {
         case .start:
-            // Prominent glass, tinted the accent: Apple's style for a floating primary action. The glass brings its
-            // own depth and press response; it sits a little into the bottom safe area, close to the home indicator.
+            // Liquid Glass with a see-through accent tint, so the set list shows through it as it scrolls under, like
+            // the system's floating controls. The tint stays strong enough to read as the one primary action, and the
+            // label keeps the on-accent ink of Log set and Resume.
             Button { send(.startTapped) } label: {
-                // The on-accent ink, like Log set and Resume. The glass style draws white on its tint, so the label sets
-                // the ink itself (the glyph as a palette symbol, so the system keeps it too).
                 Label("Start workout", systemImage: "play.fill")
                     .font(theme.font(.headline))
-                    .symbolRenderingMode(.palette)
                     .foregroundStyle(theme.palette.onAccent)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, Space.xs)
+                    .frame(maxWidth: .infinity, minHeight: Size.buttonHeight)
+                    .contentShape(Capsule())
             }
-            .buttonStyle(.glassProminent)
-            .buttonBorderShape(.capsule)
-            .controlSize(.large)
-            .tint(theme.palette.accent)
+            .buttonStyle(.plain)
+            .glassEffect(.regular.tint(theme.palette.accent.opacity(StartGlass.tintOpacity)).interactive(), in: Capsule())
             .padding(.horizontal, Space.gutter)
             .padding(.bottom, -Space.md)
         case .lifting, .resting, .ready, .complete, .paused:
@@ -50,6 +46,11 @@ struct WorkoutDock: View {
             }
         }
     }
+}
+
+/// How much of the accent the floating Start workout's glass carries (a maths constant, not a colour).
+nonisolated enum StartGlass {
+    static let tintOpacity: Double = 0.75
 }
 
 private struct WorkoutDockCard: View {
