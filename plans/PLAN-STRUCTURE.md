@@ -152,6 +152,15 @@ Circuit: forearm plank 2 rounds of 45 s, side plank 2 rounds of 45 s each side.
 3) Forward step down 3x8: each leg.
 4) Copenhagen plank 2x8: each side.
 
+**Arm finisher** (15 min, home dumbbells 15/20/25 lb and bands; straight after a Zwift ride, or to top up arm
+volume on a week a lift fell off). Supersets, 60 s rest after each pair; go to 1–2 reps in reserve.
+1) Dumbbell curl 3x12: 25 lb, slow 3 s down.
+2) Overhead dumbbell triceps extension 3x12: one 25 lb dumbbell, both hands.
+3) Hammer curl 3x12: 20 lb.
+4) Band pushdown 3x15
+5) Dumbbell lateral raise 2x15: 15 lb.
+6) Push-up 2x12: to 1–2 reps in reserve.
+
 **Mobility mini** (15 min, cut from Mobility; after a long ride or a travel day).
 Couch stretch 1 min each side, pigeon stretch 1 min each side.
 1) World's greatest stretch 1x5: each side.

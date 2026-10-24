@@ -49,9 +49,6 @@ Also surface the **updated fitness state**: new CTL/ATL/TSB and the delta from w
 ### Step 4 — Ask 1-2 quick questions (AskUserQuestion)
 1. **How did completed sessions feel?** Great / Normal / Harder than expected / Beat up
 2. **Reason to change remaining days?** Stay the course / Reduce / Add quality / Reshuffle / Skip ahead
-3. **How heavy is life this week, 1–5?** (work, sleep, family, travel; 1 = light, 5 = flat out). A 4 or 5 turns the
-   rest of the week into a floor week (`.claude/commands/plan.md`, "Full weeks, floor weeks and the month") and is
-   the default for next week's /plan. Record it in the check-in log.
 
 ### Step 5 — Adjust remaining days
 - **Past days**: don't rewrite. Coach already marks them done (Strava and Lift) or missed.

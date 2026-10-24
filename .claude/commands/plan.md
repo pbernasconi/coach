@@ -208,11 +208,19 @@ matter more than the size of the best week.
 
 - **Two versions of a week.** A full week is the normal plan. A floor week keeps the gains with about half the time:
   2 short lifts (40 min, the top sets only, same loads), one long run or ride of 75–90 min, one easy session, walks;
-  no quality session unless he is fresh. Plan a floor week when: travel takes 3+ days, he says the week is busy or
-  life is heavy (4 or 5 on the check-in's life score), the answer to "How are you feeling?" is 🟡 or 🔴, or sleep has
-  been under 6.5 h for 3+ nights in the profile. Say which version it is in `title` or `context` and why.
-- **Lifts: 2 a week is the target, 1 is the floor.** Two lifts grow the arms; one holds strength for months. Arm
-  growth is the goal running interferes with least, so lifts are not dropped to make room for cardio.
+  no quality session unless he is fresh. Plan a floor week when: travel leaves no gym and no long-session window
+  (a trip with a gym and free mornings stays a full week), the calendar is packed with meetings, the answer to "How
+  are you feeling?" is 🟡 or 🔴, or sleep has been under 6.5 h for 3+ nights in the profile. Don't downshift for
+  life stress alone: Paolo says he is happy most days (2026-10-24). Say which version it is in `title` or `context`
+  and why.
+- **Lifts: 2 a week, not 3; 1 is the floor** (Paolo, 2026-10-24: 3 isn't realistic). Two lifts grow the arms; one
+  holds strength for months. Arm growth is the goal running interferes with least, so lifts are not dropped to make
+  room for cardio.
+- **Place sessions around his meetings, not fixed weekdays.** He isn't working right now, so days are flexible; the
+  calendar decides. Put the lifts and the quality session in the widest free windows of the week, away from the
+  busiest meeting days, and keep a heavy meeting day to one easy session or rest.
+- **Arm top-up at home.** When a lift falls off or the week is a floor week, the "Arm finisher" home mini session
+  (PLAN-STRUCTURE) can follow a Zwift ride as one block. Home has 15, 20 and 25 lb dumbbells and bands.
 - **Never miss twice.** If the profile shows no lift in the last 6 days, the week's first lift goes in its first 2
   days (a 40 min version is fine).
 - **Mornings decide the version of the day** (the web's "how I feel" and the readiness in the profile): green as
