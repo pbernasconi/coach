@@ -31,7 +31,10 @@ struct WorkoutDock: View {
                     .contentShape(Capsule())
             }
             .buttonStyle(.plain)
-            .glassEffect(.regular.tint(theme.palette.accent.opacity(StartGlass.tintOpacity)).interactive(), in: Capsule())
+            .glassEffect(
+                .regular.tint(theme.palette.accent.opacity(StartGlass.tintOpacity)).interactive(),
+                in: Capsule()
+            )
             .padding(.horizontal, Space.gutter)
             .padding(.bottom, -Space.md)
         case .lifting, .resting, .ready, .complete, .paused:
