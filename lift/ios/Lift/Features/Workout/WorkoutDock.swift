@@ -23,8 +23,12 @@ struct WorkoutDock: View {
             // Prominent glass, tinted the accent: Apple's style for a floating primary action. The glass brings its
             // own depth and press response; it sits a little into the bottom safe area, close to the home indicator.
             Button { send(.startTapped) } label: {
+                // The on-accent ink, like Log set and Resume. The glass style draws white on its tint, so the label sets
+                // the ink itself (the glyph as a palette symbol, so the system keeps it too).
                 Label("Start workout", systemImage: "play.fill")
                     .font(theme.font(.headline))
+                    .symbolRenderingMode(.palette)
+                    .foregroundStyle(theme.palette.onAccent)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, Space.xs)
             }
