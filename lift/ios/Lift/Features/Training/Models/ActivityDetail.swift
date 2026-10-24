@@ -128,6 +128,8 @@ nonisolated struct ActivityEquipment: Decodable, Equatable, Sendable {
 /// The route as `[lat, lng]` pairs, at most 500.
 nonisolated struct ActivityRoute: Decodable, Equatable, Sendable {
     var points: [[Double]]
+    /// The line coloured by a metric (the map's colour button); nil without a GPS stream or from an older server.
+    var colored: ActivityRouteColors?
 
     /// The pairs with both numbers present.
     var coordinates: [(latitude: Double, longitude: Double)] {

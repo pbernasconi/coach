@@ -16,6 +16,8 @@ struct ActivityMapPage: View {
     @State private var detent: BackdropSheetDetent
     @State private var mapType: ActivityMapType = .standard
     @State private var isThreeD = false
+    /// The metric the route is coloured by (`route.colored`); nil is the sport's colour.
+    @State private var metricKey: String?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Shown already loaded (a kept copy): the sheet drops as the page appears, not when the server answers.
     private let opensLoaded: Bool
@@ -50,7 +52,8 @@ struct ActivityMapPage: View {
                 color: (header?.sportStyle ?? state.seed?.sport ?? .other).color,
                 rest: rest,
                 type: mapType,
-                isThreeD: isThreeD
+                isThreeD: isThreeD,
+                metric: route?.colored?.metric(metricKey)
             )
             .equatable()
         } sheet: {
@@ -74,6 +77,8 @@ struct ActivityMapPage: View {
                 isLoaded: showsContent,
                 mapType: $mapType,
                 isThreeD: $isThreeD,
+                metrics: route?.colored?.metrics ?? [],
+                metricKey: $metricKey,
                 onLower: { detent = .medium }
             )
             .onChange(of: sheet.resting) { _, resting in
@@ -123,6 +128,8 @@ private struct ActivityMapOverlay: View {
     let isLoaded: Bool
     @Binding var mapType: ActivityMapType
     @Binding var isThreeD: Bool
+    let metrics: [ActivityRouteColors.Metric]
+    @Binding var metricKey: String?
     let onLower: () -> Void
     @Environment(\.koboTheme) private var theme
     @Environment(\.dismiss) private var dismiss
@@ -179,49 +186,21 @@ private struct ActivityMapOverlay: View {
         .tint(theme.palette.textPrimary)
     }
 
-    /// Layers and 3D in one glass pill under the bar's "…", as Apple Maps stacks its map controls.
+    /// Layers, colour and 3D in one glass pill under the bar's "…", and the colour's scale on the left.
     @ViewBuilder private var mapButtons: some View {
         if showsMapButtons {
-            VStack(spacing: 0) {
-                Menu {
-                    Picker(selection: $mapType) {
-                        ForEach(ActivityMapType.allCases, id: \.self) { type in
-                            Label { Text(type.label) } icon: { Image(systemName: type.symbol) }
-                        }
-                    } label: {
-                        Text("Map type")
-                    }
-                } label: {
-                    Image(systemName: "square.3.layers.3d")
-                        .font(theme.font(.subheadline).weight(.semibold))
-                        .frame(width: Self.control, height: Self.control)
-                        .contentShape(Rectangle())
-                }
-                .accessibilityLabel(Text("Map type"))
-                theme.palette.separator
-                    .frame(width: Self.control - Space.md, height: Size.hairline * 2)
-                Button {
-                    isThreeD.toggle()
-                } label: {
-                    Text("3D")
-                        .font(theme.font(.footnote).weight(.bold))
-                        .foregroundStyle(isThreeD ? theme.palette.accentText : theme.palette.textPrimary)
-                        .frame(width: Self.control, height: Self.control)
-                        .contentShape(Rectangle())
-                }
-                .accessibilityLabel(Text("3D"))
-                .accessibilityAddTraits(isThreeD ? .isSelected : [])
+            ActivityMapControls(mapType: $mapType, isThreeD: $isThreeD, metrics: metrics, metricKey: $metricKey)
+                .padding(.top, sheet.topInset + Space.xxs)
+                // In line with the bar's "…": the bar keeps its buttons 20 points from the edge.
+                .padding(.trailing, Space.xl)
+                .transition(Motion.pop(reduceMotion: reduceMotion))
+            if let metric = metrics.first(where: { $0.key == metricKey }) {
+                ActivityRouteLegend(metric: metric)
+                    .padding(.top, sheet.topInset + Space.xxs)
+                    .padding(.leading, Space.xl)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .transition(Motion.pop(reduceMotion: reduceMotion))
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(theme.palette.textPrimary)
-            .glassEffect(.regular.interactive(), in: Capsule())
-            .padding(.top, sheet.topInset + Space.xxs)
-            // In line with the bar's "…": the bar keeps its buttons 20 points from the edge.
-            .padding(.trailing, Space.xl)
-            .transition(Motion.pop(reduceMotion: reduceMotion))
         }
     }
-
-    /// One map control: the same 44 points as the bar's buttons, so the pill lines up under "…".
-    private static let control: CGFloat = Size.minTouch
 }

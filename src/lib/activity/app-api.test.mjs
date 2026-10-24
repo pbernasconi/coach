@@ -181,6 +181,17 @@ const CONTEXT = {
   },
 };
 
+test('detailResponse: the route coloured by each metric, on at most 400 points', () => {
+  const s = series1000();
+  const series = { ...s, lat: s.t.map((_, i) => 37.7 + i * 1e-5), lng: s.t.map((_, i) => -122.4 + i * 1e-5) };
+  const r = detailResponse({ v: view({ series }), context: CONTEXT, timeZone: 'UTC', today: '2026-10-20', now: NOW, typeLabel });
+  const c = r.route.colored;
+  assert.equal(c.points.length, 400);
+  assert.ok(c.metrics.some((m) => m.key === 'pace'));
+  assert.ok(c.metrics.some((m) => m.key === 'hrZones'));
+  for (const m of c.metrics) assert.equal(m.bins.length, 400, m.key);
+});
+
 test('detailResponse: every section in the web order, with display text', () => {
   const r = detailResponse({ v: view(), context: CONTEXT, timeZone: 'UTC', today: '2026-10-20', now: NOW, typeLabel });
   assert.deepEqual(Object.keys(r), [
@@ -202,6 +213,7 @@ test('detailResponse: every section in the web order, with display text', () => 
   assert.deepEqual(r.equipment.gear, { label: 'Shoes', name: 'Pegasus 41', distanceText: '(412 km)' });
   assert.deepEqual(r.splits.rows.map((x) => x.label), ['1', '0.23']);
   assert.ok(r.route.points.length <= 500);
+  assert.equal(r.route.colored, null); // the series has no lat/lng
   assert.equal(r.sameRoute.rows.length, 2);
   assert.equal(r.sameRoute.rows.find((x) => x.isThis).name, 'This activity');
   assert.equal(r.coach.planned.title, 'Easy run');

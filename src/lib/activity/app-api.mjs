@@ -7,6 +7,7 @@ import { duration, km, kmh, pace, percents } from './format.mjs';
 
 export { percents };
 import { bucketMean, buckets, smooth } from './streams.mjs';
+import { routeColors } from './route-colors.mjs';
 import {
   achievementsText, bestEffortRow, bestEffortsNote, effortView, garminRows, gearView, heartRateNote, lapRow, layoutOf, loadView,
   noStreamsText, overviewStats, paceHistogramView, plannedTexts, rankedSegments, sameRouteRows, segmentRow, segmentsNote, splitRow,
@@ -25,6 +26,8 @@ export const CHART_SMOOTHING_S = 30;
 /** The web's window for the "smoothed" pace line (PaceBars.tsx). */
 export const PACE_LINE_SMOOTHING_S = 60;
 export const ROUTE_POINTS = 500;
+/** Points on the route coloured by a metric (route.colored): each carries a bin per metric. */
+export const ROUTE_COLOR_POINTS = 400;
 export const TOP_SEGMENTS = 15;
 const ID = /^[A-Za-z0-9_-]{1,40}$/;
 
@@ -414,7 +417,11 @@ export function detailResponse({ v, context, timeZone, today, now, typeLabel }) 
           }
         : null
     ),
-    route: section('route', () => (v.route.length > 1 ? { points: simplifyRoute(v.route) } : null)),
+    route: section('route', () =>
+      v.route.length > 1
+        ? { points: simplifyRoute(v.route), colored: routeColors(v.series, { foot, hrZones: v.hrZones, powerZones: v.powerZones, points: ROUTE_COLOR_POINTS }) }
+        : null
+    ),
     sameRoute: !context.ok
       ? { ok: false }
       : section('same route', () => {
