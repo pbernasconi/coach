@@ -119,13 +119,17 @@ final class DemoAppData: AppDataSource {
                 plan["subtitle"] = parts.joined(separator: " · ")
             }
         }
-        // The week's own workout for that weekday (Monday first; 1 January 1970 was a Thursday): its title and sport,
-        // and the ride's intervals only on a ride.
-        let entry = DemoCoachWeeks.otherSports[(day.daysSinceEpoch + 3) % 7]
+        // The week's own workout for that weekday (Monday first; 1 January 1970 was a Thursday): its title and sport.
+        let weekday = (day.daysSinceEpoch + 3) % 7
+        let entry = DemoCoachWeeks.otherSports[weekday]
         plan["title"] = entry.title
         plan["sport"] = entry.sport.rawValue
         plan["sportLabel"] = entry.sport.label
-        if entry.sport != .ride { plan["workout"] = NSNull() }
+        if weekday != 1 {  // only Tuesday's ride is the sweet spot: no intervals, IF or its note on another day
+            plan["workout"] = NSNull()
+            plan["notes"] = NSNull()
+            plan["hero"] = (plan["hero"] as? [[String: Any]])?.filter { ($0["label"] as? String) != "Planned IF" }
+        }
         if var parts = (plan["subtitle"] as? String)?.components(separatedBy: " · "), parts.count == 3 {
             parts[0] = entry.sport.label
             plan["subtitle"] = parts.joined(separator: " · ")
