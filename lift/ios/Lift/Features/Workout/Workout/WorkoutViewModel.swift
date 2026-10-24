@@ -134,8 +134,8 @@ final class WorkoutViewModel {
     private func sendLocal(_ action: WorkoutAction) -> Task<Void, Never>? {
         switch action {
         case .setValuesTapped(let id): openEditor(id)
-        case .editorWeightChanged, .editorRepsChanged, .editorApplyToLaterChanged, .editorRPEChanged,
-            .editorNoteChanged, .editorDismissed:
+        case .editorWeightChanged, .editorRepsChanged, .editorApplyToLaterChanged, .editorNoteChanged,
+            .editorDismissed:
             state.editor = state.editor?.applying(action)
         case .editorDoneTapped: return saveEditor()
         case .sessionNoteTapped, .exerciseNoteTapped: openNote(action)

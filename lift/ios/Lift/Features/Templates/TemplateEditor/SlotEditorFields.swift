@@ -69,6 +69,6 @@ private struct SlotEditorActions: View {
             .buttonStyle(.kobo(.secondary, size: .compact, width: .full))
             .disabled(!editor.canMoveDown)
         Button("Remove", systemImage: "trash", role: .destructive) { send(.removeTapped(editor.id)) }
-            .buttonStyle(.kobo(.destructive, size: .compact, width: .full))
+            .buttonStyle(.kobo(.destructiveTonal, size: .compact, width: .full))
     }
 }

@@ -55,22 +55,6 @@ import Testing
         #expect(vm.state.editor?.hasChanges == false)
     }
 
-    @Test func editorRPEChangedChoosesAValueAndTheSameValueClearsIt() async {
-        let vm = makeViewModel(planned, sets: recorder(planned))
-        await vm.run()
-        vm.send(.setValuesTapped(firstSetID))
-
-        #expect(vm.send(.editorRPEChanged(8)) == nil)
-        #expect(vm.state.editor?.rpe == 8)
-        #expect(vm.state.editor?.hasChanges == true)
-        vm.send(.editorRPEChanged(9.5))
-        #expect(vm.state.editor?.rpe == 9.5)
-        vm.send(.editorRPEChanged(9.5))
-        #expect(vm.state.editor?.rpe == nil)
-        vm.send(.editorRPEChanged(11))
-        #expect(vm.state.editor?.rpe == nil)
-    }
-
     @Test func editorNoteChangedUpdatesTheDraft() async {
         let vm = makeViewModel(planned, sets: recorder(planned))
         await vm.run()

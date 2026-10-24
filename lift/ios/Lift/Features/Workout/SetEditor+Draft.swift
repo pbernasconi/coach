@@ -1,5 +1,4 @@
 import Foundation
-import LiftCore
 
 extension SetEditor {
     /// The draft after an editor action, or nil once it is dismissed. Done saves, so the ViewModel handles it.
@@ -9,7 +8,6 @@ extension SetEditor {
         case .editorWeightChanged(let weight): draft.weight = max(0, weight)
         case .editorRepsChanged(let reps): draft.reps = max(0, reps)
         case .editorApplyToLaterChanged(let isOn): draft.appliesToLater = isOn
-        case .editorRPEChanged(let value): draft.rpe = draft.rpe == value || !RPE.isValid(value) ? nil : value
         case .editorNoteChanged(let text): draft.note = text
         case .editorDismissed: return nil
         default: break

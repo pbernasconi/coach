@@ -195,7 +195,7 @@ private struct WorkoutBody: View {
     }
 }
 
-/// Last time's values, the weight and reps steppers, "Apply to later sets", the RPE chips, the note and Remove set in the
+/// Last time's values, the weight and reps steppers, "Apply to later sets", the note and Remove set in the
 /// editor sheet. Done (in the sheet footer) saves; it never logs the set.
 private struct SetEditorFields: View {
     @Environment(\.koboTheme) private var theme
@@ -231,7 +231,6 @@ private struct SetEditorFields: View {
                 isOn: .action(editor.appliesToLater) { send(.editorApplyToLaterChanged($0)) }
             )
         }
-        SetEditorRPE(rpe: editor.rpe, send: send)
         KoboTextArea(
             "Note",
             text: .action(editor.note) { send(.editorNoteChanged($0)) },
@@ -240,7 +239,7 @@ private struct SetEditorFields: View {
         )
         // Removes at once and closes the sheet; the "Set removed" toast offers Undo (product rule).
         Button("Remove set", systemImage: "trash", role: .destructive) { send(.setRemoveTapped(editor.id)) }
-            .buttonStyle(.kobo(.destructive, size: .compact, width: .full))
+            .buttonStyle(.kobo(.destructiveTonal, width: .full))
             .accessibilityLabel(Text("Remove \(editor.title)"))
     }
 }

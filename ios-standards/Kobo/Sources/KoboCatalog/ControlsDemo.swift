@@ -84,6 +84,7 @@ struct ControlsDemo: View {
             Button("Tonal") {}.buttonStyle(.kobo(.tonal))
             Button("Glass") {}.buttonStyle(.kobo(.glass))
             Button("Delete", role: .destructive) {}.buttonStyle(.kobo(.destructive))
+            Button("Remove", systemImage: "trash", role: .destructive) {}.buttonStyle(.kobo(.destructiveTonal))
             Button("Loading") {}.buttonStyle(.kobo(.primary, isLoading: true))
         }
     }

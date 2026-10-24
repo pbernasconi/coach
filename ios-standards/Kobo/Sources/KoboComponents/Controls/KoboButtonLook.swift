@@ -14,6 +14,8 @@ extension KoboButtonStyle {
         case glass
         /// The danger fill: an action that deletes or cannot be undone.
         case destructive
+        /// The soft danger tint with danger ink: a remove action in a sheet or form that sits below its main action.
+        case destructiveTonal
         /// Ink only, no fill: inline and tertiary actions.
         case plain
     }
@@ -73,13 +75,14 @@ struct ButtonLook: Equatable {
         case .tonal: return ButtonLook(fill: palette.accentSoft, foreground: palette.accentText)
         case .glass: return ButtonLook(fill: .clear, foreground: palette.textPrimary)
         case .destructive: return ButtonLook(fill: palette.danger.ink, foreground: palette.surface)
+        case .destructiveTonal: return ButtonLook(fill: palette.danger.soft, foreground: palette.danger.ink)
         case .plain: return ButtonLook(fill: .clear, foreground: palette.accentText)
         }
     }
 
     private static func disabled(_ variant: KoboButtonStyle.Variant, palette: Palette) -> ButtonLook {
         switch variant {
-        case .primary, .secondary, .tonal, .destructive:
+        case .primary, .secondary, .tonal, .destructive, .destructiveTonal:
             ButtonLook(fill: palette.surfaceRaised, foreground: palette.textTertiary)
         case .glass, .plain:
             ButtonLook(fill: .clear, foreground: palette.textTertiary)

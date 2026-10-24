@@ -15,12 +15,10 @@ nonisolated enum WorkoutAction: Equatable, Sendable {
     case addSetTapped(exerciseID: UUID)
     case editorWeightChanged(Double)
     case editorRepsChanged(Int)
-    /// An RPE chip in the editor; tapping the chip already chosen clears the RPE.
-    case editorRPEChanged(Double)
     case editorNoteChanged(String)
     /// "Apply to later sets": Done also saves a new weight onto the later planned sets of the same kind.
     case editorApplyToLaterChanged(Bool)
-    /// Saves the editor's values, RPE and note without logging the set.
+    /// Saves the editor's values and note (a set's saved RPE is kept as it was) without logging the set.
     case editorDoneTapped
     case editorDismissed
     /// "Add note" or the note under the header: opens the note editor for the whole session.
