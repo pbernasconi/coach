@@ -28,6 +28,23 @@ import Testing
         #expect(detail.heartRate?.value?.zones.first?.percent == 96)
         #expect(detail.segments?.value?.rows.first?.rankText == "PR")
         #expect(detail.route?.value?.coordinates.count == 2)
+        let colored = try #require(detail.route?.value?.colored)
+        #expect(colored.metrics.map(\.key) == ["hr"])
+        #expect(colored.metric("hr")?.bins == [0, 1, 1])
+    }
+
+    /// The coloured line: one piece per run of a colour, each starting where the one before ends.
+    @Test func routePiecesJoinEndToStart() {
+        let metric = ActivityRouteColors.Metric(
+            key: "hr", label: "Heart rate", unit: "bpm", colors: ["#000001", "#000002"], bins: [0, 0, 1, nil, 1],
+            lowText: "120", highText: "170"
+        )
+        let colors = ActivityRouteColors(points: [[1, 1], [2, 2], [3, 3], [4, 4], [5, 5]], metrics: [metric])
+        let pieces = colors.pieces(for: metric)
+        #expect(pieces.map(\.color) == ["#000001", "#000002", nil, "#000002"])
+        #expect(pieces.map { $0.coordinates.map(\.latitude) } == [[1, 2], [2, 3], [3, 4], [4, 5]])
+        #expect(colors.metric(nil) == nil)
+        #expect(colors.metric("hr") == metric)
     }
 
     @Test func contractTrendsDecode() throws {

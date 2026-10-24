@@ -687,7 +687,14 @@ Trimmed response (a run; arrays cut):
   "weather": { "ok": true, "headline": "Clear, 16 °C", "rows": [{ "label": "Wind", "valueText": "3.9 km/h NNW" }], "source": "Open-Meteo, the hour nearest the start" },
   "equipment": { "ok": true, "device": "Garmin fēnix 7S Pro", "gear": { "label": "Shoes", "name": "Nike AlphaFLY", "distanceText": "(1,464 km)" } },
   "splits": { "ok": true, "note": null, "rows": [{ "index": 1, "distance": 1000.2, "speed": 3.04, "gapSpeed": 3.11, "label": "1", "paceText": "5:29", "gapText": "5:22", "elevText": "+3", "hrText": "137" }] },
-  "route": { "ok": true, "points": [[34.99831, 135.76627], [34.99827, 135.76625]] },
+  "route": {
+    "ok": true,
+    "points": [[34.99831, 135.76627], [34.99827, 135.76625]],
+    "colored": {
+      "points": [[34.99831, 135.76627], [34.99829, 135.76626], [34.99827, 135.76625]],
+      "metrics": [{ "key": "hr", "label": "Heart rate", "unit": "bpm", "colors": ["#2c7bb6", "#e0301e"], "bins": [0, 1, 1], "lowText": "128", "highText": "161" }]
+    }
+  },
   "sameRoute": null,
   "coach": {
     "ok": true,
@@ -780,6 +787,12 @@ Field rules:
   (at least 2 points), `sameRoute` (other activities of the same sport on the route; the row with `isThis` is this
   activity, not a link): `null` when absent.
 - `route.points`: `[lat, lng]`, 5 decimals, at most 500 (Douglas–Peucker with the smallest tolerance that fits).
+- `route.colored`: the line coloured by a metric (the map's "Colour by" button; `src/lib/activity/route-colors.mjs`),
+  `null` without a GPS stream. `points`: at most 400 `[lat, lng]` along the streams. `metrics`: the ones this
+  activity has, in menu order, each `{ key, label, unit, colors, bins, lowText, highText }`. `key`: `pace`, `gap`,
+  `speed`, `hr`, `hrZones`, `power`, `powerZones`, `elevation`, `grade`, `cadence`. `bins[i]` is the colour of
+  point `i` (an index into `colors`, `#rrggbb`, low end first; gaps are already filled). `lowText`/`highText` label
+  the legend's ends (`"5:33"`, `"4:10"` with `unit` `/km`; `"Z1"`, `"Z5"`; `"-8"`, `"+8"` with `%`).
 - `coach.planned`: `null` when no plan workout matched (show `plannedEmptyText`). `compliance.level`:
   `good | done | partial | off | …` (`complianceOf`, the web's `ComplianceMark` colours); `label` is its text. `ratioText`: `null` without a ratio.
   `load.rows`: CTL, ATL, TSB after the activity's day, with the change from the day before in brackets, and "TSS

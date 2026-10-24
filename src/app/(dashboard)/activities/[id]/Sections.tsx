@@ -15,7 +15,8 @@ import { RangeRow, type HighlightRange } from './ActivityHover';
 import Histogram from './Histogram';
 import PaceBars from './PaceBars';
 import PowerCurve from './PowerCurve';
-import RouteMap from './RouteMap';
+import RouteMap, { type RouteColored } from './RouteMap';
+import { routeColors } from '@/lib/activity/route-colors.mjs';
 import RouteProfile from './RouteProfile';
 import StatSummary from './StatSummary';
 import StreamCharts from './StreamCharts';
@@ -98,6 +99,7 @@ export function ZoneBars({ zones, unit, kind }: { zones: Zone[]; unit: string; k
 
 function Overview({ v, color }: { v: ActivityView; color: string }) {
   const splitR = v.series ? splitRanges(v.splits, v.series) : v.splits.map(() => null);
+  const colored = routeColors(v.series, { foot: v.layout === 'run', hrZones: v.hrZones, powerZones: v.powerZones }) as RouteColored | null;
   const points = v.series?.lat && v.series.lng ? v.series.lat.map((la, i) => (la != null && v.series!.lng![i] != null ? ([v.series!.lng![i]!, la] as [number, number]) : null)) : null;
 
   return (
@@ -133,7 +135,7 @@ function Overview({ v, color }: { v: ActivityView; color: string }) {
         )}
         {v.route.length > 1 && (
           <div className="min-w-0 space-y-2">
-            <RouteMap route={v.route} points={points} color={color} label={`Route map of ${v.name}${v.place ? ` near ${v.place}` : ''}`} />
+            <RouteMap route={v.route} points={points} color={color} colored={colored} label={`Route map of ${v.name}${v.place ? ` near ${v.place}` : ''}`} />
             {v.series && points && <RouteProfile series={v.series} foot={v.layout === 'run'} color={color} />}
           </div>
         )}

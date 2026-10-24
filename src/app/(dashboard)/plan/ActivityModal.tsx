@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { sport, stravaTypeLabel } from '@/lib/sports';
 import { duration, int, km, kmh, pace, paceOfSeconds, signed } from '@/lib/activity/format.mjs';
 import { PEAK_DURATIONS, peakCurve } from '@/lib/activity/peaks.mjs';
+import { routeColors } from '@/lib/activity/route-colors.mjs';
 import { NOT_LOADED_NOTE } from '@/lib/activity/view.mjs';
 import { weatherLabel } from '@/lib/activity/weather.mjs';
 import { plainTitle } from '@/lib/plan/calendar.mjs';
@@ -18,7 +19,7 @@ import type { CalendarWorkout } from '@/lib/plan/month';
 import { ActivityHoverProvider } from '../activities/[id]/ActivityHover';
 import Histogram from '../activities/[id]/Histogram';
 import PowerCurve from '../activities/[id]/PowerCurve';
-import RouteMap from '../activities/[id]/RouteMap';
+import RouteMap, { type RouteColored } from '../activities/[id]/RouteMap';
 import RouteProfile from '../activities/[id]/RouteProfile';
 import StreamCharts from '../activities/[id]/StreamCharts';
 import { ZoneBars } from '../activities/[id]/Sections';
@@ -88,6 +89,10 @@ function ActivityContent({
   const ride = v.layout === 'ride';
   const color = sport(v.sport).color;
   const series = v.series;
+  const colored = useMemo(
+    () => routeColors(series, { foot: v.layout === 'run', hrZones: v.hrZones, powerZones: v.powerZones }) as RouteColored | null,
+    [series, v.layout, v.hrZones, v.powerZones],
+  );
   const hrPeaks = useMemo(() => (series ? peakCurve(series.t, series.hr) : []), [series]);
   // GPS speed jumps for a few seconds, so the speed curve starts at 30 s.
   const speedPeaks = useMemo(
@@ -173,6 +178,7 @@ function ActivityContent({
                       route={v.route}
                       points={series?.lat && series.lng ? series.lat.map((la, i) => (la != null && series.lng![i] != null ? ([series.lng![i]!, la] as [number, number]) : null)) : null}
                       color={color}
+                      colored={colored}
                       label={`Route map of ${v.name}`}
                     />
                   </div>

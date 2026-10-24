@@ -4,8 +4,10 @@ import MapKit
 import SwiftUI
 
 /// The map types under the layers button.
-nonisolated enum ActivityMapType: String, CaseIterable, Sendable {
+nonisolated enum ActivityMapType: String, CaseIterable, Sendable, Identifiable {
     case standard, satellite, hybrid
+
+    var id: String { rawValue }
 
     var label: LocalizedStringResource {
         switch self {
@@ -33,16 +35,27 @@ struct ActivityRouteMap: View, Equatable {
     let rest: BackdropSheetRest
     let type: ActivityMapType
     let isThreeD: Bool
+    /// The metric the line is coloured by; nil draws it in `color`.
+    var metric: ActivityRouteColors.Metric?
     @Environment(\.koboTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var camera: MapCameraPosition = .automatic
 
     var body: some View {
         Map(position: $camera, interactionModes: .all) {
-            MapPolyline(coordinates: points)
-                .stroke(theme.palette.surface, style: StrokeStyle(lineWidth: Space.sm, lineCap: .round, lineJoin: .round))
-            MapPolyline(coordinates: points)
-                .stroke(color, style: StrokeStyle(lineWidth: Space.xs + 1, lineCap: .round, lineJoin: .round))
+            if let metric, let colored = route.colored {
+                MapPolyline(coordinates: Self.coordinates(colored.points))
+                    .stroke(theme.palette.surface, style: Self.casing)
+                ForEach(colored.pieces(for: metric)) { piece in
+                    MapPolyline(coordinates: piece.coordinates.map { CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) })
+                        .stroke(piece.color.flatMap { Color(routeHex: $0) } ?? color, style: Self.line)
+                }
+            } else {
+                MapPolyline(coordinates: points)
+                    .stroke(theme.palette.surface, style: Self.casing)
+                MapPolyline(coordinates: points)
+                    .stroke(color, style: Self.line)
+            }
             if let first = points.first {
                 Annotation("Start", coordinate: first) { RouteMapStart() }
                     .annotationTitles(.hidden)
@@ -67,11 +80,19 @@ struct ActivityRouteMap: View, Equatable {
 
     nonisolated static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.route == rhs.route && lhs.rest == rhs.rest && lhs.type == rhs.type && lhs.isThreeD == rhs.isThreeD
-            && lhs.color == rhs.color
+            && lhs.color == rhs.color && lhs.metric == rhs.metric
     }
+
+    /// The white edge under the line, and the line.
+    private static let casing = StrokeStyle(lineWidth: Space.sm, lineCap: .round, lineJoin: .round)
+    private static let line = StrokeStyle(lineWidth: Space.xs + 1, lineCap: .round, lineJoin: .round)
 
     private var points: [CLLocationCoordinate2D] {
         route.coordinates.map { CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) }
+    }
+
+    private static func coordinates(_ pairs: [[Double]]) -> [CLLocationCoordinate2D] {
+        pairs.compactMap { $0.count == 2 ? CLLocationCoordinate2D(latitude: $0[0], longitude: $0[1]) : nil }
     }
 
     private var mapStyle: MapStyle {

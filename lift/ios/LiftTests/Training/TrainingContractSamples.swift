@@ -133,7 +133,14 @@ enum TrainingContractSamples {
           "weather": { "ok": true, "headline": "Clear, 16 °C", "rows": [{ "label": "Wind", "valueText": "3.9 km/h NNW" }], "source": "Open-Meteo, the hour nearest the start" },
           "equipment": { "ok": true, "device": "Garmin fēnix 7S Pro", "gear": { "label": "Shoes", "name": "Nike AlphaFLY", "distanceText": "(1,464 km)" } },
           "splits": { "ok": true, "note": null, "rows": [{ "index": 1, "distance": 1000.2, "speed": 3.04, "gapSpeed": 3.11, "label": "1", "paceText": "5:29", "gapText": "5:22", "elevText": "+3", "hrText": "137" }] },
-          "route": { "ok": true, "points": [[34.99831, 135.76627], [34.99827, 135.76625]] },
+          "route": {
+            "ok": true,
+            "points": [[34.99831, 135.76627], [34.99827, 135.76625]],
+            "colored": {
+              "points": [[34.99831, 135.76627], [34.99829, 135.76626], [34.99827, 135.76625]],
+              "metrics": [{ "key": "hr", "label": "Heart rate", "unit": "bpm", "colors": ["#2c7bb6", "#e0301e"], "bins": [0, 1, 1], "lowText": "128", "highText": "161" }]
+            }
+          },
           "sameRoute": null,
           "coach": {
             "ok": true,
