@@ -88,7 +88,7 @@ private struct WorkoutDockCard: View {
                 }
             }
             .padding(.horizontal, Space.cardInset)
-            .padding(.vertical, Space.md)
+            .padding(.vertical, Space.lg)  // room around the buttons, so the card never feels cut off
         }
         .clipShape(WorkoutDockPanel.shape)  // the strip's corners
         .background { WorkoutDockPanel(isReady: isReady, isResting: isResting).ignoresSafeArea(edges: .bottom) }
