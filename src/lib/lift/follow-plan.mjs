@@ -108,7 +108,9 @@ export async function followWorkout(sql, pushChanges, activityId, opts = {}) {
 // the workout's last change on the server. So an offline phone edit (a note, a start) that still carries the old day
 // cannot move a workout back after a web move, phones before v8 never move the plan, and the web's own pushes above
 // keep the stored `dayMovedAt`, so they never look like a phone move. A session the phone removed leaves its workout
-// as it is (lift/WEEK-API.md, "Phone behaviour").
+// planned (lift/WEEK-API.md, "Phone behaviour"), but a move it carries still counts: Lift's Discard of a workout that
+// Start had moved to today puts the session back on its planned day and removes it in one push, and the workout must
+// go back with it, not stay on today as missed.
 
 /**
  * The session rows of a push, the last change of each session winning.
@@ -130,7 +132,8 @@ export function pushedSessions(changes) {
 
 /**
  * The plan workouts to move to their session's new day: the session was moved on the phone (`dayMovedAt`) after the
- * workout last changed on the server (`changedAt`: the later of its edited_at and updated_at).
+ * workout last changed on the server (`changedAt`: the later of its edited_at and updated_at). A removed session's
+ * move counts too (Discard after Start moved it: back to its planned day).
  * @param {Map<string, { day: unknown, removed: boolean, dayMovedAt: Date | null }>} sessions  from pushedSessions
  * @param {{ id: string, liftSessionId: string, date: string, status: string, changedAt: Date | null }[]} workouts
  *   the workouts linked to them
@@ -141,7 +144,7 @@ export function planFollowMoves(sessions, workouts) {
   for (const w of workouts) {
     const sessionId = String(w.liftSessionId ?? '').toLowerCase();
     const s = sessions.get(sessionId);
-    if (!s || s.removed || typeof s.day !== 'string' || !DAY.test(s.day)) continue;
+    if (!s || typeof s.day !== 'string' || !DAY.test(s.day)) continue;
     if (w.status === 'skipped' || w.date === s.day) continue;
     if (!s.dayMovedAt || (w.changedAt && s.dayMovedAt.getTime() <= w.changedAt.getTime())) continue;
     moves.push({ id: w.id, sessionId, from: w.date, to: s.day });
