@@ -8,6 +8,8 @@ nonisolated enum LiftSessionAction: Equatable, Sendable {
     case refreshPulled
     /// "Open Settings" under "not connected".
     case connectTapped
+    /// "Back" under "This workout was deleted".
+    case backTapped
     /// The older or newer session in the bar's menu: replaces this page, so Back still leads where it was opened from.
     case olderTapped
     case newerTapped

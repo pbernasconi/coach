@@ -95,7 +95,7 @@ struct AppNotConnectedView: View {
     }
 }
 
-/// "Offline · updated 1:05 PM" with the offline glyph. Fresh data shows no line.
+/// "Offline · updated 1:05 PM" with its glyph (no network, or a warning). Fresh data shows no line.
 struct AppFreshnessLine: View {
     @Environment(\.koboTheme) private var theme
     let freshness: AppFreshness
@@ -104,7 +104,7 @@ struct AppFreshnessLine: View {
         Label {
             Text(verbatim: freshness.text)
         } icon: {
-            Image(systemName: "wifi.slash")
+            Image(systemName: freshness.symbol)
                 .accessibilityHidden(true)
         }
         .font(theme.font(.caption))

@@ -111,7 +111,14 @@ export async function loadRange(userId: string, fromMonday: string, toMonday: st
     sql`
       SELECT a.id, a.scheduled_date, a.start_time, a.end_time, a.title, a.activity_type, a.workout_type, a.intensity,
              a.duration, a.distance, a.tss, a.why, a.description, a.status, a.skip_reason, a.adapted_from, a.sort_order, a.source_key,
-             a.lift_session_id, a.steps,
+             -- A link to a Lift session that was deleted (discarded on the phone, or removed with a skipped workout)
+             -- reads as none: the workout opens as not started instead of a session that is gone (the App API's
+             -- /lift/sessions/{id} answers 404 for it). The stored link stays, so an un-skip brings the session back.
+             CASE WHEN EXISTS (
+               SELECT 1 FROM lift_rows l
+               WHERE l.entity = 'session' AND l.id::text = lower(a.lift_session_id) AND l.deleted_at IS NOT NULL
+             ) THEN NULL ELSE a.lift_session_id END AS lift_session_id,
+             a.steps,
              (SELECT json_object_agg(s.target, json_build_object('status', s.status, 'error', s.last_error, 'syncedAt', s.synced_at))
                 FROM workout_syncs s WHERE s.activity_id = a.id) AS syncs
       FROM training_plan_activities a JOIN training_plans p ON p.id = a.plan_id

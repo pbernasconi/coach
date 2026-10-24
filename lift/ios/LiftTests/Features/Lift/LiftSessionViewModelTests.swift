@@ -114,10 +114,30 @@ import Testing
         #expect(notOnThisPhone.state.localFallback == nil)
     }
 
-    @Test func aLoadedSessionKeepsTheCoachPage() async {
-        let vm = makeViewModel(FakeAppData([.success(contract)]), local: IDSequence.id(5, prefix: 0xEE))
+    @Test func aLoadedDoneSessionKeepsTheCoachPage() async {
+        let body = AppAPISamples.liftSessionContract
+        let done = Data(body.replacingOccurrences(of: #""state": "planned""#, with: #""state": "done""#).utf8)
+        let vm = makeViewModel(FakeAppData([.success(done)]), local: IDSequence.id(5, prefix: 0xEE))
         await vm.run()
         #expect(vm.state.localFallback == nil)
+    }
+
+    /// This iPhone finished it and the coach still says planned or in progress (the push is still to come): the local
+    /// copy, with its controls, not a stale page with none.
+    @Test func aCoachPageBehindThePhoneFallsBackToTheLocalCopy() async {
+        let local = IDSequence.id(5, prefix: 0xEE)
+        let vm = makeViewModel(FakeAppData([.success(contract)]), local: local)
+        await vm.run()
+        #expect(vm.state.localFallback == local)
+    }
+
+    @Test func aDeletedSessionSaysSoAndBackLeaves() async {
+        let vm = makeViewModel(FakeAppData([.failure(.rejected(status: 404))]))
+        await vm.run()
+        #expect(vm.state.detail.isGone)
+        #expect(vm.state.localFallback == nil)
+        vm.send(.backTapped)
+        #expect(router.backCount == 1)
     }
 
     @Test func comingBackWithinAMinuteDoesNotFetchAgain() async {

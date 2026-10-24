@@ -106,7 +106,12 @@ export async function removeFromLift(sessionId: string | null | undefined): Prom
  */
 export async function startPlanLift(userId: string, planId: string, unit: 'kg' | 'lb'): Promise<{ sessionId: string } | { error: string }> {
   const [w] = (await sql`
-    SELECT a.id, a.title, a.description, a.lift_session_id, to_char(a.scheduled_date, 'YYYY-MM-DD') AS day
+    SELECT a.id, a.title, a.description, to_char(a.scheduled_date, 'YYYY-MM-DD') AS day,
+           -- A deleted session is no session: "Log sets" makes a new one.
+           CASE WHEN EXISTS (
+             SELECT 1 FROM lift_rows l
+             WHERE l.entity = 'session' AND l.id::text = lower(a.lift_session_id) AND l.deleted_at IS NOT NULL
+           ) THEN NULL ELSE a.lift_session_id END AS lift_session_id
     FROM training_plan_activities a JOIN training_plans p ON p.id = a.plan_id
     WHERE a.id = ${planId} AND p.user_id = ${userId}`) as { id: string; title: string | null; description: string | null; lift_session_id: string | null; day: string }[];
   if (!w) return { error: 'The workout is not there.' };

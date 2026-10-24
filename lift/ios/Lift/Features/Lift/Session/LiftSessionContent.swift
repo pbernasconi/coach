@@ -50,21 +50,48 @@ struct LiftSessionContent: View {
     /// Loading, a session not yet done, or one with no drawn muscle: the page scrolls under the bar.
     private var scrollPage: some View {
         ScrollView {
-            AppResourcePage(
-                state.detail,
-                onRetry: { send(.retryTapped) },
-                onConnect: { send(.connectTapped) }
-            ) { detail in
-                LiftSessionSections(detail: detail, state: state, send: send)
-            } placeholder: {
-                LiftSessionSkeleton()
+            if state.detail.isGone {
+                LiftSessionGoneView(onBack: { send(.backTapped) })
+                    .pageColumn()
+            } else {
+                page
             }
-            .pageColumn()
-            .padding(.top, Space.sm)
-            .padding(.bottom, Space.xxl)
         }
         .screenCanvas()
         .workoutBarTitle(state.detail.content.value?.hero.value?.title)
+    }
+
+    private var page: some View {
+        AppResourcePage(
+            state.detail,
+            onRetry: { send(.retryTapped) },
+            onConnect: { send(.connectTapped) }
+        ) { detail in
+            LiftSessionSections(detail: detail, state: state, send: send)
+        } placeholder: {
+            LiftSessionSkeleton()
+        }
+        .pageColumn()
+        .padding(.top, Space.sm)
+        .padding(.bottom, Space.xxl)
+    }
+}
+
+/// The session was deleted (Coach answers 404): say so plainly, with the way back. Never an old copy as "offline".
+struct LiftSessionGoneView: View {
+    let onBack: () -> Void
+
+    var body: some View {
+        EmptyState(
+            symbol: "trash",
+            title: "This workout was deleted",
+            message: "It is not on Coach or this iPhone any more. To do it after all, start it again from its day on the Week tab."
+        ) {
+            Button("Back", systemImage: "chevron.backward", action: onBack)
+                .buttonStyle(.kobo(.primary))
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, Space.xxl)
     }
 }
 
