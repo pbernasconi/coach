@@ -100,7 +100,7 @@ nonisolated struct DemoCoachWeeks {
     }
 
     /// The other sports by weekday, Monday first: title, sport and subtitle. Tuesday is the intervals.
-    private static let otherSports: [(title: String, sport: Sport, subtitle: String)] = [
+    static let otherSports: [(title: String, sport: Sport, subtitle: String)] = [
         ("Rest day", .rest, "Recover"),
         ("Sweet spot 3 × 12", .ride, "07:00 · 60 min · 70 TSS"),
         ("Easy run", .run, "07:00 · 40 min · 35 TSS"),

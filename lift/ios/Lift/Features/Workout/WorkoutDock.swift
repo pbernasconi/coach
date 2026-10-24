@@ -39,6 +39,8 @@ struct WorkoutDock: View {
             )
             .padding(.horizontal, Space.gutter)
             .padding(.bottom, -Space.md)
+            // A frosted fade behind it, so the set rows blur away under the button instead of showing sharp.
+            .scrollEdgeFade()
         case .lifting, .resting, .ready, .complete, .paused:
             if let content = phase.content {
                 WorkoutDockCard(

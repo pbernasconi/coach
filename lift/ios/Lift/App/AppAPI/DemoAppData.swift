@@ -103,7 +103,8 @@ final class DemoAppData: AppDataSource {
         return LocalDay(daysSinceEpoch: days)
     }
 
-    /// The plan body moved to `day`: its date, the day in its subtitle (the sport and time stay), and its state.
+    /// The plan body moved to `day`: its date, the week's workout for that weekday (title, sport), the day in its
+    /// subtitle, and its state.
     nonisolated static func dated(_ plan: [String: Any], on day: LocalDay, today: LocalDay) -> [String: Any] {
         var plan = plan
         let calendar = Calendar(identifier: .gregorian)
@@ -117,6 +118,17 @@ final class DemoAppData: AppDataSource {
                 parts[1] = date.formatted(.dateTime.weekday(.wide).month(.wide).day())
                 plan["subtitle"] = parts.joined(separator: " · ")
             }
+        }
+        // The week's own workout for that weekday (Monday first; 1 January 1970 was a Thursday): its title and sport,
+        // and the ride's intervals only on a ride.
+        let entry = DemoCoachWeeks.otherSports[(day.daysSinceEpoch + 3) % 7]
+        plan["title"] = entry.title
+        plan["sport"] = entry.sport.rawValue
+        plan["sportLabel"] = entry.sport.label
+        if entry.sport != .ride { plan["workout"] = NSNull() }
+        if var parts = (plan["subtitle"] as? String)?.components(separatedBy: " · "), parts.count == 3 {
+            parts[0] = entry.sport.label
+            plan["subtitle"] = parts.joined(separator: " · ")
         }
         let state = day == today ? "today" : day > today ? "planned" : "missed"
         plan["state"] = state
