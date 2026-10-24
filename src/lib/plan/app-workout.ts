@@ -19,6 +19,18 @@ export const PLAN_ID = /^[A-Za-z0-9-]{1,64}$/;
  * match from loadRange (the same data as the web calendar), or null when the owner has no such workout.
  */
 export async function loadAppWorkout(userId: string, id: string, today: string) {
+  const w = await loadPlanWorkout(userId, id, today);
+  if (!w) return null;
+  // "How did it feel" from the workout's day on, as the web's workout window (EffortLog).
+  if (w.date > today) return { ...appWorkout(w, sports), feedback: null };
+  const item = `plan:${w.id}`;
+  const row = await load('app plan: feedback', () => loadFeedback(userId, [item], String(w.id)));
+  const feedback = row.ok ? feedbackBlock({ item, date: w.date, title: plainTitle(w.title), planActivityId: String(w.id), row: row.value }) : null;
+  return { ...appWorkout(w, sports), feedback };
+}
+
+/** The owner's planned workout `id` as the web calendar has it (loadRange), or null when there is none. */
+export async function loadPlanWorkout(userId: string, id: string, today: string) {
   const rows = (await sql`
     SELECT a.scheduled_date FROM training_plan_activities a JOIN training_plans p ON p.id = a.plan_id
     WHERE p.user_id = ${userId} AND a.id::text = ${id}
@@ -27,12 +39,5 @@ export async function loadAppWorkout(userId: string, id: string, today: string) 
   if (!date) return null;
   const monday = mondayOf(date);
   const range = await loadRange(userId, monday, monday, today);
-  const w = range.workouts.find((x) => String(x.id) === id);
-  if (!w) return null;
-  // "How did it feel" from the workout's day on, as the web's workout window (EffortLog).
-  if (w.date > today) return { ...appWorkout(w, sports), feedback: null };
-  const item = `plan:${w.id}`;
-  const row = await load('app plan: feedback', () => loadFeedback(userId, [item], String(w.id)));
-  const feedback = row.ok ? feedbackBlock({ item, date: w.date, title: plainTitle(w.title), planActivityId: String(w.id), row: row.value }) : null;
-  return { ...appWorkout(w, sports), feedback };
+  return range.workouts.find((x) => String(x.id) === id) ?? null;
 }

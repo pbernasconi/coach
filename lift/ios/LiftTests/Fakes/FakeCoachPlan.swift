@@ -14,7 +14,9 @@ final class FakeCoachPlan: CoachPlanProviding {
     private(set) var refreshCount = 0
     /// Each move and delete, in order.
     private(set) var edits: [CoachPlanEdit] = []
-    /// Thrown by every move and delete when set.
+    /// Each Edit saved, in order.
+    private(set) var updates: [PlannedWorkoutEdit] = []
+    /// Thrown by every move, delete and Edit when set.
     var editError: SyncTransportError?
 
     init(_ snapshots: [CoachPlanSnapshot]) {
@@ -45,6 +47,12 @@ final class FakeCoachPlan: CoachPlanProviding {
 
     func delete(_ id: String) async throws {
         edits.append(.remove(id: id))
+        if let editError { throw editError }
+    }
+
+    func update(_ id: String, with edit: PlannedWorkoutEdit, movingTo day: LocalDay?) async throws {
+        updates.append(edit)
+        if let day { edits.append(.move(id: id, to: day)) }
         if let editError { throw editError }
     }
 }

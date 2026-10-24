@@ -35,4 +35,10 @@ nonisolated enum ActivityDetailAction: Equatable, Sendable {
     case deleteTapped
     /// "Delete workout" in the question: the workout goes, and the page closes.
     case deleteConfirmed
+    /// The pencil in the bar: the Edit sheet opens, filled in.
+    case editTapped
+    /// A field changed in the Edit sheet.
+    case editChanged(WorkoutEditDraft)
+    /// "Save" in the Edit sheet: the workout is saved, and the page reads it again.
+    case editSaveTapped
 }

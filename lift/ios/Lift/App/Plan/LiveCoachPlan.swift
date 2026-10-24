@@ -9,7 +9,7 @@ final class LiveCoachPlan: CoachPlanProviding {
     static let weeksPerFetch = 2
 
     private let client: any CoachPlanFetching
-    /// The App API, for the plan writes (move, delete).
+    /// The App API, for the plan writes (move, delete, edit).
     private let writer: any AppDataSource
     private let cache: any CoachPlanStoring
     private let sync: any Syncing
@@ -113,11 +113,21 @@ final class LiveCoachPlan: CoachPlanProviding {
         try await write(.remove(id: id)) { _ = try await writer.delete(AppPlannedWorkout.path(id)) }
     }
 
-    /// Shows `edit` at once, sends it, then fetches the shown weeks: the server's answer replaces the guess, and a
-    /// refused write comes back as it was.
-    private func write(_ edit: CoachPlanEdit, _ send: () async throws -> Void) async throws {
-        snapshot.book.apply(edit)
-        publish()
+    func update(_ id: String, with edit: PlannedWorkoutEdit, movingTo day: LocalDay?) async throws {
+        let body = try JSONEncoder().encode(edit)
+        let writer = writer
+        try await write(day.map { .move(id: id, to: $0) }) {
+            _ = try await writer.put(AppPlannedWorkout.path(id), body: body)
+        }
+    }
+
+    /// Shows `edit` at once (when there is one to show), sends it, then fetches the shown weeks: the server's answer
+    /// replaces the guess, and a refused write comes back as it was.
+    private func write(_ edit: CoachPlanEdit?, _ send: () async throws -> Void) async throws {
+        if let edit {
+            snapshot.book.apply(edit)
+            publish()
+        }
         do {
             try await send()
         } catch {

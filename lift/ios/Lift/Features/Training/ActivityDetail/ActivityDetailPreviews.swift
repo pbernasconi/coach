@@ -13,4 +13,7 @@
     #Preview("Loading from Strava") { activityPreview(.fixturePending) }
     #Preview("Loading") { activityPreview(.fixtureLoading) }
     #Preview("Failed") { activityPreview(.fixtureFailed) }
+    #Preview("Planned, Edit") { activityPreview(.fixturePlannedEdit) }
+    #Preview("Planned, Edit, dark") { activityPreview(.fixturePlannedEdit).preferredColorScheme(.dark) }
+    #Preview("Planned, Edit, AX3") { activityPreview(.fixturePlannedEdit).dynamicTypeSize(.accessibility3) }
 #endif

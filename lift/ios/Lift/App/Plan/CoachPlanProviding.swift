@@ -26,6 +26,10 @@ protocol CoachPlanProviding: AnyObject {
 
     /// Deletes the planned workout `id` on the coach ("Delete a workout"), the same way as `move`.
     func delete(_ id: String) async throws
+
+    /// Saves the workout page's Edit of `id` on the coach ("Edit a workout"), the same way as `move`: the kept plan
+    /// shows it on `movingTo` at once when the day changed, and the rest with the next fetch.
+    func update(_ id: String, with edit: PlannedWorkoutEdit, movingTo day: LocalDay?) async throws
 }
 
 /// What the Week screen knows of the plan.
@@ -68,4 +72,8 @@ final class DisabledCoachPlan: CoachPlanProviding {
     func move(_: String, to _: LocalDay) async throws { throw SyncTransportError.missingToken }
 
     func delete(_: String) async throws { throw SyncTransportError.missingToken }
+
+    func update(_: String, with _: PlannedWorkoutEdit, movingTo _: LocalDay?) async throws {
+        throw SyncTransportError.missingToken
+    }
 }
