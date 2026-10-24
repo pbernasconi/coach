@@ -18,6 +18,8 @@ public protocol AppAPIStoring: Sendable {
     func load(_ path: String) -> AppAPIKept?
     /// Keeps `kept` for `path`, replacing the one kept before.
     func save(_ kept: AppAPIKept, for path: String) throws
+    /// Drops the body kept for `path` (the coach deleted it); nothing when none is kept.
+    func remove(_ path: String)
     /// Keeps only the `count` most recently fetched bodies whose path starts with `prefix` ("api/app/activities/"), so
     /// pages opened by id do not pile up.
     func prune(prefix: String, keeping count: Int)
@@ -44,6 +46,10 @@ public struct FileAppAPICache: AppAPIStoring {
         let url = file(path)
         try kept.data.write(to: url, options: .atomic)
         try FileManager.default.setAttributes([.modificationDate: kept.fetchedAt], ofItemAtPath: url.path)
+    }
+
+    public func remove(_ path: String) {
+        try? FileManager.default.removeItem(at: file(path))
     }
 
     public func prune(prefix: String, keeping count: Int) {

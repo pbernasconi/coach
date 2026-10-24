@@ -33,6 +33,14 @@ final class FakeAppData: AppDataSource {
         keptBodies[path] = kept
     }
 
+    /// The paths dropped with `forget`.
+    private(set) var forgotten: [String] = []
+
+    func forget(_ path: String) async {
+        forgotten.append(path)
+        keptBodies[path] = nil
+    }
+
     func put(_ path: String, body: Data) async throws -> Data {
         puts.append((path, body))
         switch putResult {

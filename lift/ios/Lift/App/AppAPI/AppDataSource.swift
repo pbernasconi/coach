@@ -19,6 +19,9 @@ protocol AppDataSource: AnyObject {
     /// Keeps `kept` as the body of `path`, for the next launch and for offline.
     func keep(_ kept: AppAPIKept, for path: String) async
 
+    /// Drops the body kept for `path`: the coach deleted it (404), so it must not show again.
+    func forget(_ path: String) async
+
     /// Sends a JSON `body` to `path` with PUT (a write, as "api/app/feedback") and returns the answer. Throws
     /// `SyncTransportError` (`missingToken` when not connected). Nothing is kept.
     func put(_ path: String, body: Data) async throws -> Data
@@ -30,6 +33,9 @@ protocol AppDataSource: AnyObject {
 extension AppDataSource {
     /// Nothing to keep (demo data, sync off, test fakes).
     func keep(_: AppAPIKept, for _: String) async {}
+
+    /// Nothing kept, nothing to drop.
+    func forget(_: String) async {}
 
     /// No writes (sync off, test fakes that only read).
     func put(_: String, body _: Data) async throws -> Data {
@@ -78,6 +84,10 @@ final class LiveAppData: AppDataSource {
         await Self.save(kept, for: path, in: cache)
     }
 
+    func forget(_ path: String) async {
+        await Self.remove(path, from: cache)
+    }
+
     func put(_ path: String, body: Data) async throws -> Data {
         try await client.send("PUT", path, body: body)
     }
@@ -96,6 +106,11 @@ final class LiveAppData: AppDataSource {
     @concurrent
     private nonisolated static func load(_ path: String, from cache: any AppAPIStoring) async -> AppAPIKept? {
         cache.load(path)
+    }
+
+    @concurrent
+    private nonisolated static func remove(_ path: String, from cache: any AppAPIStoring) async {
+        cache.remove(path)
     }
 
     @concurrent

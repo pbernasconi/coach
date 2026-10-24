@@ -64,6 +64,8 @@ final class LiftSessionViewModel {
             return Task { await load() }
         case .connectTapped:
             tabs.show(.settings)
+        case .backTapped:
+            router.back()
         case .olderTapped:
             replace(with: session?.olderId)
         case .newerTapped:
@@ -134,6 +136,10 @@ final class LiftSessionViewModel {
         if state.detail.content.value != nil, state.detail.freshness?.isOffline == false { fetchedAt = now() }
         switch state.detail.content {
         case .empty, .failed: state.localFallback = localSessionID
+        // This iPhone finished the session and the coach does not know yet (the push is still to come): the local
+        // copy is the true one, with its controls, not a stale "In progress" page.
+        case .loaded(let detail) where detail.hero.value.map({ $0.state != "done" }) ?? false:
+            state.localFallback = localSessionID
         default: break
         }
     }

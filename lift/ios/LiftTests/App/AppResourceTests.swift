@@ -62,6 +62,42 @@ import Testing
         #expect(last?.freshness == AppFreshness(text: "Offline · updated \(time(keptAt))", isOffline: true))
     }
 
+    @Test func aSecondFailureSaysOfflineOnce() async throws {
+        let source = FakeAppData([.failure(.retryable(status: nil))])
+        let keptAt = Date(timeIntervalSince1970: 1_772_442_000)
+        source.keptBodies[AppToday.path] = AppAPIKept(data: body, fetchedAt: keptAt)
+        let first = await run(source).last
+        let second = await run(source, current: try #require(first)).last
+        #expect(second?.freshness == AppFreshness(text: "Offline · updated \(time(keptAt))", isOffline: true))
+    }
+
+    @Test func aServerErrorSaysCoachHadAProblemNotOffline() async {
+        let source = FakeAppData([.failure(.retryable(status: 500))])
+        let keptAt = Date(timeIntervalSince1970: 1_772_442_000)
+        source.keptBodies[AppToday.path] = AppAPIKept(data: body, fetchedAt: keptAt)
+        let last = await run(source).last
+        #expect(
+            last?.freshness
+                == AppFreshness(
+                    text: "Coach had a problem · updated \(time(keptAt))",
+                    isOffline: true,
+                    symbol: "exclamationmark.triangle"
+                )
+        )
+    }
+
+    @Test func aDeletedPageDropsTheKeptCopyInsteadOfShowingItOffline() async {
+        let source = FakeAppData([.failure(.rejected(status: 404))])
+        let keptAt = Date(timeIntervalSince1970: 1_772_442_000)
+        source.keptBodies[AppToday.path] = AppAPIKept(data: body, fetchedAt: keptAt)
+        let last = await run(source).last
+        #expect(last?.isGone == true)
+        #expect(last?.content.value == nil)
+        #expect(last?.freshness == nil)
+        #expect(source.forgotten == [AppToday.path])
+        #expect(source.keptBodies[AppToday.path] == nil)
+    }
+
     @Test(arguments: [
         (SyncTransportError.retryable(status: 500), "Coach could not be reached. Pull down to try again."),
         (.rejected(status: 404), "Coach has nothing here."),

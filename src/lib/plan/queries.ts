@@ -72,10 +72,15 @@ async function planRow(userId: string, weekStart: string) {
 
 async function workoutRows(planId: string) {
   return (await sql`
-    SELECT id, scheduled_date, start_time, end_time, title, activity_type, workout_type, intensity, duration, tss,
-           why, description, status, skip_reason, adapted_from, sort_order, lift_session_id
-    FROM training_plan_activities WHERE plan_id = ${planId}
-    ORDER BY scheduled_date, sort_order, start_time NULLS LAST`) as Row[];
+    SELECT a.id, a.scheduled_date, a.start_time, a.end_time, a.title, a.activity_type, a.workout_type, a.intensity, a.duration, a.tss,
+           a.why, a.description, a.status, a.skip_reason, a.adapted_from, a.sort_order,
+           -- A link to a Lift session the phone deleted reads as none (loadRange in month.ts says why).
+           CASE WHEN EXISTS (
+             SELECT 1 FROM lift_rows l
+             WHERE l.entity = 'session' AND l.id::text = lower(a.lift_session_id) AND l.deleted_at IS NOT NULL
+           ) THEN NULL ELSE a.lift_session_id END AS lift_session_id
+    FROM training_plan_activities a WHERE a.plan_id = ${planId}
+    ORDER BY a.scheduled_date, a.sort_order, a.start_time NULLS LAST`) as Row[];
 }
 
 function toWorkout(r: Row): Omit<Workout, 'state' | 'match'> {
@@ -244,7 +249,10 @@ export async function linkLiftSession(userId: string, id: string, sessionId: str
     UPDATE training_plan_activities a SET lift_session_id = ${sessionId}, edited_at = NOW(), updated_at = NOW()
     FROM training_plans p
     WHERE a.id = ${id} AND p.id = a.plan_id AND p.user_id = ${userId}
-      AND (a.lift_session_id IS NULL OR lower(a.lift_session_id) = ${sessionId})
+      AND (a.lift_session_id IS NULL OR lower(a.lift_session_id) = ${sessionId} OR EXISTS (
+        -- The linked session was deleted (discarded on the phone): a new one takes its place.
+        SELECT 1 FROM lift_rows l
+        WHERE l.entity = 'session' AND l.id::text = lower(a.lift_session_id) AND l.deleted_at IS NOT NULL))
     RETURNING a.id`) as Row[];
   return rows.length > 0;
 }
