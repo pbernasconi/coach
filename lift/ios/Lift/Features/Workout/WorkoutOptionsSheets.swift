@@ -27,9 +27,18 @@ private struct WorkoutOptionsSheets: ViewModifier {
                     ToolbarItem(placement: .topBarTrailing) {
                         // Pause up top; once paused it resumes (orange), and the dock offers Finish.
                         if workout.isPaused {
-                            Button("Resume workout", systemImage: "play.fill") { send(.resumeTapped) }
-                                .tint(theme.palette.accent)
-                                .buttonStyle(.glassProminent)
+                            // The on-accent ink, as on the dock's Resume: the system's pale ink is faint on orange.
+                            // The toolbar ignores a plain foregroundStyle; a palette-rendered symbol keeps it.
+                            Button {
+                                send(.resumeTapped)
+                            } label: {
+                                Image(systemName: "play.fill")
+                                    .symbolRenderingMode(.palette)
+                                    .foregroundStyle(theme.palette.onAccent)
+                                    .accessibilityLabel("Resume workout")
+                            }
+                            .tint(theme.palette.accent)
+                            .buttonStyle(.glassProminent)
                         } else {
                             Button("Pause workout", systemImage: "pause.fill") { send(.pauseTapped) }
                         }
