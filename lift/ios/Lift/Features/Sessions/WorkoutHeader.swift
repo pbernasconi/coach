@@ -52,8 +52,8 @@ nonisolated enum WorkoutStatus: Equatable, Sendable {
 }
 
 /// The top of every workout page: the sport's icon large in a tile, beside a line of what and when ("Ride · Wednesday,
-/// October 21 · 07:00") and the title, then the status pill and any tags. `detail` holds what a page adds under it
-/// (a place, a note).
+/// October 21 · 07:00"), the title, and under it the status pill and any tags. `detail` holds what a page adds under
+/// it (a place, a note).
 /// A page that shows its status another way passes no `status`, and then no pill shows.
 struct WorkoutHeader<Detail: View>: View {
     @Environment(\.koboTheme) private var theme
@@ -69,7 +69,7 @@ struct WorkoutHeader<Detail: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Space.xs) {
             // The sport leads, large, in its colour, so a ride reads as a ride at a glance.
-            HStack(alignment: .center, spacing: Space.md) {
+            HStack(alignment: .top, spacing: Space.md) {
                 sport.icon
                     .font(.system(size: tileSize * SportTile.iconShare, weight: .semibold))
                     .frame(width: tileSize, height: tileSize)
@@ -77,6 +77,7 @@ struct WorkoutHeader<Detail: View>: View {
                         sport.color.opacity(SportTile.fillOpacity),
                         in: .rect(cornerRadius: Radius.md, style: .continuous)
                     )
+                // The status sits under the title beside the tile, not on a row of its own under it.
                 VStack(alignment: .leading, spacing: Space.xxs) {
                     Text(verbatim: kicker)
                         .font(theme.font(.subheadline).weight(.semibold))
@@ -85,18 +86,18 @@ struct WorkoutHeader<Detail: View>: View {
                         .font(theme.font(.title))
                         .foregroundStyle(theme.palette.textPrimary)
                         .accessibilityAddTraits(.isHeader)
-                }
-            }
-            if status != nil || !tags.isEmpty {
-                FlowLayout(spacing: Space.xs) {
-                    if let status {
-                        StatusPill(verbatim: statusLabel, tone: status.tone, symbol: status.symbol)
+                    if status != nil || !tags.isEmpty {
+                        FlowLayout(spacing: Space.xs) {
+                            if let status {
+                                StatusPill(verbatim: statusLabel, tone: status.tone, symbol: status.symbol)
+                            }
+                            ForEach(tags, id: \.self) { tag in
+                                KoboTag(verbatim: tag, tone: .neutral)
+                            }
+                        }
+                        .padding(.top, Space.xs)
                     }
-                    ForEach(tags, id: \.self) { tag in
-                        KoboTag(verbatim: tag, tone: .neutral)
-                    }
                 }
-                .padding(.top, Space.xxs)
             }
             detail()
         }

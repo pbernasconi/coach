@@ -34,6 +34,11 @@ nonisolated enum PlanWrite: Equatable, Sendable {
     case failed(String)
 
     var isRunning: Bool { self == .starting || self == .saving }
+
+    /// The failed write's message.
+    var failure: String? {
+        if case .failed(let message) = self { message } else { nil }
+    }
 }
 
 /// Everything the workout page renders: one workout, planned and done as one (`WorkoutDetail`). Exclusive states are

@@ -13,10 +13,11 @@ struct WorkoutPlanActions: View {
     let send: (ActivityDetailAction) -> Void
 
     var body: some View {
-        if workout.liftSessionId == nil, workout.done?.activityId == nil {
+        // Nothing at all when there's no button and no error, so the page keeps no empty gap under the header.
+        if workout.liftSessionId == nil, workout.done?.activityId == nil, canStart || write.failure != nil {
             VStack(alignment: .leading, spacing: Space.sm) {
                 buttons
-                if case .failed(let message) = write {
+                if let message = write.failure {
                     Text(verbatim: message)
                         .font(theme.font(.footnote))
                         .foregroundStyle(theme.palette.danger.ink)
@@ -26,7 +27,7 @@ struct WorkoutPlanActions: View {
     }
 
     @ViewBuilder private var buttons: some View {
-        if workout.state != "done", hasExercises {
+        if canStart {
             Button("Start workout", systemImage: "figure.strengthtraining.traditional") {
                 send(.startWorkoutTapped)
             }
@@ -35,7 +36,7 @@ struct WorkoutPlanActions: View {
         }
     }
 
-    private var hasExercises: Bool { !(workout.exercises ?? []).isEmpty }
+    private var canStart: Bool { workout.state != "done" && !(workout.exercises ?? []).isEmpty }
 }
 
 /// The coach's exercises, one row each: the name, its sets × reps, and the coach's words for it.
