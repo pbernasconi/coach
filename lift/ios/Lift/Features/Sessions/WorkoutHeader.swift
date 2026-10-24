@@ -117,14 +117,16 @@ extension WorkoutHeader where Detail == EmptyView {
 
 extension View {
     /// The older and newer workouts in one "…" menu in the bar, the same on every workout page: the bar keeps Back and
-    /// one quiet button, with no arrows. Nothing shows when there is neither.
+    /// one quiet button, with no arrows. A planned workout not done yet adds Move and Delete (`plan`). Nothing shows
+    /// when there is none of these.
     func workoutNeighbours(
         older: String,
         newer: String,
         canGoOlder: Bool,
         canGoNewer: Bool,
         onOlder: @escaping () -> Void,
-        onNewer: @escaping () -> Void
+        onNewer: @escaping () -> Void,
+        plan: WorkoutPlanMenu? = nil
     ) -> some View {
         modifier(
             WorkoutNeighbours(
@@ -133,10 +135,17 @@ extension View {
                 canGoOlder: canGoOlder,
                 canGoNewer: canGoNewer,
                 onOlder: onOlder,
-                onNewer: onNewer
+                onNewer: onNewer,
+                plan: plan
             )
         )
     }
+}
+
+/// "Move to another day" and "Delete workout" in the bar's "…" of a planned workout not done yet.
+struct WorkoutPlanMenu {
+    let onMove: () -> Void
+    let onDelete: () -> Void
 }
 
 private struct WorkoutNeighbours: ViewModifier {
@@ -147,16 +156,25 @@ private struct WorkoutNeighbours: ViewModifier {
     let canGoNewer: Bool
     let onOlder: () -> Void
     let onNewer: () -> Void
+    let plan: WorkoutPlanMenu?
 
     func body(content: Content) -> some View {
         content.toolbar {
-            if canGoOlder || canGoNewer {
+            if canGoOlder || canGoNewer || plan != nil {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
-                        Button(newer, systemImage: "arrow.up", action: onNewer)
-                            .disabled(!canGoNewer)
-                        Button(older, systemImage: "arrow.down", action: onOlder)
-                            .disabled(!canGoOlder)
+                        if let plan {
+                            Button("Move to another day", systemImage: "calendar", action: plan.onMove)
+                            Button("Delete workout", systemImage: "trash", role: .destructive, action: plan.onDelete)
+                        }
+                        if canGoOlder || canGoNewer {
+                            Section {
+                                Button(newer, systemImage: "arrow.up", action: onNewer)
+                                    .disabled(!canGoNewer)
+                                Button(older, systemImage: "arrow.down", action: onOlder)
+                                    .disabled(!canGoOlder)
+                            }
+                        }
                     } label: {
                         Label("More", systemImage: "ellipsis")
                     }

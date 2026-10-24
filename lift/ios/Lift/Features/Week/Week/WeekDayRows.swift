@@ -4,11 +4,14 @@ import SwiftUI
 
 /// One day of the Week list: its date ("Today · Wednesday, 21 October") over one card holding a row per plan item and
 /// Lift session. A free day, or a planned rest day, has a short dashed slot instead that plans a workout on it. Today's
-/// date is in the brand's text colour, the selected day's in ink.
+/// date is in the brand's text colour, the selected day's in ink. A workout not done yet can be long-pressed and dropped
+/// on another day; the day under it shows an outline in the brand colour.
 struct WeekDayRows: View {
     @Environment(\.koboTheme) private var theme
     let day: WeekDaySection
     let send: (WeekAction) -> Void
+    /// A dragged row is held over this day (presentation state only).
+    @State private var isTargeted = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: Space.xs) {
@@ -30,13 +33,24 @@ struct WeekDayRows: View {
                 }
             }
         }
+        .padding(Space.xxs)
+        .background {
+            RoundedRectangle(cornerRadius: Radius.md + Space.xxs, style: .continuous)
+                .strokeBorder(theme.palette.accent, lineWidth: Size.hairline * 4)
+                .opacity(isTargeted ? 1 : 0)
+        }
+        .padding(-Space.xxs)
+        .weekDropTarget(day.id, isTargeted: { isTargeted = $0 }, send: send)
+        .koboAnimation(.fastSpatial, value: isTargeted)
         .accessibilityAddTraits(day.isSelected ? .isSelected : [])
     }
 
     @ViewBuilder private func row(_ entry: WeekEntry) -> some View {
         switch entry {
-        case .session(let session): WeekSessionRow(session: session, send: send)
-        case .plan(let item): WeekPlanRow(item: item, send: send)
+        case .session(let session):
+            WeekSessionRow(session: session, send: send).weekDraggable(WeekDrag(entry, on: day.id))
+        case .plan(let item):
+            WeekPlanRow(item: item, send: send).weekDraggable(WeekDrag(entry, on: day.id))
         }
     }
 

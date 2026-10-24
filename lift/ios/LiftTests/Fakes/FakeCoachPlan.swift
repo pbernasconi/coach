@@ -12,6 +12,10 @@ final class FakeCoachPlan: CoachPlanProviding {
     var snapshotsToYield: [CoachPlanSnapshot]
     private(set) var shownWeeks: [LocalDay] = []
     private(set) var refreshCount = 0
+    /// Each move and delete, in order.
+    private(set) var edits: [CoachPlanEdit] = []
+    /// Thrown by every move and delete when set.
+    var editError: SyncTransportError?
 
     init(_ snapshots: [CoachPlanSnapshot]) {
         snapshotsToYield = snapshots
@@ -33,6 +37,16 @@ final class FakeCoachPlan: CoachPlanProviding {
     }
 
     func watchSync() async {}
+
+    func move(_ id: String, to day: LocalDay) async throws {
+        edits.append(.move(id: id, to: day))
+        if let editError { throw editError }
+    }
+
+    func delete(_ id: String) async throws {
+        edits.append(.remove(id: id))
+        if let editError { throw editError }
+    }
 }
 
 /// A `CoachPlanFetching` that answers from `responses` (by start week) and records each request; `error` wins.

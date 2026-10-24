@@ -28,6 +28,7 @@ struct WeekScreen: View {
                 switch change {
                 case .reschedule(let undo): viewModel.send(.undoTapped(undo))
                 case .template(let undo): viewModel.send(.templateUndoTapped(undo))
+                case .planMove(let id, let day): viewModel.send(.planMoveUndoTapped(id, to: day))
                 }
             }
         }

@@ -21,11 +21,15 @@ import Testing
         )
     }
 
-    func makePlan(client: FakeCoachPlanClient, cache: InMemoryCoachPlanCache, sync: FakeSyncing = FakeSyncing())
-        -> LiveCoachPlan
-    {
+    func makePlan(
+        client: FakeCoachPlanClient,
+        cache: InMemoryCoachPlanCache,
+        sync: FakeSyncing = FakeSyncing(),
+        writer: FakeAppData = FakeAppData()
+    ) -> LiveCoachPlan {
         LiveCoachPlan(
             client: client,
+            writer: writer,
             cache: cache,
             sync: sync,
             now: SessionBuilder.now,
@@ -157,5 +161,49 @@ import Testing
         await plan.watchSync()
         #expect(client.requests == [monday, monday])  // this week until the Week screen shows another
         #expect(sync.syncNowCount == 0)  // a sync here would start the next status, and the next sync, without end
+    }
+
+    // MARK: - Writes
+
+    @Test func aMoveShowsAtOnceSendsTheDayAndFetchesAgain() async throws {
+        let writer = FakeAppData()
+        let client = FakeCoachPlanClient(responses: [monday: body(monday)])
+        let plan = makePlan(client: client, cache: InMemoryCoachPlanCache([monday: body(monday)]), writer: writer)
+        await plan.show(weekStart: monday)
+        let wednesday = monday.adding(days: 2)
+
+        try await plan.move("ride-\(monday.day)", to: wednesday)
+        #expect(writer.puts.map(\.path) == [AppPlannedWorkout.datePath("ride-\(monday.day)")])
+        let sent = try JSONDecoder().decode([String: String].self, from: writer.puts[0].body)
+        #expect(sent == ["date": CoachPlanDates.plain(wednesday)])
+        #expect(client.requests.last == monday)
+    }
+
+    @Test func aRefusedMoveFetchesThePlanBackAndThrows() async {
+        let writer = FakeAppData()
+        writer.putResult = .failure(.rejected(status: 409))
+        let client = FakeCoachPlanClient(responses: [monday: body(monday)])
+        let plan = makePlan(client: client, cache: InMemoryCoachPlanCache(), writer: writer)
+        await plan.show(weekStart: monday)
+        let before = client.requests.count
+
+        await #expect(throws: SyncTransportError.rejected(status: 409)) {
+            try await plan.move("ride-\(monday.day)", to: monday.adding(days: 3))
+        }
+        #expect(client.requests.count == before + 1)
+        let items = await first(plan)?.book.weeks[monday]?.days[0].items.map(\.id)
+        #expect(items == ["ride-\(monday.day)"])
+    }
+
+    @Test func aDeleteSendsDeleteAndFetchesAgain() async throws {
+        let writer = FakeAppData()
+        let client = FakeCoachPlanClient(responses: [monday: body(monday)])
+        let plan = makePlan(client: client, cache: InMemoryCoachPlanCache(), writer: writer)
+        await plan.show(weekStart: monday)
+        let before = client.requests.count
+
+        try await plan.delete("ride-\(monday.day)")
+        #expect(writer.deletes == [AppPlannedWorkout.path("ride-\(monday.day)")])
+        #expect(client.requests.count == before + 1)
     }
 }

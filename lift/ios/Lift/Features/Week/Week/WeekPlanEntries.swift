@@ -119,6 +119,10 @@ nonisolated struct WeekPlanItem: Equatable, Sendable, Identifiable {
         }
     }
 
+    /// Whether it can move to another day or be deleted: a planned workout not done yet (not a rest day, not an
+    /// activity no plan matched).
+    var canMove: Bool { !isUnplanned && state != .done && sport != .rest }
+
     /// Whether the card shows a distance: not for strength, yoga or rest, which have none.
     var hasDistance: Bool { ![.strength, .yoga, .rest].contains(sport) }
 

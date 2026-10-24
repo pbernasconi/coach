@@ -37,6 +37,10 @@ public struct AppPlannedWorkout: Decodable, Equatable, Sendable {
     /// `PUT` here marks it done, skipped or planned again (APP-API.md, "Workout status").
     public static func statusPath(_ id: String) -> String { "api/app/plan/\(id)/status" }
 
+    /// `PUT` here moves it to another day, `{ "date": "YYYY-MM-DD" }` (APP-API.md, "Move a workout"). `DELETE` on
+    /// `path(_:)` deletes it ("Delete a workout").
+    public static func datePath(_ id: String) -> String { "api/app/plan/\(id)/date" }
+
     /// `PUT` here links the Lift session started for it (APP-API.md, "Workout Lift session").
     public static func liftSessionPath(_ id: String) -> String { "api/app/plan/\(id)/lift-session" }
 }

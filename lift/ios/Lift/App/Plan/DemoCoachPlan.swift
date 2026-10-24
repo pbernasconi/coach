@@ -40,6 +40,11 @@ final class DemoCoachPlan: CoachPlanProviding {
     func refresh() async {}
 
     func watchSync() async {}
+
+    /// The made-up plan is built once from the seeded sessions: a move or delete there is not kept.
+    func move(_: String, to _: LocalDay) async throws {}
+
+    func delete(_: String) async throws {}
 }
 
 /// Four made-up weeks from `firstWeek`, with "today" states as the server would send them.

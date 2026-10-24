@@ -9,6 +9,8 @@ final class LiveCoachPlan: CoachPlanProviding {
     static let weeksPerFetch = 2
 
     private let client: any CoachPlanFetching
+    /// The App API, for the plan writes (move, delete).
+    private let writer: any AppDataSource
     private let cache: any CoachPlanStoring
     private let sync: any Syncing
     private let now: @Sendable () -> Date
@@ -28,12 +30,14 @@ final class LiveCoachPlan: CoachPlanProviding {
 
     init(
         client: any CoachPlanFetching,
+        writer: any AppDataSource,
         cache: any CoachPlanStoring,
         sync: any Syncing,
         now: @escaping @Sendable () -> Date,
         calendar: Calendar
     ) {
         self.client = client
+        self.writer = writer
         self.cache = cache
         self.sync = sync
         self.now = now
@@ -94,6 +98,33 @@ final class LiveCoachPlan: CoachPlanProviding {
             await loadCacheOnce()
             await fetch(from: shownWeek ?? thisWeek)
         }
+    }
+
+    // MARK: - Writes
+
+    func move(_ id: String, to day: LocalDay) async throws {
+        let body = try JSONEncoder().encode(["date": CoachPlanDates.plain(day)])
+        let writer = writer
+        try await write(.move(id: id, to: day)) { _ = try await writer.put(AppPlannedWorkout.datePath(id), body: body) }
+    }
+
+    func delete(_ id: String) async throws {
+        let writer = writer
+        try await write(.remove(id: id)) { _ = try await writer.delete(AppPlannedWorkout.path(id)) }
+    }
+
+    /// Shows `edit` at once, sends it, then fetches the shown weeks: the server's answer replaces the guess, and a
+    /// refused write comes back as it was.
+    private func write(_ edit: CoachPlanEdit, _ send: () async throws -> Void) async throws {
+        snapshot.book.apply(edit)
+        publish()
+        do {
+            try await send()
+        } catch {
+            await fetch(from: shownWeek ?? thisWeek)
+            throw error
+        }
+        await fetch(from: shownWeek ?? thisWeek)
     }
 
     // MARK: - Fetch

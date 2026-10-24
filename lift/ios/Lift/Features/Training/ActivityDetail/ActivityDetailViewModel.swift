@@ -89,8 +89,95 @@ final class ActivityDetailViewModel {
             return startWorkout()
         case .doneToggled(let done):
             return setDone(done)
+        case .moveTapped, .moveDayPicked, .deleteTapped, .deleteConfirmed:
+            return sendPlanEdit(action)
         }
         return nil
+    }
+
+    /// The bar's "Move to another day" and "Delete workout", for a planned workout not done yet.
+    private func sendPlanEdit(_ action: ActivityDetailAction) -> Task<Void, Never>? {
+        let days = DayCalendar(calendar: calendar)
+        switch action {
+        case .moveTapped:
+            state.destination = moveDay(days).map { .moveDay($0) }
+        case .moveDayPicked(let date):
+            state.destination = nil
+            return move(to: days.day(of: date))
+        case .deleteTapped:
+            if state.canChangePlan { state.destination = .confirmDelete }
+        case .deleteConfirmed:
+            state.destination = nil
+            return delete()
+        default:
+            break
+        }
+        return nil
+    }
+
+    /// The picker opens on the workout's day, between the first and last weeks the Week tab shows.
+    private func moveDay(_ days: DayCalendar) -> WorkoutMoveDay? {
+        guard state.canChangePlan, let plan = state.plan, let day = plan.date.flatMap(CoachPlanDates.day(fromPlain:))
+        else { return nil }
+        let today = days.day(of: now())
+        let week = days.weekStart(of: today)
+        guard let current = days.date(of: day), let todayDate = days.date(of: today),
+            let first = days.date(of: week.adding(days: 7 * WeekState.weeks.lowerBound)),
+            let last = days.date(of: week.adding(days: 7 * WeekState.weeks.upperBound + 6))
+        else { return nil }
+        let title = days.longTitle(of: day)
+        return WorkoutMoveDay(
+            id: plan.id,
+            title: plan.title,
+            dayTitle: title,
+            current: current,
+            today: todayDate,
+            first: first,
+            last: last
+        )
+    }
+
+    /// Moves the workout on the coach; the page then reads it again on its new day.
+    private func move(to day: LocalDay) -> Task<Void, Never>? {
+        guard !state.planWrite.isRunning, state.canChangePlan, let plan = state.plan,
+            plan.date != CoachPlanDates.plain(day)
+        else { return nil }
+        state.planWrite = .saving
+        let coachPlan = coachPlan
+        return Task {
+            do {
+                try await coachPlan.move(plan.id, to: day)
+                state.planWrite = .idle
+                await load()
+            } catch {
+                AppLog.sync.error("Workout not moved: \(String(describing: error), privacy: .public)")
+                state.planWrite = .failed(Self.editMessage(error))
+            }
+        }
+    }
+
+    /// Deletes the workout on the coach, then closes the page.
+    private func delete() -> Task<Void, Never>? {
+        guard !state.planWrite.isRunning, state.canChangePlan, let plan = state.plan else { return nil }
+        state.planWrite = .saving
+        let coachPlan = coachPlan
+        return Task {
+            do {
+                try await coachPlan.delete(plan.id)
+                state.planWrite = .idle
+                router.back()
+            } catch {
+                AppLog.sync.error("Workout not deleted: \(String(describing: error), privacy: .public)")
+                state.planWrite = .failed(Self.editMessage(error))
+            }
+        }
+    }
+
+    private nonisolated static func editMessage(_ error: any Error) -> String {
+        if case .rejected(409) = error as? SyncTransportError {
+            return String(localized: "A done workout stays as it is.")
+        }
+        return AppResource<WorkoutDetail>.message(for: error)
     }
 
     /// A Lift session with the coach's exercises, opened at once; the page reads the link back behind it.

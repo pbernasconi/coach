@@ -44,7 +44,14 @@ final class WeekViewModel {
         self.now = now
         let days = DayCalendar(calendar: calendar)
         self.days = days
-        self.edits = WeekPlanEdits(sessions: sessions, plans: plans, templates: templates, units: units, days: days)
+        self.edits = WeekPlanEdits(
+            sessions: sessions,
+            plans: plans,
+            templates: templates,
+            units: units,
+            days: days,
+            coachPlan: coachPlan
+        )
     }
 
     /// Observes the strip's sessions, the templates and the coach plan; started by the Screen's `.task` (SCR-4).
@@ -126,8 +133,6 @@ final class WeekViewModel {
             state.destination = (day ?? selected).map { .add(WeekAddDay(id: $0, dayTitle: days.longTitle(of: $0))) }
         case .changeWorkoutTapped(let id):
             state.destination = sessionRef(id).map { .change($0) }
-        case .undoTapped(let undo):
-            return undoChange(undo)
         case .planItemTapped(let id):
             guard let item = merge?.item(id) else { return nil }
             if let route = WeekLinks.planItem(item) { router.open(route) }
@@ -135,7 +140,7 @@ final class WeekViewModel {
             state.destination = nil
             let start = layout?.weekStart(offset: state.weekOffset)
             let write = WeekPlanEdits.write(for: action, templates: state.templates, weekStart: start, router: router)
-            return write.flatMap { perform($0.key, $0.body) }
+            return write.flatMap { perform($0.key, failure: $0.failure, $0.body) }
         }
         return nil
     }
@@ -212,12 +217,6 @@ final class WeekViewModel {
     /// Applies the change at once and offers Undo in a toast; never asks first (product rule).
     private func reschedule(_ id: UUID, _ action: RescheduleAction, message: String) -> Task<Void, Never>? {
         perform(id) { WeekNotice(message, undo: .reschedule(try await $0.sessions.reschedule(id, action))) }
-    }
-
-    private func undoChange(_ undo: RescheduleUndo) -> Task<Void, Never>? {
-        perform(undo.sessionID, failure: String(localized: "The change could not be undone")) {
-            try await $0.undo(.reschedule(undo))
-        }
     }
 
     /// Runs one write; a notice it returns becomes the toast, and a failure shows `failure`. `key` is the session it

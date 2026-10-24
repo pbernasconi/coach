@@ -72,6 +72,7 @@ enum CompositionRoot {
         let workoutPreferences = workoutPreferences(source: source)
         let sets = LiveSetRepository(database: database, now: now, makeID: makeID)
         let sync = makeSync(database: database, isSaved: source.isSaved, now: now, makeID: makeID)
+        let appData = makeAppData(source: source, sync: sync, now: now)
         return AppDependencies(
             sessions: sessions,
             exercises: LiveExerciseRepository(database: database, now: now, makeID: makeID),
@@ -104,8 +105,15 @@ enum CompositionRoot {
             outbox: LiveOutboxRepository(database: database),
             sync: sync,
             health: makeHealth(sessions: sessions, isSaved: source.isSaved),
-            coachPlan: makeCoachPlan(source: source, sessions: sessions, sync: sync, now: now, calendar: appCalendar),
-            appData: makeAppData(source: source, sync: sync, now: now),
+            coachPlan: makeCoachPlan(
+                source: source,
+                sessions: sessions,
+                sync: sync,
+                writer: appData,
+                now: now,
+                calendar: appCalendar
+            ),
+            appData: appData,
             push: makePush(source: source, sync: sync),
             seedsDemo: seedsDemo,
             practice: practice

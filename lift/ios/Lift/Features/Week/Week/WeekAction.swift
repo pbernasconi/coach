@@ -41,4 +41,8 @@ nonisolated enum WeekAction: Equatable, Sendable {
     case planItemTapped(String)
     /// Pull to refresh: sync this iPhone, then fetch the coach's plan for the weeks on screen.
     case refreshPulled
+    /// A row long-pressed and dropped on another day: it moves there.
+    case rowDropped(WeekDrag, on: LocalDay)
+    /// "Undo" on the toast after a plan item was dropped on another day: it goes back to `to`.
+    case planMoveUndoTapped(String, to: LocalDay)
 }
