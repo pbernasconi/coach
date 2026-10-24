@@ -55,16 +55,21 @@ struct WorkoutSessionEdits {
         return nil
     }
 
-    /// Removes the session and the workout Lift saved for it in Apple Health, if any.
-    func discard() async throws -> WorkoutToast.Kind? {
+    /// Removes the session and the workout Lift saved for it in Apple Health, if any. With `movingBackTo`, the session
+    /// first goes back to the day it was planned for (Start had moved it to today), so its plan workout follows it back
+    /// instead of staying on today as missed.
+    func discard(movingBackTo planned: LocalDay? = nil) async throws -> WorkoutToast.Kind? {
+        if let planned { _ = try await sessions.reschedule(sessionID, .move(to: planned)) }
         let undo = try await sessions.reschedule(sessionID, .remove)
         await health.sessionRemoved(sessionID)
         return .discarded(undo)
     }
 
-    /// Puts the session back, and a finished one back in Apple Health.
-    func undoDiscard(_ undo: RescheduleUndo) async throws -> WorkoutToast.Kind? {
+    /// Puts the session back, and a finished one back in Apple Health. With `movingTo`, it returns to that day (today,
+    /// where Start had moved it before the discard took it back to its planned day).
+    func undoDiscard(_ undo: RescheduleUndo, movingTo day: LocalDay? = nil) async throws -> WorkoutToast.Kind? {
         try await sessions.undo(undo)
+        if let day { _ = try await sessions.reschedule(sessionID, .move(to: day)) }
         await health.sessionRestored(sessionID)
         return nil
     }

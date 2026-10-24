@@ -16,7 +16,8 @@ extension WorkoutViewModel {
         case .discardUndoTapped(let undo):
             // The session is gone from the store until this runs, so it cannot wait for `detail`.
             hasDiscarded = false
-            return perform { try await $0.undoDiscard(undo) }
+            let today = startMove?.today
+            return perform { try await $0.undoDiscard(undo, movingTo: today) }
         default:
             break
         }
@@ -40,6 +41,7 @@ extension WorkoutViewModel {
             // Starting a workout planned for a later day does it today: it moves here first (the plan follows).
             let day = today
             let moveTo = detail.session.day > day && detail.session.startedAt == nil ? day : nil
+            if let moveTo { startMove = (planned: detail.session.day, today: moveTo) }
             return { try await $0.start(movingTo: moveTo) }
         case .finishTapped:
             send(.restSkipTapped)  // a finished workout has no rest left, here or on the Lock Screen,
@@ -47,7 +49,9 @@ extension WorkoutViewModel {
             return { try await $0.finish() }
         case .discardTapped:
             hasDiscarded = true  // keeps the page as it was while it closes
-            return { try await $0.discard() }
+            // A workout Start moved here from a later day goes back to that day, and its plan workout with it.
+            let planned = startMove?.planned
+            return { try await $0.discard(movingBackTo: planned) }
         case .saveAsTemplateTapped:
             let name = detail.session.title
             return { try await $0.saveAsTemplate(named: name) }

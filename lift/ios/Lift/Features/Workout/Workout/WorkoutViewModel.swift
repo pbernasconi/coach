@@ -29,6 +29,9 @@ final class WorkoutViewModel {
     @ObservationIgnored var isEditingSession = false
     /// Set by Discard: the page keeps showing the session while it closes, instead of "Workout not found".
     @ObservationIgnored var hasDiscarded = false
+    /// Set by Start on a workout planned for a later day: the day it was planned for and today, where Start moved it.
+    /// Discard puts it back on the planned day (the plan follows), and the discard's Undo brings it back to today.
+    @ObservationIgnored var startMove: (planned: LocalDay, today: LocalDay)?
     /// Sets with a log, unlog or skip on the way, so a double tap writes once.
     @ObservationIgnored private var inFlight: Set<UUID> = []
     @ObservationIgnored private var serial = 0

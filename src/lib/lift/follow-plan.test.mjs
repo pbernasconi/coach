@@ -70,7 +70,7 @@ test('followLiftSession pushes one session change, and nothing for a bad id', as
   assert.equal(pushed.length, 1);
 });
 
-test('the phone moving a session moves its plan workout; a removed session or a skipped workout stays', async () => {
+test('the phone moving a session moves its plan workout, a removed one too; a skipped workout stays', async () => {
   const { planFollowMoves, pushedSessions } = await import('./follow-plan.mjs');
   const A = ID.toLowerCase();
   const B = 'b0000000-0000-4000-8000-000000000001';
@@ -86,7 +86,16 @@ test('the phone moving a session moves its plan workout; a removed session or a 
   assert.deepEqual(planFollowMoves(sessions, [w('w1', ID, '2026-10-20')]), [{ id: 'w1', sessionId: A, from: '2026-10-20', to: '2026-10-22' }]);
   assert.deepEqual(planFollowMoves(sessions, [w('w1', A, '2026-10-22')]), [], 'already on the day');
   assert.deepEqual(planFollowMoves(sessions, [w('w1', A, '2026-10-20', 'skipped')]), [], 'a skipped workout stays');
-  assert.deepEqual(planFollowMoves(sessions, [w('w2', B, '2026-10-20')]), [], 'a removed session leaves its workout');
+  assert.deepEqual(
+    planFollowMoves(sessions, [w('w2', B, '2026-10-20')]),
+    [{ id: 'w2', sessionId: B, from: '2026-10-20', to: '2026-10-24' }],
+    'a removed session still carries its move (Discard after Start: back to the planned day)'
+  );
+  assert.deepEqual(
+    planFollowMoves(sessions, [w('w2', B, '2026-10-20', 'planned', new Date('2026-10-21T00:00:00Z'))]),
+    [],
+    'a removal with an old move (already followed) leaves its workout'
+  );
   const odd = pushedSessions([{ entity: 'session', id: A, payload: { day: '2026-10-22T00:00', dayMovedAt: moved }, deletedAt: null }]);
   assert.deepEqual(planFollowMoves(odd, [w('w1', A, '2026-10-20')]), [], 'a malformed day moves nothing');
 });
