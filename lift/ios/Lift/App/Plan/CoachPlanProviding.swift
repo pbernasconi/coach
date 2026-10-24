@@ -18,6 +18,14 @@ protocol CoachPlanProviding: AnyObject {
 
     /// Runs for as long as the calling task: refreshes after every sync run (launch, foreground, Sync now, writes).
     func watchSync() async
+
+    /// Moves the planned workout `id` (a Week API item) to `day` on the coach (lift/APP-API.md, "Move a workout"). The
+    /// kept plan shows it there at once; the shown weeks are fetched again after the answer, or after a failure, which
+    /// it throws (`SyncTransportError`; `.rejected(status: 409)` for a done workout).
+    func move(_ id: String, to day: LocalDay) async throws
+
+    /// Deletes the planned workout `id` on the coach ("Delete a workout"), the same way as `move`.
+    func delete(_ id: String) async throws
 }
 
 /// What the Week screen knows of the plan.
@@ -56,4 +64,8 @@ final class DisabledCoachPlan: CoachPlanProviding {
     func refresh() async {}
 
     func watchSync() async {}
+
+    func move(_: String, to _: LocalDay) async throws { throw SyncTransportError.missingToken }
+
+    func delete(_: String) async throws { throw SyncTransportError.missingToken }
 }

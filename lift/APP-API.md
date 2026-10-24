@@ -925,6 +925,22 @@ workout reads as planned. A logged set makes it done (`matchWeek`). It answers w
 bad id or UUID, `404` for no such workout, `409` when the workout already has another session (the phone opens that
 one). The same id again is a `200`.
 
+### Move a workout: `PUT /api/app/plan/{id}/date?tz=`
+
+The Week tab's long-press drag and the workout page's "Move to another day": the web's drag on /plan (`moveWorkout`
+in `src/lib/plan/queries.ts`). Body `{ "date": "YYYY-MM-DD" }`. The workout goes into that week's plan, is marked
+edited (a plan re-import keeps it, and a Google Calendar move made before it loses), its Lift session follows, and
+the old and new weeks are pushed to Google Calendar after the answer. It answers with the workout, as `GET
+/api/app/workouts/plan-<id>`. Errors: `400` for a bad id or day, `404` for no such workout, `409` for a done workout
+(the phone offers neither move nor delete for one).
+
+### Delete a workout: `DELETE /api/app/plan/{id}?tz=`
+
+The workout page's "Delete workout": the web's Remove (`removeWorkout` in `src/lib/plan/month.ts`). The plan row goes,
+its Lift session is removed too, and the week's push deletes the Google Calendar event. No body. Answers
+`{ "removed": true, "date": "YYYY-MM-DD" }`. Errors: `400` for a bad id, `404` for no such workout, `409` for a done
+workout. There is no undo on the phone, so the phone asks first.
+
 ### Weigh-in: `GET /api/app/weigh-ins/{date | latest}`
 
 The screen a weigh-in notice opens (lift/PUSH.md, `lift://weigh-in/<date>`). `date` is `YYYY-MM-DD`; `latest` is the

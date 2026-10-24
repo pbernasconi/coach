@@ -151,6 +151,8 @@ nonisolated struct WeekToast: Equatable, Sendable, Identifiable {
 nonisolated enum WeekUndo: Equatable, Sendable {
     case reschedule(RescheduleUndo)
     case template(TemplateChangeUndo)
+    /// A coach plan item moved by a drop: its id and the day it came from.
+    case planMove(id: String, from: LocalDay)
 }
 
 /// A template in the add and change pickers.

@@ -10,6 +10,7 @@ extension CompositionRoot {
         source: AppInfo.DataSource,
         sessions: any SessionRepository,
         sync: any Syncing,
+        writer: any AppDataSource,
         now: @escaping @Sendable () -> Date,
         calendar: Calendar
     ) -> any CoachPlanProviding {
@@ -28,7 +29,14 @@ extension CompositionRoot {
             baseURL: baseURL,
             tokens: syncTokenStore()
         )
-        return LiveCoachPlan(client: client, cache: coachPlanCache(), sync: sync, now: now, calendar: calendar)
+        return LiveCoachPlan(
+            client: client,
+            writer: writer,
+            cache: coachPlanCache(),
+            sync: sync,
+            now: now,
+            calendar: calendar
+        )
     }
 
     /// Application Support/CoachPlan, or a temporary folder when Application Support cannot be made.

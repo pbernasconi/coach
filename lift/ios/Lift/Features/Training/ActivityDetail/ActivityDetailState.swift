@@ -43,12 +43,23 @@ nonisolated struct ActivityDetailState: Equatable, Sendable {
     enum Destination: Equatable, Sendable {
         /// A page of full charts or tables.
         case panel(ActivityPanel)
+        /// The day picker of "Move to another day".
+        case moveDay(WorkoutMoveDay)
+        /// "Delete workout?"
+        case confirmDelete
     }
 
     /// The open panel, if one is open.
     var panel: ActivityPanel? {
         if case .panel(let panel) = destination { panel } else { nil }
     }
+
+    /// The open day picker, if one is open.
+    var moveDay: WorkoutMoveDay? {
+        if case .moveDay(let move) = destination { move } else { nil }
+    }
+
+    var isConfirmingDelete: Bool { destination == .confirmDelete }
 
     /// The workout the page was opened with: `plan-<id>` or `strava-<id>` (also `strava-latest`).
     var ref: String
@@ -93,6 +104,12 @@ nonisolated struct ActivityDetailState: Equatable, Sendable {
     /// The planned half: what the coach planned, nil for a workout done without a plan.
     var plan: AppPlannedWorkout? { workout.content.value?.plan }
 
+    /// A planned workout not done yet: the bar's "…" offers moving it to another day and deleting it.
+    var canChangePlan: Bool {
+        guard let w = workout.content.value, let plan = w.plan else { return false }
+        return w.activity == nil && plan.state != "done"
+    }
+
     /// Loaded, and planned but not done yet: the page shows the plan.
     var isPlanOnly: Bool {
         guard let w = workout.content.value else { return false }
@@ -103,4 +120,17 @@ nonisolated struct ActivityDetailState: Equatable, Sendable {
     var shownFeedback: WorkoutFeedback? {
         feedback.shown(workout.content.value?.feedback)
     }
+}
+
+/// The day picker of "Move to another day": the workout's day, and the days it can go to (the Week tab's weeks).
+nonisolated struct WorkoutMoveDay: Equatable, Sendable, Identifiable {
+    /// The plan activity id.
+    let id: String
+    let title: String
+    /// "Friday, October 23": the sheet's subtitle.
+    let dayTitle: String
+    let current: Date
+    let today: Date
+    let first: Date
+    let last: Date
 }

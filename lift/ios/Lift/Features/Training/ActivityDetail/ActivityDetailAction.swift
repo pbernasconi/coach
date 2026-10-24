@@ -27,4 +27,12 @@ nonisolated enum ActivityDetailAction: Equatable, Sendable {
     case startWorkoutTapped
     /// "Mark done" (true), or "Not done" to put a workout marked by hand back (false).
     case doneToggled(Bool)
+    /// "Move to another day" in the bar's "…": opens the day picker.
+    case moveTapped
+    /// A day picked in the day picker: the workout moves there.
+    case moveDayPicked(Date)
+    /// "Delete workout" in the bar's "…": asks first.
+    case deleteTapped
+    /// "Delete workout" in the question: the workout goes, and the page closes.
+    case deleteConfirmed
 }

@@ -15,6 +15,8 @@ final class FakeAppData: AppDataSource {
     private(set) var fetched: [String] = []
     /// Each write: its path and JSON body.
     private(set) var puts: [(path: String, body: Data)] = []
+    /// Each delete's path.
+    private(set) var deletes: [String] = []
     /// The answer to every write; nil answers with the body sent.
     var putResult: Result<Data, SyncTransportError>?
     /// The paths of the bodies kept with `keep`.
@@ -37,6 +39,15 @@ final class FakeAppData: AppDataSource {
         case .success(let data): return data
         case .failure(let error): throw error
         case nil: return body
+        }
+    }
+
+    func delete(_ path: String) async throws -> Data {
+        deletes.append(path)
+        switch putResult {
+        case .success(let data): return data
+        case .failure(let error): throw error
+        case nil: return Data(#"{"removed":true}"#.utf8)
         }
     }
 

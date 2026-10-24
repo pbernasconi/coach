@@ -1,6 +1,7 @@
 import Foundation
 import LiftCore
 import LiftStore
+import LiftSync
 
 /// A Week toast's message and, when the change can be reverted, its Undo.
 nonisolated struct WeekNotice: Equatable, Sendable {
@@ -22,6 +23,8 @@ struct WeekPlanEdits {
     /// The preferred unit, read when a session is made: new sessions are logged in it.
     let units: any UnitPreference
     let days: DayCalendar
+    /// The coach's plan, for moving its items.
+    let coachPlan: any CoachPlanProviding
 
     func add(_ template: WeekTemplateChoice, on day: LocalDay) async throws -> WeekNotice {
         _ = try await plans.createSession(from: template.id, on: day, unit: units.unit)
@@ -53,11 +56,25 @@ struct WeekPlanEdits {
         try await templates.createTemplate(name: TemplateText.newName(taken: taken)).id
     }
 
+    /// Moves a dropped row to `day`: a plan item on the coach, a Lift session here (its plan workout follows with the
+    /// next sync, WEEK-API.md). Undo puts it back.
+    func drop(_ drag: WeekDrag, on day: LocalDay) async throws -> WeekNotice {
+        let message = String(localized: "Moved to \(days.shortTitle(of: day))")
+        switch drag {
+        case .plan(let id, let from):
+            try await coachPlan.move(id, to: day)
+            return WeekNotice(message, undo: .planMove(id: id, from: from))
+        case .session(let id, _):
+            return WeekNotice(message, undo: .reschedule(try await sessions.reschedule(id, .move(to: day))))
+        }
+    }
+
     /// Puts a change back; nothing to show after it.
     func undo(_ undo: WeekUndo) async throws -> WeekNotice? {
         switch undo {
         case .reschedule(let change): try await sessions.undo(change)
         case .template(let change): try await plans.undo(change)
+        case .planMove(let id, let day): try await coachPlan.move(id, to: day)
         }
         return nil
     }
@@ -69,6 +86,8 @@ struct WeekPlanWrite {
     static let planKey = UUID(uuid: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
 
     let key: UUID?
+    /// The toast when it fails.
+    var failure = String(localized: "The workout could not be changed")
     let body: (WeekPlanEdits) async throws -> WeekNotice?
 }
 
@@ -101,6 +120,14 @@ extension WeekPlanEdits {
             }
         case .templateUndoTapped(let undo):
             return WeekPlanWrite(key: undo.sessionID) { try await $0.undo(.template(undo)) }
+        case .undoTapped(let undo):
+            let failure = String(localized: "The change could not be undone")
+            return WeekPlanWrite(key: undo.sessionID, failure: failure) { try await $0.undo(.reschedule(undo)) }
+        case .rowDropped(let drag, let day):
+            return WeekPlanWrite(key: drag.sessionID) { try await $0.drop(drag, on: day) }
+        case .planMoveUndoTapped(let id, let day):
+            let failure = String(localized: "The change could not be undone")
+            return WeekPlanWrite(key: nil, failure: failure) { try await $0.undo(.planMove(id: id, from: day)) }
         default:
             return nil
         }

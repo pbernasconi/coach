@@ -90,4 +90,72 @@ import Testing
         #expect(PlannedSessionStarter.day(fromISO: "2026-10-22") == LocalDay(year: 2026, month: 10, day: 22))
         #expect(PlannedSessionStarter.day(fromISO: "nope") == nil)
     }
+
+    // MARK: - Move and delete (APP-API.md, "Move a workout", "Delete a workout")
+
+    @Test func moveTappedOpensTheDayPickerOnTheWorkoutsDay() async {
+        let (vm, _) = await loaded()
+        vm.send(.moveTapped)
+        let days = DayCalendar(calendar: SessionBuilder.calendar)
+        let thursday = LocalDay(year: 2026, month: 3, day: 5)
+        #expect(vm.state.moveDay?.id == "p1")
+        #expect(vm.state.moveDay?.current == days.date(of: thursday))
+        #expect(vm.state.moveDay?.first == days.date(of: Fixtures.monday.adding(days: -28)))
+        #expect(vm.state.moveDay?.last == days.date(of: Fixtures.monday.adding(days: 34)))
+    }
+
+    @Test func moveDayPickedMovesTheWorkoutAndReadsThePageAgain() async {
+        let (vm, data) = await loaded()
+        vm.send(.moveTapped)
+        let saturday = LocalDay(year: 2026, month: 3, day: 7)
+        let date = DayCalendar(calendar: SessionBuilder.calendar).date(of: saturday) ?? .distantPast
+
+        await vm.send(.moveDayPicked(date))?.value
+
+        #expect(vm.state.destination == nil)
+        #expect(coachPlan.edits == [.move(id: "p1", to: saturday)])
+        #expect(data.fetched.count >= 2)  // the page read again on its new day
+        #expect(vm.state.planWrite == .idle)
+    }
+
+    @Test func moveDayPickedOnTheSameDayDoesNothing() async {
+        let (vm, _) = await loaded()
+        let thursday = LocalDay(year: 2026, month: 3, day: 5)
+        let date = DayCalendar(calendar: SessionBuilder.calendar).date(of: thursday) ?? .distantPast
+        #expect(vm.send(.moveDayPicked(date)) == nil)
+        #expect(coachPlan.edits.isEmpty)
+    }
+
+    @Test func deleteAsksFirstThenDeletesAndCloses() async {
+        let (vm, _) = await loaded()
+        vm.send(.deleteTapped)
+        #expect(vm.state.isConfirmingDelete)
+        #expect(coachPlan.edits.isEmpty)
+
+        await vm.send(.deleteConfirmed)?.value
+
+        #expect(coachPlan.edits == [.remove(id: "p1")])
+        #expect(router.backCount == 1)
+        #expect(vm.state.destination == nil)
+    }
+
+    @Test func aRefusedDeleteSaysWhyAndStays() async {
+        let (vm, _) = await loaded()
+        coachPlan.editError = .rejected(status: 409)
+        vm.send(.deleteTapped)
+
+        await vm.send(.deleteConfirmed)?.value
+
+        #expect(router.backCount == 0)
+        #expect(vm.state.planWrite == .failed(String(localized: "A done workout stays as it is.")))
+    }
+
+    @Test func aDoneWorkoutCannotMoveOrGo() async {
+        let done = String(decoding: Self.body(), as: UTF8.self).replacingOccurrences(of: "planned", with: "done")
+        let (vm, _) = await loaded(Data(done.utf8))
+        #expect(!vm.state.canChangePlan)
+        vm.send(.moveTapped)
+        vm.send(.deleteTapped)
+        #expect(vm.state.destination == nil)
+    }
 }

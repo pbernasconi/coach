@@ -30,3 +30,27 @@ export function cleanLiftLink(body) {
   const id = typeof b.sessionId === 'string' ? b.sessionId.trim() : '';
   return UUID.test(id) ? { sessionId: id.toLowerCase() } : { error: 'sessionId must be a UUID' };
 }
+
+/**
+ * `{ date: "YYYY-MM-DD" }`: the day to move a planned workout to (lift/APP-API.md, "Move a workout"). A real calendar
+ * day only.
+ * @param {unknown} body
+ * @returns {{ date: string } | { error: string }}
+ */
+export function cleanPlanDate(body) {
+  const b = body && typeof body === 'object' ? /** @type {Record<string, unknown>} */ (body) : {};
+  const date = typeof b.date === 'string' ? b.date.trim() : '';
+  const bad = { error: 'date must be a day, YYYY-MM-DD' };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return bad;
+  const parsed = new Date(`${date}T00:00:00Z`);
+  return Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== date ? bad : { date };
+}
+
+/**
+ * Whether the phone may move or delete a workout: not one already done (a matched activity, a Lift session with sets,
+ * or done by hand). The phone hides both for a done workout; the server refuses them too.
+ * @param {{ state?: string } | null | undefined} workout
+ */
+export function canChangePlan(workout) {
+  return Boolean(workout) && workout?.state !== 'done';
+}

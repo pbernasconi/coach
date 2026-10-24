@@ -22,6 +22,9 @@ protocol AppDataSource: AnyObject {
     /// Sends a JSON `body` to `path` with PUT (a write, as "api/app/feedback") and returns the answer. Throws
     /// `SyncTransportError` (`missingToken` when not connected). Nothing is kept.
     func put(_ path: String, body: Data) async throws -> Data
+
+    /// Sends DELETE to `path` (a delete, as "api/app/plan/<id>") and returns the answer. The same errors as `put`.
+    func delete(_ path: String) async throws -> Data
 }
 
 extension AppDataSource {
@@ -30,6 +33,11 @@ extension AppDataSource {
 
     /// No writes (sync off, test fakes that only read).
     func put(_: String, body _: Data) async throws -> Data {
+        throw SyncTransportError.missingToken
+    }
+
+    /// No deletes (sync off, test fakes that only read).
+    func delete(_: String) async throws -> Data {
         throw SyncTransportError.missingToken
     }
 
@@ -72,6 +80,10 @@ final class LiveAppData: AppDataSource {
 
     func put(_ path: String, body: Data) async throws -> Data {
         try await client.send("PUT", path, body: body)
+    }
+
+    func delete(_ path: String) async throws -> Data {
+        try await client.send("DELETE", path, body: Data())
     }
 
     /// Paths opened by id, each family capped at `keptPerFamily` bodies (the most recently fetched stay).

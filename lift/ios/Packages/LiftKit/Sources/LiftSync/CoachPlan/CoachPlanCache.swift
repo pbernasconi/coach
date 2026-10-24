@@ -95,6 +95,31 @@ public struct CoachPlanBook: Equatable, Sendable {
         }
     }
 
+    /// Removes the item `id` from every kept week and returns it; nil when no kept week has it.
+    mutating func take(_ id: String) -> CoachItem? {
+        var found: CoachItem?
+        for (start, week) in weeks where week.days.contains(where: { $0.items.contains { $0.id == id } }) {
+            var kept = week
+            for index in kept.days.indices {
+                if found == nil { found = kept.days[index].items.first { $0.id == id } }
+                kept.days[index].items.removeAll { $0.id == id }
+            }
+            weeks[start] = kept
+        }
+        return found
+    }
+
+    /// Adds `item` last on `day`, when the week that holds `day` is kept.
+    mutating func place(_ item: CoachItem, on day: LocalDay) {
+        for (start, week) in weeks {
+            guard let index = week.days.firstIndex(where: { $0.date == day }) else { continue }
+            var kept = week
+            kept.days[index].items.append(item)
+            weeks[start] = kept
+            return
+        }
+    }
+
     /// Whether every week of `starts` is held.
     public func holds(_ starts: [LocalDay]) -> Bool {
         starts.allSatisfy { weeks[$0] != nil }
