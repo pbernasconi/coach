@@ -1,15 +1,18 @@
-import { neon, type NeonQueryFunction } from '@neondatabase/serverless';
+import { neon, neonConfig, type NeonQueryFunction } from '@neondatabase/serverless';
 import { drizzle, type NeonHttpDatabase } from 'drizzle-orm/neon-http';
 import { drizzle as drizzleNodePg } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { databaseDriver } from './driver.mjs';
 import * as schema from './schema';
+import { timedFetch } from '@/lib/request-timing';
 
 const connectionString = process.env.DATABASE_URL!;
 const usePg = databaseDriver(process.env) === 'pg';
 const pool = usePg ? new Pool({ connectionString, max: 5 }) : null;
 
 type Sql = NeonQueryFunction<false, false>;
+// Every Neon query is an HTTPS request; timing them shows a slow request's cause (src/lib/request-timing.ts).
+if (!usePg) neonConfig.fetchFunction = timedFetch;
 const neonSql = usePg ? null : neon(connectionString);
 
 /**

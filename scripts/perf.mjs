@@ -70,11 +70,28 @@ async function regions(base) {
   return `edge → function: ${fn}; database: ${neon}`;
 }
 
-/** The first request after idle: Neon asleep (it suspends after 5 idle minutes) and a cold function. */
+/** Neon's compute state (it suspends after 5 idle minutes), from the Neon API: reading it does not wake it. */
+async function neonState() {
+  if (!process.env.NEON_API_KEY) return '?';
+  const r = await fetch('https://console.neon.tech/api/v2/projects/falling-mud-04838480/endpoints', {
+    headers: { authorization: `Bearer ${process.env.NEON_API_KEY}`, accept: 'application/json' },
+  }).catch(() => null);
+  const e = r?.ok ? (await r.json()).endpoints?.[0] : null;
+  return e ? `${e.current_state} (last active ${e.last_active ?? '?'})` : '?';
+}
+
+/**
+ * The first requests after idle, in parts: a function that reads no data (/api/health without a token), then the
+ * app's Settings (a small read: mostly the database waking), then a page, then Settings again (all warm).
+ */
 async function coldStart(base) {
-  const page = await time(base + '/');
-  const app = appToken ? await time(`${base}/api/app/today`, { authorization: `Bearer ${appToken}` }) : null;
-  return `first request: / ${Math.round(page.total)} ms${app ? `, /api/app/today ${Math.round(app.total)} ms` : ''}`;
+  const parts = [`neon ${await neonState()}`];
+  parts.push(`function without data ${Math.round((await time(`${base}/api/health`, { authorization: 'Bearer none' })).total)} ms`);
+  const auth = { authorization: `Bearer ${appToken}` };
+  if (appToken) parts.push(`/api/app/settings ${Math.round((await time(`${base}/api/app/settings`, auth)).total)} ms`);
+  parts.push(`/ ${Math.round((await time(base + '/')).total)} ms`);
+  if (appToken) parts.push(`/api/app/settings again ${Math.round((await time(`${base}/api/app/settings`, auth)).total)} ms`);
+  return parts.join('; ');
 }
 
 async function measure(base) {

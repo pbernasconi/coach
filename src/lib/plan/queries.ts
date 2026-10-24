@@ -57,10 +57,27 @@ export type Week = {
 
 type Row = Record<string, unknown>;
 
+// The owner never changes, so a running function asks the database once: every app request and page started with
+// this query, a database round trip before any other (and one that woke Neon even when the rest was cached).
+let ownerMemo: Promise<string | null> | null = null;
+
 /** The single user (Coach is personal): the first row in users. */
-export async function ownerId(): Promise<string | null> {
-  const [u] = (await sql`SELECT id FROM users ORDER BY created_at LIMIT 1`) as Row[];
-  return u ? String(u.id) : null;
+export function ownerId(): Promise<string | null> {
+  const read = async () => {
+    const [u] = (await sql`SELECT id FROM users ORDER BY created_at LIMIT 1`) as Row[];
+    return u ? String(u.id) : null;
+  };
+  // Outside Next (the integration test, scripts) the database is reseeded between runs: read it every time.
+  if (!process.env.NEXT_RUNTIME) return read();
+  // A failed or empty read is not kept, so the next request tries again.
+  ownerMemo ??= read().then((id) => {
+    if (!id) ownerMemo = null;
+    return id;
+  }, (error) => {
+    ownerMemo = null;
+    throw error;
+  });
+  return ownerMemo;
 }
 
 async function planRow(userId: string, weekStart: string) {
