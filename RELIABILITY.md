@@ -104,7 +104,7 @@ A write that clears no tag (a script on the database) shows within an hour. `/ap
 cache as the pages: the data it checks is the data the pages show. The cache key holds the loader's code, so a
 deploy that changes a query reads fresh data. Outside Next (the CI integration test, scripts) the cache is off.
 
-Perf runs on demand only: add the label `perf` to a pull request.
+Perf runs on demand only (see "Speed" below).
 
 ## Neon compute
 
@@ -118,3 +118,28 @@ The quotas are hard: 100 CU-hours and 20 GB of transfer a month (Launch plan). A
 the next month. `neon-usage.yml` reads the usage from the Neon API every day (it does not wake the database) and
 opens a `neon-usage` issue at 50% or 80% of a quota, or when the month's pace would pass one. Each deploy renders
 every page on production, so a day with many merges also uses Neon.
+
+## Speed
+
+Measured 2026-10-24 (Actions → Perf, `scripts/perf.mjs`): the functions run in `pdx1` and Neon in
+`aws-us-west-2`, next to each other. A warm request is fast: pages 150–400 ms, `/api/app/*` 80–300 ms. The slow
+ones are the first after a pause:
+
+- **Neon waking up**: about 0.9 s on the first query after 5 idle minutes (`/api/app/settings` 1,026 ms cold,
+  100 ms warm). Keeping it awake would spend the compute quota (see "Neon compute"), so reads that can avoid the
+  database go through the data cache, and the iPhone app shows the body it kept while it fetches.
+- **A new function instance**: about 1 s more for the first page a new instance renders.
+
+So no request may add a round trip that waits on nothing: the owner row is read once per function instance
+(`ownerId`, `src/lib/owner.ts`), and the Clerk email match is in the data cache for an hour.
+
+**Timing on every request**: `src/lib/request-timing.ts` times each database call (Neon's HTTP driver is set to use
+`timedFetch`) and wraps the iPhone app routes (`appRoute`, `appWrite`, the Lift sync and week routes). Their
+responses carry `Server-Timing` (total, the slowest database call and the number of calls, and `cold` on a new
+instance). The Vercel logs get `[timing] slow …` for a request over 1 s, and `[timing] database call took …` for
+one call over 0.7 s, which is Neon waking up. A new route for the app uses `appRoute` or `withTiming`.
+
+**Perf** (Actions → Perf → Run workflow): waits for Neon to suspend (`wait_for_idle`), then times the first
+requests in parts (a function without data, the database waking, a page), then the medians of every page and app
+route. Run it after a change that could slow a page, and compare with the numbers above.
+
