@@ -115,9 +115,10 @@ struct PlannedWorkoutHeader: View {
     }
 }
 
-/// The workout card: the main work, the interval chart in zone colours with its time labels, then every step. A tap
-/// or a drag on the chart picks a bar, and a tap on a step picks its first bar: the picked step's detail shows under
-/// the chart (as the web chart's tooltip), its row lights up, and the other bars dim.
+/// The workout card: the main work, the interval chart in zone colours with its time labels, then every step. A finger
+/// on the chart picks a bar while it touches (the chart goes back to unselected when it lifts), and a tap on a step
+/// picks its first bar: the picked step's detail shows under the chart (as the web chart's tooltip), its row lights up,
+/// and the other bars dim.
 private struct PlannedStructureCard: View {
     @Environment(\.koboTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion

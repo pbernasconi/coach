@@ -61,8 +61,8 @@ final class LiveEndToEndUITests: XCTestCase {
         scrollShot("41-lift-progress")
     }
 
-    /// A strength workout the coach wrote as text: its exercises and the Start workout and Mark done buttons. It only
-    /// looks: a tap would change the real plan.
+    /// A strength workout the coach wrote as text: its exercises, Start workout, and Mark done in the bar's "…". It
+    /// only looks: a tap would change the real plan.
     func testPlannedStrengthWithLiveData() throws {
         guard let code = ProcessInfo.processInfo.environment["LIFT_LIVE_CODE"], let sync = URL(string: "lift://sync?code=\(code)")
         else { throw XCTSkip("LIFT_LIVE_CODE not set") }
@@ -79,7 +79,7 @@ final class LiveEndToEndUITests: XCTestCase {
         wait(6)
         shot("50-strength-workout")
         XCTAssertTrue(app.buttons["Start workout"].exists)
-        XCTAssertTrue(app.buttons["Mark done"].exists)
+        XCTAssertFalse(app.buttons["Mark done"].exists)  // in the "…", not on the page
         XCTAssertTrue(app.staticTexts["Standing calf raise"].exists)
         scrollShot("51-strength-workout-more")
     }

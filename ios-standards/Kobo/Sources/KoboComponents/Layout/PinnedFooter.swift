@@ -14,8 +14,9 @@ public enum PinnedFooterStyle: Sendable, Equatable {
 }
 
 extension View {
-    /// Pins primary actions to the bottom of the screen. The footer sits in the bottom safe area inset,
-    /// so scrolling content stops above it and the home indicator area stays clear. Apply it to the scroll view: the
+    /// Pins primary actions to the bottom of the screen. The footer is a bottom safe area bar, so scrolling content
+    /// stops above it, fades and blurs as it passes under (the system's soft scroll edge, as under the tab bar), and
+    /// the home indicator area stays clear. Apply it to the scroll view: the
     /// `.material` footer then draws its top hairline only while content runs under it.
     ///
     ///     ScrollView { … }
@@ -47,11 +48,14 @@ private struct PinnedFooterHost<Footer: View>: ViewModifier {
             } action: { _, isUnder in
                 contentIsUnder = isUnder
             }
-            .safeAreaInset(edge: .bottom, spacing: 0) {
+            // A bar, not a plain inset: content scrolling under it softens and blurs away, like it does under the
+            // tab bar, so floating glass buttons never sit on hard-edged rows.
+            .safeAreaBar(edge: .bottom, spacing: 0) {
                 if isPresented {
                     PinnedFooter(style: style, showsEdge: contentIsUnder) { footer }
                 }
             }
+            .scrollEdgeEffectStyle(.soft, for: .bottom)
     }
 }
 

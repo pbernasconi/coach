@@ -110,6 +110,13 @@ nonisolated struct ActivityDetailState: Equatable, Sendable {
         return w.activity == nil && plan.state != "done"
     }
 
+    /// A planned workout with no Lift session or activity behind it: the bar's "…" offers Mark done, or Not done once
+    /// it was marked by hand.
+    var canToggleDone: Bool {
+        guard let w = workout.content.value, let plan = w.plan else { return false }
+        return w.activity == nil && plan.liftSessionId == nil && plan.done?.activityId == nil
+    }
+
     /// Loaded, and planned but not done yet: the page shows the plan.
     var isPlanOnly: Bool {
         guard let w = workout.content.value else { return false }

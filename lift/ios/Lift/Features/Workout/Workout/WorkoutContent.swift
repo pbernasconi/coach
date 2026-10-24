@@ -62,7 +62,8 @@ struct WorkoutContent: View {
         .navigationBarTitleDisplayMode(.inline)
         .workoutOptions(state: state, send: send)
         // Not a pinnedFooter: the dock runs edge to edge and down to the bottom of the screen, and brings its own panel.
-        .safeAreaInset(edge: .bottom, spacing: 0) {
+        // A bar, so the list fades and blurs under the floating Start workout, as it does under the tab bar.
+        .safeAreaBar(edge: .bottom, spacing: 0) {
             if let dock = state.dock {
                 WorkoutDock(
                     phase: dock,

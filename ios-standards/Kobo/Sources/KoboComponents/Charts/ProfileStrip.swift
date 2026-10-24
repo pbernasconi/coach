@@ -51,7 +51,8 @@ public struct ProfileStrip: View {
         self.label = Text(verbatim: verbatimAccessibilityLabel)
     }
 
-    /// Lets a tap or a drag pick a block; `highlighted` lights a step's blocks while none is picked.
+    /// Lets a finger on the strip pick a block while it touches: the pick clears when the finger lifts, so the strip
+    /// always rests unselected. `highlighted` lights a step's blocks while none is picked.
     public func selectable(_ selection: Binding<Int?>, highlighted: Set<Int> = []) -> ProfileStrip {
         var copy = self
         copy.selection = selection
@@ -98,6 +99,7 @@ public struct ProfileStrip: View {
                                     selection.wrappedValue = id
                                 }
                             }
+                            .onEnded { _ in selection.wrappedValue = nil }
                         )
                 }
             }

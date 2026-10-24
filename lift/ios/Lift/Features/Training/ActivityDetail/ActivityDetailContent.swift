@@ -54,7 +54,11 @@ private struct ActivityPage: View {
             onOlder: { if let id = header?.prevId { send(.neighbourTapped(id)) } },
             onNewer: { if let id = header?.nextId { send(.neighbourTapped(id)) } },
             plan: state.canChangePlan
-                ? WorkoutPlanMenu(onMove: { send(.moveTapped) }, onDelete: { send(.deleteTapped) }) : nil
+                ? WorkoutPlanMenu(onMove: { send(.moveTapped) }, onDelete: { send(.deleteTapped) }) : nil,
+            done: state.canToggleDone
+                ? WorkoutDoneMenu(isDone: state.plan?.state == "done", isRunning: state.planWrite.isRunning) {
+                    send(.doneToggled($0))
+                } : nil
         )
         .workoutPlanEdits(state: state, send: send)
         .workoutFeedbackComment(state.feedback, comment: state.shownFeedback?.comment) { send(.feedback($0)) }

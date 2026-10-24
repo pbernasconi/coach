@@ -3,9 +3,9 @@ import KoboTokens
 import LiftSync
 import SwiftUI
 
-/// What a planned workout lets you do, as the web's Mark done: "Start workout" when the coach listed exercises (a
-/// Lift session with them, to log each set), and "Mark done" for one done without logging. A workout marked done by
-/// hand can go back with "Not done". Nothing once a Lift session or an activity completed it.
+/// What a planned workout lets you do on the page: "Start workout" when the coach listed exercises (a Lift session
+/// with them, to log each set). Mark done and Not done live in the bar's "…" (`WorkoutDoneMenu`); a failed write
+/// shows its message here. Nothing once a Lift session or an activity completed it.
 struct WorkoutPlanActions: View {
     @Environment(\.koboTheme) private var theme
     let workout: AppPlannedWorkout
@@ -26,21 +26,11 @@ struct WorkoutPlanActions: View {
     }
 
     @ViewBuilder private var buttons: some View {
-        if workout.state == "done" {
-            Button("Not done", systemImage: "arrow.uturn.backward") { send(.doneToggled(false)) }
-                .buttonStyle(.kobo(.secondary))
-                .disabled(write.isRunning)
-        } else {
-            HStack(spacing: Space.sm) {
-                if hasExercises {
-                    Button("Start workout", systemImage: "figure.strengthtraining.traditional") {
-                        send(.startWorkoutTapped)
-                    }
-                    .buttonStyle(.kobo(.primary))
-                }
-                Button("Mark done", systemImage: "checkmark") { send(.doneToggled(true)) }
-                    .buttonStyle(.kobo(hasExercises ? .secondary : .primary))
+        if workout.state != "done", hasExercises {
+            Button("Start workout", systemImage: "figure.strengthtraining.traditional") {
+                send(.startWorkoutTapped)
             }
+            .buttonStyle(.kobo(.primary))
             .disabled(write.isRunning)
         }
     }
