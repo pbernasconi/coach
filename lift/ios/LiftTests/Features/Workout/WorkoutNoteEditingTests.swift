@@ -55,22 +55,6 @@ import Testing
         #expect(vm.state.editor?.hasChanges == false)
     }
 
-    @Test func editorRPEChangedChoosesAValueAndTheSameValueClearsIt() async {
-        let vm = makeViewModel(planned, sets: recorder(planned))
-        await vm.run()
-        vm.send(.setValuesTapped(firstSetID))
-
-        #expect(vm.send(.editorRPEChanged(8)) == nil)
-        #expect(vm.state.editor?.rpe == 8)
-        #expect(vm.state.editor?.hasChanges == true)
-        vm.send(.editorRPEChanged(9.5))
-        #expect(vm.state.editor?.rpe == 9.5)
-        vm.send(.editorRPEChanged(9.5))
-        #expect(vm.state.editor?.rpe == nil)
-        vm.send(.editorRPEChanged(11))
-        #expect(vm.state.editor?.rpe == nil)
-    }
-
     @Test func editorNoteChangedUpdatesTheDraft() async {
         let vm = makeViewModel(planned, sets: recorder(planned))
         await vm.run()
@@ -83,12 +67,13 @@ import Testing
         #expect(vm.state.editor?.hasChanges == true)
     }
 
-    @Test func editorDoneTappedWithOnlyRPEAndNoteSavesThemAndNeverLogs() async {
-        let sets = recorder(planned)
-        let vm = makeViewModel(planned, sets: sets)
+    @Test func editorDoneTappedWithOnlyANoteSavesItKeepsTheSavedRPEAndNeverLogs() async {
+        var detail = planned
+        detail.items[0].sets[0].rpe = 8
+        let sets = recorder(detail)
+        let vm = makeViewModel(detail, sets: sets)
         await vm.run()
         vm.send(.setValuesTapped(firstSetID))
-        vm.send(.editorRPEChanged(8))
         vm.send(.editorNoteChanged("Belt on"))
 
         await vm.send(.editorDoneTapped)?.value
@@ -98,21 +83,21 @@ import Testing
         #expect(vm.state.rest == nil)
     }
 
-    @Test func editorDoneTappedWithValuesAndRPESavesBoth() async {
+    @Test func editorDoneTappedWithValuesAndANoteSavesBoth() async {
         let sets = recorder(planned)
         let vm = makeViewModel(planned, sets: sets)
         await vm.run()
         vm.send(.setValuesTapped(firstSetID))
         vm.send(.editorApplyToLaterChanged(false))
         vm.send(.editorRepsChanged(4))
-        vm.send(.editorRPEChanged(9))
+        vm.send(.editorNoteChanged("Belt on"))
 
         await vm.send(.editorDoneTapped)?.value
 
         #expect(
             sets.calls == [
                 .saveValues(setID: firstSetID, reps: 4, weight: .kg(100)),
-                .saveDetails(setID: firstSetID, rpe: 9, note: ""),
+                .saveDetails(setID: firstSetID, rpe: nil, note: "Belt on"),
             ]
         )
     }
