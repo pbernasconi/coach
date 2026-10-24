@@ -18,13 +18,18 @@ struct WorkoutPlanSections: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Space.section) {
-            PlannedWorkoutHeader(workout: workout)
-            WorkoutPlanActions(workout: workout, write: write, send: send)
-            if !workout.hero.isEmpty {
-                WorkoutStatGrid(items: workout.hero, id: \.label) { stat in
-                    WorkoutStatCell(label: stat.label, value: stat.valueText, unit: stat.unit)
+            // The header and its numbers sit closer than the cards below, as on the Lift session page.
+            VStack(alignment: .leading, spacing: Space.lg) {
+                PlannedWorkoutHeader(workout: workout)
+                WorkoutPlanActions(workout: workout, write: write, send: send)
+                if !workout.hero.isEmpty {
+                    // Three numbers (time, TSS, IF) on one row, not two and one left over.
+                    let columns = workout.hero.count == 3 ? 3 : 2
+                    WorkoutStatGrid(items: workout.hero, id: \.label, columns: columns) { stat in
+                        WorkoutStatCell(label: stat.label, value: stat.valueText, unit: stat.unit)
+                    }
+                    .koboCard()
                 }
-                .koboCard()
             }
             if let feedback, workout.state == "done" {  // nothing to rate before it's done
                 WorkoutFeedbackCard(feedback: feedback, save: save) { send(.feedback($0)) }
