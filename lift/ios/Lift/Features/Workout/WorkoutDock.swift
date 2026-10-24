@@ -53,7 +53,7 @@ struct WorkoutDock: View {
 
 /// How much of the accent the floating Start workout's glass carries (a maths constant, not a colour).
 nonisolated enum StartGlass {
-    static let tintOpacity: Double = 0.75
+    static let tintOpacity: Double = 0.85
 }
 
 private struct WorkoutDockCard: View {
