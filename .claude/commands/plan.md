@@ -95,6 +95,9 @@ Honor:
   10–15 min before `Heavy barbell`; Fitness SF Fillmore is a 10–15 min walk from home, so take a longer way round),
   or a Zwift ride, then `Upper (dumbbells)` at home. **Never a run after a lift**: he is tight and not in the mood;
   he walks home. When no block fits the day, the lift stands alone and the aerobic session moves or drops.
+  The import enforces it (`src/lib/plan/day-blocks.mjs`): two timed sessions on a day more than 15 min apart are
+  closed into one block from the first start, and a run planned after a lift is moved ahead of it. Plan the block
+  yourself so the times are the ones you meant.
 
 **Heat / weather is training load**
 - Compare the destination's temps to what he's adapted to (SF is 12–22°C). A jump of >8°C means he is NOT heat-adapted.
@@ -221,13 +224,13 @@ matter more than the size of the best week.
   busiest meeting days, and keep a heavy meeting day to one easy session or rest.
 - **Arm top-up at home.** When a lift falls off or the week is a floor week, the "Arm finisher" home mini session
   (PLAN-STRUCTURE) can follow a Zwift ride as one block. Home has 15, 20 and 25 lb dumbbells and bands.
-- **Never miss twice.** If the profile shows no lift in the last 6 days, the week's first lift goes in its first 2
-  days (a 40 min version is fine).
+- **Never miss twice.** The profile's "Consistency and the 4-week block" gives lifts in the last 28 days and the
+  last lift. When it says "never miss twice", the week's first lift goes in its first 2 days (40 min is fine).
 - **Mornings decide the version of the day** (the web's "how I feel" and the readiness in the profile): green as
   planned; amber = the short version (2 sets instead of 4, easy instead of intervals); red = walk or rest, and the
   session moves or drops. Write the short version into each key session's `description` ("Short on time or flat:
   …"), so it is ready when he needs it.
-- **Blocks of 4 weeks.** Three building weeks, then a lighter week (about 60–70 % of the time, the long run and
+- **Blocks of 4 weeks** (the profile gives the block week). Three building weeks, then a lighter week (about 60–70 % of the time, the long run and
   ride shorter, lifts kept but 2 sets). The lighter week's plan opens with a monthly review in `context`: lifts done
   of 8 in the last 4 weeks, top sets on the arm lifts, the weight trend, the longest run, what to change next block.
 - **Seasons.** Now to the end of January 2027: build (full weeks, floor weeks for travel). February to April 2027,

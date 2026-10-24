@@ -11,6 +11,7 @@ import { LIFT_MARKER } from './lift-plan.mjs';
 import { sportOf } from './week.mjs';
 import { bankWorkout } from '../workouts/bank.mjs';
 import { totals, validate } from '../workouts/steps.mjs';
+import { stackDays } from './day-blocks.mjs';
 
 function minutesBetween(start, end) {
   const ms = Date.parse(end) - Date.parse(start);
@@ -35,7 +36,9 @@ export function stepsOf(e, duration) {
 /** The rows a plan JSON describes, without database ids. */
 export function rowsFromPlan(plan) {
   const weekStart = plan.weekStart;
-  const rows = (plan.events ?? []).map((e, i) => {
+  // One session a day, or one stacked block (Paolo's rule): a lift hours after a run moves to straight after it.
+  const { events } = stackDays(plan.events ?? []);
+  const rows = events.map((e, i) => {
     const duration = e.end ? minutesBetween(e.start, e.end) : null;
     const steps = stepsOf(e, duration);
     return {
