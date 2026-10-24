@@ -77,8 +77,9 @@ extension ButtonStyle where Self == KoboButtonStyle {
 
 /// The capsule behind the label. Under a glass theme every filled variant is Liquid Glass, as iOS 26 draws its own
 /// buttons: primary is glass tinted the accent (the system's `.glassProminent`), tonal is glass tinted the soft accent,
-/// secondary and glass are clear glass. Destructive fills stay solid, so a delete never looks like a lesser action,
-/// and plain stays ink only. A solid theme, and a disabled primary, secondary or tonal, draw the flat fill.
+/// secondary and glass are clear glass, destructive tonal is glass tinted the soft danger. The destructive fill stays
+/// solid, so a delete never looks like a lesser action, and plain stays ink only. A solid theme, and a disabled filled
+/// variant, draw the flat fill.
 private struct ButtonSurface: ViewModifier {
     @Environment(\.koboTheme) private var theme
     @Environment(\.isEnabled) private var isEnabled
@@ -110,7 +111,8 @@ private enum ButtonGlass {
         case .primary: return isEnabled ? Glass.regular.tint(palette.accent).interactive() : nil
         case .tonal: return isEnabled ? Glass.regular.tint(palette.accentSoft).interactive() : nil
         case .secondary: return isEnabled ? Glass.regular.interactive() : nil
-        case .destructive, .destructiveTonal, .plain: return nil
+        case .destructiveTonal: return isEnabled ? Glass.regular.tint(palette.danger.soft).interactive() : nil
+        case .destructive, .plain: return nil
         }
     }
 }

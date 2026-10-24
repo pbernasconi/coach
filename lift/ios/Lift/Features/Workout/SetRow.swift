@@ -124,8 +124,9 @@ struct SetRow: View {
         pill(String(localized: "\(item.reps) reps"), label: repsLabel)
     }
 
-    /// A tonal capsule showing a value; tapping it opens the editor. It is as tall as the log check beside it (one
-    /// touch target), so every control in the row shares one height and, being a capsule, the check's round ends.
+    /// A Liquid Glass capsule showing a value (tinted once the set is logged); tapping it opens the editor. It is as
+    /// tall as the log check beside it (one touch target), so every control in the row shares one height and, being a
+    /// capsule, the check's round ends.
     private func pill(_ value: String, label: Text) -> some View {
         Button(action: onEdit) {
             Text(verbatim: value)
@@ -136,9 +137,9 @@ struct SetRow: View {
                 .minimumScaleFactor(0.8)
                 .padding(.horizontal, Space.sm)
                 .frame(maxWidth: .infinity, minHeight: Size.minTouch)
-                .background(Capsule().fill(pillFill))
+                .modifier(SetRowGlass(fill: pillFill, tint: item.status == .done ? theme.palette.accentSoft : nil, shape: Capsule()))
         }
-        .buttonStyle(.pressFeedback(.highlight, in: Capsule()))
+        .buttonStyle(.pressFeedback(.scale, in: Capsule()))
         .accessibilityLabel(label)
         .accessibilityHint(Text("Edit weight and reps"))
     }
@@ -222,11 +223,29 @@ private struct RestRingCheck: View {
                     .foregroundStyle(theme.palette.textSecondary)
             }
             .frame(width: size, height: size)
+            .modifier(SetRowGlass(fill: theme.palette.surfaceRaised, tint: nil, shape: Circle()))
             .contentShape(Circle())
         }
-        .buttonStyle(.pressFeedback(.highlight, in: Circle()))
+        .buttonStyle(.pressFeedback(.scale, in: Circle()))
         .accessibilityLabel(Text(verbatim: label))
         .accessibilityValue(Text("Rested \(rest.elapsedText) of \(rest.totalText)"))
     }
 }
 
+
+/// The set row's controls under a glass theme: Liquid Glass in `shape` (tinted `tint` when given), like the log check
+/// beside them. A solid theme draws the flat `fill`.
+private struct SetRowGlass<S: Shape>: ViewModifier {
+    @Environment(\.koboTheme) private var theme
+    let fill: Color
+    let tint: Color?
+    let shape: S
+
+    func body(content: Content) -> some View {
+        if theme.surfaceStyle == .glass {
+            content.glassEffect(tint.map { Glass.regular.tint($0).interactive() } ?? .regular.interactive(), in: shape)
+        } else {
+            content.background(shape.fill(fill))
+        }
+    }
+}

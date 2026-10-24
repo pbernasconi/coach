@@ -109,7 +109,7 @@ private struct WorkoutOptionsSheets: ViewModifier {
     }
 }
 
-/// An exercise's "…" at the end of its header: opens its options.
+/// An exercise's "…" at the end of its header, a small glass circle: opens its options.
 struct WorkoutExerciseOptionsButton: View {
     let exercise: WorkoutExercise
     let send: (WorkoutAction) -> Void
@@ -118,7 +118,8 @@ struct WorkoutExerciseOptionsButton: View {
         IconButton(
             "ellipsis",
             verbatimAccessibilityLabel: String(localized: "Options for \(exercise.name)"),
-            style: .plain
+            style: .glass,
+            size: .small
         ) { send(.exerciseOptionsTapped(exercise.id)) }
     }
 }
