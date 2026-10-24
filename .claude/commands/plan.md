@@ -87,6 +87,14 @@ Honor:
   `Hotel gym (dumbbells)` replaces either one when traveling. Short weeks (travel, newborn): a **home mini session**
   from PLAN-STRUCTURE ("Home mini sessions") keeps the floor; copy its numbered lines into `description` as written
   (no `liftTemplate`) so each set can be logged. **Never a heavy lift on the same day as a workout** (Paolo's rule; it overrides the PDF). Put the heavy lift on an aerobic day; the hotel lift can follow an aerobic day or travel.
+- **One session a day, or one stacked block** (Paolo's rule, 2026-10-24). He does a second session only when it
+  follows straight on from the first; a second session hours later gets dropped (both lifts missed in the week of
+  2026-10-19 were the PM half of a split day). Never plan two sessions hours apart on one day. A lift on an aerobic
+  day is one block: the aerobic part first and easy (Z1–low Z2, no strides), the lift straight after, as two events
+  with back-to-back times (the first ends when the second starts). Good blocks: an easy run to the gym (15–25 min,
+  10–15 min before `Heavy barbell`; Fitness SF Fillmore is a 10–15 min walk from home, so take a longer way round),
+  or a Zwift ride, then `Upper (dumbbells)` at home. **Never a run after a lift**: he is tight and not in the mood;
+  he walks home. When no block fits the day, the lift stands alone and the aerobic session moves or drops.
 
 **Heat / weather is training load**
 - Compare the destination's temps to what he's adapted to (SF is 12–22°C). A jump of >8°C means he is NOT heat-adapted.
@@ -96,7 +104,7 @@ Honor:
 **Strong defaults (athlete's actual 365d rhythm)**
 - Long ride: Sat or Sun morning; long run the other weekend day
 - Runs: Tue/Wed/Thu morning
-- Strength: on aerobic days, PM (AM works for travel days)
+- Strength: on aerobic days, stacked straight after the aerobic part (one block, whatever time of day fits)
 
 **Each session must have**
 - Day + concrete time window + correct timezone for where he is that day
@@ -191,6 +199,32 @@ open), added by the push. Check the week with `node --env-file=.env.local script
 - The plan table as inline preview
 - The week on the web: https://coach.paolobernasconi.com/plan?week=YYYY-MM-DD
 - Call out anything the pipeline detected that changes the plan (travel, heat, rotation deviation)
+
+## Full weeks, floor weeks and the month
+
+From Paolo's planning research (2026-10-24, https://claude.ai/artifact/3xnb4svBu5uurNK2SpWfCZ). Life stress (work,
+sleep, the baby due Feb 2027, travel) fills the same recovery bucket as training, and the weeks he shows up for
+matter more than the size of the best week.
+
+- **Two versions of a week.** A full week is the normal plan. A floor week keeps the gains with about half the time:
+  2 short lifts (40 min, the top sets only, same loads), one long run or ride of 75–90 min, one easy session, walks;
+  no quality session unless he is fresh. Plan a floor week when: travel takes 3+ days, he says the week is busy or
+  life is heavy (4 or 5 on the check-in's life score), the answer to "How are you feeling?" is 🟡 or 🔴, or sleep has
+  been under 6.5 h for 3+ nights in the profile. Say which version it is in `title` or `context` and why.
+- **Lifts: 2 a week is the target, 1 is the floor.** Two lifts grow the arms; one holds strength for months. Arm
+  growth is the goal running interferes with least, so lifts are not dropped to make room for cardio.
+- **Never miss twice.** If the profile shows no lift in the last 6 days, the week's first lift goes in its first 2
+  days (a 40 min version is fine).
+- **Mornings decide the version of the day** (the web's "how I feel" and the readiness in the profile): green as
+  planned; amber = the short version (2 sets instead of 4, easy instead of intervals); red = walk or rest, and the
+  session moves or drops. Write the short version into each key session's `description` ("Short on time or flat:
+  …"), so it is ready when he needs it.
+- **Blocks of 4 weeks.** Three building weeks, then a lighter week (about 60–70 % of the time, the long run and
+  ride shorter, lifts kept but 2 sets). The lighter week's plan opens with a monthly review in `context`: lifts done
+  of 8 in the last 4 weeks, top sets on the arm lifts, the weight trend, the longest run, what to change next block.
+- **Seasons.** Now to the end of January 2027: build (full weeks, floor weeks for travel). February to April 2027,
+  newborn: floor weeks are the default plan, not a failure; lifts 30–40 min, walks count, one longer session when a
+  window opens. From May: rebuild to full weeks as sleep comes back.
 
 ## Coaching principles (apply always)
 
