@@ -16,7 +16,7 @@ permissions:
 jobs:
   perf:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     env:
       HEALTH_TOKEN: ${{ secrets.HEALTH_TOKEN }}
       VERCEL_BYPASS_SECRET: ${{ secrets.VERCEL_BYPASS_SECRET }}
