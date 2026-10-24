@@ -212,6 +212,11 @@ private struct WorkoutDockButtons: View {
     let send: (WorkoutAction) -> Void
 
     var body: some View {
+        // The two Liquid Glass buttons share one container, so their glass blends as one surface.
+        GlassEffectContainer(spacing: Space.sm) { buttons }
+    }
+
+    private var buttons: some View {
         HStack(spacing: Space.sm) {
             switch phase {
             case .lifting, .ready:

@@ -15,7 +15,7 @@ public struct IconButton: View {
         case glass
         /// The accent fill with on-accent ink.
         case solid
-        /// A neutral raised fill.
+        /// A neutral raised fill (Liquid Glass under a glass theme).
         case tonal
         /// The soft accent fill with the accent ink: a secondary action that should read as tappable at a glance
         /// ("How to", "Info") without the weight of the solid accent.
@@ -162,6 +162,9 @@ private struct IconButtonStyle: ButtonStyle {
     }
 }
 
+/// Under a glass theme the filled styles are Liquid Glass, like the system's own round buttons: glass and tonal are
+/// clear glass, solid is glass tinted the accent, tinted is glass tinted the soft accent. Plain stays bare. A solid
+/// theme, and a disabled solid or tinted circle, draw the flat fill.
 private struct IconSurface: ViewModifier {
     @Environment(\.koboTheme) private var theme
     @Environment(\.isEnabled) private var isEnabled
@@ -170,8 +173,7 @@ private struct IconSurface: ViewModifier {
     let isPressed: Bool
 
     func body(content: Content) -> some View {
-        if style == .glass && theme.surfaceStyle == .glass {
-            let glass: Glass = isEnabled ? Glass.regular.interactive() : Glass.regular
+        if theme.surfaceStyle == .glass, let glass {
             content.glassEffect(glass, in: Circle())
         } else {
             content.background {
@@ -180,6 +182,15 @@ private struct IconSurface: ViewModifier {
                     Circle().fill(theme.palette.pressVeil(isPressed))
                 }
             }
+        }
+    }
+
+    private var glass: Glass? {
+        switch style {
+        case .glass, .tonal: isEnabled ? Glass.regular.interactive() : Glass.regular
+        case .solid: isEnabled ? Glass.regular.tint(theme.palette.accent).interactive() : nil
+        case .tinted: isEnabled ? Glass.regular.tint(theme.palette.accentSoft).interactive() : nil
+        case .plain: nil
         }
     }
 }
