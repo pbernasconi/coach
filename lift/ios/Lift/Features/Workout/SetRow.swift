@@ -13,7 +13,7 @@ nonisolated enum SetGridWidth {
     /// The visible height of the row's pills and check, a step under the 44 pt touch target they keep.
     static let control = Size.buttonHeightCompact
     /// The control height at a Dynamic Type size, capped at one and a half times, like the log check's `IconButton`.
-    static func control(scaled: CGFloat) -> CGFloat { min(scaled, control * 1.5) }
+    static func cappedControl(_ scaled: CGFloat) -> CGFloat { min(scaled, control * 1.5) }
     /// The grid's inset inside its card: the card inset every card's content uses.
     static let inset = Space.cardInset
 }
@@ -35,7 +35,7 @@ struct SetRow: View {
     @ScaledMetric(relativeTo: .body) private var weightWidth = SetGridWidth.weight
     @ScaledMetric(relativeTo: .body) private var repsWidth = SetGridWidth.reps
     @ScaledMetric(relativeTo: .body) private var scaledControl = SetGridWidth.control
-    private var controlHeight: CGFloat { SetGridWidth.control(scaled: scaledControl) }
+    private var controlHeight: CGFloat { SetGridWidth.cappedControl(scaledControl) }
     let item: WorkoutSetItem
     let unit: WeightUnit
     /// The rest running now, before this set (the set to do next); nil on every other row. The row gets a soft accent
@@ -218,7 +218,7 @@ struct SetRow: View {
 private struct RestRingCheck: View {
     @Environment(\.koboTheme) private var theme
     @ScaledMetric(relativeTo: .body) private var scaledSize = SetGridWidth.control
-    private var size: CGFloat { SetGridWidth.control(scaled: scaledSize) }
+    private var size: CGFloat { SetGridWidth.cappedControl(scaledSize) }
     let rest: RestTimer
     let label: String
     let action: () -> Void
