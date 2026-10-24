@@ -106,6 +106,20 @@ import Testing
         #expect(!state([.planned, .planned, .planned]).dockIntroducesExercise)
     }
 
+    @Test func doneNamesTheRestItStarts() {
+        var lifting = state([.done, .planned, .planned])
+        #expect(lifting.dockRestSeconds == 90)  // the Workout settings default
+
+        guard case .loaded(var overview) = lifting.workout else { return }
+        overview.exercises[0].restSeconds = 150
+        lifting.workout = .loaded(overview)
+        #expect(lifting.dockRestSeconds == 150)  // the exercise's own rest
+
+        lifting.preferences.startsRest = false
+        #expect(lifting.dockRestSeconds == 0)
+        #expect(state([.done, .done, .planned]).dockRestSeconds == 0)  // the last set: no rest after it
+    }
+
     @Test func theDockFinishesOnlyOnceEverySetIsDone() {
         #expect(state([.done, .done, .done]).dockFinishes)
         #expect(!state([.done, .planned, .planned]).dockFinishes)

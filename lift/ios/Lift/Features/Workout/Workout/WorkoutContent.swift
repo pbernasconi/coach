@@ -64,7 +64,12 @@ struct WorkoutContent: View {
         // Not a pinnedFooter: the dock runs edge to edge and down to the bottom of the screen, and brings its own panel.
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if let dock = state.dock {
-                WorkoutDock(phase: dock, introducesExercise: state.dockIntroducesExercise, send: send) {
+                WorkoutDock(
+                    phase: dock,
+                    introducesExercise: state.dockIntroducesExercise,
+                    restAfterLog: state.dockRestSeconds,
+                    send: send
+                ) {
                     focus($0, proxy)
                 }
                 // A sheet, not the system dialog: on iOS 26 the dialog is a popover that leaves out "Keep going".
@@ -222,7 +227,12 @@ private struct SetEditorFields: View {
         if let loading = editor.loading {
             BarPlates(loading: loading, unit: editor.unit)
         }
-        StepperField("Reps", value: .action(editor.reps) { send(.editorRepsChanged($0)) }, in: 0...100)
+        StepperField(
+            "Reps",
+            value: .action(editor.reps) { send(.editorRepsChanged($0)) },
+            in: 0...100,
+            unit: editor.reps == 1 ? "rep" : "reps"
+        )
         if editor.laterSets > 0 {
             ToggleRow(
                 "Apply to later sets",

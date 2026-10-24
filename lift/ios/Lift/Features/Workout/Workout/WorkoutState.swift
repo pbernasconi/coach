@@ -87,6 +87,8 @@ nonisolated struct WorkoutExercise: Equatable, Sendable, Identifiable {
     /// What was written about the exercise ("Elbows in"), without a next-time line `progression` already shows. It shows
     /// on the exercise's How to page, not in the list.
     var note: String?
+    /// The rest after each of its sets, when the exercise sets its own; nil uses the Workout settings default.
+    var restSeconds: Int?
 }
 
 /// One set row.

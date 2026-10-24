@@ -154,7 +154,7 @@ import Testing
         #expect(vm.state.checkIn?.step == .effort)
         #expect(vm.state.checkIn?.feedback.item == "lift:\(detail.id.uuidString.lowercased())")
         #expect(vm.state.checkIn?.feedback.date == "2026-03-02")
-        #expect(vm.state.checkIn?.feedback.rpe == nil)
+        #expect(vm.state.checkIn?.feedback.rpe == WorkoutCheckIn.startingEffort)  // the dial starts at 5
     }
 
     @Test func aSummaryOpenedLaterDoesNotAsk() async {
