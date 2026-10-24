@@ -139,6 +139,11 @@ import Testing
         #expect(vm.state.destination == nil)
     }
 
+    @Test func markDoneLivesInTheBarMenu() async {
+        let (vm, _) = await loaded()
+        #expect(vm.state.canToggleDone)
+    }
+
     @Test func aRefusedDeleteSaysWhyAndStays() async {
         let (vm, _) = await loaded()
         coachPlan.editError = .rejected(status: 409)
@@ -154,6 +159,7 @@ import Testing
         let done = String(decoding: Self.body(), as: UTF8.self).replacingOccurrences(of: "planned", with: "done")
         let (vm, _) = await loaded(Data(done.utf8))
         #expect(!vm.state.canChangePlan)
+        #expect(vm.state.canToggleDone)  // "Not done" stays in the "…"
         vm.send(.moveTapped)
         vm.send(.deleteTapped)
         #expect(vm.state.destination == nil)

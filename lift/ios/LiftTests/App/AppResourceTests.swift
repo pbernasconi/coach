@@ -1,5 +1,6 @@
 import Foundation
 import KoboPatterns
+import LiftCore
 import LiftSync
 import LiftTesting
 import Testing
@@ -156,6 +157,20 @@ import Testing
 
 /// The demo file names: a `before` cursor, the id body, then the parent.
 @Suite struct DemoAppDataNameTests {
+    @Test func aMadeUpWeeksWorkoutTakesItsOwnDayAndState() {
+        let today = LocalDay(year: 2026, month: 10, day: 24)
+        let plan: [String: Any] = [
+            "subtitle": "Ride · Tuesday, March 3 · 07:00", "state": "today", "date": "2026-03-03",
+        ]
+        let ahead = DemoAppData.dated(plan, on: today.adding(days: 3), today: today)
+        #expect(ahead["date"] as? String == "2026-10-27")
+        #expect(ahead["state"] as? String == "planned")
+        #expect((ahead["subtitle"] as? String)?.hasPrefix("Ride · ") == true)
+        #expect(DemoAppData.dated(plan, on: today, today: today)["stateLabel"] as? String == "Today")
+        #expect(DemoAppData.demoDay("ride-20385") == LocalDay(daysSinceEpoch: 20385))
+        #expect(DemoAppData.demoDay("demo-ride") == nil)
+    }
+
     @Test func namesTryTheCursorTheIdBodyAndTheParent() {
         #expect(DemoAppData.resourceNames(for: "api/app/today") == ["app-today"])
         #expect(

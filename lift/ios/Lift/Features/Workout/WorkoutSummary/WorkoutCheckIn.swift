@@ -12,6 +12,17 @@ nonisolated struct WorkoutCheckIn: Equatable, Sendable {
     var step = Step.effort
     var feedback: WorkoutFeedback
 
+    /// The dial starts in the middle, so Next works without a drag.
+    static let startingEffort = 5
+
+    /// An effort already logged (or from the watch) stays; otherwise the dial starts at `startingEffort`.
+    init(step: Step = .effort, feedback: WorkoutFeedback) {
+        var feedback = feedback
+        if feedback.rpe == nil { feedback.rpe = Self.startingEffort }
+        self.step = step
+        self.feedback = feedback
+    }
+
     /// Save is offered once something is logged.
     var canSave: Bool { feedback.rpe != nil || feedback.feel != nil }
 }

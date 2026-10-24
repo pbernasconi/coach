@@ -4,7 +4,7 @@ import SwiftUI
 
 /// The workout's card, pinned to the bottom of the Workout screen the whole time it runs. It shows where the workout
 /// stands and never edits a set: the clock and sets done, the exercise and set to do now with its dots and load, and
-/// the one action that matters now on the right (Log set, Start, Resume, Finish workout), with the lesser one (Skip,
+/// the one action that matters now on the right (Done, Start, Resume, Finish workout), with the lesser one (Skip,
 /// Finish) on the left. A rest, a rest that ran out and a pause each get a strip across the top, so they never read as
 /// a set. The card runs full width and flush with the bottom of the screen. Before the start it is one big floating
 /// Liquid Glass Start workout, low over the home indicator. It only draws; the ViewModel owns the clock and the rest.
@@ -13,6 +13,8 @@ struct WorkoutDock: View {
     let phase: WorkoutDockPhase
     /// The set to do now opens a new exercise: "Next exercise", with Start.
     var introducesExercise = false
+    /// The rest logging the set starts, in seconds; 0 when none follows.
+    var restAfterLog = 0
     let send: (WorkoutAction) -> Void
     /// Scrolls the page to a set.
     let onFocus: (UUID) -> Void
@@ -20,30 +22,32 @@ struct WorkoutDock: View {
     var body: some View {
         switch phase {
         case .start:
-            // Prominent glass, tinted the accent: Apple's style for a floating primary action. The glass brings its
-            // own depth and press response; it sits a little into the bottom safe area, close to the home indicator.
+            // Liquid Glass with a see-through accent tint, so the set list shows through it as it scrolls under, like
+            // the system's floating controls. The tint stays strong enough to read as the one primary action, and the
+            // label keeps the on-accent ink of Done and Resume.
             Button { send(.startTapped) } label: {
-                // The on-accent ink, like Log set and Resume. The glass style draws white on its tint, so the label sets
-                // the ink itself (the glyph as a palette symbol, so the system keeps it too).
                 Label("Start workout", systemImage: "play.fill")
                     .font(theme.font(.headline))
-                    .symbolRenderingMode(.palette)
                     .foregroundStyle(theme.palette.onAccent)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, Space.xs)
+                    .frame(maxWidth: .infinity, minHeight: Size.buttonHeight)
+                    .contentShape(Capsule())
             }
-            .buttonStyle(.glassProminent)
-            .buttonBorderShape(.capsule)
-            .controlSize(.large)
-            .tint(theme.palette.accent)
+            .buttonStyle(.plain)
+            .glassEffect(
+                .regular.tint(theme.palette.accent.opacity(StartGlass.tintOpacity)).interactive(),
+                in: Capsule()
+            )
             .padding(.horizontal, Space.gutter)
             .padding(.bottom, -Space.md)
+            // A frosted fade behind it, so the set rows blur away under the button instead of showing sharp.
+            .scrollEdgeFade()
         case .lifting, .resting, .ready, .complete, .paused:
             if let content = phase.content {
                 WorkoutDockCard(
                     phase: phase,
                     content: content,
                     introducesExercise: introducesExercise,
+                    restAfterLog: restAfterLog,
                     send: send,
                     onFocus: onFocus
                 )
@@ -52,11 +56,17 @@ struct WorkoutDock: View {
     }
 }
 
+/// How much of the accent the floating Start workout's glass carries (a maths constant, not a colour).
+nonisolated enum StartGlass {
+    static let tintOpacity: Double = 0.85
+}
+
 private struct WorkoutDockCard: View {
     @Environment(\.koboTheme) private var theme
     let phase: WorkoutDockPhase
     let content: WorkoutActivityAttributes.ContentState
     let introducesExercise: Bool
+    let restAfterLog: Int
     let send: (WorkoutAction) -> Void
     let onFocus: (UUID) -> Void
 
@@ -79,12 +89,13 @@ private struct WorkoutDockCard: View {
                         phase: phase,
                         content: content,
                         introducesExercise: introducesExercise,
+                        restAfterLog: restAfterLog,
                         send: send
                     )
                 }
             }
             .padding(.horizontal, Space.cardInset)
-            .padding(.vertical, Space.md)
+            .padding(.vertical, Space.lg)  // room around the buttons, so the card never feels cut off
         }
         .clipShape(WorkoutDockPanel.shape)  // the strip's corners
         .background { WorkoutDockPanel(isReady: isReady, isResting: isResting).ignoresSafeArea(edges: .bottom) }
@@ -207,17 +218,23 @@ private struct WorkoutDockNow: View {
     }
 }
 
-/// The action that matters now on the right, wide, with the lesser one on the left: Skip and Log set (or Start on a
+/// The action that matters now on the right, wide, with the lesser one on the left: Skip and Done (or Start on a
 /// new exercise), Finish and Resume, or Finish workout alone.
 private struct WorkoutDockButtons: View {
     let phase: WorkoutDockPhase
     let content: WorkoutActivityAttributes.ContentState
     let introducesExercise: Bool
+    let restAfterLog: Int
     let send: (WorkoutAction) -> Void
 
     var body: some View {
         // The two Liquid Glass buttons share one container, so their glass blends as one surface.
         GlassEffectContainer(spacing: Space.sm) { buttons }
+    }
+
+    /// "Done · rest 2:00", or "Done" when no rest follows.
+    private var doneTitle: String {
+        restAfterLog > 0 ? String(localized: "Done · rest \(RestText.clock(restAfterLog))") : String(localized: "Done")
     }
 
     private var buttons: some View {
@@ -233,9 +250,10 @@ private struct WorkoutDockButtons: View {
                             .buttonStyle(.kobo(.primary, width: .full))
                             .accessibilityLabel(Text("Start \(set.exerciseName)"))
                     } else {
-                        Button("Log set", systemImage: "checkmark") { send(.setLogTapped(set.id)) }
+                        // Says what the tap does: the set is done, and the rest that follows starts.
+                        Button(doneTitle, systemImage: "checkmark") { send(.setLogTapped(set.id)) }
                             .buttonStyle(.kobo(.primary, width: .full))
-                            .accessibilityLabel(Text("Log \(set.exerciseName), \(set.title)"))
+                            .accessibilityLabel(Text("\(set.exerciseName), \(set.title) done"))
                     }
                 }
             case .complete:

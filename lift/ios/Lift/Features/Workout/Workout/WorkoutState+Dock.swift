@@ -84,6 +84,16 @@ extension WorkoutState {
         return set.id != startedExerciseSetID
     }
 
+    /// The rest that logging the dock's set starts, for "Done · rest 2:00": none on the last planned set or when rests
+    /// are off in Workout settings. Matches `SessionDetail.restSeconds(afterLogging:preferences:)`.
+    var dockRestSeconds: Int {
+        guard preferences.startsRest, case .loaded(let workout) = workout, let setID = dock?.content?.current?.id,
+            let exercise = workout.exercises.first(where: { $0.sets.contains { $0.id == setID } })
+        else { return 0 }
+        let othersPlanned = workout.exercises.flatMap(\.sets).contains { $0.status == .planned && $0.id != setID }
+        return othersPlanned ? exercise.restSeconds ?? preferences.defaultRestSeconds : 0
+    }
+
     /// The dock shows Finish: every set is done, or the workout is paused.
     var dockFinishes: Bool {
         switch dock {

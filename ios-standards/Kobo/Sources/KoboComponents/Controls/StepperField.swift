@@ -1,9 +1,9 @@
 import KoboTokens
 import SwiftUI
 
-/// A big, centred number with large − and + buttons: distances, counts, minutes. Steps snap to `step` within `range`
-/// (2.5 steps from 21 go to 22.5); holding a button repeats. VoiceOver reads one adjustable element (swipe up or
-/// down to step). Pair it with a `QuickPickRow` for one-tap nearby values.
+/// A big, centred number, its unit on the same line, with large − and + buttons: distances, counts, minutes. Steps
+/// snap to `step` within `range` (2.5 steps from 21 go to 22.5); holding a button repeats. VoiceOver reads one
+/// adjustable element (swipe up or down to step). Pair it with a `QuickPickRow` for one-tap nearby values.
 ///
 ///     StepperField("Distance", value: $distance, in: 0...500, step: 2.5, unit: "km")
 ///     StepperField("Guests", value: $guests, in: 1...50)
@@ -117,7 +117,8 @@ public struct StepperField: View {
         HStack(spacing: Space.md) {
             IconButton("minus", label: Text("Decrease", bundle: .module), style: .tonal, size: .large) { move(.down) }
                 .disabled(!StepperMath.canStep(current, by: step, .down, in: range))
-            VStack(spacing: Space.xxs) {
+            // The unit sits on the number's line, after it ("102.5 km", "8 people").
+            HStack(alignment: .firstTextBaseline, spacing: Space.xs) {
                 Text(verbatim: format(current))
                     .font(theme.font(.display))
                     .foregroundStyle(theme.palette.textPrimary)
@@ -126,7 +127,10 @@ public struct StepperField: View {
                     .contentTransition(.numericText(value: current))
                     .koboAnimation(.defaultEffects, value: current)
                 if let unit {
-                    unit.font(theme.font(.footnote)).foregroundStyle(theme.palette.textSecondary)
+                    unit.font(theme.font(.headline))
+                        .foregroundStyle(theme.palette.textSecondary)
+                        .lineLimit(1)
+                        .fixedSize()
                 }
             }
             .frame(maxWidth: .infinity)

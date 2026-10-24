@@ -14,8 +14,9 @@ public enum PinnedFooterStyle: Sendable, Equatable {
 }
 
 extension View {
-    /// Pins primary actions to the bottom of the screen. The footer sits in the bottom safe area inset,
-    /// so scrolling content stops above it and the home indicator area stays clear. Apply it to the scroll view: the
+    /// Pins primary actions to the bottom of the screen. The footer is a bottom safe area bar, so scrolling content
+    /// stops above it, fades and blurs as it passes under (the system's soft scroll edge, as under the tab bar), and
+    /// the home indicator area stays clear. Apply it to the scroll view: the
     /// `.material` footer then draws its top hairline only while content runs under it.
     ///
     ///     ScrollView { … }
@@ -47,11 +48,14 @@ private struct PinnedFooterHost<Footer: View>: ViewModifier {
             } action: { _, isUnder in
                 contentIsUnder = isUnder
             }
-            .safeAreaInset(edge: .bottom, spacing: 0) {
+            // A bar, not a plain inset: content scrolling under it softens and blurs away, like it does under the
+            // tab bar, so floating glass buttons never sit on hard-edged rows.
+            .safeAreaBar(edge: .bottom, spacing: 0) {
                 if isPresented {
                     PinnedFooter(style: style, showsEdge: contentIsUnder) { footer }
                 }
             }
+            .scrollEdgeEffectStyle(.soft, for: .bottom)
     }
 }
 
@@ -82,6 +86,7 @@ public struct PinnedFooter<Content: View>: View {
             .frame(maxWidth: .infinity)
             .padding(.horizontal, Space.gutter)
             .padding(.bottom, Space.sm)
+            .background(alignment: .bottom) { ScrollEdgeFade() }
         case .automatic, .material:
             VStack(spacing: Space.sm) { content }
                 .padding(.horizontal, Space.gutter)
@@ -98,6 +103,50 @@ public struct PinnedFooter<Content: View>: View {
     private var resolvedStyle: PinnedFooterStyle {
         guard style == .automatic else { return style }
         return theme.surfaceStyle == .glass ? .glass : .material
+    }
+}
+
+/// The frosted fade behind floating bottom controls: content scrolling under them blurs and dims from clear (a little
+/// above the controls) to frosted at the screen's bottom edge, like under the tab bar, so a glass button never sits on
+/// sharp rows. `.pinnedFooter` adds it to glass footers; custom floating controls use `.scrollEdgeFade()`. It reaches
+/// `reach` above them and down past the home indicator, and never takes touches.
+struct ScrollEdgeFade: View {
+    @Environment(\.koboTheme) private var theme
+
+    /// How far above the controls the fade starts.
+    static let reach = Space.xxl
+
+    var body: some View {
+        ZStack {
+            Rectangle()
+                .fill(.ultraThinMaterial)
+                .mask(LinearGradient(stops: Self.blurStops, startPoint: .top, endPoint: .bottom))
+            LinearGradient(
+                colors: [theme.palette.canvas.opacity(0), theme.palette.canvas.opacity(Self.dimOpacity)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        }
+        .padding(.top, -Self.reach)
+        .ignoresSafeArea(edges: .bottom)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    /// The blur fades in over the top half, then holds (maths constants, not colours).
+    private static let blurStops: [Gradient.Stop] = [
+        .init(color: .clear, location: 0),
+        .init(color: .black, location: 0.55),
+    ]
+    /// How much of the canvas the fade lays over the content at the bottom.
+    private static let dimOpacity: Double = 0.55
+}
+
+extension View {
+    /// Lays the frosted bottom fade (`.pinnedFooter`'s glass backdrop) behind floating bottom controls that are not in
+    /// a pinned footer, so content scrolling under them blurs away instead of showing sharp.
+    public func scrollEdgeFade() -> some View {
+        background(alignment: .bottom) { ScrollEdgeFade() }
     }
 }
 

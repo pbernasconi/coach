@@ -66,9 +66,10 @@ struct BarPlates: View {
         case .bar(let bar):
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: 0) {
-                    sleeve.scaleEffect(x: -1)
+                    // The left sleeve is the right one mirrored; its labels flip back so they read normally.
+                    sleeve(mirrored: true).scaleEffect(x: -1)
                     shaft(label: WorkoutText.barLabel(bar, unit: unit))
-                    sleeve
+                    sleeve()
                 }
                 oneSide
             }
@@ -83,7 +84,7 @@ struct BarPlates: View {
             Capsule()
                 .fill(theme.palette.textTertiary)
                 .frame(width: PlateDrawing.collarWidth, height: PlateDrawing.height)
-            sleeve
+            sleeve()
         }
     }
 
@@ -105,13 +106,13 @@ struct BarPlates: View {
     }
 
     /// One sleeve from the collar outwards: the collar, then the plates, then bare sleeve.
-    private var sleeve: some View {
+    private func sleeve(mirrored: Bool = false) -> some View {
         HStack(spacing: PlateDrawing.gap) {
             Capsule()
                 .fill(theme.palette.textSecondary)
                 .frame(width: PlateDrawing.collarWidth, height: PlateDrawing.collarHeight)
             ForEach(Array(loading.perSide.enumerated()), id: \.offset) { _, size in
-                plate(size)
+                plate(size, mirrored: mirrored)
             }
         }
         .padding(.trailing, PlateDrawing.bareSleeve)
@@ -125,12 +126,13 @@ struct BarPlates: View {
     }
 
     /// A plate with its weight written inside it; the label sets the width when it needs more than the plate.
-    private func plate(_ size: Double) -> some View {
+    private func plate(_ size: Double, mirrored: Bool) -> some View {
         Text(verbatim: WorkoutText.plateLabel(size))
             .font(theme.font(.caption).weight(.bold).monospacedDigit())
             .foregroundStyle(theme.palette.surface)
             .lineLimit(1)
             .fixedSize()
+            .scaleEffect(x: mirrored ? -1 : 1)
             .padding(.horizontal, PlateDrawing.labelInset)
             .frame(minWidth: PlateDrawing.width)
             .frame(height: height(of: size))

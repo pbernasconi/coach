@@ -51,8 +51,9 @@ nonisolated enum WorkoutStatus: Equatable, Sendable {
     }
 }
 
-/// The top of every workout page: the sport's icon with a line of what and when ("Ride · Wednesday, October 21 ·
-/// 07:00"), the title, then the status pill and any tags. `detail` holds what a page adds under it (a place, a note).
+/// The top of every workout page: the sport's icon large in a tile, beside a line of what and when ("Ride · Wednesday,
+/// October 21 · 07:00") and the title, then the status pill and any tags. `detail` holds what a page adds under it
+/// (a place, a note).
 /// A page that shows its status another way passes no `status`, and then no pill shows.
 struct WorkoutHeader<Detail: View>: View {
     @Environment(\.koboTheme) private var theme
@@ -63,20 +64,29 @@ struct WorkoutHeader<Detail: View>: View {
     let statusLabel: String
     var tags: [String] = []
     @ViewBuilder var detail: () -> Detail
+    @ScaledMetric(relativeTo: .title) private var tileSize = Size.thumbnail
 
     var body: some View {
         VStack(alignment: .leading, spacing: Space.xs) {
-            Label {
-                Text(verbatim: kicker)
-            } icon: {
+            // The sport leads, large, in its colour, so a ride reads as a ride at a glance.
+            HStack(alignment: .center, spacing: Space.md) {
                 sport.icon
+                    .font(.system(size: tileSize * SportTile.iconShare, weight: .semibold))
+                    .frame(width: tileSize, height: tileSize)
+                    .background(
+                        sport.color.opacity(SportTile.fillOpacity),
+                        in: .rect(cornerRadius: Radius.md, style: .continuous)
+                    )
+                VStack(alignment: .leading, spacing: Space.xxs) {
+                    Text(verbatim: kicker)
+                        .font(theme.font(.subheadline).weight(.semibold))
+                        .foregroundStyle(theme.palette.textSecondary)
+                    Text(verbatim: title)
+                        .font(theme.font(.title))
+                        .foregroundStyle(theme.palette.textPrimary)
+                        .accessibilityAddTraits(.isHeader)
+                }
             }
-            .font(theme.font(.subheadline).weight(.semibold))
-            .foregroundStyle(theme.palette.textSecondary)
-            Text(verbatim: title)
-                .font(theme.font(.title))
-                .foregroundStyle(theme.palette.textPrimary)
-                .accessibilityAddTraits(.isHeader)
             if status != nil || !tags.isEmpty {
                 FlowLayout(spacing: Space.xs) {
                     if let status {
@@ -92,6 +102,13 @@ struct WorkoutHeader<Detail: View>: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
+}
+
+/// The header's sport tile: how much of it the icon fills, and how much of the sport's colour tints it (maths
+/// constants, not colours).
+nonisolated enum SportTile {
+    static let iconShare: CGFloat = 0.5
+    static let fillOpacity: Double = 0.16
 }
 
 extension WorkoutHeader where Detail == EmptyView {
@@ -117,8 +134,9 @@ extension WorkoutHeader where Detail == EmptyView {
 
 extension View {
     /// The older and newer workouts in one "…" menu in the bar, the same on every workout page: the bar keeps Back and
-    /// one quiet button, with no arrows. A planned workout not done yet adds Move and Delete (`plan`). Nothing shows
-    /// when there is none of these. `onEdit` puts a pencil before the "…", its own round button, for the Edit sheet.
+    /// one quiet button, with no arrows. A planned workout not done yet adds Move and Delete (`plan`); one done or not
+    /// done by hand adds Mark done or Not done (`done`). Nothing shows when there is none of these. `onEdit` puts a
+    /// pencil before the "…", its own round button, for the Edit sheet.
     func workoutNeighbours(
         older: String,
         newer: String,
@@ -127,6 +145,7 @@ extension View {
         onOlder: @escaping () -> Void,
         onNewer: @escaping () -> Void,
         plan: WorkoutPlanMenu? = nil,
+        done: WorkoutDoneMenu? = nil,
         onEdit: (() -> Void)? = nil
     ) -> some View {
         modifier(
@@ -138,6 +157,7 @@ extension View {
                 onOlder: onOlder,
                 onNewer: onNewer,
                 plan: plan,
+                done: done,
                 onEdit: onEdit
             )
         )
@@ -150,6 +170,14 @@ struct WorkoutPlanMenu {
     let onDelete: () -> Void
 }
 
+/// "Mark done" (or "Not done" once marked by hand) in the bar's "…" of a planned workout, so the page keeps one
+/// big action at most.
+struct WorkoutDoneMenu {
+    let isDone: Bool
+    let isRunning: Bool
+    let onToggle: (Bool) -> Void
+}
+
 private struct WorkoutNeighbours: ViewModifier {
     @Environment(\.koboTheme) private var theme
     let older: String
@@ -159,6 +187,7 @@ private struct WorkoutNeighbours: ViewModifier {
     let onOlder: () -> Void
     let onNewer: () -> Void
     let plan: WorkoutPlanMenu?
+    let done: WorkoutDoneMenu?
     let onEdit: (() -> Void)?
 
     func body(content: Content) -> some View {
@@ -172,9 +201,19 @@ private struct WorkoutNeighbours: ViewModifier {
                 // Its own round button, apart from the "…".
                 ToolbarSpacer(.fixed, placement: .topBarTrailing)
             }
-            if canGoOlder || canGoNewer || plan != nil {
+            if canGoOlder || canGoNewer || plan != nil || done != nil {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
+                        if let done {
+                            Group {
+                                if done.isDone {
+                                    Button("Not done", systemImage: "arrow.uturn.backward") { done.onToggle(false) }
+                                } else {
+                                    Button("Mark done", systemImage: "checkmark") { done.onToggle(true) }
+                                }
+                            }
+                            .disabled(done.isRunning)
+                        }
                         if let plan {
                             Button("Move to another day", systemImage: "calendar", action: plan.onMove)
                             Button("Delete workout", systemImage: "trash", role: .destructive, action: plan.onDelete)

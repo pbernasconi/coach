@@ -69,7 +69,8 @@ extension WorkoutExercise {
             libraryID: exercise.exerciseID,
             catalogID: item.catalogID,
             unit: item.sets.first?.unit ?? unit,
-            note: WorkoutText.exerciseNote(exercise.note, hasHint: exercise.nextTimeHint != nil)
+            note: WorkoutText.exerciseNote(exercise.note, hasHint: exercise.nextTimeHint != nil),
+            restSeconds: exercise.restSeconds
         )
     }
 

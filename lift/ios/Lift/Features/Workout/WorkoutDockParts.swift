@@ -110,7 +110,7 @@ struct WorkoutDockBand: View {
         .font(theme.font(.caption))
         .foregroundStyle(ink)
         .padding(.horizontal, Space.cardInset)
-        .padding(.vertical, Space.xs)
+        .padding(.vertical, Space.sm)
         .frame(maxWidth: .infinity)
         .background(fill)
         .accessibilityElement(children: .combine)

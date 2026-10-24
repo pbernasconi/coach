@@ -55,6 +55,10 @@ private struct ActivityPage: View {
             onNewer: { if let id = header?.nextId { send(.neighbourTapped(id)) } },
             plan: state.canChangePlan
                 ? WorkoutPlanMenu(onMove: { send(.moveTapped) }, onDelete: { send(.deleteTapped) }) : nil,
+            done: state.canToggleDone
+                ? WorkoutDoneMenu(isDone: state.plan?.state == "done", isRunning: state.planWrite.isRunning) {
+                    send(.doneToggled($0))
+                } : nil,
             onEdit: state.canEdit ? { send(.editTapped) } : nil
         )
         .workoutPlanEdits(state: state, send: send)

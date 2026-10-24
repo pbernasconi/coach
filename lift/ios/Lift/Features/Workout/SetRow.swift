@@ -10,6 +10,10 @@ nonisolated enum SetGridWidth {
     static let badge = Size.iconLg + Space.xs
     static let weight = Size.thumbnail + Space.lg
     static let reps = Size.thumbnail
+    /// The visible height of the row's pills and check, a step under the 44 pt touch target they keep.
+    static let control = Size.buttonHeightCompact
+    /// The control height at a Dynamic Type size, capped at one and a half times, like the log check's `IconButton`.
+    static func cappedControl(_ scaled: CGFloat) -> CGFloat { min(scaled, control * 1.5) }
     /// The grid's inset inside its card: the card inset every card's content uses.
     static let inset = Space.cardInset
 }
@@ -30,6 +34,8 @@ struct SetRow: View {
     @ScaledMetric(relativeTo: .body) private var badgeWidth = SetGridWidth.badge
     @ScaledMetric(relativeTo: .body) private var weightWidth = SetGridWidth.weight
     @ScaledMetric(relativeTo: .body) private var repsWidth = SetGridWidth.reps
+    @ScaledMetric(relativeTo: .body) private var scaledControl = SetGridWidth.control
+    private var controlHeight: CGFloat { SetGridWidth.cappedControl(scaledControl) }
     let item: WorkoutSetItem
     let unit: WeightUnit
     /// The rest running now, before this set (the set to do next); nil on every other row. The row gets a soft accent
@@ -124,8 +130,8 @@ struct SetRow: View {
         pill(String(localized: "\(item.reps) reps"), label: repsLabel)
     }
 
-    /// A Liquid Glass capsule showing a value (tinted once the set is logged); tapping it opens the editor. It is as
-    /// tall as the log check beside it (one touch target), so every control in the row shares one height and, being a
+    /// A tonal capsule showing a value; tapping it opens the editor. It is as tall as the log check beside it
+    /// (`SetGridWidth.control`, inside a full touch target), so every control in the row shares one height and, being a
     /// capsule, the check's round ends.
     private func pill(_ value: String, label: Text) -> some View {
         Button(action: onEdit) {
@@ -136,10 +142,12 @@ struct SetRow: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
                 .padding(.horizontal, Space.sm)
-                .frame(maxWidth: .infinity, minHeight: Size.minTouch)
-                .modifier(SetRowGlass(fill: pillFill, tint: item.status == .done ? theme.palette.accentSoft : nil, shape: Capsule()))
+                .frame(maxWidth: .infinity, minHeight: controlHeight)
+                .background(Capsule().fill(pillFill))
+                .padding(.vertical, max(Size.minTouch - controlHeight, 0) / 2)  // the touch target stays 44 pt
+                .contentShape(Rectangle())
         }
-        .buttonStyle(.pressFeedback(.scale, in: Capsule()))
+        .buttonStyle(.pressFeedback(.scale))
         .accessibilityLabel(label)
         .accessibilityHint(Text("Edit weight and reps"))
     }
@@ -152,13 +160,17 @@ struct SetRow: View {
         }
     }
 
+    /// Flat, not glass: the set rows are content, and a column of glass circles read as noise (Paolo, 2026-10-24).
+    /// Glass stays on the floating controls, such as Start workout.
     private var logCheck: some View {
         IconButton(
             item.status == .skipped ? "forward.fill" : "checkmark",
             verbatimAccessibilityLabel: logLabel,
             style: item.status == .planned ? .tonal : .solid,
+            size: .small,
             action: onLog
         )
+        .transformEnvironment(\.koboTheme) { $0.surfaceStyle = .solid }
     }
 
     private var badgeColor: Color {
@@ -205,7 +217,8 @@ struct SetRow: View {
 /// logs the set, like the plain check.
 private struct RestRingCheck: View {
     @Environment(\.koboTheme) private var theme
-    @ScaledMetric(relativeTo: .body) private var size = Size.minTouch
+    @ScaledMetric(relativeTo: .body) private var scaledSize = SetGridWidth.control
+    private var size: CGFloat { SetGridWidth.cappedControl(scaledSize) }
     let rest: RestTimer
     let label: String
     let action: () -> Void
@@ -223,29 +236,13 @@ private struct RestRingCheck: View {
                     .foregroundStyle(theme.palette.textSecondary)
             }
             .frame(width: size, height: size)
-            .modifier(SetRowGlass(fill: theme.palette.surfaceRaised, tint: nil, shape: Circle()))
             .contentShape(Circle())
+            .frame(minWidth: Size.minTouch, minHeight: Size.minTouch)  // the touch target stays 44 pt
+            .contentShape(Rectangle())
         }
-        .buttonStyle(.pressFeedback(.scale, in: Circle()))
+        .buttonStyle(.pressFeedback(.scale))
         .accessibilityLabel(Text(verbatim: label))
         .accessibilityValue(Text("Rested \(rest.elapsedText) of \(rest.totalText)"))
     }
 }
 
-
-/// The set row's controls under a glass theme: Liquid Glass in `shape` (tinted `tint` when given), like the log check
-/// beside them. A solid theme draws the flat `fill`.
-private struct SetRowGlass<S: Shape>: ViewModifier {
-    @Environment(\.koboTheme) private var theme
-    let fill: Color
-    let tint: Color?
-    let shape: S
-
-    func body(content: Content) -> some View {
-        if theme.surfaceStyle == .glass {
-            content.glassEffect(tint.map { Glass.regular.tint($0).interactive() } ?? .regular.interactive(), in: shape)
-        } else {
-            content.background(shape.fill(fill))
-        }
-    }
-}
