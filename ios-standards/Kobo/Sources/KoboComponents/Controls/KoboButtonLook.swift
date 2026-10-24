@@ -2,7 +2,8 @@ import KoboTokens
 import SwiftUI
 
 extension KoboButtonStyle {
-    /// The visual weight of a button. Pick one prominent action per screen.
+    /// The visual weight of a button. Pick one prominent action per screen. Under a glass theme primary, secondary,
+    /// tonal and glass draw Liquid Glass (primary and tonal tinted); destructive and plain never do.
     public enum Variant: Sendable, Equatable, CaseIterable {
         /// The accent fill: the one main action.
         case primary

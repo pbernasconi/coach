@@ -29,7 +29,7 @@ private struct WorkoutOptionsSheets: ViewModifier {
                         if workout.isPaused {
                             Button("Resume workout", systemImage: "play.fill") { send(.resumeTapped) }
                                 .tint(theme.palette.accent)
-                                .buttonStyle(.borderedProminent)
+                                .buttonStyle(.glassProminent)
                         } else {
                             Button("Pause workout", systemImage: "pause.fill") { send(.pauseTapped) }
                         }

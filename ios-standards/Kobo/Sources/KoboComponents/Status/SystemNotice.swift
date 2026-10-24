@@ -59,14 +59,9 @@ public struct SystemNotice: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .fixedSize(horizontal: false, vertical: true)
             if let action {
-                Button(action: action.perform) {
-                    action.label
-                        .font(theme.font(.subheadline).weight(.semibold))
-                        .underline()
-                        .frame(minHeight: Size.minTouch)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
+                // A glass pill, as iOS 26 draws a banner's action ("Reopen", "Turn off").
+                Button(action: action.perform) { action.label.fixedSize() }
+                    .buttonStyle(.kobo(.glass, size: .compact))
             }
             if let onDismiss {
                 BannerDismissButton(label: Text("Dismiss", bundle: .module), action: onDismiss)

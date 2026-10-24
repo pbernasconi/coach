@@ -48,7 +48,7 @@ public struct KoboButtonStyle: ButtonStyle {
                 maxWidth: width == .full ? .infinity : nil,
                 minHeight: size.height
             )
-            .modifier(ButtonSurface(look: look, usesGlass: variant == .glass, isPressed: isPressed))
+            .modifier(ButtonSurface(variant: variant, look: look, isPressed: isPressed))
             .contentShape(Capsule())
             .scaleEffect(isPressed ? PressMetrics.scale : 1)
             .koboAnimation(.instant, value: isPressed)
@@ -75,25 +75,42 @@ extension ButtonStyle where Self == KoboButtonStyle {
     }
 }
 
-/// The capsule behind the label: Liquid Glass for `.glass`, otherwise the variant fill with the press veil on top.
+/// The capsule behind the label. Under a glass theme every filled variant is Liquid Glass, as iOS 26 draws its own
+/// buttons: primary is glass tinted the accent (the system's `.glassProminent`), tonal is glass tinted the soft accent,
+/// secondary and glass are clear glass. Destructive fills stay solid, so a delete never looks like a lesser action,
+/// and plain stays ink only. A solid theme, and a disabled primary, secondary or tonal, draw the flat fill.
 private struct ButtonSurface: ViewModifier {
     @Environment(\.koboTheme) private var theme
     @Environment(\.isEnabled) private var isEnabled
+    let variant: KoboButtonStyle.Variant
     let look: ButtonLook
-    let usesGlass: Bool
     let isPressed: Bool
 
     func body(content: Content) -> some View {
-        if usesGlass && theme.surfaceStyle == .glass {
-            let glass: Glass = isEnabled ? Glass.regular.interactive() : Glass.regular
+        let glass = ButtonGlass.resolve(variant, palette: theme.palette, isEnabled: isEnabled)
+        if theme.surfaceStyle == .glass, let glass {
             content.glassEffect(glass, in: Capsule())
         } else {
             content.background {
                 ZStack {
-                    Capsule().fill(usesGlass ? theme.palette.surfaceRaised : look.fill)
+                    Capsule().fill(variant == .glass ? theme.palette.surfaceRaised : look.fill)
                     Capsule().fill(theme.palette.pressVeil(isPressed))
                 }
             }
+        }
+    }
+}
+
+/// The Liquid Glass of a variant under a glass theme, or `nil` for a variant that keeps its flat fill.
+private enum ButtonGlass {
+    static func resolve(_ variant: KoboButtonStyle.Variant, palette: Palette, isEnabled: Bool) -> Glass? {
+        // A disabled filled button keeps the flat disabled fill: an untinted glass pill would still read as enabled.
+        switch variant {
+        case .glass: return isEnabled ? Glass.regular.interactive() : Glass.regular
+        case .primary: return isEnabled ? Glass.regular.tint(palette.accent).interactive() : nil
+        case .tonal: return isEnabled ? Glass.regular.tint(palette.accentSoft).interactive() : nil
+        case .secondary: return isEnabled ? Glass.regular.interactive() : nil
+        case .destructive, .destructiveTonal, .plain: return nil
         }
     }
 }
