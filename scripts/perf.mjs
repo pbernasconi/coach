@@ -85,6 +85,10 @@ async function neonState() {
  * app's Settings (a small read: mostly the database waking), then a page, then Settings again (all warm).
  */
 async function coldStart(base) {
+  // WAIT_FOR_IDLE=1: wait (up to 10 minutes) for Neon to suspend, so the first request below wakes it.
+  for (let i = 0; process.env.WAIT_FOR_IDLE === '1' && i < 40 && !(await neonState()).startsWith('idle'); i++) {
+    await new Promise((r) => setTimeout(r, 15_000));
+  }
   const parts = [`neon ${await neonState()}`];
   parts.push(`function without data ${Math.round((await time(`${base}/api/health`, { authorization: 'Bearer none' })).total)} ms`);
   const auth = { authorization: `Bearer ${appToken}` };

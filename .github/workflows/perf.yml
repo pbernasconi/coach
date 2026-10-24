@@ -4,6 +4,11 @@ name: Perf
 
 on:
   workflow_dispatch:
+    inputs:
+      wait_for_idle:
+        description: Wait for the database to suspend first, to time the first request after idle
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -17,6 +22,7 @@ jobs:
       VERCEL_BYPASS_SECRET: ${{ secrets.VERCEL_BYPASS_SECRET }}
       LIFT_SYNC_TOKEN: ${{ secrets.LIFT_SYNC_TOKEN }}
       NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+      WAIT_FOR_IDLE: ${{ inputs.wait_for_idle && '1' || '0' }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
       - name: Measure
