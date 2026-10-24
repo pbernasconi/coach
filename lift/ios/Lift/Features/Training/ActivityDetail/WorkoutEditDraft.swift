@@ -42,6 +42,8 @@ nonisolated struct WorkoutEditDraft: Equatable, Sendable, Identifiable {
         description = form.description
     }
 
+    private static func trim(_ text: String) -> String { text.trimmingCharacters(in: .whitespacesAndNewlines) }
+
     /// "07:00" as minutes after midnight.
     static func minute(of time: String) -> Int? {
         let parts = time.split(separator: ":").compactMap { Int($0) }
@@ -76,14 +78,14 @@ nonisolated struct WorkoutEditDraft: Equatable, Sendable, Identifiable {
     /// The body to send, or the words for the first field that is not right.
     var edit: Result<PlannedWorkoutEdit, EditProblem> {
         let minutes = PlannedEditText.minutes(durationText)
-        if !durationText.trimmed.isEmpty, minutes == nil { return .failure(.duration) }
+        if !Self.trim(durationText).isEmpty, minutes == nil { return .failure(.duration) }
         let distance = PlannedEditText.number(distanceText)
-        if !distanceText.trimmed.isEmpty, (distance ?? 0) <= 0 { return .failure(.distance) }
+        if !Self.trim(distanceText).isEmpty, (distance ?? 0) <= 0 { return .failure(.distance) }
         let tss = PlannedEditText.number(tssText)
-        if !tssText.trimmed.isEmpty, tss == nil || (tss ?? 0) < 0 { return .failure(.tss) }
+        if !Self.trim(tssText).isEmpty, tss == nil || (tss ?? 0) < 0 { return .failure(.tss) }
         return .success(
             PlannedWorkoutEdit(
-                title: title.trimmed,
+                title: Self.trim(title),
                 date: CoachPlanDates.plain(day),
                 startTime: startMinute.map { String(format: "%02d:%02d", $0 / 60, $0 % 60) },
                 duration: minutes.map(Double.init),
@@ -156,6 +158,3 @@ extension ActivityDetailState {
     }
 }
 
-extension String {
-    fileprivate var trimmed: String { trimmingCharacters(in: .whitespacesAndNewlines) }
-}
