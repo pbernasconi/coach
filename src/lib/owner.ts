@@ -1,5 +1,6 @@
-import { auth, currentUser } from '@clerk/nextjs/server';
+import { auth, clerkClient } from '@clerk/nextjs/server';
 import { headers } from 'next/headers';
+import { unstable_cache } from 'next/cache';
 import { cache } from 'react';
 import { isAuthorized } from '@/lib/lift-sync/auth.mjs';
 import { HEALTH_HEADER } from '@/lib/health-header';
@@ -21,6 +22,23 @@ async function ownerRow(now: number): Promise<Owner | null> {
 }
 
 /**
+ * Whether a Clerk user's verified primary email is the owner's. It calls Clerk's API (a few hundred ms), so the
+ * answer is kept in the data cache for an hour, for every function instance: since the Clerk keys changed
+ * (2026-10-23) the Clerk user id is not the owner's, and each new instance asked Clerk again on its first page.
+ */
+const emailMatchesOwner = unstable_cache(
+  // By id through Clerk's API client: a cached function may not read the request (currentUser() does).
+  async (clerkUserId: string, ownerEmail: string) => {
+    const user = await (await clerkClient()).users.getUser(clerkUserId);
+    const primary = user?.emailAddresses.find((e) => e.id === user.primaryEmailAddressId);
+    const verified = primary?.verification?.status === 'verified';
+    return !!verified && primary?.emailAddress.toLowerCase() === ownerEmail.toLowerCase();
+  },
+  ['clerk-owner-email'],
+  { revalidate: 3600 }
+);
+
+/**
  * The data owner's user id for the signed-in Clerk user, or null. Once per request (React cache): the layout and
  * the page share the answer.
  *
@@ -40,10 +58,7 @@ export const ownerForSignedInUser = cache(async (): Promise<string | null> => {
   const owner = await ownerRow(now);
   if (!owner) return null;
   if (owner.id === userId || (matchedUntil.get(userId) ?? 0) > now) return owner.id;
-  const user = await currentUser();
-  const primary = user?.emailAddresses.find((e) => e.id === user.primaryEmailAddressId);
-  const verified = primary?.verification?.status === 'verified';
-  if (!verified || primary?.emailAddress.toLowerCase() !== owner.email.toLowerCase()) return null;
+  if (!(await emailMatchesOwner(userId, owner.email))) return null;
   matchedUntil.set(userId, now + TTL_MS);
   return owner.id;
 });
