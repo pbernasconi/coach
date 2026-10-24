@@ -165,10 +165,16 @@ test('race: a web move, then an offline phone edit with the old day and an older
   assert.equal((await session(SESSION)).payload.day, oldDay, 'last writer wins in Lift; lift-plan.mjs puts it right');
 });
 
-test('the phone removing a session leaves the plan workout as it is', async () => {
+test('the phone removing a session leaves the plan workout planned; a move it carries (Discard after Start) counts', async () => {
   const s = await session(SESSION);
   const at = new Date(s.updated_at.getTime() + 60_000).toISOString();
-  assert.deepEqual(await phonePush({ ...s.payload, day: '2030-03-13', dayMovedAt: at, updatedAt: at, deletedAt: at }), []);
+  // A plain removal: same day, the old dayMovedAt. The workout stays where it is.
+  assert.deepEqual(await phonePush({ ...s.payload, updatedAt: at, deletedAt: at }), []);
+  assert.deepEqual([(await planned(activity)).day, (await planned(activity)).status], ['2030-03-15', 'planned']);
+  // Discard after Start moved it: the session goes back to its planned day, then is removed, in one push.
+  const later = new Date(s.updated_at.getTime() + 120_000).toISOString();
+  const moves = await phonePush({ ...s.payload, day: '2030-03-13', dayMovedAt: later, updatedAt: later, deletedAt: later });
+  assert.deepEqual(moves.map((m: { from: string; to: string }) => [m.from, m.to]), [['2030-03-15', '2030-03-13']]);
   const w = await planned(activity);
-  assert.deepEqual([w.day, w.status], ['2030-03-15', 'planned']);
+  assert.deepEqual([w.day, w.status], ['2030-03-13', 'planned']);
 });

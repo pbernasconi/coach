@@ -136,7 +136,8 @@ extension WorkoutHeader where Detail == EmptyView {
 extension View {
     /// The older and newer workouts in one "…" menu in the bar, the same on every workout page: the bar keeps Back and
     /// one quiet button, with no arrows. A planned workout not done yet adds Move and Delete (`plan`); one done or not
-    /// done by hand adds Mark done or Not done (`done`). Nothing shows when there is none of these.
+    /// done by hand adds Mark done or Not done (`done`). Nothing shows when there is none of these. `onEdit` puts a
+    /// pencil before the "…", its own round button, for the Edit sheet.
     func workoutNeighbours(
         older: String,
         newer: String,
@@ -145,7 +146,8 @@ extension View {
         onOlder: @escaping () -> Void,
         onNewer: @escaping () -> Void,
         plan: WorkoutPlanMenu? = nil,
-        done: WorkoutDoneMenu? = nil
+        done: WorkoutDoneMenu? = nil,
+        onEdit: (() -> Void)? = nil
     ) -> some View {
         modifier(
             WorkoutNeighbours(
@@ -156,7 +158,8 @@ extension View {
                 onOlder: onOlder,
                 onNewer: onNewer,
                 plan: plan,
-                done: done
+                done: done,
+                onEdit: onEdit
             )
         )
     }
@@ -186,9 +189,19 @@ private struct WorkoutNeighbours: ViewModifier {
     let onNewer: () -> Void
     let plan: WorkoutPlanMenu?
     let done: WorkoutDoneMenu?
+    let onEdit: (() -> Void)?
 
     func body(content: Content) -> some View {
         content.toolbar {
+            if let onEdit {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Edit workout", systemImage: "pencil", action: onEdit)
+                        .labelStyle(.iconOnly)
+                        .tint(theme.palette.textPrimary)
+                }
+                // Its own round button, apart from the "…".
+                ToolbarSpacer(.fixed, placement: .topBarTrailing)
+            }
             if canGoOlder || canGoNewer || plan != nil || done != nil {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {

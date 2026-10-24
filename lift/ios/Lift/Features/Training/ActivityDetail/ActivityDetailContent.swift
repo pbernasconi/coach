@@ -58,9 +58,11 @@ private struct ActivityPage: View {
             done: state.canToggleDone
                 ? WorkoutDoneMenu(isDone: state.plan?.state == "done", isRunning: state.planWrite.isRunning) {
                     send(.doneToggled($0))
-                } : nil
+                } : nil,
+            onEdit: state.canEdit ? { send(.editTapped) } : nil
         )
         .workoutPlanEdits(state: state, send: send)
+        .workoutEditSheet(state.editDraft, send: send)
         .workoutFeedbackComment(state.feedback, comment: state.shownFeedback?.comment) { send(.feedback($0)) }
         .navigationDestination(
             item: Binding.action(state.panel) { if $0 == nil { send(.destinationDismissed) } }

@@ -199,6 +199,29 @@ import Testing
         #expect(sessions.calls == [.reschedule(tomorrow.id, .move(to: Fixtures.monday)), .start(tomorrow.id)])
     }
 
+    @Test func discardAfterStartMovedItPutsItBackOnItsPlannedDay() async {
+        let (vm, sessions, _) = await loaded(tomorrow)
+        await vm.send(.startTapped)?.value
+
+        await vm.send(.discardTapped)?.value
+
+        #expect(
+            sessions.calls == [
+                .reschedule(tomorrow.id, .move(to: Fixtures.monday)), .start(tomorrow.id),
+                .reschedule(tomorrow.id, .move(to: tomorrow.session.day)), .reschedule(tomorrow.id, .remove),
+            ])
+    }
+
+    @Test func undoOfThatDiscardBringsItBackToToday() async {
+        let (vm, sessions, _) = await loaded(tomorrow)
+        await vm.send(.startTapped)?.value
+        let undo = RescheduleUndo(sessionID: tomorrow.id, previousDay: tomorrow.session.day)
+
+        await vm.send(.discardUndoTapped(undo))?.value
+
+        #expect(Array(sessions.calls.suffix(2)) == [.undo(undo), .reschedule(tomorrow.id, .move(to: Fixtures.monday))])
+    }
+
     @Test func aLaterDaysWorkoutAlreadyStartedLogsAsUsual() async {
         var started = tomorrow
         started.session.startedAt = ManualNow.start
