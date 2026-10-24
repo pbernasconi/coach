@@ -7,9 +7,13 @@
 //   HEALTH_TOKEN=… node scripts/perf.mjs <base-url> [<other-base-url>]
 //
 // With two URLs it prints both side by side and the change. Env: HEALTH_TOKEN (required); VERCEL_BYPASS_SECRET for
-// protected *.vercel.app URLs; RUNS (default 5).
+// protected *.vercel.app URLs; RUNS (default 5); LIFT_SYNC_TOKEN to time the iPhone app's API (/api/app/*) too;
+// NEON_API_KEY to print the database's region next to the function's.
 
 const PAGES = ['/', '/plan', '/plan?month=2026-01', '/lift', '/lift/weekly', '/health', '/health/training', '/health/day/today', '/settings'];
+// The GET routes the iPhone app calls (lift/APP-API.md), with the LIFT_SYNC_TOKEN bearer.
+const APP = ['/api/app/today', '/api/app/trends', '/api/app/lift', '/api/app/lift/weekly', '/api/app/health', '/api/app/activities', '/api/app/settings', '/api/lift/week', '/api/lift/sync/pull'];
+const appToken = process.env.LIFT_SYNC_TOKEN;
 const RUNS = Number(process.env.RUNS ?? 5);
 const token = process.env.HEALTH_TOKEN;
 const bases = process.argv.slice(2).map((b) => b.replace(/\/$/, ''));
@@ -36,6 +40,42 @@ async function time(url, extra = {}) {
 }
 
 const median = (xs) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)];
+
+async function measureApp(base) {
+  const rows = {};
+  if (!appToken) return rows;
+  const auth = { authorization: `Bearer ${appToken}` };
+  for (const route of APP) {
+    const first = await time(base + route, auth);
+    const runs = [];
+    for (let i = 0; i < RUNS; i++) runs.push(await time(base + route, auth));
+    const bad = [first, ...runs].find((r) => r.status !== 200);
+    rows[route] = { status: bad?.status ?? 200, first: first.total, total: median(runs.map((r) => r.total)), max: Math.max(...runs.map((r) => r.total)) };
+  }
+  return rows;
+}
+
+/** Where the function and the database run: a function far from its database pays the distance on every query. */
+async function regions(base) {
+  const res = await fetch(`${base}/api/health`, { headers: { authorization: 'Bearer none' } });
+  const fn = (res.headers.get('x-vercel-id') ?? '').split('::').slice(0, -1).join(' → ') || '?';
+  let neon = '?';
+  if (process.env.NEON_API_KEY) {
+    const r = await fetch('https://console.neon.tech/api/v2/projects/falling-mud-04838480', {
+      headers: { authorization: `Bearer ${process.env.NEON_API_KEY}`, accept: 'application/json' },
+    }).catch(() => null);
+    const p = r?.ok ? (await r.json()).project : null;
+    if (p) neon = `${p.region_id}, suspend after ${p.default_endpoint_settings?.suspend_timeout_seconds ?? '?'} s`;
+  }
+  return `edge → function: ${fn}; database: ${neon}`;
+}
+
+/** The first request after idle: Neon asleep (it suspends after 5 idle minutes) and a cold function. */
+async function coldStart(base) {
+  const page = await time(base + '/');
+  const app = appToken ? await time(`${base}/api/app/today`, { authorization: `Bearer ${appToken}` }) : null;
+  return `first request: / ${Math.round(page.total)} ms${app ? `, /api/app/today ${Math.round(app.total)} ms` : ''}`;
+}
 
 async function measure(base) {
   const rows = {};
@@ -82,13 +122,19 @@ async function loaders(base) {
 
 const results = [];
 const floors = [];
+const apps = [];
+const colds = [];
 for (const base of bases) {
+  colds.push(await coldStart(base));
+  console.log(`${base}: ${await regions(base)}`);
   floors.push(await floor(base));
   results.push(await measure(base));
+  apps.push(await measureApp(base));
 }
 const ms = (x) => `${Math.round(x)}`.padStart(6);
 const pct = (a, b) => `${Math.round((1 - b / a) * 100)}%`.padStart(5);
 console.log(`median of ${RUNS} runs, ms${bases.length > 1 ? ` — A: ${bases[0]}  B: ${bases[1]}` : ` — ${bases[0]}`}`);
+colds.forEach((c, i) => console.log(`cold ${'AB'[i]}: ${c}`));
 floors.forEach((f, i) => console.log(`network floor ${'AB'[i]}: CDN file ${Math.round(f.cdn)} ms, function without data ${Math.round(f.fn)} ms`));
 for (const [i, base] of bases.entries()) console.log(`loaders ${'AB'[i]} (ms, first call→second): ${await loaders(base)}`);
 for (const page of PAGES) {
@@ -98,6 +144,13 @@ for (const page of PAGES) {
     b
       ? `${line}  |  B ttfb ${ms(b.ttfb)}  load ${ms(b.load)} (${pct(a.load, b.load)})  nav ${ms(b.nav)} (${pct(a.nav, b.nav)})${b.status !== 200 ? `  (status ${b.status})` : ''}`
       : line
+  );
+}
+for (const route of appToken ? APP : []) {
+  console.log(
+    apps
+      .map((a, i) => `${i ? '  |  B ' : route.padEnd(24)}first ${ms(a[route].first)}  median ${ms(a[route].total)}  max ${ms(a[route].max)}${a[route].status !== 200 ? `  (status ${a[route].status})` : ''}`)
+      .join('')
   );
 }
 if (results.length > 1) {
