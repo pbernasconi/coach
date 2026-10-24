@@ -29,6 +29,7 @@ import { untrusted } from './untrusted.mjs';
 import { noteLines, noteText, setExtras } from './lift-notes.mjs';
 import { healthProfileMarkdown } from './health-profile.mjs';
 import { feedbackLine } from '../src/lib/plan/feedback.mjs';
+import { blockWeek, liftConsistency } from '../src/lib/plan/consistency.mjs';
 
 const sql = connect();
 const args = process.argv.slice(2);
@@ -531,6 +532,21 @@ for (const w of weekWindows) {
   md.push('');
 }
 
+// Lifts from Strava (WeightTraining) and Lift (logged sessions), one per day.
+const liftDays = [
+  ...acts120.filter((a) => a.type === 'WeightTraining').map((a) => new Date(a.start_date_local).toISOString().slice(0, 10)),
+  ...liftSessions.logged.map((ses) => ses.day),
+];
+const lifts = liftConsistency(liftDays, todayLocal);
+md.push(`## Consistency and the 4-week block (.claude/commands/plan.md, "Full weeks, floor weeks and the month")`);
+md.push(`- **Lifts, last 28 days**: ${lifts.last28} of ${lifts.target28} (target 2 a week, 1 is the floor)`);
+md.push(`- **Last lift**: ${lifts.lastDay ? `${lifts.lastDay} (${lifts.daysSince} days ago)` : 'none in 120 days'}${lifts.liftFirst ? ' → never miss twice: the first lift goes in the first 2 days of the week' : ''}`);
+for (const w of weekWindows) {
+  const bw = blockWeek(w.key);
+  md.push(`- **Block, week of ${w.key}**: week ${bw} of 4${bw === 4 ? ' → the lighter week; open its plan with the monthly review in `context`' : bw === 3 ? ' (last building week)' : ''}`);
+}
+md.push('');
+
 md.push(`## Skipped workouts (last 14 days)`);
 if (skippedRecent.length === 0) md.push('_(none)_');
 for (const r of skippedRecent) {
@@ -617,6 +633,7 @@ const profileJson = {
   fitnessState: { asOf: last.date, ctl: last.ctl, atl: last.atl, tsb: last.tsb, trend, ramp7d, weeklyTss },
   sportStats: { run: runStats, ride: rideStats, virtualRide: vrideStats, lift: liftStats, hike: hikeStats },
   rhythm: rhythmSummary,
+  consistency: { lifts, blockWeeks: weekWindows.map((w) => ({ weekStart: w.key, week: blockWeek(w.key) })) },
   recentActivities: acts120.slice(0, 30).map((a) => ({
     date: new Date(a.start_date_local).toISOString().slice(0, 10),
     type: a.type, name: a.name,
