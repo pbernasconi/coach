@@ -67,10 +67,16 @@ export function preferenceView(stored) {
  * @param {unknown} body
  * @param {string} userId
  * @param {DeviceRepository} repo
+ * @param {{ appTopic?: string }} [options]  appTopic: the one bundle id the APNs key pushes to (APNS_TOPIC)
  */
-export async function handleRegister(body, userId, repo) {
+export async function handleRegister(body, userId, repo, { appTopic } = {}) {
   const parsed = registrationSchema.safeParse(body);
   if (!parsed.success) return { status: 400, body: { error: firstIssue(parsed.error) } };
+  // A build with another bundle id (a Simulator or Xcode debug build, com.example.lift) can never get a push from this
+  // key: APNs answers TopicDisallowed. Refuse it here, so it is not stored as a device that every notice fails on.
+  if (appTopic && parsed.data.topic !== appTopic) {
+    return { status: 422, body: { error: `topic: ${parsed.data.topic} is not this app's bundle id` } };
+  }
   const { id } = await repo.register(userId, parsed.data);
   return { status: 200, body: { deviceId: id } };
 }
