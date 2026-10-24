@@ -30,6 +30,8 @@ public struct AppPlannedWorkout: Decodable, Equatable, Sendable {
     public var exercises: [PlannedExercise]?
     /// "How did it feel", from the workout's day on; nil before it, or when it did not load.
     public var feedback: WorkoutFeedback?
+    /// The form of the page's Edit, filled in; nil once done, or from an older server.
+    public var edit: PlannedEditForm?
 
     /// The path of the plan activity `id` (the Week API item's id).
     public static func path(_ id: String) -> String { "api/app/plan/\(id)" }
@@ -38,7 +40,8 @@ public struct AppPlannedWorkout: Decodable, Equatable, Sendable {
     public static func statusPath(_ id: String) -> String { "api/app/plan/\(id)/status" }
 
     /// `PUT` here moves it to another day, `{ "date": "YYYY-MM-DD" }` (APP-API.md, "Move a workout"). `DELETE` on
-    /// `path(_:)` deletes it ("Delete a workout").
+    /// `path(_:)` deletes it ("Delete a workout"), and `PUT` there saves an Edit (`PlannedWorkoutEdit`, "Edit a
+    /// workout").
     public static func datePath(_ id: String) -> String { "api/app/plan/\(id)/date" }
 
     /// `PUT` here links the Lift session started for it (APP-API.md, "Workout Lift session").

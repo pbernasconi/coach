@@ -3,6 +3,7 @@
 // numbers at the top, the main work, the interval chart, every step, the time in each zone and the coach's notes.
 // Every text is ready to show. Pure: the loader (app-workout.ts) finds the workout through loadRange. node --test.
 
+import { editForm } from './app-edit.mjs';
 import { plainTitle } from './calendar.mjs';
 import { dur } from './cells.mjs';
 import { LIFT_MARKER } from './lift-plan.mjs';
@@ -196,5 +197,7 @@ export function appWorkout(w, sports) {
           name: done.name ?? null,
         }
       : null,
+    // The form of the phone's Edit (app-edit.mjs), for a workout not done yet; null once done.
+    edit: w.state === 'done' ? null : editForm(w),
   };
 }

@@ -257,6 +257,127 @@
   "notes": "Keep the cadence high on the last set.",
   "liftSessionId": null,
   "done": null,
+  "edit": {
+    "sport": "ride",
+    "date": "2026-03-03",
+    "startTime": "07:00",
+    "title": "Sweet spot 3 × 12",
+    "duration": 73,
+    "distanceKm": null,
+    "tss": 70,
+    "effort": "easy",
+    "description": "Three long blocks just under threshold. Smooth cadence, steady breathing.",
+    "bank": null,
+    "level": 0,
+    "otherSteps": true,
+    "stepsMinutes": 73,
+    "stepsTss": 69,
+    "efforts": [
+      {
+        "id": "recovery",
+        "label": "Recovery",
+        "if": 0.55
+      },
+      {
+        "id": "easy",
+        "label": "Easy",
+        "if": 0.65
+      },
+      {
+        "id": "moderate",
+        "label": "Moderate",
+        "if": 0.75
+      },
+      {
+        "id": "hard",
+        "label": "Hard",
+        "if": 0.85
+      },
+      {
+        "id": "very-hard",
+        "label": "Very hard",
+        "if": 0.95
+      }
+    ],
+    "bankOptions": [
+      {
+        "id": "threshold-a",
+        "name": "Threshold A",
+        "levels": [
+          "6×5 min top of Z4",
+          "7×5 min top of Z4",
+          "8×5 min top of Z4",
+          "9×5 min top of Z4",
+          "10×5 min top of Z4"
+        ]
+      },
+      {
+        "id": "threshold-b",
+        "name": "Threshold B",
+        "levels": [
+          "5×[5 min Z4/Z5]",
+          "5×[6 min Z4/Z5]",
+          "5×[7 min Z4/Z5]",
+          "5×[8 min Z4/Z5]"
+        ]
+      },
+      {
+        "id": "vo2-a",
+        "name": "VO2 A",
+        "levels": [
+          "4×3 min hard",
+          "5×3 min hard",
+          "5×3.5 min hard",
+          "5×4 min hard",
+          "5×4.5 min hard",
+          "5×5 min hard"
+        ]
+      },
+      {
+        "id": "vo2-b",
+        "name": "VO2 B",
+        "levels": [
+          "3×[6×30/30]",
+          "3×[7×30/30]",
+          "3×[8×30/30]",
+          "3×[9×30/30]",
+          "3×[10×30/30]",
+          "3×[10×30/30]"
+        ]
+      },
+      {
+        "id": "tempo",
+        "name": "Tempo",
+        "levels": [
+          "3×20 min Z3",
+          "3×25 min Z3",
+          "3×30 min Z3",
+          "3×35 min Z3"
+        ]
+      },
+      {
+        "id": "easy",
+        "name": "Aerobic",
+        "levels": [
+          "Aerobic"
+        ]
+      },
+      {
+        "id": "long",
+        "name": "Long",
+        "levels": [
+          "Long"
+        ]
+      },
+      {
+        "id": "test-10k",
+        "name": "10k test",
+        "levels": [
+          "10k test"
+        ]
+      }
+    ]
+  },
   "feedback": {
     "item": "plan:demo-ride",
     "date": "2026-03-03",

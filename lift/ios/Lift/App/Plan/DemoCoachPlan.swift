@@ -45,6 +45,8 @@ final class DemoCoachPlan: CoachPlanProviding {
     func move(_: String, to _: LocalDay) async throws {}
 
     func delete(_: String) async throws {}
+
+    func update(_: String, with _: PlannedWorkoutEdit, movingTo _: LocalDay?) async throws {}
 }
 
 /// Four made-up weeks from `firstWeek`, with "today" states as the server would send them.

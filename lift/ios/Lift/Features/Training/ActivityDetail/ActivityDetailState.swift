@@ -1,5 +1,6 @@
 import Foundation
 import KoboPatterns
+import LiftCore
 import LiftSync
 
 /// The analysis charts' shared x axis.
@@ -47,6 +48,8 @@ nonisolated struct ActivityDetailState: Equatable, Sendable {
         case moveDay(WorkoutMoveDay)
         /// "Delete workout?"
         case confirmDelete
+        /// The Edit sheet.
+        case edit(WorkoutEditDraft)
     }
 
     /// The open panel, if one is open.
@@ -60,6 +63,11 @@ nonisolated struct ActivityDetailState: Equatable, Sendable {
     }
 
     var isConfirmingDelete: Bool { destination == .confirmDelete }
+
+    /// The open Edit sheet, if one is open.
+    var editDraft: WorkoutEditDraft? {
+        if case .edit(let draft) = destination { draft } else { nil }
+    }
 
     /// The workout the page was opened with: `plan-<id>` or `strava-<id>` (also `strava-latest`).
     var ref: String
@@ -117,6 +125,9 @@ nonisolated struct ActivityDetailState: Equatable, Sendable {
         return w.activity == nil && plan.liftSessionId == nil && plan.done?.activityId == nil
     }
 
+    /// A planned workout not done yet, from a server that sends the form: the bar shows the pencil.
+    var canEdit: Bool { canChangePlan && plan?.edit != nil }
+
     /// Loaded, and planned but not done yet: the page shows the plan.
     var isPlanOnly: Bool {
         guard let w = workout.content.value else { return false }
@@ -140,4 +151,23 @@ nonisolated struct WorkoutMoveDay: Equatable, Sendable, Identifiable {
     let today: Date
     let first: Date
     let last: Date
+
+    /// The picker for `plan`: it opens on the workout's day, between the first and last weeks the Week tab shows.
+    static func picker(for plan: AppPlannedWorkout, today: LocalDay, days: DayCalendar) -> WorkoutMoveDay? {
+        guard let day = plan.date.flatMap(CoachPlanDates.day(fromPlain:)) else { return nil }
+        let week = days.weekStart(of: today)
+        guard let current = days.date(of: day), let todayDate = days.date(of: today),
+            let first = days.date(of: week.adding(days: 7 * WeekState.weeks.lowerBound)),
+            let last = days.date(of: week.adding(days: 7 * WeekState.weeks.upperBound + 6))
+        else { return nil }
+        return WorkoutMoveDay(
+            id: plan.id,
+            title: plan.title,
+            dayTitle: days.longTitle(of: day),
+            current: current,
+            today: todayDate,
+            first: first,
+            last: last
+        )
+    }
 }

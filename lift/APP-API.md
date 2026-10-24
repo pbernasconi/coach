@@ -866,6 +866,22 @@ opens it for a planned workout that is not a Lift session. `id` is the Week API 
   exercises, `notes` leaves their lines out (`strengthNotes`), so the page says each once.
 - `done.activityId`: the Strava activity to open (`null` for a Lift match); `done` is `null` until done.
 - `feedback`: from the workout's day on (see "Feedback", item `plan:<id>`); `null` before it, or when it did not load.
+- `edit`: the form of the phone's Edit (`editForm`, `src/lib/plan/app-edit.mjs`), filled in as the web's Edit fills
+  it; `null` once done. `{ sport, date, startTime: "07:00" | null, title, duration (min) | null, distanceKm | null,
+  tss | null, effort, description, bank | null, level, otherSteps, stepsMinutes | null, stepsTss | null, efforts: [{ id,
+  label, if }], bankOptions: [{ id, name, levels: ["6×5 min top of Z4", …] }] }`. `tss` is `null` when the stored TSS
+  is the steps' own (it stays automatic). `bank`/`level` name the coach's bank workout and its step; `bankOptions` is
+  `[]` but for runs and rides. `otherSteps`: steps not from the bank, kept until a bank workout is picked.
+
+### Edit a workout: `PUT /api/app/plan/{id}?tz=`
+
+The workout page's pencil: the web's Edit (`updateWorkoutAction`). Body: the `edit` fields the phone changes, `{ title,
+date, startTime, duration, distanceKm, tss, effort, description, bank, level }`; `null` for an empty field. The sport
+stays. An empty TSS is automatic (the steps', else the time at the effort's IF); an empty distance keeps the stored
+one. A bank workout's steps are built again (`bankWorkout`) only when its workout, step or time changed. A new day
+moves it, as "Move a workout". It answers with the workout, as `GET /api/app/workouts/plan-<id>`, and pushes the old
+and new weeks to Google Calendar after the answer. Errors: `400 {"error":"…"}` for a bad id or field, `404` for no
+such workout, `409` for a done workout.
 
 ### Workout: `GET /api/app/workouts/{ref}?tz=`
 

@@ -91,8 +91,30 @@ final class ActivityDetailViewModel {
             return setDone(done)
         case .moveTapped, .moveDayPicked, .deleteTapped, .deleteConfirmed:
             return sendPlanEdit(action)
+        case .editTapped:
+            state.openEdit()
+        case .editChanged(let draft):
+            if state.editDraft != nil { state.destination = .edit(draft) }
+        case .editSaveTapped:
+            return saveEdit()
         }
         return nil
+    }
+
+    /// The Edit sheet's Save: the sheet closes and the page reads the workout again; a refused save says why in it.
+    private func saveEdit() -> Task<Void, Never>? {
+        guard let id = state.plan?.id, let save = state.beginEditSave() else { return nil }
+        let coachPlan = coachPlan
+        return Task {
+            do {
+                try await coachPlan.update(id, with: save.edit, movingTo: save.moving)
+                state.destination = nil
+                await load()
+            } catch {
+                AppLog.sync.error("Workout not edited: \(String(describing: error), privacy: .public)")
+                state.failEditSave(Self.editMessage(error))
+            }
+        }
     }
 
     /// The bar's "Move to another day" and "Delete workout", for a planned workout not done yet.
@@ -100,7 +122,9 @@ final class ActivityDetailViewModel {
         let days = DayCalendar(calendar: calendar)
         switch action {
         case .moveTapped:
-            state.destination = moveDay(days).map { .moveDay($0) }
+            guard state.canChangePlan, let plan = state.plan else { return nil }
+            let picker = WorkoutMoveDay.picker(for: plan, today: days.day(of: now()), days: days)
+            state.destination = picker.map { .moveDay($0) }
         case .moveDayPicked(let date):
             state.destination = nil
             return move(to: days.day(of: date))
@@ -113,28 +137,6 @@ final class ActivityDetailViewModel {
             break
         }
         return nil
-    }
-
-    /// The picker opens on the workout's day, between the first and last weeks the Week tab shows.
-    private func moveDay(_ days: DayCalendar) -> WorkoutMoveDay? {
-        guard state.canChangePlan, let plan = state.plan, let day = plan.date.flatMap(CoachPlanDates.day(fromPlain:))
-        else { return nil }
-        let today = days.day(of: now())
-        let week = days.weekStart(of: today)
-        guard let current = days.date(of: day), let todayDate = days.date(of: today),
-            let first = days.date(of: week.adding(days: 7 * WeekState.weeks.lowerBound)),
-            let last = days.date(of: week.adding(days: 7 * WeekState.weeks.upperBound + 6))
-        else { return nil }
-        let title = days.longTitle(of: day)
-        return WorkoutMoveDay(
-            id: plan.id,
-            title: plan.title,
-            dayTitle: title,
-            current: current,
-            today: todayDate,
-            first: first,
-            last: last
-        )
     }
 
     /// Moves the workout on the coach; the page then reads it again on its new day.
@@ -176,6 +178,9 @@ final class ActivityDetailViewModel {
     private nonisolated static func editMessage(_ error: any Error) -> String {
         if case .rejected(409) = error as? SyncTransportError {
             return String(localized: "A done workout stays as it is.")
+        }
+        if case .rejected(400) = error as? SyncTransportError {
+            return String(localized: "The coach did not take these details. Check them and try again.")
         }
         return AppResource<WorkoutDetail>.message(for: error)
     }
