@@ -3,7 +3,8 @@ name: Push test
 
 # Sends test pushes to Lift through POST /api/app/push/test (lift/PUSH.md): "test" is the plain Coach test, the others
 # replay the real notice for the latest Lift session, Strava activity or weigh-in, with its deep link. Prints what
-# APNs answered (status and device counts, no content). Secret: LIFT_SYNC_TOKEN (the same value as in Vercel).
+# APNs answered (status and device counts, no content). "status" sends nothing: it prints the devices (on or off, and
+# why) and the last notices with their APNs codes. Secret: LIFT_SYNC_TOKEN (the same value as in Vercel).
 "on":
   workflow_dispatch:
     inputs:
@@ -11,7 +12,7 @@ name: Push test
         description: Which notice
         type: choice
         default: all
-        options: [all, test, lift, strava, weigh_in]
+        options: [all, status, test, lift, strava, weigh_in]
 
 permissions:
   contents: read
@@ -27,6 +28,10 @@ jobs:
           KIND: ${{ inputs.kind }}
         run: |
           if [ "$KIND" = all ]; then kinds="lift strava weigh_in"; else kinds="$KIND"; fi
+          if [ "$KIND" = status ]; then
+            curl -fsS --max-time 60 -H "Authorization: Bearer $LIFT_SYNC_TOKEN" https://coach.paolobernasconi.com/api/app/push/test | jq .
+            exit 0
+          fi
           for kind in $kinds; do
             if [ "$kind" = test ]; then body=''; else body="{\"replay\":\"$kind\"}"; fi
             echo "$kind: $(curl -fsS --max-time 60 -X POST -H "Authorization: Bearer $LIFT_SYNC_TOKEN" \

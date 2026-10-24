@@ -69,3 +69,12 @@ test('preferences list the switchable categories, on by default, and can be swit
   assert.equal((await handleSetPreferences({ categories: { system: false } }, USER, repo)).status, 400);
   assert.equal((await handleSetPreferences({ categories: { nope: true } }, USER, repo)).status, 400);
 });
+
+test("a build with another bundle id than the app's is refused, and nothing is stored", async () => {
+  const repo = createMemoryNotificationRepository();
+  const r = await handleRegister(reg({ topic: 'com.example.lift' }), USER, repo, { appTopic: 'com.pbernasconi.lift' });
+  assert.equal(r.status, 422);
+  assert.match(r.body.error, /^topic:/);
+  assert.equal(repo.devices.size, 0);
+  assert.equal((await handleRegister(reg(), USER, repo, { appTopic: 'com.pbernasconi.lift' })).status, 200);
+});

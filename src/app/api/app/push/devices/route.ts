@@ -3,6 +3,8 @@
  *
  *   POST   /api/app/push/devices  { token, environment, topic, installId, appVersion, deviceName, notificationsAuthorized }
  *   DELETE /api/app/push/devices  { token }
+ *
+ * A registration from another bundle id than APNS_TOPIC (a Simulator build) is refused with 422.
  */
 
 import { appWrite } from '@/lib/app-api/route';
@@ -13,7 +15,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
-  return appWrite(request, 'push register', ({ userId }, body) => handleRegister(body, userId, neonNotificationRepository));
+  return appWrite(request, 'push register', ({ userId }, body) => handleRegister(body, userId, neonNotificationRepository, { appTopic: process.env.APNS_TOPIC }));
 }
 
 export async function DELETE(request: Request) {

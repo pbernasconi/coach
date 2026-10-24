@@ -102,7 +102,7 @@ export function statusOf(outcomes) {
  *   transport: PushTransport,
  *   origin: string,
  *   sleep?: (ms: number) => Promise<void>,
- *   log?: { warn: (...a: unknown[]) => void, error: (...a: unknown[]) => void },
+ *   log?: { info?: (...a: unknown[]) => void, warn: (...a: unknown[]) => void, error: (...a: unknown[]) => void },
  * }} deps
  */
 export function createNotifier(deps) {
@@ -116,6 +116,8 @@ export function createNotifier(deps) {
    */
   async function deliver(n) {
     const devices = await repo.activeDevices(n.userId);
+    // A notice with no phone to go to is the quiet failure: say so, so the logs show it.
+    if (devices.length === 0) log.warn(`Push ${n.event.type}: no active devices`);
     /** @type {Map<string, { outcome: SendOutcome, attempts: number }>} */
     const results = new Map();
     let pending = devices;
@@ -146,6 +148,7 @@ export function createNotifier(deps) {
       if (o.status === 'dead') await repo.disableDevice(d.id, o.code);
       // Codes only: the text is health data and never goes to the logs.
       if (o.status !== 'accepted') log.warn(`Push ${n.event.type} to device ${d.id} ${o.status}: ${o.code}`);
+      else log.info?.(`Push ${n.event.type} to device ${d.id} accepted`);
     }
     const outcomes = [...results.values()].map((r) => r.outcome);
     const status = statusOf(outcomes);

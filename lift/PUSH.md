@@ -73,7 +73,11 @@ bad body.
 → `{ "deviceId": "<uuid>" }`. Safe to repeat. A token already known is refreshed and turned back on; a new token
 from the same `installId` turns the install's old token off. `environment` is the APNs host the build's signing
 uses: `sandbox` for an Xcode debug build, `production` for TestFlight and the App Store (the app reads
-`aps-environment` from its provisioning profile).
+`aps-environment` from its provisioning profile). A `topic` other than `APNS_TOPIC` (a Simulator or Xcode build
+with the placeholder `com.example.lift`) is refused with `422`: this key can never push to it.
+
+`GET /api/app/push/test` reads the push state without sending anything: the devices (on or off, and why) and the
+last notices with status and APNs codes. `push-test.yml` with `status` prints it.
 
 ### `DELETE /api/app/push/devices`
 
