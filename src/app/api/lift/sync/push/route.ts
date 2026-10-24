@@ -11,6 +11,7 @@ import { sql } from '@/db';
 import { pushWeek } from '@/lib/calendar-sync/push.mjs';
 import { handlePush } from '@/lib/lift-sync/sync.mjs';
 import type { ValidChange } from '@/lib/lift-sync/contract.mjs';
+import { withTiming } from '@/lib/request-timing';
 import { drizzleLiftRepository } from '@/lib/lift-sync/drizzle-repository';
 import { followSessionsInPlan } from '@/lib/lift/plan-follow';
 import { notifyLiftWorkouts } from '@/lib/notifications';
@@ -44,21 +45,19 @@ async function followInPlan(applied: ValidChange[]) {
 export async function POST(request: Request) {
   try {
     const applied: ValidChange[] = [];
-    const result = await handlePush(
-      {
-        authorization: request.headers.get('authorization'),
-        rawBody: await request.text(),
-        token: process.env.LIFT_SYNC_TOKEN,
-      },
-      drizzleLiftRepository,
-      { applied }
-    );
-    if (result.status === 200 && applied.length) {
-      await followInPlan(applied);
-      // A session finished on the phone: "Workout completed!" with a link to it (src/lib/notifications).
-      after(() => notifyLiftWorkouts(applied));
-    }
-    return Response.json(result.body, { status: result.status });
+    const rawBody = await request.text();
+    const { result, serverTiming } = await withTiming('POST lift sync push', async () => {
+      const pushed = await handlePush(
+        { authorization: request.headers.get('authorization'), rawBody, token: process.env.LIFT_SYNC_TOKEN },
+        drizzleLiftRepository,
+        { applied }
+      );
+      if (pushed.status === 200 && applied.length) await followInPlan(applied);
+      return pushed;
+    });
+    // A session finished on the phone: "Workout completed!" with a link to it (src/lib/notifications).
+    if (result.status === 200 && applied.length) after(() => notifyLiftWorkouts(applied));
+    return Response.json(result.body, { status: result.status, headers: { 'Server-Timing': serverTiming } });
   } catch (error) {
     console.error('Lift sync push failed:', error);
     return Response.json({ error: 'internal error' }, { status: 500 });

@@ -2,6 +2,7 @@ import { isAuthorized } from '@/lib/lift-sync/auth.mjs';
 import { ownerId } from '@/lib/plan/queries';
 import { zoneOrDefault } from '@/lib/plan/week-api.mjs';
 import { todayIn } from '@/lib/plan/week.mjs';
+import { withTiming } from '@/lib/request-timing';
 
 // The shared part of every /api/app route (lift/APP-API.md, "Shared rules"): the LIFT_SYNC_TOKEN bearer token, the
 // owner, `tz` and today, `Cache-Control: no-store`, and the errors 400/401/404/500.
@@ -27,11 +28,14 @@ export async function appRoute(
   try {
     const params = new URL(request.url).searchParams;
     const timeZone = zoneOrDefault(params.get('tz'));
-    const userId = await ownerId();
-    if (!userId) return Response.json({ error: 'no user' }, { status: 404, headers: NO_STORE });
-    const body = await run({ userId, timeZone, today: todayIn(timeZone), params });
-    if (!body) return Response.json({ error: 'not found' }, { status: 404, headers: NO_STORE });
-    return Response.json(body, { headers: NO_STORE });
+    const { result, serverTiming } = await withTiming(`GET app ${label}`, async () => {
+      const userId = await ownerId();
+      return userId ? { body: await run({ userId, timeZone, today: todayIn(timeZone), params }) } : null;
+    });
+    const headers = { ...NO_STORE, 'Server-Timing': serverTiming };
+    if (!result) return Response.json({ error: 'no user' }, { status: 404, headers });
+    if (!result.body) return Response.json({ error: 'not found' }, { status: 404, headers });
+    return Response.json(result.body, { headers });
   } catch (error) {
     console.error(`App ${label} failed:`, error);
     return Response.json({ error: 'internal error' }, { status: 500, headers: NO_STORE });
@@ -64,10 +68,13 @@ export async function appWrite(
   try {
     const params = new URL(request.url).searchParams;
     const timeZone = zoneOrDefault(params.get('tz'));
-    const userId = await ownerId();
-    if (!userId) return Response.json({ error: 'no user' }, { status: 404, headers: NO_STORE });
-    const result = await run({ userId, timeZone, today: todayIn(timeZone), params }, body);
-    return Response.json(result.body, { status: result.status, headers: NO_STORE });
+    const { result, serverTiming } = await withTiming(`${request.method} app ${label}`, async () => {
+      const userId = await ownerId();
+      return userId ? await run({ userId, timeZone, today: todayIn(timeZone), params }, body) : null;
+    });
+    const headers = { ...NO_STORE, 'Server-Timing': serverTiming };
+    if (!result) return Response.json({ error: 'no user' }, { status: 404, headers });
+    return Response.json(result.body, { status: result.status, headers });
   } catch (error) {
     console.error(`App ${label} failed:`, error instanceof Error ? error.message : 'unknown error');
     return Response.json({ error: 'internal error' }, { status: 500, headers: NO_STORE });

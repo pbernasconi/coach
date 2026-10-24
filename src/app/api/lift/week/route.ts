@@ -9,6 +9,7 @@ import { isAuthorized } from '@/lib/lift-sync/auth.mjs';
 import { ownerId } from '@/lib/plan/queries';
 import { loadLiftWeeks } from '@/lib/plan/week-api';
 import { parseWeekQuery } from '@/lib/plan/week-api.mjs';
+import { withTiming } from '@/lib/request-timing';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -22,10 +23,13 @@ export async function GET(request: Request) {
   const query = parseWeekQuery(new URL(request.url).searchParams);
   if ('error' in query) return Response.json({ error: query.error }, { status: 400, headers: NO_STORE });
   try {
-    const userId = await ownerId();
-    if (!userId) return Response.json({ error: 'no user' }, { status: 404, headers: NO_STORE });
-    const body = await loadLiftWeeks(userId, query.start, query.weeks, query.today, query.timeZone);
-    return Response.json(body, { headers: NO_STORE });
+    const { result: body, serverTiming } = await withTiming('GET lift week', async () => {
+      const userId = await ownerId();
+      return userId ? loadLiftWeeks(userId, query.start, query.weeks, query.today, query.timeZone) : null;
+    });
+    const headers = { ...NO_STORE, 'Server-Timing': serverTiming };
+    if (!body) return Response.json({ error: 'no user' }, { status: 404, headers });
+    return Response.json(body, { headers });
   } catch (error) {
     console.error('Lift week failed:', error);
     return Response.json({ error: 'internal error' }, { status: 500, headers: NO_STORE });
