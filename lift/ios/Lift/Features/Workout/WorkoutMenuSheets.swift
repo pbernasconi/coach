@@ -96,11 +96,11 @@ private struct ExerciseReorderRow: View {
                     .foregroundStyle(row.isCurrent ? theme.palette.accentText : theme.palette.textSecondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            IconButton("arrow.up", verbatimAccessibilityLabel: String(localized: "Move \(row.name) up"), style: .plain, size: .small) {
+            IconButton("arrow.up", verbatimAccessibilityLabel: String(localized: "Move \(row.name) up"), style: .glass, size: .small) {
                 move(-1)
             }
             .disabled(isFirst)
-            IconButton("arrow.down", verbatimAccessibilityLabel: String(localized: "Move \(row.name) down"), style: .plain, size: .small) {
+            IconButton("arrow.down", verbatimAccessibilityLabel: String(localized: "Move \(row.name) down"), style: .glass, size: .small) {
                 move(1)
             }
             .disabled(isLast)

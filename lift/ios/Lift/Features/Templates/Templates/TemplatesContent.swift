@@ -76,7 +76,7 @@ private struct TemplateRow: View {
             IconButton(
                 "ellipsis",
                 verbatimAccessibilityLabel: String(localized: "Options for \(item.name)"),
-                style: .plain,
+                style: .glass,
                 size: .small
             ) { send(.optionsTapped(item.id)) }
             .frame(width: Size.minTouch)

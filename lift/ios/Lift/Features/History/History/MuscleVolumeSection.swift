@@ -48,11 +48,11 @@ private struct WeekStepButtons: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            IconButton("chevron.left", accessibilityLabel: "Previous week", style: .plain, size: .small) {
+            IconButton("chevron.left", accessibilityLabel: "Previous week", style: .glass, size: .small) {
                 if let week = progress.previousWeek { send(.volumeWeekSelected(week)) }
             }
             .disabled(progress.previousWeek == nil)
-            IconButton("chevron.right", accessibilityLabel: "Next week", style: .plain, size: .small) {
+            IconButton("chevron.right", accessibilityLabel: "Next week", style: .glass, size: .small) {
                 if let week = progress.nextWeek { send(.volumeWeekSelected(week)) }
             }
             .disabled(progress.nextWeek == nil)

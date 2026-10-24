@@ -92,7 +92,7 @@ private struct LiftTargetRow: View {
                             .foregroundStyle(session.done ? theme.palette.textPrimary : theme.palette.textSecondary)
                             .padding(.horizontal, Space.sm)
                             .padding(.vertical, Space.xxs)
-                            .background(theme.palette.surfaceSunken, in: Capsule())
+                            .glassEffect(.regular.interactive(), in: Capsule())
                         }
                         .buttonStyle(.plain)
                     }

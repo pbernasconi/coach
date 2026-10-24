@@ -69,17 +69,9 @@ struct BodyMuscleCallout: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            Button(action: onClose) {
-                Image(systemName: "xmark")
-                    .font(theme.font(.footnote).weight(.semibold))
-                    .frame(width: Size.minTouch, height: Size.minTouch)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(theme.palette.textSecondary)
-            .accessibilityLabel(Text("Close"))
-            .padding(.top, -Space.md)
-            .padding(.trailing, -Space.md)
+            CloseButton(style: .glass, size: .small, action: onClose)
+                .padding(.top, -Space.md)
+                .padding(.trailing, -Space.md)
         }
         .padding(Space.cardInset)
         .background {
