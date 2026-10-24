@@ -6,6 +6,9 @@ _This is the ultimate template for structuring every weekly calendar. Source: "P
 
 - The workout order is tracked in the database: `scripts/rotation.mjs` reads past plans and gives the next workouts and the last prescription of each one. A workout's `workoutType` names it: `ride-threshold-a`, `run-vo2-b`, and so on.
 - Paolo's change: **never a heavy lift on the same day as a workout.** The heavy lift goes on an aerobic day.
+- Paolo's change (2026-10-24): **one session a day, or one stacked block.** A lift on an aerobic day follows the
+  easy aerobic part straight away (an easy run to the gym, or Zwift then the home lift), never hours later and never
+  followed by a run. `.claude/commands/plan.md` has the rule and the floor-week and monthly rules.
 - The goals (Coach → Settings → Goals) choose bike or run: at least 1 run workout each week for the 10k goal; rides for VO2 max and ride km.
 - A 10k test run at goal pace (`run-test-10k`) replaces one workout about every 6 weeks. It does not move the order.
 - From November to June, a ski tour (`ski-tour`) can replace the long ride as the weekend long aerobic day.
@@ -22,7 +25,7 @@ _This is the ultimate template for structuring every weekly calendar. Source: "P
 
 - Adjust as needed; if only one weekday is available, make it a workout.
 - After a workout day, next day is aerobic or recovery — goal is to be recovered for the next workout.
-- Lifts ideally go on workout days **after** the workout; can go any day, just never back-to-back.
+- Lifts ideally go on workout days **after** the workout; can go any day, just never back-to-back. (Paolo's changes above win: heavy lifts on aerobic days, stacked right after the easy part.)
 
 ## Weekend Schedule
 
@@ -148,6 +151,15 @@ Circuit: forearm plank 2 rounds of 45 s, side plank 2 rounds of 45 s each side.
 2) Standing calf raise 3x15: off a step, 3 s up, 3 s down.
 3) Forward step down 3x8: each leg.
 4) Copenhagen plank 2x8: each side.
+
+**Arm finisher** (15 min, home dumbbells 15/20/25 lb and bands; straight after a Zwift ride, or to top up arm
+volume on a week a lift fell off). Supersets, 60 s rest after each pair; go to 1–2 reps in reserve.
+1) Dumbbell curl 3x12: 25 lb, slow 3 s down.
+2) Overhead dumbbell triceps extension 3x12: one 25 lb dumbbell, both hands.
+3) Hammer curl 3x12: 20 lb.
+4) Band pushdown 3x15
+5) Dumbbell lateral raise 2x15: 15 lb.
+6) Push-up 2x12: to 1–2 reps in reserve.
 
 **Mobility mini** (15 min, cut from Mobility; after a long ride or a travel day).
 Couch stretch 1 min each side, pigeon stretch 1 min each side.

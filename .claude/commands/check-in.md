@@ -57,11 +57,18 @@ Also surface the **updated fitness state**: new CTL/ATL/TSB and the delta from w
 Common patterns:
 - Felt great + TSB recovering → keep Fri quality session
 - Beat up → drop intensity, swap to easy
-- Skipped Tue strength → don't try to "make it up"; continue
+- Skipped Tue strength (busy) → move it once to the next free aerobic or rest day (see the lift rule below)
 - Weather got worse → outdoor → Zwift swap
 
 Skipped workouts, by reason:
-- **Never make up a skipped workout.** Don't move it to a later day, don't add its TSS to other days, and don't stack
+- **A missed lift is the one exception.** Lifts are the goal most at risk (2 a week grows the arms), so a lift
+  skipped or missed for busy, travel or other moves once to the next aerobic or rest day this week or in the next 7
+  days: never on a workout day, at least 24 h from the other lift, stacked straight after that day's aerobic session
+  (one session a day, or one block; never a run after it). A 40 min version is fine. Tired, sore or sick: don't move
+  it; the next lift is the regular one. Never put two lifts on one day. Move it with `plan-edit.mjs move <id>
+  YYYY-MM-DD` (the same workout, so its Lift session stays linked), then keep the record of the miss in the
+  workout: `plan-edit.mjs update <id> description="Moved from Wed 21 Oct (busy). …"`, and say it in the report.
+- **Never make up any other skipped workout.** Don't move it to a later day, don't add its TSS to other days, and don't stack
   two quality sessions to catch up. The week's TSS target drops by what was skipped.
 - **tired / sore**: a fatigue signal. The next day is easy or rest. The next quality session needs one easy day in
   front of it; if it is tomorrow, push it a day or make it aerobic. If it is the week's second fatigue skip (or HRV
