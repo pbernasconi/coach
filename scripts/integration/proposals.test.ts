@@ -41,7 +41,7 @@ test('request, claim, check, propose and accept a cloud plan', async () => {
     assert.ok('fails' in ok && ok.fails === 2, JSON.stringify(ok));
     const [stored] = await sql`SELECT context, checks FROM plan_proposals WHERE id = ${id}`;
     assert.equal(stored.context.weekStart, week);
-    assert.deepEqual(stored.checks.issues.map((i: { id: string }) => i.id).sort(), ['R4', 'R6']);
+    assert.deepEqual(stored.checks.issues.map((i: { id: string }) => i.id).sort(), ['R4', 'R6', 'R9']);
     const open = await openProposal(user);
     assert.equal(open?.id, id, 'the newest open one is the proposed plan, not the older failure');
     assert.equal(open?.rows.length, 2);
