@@ -34,13 +34,21 @@ test('request, claim, check, propose and accept a cloud plan', async () => {
     assert.equal(failed.status, 'failed');
 
     const review = { headline: 'Two quality days.', decisions: [{ title: 'Threshold first', tradeoff: 'No VO2 this week' }] };
-    const ok = await submitPlan(user, id, { ...plan, review }, 'Fresh: two quality days.');
+    const context = { generatedAt: '2026-11-01T15:00:00Z', weekStart: week, calendarByWeek: [], consistency: { lifts: { liftFirst: false } } };
+    const ok = await submitPlan(user, id, { ...plan, review }, 'Fresh: two quality days.', context);
     assert.ok('events' in ok && ok.events === 2, JSON.stringify(ok));
+    // The rules report (no lift, no long run) and don't block; the profile is kept for the evals.
+    assert.ok('fails' in ok && ok.fails === 2, JSON.stringify(ok));
+    const [stored] = await sql`SELECT context, checks FROM plan_proposals WHERE id = ${id}`;
+    assert.equal(stored.context.weekStart, week);
+    assert.deepEqual(stored.checks.issues.map((i: { id: string }) => i.id).sort(), ['R4', 'R6']);
     const open = await openProposal(user);
     assert.equal(open?.id, id, 'the newest open one is the proposed plan, not the older failure');
     assert.equal(open?.rows.length, 2);
     assert.equal(open?.review?.headline, 'Two quality days.');
     assert.equal(open?.review?.decisions[0].tradeoff, 'No VO2 this week');
+    assert.equal(open?.checks?.fails, 2);
+    assert.equal('context' in (open as object), false, 'the page reads never carry the profile');
     assert.equal((await loadOutlook(user, open!)).plannedTss > 0, true);
     // Calendar: Coach's own workout events and declined events are not busy time; times are Paolo's wall clock.
     await sql`

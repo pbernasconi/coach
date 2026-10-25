@@ -18,6 +18,11 @@ export const planProposals = pgTable(
     plan: jsonb('plan'),
     summary: text('summary'),
     error: text('error'),
+    // What the planner knew (the job's profile.json, without the user block): the golden weeks of the evals are
+    // built from these. Large (tens of KB): never read it in a page loader.
+    context: jsonb('context'),
+    // The rule results (src/lib/plan/rules.mjs checkProposal) of the plan as the planner wrote it.
+    checks: jsonb('checks'),
     createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow(),
     decidedAt: timestamp('decided_at', { mode: 'date' }),
@@ -56,5 +61,26 @@ export const workoutFeedback = pgTable(
     index('workout_feedback_user_date_idx').on(t.userId, t.date),
     check('workout_feedback_feel_check', sql`${t.feel} IS NULL OR ${t.feel} BETWEEN 1 AND 5`),
     check('workout_feedback_rpe_check', sql`${t.rpe} IS NULL OR ${t.rpe} BETWEEN 1 AND 10`),
+  ],
+);
+
+/**
+ * Paolo's verdict on a past plan (the Past plans page, /plan/history): good or bad and one line why. Phase 0 of the
+ * planner evals reads these to find what goes wrong. `item` is 'week:<training_plans.id>' or
+ * 'proposal:<plan_proposals.id>'.
+ */
+export const planVerdicts = pgTable(
+  'plan_verdicts',
+  {
+    userId: text('user_id').notNull(),
+    item: text('item').notNull(),
+    weekStart: date('week_start').notNull(),
+    verdict: text('verdict').notNull(),
+    note: text('note'),
+    updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.userId, t.item] }),
+    check('plan_verdicts_verdict_check', sql`${t.verdict} IN ('good', 'bad')`),
   ],
 );

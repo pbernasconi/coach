@@ -3,7 +3,7 @@
  * The plan job's calls to Coach (POST /api/plan/proposals, Bearer CRON_SECRET). No database access, no packages.
  *
  *   node scripts/plan-cloud/client.mjs claim [proposalId]   # writes plans/request.json, prints id and weekStart for $GITHUB_OUTPUT
- *   node scripts/plan-cloud/client.mjs submit <proposalId> <weekStart>   # sends plans/<weekStart>.json and .summary.md
+ *   node scripts/plan-cloud/client.mjs submit <proposalId> <weekStart>   # sends plans/<weekStart>.json, .summary.md and profile.json
  *   node scripts/plan-cloud/client.mjs fail <proposalId> "<what failed>"
  *
  * claim without an id (the Sunday run) asks Coach for a new weekly request for next week, with no answers: the agent
@@ -62,8 +62,16 @@ if (cmd === 'claim') {
   }
   const summaryFile = `plans/${arg}.summary.md`;
   const summary = existsSync(summaryFile) ? readFileSync(summaryFile, 'utf8').slice(0, 6000) : null;
-  const r = await post({ action: 'submit', id, plan, summary });
-  console.log(`Proposal ${id}: ${r.events} events, ${r.tss} TSS planned. Review it on the Plan page.`);
+  // What the planner knew, kept with the proposal for the evals (the golden weeks). Not the user block.
+  let context = null;
+  try {
+    context = existsSync('profile.json') ? JSON.parse(readFileSync('profile.json', 'utf8')) : null;
+    if (context) delete context.user;
+  } catch {
+    context = null;
+  }
+  const r = await post({ action: 'submit', id, plan, summary, context });
+  console.log(`Proposal ${id}: ${r.events} events, ${r.tss} TSS planned, ${r.fails ?? 0} rule failures, ${r.warns ?? 0} warnings. Review it on the Plan page.`);
 } else if (cmd === 'fail') {
   await post({ action: 'fail', id, error: `${String(arg ?? 'The plan job failed.').slice(0, 180)}${agentTail()}` });
   console.log(`Proposal ${id} marked as failed.`);
