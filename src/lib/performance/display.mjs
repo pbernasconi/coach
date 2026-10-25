@@ -331,7 +331,7 @@ export function goalView(g) {
  */
 export function todayWorkouts(range) {
   const items = range.workouts.filter((w) => w.date === range.today && w.status !== 'skipped');
-  const emptyText = items.length ? null : range.workouts.length ? 'Rest day' : 'No plan this week. Run /plan in Claude Code to make one.';
+  const emptyText = items.length ? null : range.workouts.length ? 'Rest day' : 'No plan this week. Plan one with Coach on the Plan page.';
   return { items, emptyText };
 }
 
