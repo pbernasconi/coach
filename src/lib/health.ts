@@ -2,6 +2,7 @@ import { loadAppWorkout } from '@/lib/plan/app-workout';
 import journal from '../../drizzle/meta/_journal.json';
 import { openProposal, type Proposal } from '@/lib/plan/proposals';
 import { loadPlanHistory } from '@/lib/plan/history';
+import { loadPlannerStatus } from '@/lib/planner/run';
 import { loadOutlook, loadPlanningContext } from '@/lib/plan/planning-context';
 import { GET as homeSummary } from '@/app/api/home/route';
 import { GET as liftWeek } from '@/app/api/lift/week/route';
@@ -71,6 +72,7 @@ export async function runChecks(now = new Date(), { migrations = true }: { migra
     check('status', () => loadStatus(userId, now.getTime())),
     check('targets', () => loadTargets(userId)),
     check('coaching notes', () => loadCoachingNotes(userId)),
+    check('planner status', () => loadPlannerStatus(userId)),
     check('performance', () => loadPerformance(userId, today)),
     check('week (this)', () => loadWeek(userId, monday, today)),
     check('week (next)', () => loadWeek(userId, addDays(monday, 7), today)),

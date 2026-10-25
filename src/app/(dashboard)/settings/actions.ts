@@ -11,6 +11,7 @@ import { locationFrom } from '@/lib/plan/calendar.mjs';
 import { geocodeUrl, placesFrom } from '@/lib/plan/places.mjs';
 import { DEFAULT_PLACE, type Place } from '@/lib/plan/weather';
 import { saveGoals } from '@/lib/goals/goals.mjs';
+import { setPlannerRunner } from '@/lib/planner/run';
 
 async function owner() {
   const id = await ownerForSignedInUser();
@@ -153,3 +154,10 @@ export async function saveThresholdsAction(t: ThresholdInput): Promise<string> {
   return `Thresholds saved. ${r.changed} of ${r.total} activities have a new TSS.`;
 }
 
+
+/** The planner switch: plan on the server with the Claude API, or on the GitHub job. */
+export async function setPlannerRunnerAction(on: boolean) {
+  const userId = await owner();
+  await setPlannerRunner(userId, on ? 'server' : 'github');
+  revalidatePath('/settings');
+}

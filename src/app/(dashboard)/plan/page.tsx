@@ -15,6 +15,8 @@ import './plan.css';
 export const metadata: Metadata = { title: 'Plan' };
 
 export const dynamic = 'force-dynamic';
+// "Plan with Coach" plans on the server in the background of its request (src/lib/planner/run.ts): up to 5 minutes.
+export const maxDuration = 300;
 
 type Search = { week?: string; month?: string; open?: string };
 

@@ -41,7 +41,15 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      # The server planner (Coach + the Claude API) plans it when it's on; the steps below run only when it isn't.
+      - name: Server planner
+        id: server
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          PROPOSAL_ID: ${{ inputs.proposal_id }}
+        run: node scripts/plan-cloud/client.mjs server "$PROPOSAL_ID" >> "$GITHUB_OUTPUT"
       - name: Agent login set up?
+        if: steps.server.outputs.handled != 'true'
         id: ready
         env:
           OAUTH: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -51,11 +59,11 @@ jobs:
             echo "::warning::Set CLAUDE_CODE_OAUTH_TOKEN (claude setup-token) or ANTHROPIC_API_KEY to plan in the cloud."
             echo "ok=false" >> "$GITHUB_OUTPUT"; fi
       - name: Install
-        if: steps.ready.outputs.ok == 'true' || inputs.proposal_id != ''
+        if: steps.server.outputs.handled != 'true' && (steps.ready.outputs.ok == 'true' || inputs.proposal_id != '')
         run: npm ci --no-audit --no-fund
 
       - name: Claim the request
-        if: steps.ready.outputs.ok == 'true' || inputs.proposal_id != ''
+        if: steps.server.outputs.handled != 'true' && (steps.ready.outputs.ok == 'true' || inputs.proposal_id != '')
         id: claim
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
