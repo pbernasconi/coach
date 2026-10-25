@@ -34,7 +34,11 @@ All files are in the current directory (the repository):
      Monday from the request.
    - `plans/<weekStart>.summary.md`: at most 8 lines, the same content as `review` in plain text (it is kept with
      the plan in Coach).
-5. Stop. Do not edit any other file.
+5. Check the plan: `node scripts/check-plan.mjs plans/<weekStart>.json`. It prints each rule the plan breaks
+   (FAIL) or bends (WARN), from Paolo's rules. Fix every FAIL and run it again, at most 3 times. A WARN you keep
+   on purpose (he asked for 1 lift, a floor week) gets a line in `review.decisions` or `review.watch`. If a FAIL
+   can't be fixed (a day off leaves no room), keep the best plan and say which rule and why in `review.watch`.
+6. Stop. Do not edit any other file.
 
 ## Weather
 

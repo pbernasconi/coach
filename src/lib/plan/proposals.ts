@@ -10,6 +10,7 @@ import { toDay, toIso } from '@/lib/db-time.mjs';
 import { HOME_TZ, pushWeek } from '@/lib/calendar-sync/push.mjs';
 import { importPlan } from '@/lib/plan/import.mjs';
 import { checkPlan } from '@/lib/plan/proposal.mjs';
+import { checkProposal, todayOf } from '@/lib/plan/rules.mjs';
 import { cleanReview } from '@/lib/plan/review.mjs';
 import type { StructuredWorkout } from '@/lib/plan/queries';
 import { addDays, mondayOf, todayIn } from '@/lib/plan/week.mjs';
@@ -27,11 +28,15 @@ export type ProposalRow = {
 export type ProposalReview = {
   headline: string | null; reasoning: string[]; decisions: { title: string; why: string | null; tradeoff: string | null }[]; watch: string[];
 };
+export type RuleIssue = { id: string; level: 'fail' | 'warn'; day: string | null; message: string };
+export type ProposalChecks = { version: number; issues: RuleIssue[]; fails: number; warns: number };
 export type Proposal = {
   id: string; status: ProposalStatus; request: PlanRequest; weekStart: string; summary: string | null; error: string | null;
   createdAt: string | null; updatedAt: string | null; rows: ProposalRow[];
   /** The coach's structured review (plan.review), or null for a plan with only the markdown summary. */
   review: ProposalReview | null;
+  /** Paolo's planning rules on the plan as the planner wrote it (rules.mjs), or null for a plan from before them. */
+  checks: ProposalChecks | null;
 };
 
 type Row = Record<string, unknown>;
@@ -55,7 +60,13 @@ function toProposal(r: Row): Proposal {
       description: (x.description as string) ?? null, steps: (x.steps as StructuredWorkout) ?? null,
     })),
     review: r.plan ? cleanReview((r.plan as { review?: unknown }).review) : null,
+    checks: cleanChecks(r.checks),
   };
+}
+
+function cleanChecks(v: unknown): ProposalChecks | null {
+  const c = v as ProposalChecks | null;
+  return c && Array.isArray(c.issues) ? c : null;
 }
 
 /** A request from the Plan page. Returns its id. */
@@ -83,19 +94,35 @@ export async function claimRequest(userId: string, id: string | null): Promise<{
   return r ? { id: String(r.id), request: r.request as PlanRequest } : null;
 }
 
-/** The agent's plan. A plan that fails the checks marks the request failed, with the reason. */
-export async function submitPlan(userId: string, id: string, plan: unknown, summary: string | null): Promise<{ error: string } | { events: number; tss: number }> {
-  const [p] = (await sql`SELECT week_start FROM plan_proposals WHERE id = ${id} AND user_id = ${userId} AND status = 'running'`) as Row[];
+/**
+ * The agent's plan. A plan that fails the format checks marks the request failed, with the reason. Paolo's planning
+ * rules (rules.mjs) only report: the result is stored with the plan and shown in the review. `context` is the
+ * profile.json the job planned from, kept for the evals.
+ */
+export async function submitPlan(
+  userId: string, id: string, plan: unknown, summary: string | null, context: unknown = null,
+): Promise<{ error: string } | { events: number; tss: number; fails: number; warns: number }> {
+  const [p] = (await sql`SELECT week_start, request FROM plan_proposals WHERE id = ${id} AND user_id = ${userId} AND status = 'running'`) as Row[];
   if (!p) return { error: 'No running request with that id.' };
-  const { errors, rows } = checkPlan(plan, (toDay(p.week_start) ?? ''));
+  const weekStart = toDay(p.week_start) ?? '';
+  const { errors, rows } = checkPlan(plan, weekStart);
   if (errors.length) {
     await failRequest(userId, id, `The plan did not pass the checks: ${errors.slice(0, 3).join(' ')}`);
     return { error: errors.join(' ') };
   }
+  const request = p.request as PlanRequest;
+  const ctx = context && typeof context === 'object' ? context : null;
+  const checks = checkProposal(plan, { weekStart, request, context: ctx, today: request?.kind === 'checkin' ? todayOf(ctx) : null });
   await sql`
-    UPDATE plan_proposals SET status = 'proposed', plan = ${JSON.stringify(plan)}::jsonb, summary = ${summary}, error = NULL, updated_at = NOW()
-    WHERE id = ${id}`;
-  return { events: rows.length, tss: Math.round(rows.reduce((n: number, r: { tss?: number | null }) => n + (r.tss ?? 0), 0)) };
+    UPDATE plan_proposals SET status = 'proposed', plan = ${JSON.stringify(plan)}::jsonb, summary = ${summary}, error = NULL,
+      checks = ${JSON.stringify(checks)}::jsonb, context = ${ctx ? JSON.stringify(ctx) : null}::jsonb, updated_at = NOW()
+    WHERE id = ${id} AND status = 'running'`;
+  return {
+    events: rows.length,
+    tss: Math.round(rows.reduce((n: number, r: { tss?: number | null }) => n + (r.tss ?? 0), 0)),
+    fails: checks.fails,
+    warns: checks.warns,
+  };
 }
 
 export async function failRequest(userId: string, id: string, error: string) {
@@ -110,7 +137,8 @@ export async function failRequest(userId: string, id: string, error: string) {
  */
 export async function openProposal(userId: string): Promise<Proposal | null> {
   const [r] = (await sql`
-    SELECT * FROM plan_proposals
+    -- Every column but context (tens of KB, for the evals only): the Plan page polls this while a job runs.
+    SELECT id, user_id, kind, week_start, status, request, plan, summary, error, checks, created_at, updated_at, decided_at FROM plan_proposals
     WHERE user_id = ${userId} AND status IN ('requested', 'running', 'proposed', 'failed') AND created_at > NOW() - INTERVAL '14 days'
     ORDER BY CASE status WHEN 'proposed' THEN 0 WHEN 'running' THEN 1 WHEN 'requested' THEN 1 ELSE 2 END, created_at DESC
     LIMIT 1`) as Row[];
@@ -118,7 +146,7 @@ export async function openProposal(userId: string): Promise<Proposal | null> {
 }
 
 export async function proposalById(userId: string, id: string): Promise<Proposal | null> {
-  const [r] = (await sql`SELECT * FROM plan_proposals WHERE id = ${id} AND user_id = ${userId}`) as Row[];
+  const [r] = (await sql`SELECT id, user_id, kind, week_start, status, request, plan, summary, error, checks, created_at, updated_at, decided_at FROM plan_proposals WHERE id = ${id} AND user_id = ${userId}`) as Row[];
   return r ? toProposal(r) : null;
 }
 
@@ -130,7 +158,7 @@ export async function acceptProposal(
   userId: string,
   id: string,
 ): Promise<{ error: string } | { weekStart: string; counts: { inserted: number; updated: number; kept: number; deleted: number } }> {
-  const [r] = (await sql`SELECT * FROM plan_proposals WHERE id = ${id} AND user_id = ${userId} AND status = 'proposed'`) as Row[];
+  const [r] = (await sql`SELECT week_start, plan, summary FROM plan_proposals WHERE id = ${id} AND user_id = ${userId} AND status = 'proposed'`) as Row[];
   if (!r) return { error: 'This plan is no longer waiting for you.' };
   const weekStart = (toDay(r.week_start) ?? '');
   const counts = await importPlan(sql, userId, r.plan as object, (r.summary as string) ?? undefined);

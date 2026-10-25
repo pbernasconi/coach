@@ -22,6 +22,7 @@ const PAGES = [
   ['/lift/weekly', 'lift-weekly'],
   ['/lift/sessions/latest', 'lift-session'],
   ['/plan?week=2026-01-05', 'plan'],
+  ['/plan/history', 'plan-history'],
   ['/health', 'health'],
   ['/health/training', 'health-training'],
   ['/health/labs', 'health-labs'],

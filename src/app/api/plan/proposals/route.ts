@@ -2,7 +2,8 @@
  * POST /api/plan/proposals: the cloud plan job's calls (scripts/plan-cloud/client.mjs, .github/workflows/plan.yml and
  * plan-apply.yml). Public to Clerk; authenticated by `Authorization: Bearer $CRON_SECRET`.
  *   { action: 'claim', id? }               → { id, request }   (no id: a new weekly request for next week)
- *   { action: 'submit', id, plan, summary } → { events, tss }  (the plan is checked; a bad one fails the request)
+ *   { action: 'submit', id, plan, summary, context? } → { events, tss, fails, warns }  (the format is checked, and a
+ *     bad one fails the request; the planning rules only report; context is the profile.json, kept for the evals)
  *   { action: 'fail', id, error }
  *   { action: 'push', weeks: 'YYYY-MM-DD,…' } → pushes those plan weeks to Google Calendar
  */
@@ -38,7 +39,8 @@ export async function POST(request: Request) {
     if (body.action === 'submit') {
       if (!id) return bad('id is required');
       const summary = typeof body.summary === 'string' ? body.summary.slice(0, 6000) : null;
-      const r = await submitPlan(userId, id, body.plan, summary);
+      const context = body.context && typeof body.context === 'object' && JSON.stringify(body.context).length < 1_000_000 ? body.context : null;
+      const r = await submitPlan(userId, id, body.plan, summary, context);
       return 'error' in r ? bad(String(r.error), 422) : Response.json(r, { headers });
     }
     if (body.action === 'fail') {

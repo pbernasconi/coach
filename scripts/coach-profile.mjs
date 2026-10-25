@@ -224,7 +224,10 @@ for (const [t, r] of Object.entries(rhythmByType)) {
 
 // ===== 6. Calendar events across the full horizon =====
 const events = await sql`
-  SELECT cc.google_email, ce.summary, ce.start_time, ce.end_time, ce.is_all_day, ce.location
+  SELECT cc.google_email, ce.summary, ce.start_time, ce.end_time, ce.is_all_day, ce.location,
+         -- Coach's own workout events (calendar-sync/push.mjs ends each with this link): not meetings.
+         COALESCE(ce.description LIKE '%Open in Coach: %', false) AS coach,
+         COALESCE(ce.attendees::jsonb @> '[{"self": true, "responseStatus": "declined"}]', false) AS declined
   FROM calendar_events ce
   JOIN calendar_connections cc ON cc.id = ce.connection_id
   WHERE cc.user_id = ${USER_ID}
@@ -655,7 +658,7 @@ const profileJson = {
     events: events
       .filter((e) => new Date(e.start_time) >= w.start && new Date(e.start_time) < w.end)
       .map((e) => ({
-        summary: e.summary, start: e.start_time, end: e.end_time, allDay: e.is_all_day, location: e.location,
+        summary: e.summary, start: e.start_time, end: e.end_time, allDay: e.is_all_day, location: e.location, coach: e.coach, declined: e.declined,
         tz: travel.placeByDate[localDateKey(new Date(e.start_time), HOME.tz)]?.tz ?? HOME.tz,
       })),
   })),

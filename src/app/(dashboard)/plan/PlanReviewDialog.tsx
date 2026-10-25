@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeftRight, Eye, Moon } from 'lucide-react';
+import { ArrowLeftRight, CircleAlert, Eye, Moon, TriangleAlert } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import CalendarCard from '@/components/plan/CalendarCard';
@@ -66,6 +66,9 @@ export default function PlanReviewDialog({
   const [fetched, setFetched] = useState<WeekOutlook | null | undefined>(undefined);
   const outlook = preloaded ?? fetched;
   const [open, setOpen] = useState<string | null>(null);
+  // A plan that breaks one of Paolo's rules takes a second tap to accept.
+  const [confirming, setConfirming] = useState(false);
+  const fails = proposal.checks?.fails ?? 0;
 
   useEffect(() => {
     if (preloaded) return;
@@ -109,7 +112,11 @@ export default function PlanReviewDialog({
   const legacy = review ? [] : summaryBlocks(proposal.summary);
   const wx = (d: string) => (d >= today ? weather[d] : undefined);
 
-  const accept = () =>
+  const accept = () => {
+    if (fails > 0 && !confirming) {
+      setConfirming(true);
+      return;
+    }
     start(async () => {
       const r = await acceptProposalAction(proposal.id);
       if ('error' in r) {
@@ -121,6 +128,7 @@ export default function PlanReviewDialog({
       router.push(`/plan?week=${r.weekStart}`);
       router.refresh();
     });
+  };
   const reject = () =>
     start(async () => {
       await rejectProposalAction(proposal.id);
@@ -138,7 +146,7 @@ export default function PlanReviewDialog({
         <>
           <Button variant="outline" disabled={pending} onClick={reject}>Reject</Button>
           <Button disabled={pending} onClick={accept} title="Adds it to Coach, your calendar, Lift and Garmin">
-            {pending ? 'Saving…' : 'Accept'}
+            {pending ? 'Saving…' : confirming ? 'Accept anyway' : 'Accept'}
           </Button>
         </>
       }
@@ -173,6 +181,8 @@ export default function PlanReviewDialog({
         </div>
         {selected && <SessionDetail row={selected} onClose={() => setOpen(null)} />}
       </section>
+
+      {proposal.checks && proposal.checks.issues.length > 0 && <RuleIssues checks={proposal.checks} />}
 
       {review && review.decisions.length > 0 && (
         <section>
@@ -233,6 +243,29 @@ export default function PlanReviewDialog({
         </section>
       )}
     </CoachDialog>
+  );
+}
+
+const shortDay = (d: string) =>
+  new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
+
+/** Paolo's planning rules the plan breaks (fail) or bends (warn), failures first (src/lib/plan/rules.mjs). */
+function RuleIssues({ checks }: { checks: NonNullable<Proposal['checks']> }) {
+  const issues = [...checks.issues].sort((a, b) => (a.level === b.level ? (a.day ?? '').localeCompare(b.day ?? '') : a.level === 'fail' ? -1 : 1));
+  return (
+    <section data-testid="plan-rules">
+      <SectionTitle>{checks.fails ? `Breaks ${checks.fails} of your rules` : 'Rules to look at'}</SectionTitle>
+      <ul className="space-y-1 text-[13px] leading-snug text-[var(--viz-ink-2)]">
+        {issues.map((i, n) => (
+          <li key={n} className="flex gap-2">
+            {i.level === 'fail'
+              ? <CircleAlert aria-label="Breaks a rule" className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-500" />
+              : <TriangleAlert aria-label="Worth a look" className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />}
+            <span>{i.message}{i.day && !i.message.includes(':') ? ` (${shortDay(i.day)})` : ''}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
