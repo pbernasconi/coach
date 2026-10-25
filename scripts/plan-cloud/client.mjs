@@ -6,6 +6,7 @@
  *   node scripts/plan-cloud/client.mjs submit <proposalId> <weekStart>   # sends plans/<weekStart>.json, .summary.md and profile.json
  *   node scripts/plan-cloud/client.mjs fail <proposalId> "<what failed>"
  *   node scripts/plan-cloud/client.mjs server [proposalId]   # hands it to the server planner; prints handled=true|false
+ *     (FRESH=true: a new plan for next week, replacing the one waiting)
  *
  * claim without an id (the Sunday run) asks Coach for a new weekly request for next week, with no answers: the agent
  * decides from the data, and Paolo reviews it.
@@ -46,7 +47,7 @@ if (cmd === 'server') {
   const res = await fetch(`${coach}/api/plan/run`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', authorization: `Bearer ${secret}` },
-    body: JSON.stringify({ id: id || null }),
+    body: JSON.stringify({ id: id || null, fresh: process.env.FRESH === 'true' }),
     signal: AbortSignal.timeout(60_000),
   }).catch(() => null);
   const r = res?.ok ? await res.json().catch(() => ({})) : {};

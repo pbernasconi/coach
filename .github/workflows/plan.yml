@@ -19,6 +19,11 @@ on:
         description: The request from the Plan page (empty for a new weekly plan of next week)
         required: false
         default: ""
+      fresh:
+        description: Server planner only, no proposal_id - a new plan for next week, rejecting the one waiting
+        type: boolean
+        required: false
+        default: false
 
 concurrency: plan
 
@@ -47,6 +52,7 @@ jobs:
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           PROPOSAL_ID: ${{ inputs.proposal_id }}
+          FRESH: ${{ inputs.fresh }}
         run: node scripts/plan-cloud/client.mjs server "$PROPOSAL_ID" >> "$GITHUB_OUTPUT"
       - name: Agent login set up?
         if: steps.server.outputs.handled != 'true'
