@@ -1,7 +1,7 @@
 // @ts-check
-// Paolo's planning rules as code (.claude/commands/plan.md, plans/PLAN-STRUCTURE.md): the checks a plan should pass
+// Paolo's planning rules as code (src/lib/planner/prompts/coaching.md, plan-structure.md): the checks a plan should pass
 // before he sees it. They report and never change the plan; the import's own fixes (stackDays) come after, so a
-// score is the planner's first draft. scripts/check-plan.mjs runs them for the cloud planner, submitPlan stores them
+// score is the planner's first draft. The planner checks each draft with them (run.ts checkDraft), submitPlan stores them
 // with each proposal, and the review shows them. Pure, so node --test can run it.
 //
 // The plan of record: /mnt/project-files/planning/2026-10-25-server-planner-plan.md (Phase 1).
@@ -144,7 +144,7 @@ export function isQuality(s) {
   return isHard({ workoutType: s.workoutType ?? '', title: s.title, intensity: s.intensity });
 }
 
-/** A physio session (PLAN-STRUCTURE "Physio": "🩹 Physio A — Achilles & calf"). @param {{ title?: string }} s */
+/** A physio session (plan-structure.md "Physio": "🩹 Physio A — Achilles & calf"). @param {{ title?: string }} s */
 export function isPhysio(s) {
   return /\bphysio/i.test(String(s?.title ?? ''));
 }
@@ -314,7 +314,7 @@ export function checkRules(sessions, { weekStart, request = null, context = null
   const physioWant = floorWeek || shortWeek ? 1 : 2;
   if (physioDays.length < physioWant) {
     add('R9', 'warn', null, physioDays.length
-      ? `1 physio session; a full week has 2 (Physio A and B, PLAN-STRUCTURE "Physio").`
+      ? `1 physio session; a full week has 2 (Physio A and B, plan-structure.md "Physio").`
       : 'No physio this week: plan Physio A (and B on a full week) on a rest or easy day.');
   }
   for (let i = 1; i < physioDays.length; i++) {

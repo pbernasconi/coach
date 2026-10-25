@@ -32,7 +32,7 @@ on:
         required: false
         default: ""
       workouts_only:
-        description: Only put Coach's planned runs on the Garmin calendar (what /plan and /check-in start)
+        description: Only put Coach's planned runs on the Garmin calendar (what plan-apply.yml starts after an accept)
         type: boolean
         required: false
         default: false

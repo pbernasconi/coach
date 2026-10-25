@@ -7,7 +7,7 @@
  *
  *   node --env-file=.env.local scripts/zwift-workouts.mjs [--days 14] [--dry-run] [--folder <path>]
  *
- * /plan and /check-in run it; scripts/zwift/install.sh runs it every 30 minutes on the Mac (launchd).
+ * scripts/zwift/install.sh runs it every 30 minutes on the Mac (launchd).
  * Logic: src/lib/workouts/sync.mjs (target 'zwift').
  */
 

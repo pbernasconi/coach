@@ -1,4 +1,4 @@
-// Paolo's zone anchors, from plans/PLAN-STRUCTURE.md (FTP 265 W, LTHR 168). Change them there and here.
+// Paolo's zone anchors, from src/lib/planner/prompts/plan-structure.md (FTP 265 W, LTHR 168). Change them there and here.
 // No imports, so node --test can run it (zones.test.mjs).
 
 export const ZONES = {
@@ -13,7 +13,7 @@ export const ZONES = {
 
 /**
  * The zone targets that apply to a workout, from its type, intensity and title.
- * Power is shown for rides only; runs go by heart rate (PLAN-STRUCTURE: HR for all but Z5).
+ * Power is shown for rides only; runs go by heart rate (plan-structure.md: HR for all but Z5).
  * @param {{ title?: string, workoutType?: string | null, intensity?: string | null, sport?: string }} w
  * @returns {{ zone: string, label: string, target: string }[]}
  */

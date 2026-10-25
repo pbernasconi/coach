@@ -1,4 +1,4 @@
-// The coach's workout bank (plans/PLAN-STRUCTURE.md) as structured workouts, each with its own progression.
+// The coach's workout bank (src/lib/planner/prompts/plan-structure.md) as structured workouts, each with its own progression.
 // `level` 0 is the first step of a progression; /plan raises it by 1 when the last one was done, and repeats or
 // lowers it when it was not. Pure; node --test.
 
@@ -8,7 +8,7 @@ const min = (m) => ({ type: 'time', s: Math.round(m * 60) });
 const sec = (s) => ({ type: 'time', s });
 const open = { type: 'open' };
 const step = (kind, duration, target, extra = {}) => ({ kind, duration, target, ...extra });
-// Z5 by power on the bike; on foot by effort only (PLAN-STRUCTURE: heart rate for all but Z5, it lags).
+// Z5 by power on the bike; on foot by effort only (plan-structure.md: heart rate for all but Z5, it lags).
 const hard = (sport) => (sport === 'ride' ? zoneTarget('Z5', 'ride') : open);
 
 /** The finish every workout of the bank shares: 10–20 min at the top of Z2 (lactate clearance), here 15. */

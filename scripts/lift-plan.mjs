@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Puts the plan's strength workouts into Lift as planned sessions, so every set has a target and every rep and weight
- * is logged in Lift. /plan and /check-in run it after plan-import.mjs. Safe to re-run.
+ * is logged in Lift. plan-apply.yml runs it after Paolo accepts a plan. Safe to re-run.
  *
  *   node --env-file=.env.local scripts/lift-plan.mjs [--days 21] [--dry-run]
  *

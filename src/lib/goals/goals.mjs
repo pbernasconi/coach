@@ -1,7 +1,7 @@
 import { toDay } from '../db-time.mjs';
 
 // Milestone goals: one measurable target with a deadline, measured from Strava and Garmin data.
-// They live in users.settings.goals. The web (Performance, Settings) and /plan (scripts/coach-profile.mjs) use this file.
+// They live in users.settings.goals. The web (Performance, Settings) and the planner (src/lib/planner/profile.mjs) use this file.
 
 /**
  * @typedef {'run_10k_pace' | 'ski_4000m' | 'vo2max' | 'ride_km'} GoalKind

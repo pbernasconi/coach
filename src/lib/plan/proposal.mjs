@@ -1,4 +1,4 @@
-// Checks for the cloud plan (scripts/plan-cloud/PROMPT.md, .github/workflows/plan.yml): the request Paolo sends from
+// Checks for the planner's plans (src/lib/planner/): the request Paolo sends from
 // the Plan page, and the plan the agent proposes, before Coach stores it. Pure, so node --test can run it.
 
 import { rowsFromPlan } from './import.mjs';

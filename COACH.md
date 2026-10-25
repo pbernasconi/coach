@@ -1,111 +1,62 @@
-# Coach — Personal Training Workflow
+# Coach — how planning works
 
 The routes and data sources are in COACH-API.md; the Lift sync contract is lift/SYNC.md.
 
-This repo doubles as my personal coach. Open it in Claude Code and use the slash commands.
+Coach plans Paolo's training with the Claude API. There is one planner, in Coach itself (`src/lib/planner/`).
+Nothing plans locally or in a GitHub job.
 
-## Quick start
+## When it plans
 
-```
-/plan              # generate this week's plan (or next week)
-/plan --two-weeks  # generate 2 weeks (e.g. build + recovery)
-/check-in          # mid-week: log what you did, adjust remaining days
-```
-
-Both commands are non-interactive defaults plus 2–3 questions per run.
-
-## In the cloud (no Mac needed)
-
-Coach plans in a GitHub job (`.github/workflows/plan.yml`) with Claude Code, by the same rules as `/plan`
-(`scripts/plan-cloud/PROMPT.md` points the agent at `.claude/commands/plan.md`):
-
-- **Every Sunday at 08:00 PDT** it plans next week from the data alone.
-- **Any time**, Plan page → **Plan with Coach**: pick next week or the rest of this week (a check-in). The dialog
-  shows what Coach sees (fitness, form, recent weeks, readiness, how sessions felt, skips, the next event, the week's
+- **Every Sunday from 08:17 PDT** it plans next week from the data alone. `sync.yml` calls `POST /api/plan/run`
+  each hour on Sunday from 15:17 UTC; the first call starts the plan, later calls see the week has one.
+- **Any time**, Plan page → **Plan with Coach**: next week, or the rest of this week (a check-in). The dialog shows
+  what Coach sees (fitness, form, recent weeks, readiness, how sessions felt, skips, the next event, the week's
   calendar and weather) and asks how you feel (pre-filled from the data), time available, days off, gym sessions,
-  the focus and notes. The job starts at once and takes a few minutes.
+  the focus and notes. A plan takes 1–3 minutes.
 
-The plan comes back as a proposal on the Plan page: **Review** shows the week as a /plan week row (weather, the
-same cards, the projected end-of-week fitness), each session's reason, the key decisions and their trade-offs, and
-what to watch (the plan JSON's `review`, `src/lib/plan/review.mjs`). **Accept**
-writes it into Coach (the same import as `/plan`; workouts you changed on the web stay) and onto Google Calendar,
-then `plan-apply.yml` plans the Lift sessions and puts the runs on Garmin. **Reject** changes nothing. Nothing reaches
-your calendar before Accept: the profile holds calendar text from other people, and the review is the gate.
+## How a plan is made
 
-The agent gets no database URL and no Coach secret; it can only read the repository and write `plans/`. The steps
-before and after it build the profile and send the plan (`scripts/plan-cloud/client.mjs`, `POST /api/plan/proposals`).
+1. Coach stores the request (`plan_proposals`, status `requested`).
+2. It builds the athlete profile for that week (`profile.mjs`) and, for a check-in, the week as it is now
+   (`current-week.mjs`).
+3. It sends Claude the system prompt (the four files in `src/lib/planner/prompts/`, cached) and the week (the request,
+   the profile).
+4. Claude hands the plan in with the `submit_plan` tool. Coach checks it in code: the format (`proposal.mjs`) and
+   Paolo's rules (`rules.mjs`). A failed check goes back to Claude as a list to fix, 3 tries at most (`loop.mjs`).
+5. The plan is saved as a proposal; each run is recorded in `plan_runs` (tokens, cost, tries, the rules the first
+   draft broke).
+6. **Review** on the Plan page shows the week, each session's reason, the key decisions and trade-offs, and what to
+   watch (`review.mjs`). **Accept** writes it into Coach (workouts changed on the web stay; a check-in keeps the days
+   before it) and onto Google Calendar, then `plan-apply.yml` plans the Lift sessions and puts the runs on Garmin.
+   **Reject** changes nothing.
 
-Setup (once): GitHub secret `CLAUDE_CODE_OAUTH_TOKEN` (`claude setup-token`) or `ANTHROPIC_API_KEY`, and
-`LIFT_SYNC_TOKEN`; Vercel `GITHUB_DISPATCH_TOKEN` (a fine-grained token for this repository, Actions: read and write).
+Nothing reaches the calendar before Accept: the profile holds calendar text from other people, and the review is
+the gate.
 
-The local `/plan` and `/check-in` below still work, for a conversation about the week.
+A run that can't plan (no key, over the budget, an API error, no valid plan in time) marks the request failed with
+the reason, and the Plan page offers to try again.
 
-## What `/plan` actually does
+## The prompts
 
-1. Refreshes the athlete profile (Strava 90d, fitness state CTL/ATL/TSB, calendar, weather, Lift templates).
-2. Shows a 4-line current-state snapshot.
-3. Asks 3 quick questions (how you feel · this week's focus · anything to lock).
-4. Drafts a 7-day plan honoring your goals, natural rhythm, weather, and calendar.
-5. Confirms with you, then writes `plans/YYYY-MM-DD.{md,json}`.
-6. Auto-pushes events to your personal Google Calendar (purple, idempotent re-runs). Each event links to its
-   workout in Coach (`/plan?week=…&open=w-<id>`).
+| File | What it is |
+| --- | --- |
+| `prompts/planner.md` | The job: what Claude gets, the plan JSON it hands in, the review Paolo reads, weather, safety |
+| `prompts/coaching.md` | The coaching rules: week shape, rotation, strength, physio, one session a day, floor weeks, principles |
+| `prompts/check-in.md` | How to change a week that has started: past days stay, skips by reason |
+| `prompts/plan-structure.md` | The coach's plan: week pattern, workout bank and progressions, lifts, physio, zones |
 
-## What `/check-in` does
+After editing a prompt file, run `node scripts/planner-prompt.mjs` (it bundles them into
+`prompt-sources.generated.mjs`; `npm test` fails when the bundle is stale). A rule that must always hold also goes
+into `src/lib/plan/rules.mjs`, so Coach checks it.
 
-1. Reads the current `plans/YYYY-MM-DD.{md,json}`.
-2. Pulls fresh Strava — diffs planned vs actual.
-3. Shows updated fitness state.
-4. Asks how things felt + whether to adjust.
-5. Annotates past days (✅ or ~~skip~~) and modifies future days in place.
-6. Syncs calendar if any future events changed.
+## Setup and cost
 
-## Durable preferences
+- Vercel: `ANTHROPIC_API_KEY` (the planner), `GITHUB_DISPATCH_TOKEN` (starts `plan-apply.yml` after an accept).
+- GitHub: `CRON_SECRET`, `PROD_DATABASE_URL`, `LIFT_SYNC_TOKEN` (for `sync.yml` and `plan-apply.yml`).
+- Claude Opus 5.5, adaptive thinking, medium effort: about $0.30–0.70 a plan. The planner stops for the month at
+  $25 (`cost.mjs`); Settings → Planner shows the spend and the last run.
 
-Stored in `~/.claude/projects/-Users-paolo-work-personal-coach/memory/`. The commands honor these automatically — no need to re-state every week:
+## Preferences and goals
 
-- **Units**: Celsius, km, min/km
-- **Goals**: milestones with a target and a deadline, in Coach → Settings → Goals (10k at 4:00/km, 3 × 4000 m ski peaks, VO2 max 52, 6,000 km of riding in 2027). Performance shows the progress.
-- **Strength**: 2 sessions/wk — heavy barbell + dumbbell
-- **Calendar**: personal Gmail, purple events, each with an "Open in Coach" link to the workout. Moving an event on
-  the calendar moves the workout in Coach (within the hour)
-- **Templates**: the Lift app's templates (Heavy barbell, Upper (dumbbells), Hotel gym (dumbbells)) are authoritative for
-  lift programming. `scripts/lift-plan.mjs` plans each strength workout as a Lift session, so every rep and load is logged
-
-To update any of these: edit the file in the memory directory, or just tell Claude in conversation ("I changed my goal to X").
-
-## Data sources
-
-| Source | What we pull | How |
-|---|---|---|
-| Strava | Activities + laps + splits + streams + athlete profile (FTP, zones, weight) | OAuth refresh, `scripts/strava-backfill.mjs` |
-| Google Calendar | Synced events from 3 accounts; pushed workout events to personal | App OAuth (read) + google-calendar skill creds (write) |
-| Lift (iPhone) | Workouts and templates, synced to the database | Lift sync (`lift/SYNC.md`) |
-| Garmin Connect | HRV, sleep, resting HR, Body Battery, readiness, lactate threshold | `garmin.yml` (GitHub Actions) |
-| Function Health | Lab results and the clinician's notes | `function.yml`, by hand |
-| Weather | NWS for US places, Open-Meteo elsewhere | Free, no key |
-
-## File layout
-
-```
-.claude/commands/
-  plan.md                  # /plan slash command instructions
-  check-in.md              # /check-in slash command instructions
-scripts/
-  coach-profile.mjs        # athlete profile aggregator
-  add-workouts-to-calendar.mjs  # push events to calendar (idempotent)
-  lift-plan.mjs                 # strength workouts → planned Lift sessions (sets, targets), linked by id
-  strava-backfill.mjs      # backfill Strava data
-  README.md                # detailed script docs
-plans/
-  YYYY-MM-DD.md            # one per Monday — human-readable plan
-  YYYY-MM-DD.json          # one per Monday — structured events
-src/lib/
-  plan/weather.ts, plan/forecast.mjs   # NWS and Open-Meteo forecasts (app + scripts)
-  strava-sync/tss.mjs, load.mjs        # TSS and CTL/ATL/TSB
-```
-
-## Future extensions
-
-- **Streams analysis**: TSS uses the streams (`src/lib/strava-sync/tss.mjs`), but there is no analyser yet for
-  cardiac drift, decoupling or interval execution.
-- **Goal-driven blocks**: /plan could build periodized blocks (base → build → test) toward each milestone deadline.
+They live in Coach, not in a chat or memory: Settings → Coaching preferences (printed in the profile), Settings →
+Goals (milestones with a target and a deadline), the Lift templates (the strength programming).

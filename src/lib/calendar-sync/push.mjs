@@ -1,5 +1,5 @@
 // Puts a plan week's workouts on Google Calendar (the personal calendar of the active connection), purple.
-// The database is the source: the CLI (/plan, /check-in) and the web (move, skip, how I feel) both call
+// The database is the source: an accepted plan, scripts/plan-edit.mjs and the web (move, skip, how I feel) both call
 // pushWeek. Each event carries the workout id, so a re-push updates, creates and deletes only what changed.
 // A workout moved on the calendar (another time or day) keeps that move: the push copies it into the database
 // first (adoptMove). Each event records the time Coach last wrote (coachTime), so a push can tell a move on the

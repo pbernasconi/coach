@@ -25,7 +25,7 @@ export type DayWeather = {
   src: 'NWS' | 'Open-Meteo';
 };
 
-/** Used when users.settings has no `location: { name, lat, lon }`. The same home as scripts/coach-profile.mjs. */
+/** Used when users.settings has no `location: { name, lat, lon }`. The same home as the planner's profile (src/lib/planner/profile.mjs). */
 export const DEFAULT_PLACE: Place = { name: 'San Francisco, CA', lat: 37.7749, lon: -122.4194 };
 
 export function placeFrom(settings: unknown): Place {

@@ -50,7 +50,7 @@ adapted, zones: [{ zone, label, target }] }`. Events leave out cancelled ones, o
 | --- | --- | --- |
 | Activities | Strava webhook, crons | `strava_activities`, `daily_training_load` |
 | Lifts and templates | Lift app (sync) | `lift_rows` |
-| Week plan | `/plan` (import), web week page, `scripts/plan-edit.mjs` | `training_plans`, `training_plan_activities` |
+| Week plan | an accepted plan, web week page, `scripts/plan-edit.mjs` | `training_plans`, `training_plan_activities` |
 | Calendar | calendar cron | `calendar_events` (Google is the source; Coach pushes plan workouts back as purple events) |
 | Preferences, targets, calendars to sync | Settings page | `users.settings` (optional `location: { name, lat, lon }` for the /plan weather; default San Francisco) |
 | Weather on /plan | Open-Meteo forecast, cached 3 h | not stored |
@@ -291,12 +291,12 @@ Bearer `CRON_SECRET`. Every scan in full for AI questions: `{ scans: [FullScan &
 resultId, scanDate, kind, name, contentType, sizeBytes, url, text }] }` (`FullScan` is in `dexa.mjs`).
 `?format=md` answers one Markdown document instead: a table of the scans, each scan's report and the PDFs' text.
 `GET /api/vitals/dexa/files/{id}` (same bearer) is one file. Locally, `node --env-file=.env.local
-scripts/dexa-report.mjs` prints the same Markdown from the database, and profile.md (for /plan and /check-in) has a
+scripts/dexa-report.mjs` prints the same Markdown from the database, and the planner's profile has a
 DEXA line.
 
 ## `POST /api/plan/proposals`
 
-`Authorization: Bearer <CRON_SECRET>`. The cloud plan job (`scripts/plan-cloud/client.mjs`) and `plan-apply.yml`.
+`Authorization: Bearer <CRON_SECRET>`. `sync.yml` (the Sunday plan, `/api/plan/run`) and `plan-apply.yml`.
 The table is `plan_proposals` (`src/db/plan-schema.ts`); the flow is in COACH.md, "In the cloud".
 
 | `action` | Body | Does |

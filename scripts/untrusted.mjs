@@ -17,11 +17,9 @@
  *
  * This cannot strip *intent* — hostile prose survives as inline text. It removes
  * the ability to impersonate document structure. The labelled blockquote in
- * profile.md and the human confirm at /plan Step 5 are the other two layers.
+ * profile and Paolo's Accept of every plan are the other two layers.
  *
- * Lives in its own module (rather than inline in coach-profile.mjs) so it is
- * testable — coach-profile.mjs runs DB queries at import time and can't be
- * imported by a test.
+ * Lives in its own module so it is testable without a database.
  */
 
 // Control chars + Unicode LINE/PARAGRAPH SEPARATOR, which also break lines in

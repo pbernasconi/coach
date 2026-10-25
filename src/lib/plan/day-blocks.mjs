@@ -1,7 +1,7 @@
-// Paolo's rule (2026-10-24, .claude/commands/plan.md): one session a day, or one stacked block. He drops a second
+// Paolo's rule (2026-10-24, src/lib/planner/prompts/coaching.md): one session a day, or one stacked block. He drops a second
 // session that comes hours after the first, and he won't run after a lift. This turns any day a plan gives two or
 // more timed sessions into one block: runs before lifts, each session starting when the one before it ends.
-// rowsFromPlan applies it, so /plan, /check-in and the cloud planner all get it. Pure, so node --test can run it.
+// rowsFromPlan applies it, so every accepted plan gets it. Pure, so node --test can run it.
 
 import { sportOf } from './week.mjs';
 

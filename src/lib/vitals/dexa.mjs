@@ -2,7 +2,7 @@
 // One DEXA scan in full, from the sections BodySpec sent (dexa_scans.raw): every region, bone site, percentile and
 // RMR formula, plus the measures derived from them (FFMI, ALMI, left/right balance). The same model feeds the
 // /health/dexa pages, the plain-text report stored for AI questions (dexa_scans.report_md) and the profile that
-// /plan and /check-in read. Pure, tested in dexa.test.mjs.
+// the planner reads. Pure, tested in dexa.test.mjs.
 
 /** Bump when scanReport or deriveScan change: the sync rebuilds stored reports with an older version. */
 export const REPORT_VERSION = 1;

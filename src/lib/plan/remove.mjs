@@ -13,7 +13,7 @@ import { mondayOf } from './week.mjs';
 export function removeNotice(w) {
   const notes = [];
   if (w.state === 'done') notes.push('It is matched to a completed activity. The activity stays; only the plan entry goes.');
-  if (w.imported) notes.push('It came from the plan file. A new import of that week (/plan, /check-in) adds it again.');
+  if (w.imported) notes.push('It came from the plan file. Accepting a new plan for that week adds it again.');
   notes.push('Its Google Calendar event is deleted too.');
   return { question: `Remove “${w.title}”?`, notes };
 }

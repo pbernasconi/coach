@@ -1,4 +1,4 @@
-import PlannerSwitch from './PlannerSwitch';
+import PlannerPanel from './PlannerPanel';
 import { loadPlannerStatus } from '@/lib/planner/run';
 import { fmtDate } from '@/lib/vitals/health-view.mjs';
 import type { Metadata } from 'next';
@@ -384,14 +384,14 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         </Group>
 
         <Group id="coach" title="Coach">
-          <Panel id="preferences" title="Coaching preferences" help="Weekly structure and rules in Markdown. /plan and /check-in read them; change them here, not in a chat.">
+          <Panel id="preferences" title="Coaching preferences" help="Weekly structure and rules in Markdown. The planner reads them; change them here.">
             <CoachingNotesForm notes={coachingNotes} />
           </Panel>
           <Panel id="location" title="Weather location" help="The /plan week and month views show the forecast for this place.">
             <LocationForm />
           </Panel>
-          <Panel id="planner" title="Planner" help="Who plans your weeks: Coach with the Claude API (capped each month), or the GitHub job.">
-            {planner.ok ? <PlannerSwitch status={planner.value} /> : <SectionError label="Planner" />}
+          <Panel id="planner" title="Planner" help="Coach plans your weeks and check-ins with the Claude API, capped each month.">
+            {planner.ok ? <PlannerPanel status={planner.value} /> : <SectionError label="Planner" />}
           </Panel>
         </Group>
       </div>

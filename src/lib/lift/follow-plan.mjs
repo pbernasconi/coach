@@ -6,7 +6,7 @@
 // The rule is lift-plan.mjs's: a session that was started, finished or has a logged set never changes. A skipped or
 // removed workout soft-deletes its session (only the session row, as LiftStore's own remove does; its exercises and
 // sets stay and go with it). An un-skip or an Undo of a remove brings the session back (LiftStore's undo does the
-// same). lift-plan.mjs still runs after /plan and /check-in: it re-plans the targets and clears the link of a
+// same). lift-plan.mjs still runs after an accepted plan (plan-apply.yml): it re-plans the targets and clears the link of a
 // removed session.
 //
 // `liftFollowChange` is pure (node --test, follow-plan.test.mjs); `followLiftSession` and `followWorkout` read the

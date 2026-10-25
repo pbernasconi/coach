@@ -24,7 +24,7 @@ export async function followSessionsInPlan(changes: { entity: string; id: string
   const moves = planFollowMoves(
     sessions,
     rows.map((r) => {
-      // The workout's last change on the server: a web or /check-in edit (edited_at), or a script (updated_at).
+      // The workout's last change on the server: a web edit (edited_at), or a script (updated_at).
       const times = [toDate(r.edited_at), toDate(r.updated_at)].filter((t): t is Date => t !== null);
       const changedAt = times.length ? new Date(Math.max(...times.map((t) => t.getTime()))) : null;
       return { id: String(r.id), liftSessionId: String(r.lift_session_id), date: toDay(r.scheduled_date) ?? '', status: String(r.status ?? ''), changedAt };

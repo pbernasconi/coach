@@ -1,6 +1,6 @@
-// The numbers behind .claude/commands/plan.md "Full weeks, floor weeks and the month": lifts in the last 4 weeks
+// The numbers behind the coaching rules' "Full weeks, floor weeks and the month": lifts in the last 4 weeks
 // (the target is 2 a week), days since the last lift (never miss twice), and where a week sits in the 4-week block
-// (week 4 is the lighter week that opens with the monthly review). coach-profile.mjs prints them. Pure.
+// (week 4 is the lighter week that opens with the monthly review). The planner's profile prints them. Pure.
 
 import { addDays } from './week.mjs';
 

@@ -1,7 +1,6 @@
 // The athlete profile the coach plans from (profile.md for the model, profile.json for code): fitness, recent
-// sessions, calendar, travel, weather, the workout rotation, Lift templates, goals, readiness. One function, so the
-// /plan command (scripts/coach-profile.mjs, which syncs first and writes the files) and the server planner
-// (src/lib/planner/run.ts) build the same thing. No file writes, no child processes.
+// sessions, calendar, travel, weather, the workout rotation, Lift templates, goals, readiness. The planner
+// (src/lib/planner/run.ts) builds it for each run. No file writes, no child processes.
 
 import { goalLine, loadGoals, measureGoals } from '../goals/goals.mjs';
 import { resolveTravel, dateKeysBetween, HOME_TZ } from '../../../scripts/travel.mjs';
@@ -486,7 +485,7 @@ export async function buildProfile(sql, { userId: USER_ID = OWNER_ID, weekOf: we
     ...liftSessions.logged.map((ses) => ses.day),
   ];
   const lifts = liftConsistency(liftDays, todayLocal);
-  md.push(`## Consistency and the 4-week block (.claude/commands/plan.md, "Full weeks, floor weeks and the month")`);
+  md.push(`## Consistency and the 4-week block (coaching rules, "Full weeks, floor weeks and the month")`);
   md.push(`- **Lifts, last 28 days**: ${lifts.last28} of ${lifts.target28} (target 2 a week, 1 is the floor)`);
   md.push(`- **Last lift**: ${lifts.lastDay ? `${lifts.lastDay} (${lifts.daysSince} days ago)` : 'none in 120 days'}${lifts.liftFirst ? ' → never miss twice: the first lift goes in the first 2 days of the week' : ''}`);
   for (const w of weekWindows) {
@@ -501,10 +500,10 @@ export async function buildProfile(sql, { userId: USER_ID = OWNER_ID, weekOf: we
     const d = new Date(r.scheduled_date).toISOString().slice(0, 10);
     md.push(`- ${d}: ${r.title} (${r.intensity ?? '-'}, ${r.duration ?? '?'} min, ${r.tss ?? '?'} TSS) — skipped: ${r.skip_reason ?? 'no reason given'}`);
   }
-  md.push('A skip for tired, sick or sore is a fatigue signal: never make it up, and ease the next 1–2 days (see /check-in).');
+  md.push('A skip for tired, sick or sore is a fatigue signal: never make it up, and ease the next 1–2 days (see check-ins).');
   md.push('');
 
-  md.push(`## Workout rotation (plans/PLAN-STRUCTURE.md order)`);
+  md.push(`## Workout rotation (plan-structure.md order)`);
   md.push(`- **Next workouts, in order**: ${rotation.nextLabels.join(' → ')}`);
   md.push(`- **Last time** (progress it when done; repeat or step back when not):`);
   for (const [bank, l] of Object.entries(rotation.last)) {

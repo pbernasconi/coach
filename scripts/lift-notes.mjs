@@ -1,6 +1,6 @@
 // Lift notes for the athlete profile: what Paolo wrote in Lift about a workout, an exercise or a set ("felt heavy",
 // "Achilles sore", "go up 5 lb"). The planner reads them to adapt the next sessions (COACH.md, .claude/commands).
-// Pure, so it is testable: coach-profile.mjs runs database queries at import time.
+// Pure, so it is testable: the profile (src/lib/planner/profile.mjs) needs a database.
 import { untrusted } from './untrusted.mjs';
 
 /** A note flattened to one line for markdown, or null when there is none. */

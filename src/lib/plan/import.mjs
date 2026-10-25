@@ -1,10 +1,11 @@
-// Imports a plans/<weekStart>.json file (written by /plan and /check-in) into training_plans and
-// training_plan_activities, so the web week page and the start page can show and change it.
+// Imports an accepted plan (the planner's plan JSON) into training_plans and training_plan_activities, so the web
+// week page and the start page can show and change it.
 //
 // The JSON stays the source for workouts nobody changed on the web. A workout moved, adapted or skipped on
 // the web (edited_at or adapted_from set) keeps its web version. A workout removed from the JSON is
-// deleted unless it was changed on the web. `liftTemplate` names the Lift template of a strength workout;
-// scripts/lift-plan.mjs then plans the Lift session (run it after the import).
+// deleted unless it was changed on the web, or (a check-in) it is on a day before `keepBefore`: past days are
+// history. `liftTemplate` names the Lift template of a strength workout; scripts/lift-plan.mjs (plan-apply.yml) then
+// plans the Lift session.
 
 import { createId } from '@paralleldrive/cuid2';
 import { LIFT_MARKER } from './lift-plan.mjs';
@@ -12,6 +13,7 @@ import { sportOf } from './week.mjs';
 import { bankWorkout } from '../workouts/bank.mjs';
 import { totals, validate } from '../workouts/steps.mjs';
 import { stackDays } from './day-blocks.mjs';
+import { toDay } from '../db-time.mjs';
 
 function minutesBetween(start, end) {
   const ms = Date.parse(end) - Date.parse(start);
@@ -88,11 +90,12 @@ export function rowsFromPlan(plan) {
 /**
  * @param {import('@neondatabase/serverless').NeonQueryFunction<false, false>} sql
  * @param {string} userId
- * @param {object} plan  parsed plans/<weekStart>.json
- * @param {string} [markdown]  plans/<weekStart>.md, stored as plan_content
+ * @param {object} plan  the plan JSON
+ * @param {string} [markdown]  the plan's summary, stored as plan_content
+ * @param {{ keepBefore?: string | null }} [opts]  a check-in's day: workouts before it are never deleted
  * @returns {Promise<{ planId: string, inserted: number, updated: number, kept: number, deleted: number }>}
  */
-export async function importPlan(sql, userId, plan, markdown) {
+export async function importPlan(sql, userId, plan, markdown, { keepBefore = null } = {}) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(plan.weekStart ?? '')) throw new Error('plan.weekStart must be YYYY-MM-DD');
   const weekEnd = plan.weekEnd ?? plan.weekStart;
   const context = {
@@ -104,7 +107,7 @@ export async function importPlan(sql, userId, plan, markdown) {
   const [planRow] = await sql`
     INSERT INTO training_plans (id, user_id, week_start_date, week_end_date, plan_content, ai_model, context_data, status)
     VALUES (${createId()}, ${userId}, ${plan.weekStart}, ${weekEnd}, ${markdown ?? plan.title ?? plan.weekStart},
-            ${'claude /plan'}, ${JSON.stringify(context)}, 'active')
+            ${'coach planner'}, ${JSON.stringify(context)}, 'active')
     ON CONFLICT (user_id, week_start_date) DO UPDATE SET
       week_end_date = EXCLUDED.week_end_date, plan_content = EXCLUDED.plan_content,
       context_data = EXCLUDED.context_data, updated_at = NOW()
@@ -112,13 +115,18 @@ export async function importPlan(sql, userId, plan, markdown) {
   const planId = planRow.id;
 
   const existing = await sql`
-    SELECT id, source_key, edited_at, adapted_from, description, intensity, lift_session_id
+    SELECT id, source_key, scheduled_date, edited_at, adapted_from, description, intensity, lift_session_id
     FROM training_plan_activities WHERE plan_id = ${planId}`;
-  const bySource = new Map(existing.filter((r) => r.source_key).map((r) => [r.source_key, r]));
+  // A check-in never changes a day before `keepBefore`: those rows are history. Source keys are positions in the
+  // plan (weekStart#i), so a new row whose key a past row holds takes another key instead of overwriting it.
+  const past = (r) => Boolean(keepBefore) && (toDay(r.scheduled_date) ?? '') < keepBefore;
+  const bySource = new Map(existing.filter((r) => r.source_key && !past(r)).map((r) => [r.source_key, r]));
+  const pastKeys = new Set(existing.filter((r) => r.source_key && past(r)).map((r) => r.source_key));
   const touched = (r) => r.edited_at != null || r.adapted_from != null;
 
   const counts = { planId, inserted: 0, updated: 0, kept: 0, deleted: 0 };
   const rows = rowsFromPlan(plan);
+  for (const r of rows) while (pastKeys.has(r.sourceKey)) r.sourceKey += '~';
   for (const r of rows) {
     const old = bySource.get(r.sourceKey);
     if (old && touched(old)) {
@@ -157,7 +165,7 @@ export async function importPlan(sql, userId, plan, markdown) {
   }
   const keys = new Set(rows.map((r) => r.sourceKey));
   for (const old of existing) {
-    if (old.source_key && !keys.has(old.source_key) && !touched(old)) {
+    if (old.source_key && !keys.has(old.source_key) && !touched(old) && !past(old)) {
       await sql`DELETE FROM training_plan_activities WHERE id = ${old.id}`;
       counts.deleted++;
     }

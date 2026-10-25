@@ -1,19 +1,19 @@
 /**
- * The cloud plan: requests from the Plan page, the job's claims and results, and Paolo's accept or reject.
- * The table is plan_proposals (src/db/plan-schema.ts); the checks are in proposal.mjs; the job is
- * .github/workflows/plan.yml, and an accept starts plan-apply.yml (Lift sessions, Garmin).
+ * Plans waiting for Paolo: requests (the Plan page, the Sunday run), the planner's results (src/lib/planner/run.ts),
+ * and his accept or reject. The table is plan_proposals (src/db/plan-schema.ts); the checks are in proposal.mjs and
+ * rules.mjs; an accept starts plan-apply.yml (Lift sessions, Garmin).
  */
 
 import { createId } from '@paralleldrive/cuid2';
 import { sql } from '@/db';
 import { toDay, toIso } from '@/lib/db-time.mjs';
-import { HOME_TZ, pushWeek } from '@/lib/calendar-sync/push.mjs';
+import { pushWeek } from '@/lib/calendar-sync/push.mjs';
 import { importPlan } from '@/lib/plan/import.mjs';
 import { checkPlan } from '@/lib/plan/proposal.mjs';
 import { checkProposal, todayOf } from '@/lib/plan/rules.mjs';
 import { cleanReview } from '@/lib/plan/review.mjs';
 import type { StructuredWorkout } from '@/lib/plan/queries';
-import { addDays, mondayOf, todayIn } from '@/lib/plan/week.mjs';
+import { mondayOf } from '@/lib/plan/week.mjs';
 
 export type PlanRequest = {
   kind: 'weekly' | 'checkin'; weekStart: string; feel: string | null; focus: string | null; lock: string | null;
@@ -78,15 +78,8 @@ export async function createRequest(userId: string, req: PlanRequest): Promise<s
   return id;
 }
 
-/**
- * The job takes a request: the one with `id`, or (the Sunday run, no id) a new weekly request for next week with no
- * answers. Marks it running.
- */
-export async function claimRequest(userId: string, id: string | null): Promise<{ id: string; request: PlanRequest } | null> {
-  if (!id) {
-    const weekStart = addDays(mondayOf(todayIn(HOME_TZ)), 7);
-    id = await createRequest(userId, { kind: 'weekly', weekStart, feel: null, focus: null, lock: null });
-  }
+/** The planner takes the request `id`: marks it running. Null when it is no longer open. */
+export async function claimRequest(userId: string, id: string): Promise<{ id: string; request: PlanRequest } | null> {
   const [r] = (await sql`
     UPDATE plan_proposals SET status = 'running', updated_at = NOW()
     WHERE id = ${id} AND user_id = ${userId} AND status IN ('requested', 'running')
@@ -95,9 +88,9 @@ export async function claimRequest(userId: string, id: string | null): Promise<{
 }
 
 /**
- * The agent's plan. A plan that fails the format checks marks the request failed, with the reason. Paolo's planning
- * rules (rules.mjs) only report: the result is stored with the plan and shown in the review. `context` is the
- * profile.json the job planned from, kept for the evals.
+ * The planner's plan. A plan that fails the format checks marks the request failed, with the reason. Paolo's planning
+ * rules (rules.mjs) only report here: the result is stored with the plan and shown in the review. `context` is the
+ * profile the planner planned from (the Past plans page shows it).
  */
 export async function submitPlan(
   userId: string, id: string, plan: unknown, summary: string | null, context: unknown = null,
@@ -166,17 +159,18 @@ export async function proposalById(userId: string, id: string): Promise<Proposal
 }
 
 /**
- * Accept: the plan goes into Coach (the same import as /plan, which keeps workouts changed on the web), then onto
- * Google Calendar; plan-apply.yml then plans the Lift sessions and the Garmin runs.
+ * Accept: the plan goes into Coach (the import keeps workouts changed on the web, and a check-in keeps the days before
+ * it), then onto Google Calendar; plan-apply.yml then plans the Lift sessions and the Garmin runs.
  */
 export async function acceptProposal(
   userId: string,
   id: string,
 ): Promise<{ error: string } | { weekStart: string; counts: { inserted: number; updated: number; kept: number; deleted: number } }> {
-  const [r] = (await sql`SELECT week_start, plan, summary FROM plan_proposals WHERE id = ${id} AND user_id = ${userId} AND status = 'proposed'`) as Row[];
+  const [r] = (await sql`SELECT kind, week_start, plan, summary, context FROM plan_proposals WHERE id = ${id} AND user_id = ${userId} AND status = 'proposed'`) as Row[];
   if (!r) return { error: 'This plan is no longer waiting for you.' };
   const weekStart = (toDay(r.week_start) ?? '');
-  const counts = await importPlan(sql, userId, r.plan as object, (r.summary as string) ?? undefined);
+  const keepBefore = r.kind === 'checkin' ? todayOf(r.context) : null;
+  const counts = await importPlan(sql, userId, r.plan as object, (r.summary as string) ?? undefined, { keepBefore });
   await sql`UPDATE plan_proposals SET status = 'accepted', decided_at = NOW(), updated_at = NOW() WHERE id = ${id}`;
   // Older open requests are now out of date.
   await sql`
@@ -199,7 +193,7 @@ export async function pushWeeks(userId: string, weeks: string[]) {
 }
 
 /**
- * Starts a workflow (plan.yml, plan-apply.yml) through the GitHub API. Needs GITHUB_DISPATCH_TOKEN in Vercel: a
+ * Starts a workflow (plan-apply.yml after an accept) through the GitHub API. Needs GITHUB_DISPATCH_TOKEN in Vercel: a
  * fine-grained token for this repository with Actions: read and write.
  */
 export async function dispatchWorkflow(file: string, inputs: Record<string, string> = {}): Promise<{ ok: true } | { error: string }> {

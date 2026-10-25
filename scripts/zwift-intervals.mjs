@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Sends the plan's indoor rides to Zwift through intervals.icu, now (the cloud cron does it every 30 minutes:
- * /api/cron/workouts). /plan and /check-in run it after a change.
+ * /api/cron/workouts). Run it by hand after a change to send it at once.
  *
  *   node --env-file=.env.local scripts/zwift-intervals.mjs [--days 14] [--dry-run]
  */

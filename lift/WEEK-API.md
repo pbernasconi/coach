@@ -136,7 +136,7 @@ Field rules:
   session edit) the plan does not move: an offline edit that still carries the old day cannot undo a web move. The
   web's own Lift pushes keep the stored `dayMovedAt` and never come back to the plan.
 - Removing a linked session on the phone (soft delete) leaves its plan workout planned: not skipped, not removed.
-  The plan stays the coach's; skip or move the workout in the plan (web or /check-in). The next `lift-plan.mjs` run
+  The plan stays the coach's; skip or move the workout in the plan (web, or a check-in). The next `lift-plan.mjs` run
   plans a new session for a workout that still has a Lift template. A move the removal carries still counts (same
   `dayMovedAt` rule): Start on a workout planned for a later day moves it to today, and Discard puts the session back
   on its planned day before it removes it, so the plan workout goes back too instead of staying on today as missed.
