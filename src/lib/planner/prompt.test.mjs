@@ -4,25 +4,41 @@ import { readFileSync } from 'node:fs';
 import { OUT, render } from '../../../scripts/planner-prompt.mjs';
 import { SUBMIT_TOOL, systemPrompt, userMessage } from './prompt.mjs';
 
-test('the copied planning rules are up to date (run node scripts/planner-prompt.mjs)', () => {
+test('the prompt bundle is up to date (run node scripts/planner-prompt.mjs)', () => {
   assert.equal(readFileSync(OUT, 'utf8'), render());
 });
 
-test('the system prompt holds the rules and is the same every call', () => {
+test('the system prompt holds the four prompt files in order and is the same every call', () => {
   const s = systemPrompt();
   assert.equal(s, systemPrompt());
+  const at = ['# Coach: plan Paolo', '# Coaching rules', '# Check-ins', '# Plan Structure'].map((h) => s.indexOf(h));
+  assert.ok(at.every((i) => i >= 0), String(at));
+  assert.deepEqual([...at].sort((a, b) => a - b), at);
   assert.match(s, /submit_plan/);
-  assert.match(s, /# \.claude\/commands\/plan\.md/);
-  assert.match(s, /# plans\/PLAN-STRUCTURE\.md/);
   assert.match(s, /## Weather/);
+  assert.match(s, /## Safety/);
+});
+
+test('the prompts have no local or GitHub planning left', () => {
+  const s = systemPrompt();
+  for (const gone of ['--env-file', 'AskUserQuestion', 'plan-import', 'coach-profile', 'plans/request.json', '.claude/commands', 'GitHub job']) {
+    assert.ok(!s.includes(gone), gone);
+  }
 });
 
 test('the user message has the request, the revision note and the profile', () => {
-  const m = userMessage({ request: { weekStart: '2026-10-26' }, profileMd: 'PROFILE', revise: { note: 'less running', plan: { a: 1 } } });
+  const m = userMessage({ request: { kind: 'weekly', weekStart: '2026-10-26' }, profileMd: 'PROFILE', revise: { note: 'less running', plan: { a: 1 } } });
   assert.match(m, /<request>[\s\S]*2026-10-26/);
   assert.match(m, /<paolo_note>\nless running/);
   assert.match(m, /<profile>\nPROFILE/);
+  assert.ok(!m.includes('<current_week>'));
   assert.ok(!userMessage({ request: { weekStart: '2026-10-26' }, profileMd: 'P' }).includes('paolo_note'));
+});
+
+test('a check-in message names today and holds the current week', () => {
+  const m = userMessage({ request: { kind: 'checkin', weekStart: '2026-10-26' }, profileMd: 'P', today: '2026-10-28', currentWeek: 'Week of 2026-10-26' });
+  assert.match(m, /Today is 2026-10-28/);
+  assert.match(m, /<current_week>\nWeek of 2026-10-26\n<\/current_week>/);
 });
 
 test('submit_plan streams its input and needs a plan and summary', () => {

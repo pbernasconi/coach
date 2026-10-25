@@ -52,3 +52,16 @@ jobs:
             exit 0
           fi
           curl -fsS --max-time 120 -H "Authorization: Bearer $CRON_SECRET" https://coach.paolobernasconi.com/api/cron/bodyspec
+      - name: Sunday plan for next week
+        if: ${{ !cancelled() }} # even when a sync step above failed
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          # Sundays from 15:17 UTC (08:17 PDT): the planner plans next week (Claude API, in Coach). The first call starts
+          # it; later calls see the week has a request and do nothing. Answers hold ids and reasons only.
+          if [ "$(date -u +%u)" != "7" ] || [ "$(date -u +%H)" -lt 15 ]; then
+            echo "The Sunday plan runs on Sundays from 15:17 UTC; not now."
+            exit 0
+          fi
+          curl -fsS --max-time 60 -X POST -H "Authorization: Bearer $CRON_SECRET" -H 'content-type: application/json' \
+            -d '{}' https://coach.paolobernasconi.com/api/plan/run

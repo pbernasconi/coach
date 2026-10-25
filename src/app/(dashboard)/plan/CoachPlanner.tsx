@@ -16,8 +16,8 @@ const weekLabel = (monday: string) =>
 const POLL_MS = 20_000;
 
 /**
- * The cloud coach on the Plan page: "Plan with Coach" sends a request (how you feel, the focus, what to lock) to the
- * cloud job; the bar then shows its state, and a ready plan opens for review with Accept and Reject. Nothing reaches
+ * The coach on the Plan page: "Plan with Coach" sends a request (how you feel, the focus, what to lock) to the
+ * planner (Claude API, src/lib/planner/); the bar then shows its state, and a ready plan opens for review with Accept and Reject. Nothing reaches
  * the calendar before Accept.
  */
 export default function CoachPlanner({
@@ -42,7 +42,7 @@ export default function CoachPlanner({
   const [reviewing, setReviewing] = useState(false);
   const busy = proposal?.status === 'requested' || proposal?.status === 'running';
 
-  // While the job runs, look again every 20 s (one small query), for at most 15 minutes.
+  // While the planner runs, look again every 20 s (one small query), for at most 15 minutes.
   useEffect(() => {
     if (!busy) return;
     const started = Date.now();

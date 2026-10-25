@@ -2,7 +2,7 @@
 /**
  * Workout rotation state: which bank workout comes next, and how each one went last time.
  *
- * plans/PLAN-STRUCTURE.md (the coach's "Paolo Plan" PDF) gives a fixed order for the workout days:
+ * src/lib/planner/prompts/plan-structure.md (the coach's "Paolo Plan" PDF) gives a fixed order for the workout days:
  *   Threshold A → VO2 A → VO2 B → Threshold B → Threshold A → VO2 A → (repeat)
  * Each bank workout has its own progression, applied only when the last one was done.
  *

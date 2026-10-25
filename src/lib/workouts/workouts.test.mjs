@@ -4,7 +4,7 @@ import { ANCHORS, flatten, targetText, totals, validate, zoneOf, zoneTarget } fr
 import { BANK, bankWorkout } from './bank.mjs';
 import { toZwo } from './zwo.mjs';
 
-test('zones match the PLAN-STRUCTURE table at FTP 265 W and LTHR 168', () => {
+test('zones match the plan-structure.md table at FTP 265 W and LTHR 168', () => {
   assert.equal(targetText(zoneTarget('Z4top', 'ride')), '254–276 W');
   assert.equal(targetText(zoneTarget('Z4top', 'run')), '175–181 bpm');
   assert.equal(targetText(zoneTarget('Z2top', 'ride')), '186–199 W');

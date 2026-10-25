@@ -9,7 +9,7 @@ export const PRICES = {
   'claude-haiku-5-5': { input: 0.1, output: 0.5, cacheRead: 0.01, cacheWrite: 0.125 },
 };
 
-/** The planner stops using the API for the rest of the month at this spend; the GitHub job takes over. */
+/** The planner stops using the API for the rest of the month at this spend (Settings shows it). */
 export const PLANNER_MONTHLY_CAP_USD = 25;
 
 /**

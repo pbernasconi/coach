@@ -17,7 +17,7 @@
  *   HOME_TZ                              → default timezone, single source of truth
  */
 
-// Default timezone. Single source of truth — render-plan.mjs and
+// Default timezone. Single source of truth —
 // add-workouts-to-calendar.mjs import this rather than redeclaring the literal.
 export const HOME_TZ = 'America/Los_Angeles';
 

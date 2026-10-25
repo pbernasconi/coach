@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * The health section of the athlete profile (profile.md, for /plan and /check-in): readiness against the 60-day
+ * The health section of the athlete profile (for the planner): readiness against the 60-day
  * baselines, the last 7 days, and the lab results that are out of range. Reads the database only.
  *
- * coach-profile.mjs calls `healthProfileMarkdown` and appends the result. Run on its own to print the section:
+ * src/lib/planner/profile.mjs calls `healthProfileMarkdown` and appends the result. Run on its own to print the section:
  *   node --env-file=.env.local scripts/health-profile.mjs [YYYY-MM-DD]
  */
 

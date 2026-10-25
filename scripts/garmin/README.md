@@ -77,8 +77,8 @@ update or delete). The job does it with `upload_workout`, `update_workout`, `sch
 (the library once stored heart rate as power without an error), then reports (`POST /api/workouts/garmin`, table
 `workout_syncs`). A workout made in Garmin Connect by hand is never touched; Coach's are named `Coach · …`.
 
-It runs after each data sync, and after each hourly Sync run. `/plan`
-and `/check-in` start it at once: `gh workflow run garmin.yml --repo pbernasconi/coach -f workouts_only=true`. A
+It runs after each data sync, and after each hourly Sync run. plan-apply.yml
+starts it after an accept: `gh workflow run garmin.yml --repo pbernasconi/coach -f workouts_only=true`. A
 local run: `COACH_URL=… CRON_SECRET=… .venv/bin/python sync.py --workouts-only [--dry-run]`.
 
 ## Activities from the watch

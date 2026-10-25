@@ -2,7 +2,7 @@ import { sql } from 'drizzle-orm';
 import { check, date, doublePrecision, index, integer, jsonb, pgTable, primaryKey, smallint, text, timestamp } from 'drizzle-orm/pg-core';
 
 /**
- * Cloud plan requests and the plans they propose (src/lib/plan/proposals.ts, .github/workflows/plan.yml).
+ * Cloud plan requests and the plans they propose (src/lib/plan/proposals.ts, src/lib/planner/run.ts).
  * requested (from the Plan page) → running (the job claimed it) → proposed (the agent's plan, checked) → accepted or
  * rejected by Paolo; failed at any step. `request` is { kind, weekStart, feel, focus, lock } (proposal.mjs).
  */
@@ -38,7 +38,7 @@ export const planProposals = pgTable(
  * How a workout felt, logged in the item modal (src/lib/plan/feedback.ts): the feel (1 very weak … 5 very strong),
  * the perceived effort (RPE 1–10) and a comment. One row per item: `item` is 'plan:<training_plan_activities.id>',
  * 'strava:<strava_activity_id>' or 'lift:<Lift session id>'. `plan_activity_id` is the planned workout it belongs
- * to, when there is one. /plan and /check-in read these (scripts/coach-profile.mjs, scripts/plan-edit.mjs show).
+ * to, when there is one. The planner reads these (src/lib/planner/profile.mjs, current-week.mjs).
  */
 export const workoutFeedback = pgTable(
   'workout_feedback',

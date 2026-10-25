@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 /**
  * Reads and changes a plan week in the database (the only plan source), then updates Google Calendar.
- * /check-in uses it; the web week page does the same through its server actions.
+ * A tool for fixing data by hand; the web week page does the same through its server actions.
  *
  *   node --env-file=.env.local scripts/plan-edit.mjs show 2026-10-19
  *   node --env-file=.env.local scripts/plan-edit.mjs move <workoutId> 2026-10-23
  *   node --env-file=.env.local scripts/plan-edit.mjs skip <workoutId> [tired|sick|sore|busy|travel|other]
- *        (unskip <workoutId> to undo; the reason is what /check-in and /plan read, src/lib/plan/skip.mjs)
+ *        (unskip <workoutId> to undo; the reason is what the planner reads, src/lib/plan/skip.mjs)
  *   node --env-file=.env.local scripts/plan-edit.mjs update <workoutId> title="Easy ride" duration=60 intensity=easy \
  *        start_time=07:30 description="Z2 only"
  *
- * Every change sets edited_at, so a later plan-import keeps it. Add --no-calendar to skip the calendar update.
+ * Every change sets edited_at, so a later accepted plan keeps it. Add --no-calendar to skip the calendar update.
  * A move, skip or unskip of a strength workout also moves or removes its Lift session (when nothing was logged in it),
  * through the server's Lift sync push (LIFT_SYNC_TOKEN; src/lib/lift/follow-plan.mjs). The push goes to
  * LIFT_SYNC_BASE_URL (default production) and only when that server reads the same database: production's when

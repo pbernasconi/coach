@@ -23,7 +23,8 @@ https://coach.paolobernasconi.com (Vercel Hobby, Neon Postgres with hard monthly
   (`lift/`, its own sync), Google Calendar, Function Health (`function.yml`, by hand), the bathroom scale
   (`devices/scale-bridge/`, an ESP32), BodySpec DEXA scans (OAuth from Settings, daily in `sync.yml`). COACH-API.md has every
   route and source.
-- **Planning**: the `/plan` and `/check-in` commands in `.claude/commands/` (COACH.md).
+- **Planning**: one planner on the Claude API in Coach (`src/lib/planner/`, prompts in `src/lib/planner/prompts/`): the
+  Plan page and a Sunday run plan weeks and check-ins; Paolo accepts each plan (COACH.md).
 
 ## Code map
 

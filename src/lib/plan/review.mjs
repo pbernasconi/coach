@@ -1,4 +1,4 @@
-// The coach's review of a proposed week (scripts/plan-cloud/PROMPT.md writes it as `review` in the plan JSON) and
+// The coach's review of a proposed week (the planner writes it as `review` in the plan JSON, src/lib/planner/prompts/planner.md) and
 // the load outlook Coach computes for it. Pure, so node --test can run it (review.test.mjs).
 
 import { estimatePlannedTss, projectLoad } from '../performance/pmc.mjs';

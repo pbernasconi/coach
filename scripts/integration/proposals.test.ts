@@ -1,10 +1,11 @@
-// The cloud plan on a real Postgres (src/lib/plan/proposals.ts): request → claim → a bad plan fails → a good plan is
-// proposed → accept imports it (the same import as /plan) and closes older proposals for the week.
+// Plans waiting for Paolo on a real Postgres (src/lib/plan/proposals.ts): request → claim → a bad plan fails → a good
+// plan is proposed → accept imports it and closes older proposals for the week → a check-in keeps the days before it.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { sql } from '@/db';
 import { acceptProposal, claimRequest, createRequest, openProposal, submitPlan } from '@/lib/plan/proposals';
 import { loadOutlook, loadPlanningContext } from '@/lib/plan/planning-context';
+import { currentWeekText } from '@/lib/planner/current-week.mjs';
 
 const user = 'user_proposals';
 const week = '2026-11-02';
@@ -74,6 +75,26 @@ test('request, claim, check, propose and accept a cloud plan', async () => {
     assert.equal(other.status, 'rejected', 'an accept closes the older failure for the same week');
     assert.ok('error' in (await acceptProposal(user, id)), 'a plan is accepted once');
     assert.equal(await openProposal(user), null);
+
+    // A check-in on Wednesday 4 Nov: the planner sees the week as it is, and the accept keeps Tuesday (the past) even
+    // though the check-in plan leaves it out, while Wednesday's easy run (today, dropped) goes.
+    const week1 = await currentWeekText(sql, user, week);
+    assert.match(week1, /2026-11-03 07:00 {2}🚴 Threshold A/);
+    const ciId = await createRequest(user, { kind: 'checkin', weekStart: week, feel: 'fatigued', focus: null, lock: null });
+    assert.ok(await claimRequest(user, ciId));
+    const checkin = {
+      weekStart: week, weekEnd: '2026-11-08',
+      completed: [{ day: '2026-11-03', session: '🚴 Threshold A', tss: 90 }],
+      events: [{ title: '🚴 Easy spin', start: '2026-11-05T07:00:00', end: '2026-11-05T07:45:00', workoutType: 'ride-z2', workout: { bank: 'easy', reps: 0, zone: 'Z1' }, why: 'Tired: easy day' }],
+    };
+    const ciContext = { ...context, generatedAt: '2026-11-04T18:00:00Z' };
+    assert.ok('events' in (await submitPlan(user, ciId, checkin, 'Eased the week.', ciContext)));
+    const ci = await acceptProposal(user, ciId);
+    assert.ok('counts' in ci && ci.counts.deleted === 1, JSON.stringify(ci));
+    const after = await sql`
+      SELECT a.title FROM training_plan_activities a JOIN training_plans p ON p.id = a.plan_id
+      WHERE p.user_id = ${user} ORDER BY a.scheduled_date`;
+    assert.deepEqual(after.map((r) => r.title), ['🚴 Threshold A', '🚴 Easy spin']);
   } finally {
     await sql`DELETE FROM training_plan_activities a USING training_plans p WHERE p.id = a.plan_id AND p.user_id = ${user}`;
     await sql`DELETE FROM training_plans WHERE user_id = ${user}`;

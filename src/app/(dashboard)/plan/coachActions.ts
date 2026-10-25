@@ -10,7 +10,7 @@ import {
   acceptProposal, createRequest, dispatchWorkflow, openProposal, proposalById, rejectProposal, type PlanRequest, type Proposal,
 } from '@/lib/plan/proposals';
 import { loadOutlook, loadPlanningContext, type PlanningContext, type WeekOutlook } from '@/lib/plan/planning-context';
-import { plannerRunner, runServerPlan } from '@/lib/planner/run';
+import { plannerReady, runPlanner } from '@/lib/planner/run';
 import { mondayOf } from '@/lib/plan/week.mjs';
 
 async function user() {
@@ -20,25 +20,17 @@ async function user() {
 }
 
 /**
- * "Plan with Coach": stores the request and plans it: on the server with the Claude API when that is on (a weekly
- * plan; src/lib/planner/run.ts, in the background of this request, up to 5 minutes), else the cloud job (plan.yml).
+ * "Plan with Coach": stores the request and plans it with the planner (src/lib/planner/run.ts, the Claude API), in
+ * the background of this request, up to 5 minutes. The Plan page watches it (openProposalAction).
  */
 export async function requestPlanAction(input: Record<string, unknown>): Promise<{ id: string } | { error: string }> {
   const userId = await user();
   const clean = cleanRequest(input) as { value?: PlanRequest; error?: string };
   if (!clean.value) return { error: clean.error ?? 'The request is not valid.' };
+  const ready = await plannerReady(userId);
+  if (!ready.ready) return { error: ready.reason };
   const id = await createRequest(userId, clean.value);
-  if (clean.value.kind === 'weekly' && (await plannerRunner(userId)).server) {
-    after(() => runServerPlan(userId, id));
-    revalidatePath('/plan');
-    return { id };
-  }
-  const started = await dispatchWorkflow('plan.yml', { proposal_id: id });
-  if ('error' in started) {
-    await sql`UPDATE plan_proposals SET status = 'failed', error = ${started.error}, updated_at = NOW() WHERE id = ${id}`;
-    revalidatePath('/plan');
-    return { error: started.error };
-  }
+  after(() => runPlanner(userId, id));
   revalidatePath('/plan');
   return { id };
 }
@@ -57,7 +49,7 @@ export async function proposalOutlookAction(id: string): Promise<WeekOutlook | n
   return p ? loadOutlook(userId, p) : null;
 }
 
-/** The open request or proposal, for the Plan page to watch while the job runs. */
+/** The open request or proposal, for the Plan page to watch while the planner runs. */
 export async function openProposalAction(): Promise<Proposal | null> {
   return openProposal(await user());
 }
