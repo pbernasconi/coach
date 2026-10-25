@@ -136,6 +136,7 @@ export async function failRequest(userId: string, id: string, error: string) {
  * progress, then a failure (the newest of each). A failed rerun never hides a plan that is ready.
  */
 export async function openProposal(userId: string): Promise<Proposal | null> {
+  await sweepServerRuns(userId);
   const [r] = (await sql`
     -- Every column but context (tens of KB, for the evals only): the Plan page polls this while a job runs.
     SELECT id, user_id, kind, week_start, status, request, plan, summary, error, checks, created_at, updated_at, decided_at FROM plan_proposals
@@ -143,6 +144,20 @@ export async function openProposal(userId: string): Promise<Proposal | null> {
     ORDER BY CASE status WHEN 'proposed' THEN 0 WHEN 'running' THEN 1 WHEN 'requested' THEN 1 ELSE 2 END, created_at DESC
     LIMIT 1`) as Row[];
   return r ? toProposal(r) : null;
+}
+
+/**
+ * A server planner run is cut off at 5 minutes (maxDuration), and a cut-off run can't record it. After 6 minutes
+ * its request shows as failed, so the Plan page offers to try again instead of waiting forever.
+ */
+async function sweepServerRuns(userId: string) {
+  await sql`
+    UPDATE plan_proposals p SET status = 'failed', error = 'The planner ran out of time. Try again.', updated_at = NOW()
+    WHERE p.user_id = ${userId} AND p.status = 'running' AND EXISTS (
+      SELECT 1 FROM plan_runs r WHERE r.proposal_id = p.id AND r.status = 'running' AND r.created_at < NOW() - INTERVAL '6 minutes')`;
+  await sql`
+    UPDATE plan_runs SET status = 'failed', error = 'Cut off at the time limit.'
+    WHERE user_id = ${userId} AND status = 'running' AND created_at < NOW() - INTERVAL '6 minutes'`;
 }
 
 export async function proposalById(userId: string, id: string): Promise<Proposal | null> {

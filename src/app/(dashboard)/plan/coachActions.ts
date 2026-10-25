@@ -10,6 +10,7 @@ import {
   acceptProposal, createRequest, dispatchWorkflow, openProposal, proposalById, rejectProposal, type PlanRequest, type Proposal,
 } from '@/lib/plan/proposals';
 import { loadOutlook, loadPlanningContext, type PlanningContext, type WeekOutlook } from '@/lib/plan/planning-context';
+import { plannerRunner, runServerPlan } from '@/lib/planner/run';
 import { mondayOf } from '@/lib/plan/week.mjs';
 
 async function user() {
@@ -18,12 +19,20 @@ async function user() {
   return userId;
 }
 
-/** "Plan with Coach": stores the request and starts the cloud job (plan.yml) for it. */
+/**
+ * "Plan with Coach": stores the request and plans it: on the server with the Claude API when that is on (a weekly
+ * plan; src/lib/planner/run.ts, in the background of this request, up to 5 minutes), else the cloud job (plan.yml).
+ */
 export async function requestPlanAction(input: Record<string, unknown>): Promise<{ id: string } | { error: string }> {
   const userId = await user();
   const clean = cleanRequest(input) as { value?: PlanRequest; error?: string };
   if (!clean.value) return { error: clean.error ?? 'The request is not valid.' };
   const id = await createRequest(userId, clean.value);
+  if (clean.value.kind === 'weekly' && (await plannerRunner(userId)).server) {
+    after(() => runServerPlan(userId, id));
+    revalidatePath('/plan');
+    return { id };
+  }
   const started = await dispatchWorkflow('plan.yml', { proposal_id: id });
   if ('error' in started) {
     await sql`UPDATE plan_proposals SET status = 'failed', error = ${started.error}, updated_at = NOW() WHERE id = ${id}`;

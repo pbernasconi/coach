@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { check, date, index, jsonb, pgTable, primaryKey, smallint, text, timestamp } from 'drizzle-orm/pg-core';
+import { check, date, doublePrecision, index, integer, jsonb, pgTable, primaryKey, smallint, text, timestamp } from 'drizzle-orm/pg-core';
 
 /**
  * Cloud plan requests and the plans they propose (src/lib/plan/proposals.ts, .github/workflows/plan.yml).
@@ -82,5 +82,39 @@ export const planVerdicts = pgTable(
   (t) => [
     primaryKey({ columns: [t.userId, t.item] }),
     check('plan_verdicts_verdict_check', sql`${t.verdict} IN ('good', 'bad')`),
+  ],
+);
+
+/**
+ * One server planner run (src/lib/planner/run.ts): the model, the prompt version, how many tries it took, what the
+ * first draft got wrong, and what it cost. The monthly cap (src/lib/planner/cost.mjs) adds up cost_usd. Summary columns only: no plan or profile text.
+ */
+export const planRuns = pgTable(
+  'plan_runs',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id').notNull(),
+    proposalId: text('proposal_id'),
+    kind: text('kind').notNull(),
+    model: text('model').notNull(),
+    promptVersion: text('prompt_version').notNull(),
+    status: text('status').notNull(),
+    stop: text('stop'),
+    turns: smallint('turns').notNull().default(0),
+    submits: smallint('submits').notNull().default(0),
+    firstDraftProblems: jsonb('first_draft_problems'),
+    inputTokens: integer('input_tokens').notNull().default(0),
+    outputTokens: integer('output_tokens').notNull().default(0),
+    cacheReadTokens: integer('cache_read_tokens').notNull().default(0),
+    cacheWriteTokens: integer('cache_write_tokens').notNull().default(0),
+    costUsd: doublePrecision('cost_usd').notNull().default(0),
+    durationMs: integer('duration_ms'),
+    error: text('error'),
+    createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('plan_runs_user_created_idx').on(t.userId, t.createdAt),
+    check('plan_runs_kind_check', sql`${t.kind} IN ('plan', 'eval')`),
+    check('plan_runs_status_check', sql`${t.status} IN ('running', 'ok', 'failed')`),
   ],
 );

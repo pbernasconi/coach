@@ -120,10 +120,13 @@ export function dexaLines(dexaRows) {
   ];
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
+// A function, not top-level await: the server planner imports this file (tsx and bundlers compile it to CommonJS).
+async function main() {
   const { neon } = await import('@neondatabase/serverless');
   const sql = neon(process.env.DATABASE_URL);
   const [owner] = await sql`SELECT id FROM users ORDER BY created_at LIMIT 1`;
   const today = process.argv[2] ?? new Date().toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' });
   console.log(owner ? await healthProfileMarkdown({ sql, userId: owner.id, today }) : 'No Coach user.');
 }
+
+if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) main().catch((e) => { console.error(e); process.exit(1); });

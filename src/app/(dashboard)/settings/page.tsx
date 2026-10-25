@@ -1,3 +1,5 @@
+import PlannerSwitch from './PlannerSwitch';
+import { loadPlannerStatus } from '@/lib/planner/run';
 import { fmtDate } from '@/lib/vitals/health-view.mjs';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
@@ -149,6 +151,7 @@ const SECTIONS = [
   { id: 'thresholds', label: 'Thresholds' },
   { id: 'preferences', label: 'Coaching preferences' },
   { id: 'location', label: 'Weather location' },
+  { id: 'planner', label: 'Planner' },
 ];
 
 /** The notice after an OAuth redirect back to Settings (?success= or ?error=). */
@@ -167,7 +170,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   if (!userId) return <p data-smoke="settings" className="text-sm text-muted-foreground">This account has no Coach data.</p>;
   const today = todayIn(zone((await cookies()).get('tz')?.value));
   const notice = redirectNotice(await searchParams);
-  const [status, targets, coachingNotes, goals, events, thresholds, bodyspec] = await Promise.all([
+  const [status, targets, coachingNotes, goals, events, thresholds, bodyspec, planner] = await Promise.all([
     loadStatus(userId),
     loadTargets(userId),
     loadCoachingNotes(userId),
@@ -175,6 +178,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     load('Events', () => loadEventsWithCountdown(userId, today)),
     load('Thresholds', () => loadThresholdSources(sql, userId)),
     load('BodySpec', () => loadBodyspecStatus(userId)),
+    load('Planner', () => loadPlannerStatus(userId)),
   ]);
 
   // One source for every connection's state, shared with the phone's Settings (GET /api/app/settings).
@@ -385,6 +389,9 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           </Panel>
           <Panel id="location" title="Weather location" help="The /plan week and month views show the forecast for this place.">
             <LocationForm />
+          </Panel>
+          <Panel id="planner" title="Planner" help="Who plans your weeks: Coach with the Claude API (capped each month), or the GitHub job.">
+            {planner.ok ? <PlannerSwitch status={planner.value} /> : <SectionError label="Planner" />}
           </Panel>
         </Group>
       </div>

@@ -5,6 +5,7 @@
  *   node scripts/plan-cloud/client.mjs claim [proposalId]   # writes plans/request.json, prints id and weekStart for $GITHUB_OUTPUT
  *   node scripts/plan-cloud/client.mjs submit <proposalId> <weekStart>   # sends plans/<weekStart>.json, .summary.md and profile.json
  *   node scripts/plan-cloud/client.mjs fail <proposalId> "<what failed>"
+ *   node scripts/plan-cloud/client.mjs server [proposalId]   # hands it to the server planner; prints handled=true|false
  *
  * claim without an id (the Sunday run) asks Coach for a new weekly request for next week, with no answers: the agent
  * decides from the data, and Paolo reviews it.
@@ -40,7 +41,18 @@ async function post(body) {
   return JSON.parse(text);
 }
 
-if (cmd === 'claim') {
+if (cmd === 'server') {
+  // The server planner (POST /api/plan/run) plans it when it is on; otherwise this job does, as before.
+  const res = await fetch(`${coach}/api/plan/run`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${secret}` },
+    body: JSON.stringify({ id: id || null }),
+    signal: AbortSignal.timeout(60_000),
+  }).catch(() => null);
+  const r = res?.ok ? await res.json().catch(() => ({})) : {};
+  console.error(r.handled ? `The server planner has it: ${r.reason ?? r.id}` : `Planning here: ${r.reason ?? `HTTP ${res?.status ?? 'error'}`}`);
+  console.log(`handled=${r.handled ? 'true' : 'false'}`);
+} else if (cmd === 'claim') {
   const r = await post({ action: 'claim', id: id || null });
   writeFileSync('plans/request.json', JSON.stringify(r.request, null, 2));
   console.log(`id=${r.id}`);
