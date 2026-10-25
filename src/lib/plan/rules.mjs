@@ -24,6 +24,7 @@ export const RULES = {
   R6: 'A long run each week (90 min or more)',
   R7: 'Days off stay empty, and nothing on top of a meeting',
   R8: 'Within the hours he has',
+  R9: 'Physio for the Achilles and knee: 2 a week (1 on a floor week)',
   R17: 'A check-in leaves past days as they were',
 };
 
@@ -141,6 +142,11 @@ export function isQuality(s) {
   // A recovery or easy session whose note says "intervals" (strides) is not quality.
   if (/^(run|ride)-(easy|z2|long)$|^recovery$/.test(s.workoutType ?? '')) return false;
   return isHard({ workoutType: s.workoutType ?? '', title: s.title, intensity: s.intensity });
+}
+
+/** A physio session (PLAN-STRUCTURE "Physio": "🩹 Physio A — Achilles & calf"). @param {{ title?: string }} s */
+export function isPhysio(s) {
+  return /\bphysio/i.test(String(s?.title ?? ''));
 }
 
 /** @param {Session} s */
@@ -301,6 +307,21 @@ export function checkRules(sessions, { weekStart, request = null, context = null
   if (typeof request?.hours === 'number') {
     const total = sessions.reduce((n, s) => n + s.minutes, 0);
     if (total > request.hours * 60 * 1.05) add('R8', 'fail', null, `${Math.round(total / 6) / 10} h planned; he has ${request.hours} h.`);
+  }
+
+  // R9: physio every week, 2 on a full week and 1 on a floor or lighter week, 48 h apart. A check-in counts one done.
+  const physioDays = [...new Set([...sessions.filter(isPhysio).map((s) => s.day), ...done.filter((c) => /physio/i.test(c.text)).map((c) => c.day)])].sort();
+  const physioWant = floorWeek || shortWeek ? 1 : 2;
+  if (physioDays.length < physioWant) {
+    add('R9', 'warn', null, physioDays.length
+      ? `1 physio session; a full week has 2 (Physio A and B, PLAN-STRUCTURE "Physio").`
+      : 'No physio this week: plan Physio A (and B on a full week) on a rest or easy day.');
+  }
+  for (let i = 1; i < physioDays.length; i++) {
+    if (addDays(physioDays[i - 1], 1) === physioDays[i]) add('R9', 'warn', physioDays[i], `${label(physioDays[i - 1])} and ${label(physioDays[i])}: physio on back-to-back days. Leave 48 h between them.`);
+  }
+  for (const s of sessions.filter(isPhysio)) {
+    if (sessions.some((l) => l.day === s.day && isLift(l))) add('R9', 'warn', s.day, `${label(s.day)}: ${s.title} is on a lift day. Put it on a rest or easy day.`);
   }
 
   // R17: a check-in plans only today and the days after it (done sessions go in completed[]).

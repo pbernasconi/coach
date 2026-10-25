@@ -12,8 +12,10 @@ const threshold = (day) => ev(day, '07:00', '08:15', '🚴 Threshold A', { worko
 const vo2Run = (day) => ev(day, '07:00', '08:00', '🏃 VO2 A', { workoutType: 'run-vo2-a' });
 const longRun = (day, mins = '09:40') => ev(day, '08:00', mins, '🏃 Long run', { workoutType: 'run-long' });
 const longRide = (day) => ev(day, '08:00', '11:00', '🚴 Long ride', { workoutType: 'ride-long' });
+const physio = (day, from, to, which = 'A — Achilles & calf') => ev(day, from, to, `🩹 Physio ${which}`, { workoutType: 'strength-home' });
 
-/** A good full week: lifts Tue and Thu stacked after easy runs, quality Mon/Wed, long ride Sat, long run Sun. */
+/** A good full week: lifts Tue and Thu stacked after easy runs, quality Mon/Wed, long ride Sat with Physio B
+ * straight after, long run Sun, Physio A after Monday's ride. */
 const good = () => ({
   weekStart: W,
   events: [
@@ -21,6 +23,7 @@ const good = () => ({
     easyRun('2026-11-03', '07:10', '07:30'), heavy('2026-11-03', '07:40', '08:40'),
     vo2Run('2026-11-04'),
     ev('2026-11-05', '07:00', '07:45', '🚴 Zwift easy', { workoutType: 'ride-z2' }), upper('2026-11-05', '07:45', '08:30'),
+    physio('2026-11-02', '08:15', '08:35'), physio('2026-11-07', '11:00', '11:25', 'B — Knee & hip'),
     longRide('2026-11-07'),
     longRun('2026-11-08'),
   ],
@@ -136,9 +139,29 @@ test('R8: over the hours he has fails', () => {
   assert.ok(ids(checkProposal(good(), { weekStart: W, request: { hours: 5 } }).issues).includes('R8:fail'));
 });
 
+test('R9: physio twice on a full week, once on a floor week, never on a lift day or back to back', () => {
+  const none = good();
+  none.events = none.events.filter((e) => !/Physio/.test(e.title));
+  const r = checkProposal(none, { weekStart: W });
+  assert.deepEqual(ids(r.issues), ['R9:warn']);
+  assert.match(r.issues[0].message, /No physio/);
+  const one = good();
+  one.events = one.events.filter((e) => !/Physio B/.test(e.title));
+  assert.deepEqual(ids(checkProposal(one, { weekStart: W }).issues), ['R9:warn']);
+  assert.deepEqual(checkProposal({ ...one, title: 'Floor week: travel' }, { weekStart: W }).issues.filter((i) => i.id === 'R9'), []);
+  // One already done in a check-in counts.
+  assert.deepEqual(checkProposal({ ...one, completed: [{ day: '2026-11-04', session: '🩹 Physio B — Knee & hip' }] }, { weekStart: W }).issues, []);
+  const lift = good();
+  lift.events.push(physio('2026-11-03', '08:40', '09:00', 'B — Knee & hip'));
+  assert.ok(checkProposal(lift, { weekStart: W }).issues.some((i) => i.id === 'R9' && /lift day/.test(i.message)));
+  const twice = good();
+  twice.events = twice.events.map((e) => (/Physio B/.test(e.title) ? physio('2026-11-03', '06:30', '06:50', 'B — Knee & hip') : e));
+  assert.ok(checkProposal(twice, { weekStart: W }).issues.some((i) => /back-to-back/.test(i.message)));
+});
+
 test('R17: a check-in never plans a past day', () => {
   const r = checkProposal(good(), { weekStart: W, request: { kind: 'checkin' }, today: '2026-11-04' });
-  assert.equal(r.issues.filter((i) => i.id === 'R17').length, 3);
+  assert.equal(r.issues.filter((i) => i.id === 'R17').length, 4); // Mon ride and physio, Tue run and lift
   assert.equal(todayOf({ generatedAt: '2026-11-04T05:00:00.000Z', home: { tz: 'America/Los_Angeles' } }), '2026-11-03');
 });
 
@@ -151,7 +174,7 @@ test('a week in Coach (training_plan_activities rows) gets the same checks', () 
   const s = sessionsFromRows(rows);
   assert.equal(s.length, 2);
   const r = checkRules(s, { weekStart: W });
-  assert.deepEqual(ids(r).sort(), ['R1:fail', 'R4:warn', 'R6:fail']);
+  assert.deepEqual(ids(r).sort(), ['R1:fail', 'R4:warn', 'R6:fail', 'R9:warn']);
 });
 
 test('sessions keep the plan as written, before the import stacks the day', () => {

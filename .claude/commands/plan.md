@@ -87,6 +87,13 @@ Honor:
   `Hotel gym (dumbbells)` replaces either one when traveling. Short weeks (travel, newborn): a **home mini session**
   from PLAN-STRUCTURE ("Home mini sessions") keeps the floor; copy its numbered lines into `description` as written
   (no `liftTemplate`) so each set can be logged. **Never a heavy lift on the same day as a workout** (Paolo's rule; it overrides the PDF). Put the heavy lift on an aerobic day; the hotel lift can follow an aerobic day or travel.
+- **Physio every week** (Paolo, 2026-10-25: rehab for the right Achilles, knee and hip). Two sessions on a full week,
+  Physio A and Physio B from PLAN-STRUCTURE ("Physio"), 48 h apart; one (Physio A) on a floor, travel or newborn
+  week. On top of the 2 lifts, never instead of one. On a rest or easy day alone, or stacked straight after a ride;
+  not on a lift day, never before a run, and Physio A not the day before a run workout or the long run. Copy its numbered lines
+  into `description` as written, `workoutType` `strength-home`, title starting "🩹 Physio". When a Lift note says
+  the Achilles or knee is sore, keep the physio (it is the treatment) at the last load, and make the runs around it
+  easy or a ride. The plan check warns on a week without physio (R9).
 - **One session a day, or one stacked block** (Paolo's rule, 2026-10-24). He does a second session only when it
   follows straight on from the first; a second session hours later gets dropped (both lifts missed in the week of
   2026-10-19 were the PM half of a split day). Never plan two sessions hours apart on one day. A lift on an aerobic

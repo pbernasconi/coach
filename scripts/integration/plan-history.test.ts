@@ -41,7 +41,7 @@ test('past plans: rule baseline and verdicts', async () => {
     assert.deepEqual(wk.issues.filter((i) => i.level === 'fail').map((i) => i.id).sort(), ['R1', 'R6']);
     const pr = h.items.find((i) => i.kind === 'proposal')!;
     assert.equal(pr.title, 'Two lifts, long run Sunday.');
-    assert.deepEqual(pr.issues.map((i) => i.id), ['R7'], 'the Thursday lift is on a day off');
+    assert.deepEqual(pr.issues.map((i) => i.id), ['R7', 'R9'], 'the Thursday lift is on a day off; no physio');
     assert.deepEqual(h.baseline.find((b) => b.id === 'R1')!.weeks, { fail: 1, warn: 0 });
 
     await saveVerdict(user, pr.key, week, 'bad', 'Lift on my day off');

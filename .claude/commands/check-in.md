@@ -68,6 +68,9 @@ Skipped workouts, by reason:
   it; the next lift is the regular one. Never put two lifts on one day. Move it with `plan-edit.mjs move <id>
   YYYY-MM-DD` (the same workout, so its Lift session stays linked), then keep the record of the miss in the
   workout: `plan-edit.mjs update <id> description="Moved from Wed 21 Oct (busy). …"`, and say it in the report.
+- **A missed physio session** (🩹 Physio, PLAN-STRUCTURE "Physio") moves once to the next rest or easy day this
+  week, 48 h from the other one, for any reason but sick: it is 20 minutes and it is the rehab for his Achilles and
+  knee. Sore is a reason to do it at the last load, not to drop it. A week keeps at least one.
 - **Never make up any other skipped workout.** Don't move it to a later day, don't add its TSS to other days, and don't stack
   two quality sessions to catch up. The week's TSS target drops by what was skipped.
 - **tired / sore**: a fatigue signal. The next day is easy or rest. The next quality session needs one easy day in
