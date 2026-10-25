@@ -137,7 +137,7 @@ test('goals and the today line', () => {
   const w = (over) => ({ id: 'a', date: '2026-10-20', status: 'planned', state: 'today', startTime: '13:30', duration: 60, ...over });
   assert.deepEqual(todayWorkouts({ today: '2026-10-20', workouts: [w({}), w({ id: 'b', status: 'skipped' }), w({ id: 'c', date: '2026-10-21' })] }).items.map((x) => x.id), ['a']);
   assert.equal(todayWorkouts({ today: '2026-10-20', workouts: [w({ date: '2026-10-21' })] }).emptyText, 'Rest day');
-  assert.equal(todayWorkouts({ today: '2026-10-20', workouts: [] }).emptyText, 'No plan this week. Run /plan in Claude Code to make one.');
+  assert.equal(todayWorkouts({ today: '2026-10-20', workouts: [] }).emptyText, 'No plan this week. Plan one with Coach on the Plan page.');
   assert.equal(todayItemText(w({})), '13:30 · 1:00');
   assert.equal(todayItemText(w({ startTime: null, duration: 45, state: 'done' })), '45m · done');
 

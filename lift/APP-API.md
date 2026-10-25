@@ -145,8 +145,8 @@ Field rules:
 - `stale.text`: "The newest Strava activity is from YYYY-MM-DD." when it is more than 7 days old, else `null`.
 - `todayLine`: today's planned workouts, not skipped (the line above the web's week). `id` is the plan workout id,
   the same as `/api/lift/week` `items[].id`. `text`: start time and duration ("45m", "1:15"), plus " · done".
-  `emptyText` when there are none: "Rest day" (the week has a plan) or "No plan this week. Run /plan in Claude Code
-  to make one." `cue`: the readiness cue, only with items and a readiness value.
+  `emptyText` when there are none: "Rest day" (the week has a plan) or "No plan this week. Plan one
+  with Coach on the Plan page." `cue`: the readiness cue, only with items and a readiness value.
 - `fitness.days`: 120 days before today, then the plan's projection (`projected: true`) to the end of the plan or
   the next event (at most 120 days). Values to 0.1. Today is projected while it has planned TSS and no done TSS
   yet; `now` is the last actual day (the source of the fitness and form chips). `zones`: form bands for the TSB panel, `null` = open end, `shade` = draw a band.

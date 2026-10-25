@@ -78,11 +78,14 @@ export async function createRequest(userId: string, req: PlanRequest): Promise<s
   return id;
 }
 
-/** The planner takes the request `id`: marks it running. Null when it is no longer open. */
+/**
+ * The planner takes the request `id`: marks it running. Null when it is not waiting, so a request that is already
+ * running (a second trigger, a retried call) never runs twice.
+ */
 export async function claimRequest(userId: string, id: string): Promise<{ id: string; request: PlanRequest } | null> {
   const [r] = (await sql`
     UPDATE plan_proposals SET status = 'running', updated_at = NOW()
-    WHERE id = ${id} AND user_id = ${userId} AND status IN ('requested', 'running')
+    WHERE id = ${id} AND user_id = ${userId} AND status = 'requested'
     RETURNING id, request`) as Row[];
   return r ? { id: String(r.id), request: r.request as PlanRequest } : null;
 }
@@ -141,13 +144,17 @@ export async function openProposal(userId: string): Promise<Proposal | null> {
 
 /**
  * A server planner run is cut off at 5 minutes (maxDuration), and a cut-off run can't record it. After 6 minutes
- * its request shows as failed, so the Plan page offers to try again instead of waiting forever.
+ * its request shows as failed, and a request the planner never started after 10 minutes too, so the Plan page
+ * offers to try again instead of waiting forever.
  */
 async function sweepServerRuns(userId: string) {
   await sql`
     UPDATE plan_proposals p SET status = 'failed', error = 'The planner ran out of time. Try again.', updated_at = NOW()
     WHERE p.user_id = ${userId} AND p.status = 'running' AND EXISTS (
       SELECT 1 FROM plan_runs r WHERE r.proposal_id = p.id AND r.status = 'running' AND r.created_at < NOW() - INTERVAL '6 minutes')`;
+  await sql`
+    UPDATE plan_proposals SET status = 'failed', error = 'The planner did not start. Try again.', updated_at = NOW()
+    WHERE user_id = ${userId} AND status = 'requested' AND created_at < NOW() - INTERVAL '10 minutes'`;
   await sql`
     UPDATE plan_runs SET status = 'failed', error = 'Cut off at the time limit.'
     WHERE user_id = ${userId} AND status = 'running' AND created_at < NOW() - INTERVAL '6 minutes'`;

@@ -90,7 +90,7 @@ test('empty states', () => {
     lift: ok({ ...lift, top: [], hasData: false, last: null, next: null, daysSince: null, prs: 0 }),
     perf: ok({ weeks: [], load: [], latestActivity: '2026-10-01' }),
   }));
-  assert.equal(r.todayLine.emptyText, 'No plan this week. Run /plan in Claude Code to make one.');
+  assert.equal(r.todayLine.emptyText, 'No plan this week. Plan one with Coach on the Plan page.');
   assert.equal(r.body.weight, null);
   assert.match(r.body.emptyText, /^No weight in the last 12 weeks/);
   assert.equal(r.lift.mainLiftsEmptyText, 'No Lift sessions in 12 weeks.');
