@@ -169,6 +169,47 @@ Couch stretch 1 min each side, pigeon stretch 1 min each side.
 4) Thread the needle 2x10: each side.
 5) Dead bug 2x10: each side.
 
+### Physio (right Achilles, right knee and hip): 1–2 a week, every week
+
+Rehab for his right Achilles, right knee and hip, built from the home programs his physios and his coach gave him
+(2020–2024: heavy slow calf raises, front-of-knee work at a slow tempo, single-leg control and hip strength). The
+clinic's latest sheets were given in person, so update these when he has a new one.
+
+- **How many.** Two a week on a full week (Physio A and Physio B, at least 48 h apart); one on a floor week, travel or
+  newborn week (Physio A: 20 min, a step and a dumbbell, works in a hotel). They are not a lift and not a home mini
+  session: plan them on top of the 2 lifts.
+- **Where.** A rest day or an easy day on its own, or as one block straight after a ride (the bike barely loads the
+  Achilles; the one-session-a-day rule holds, so never hours apart from another session). Not on a lift day (the lift
+  loads the same legs) and never before a run. Physio A, the heavy calf work, not the day before a run workout or the
+  long run; the day after the long run is good. 15–25 min.
+- **Format.** As the home mini sessions: `activityType` strength, `workoutType` `strength-home`, the title starts with
+  "🩹 Physio" (the plan check counts sessions by that word), the numbered lines copied into `description` as written.
+  The names are the bodyweight ones below, not the gym's ("Standing calf raise" is the calf machine in Lift), so these
+  sets keep their own history.
+- **Load.** Tendon rehab is slow and heavy: add weight (a dumbbell in the hand on that side) when the last 2 reps of a
+  set stop being hard. Achilles pain up to 3/10 during the set that settles by the next morning is fine; worse or
+  stiffer the next morning, go back to the last load and skip the run the day after. Right side first; when one side
+  is weaker, the weak side sets the reps.
+
+**Physio A — Achilles & calf** (20 min; the coach's Achilles work plus the physio's heel and foot work).
+Calf foam roll 2–3 min: find a sore spot, stay on it and move the ankle around.
+1) Single-leg bent-knee calf raise 2x8: slow, 2–3 s up and 2–3 s down, off a step; a dumbbell so the last reps are hard; 30–60 s rest or alternate legs.
+2) Single-leg straight-knee calf raise 2x8: same tempo, off a step, knee locked.
+3) Wall drill heel raise 3x8: each side; hands on the wall, drive the knee forward and rise onto the big toe.
+4) Mid-foot bridge tap 3x15: bridge up on the mid-foot, tap one heel down, then the other.
+Long-lever hamstring bridge hold: 20 s each side, 3 rounds (25 s from week 2). The marker is a heel-off bridge for 60 s with no cramp.
+
+**Physio B — Knee & hip** (25 min; the physio's knee strength session at the coach's front-of-knee tempo, and the
+physio's hip work).
+1) Single-leg step down 3x8: each side, off a step, 2–3 s down; knee over the second toe, hips level; right leg first.
+2) Bodyweight split squat 3x8: each side, 2–3 s down and up; hold a dumbbell when 8 feel easy.
+3) Side-lying hip abduction 3x8: each side; roll the hips forward, top leg slightly back (toes out of sight); the burn is in the back pocket, not the front of the thigh.
+4) Standing wall clam 3x12: each side; foot 2 ft from the wall, weight in the standing heel, hinge at the hips, don't lean on the wall.
+5) Single-leg Romanian deadlift 3x10: each leg, 15–20 lb; hips level, standing knee soft.
+6) Single-leg bent-knee calf raise 2x8: as in Physio A, slow.
+Runner's split squat hold: 20 s each side, 3 rounds.
+Adductor squeeze hold: a ball or pillow between the knees on a chair, 15–20 s, 3 rounds.
+
 ## Paolo's zone anchors (FTP 265 W, LTHR 168, max ~182+; FTP was 280 W until 2026-10-20)
 
 | Zone | HR | Power |
