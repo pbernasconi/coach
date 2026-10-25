@@ -3,6 +3,8 @@
  * server). Bearer CRON_SECRET.
  *   { id }  → plans that request on the server, if the server planner is on and hasn't tried it yet
  *   { }     → the Sunday run: a new weekly request for next week, unless one is already waiting or accepted
+ *   { fresh: true } → a new plan for next week even when one is waiting: rejects the waiting ones first (an accepted
+ *             week stays; plan.yml's "fresh" input)
  * Answers at once with { handled: true } (the plan follows in the background, up to 5 minutes) or
  * { handled: false, reason } (the GitHub job plans it, as before).
  */
@@ -41,6 +43,11 @@ export async function POST(request: Request) {
     }
   } else {
     const weekStart = addDays(mondayOf(todayIn(HOME_TZ)), 7);
+    if (body.fresh === true) {
+      await sql`
+        UPDATE plan_proposals SET status = 'rejected', decided_at = NOW(), updated_at = NOW()
+        WHERE user_id = ${userId} AND week_start = ${weekStart} AND status IN ('requested', 'proposed')`;
+    }
     const open = (await sql`
       SELECT 1 FROM plan_proposals
       WHERE user_id = ${userId} AND week_start = ${weekStart} AND status IN ('requested', 'running', 'proposed', 'accepted')
