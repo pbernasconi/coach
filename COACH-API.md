@@ -14,6 +14,7 @@ Coach is the only source of truth; every client reads or writes through these ro
 | `PUT /api/app/feedback` | `Bearer LIFT_SYNC_TOKEN` | Lift | How a workout felt: feel, RPE, comment (workout_feedback; lift/APP-API.md, "Feedback") |
 | `PUT /api/app/plan/{id}/date`, `DELETE /api/app/plan/{id}` | `Bearer LIFT_SYNC_TOKEN` | Lift | Move a planned workout to another day, or delete it; refused for a done one; pushes Google Calendar (lift/APP-API.md, "Move a workout", "Delete a workout") |
 | `POST /api/app/plan` | `Bearer LIFT_SYNC_TOKEN` | Lift | Add a planned workout (the web's "+"); pushes Google Calendar (lift/APP-API.md, "Add a workout") |
+| `GET /api/app/coach`, `POST /api/app/coach/messages`, `POST /api/app/coach/proposals/{id}/apply\|undo\|dismiss` | `Bearer LIFT_SYNC_TOKEN` | Lift | The Coach tab: talk to Coach (Claude API), which proposes plan changes; Apply runs the plan writes and pushes Google Calendar (lift/APP-API.md, "Coach") |
 | `POST /api/lift/enroll` | one-time code | Lift | `{ code }` → `{ token }`; codes come from Settings → Lift (`lift://sync?code=…`, 15 min, single use) |
 | `GET/POST /api/webhooks/strava` | Strava verify token / athlete id | Strava | Subscription check; a new or edited activity is stored in full at once (detail, streams, weather, TSS: `src/lib/strava-sync/ingest.mjs`), then the workout notice; delete |
 | `GET /api/cron/strava` | `Bearer CRON_SECRET` | Vercel cron (daily), GitHub Actions (every 3 h) | Strava sync, the backup for the webhook; fills in 15 older activities without detail, streams or weather |
