@@ -223,6 +223,38 @@ async function liftTemplates(): Promise<{ id: string; name: string; position: nu
     });
 }
 
+/**
+ * The exercises of the Lift template named `name` (a plan workout's lift_template), as the App API lists a planned
+ * workout's: sets × reps and the template's load and note. Empty when Lift has no such template.
+ */
+export async function liftTemplateExercises(name: string): Promise<{ name: string; sets: number; reps: number; repsMax: number | null; note: string | null }[]> {
+  const rows = (await sql`
+    SELECT entity, id, payload FROM lift_rows
+    WHERE deleted_at IS NULL AND entity IN ('template', 'templateExercise', 'exercise')`) as { entity: string; id: string; payload: Record<string, unknown> }[];
+  const wanted = name.trim().toLowerCase();
+  const template = rows.find((r) => r.entity === 'template' && !r.payload.deletedAt && String(r.payload.name ?? '').trim().toLowerCase() === wanted);
+  if (!template) return [];
+  const id = String(template.id).toLowerCase();
+  const names = new Map(rows.filter((r) => r.entity === 'exercise').map((r) => [String(r.id).toLowerCase(), String(r.payload.name ?? '')]));
+  return rows
+    .filter((r) => r.entity === 'templateExercise' && !r.payload.deletedAt && String(r.payload.templateID ?? '').toLowerCase() === id)
+    .sort((a, b) => Number(a.payload.position ?? 0) - Number(b.payload.position ?? 0))
+    .map((r) => {
+      const p = r.payload;
+      const repMin = Number(p.repMin ?? 0) || 1;
+      const repMax = Number(p.repMax ?? repMin) || repMin;
+      const load = p.weightValue ? `${p.weightValue} ${p.weightUnit ?? ''}`.trim() : null;
+      const note = [load, p.note ? String(p.note) : null].filter(Boolean).join(' · ') || null;
+      return {
+        name: names.get(String(p.exerciseID ?? '').toLowerCase()) || String(p.displayName ?? 'Exercise'),
+        sets: Number(p.setCount ?? 1) || 1,
+        reps: repMin,
+        repsMax: repMax > repMin ? repMax : null,
+        note,
+      };
+    });
+}
+
 /** The workout library: distinct planned workouts from the plan history, and the Lift templates. */
 export async function loadLibrary(userId: string): Promise<LibraryItem[]> {
   const [rows, templates] = await Promise.all([

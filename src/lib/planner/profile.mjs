@@ -531,7 +531,7 @@ export async function buildProfile(sql, { userId: USER_ID = OWNER_ID, weekOf: we
   }
   md.push('');
   md.push(`## Lift sessions (reps × load per set, from Lift)`);
-  md.push('A strength workout names its template in `liftTemplate`; scripts/lift-plan.mjs plans the Lift session, and Lift sets each target from the template and these logs (about 90% of the last load after 14 days off).');
+  md.push('A gym lift names its template in `liftTemplate`; Lift sets the loads from these logs. That is background for you: never explain it in a description.');
   md.push('### Notes from Lift (Paolo wrote these during his workouts; adapt the next sessions to them)');
   md.push('A note such as "felt heavy", "Achilles sore" or "go up 5 lb" is how Paolo tells the coach what to change next time. Pain or a niggle: lighten or swap what loads it, and keep it easy for a day or two. Heavy or a missed rep: hold the load. "Go up": raise it.');
   if (liftSessions.notes.length === 0) md.push('_(none in the last logged sessions)_');
