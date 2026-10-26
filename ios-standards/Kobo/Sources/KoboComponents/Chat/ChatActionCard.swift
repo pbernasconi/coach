@@ -4,12 +4,13 @@ import SwiftUI
 /// Changes an assistant proposes, for the reader to apply: a title, one row per change (its glyph, what it changes,
 /// and the old value struck through before the new one), optional notes, then Apply and Dismiss. Nothing changes until
 /// Apply. After it, the card says "Applied" and offers Undo when the caller can take the changes back. A dismissed,
-/// superseded or expired card dims its rows and drops the buttons.
+/// superseded or expired card dims its rows and drops the buttons. At accessibility text sizes the buttons stack.
 ///
 ///     ChatActionCard(verbatim: "2 changes this week", items: items, status: status,
 ///                    onApply: apply, onDismiss: dismiss, onUndo: undo)
 public struct ChatActionCard: View {
     @Environment(\.koboTheme) private var theme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     private let title: String
     private let items: [ChatActionItem]
     private let notes: [String]
@@ -64,18 +65,31 @@ public struct ChatActionCard: View {
 
     @ViewBuilder
     private var footer: some View {
-        if status.showsActions {
+        if status.showsActions, dynamicTypeSize.isAccessibilitySize {
+            VStack(spacing: Space.sm) {  // stacked at accessibility sizes, so neither label breaks; Apply first
+                applyButton
+                dismissButton
+            }
+        } else if status.showsActions {
             HStack(spacing: Space.sm) {
-                Button(action: onDismiss) { Text("Dismiss", bundle: .module) }
-                    .buttonStyle(.kobo(.secondary, width: .full))
-                    .disabled(status == .applying)
-                Button(action: onApply) { Text("Apply", bundle: .module) }
-                    .buttonStyle(.kobo(.primary, width: .full, isLoading: status == .applying))
+                dismissButton
+                applyButton
             }
         } else if status == .applied, let onUndo {
             Button(action: onUndo) { Text("Undo", bundle: .module) }
                 .buttonStyle(.kobo(.plain, size: .compact))
         }
+    }
+
+    private var applyButton: some View {
+        Button(action: onApply) { Text("Apply", bundle: .module) }
+            .buttonStyle(.kobo(.primary, width: .full, isLoading: status == .applying))
+    }
+
+    private var dismissButton: some View {
+        Button(action: onDismiss) { Text("Dismiss", bundle: .module) }
+            .buttonStyle(.kobo(.secondary, width: .full))
+            .disabled(status == .applying)
     }
 }
 

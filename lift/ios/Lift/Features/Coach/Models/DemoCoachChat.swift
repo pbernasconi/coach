@@ -54,9 +54,13 @@ nonisolated struct DemoCoachChat: CoachChatting {
                 id: "p\(turn)",
                 title: "3 changes this week",
                 items: [
-                    ChatActionItem(id: "lift", change: .move, title: "Heavy barbell", detail: "Tue 09:00", previous: "Mon 17:00"),
+                    ChatActionItem(
+                        id: "lift", change: .move, title: "Heavy barbell", detail: "Tue 09:00", previous: "Mon 17:00"
+                    ),
                     ChatActionItem(id: "vo2", change: .remove, title: "VO2 B", detail: "Tue · skipped (busy)"),
-                    ChatActionItem(id: "run", change: .add, title: "Easy Z2 run", detail: "Mon 16:00 · 45 min · HR < 145"),
+                    ChatActionItem(
+                        id: "run", change: .add, title: "Easy Z2 run", detail: "Mon 16:00 · 45 min · HR < 145"
+                    ),
                 ],
                 notes: ["Tuesday has events from 13:30, so the lift has no later slot."]
             )
@@ -74,7 +78,9 @@ nonisolated struct DemoCoachChat: CoachChatting {
                 id: "p\(turn)",
                 title: "1 change today",
                 items: [
-                    ChatActionItem(id: "ride", change: .edit, title: "Threshold A", detail: "60 min Z2", previous: "75 min, 4×8 min Z4"),
+                    ChatActionItem(
+                        id: "ride", change: .edit, title: "Threshold A", detail: "60 min Z2", previous: "75 min, 4×8 min Z4"
+                    )
                 ]
             )
         )

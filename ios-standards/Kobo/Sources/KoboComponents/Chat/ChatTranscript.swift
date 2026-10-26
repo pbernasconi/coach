@@ -10,7 +10,7 @@ import SwiftUI
 public struct ChatTranscript<Data: RandomAccessCollection, Row: View, Footer: View>: View
 where Data.Element: Identifiable {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var position = ScrollPosition(edge: .bottom)
+    @State private var position = ScrollPosition()
     @State private var follow = ChatScrollFollow()
     private let data: Data
     private let row: (Data.Element) -> Row
@@ -27,19 +27,24 @@ where Data.Element: Identifiable {
     }
 
     public var body: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: Space.lg) {
+        ScrollView(.vertical) {
+            // Not lazy: under a bottom anchor, iOS 26 shifts a lazy stack sideways (a thread stays short).
+            VStack(alignment: .leading, spacing: Space.lg) {
                 ForEach(data) { row($0) }
                 footer
             }
             .pageColumn()
             .padding(.vertical, Space.lg)
+            // Exactly the scroll view's width: scrolling to the bottom edge must never shift the column sideways.
+            .containerRelativeFrame(.horizontal)
             .scrollTargetLayout()
         }
         .scrollPosition($position)
-        .defaultScrollAnchor(.bottom)
+        .defaultScrollAnchor(.bottomLeading)  // leading: a bottom anchor also centres the column sideways
         .scrollDismissesKeyboard(.interactively)
         .scrollEdgeEffectStyle(.soft, for: .bottom)
+        // Room under the last row for the jump-to-latest button, so it never covers the last card's buttons.
+        .contentMargins(.bottom, Size.minTouch + Space.lg, for: .scrollContent)
         .onScrollGeometryChange(for: Double.self) { geometry in
             ChatScrollFollow.distanceFromBottom(
                 contentHeight: geometry.contentSize.height,

@@ -14,17 +14,15 @@ struct CoachContent: View {
             CoachMessageRow(message: message, busyProposal: state.busyProposal, send: send)
         } footer: {
             switch state.phase {
-            case .idle: EmptyView()
-            case .waiting: ChatTypingIndicator(verbatim: String(localized: "Reading your plan"))
-            case .failed(let reason): ChatErrorRow(verbatim: reason) { send(.retryTapped) }
-            }
-        }
-        .overlay(alignment: .bottom) {
-            if state.messages.isEmpty, state.phase == .idle {
+            case .idle where state.messages.isEmpty:
+                // In the scroll content, so the keyboard scrolls it instead of pushing it under the title.
                 CoachIntro(prompts: state.prompts) { prompt in
                     send(.promptPicked(prompt))
                     isComposing = true
                 }
+            case .idle: EmptyView()
+            case .waiting: ChatTypingIndicator(verbatim: String(localized: "Reading your plan"))
+            case .failed(let reason): ChatErrorRow(verbatim: reason) { send(.retryTapped) }
             }
         }
         .safeAreaBar(edge: .bottom) {
@@ -89,15 +87,15 @@ private struct CoachIntro: View {
                     .font(theme.font(.title2))
                     .foregroundStyle(theme.palette.textPrimary)
                     .accessibilityAddTraits(.isHeader)
-                Text("Tell Coach what changed: your calendar, how you feel, who you train with. Coach proposes the changes, and you apply them.")
-                    .font(theme.font(.subheadline))
-                    .foregroundStyle(theme.palette.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                Text(
+                    "Tell Coach what changed: your calendar, how you feel, who you train with. Coach proposes the changes, and you apply them."
+                )
+                .font(theme.font(.subheadline))
+                .foregroundStyle(theme.palette.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
             }
             InlineNotice("Concept build: Coach answers with sample replies and changes nothing.", tone: .info)
             ChatPromptSuggestions(prompts, onSelect: onSelect)
         }
-        .pageColumn()
-        .padding(.bottom, Space.lg)
     }
 }

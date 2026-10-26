@@ -105,6 +105,28 @@ import Testing
         #expect(ChatReplyBlock.parse("2026 was a good year") == [.paragraph("2026 was a good year")])
     }
 
+    @Test(arguments: [
+        ("Moved **Team", "Moved **Team**"),
+        ("a **b** and **c", "a **b** and **c**"),
+        ("Use `code", "Use `code`"),
+        ("Done *", "Done "),
+        ("**bold** done", "**bold** done"),
+        ("```\n**x", "```\n**x"),
+        ("Moved **it to `Tue", "Moved **it to `Tue`**"),
+        ("Run `a **b", "Run `a **b**`"),
+    ])
+    func streamingTextClosesOpenMarks(text: String, expected: String) {
+        #expect(ChatStreamingText.repaired(text) == expected)
+    }
+
+    @Test func theReplyIsAnnouncedOnceWhenStreamingEnds() {
+        #expect(
+            ChatStreamingText.announcement(wasStreaming: true, isStreaming: false, text: "Moved **it**.") == "Moved it."
+        )
+        #expect(ChatStreamingText.announcement(wasStreaming: true, isStreaming: true, text: "Moved") == nil)
+        #expect(ChatStreamingText.announcement(wasStreaming: false, isStreaming: false, text: "Moved") == nil)
+    }
+
     @Test func onlyPendingAndApplyingCardsOfferButtons() {
         #expect(ChatActionStatus.pending.showsActions)
         #expect(ChatActionStatus.applying.showsActions)
