@@ -27,7 +27,7 @@ import Testing
         (["Lift", "-tab"], LaunchOptions()),
         (["Lift", "-tab", "lift"], LaunchOptions(initialTab: .lift)),
         (["Lift", "-tab", "today"], LaunchOptions(initialTab: .today)),
-        (["Lift", "-tab", "training"], LaunchOptions(initialTab: .training)),
+        (["Lift", "-tab", "coach"], LaunchOptions(initialTab: .coach)),
         (["Lift", "-demo", "-open", "workout"], LaunchOptions(isDemo: true, initialTab: .week, opening: .workout)),
         (["Lift", "-open", "Workout"], LaunchOptions(initialTab: .week, opening: .workout)),
         (["Lift", "-open", "nope"], LaunchOptions()),

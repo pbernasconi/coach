@@ -140,7 +140,7 @@ private struct AppShell: View {
         [
             KoboTab("Week", systemImage: AppTab.week.systemImage, value: .week),
             KoboTab("Today", systemImage: AppTab.today.systemImage, value: .today),
-            KoboTab("Training", systemImage: AppTab.training.systemImage, value: .training),
+            KoboTab("Coach", systemImage: AppTab.coach.systemImage, value: .coach),
             KoboTab("Lift", systemImage: AppTab.lift.systemImage, value: .lift),
             KoboTab("Settings", systemImage: AppTab.settings.systemImage, value: .settings),
         ]

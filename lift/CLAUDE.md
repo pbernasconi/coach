@@ -63,7 +63,7 @@ xcodebuild test -project ios/Lift.xcodeproj -scheme Lift \
 Launch arguments (scheme or `simctl launch`): `-demo` opens an in-memory database seeded by `DemoSeeder`
 (fabricated data, nothing saved); `-fresh` opens an empty in-memory database as a first launch leaves it (the exercise
 library only; it wins over `-demo`, never syncs and never touches Apple Health), for the empty states;
-`-tab week|history|exercises|settings` picks the first tab; `-appearance dark|light` forces an appearance; with
+`-tab week|today|coach|lift|history|exercises|settings` picks the first tab; `-appearance dark|light` forces an appearance; with
 `-demo`, `-open workout` pushes today's or the next planned session onto the Week tab, `-open exercise` pushes the Back squat detail onto the Exercises tab, `-open templates` and
 `-open template` push the templates list and the first template's editor onto the Exercises tab, `-open summary`
 pushes the latest logged session's summary onto the Week tab, `-open template-link` opens the template link review over
@@ -89,7 +89,8 @@ used inside `Loadable`.
   finish, with its title; no energy (Lift cannot estimate it honestly). The first summary asks before the system sheet
   does, never at launch; Settings has the switch. `session.healthWorkoutID` (schema v5) keeps it saved once, and a
   discard deletes the workout Lift saved. Demo and `-fresh` data never touch Health.
-- **No generated commentary.** No AI summaries or "insights" text. Show numbers and plain labels.
+- **No generated commentary.** No AI summaries or "insights" text. Show numbers and plain labels. The one exception is
+  the Coach tab (`COACH-CHAT.md`): a chat where Coach answers and proposes plan changes that Paolo applies.
 - **Rescheduling** uses the lift sheet: move to another day, push to next week, change the workout, or
   remove it. Each action offers Undo instead of a confirmation dialog.
 - **Real data stays out of the repo.** Fixtures and tests use made-up sessions, never imported notes. A person's own

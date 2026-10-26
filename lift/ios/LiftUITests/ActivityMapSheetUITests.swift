@@ -108,8 +108,8 @@ final class ActivityMapSheetUITests: XCTestCase {
         pause(1.5)
         edgeSwipe()
         shot("20-swiped-back")
-        // The list it came from (the demo's Training tab also lists "Harbour loop").
-        XCTAssertTrue(app.staticTexts["Training"].exists, "the page went back")
+        // The Week tab it was pushed on.
+        XCTAssertTrue(app.staticTexts["Week"].exists, "the page went back")
         XCTAssertFalse(app.buttons["Map type"].exists)
     }
 
@@ -130,20 +130,17 @@ final class ActivityMapSheetUITests: XCTestCase {
     /// The tab bar slides away with the push and back with the pop (it is driven from the stack's root).
     func testTabBarLeavesWithThePushAndComesBackWithThePop() {
         app.terminate()
-        app.launchArguments = ["-demo", "-tab", "training"]
+        // The made-up ride, pushed on Week at launch: an outdoor activity with its track, so it opens on its map.
+        app.launchArguments = ["-demo", "-open", "ride"]
         app.launch()
-        // Valley ride: an outdoor activity with its track, so the page opens on its map.
-        let row = app.buttons.containing(.staticText, identifier: "Valley ride").firstMatch
-        XCTAssertTrue(row.waitForExistence(timeout: 10))
-        XCTAssertTrue(app.tabBars.firstMatch.isHittable)
-        row.tap()
+        XCTAssertTrue(app.buttons["Back"].firstMatch.waitForExistence(timeout: 10))
         pause(1.5)
         shot("30-pushed")
         XCTAssertFalse(app.tabBars.firstMatch.isHittable, "no tab bar on the activity")
         app.buttons["Back"].firstMatch.tap()
         pause(1.5)
         shot("31-popped")
-        XCTAssertTrue(app.tabBars.firstMatch.isHittable, "the tab bar is back on the list")
+        XCTAssertTrue(app.tabBars.firstMatch.isHittable, "the tab bar is back on Week")
     }
 
     private func edgeSwipe() {

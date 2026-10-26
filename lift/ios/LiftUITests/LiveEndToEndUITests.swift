@@ -40,20 +40,9 @@ final class LiveEndToEndUITests: XCTestCase {
             back()
         }
 
-        tab("Training")
-        wait(5)
-        shot("30-training")
-        let first = app.cells.firstMatch.exists ? app.cells.firstMatch : app.buttons.containing(.staticText, identifier: "Run").firstMatch
-        if let run = firstCard(in: ["Lunch Run", "Morning Run"]) ?? (first.exists ? first : nil) {
-            run.tap()
-            wait(7)
-            shot("31-activity-map")
-            app.swipeUp(velocity: .slow)
-            wait(2)
-            shot("32-activity-up")
-            scrollShot("33-activity-more")
-            back()
-        }
+        tab("Coach")
+        wait(2)
+        shot("30-coach")
 
         tab("Lift")
         wait(5)

@@ -37,7 +37,7 @@ import Testing
 
     @Test func eachScreenLinkOpensOnItsTab() {
         #expect(AppLink.session(sessionID).destination == ScreenDestination(tab: .lift, route: .liftSession(sessionID)))
-        #expect(AppLink.activity("1").destination == ScreenDestination(tab: .training, route: .activity("1")))
+        #expect(AppLink.activity("1").destination == ScreenDestination(tab: .week, route: .activity("1")))
         #expect(AppLink.weighIn("latest").destination == ScreenDestination(tab: .today, route: .weighIn("latest")))
         #expect(AppLink.today.destination == ScreenDestination(tab: .today, route: nil))
         #expect(AppLink.syncCode("A").destination == nil)

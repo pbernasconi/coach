@@ -5,7 +5,7 @@ import Foundation
 nonisolated enum AppTab: String, CaseIterable, Hashable, Sendable {
     case week
     case today
-    case training
+    case coach
     case lift
     case settings
 
@@ -14,7 +14,7 @@ nonisolated enum AppTab: String, CaseIterable, Hashable, Sendable {
         switch self {
         case .today: "sun.max"
         case .week: "calendar"
-        case .training: "chart.line.uptrend.xyaxis"
+        case .coach: "bubble.left.and.text.bubble.right"
         case .lift: "dumbbell"
         case .settings: "gearshape"
         }
