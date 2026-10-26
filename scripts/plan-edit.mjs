@@ -9,6 +9,8 @@
  *        (unskip <workoutId> to undo; the reason is what the planner reads, src/lib/plan/skip.mjs)
  *   node --env-file=.env.local scripts/plan-edit.mjs update <workoutId> title="Easy ride" duration=60 intensity=easy \
  *        start_time=07:30 description="Z2 only"
+ *   node --env-file=.env.local scripts/plan-edit.mjs add 2026-10-26 sport=run title="Easy Z2 run" start_time=16:00 \
+ *        duration=45 intensity=Easy tss=32 description="Conversational"   (the web's "+" on a day; prints the new id)
  *
  * Every change sets edited_at, so a later accepted plan keeps it. Add --no-calendar to skip the calendar update.
  * A move, skip or unskip of a strength workout also moves or removes its Lift session (when nothing was logged in it),
@@ -156,6 +158,31 @@ if (cmd === 'show') {
   }
   console.log(`updated ${w.title}`);
   await push([day(w.week_start_date)]);
+} else if (cmd === 'add') {
+  if (!DATE.test(a ?? '')) fail('add YYYY-MM-DD sport=run title="…" key=value ...');
+  const fields = {};
+  for (const pair of [b, ...rest].filter(Boolean)) {
+    const i = pair.indexOf('=');
+    const key = pair.slice(0, i);
+    if (key !== 'sport' && !COLUMNS[key]) fail(`Unknown field ${key}; use sport or one of ${Object.keys(COLUMNS).join(', ')}`);
+    fields[key] = pair.slice(i + 1);
+  }
+  if (!fields.sport) fail('add needs sport=run|ride|swim|strength|walk|hike|yoga|rest|other');
+  const planId = await planFor(monday(a));
+  const id = crypto.randomUUID();
+  await sql`
+    INSERT INTO training_plan_activities (id, plan_id, activity_type, title, scheduled_date, status, sort_order, edited_at)
+    VALUES (${id}, ${planId}, ${fields.sport}, ${fields.title ?? fields.sport}, ${a}, 'planned',
+            (SELECT COALESCE(MAX(sort_order), -1) + 1 FROM training_plan_activities WHERE plan_id = ${planId} AND scheduled_date = ${a}),
+            NOW())`;
+  for (const [key, raw] of Object.entries(fields)) {
+    if (key === 'sport' || key === 'title') continue;
+    const value = key === 'duration' ? parseInt(raw, 10) : key === 'tss' ? Number(raw) : raw;
+    // Column names come from COLUMNS, never from input.
+    await sql.query(`UPDATE training_plan_activities SET ${COLUMNS[key]} = $1 WHERE id = $2`, [value, id]);
+  }
+  console.log(`added ${id}  ${a} ${fields.start_time ?? '--:--'}  ${fields.title ?? fields.sport}`);
+  await push([monday(a)]);
 } else {
-  fail('Usage: plan-edit.mjs show YYYY-MM-DD | move <id> YYYY-MM-DD | skip <id> | unskip <id> | update <id> key=value ...');
+  fail('Usage: plan-edit.mjs show YYYY-MM-DD | move <id> YYYY-MM-DD | skip <id> | unskip <id> | update <id> key=value ... | add YYYY-MM-DD sport=… key=value ...');
 }

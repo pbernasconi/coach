@@ -13,6 +13,7 @@ Coach is the only source of truth; every client reads or writes through these ro
 | `GET /api/app/health?tz=&days=30\|90` | `Bearer LIFT_SYNC_TOKEN` | Lift | The Health page for the Today tab: Garmin line, readiness, vitals, trends, body, labs (lift/APP-API.md, "Health") |
 | `PUT /api/app/feedback` | `Bearer LIFT_SYNC_TOKEN` | Lift | How a workout felt: feel, RPE, comment (workout_feedback; lift/APP-API.md, "Feedback") |
 | `PUT /api/app/plan/{id}/date`, `DELETE /api/app/plan/{id}` | `Bearer LIFT_SYNC_TOKEN` | Lift | Move a planned workout to another day, or delete it; refused for a done one; pushes Google Calendar (lift/APP-API.md, "Move a workout", "Delete a workout") |
+| `POST /api/app/plan` | `Bearer LIFT_SYNC_TOKEN` | Lift | Add a planned workout (the web's "+"); pushes Google Calendar (lift/APP-API.md, "Add a workout") |
 | `POST /api/lift/enroll` | one-time code | Lift | `{ code }` → `{ token }`; codes come from Settings → Lift (`lift://sync?code=…`, 15 min, single use) |
 | `GET/POST /api/webhooks/strava` | Strava verify token / athlete id | Strava | Subscription check; a new or edited activity is stored in full at once (detail, streams, weather, TSS: `src/lib/strava-sync/ingest.mjs`), then the workout notice; delete |
 | `GET /api/cron/strava` | `Bearer CRON_SECRET` | Vercel cron (daily), GitHub Actions (every 3 h) | Strava sync, the backup for the webhook; fills in 15 older activities without detail, streams or weather |

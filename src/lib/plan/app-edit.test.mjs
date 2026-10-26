@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { bankOptions, editForm, editInput } from './app-edit.mjs';
+import { addInput, bankOptions, editForm, editInput } from './app-edit.mjs';
 import { cleanNewWorkout } from './create.mjs';
 import { bankWorkout } from '../workouts/bank.mjs';
 
@@ -81,4 +81,28 @@ test('editInput keeps steps not from the bank, and a rest day stays bare', () =>
   assert.equal(editInput({ ...editForm(w) }, w).value.steps, custom);
   const rest = editInput({ title: '', duration: 30 }, { sport: 'rest', date: '2026-10-28' }).value;
   assert.equal(cleanNewWorkout(rest).value.duration, null);
+});
+
+test('addInput: a new run from the phone, with the effort setting the TSS', () => {
+  const r = addInput({ sport: 'run', date: '2026-10-26', startTime: '16:00', title: 'Easy Z2 run with David', duration: 45, effort: 'easy', description: 'Slow' }).value;
+  assert.equal(r.sport, 'run');
+  assert.equal(r.date, '2026-10-26');
+  assert.equal(r.startTime, '16:00');
+  assert.equal(r.intensity, 'Easy');
+  assert.equal(r.tss, 32);
+  assert.equal(r.steps, null);
+  const clean = cleanNewWorkout(r).value;
+  assert.equal(clean.title, 'Easy Z2 run with David');
+  assert.equal(clean.duration, 45);
+});
+
+test('addInput: a bank workout gets its steps; sport and day are required', () => {
+  const r = addInput({ sport: 'ride', date: '2026-10-27', bank: 'easy', duration: 60 }).value;
+  assert.ok(Array.isArray(r.steps.steps));
+  assert.equal(cleanNewWorkout(r).value.workoutType, 'ride-z2');
+  assert.ok(addInput({ date: '2026-10-27' }).error);
+  assert.ok(addInput({ sport: 'kite', date: '2026-10-27' }).error);
+  assert.ok(addInput({ sport: 'run', date: 'tomorrow' }).error);
+  assert.ok(addInput(null).error);
+  assert.ok(addInput({ sport: 'swim', date: '2026-10-27', bank: 'easy' }).error);
 });

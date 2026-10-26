@@ -887,6 +887,16 @@ moves it, as "Move a workout". It answers with the workout, as `GET /api/app/wor
 and new weeks to Google Calendar after the answer. Errors: `400 {"error":"…"}` for a bad id or field, `404` for no
 such workout, `409` for a done workout.
 
+### Add a workout: `POST /api/app/plan?tz=`
+
+A new planned workout from the phone: the web's "+" on a day (`createWorkout` in `src/lib/plan/month.ts`), and the
+Coach tab's Apply for an added session (lift/COACH-CHAT.md). Body: the Edit fields plus the sport and day, `{ sport,
+date, startTime, title, duration, distanceKm, tss, effort, description, bank, level }`; `sport` is one of run, ride,
+swim, strength, walk, hike, yoga, rest, other, and `date` is `YYYY-MM-DD`. An empty TSS is automatic, as in Edit;
+`bank`/`level` build a run or ride from the bank. The row is marked edited, so a plan re-import keeps it. It answers
+`201` with the workout, as `GET /api/app/workouts/plan-<id>`, and pushes the week to Google Calendar after the answer.
+Errors: `400 {"error":"…"}` for a bad sport, day or field.
+
 ### Workout: `GET /api/app/workouts/{ref}?tz=`
 
 One workout, planned and done as one: the phone's one workout page. `ref` is `plan-<plan workout id>` (a Week API item's

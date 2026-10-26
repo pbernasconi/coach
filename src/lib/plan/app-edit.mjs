@@ -132,3 +132,15 @@ export function editInput(body, w) {
     },
   };
 }
+
+/**
+ * The POST body of "Add a workout" (`POST /api/app/plan`) as the web's workout input, or `{ error }`: the Edit form's
+ * fields plus `sport` and `date`, which a new workout must name. cleanNewWorkout checks it next, as for the web's "+".
+ * @param {unknown} body
+ */
+export function addInput(body) {
+  const b = body && typeof body === 'object' ? /** @type {Record<string, unknown>} */ (body) : {};
+  if (typeof b.sport !== 'string' || !SPORT_IDS.includes(b.sport)) return { error: 'Pick a sport.' };
+  if (typeof b.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(b.date)) return { error: 'Pick a day.' };
+  return editInput(b, { sport: b.sport, date: b.date, steps: null });
+}
