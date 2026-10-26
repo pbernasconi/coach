@@ -132,3 +132,27 @@ function loadNote(text) {
   const t = String(text ?? '').trim().replace(/^@\s*/, '');
   return t || null;
 }
+
+/**
+ * The Lift template a gym lift is for, among `names`: its `lift_template`, else the template its summary starts
+ * with ("Heavy barbell · 9 exercises …"), else the longest template name in its title, else by its workout type
+ * (strength-heavy → the "heavy" template, strength-dumbbell → the dumbbell one that is not the hotel's). null for
+ * anything else (a home session, physio), so those keep the exercises in their own text.
+ * @param {{ sport?: string, workoutType?: string | null, liftTemplate?: string | null, intensity?: string | null, title?: string }} w
+ * @param {string[]} names
+ * @returns {string | null}
+ */
+export function pickTemplate(w, names) {
+  if (w.sport !== 'strength' || w.workoutType === 'strength-home' || names.length === 0) return null;
+  const key = (s) => String(s ?? '').trim().toLowerCase();
+  const byKey = new Map(names.map((n) => [key(n), n]));
+  if (w.liftTemplate && byKey.has(key(w.liftTemplate))) return byKey.get(key(w.liftTemplate));
+  const lead = key(String(w.intensity ?? '').split(' · ')[0]);
+  if (byKey.has(lead)) return byKey.get(lead);
+  const title = key(w.title);
+  const inTitle = names.filter((n) => key(n) && title.includes(key(n))).sort((a, b) => b.length - a.length)[0];
+  if (inTitle) return inTitle;
+  if (w.workoutType === 'strength-heavy') return names.find((n) => /heavy/i.test(n)) ?? null;
+  if (w.workoutType === 'strength-dumbbell') return names.find((n) => /dumbbell/i.test(n) && !/hotel/i.test(n)) ?? null;
+  return null;
+}

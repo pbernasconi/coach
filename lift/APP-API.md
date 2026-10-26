@@ -862,7 +862,9 @@ opens it for a planned workout that is not a Lift session. `id` is the Week API 
 - `exercises`: a strength workout's exercises, `{ name, sets, reps, repsMax, note }` each, from the first of:
   1. the sets Lift planned (`blockExercises`, `src/lib/plan/lift-plan.mjs`: the generated block's lines, the load in
      `note`: "Back squat 3 × 5 @ 255 lb" → 3 × 5, note "255 lb"), with or without a linked session, until done;
-  2. with no Lift session and no block yet, the exercises of its Lift template (`lift_template`);
+  2. with no live Lift session and no block yet, the exercises of its Lift template: `lift_template`, else the
+     template its `intensity` starts with, its title names, or its workout type means (`pickTemplate`), so a gym lift
+     never shows without them;
   3. with no Lift session, the coach's text (`strengthExercises`, `src/lib/plan/strength-text.mjs`): "1) Standing calf
      raise 3x15: 3 s up" → 3 × 15, note "3 s up". Then `notes` leaves their lines out (`strengthNotes`).
   `[]` with structured steps, or when none of these has any. Start workout uses them when no session is linked.
