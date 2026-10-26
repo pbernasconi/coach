@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { blockExercises, exerciseLine, intensityText, LIFT_MARKER, mergeDescription, planEntries } from './lift-plan.mjs';
+import { blockExercises, exerciseLine, pickTemplate, intensityText, LIFT_MARKER, mergeDescription, planEntries } from './lift-plan.mjs';
 
 const set = (o = {}) => ({ kind: 'working', reps: 8, repMin: null, repMax: null, weight: 100, unit: 'lb', status: 'planned', actualReps: null, actualWeight: null, ...o });
 const squat = { name: 'Made-up squat', loadMode: 'total', sets: [set(), set(), set()] };
@@ -83,4 +83,18 @@ test('blockExercises reads what sessionBlock writes', () => {
     { name: 'Back squat', loadMode: 'total', sets: [1, 2, 3].map(() => ({ kind: 'working', reps: 5, repMin: null, repMax: null, weight: 255, unit: 'lb', status: 'planned', actualReps: null, actualWeight: null })) },
   ] };
   assert.deepEqual(blockExercises(mergeDescription('Go.', planned)), [{ name: 'Back squat', sets: 3, reps: 5, repsMax: null, note: '255 lb' }]);
+});
+
+test('pickTemplate: stored template, summary, title, then workout type; never a home session', () => {
+  const names = ['Heavy barbell', 'Upper (dumbbells)', 'Hotel gym (dumbbells)'];
+  const lift = (over) => pickTemplate({ sport: 'strength', workoutType: null, liftTemplate: null, intensity: null, title: '', ...over }, names);
+  assert.equal(lift({ liftTemplate: 'upper (dumbbells)' }), 'Upper (dumbbells)');
+  assert.equal(lift({ intensity: 'Heavy barbell · 9 exercises · 25 sets · Back squat 3 × 5 @ 255 lb' }), 'Heavy barbell');
+  assert.equal(lift({ title: '🏋️ Heavy barbell lift' }), 'Heavy barbell');
+  assert.equal(lift({ title: 'Hotel gym (dumbbells) session' }), 'Hotel gym (dumbbells)');
+  assert.equal(lift({ workoutType: 'strength-heavy', title: 'Gym' }), 'Heavy barbell');
+  assert.equal(lift({ workoutType: 'strength-dumbbell', title: 'Gym' }), 'Upper (dumbbells)');
+  assert.equal(lift({ workoutType: 'strength-home', title: 'Heavy barbell' }), null);
+  assert.equal(lift({ title: 'Arm finisher' }), null);
+  assert.equal(pickTemplate({ sport: 'ride', title: 'Heavy barbell' }, names), null);
 });

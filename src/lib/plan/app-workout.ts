@@ -4,7 +4,8 @@ import { SPORTS, sport } from '@/lib/sports';
 import { liftTemplateExercises, loadRange } from './month';
 import { mondayOf } from './week.mjs';
 import { appWorkout } from './app-workout.mjs';
-import { LIFT_MARKER } from './lift-plan.mjs';
+import { LIFT_MARKER, pickTemplate } from './lift-plan.mjs';
+import { sportId } from './week-api.mjs';
 import { plainTitle } from './calendar.mjs';
 import { feedbackBlock } from './feedback.mjs';
 import { loadFeedback } from './feedback';
@@ -22,12 +23,18 @@ export const PLAN_ID = /^[A-Za-z0-9-]{1,64}$/;
 export async function loadAppWorkout(userId: string, id: string, today: string) {
   const found = await loadPlanWorkout(userId, id, today);
   if (!found) return null;
-  // A gym lift Lift has not planned yet (no session, no generated sets): the template's exercises, so the page still
-  // lists them and Start workout has them.
-  const name = found.liftTemplate;
-  const unplanned = name && !found.liftSessionId && found.state !== 'done' && !String(found.description ?? '').includes(LIFT_MARKER);
-  const template = unplanned ? await load('app plan: lift template', () => liftTemplateExercises(name)) : null;
-  const w = template?.ok ? { ...found, templateExercises: template.value } : found;
+  // Guard: a gym lift always lists its exercises. When Lift has not planned it (no live session, no generated sets),
+  // the page takes its Lift template's, found from the stored template, the summary, the title or the workout type.
+  const sportKey = sportId(found, sports.known);
+  const unplanned = sportKey === 'strength' && !found.steps && !found.liftSessionId && found.state !== 'done' &&
+    !String(found.description ?? '').includes(LIFT_MARKER);
+  const templates = unplanned ? await load('app plan: lift templates', () => liftTemplateExercises()) : null;
+  const picked = templates?.ok
+    ? pickTemplate({ ...found, sport: sportKey }, templates.value.map((t) => t.name))
+    : null;
+  const template = picked && templates?.ok ? templates.value.find((t) => t.name === picked) : null;
+  if (unplanned && !template) console.warn(`[app plan] strength workout ${id} has no Lift plan and no template matched`);
+  const w = template ? { ...found, templateExercises: template.exercises } : found;
   // "How did it feel" from the workout's day on, as the web's workout window (EffortLog).
   if (w.date > today) return { ...appWorkout(w, sports), feedback: null };
   const item = `plan:${w.id}`;
