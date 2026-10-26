@@ -897,6 +897,44 @@ swim, strength, walk, hike, yoga, rest, other, and `date` is `YYYY-MM-DD`. An em
 `201` with the workout, as `GET /api/app/workouts/plan-<id>`, and pushes the week to Google Calendar after the answer.
 Errors: `400 {"error":"…"}` for a bad sport, day or field.
 
+### Coach: `/api/app/coach…`
+
+The Coach tab (lift/COACH-CHAT.md): Paolo talks to his coach and Coach proposes plan changes as a card. Nothing in the
+plan changes until he taps Apply; Apply runs the same writes as the Week tab and the Edit sheet, then pushes Google
+Calendar. Code: `src/lib/coach-chat/` (server.ts, writes.ts, changes.mjs, chat.mjs); prompt
+`src/lib/planner/prompts/coach-chat.md`. One open thread; a new one starts after 24 h idle. A $10 monthly cap,
+apart from the planner's.
+
+- `GET /api/app/coach?tz=` → `{ threadId, messages, ready, notice, suggestions }`. `messages` oldest first; `ready`
+  false (with `notice`) when there is no API key or the month's budget is used; `suggestions` are quick prompts.
+- `POST /api/app/coach/messages?tz=` `{ text }` (1–2000 characters) → `{ message, reply }`, once Claude is done
+  (5–30 s, no streaming yet). A Claude failure is a reply that says so, not an error.
+- `POST /api/app/coach/proposals/{id}/apply?tz=` → `{ proposal, dates }`: the days it touched. `409 { error, proposal }`
+  when the card isn't open, or a workout it touches changed since (the card is then `stale`), or a write failed (the
+  writes before it are put back).
+- `POST /api/app/coach/proposals/{id}/undo?tz=` → `{ proposal, dates }`: puts back what Apply changed. `409` unless applied.
+- `POST /api/app/coach/proposals/{id}/dismiss` → `{ proposal }`. `409` unless open.
+
+```json
+{
+  "id": "m2…", "role": "assistant", "createdAt": "2026-10-26T21:02:11.000Z",
+  "text": "Tuesday is free until 13:30, so the lift goes at 09:00 and VO2 B comes out.",
+  "proposal": {
+    "id": "p7…", "title": "Lift Tuesday, run with David today", "status": "open",
+    "why": "Based on your message and Tuesday's calendar",
+    "items": [
+      { "kind": "changed", "title": "Heavy barbell", "detail": "Mon 26 Oct 17:00 → Tue 27 Oct 09:00" },
+      { "kind": "removed", "title": "VO2 B", "detail": "Skip · Tue 27 Oct 09:00 · busy" },
+      { "kind": "added", "title": "Easy run with David", "detail": "Mon 26 Oct 16:00 · 45 min · Easy" }
+    ],
+    "warnings": []
+  }
+}
+```
+
+`items[].kind` maps to Kobo's change rows (added, removed, changed). `status` is open, applied, undone, dismissed or
+stale. `warnings` are Paolo's plan rules (rules.mjs) the changes break, kept because he asked for them.
+
 ### Workout: `GET /api/app/workouts/{ref}?tz=`
 
 One workout, planned and done as one: the phone's one workout page. `ref` is `plan-<plan workout id>` (a Week API item's
