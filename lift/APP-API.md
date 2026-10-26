@@ -859,11 +859,13 @@ opens it for a planned workout that is not a Lift session. `id` is the Week API 
   the chart (0…1). `steps` nest one level for repeats; each step has an `id`, a plain `label` ("Work") and its `cue`
   apart. `keyTargets` leave the cue out. `zones` is "Time in zones" as Strava lists it: each zone's `name` (Recovery …
   VO2 max), `rangeText` ("148–200 W"), `timeText` ("58 min", "" for none) and `percent` (`null` with no time).
-- `exercises`: a strength workout's exercises, read from the coach's text by `strengthExercises`
-  (`src/lib/plan/strength-text.mjs`), so the phone can start a Lift session with them: `{ name, sets, reps, repsMax,
-  note }` per line with sets × reps ("1) Standing calf raise 3x15: 3 s up" → name "Standing calf raise", 3 × 15, note
-  "3 s up"). `[]` with structured steps, once a Lift session is linked (Start workout here, or "Log sets" on the web), or when no line has sets × reps. With
-  exercises, `notes` leaves their lines out (`strengthNotes`), so the page says each once.
+- `exercises`: a strength workout's exercises, `{ name, sets, reps, repsMax, note }` each, from the first of:
+  1. the sets Lift planned (`blockExercises`, `src/lib/plan/lift-plan.mjs`: the generated block's lines, the load in
+     `note`: "Back squat 3 × 5 @ 255 lb" → 3 × 5, note "255 lb"), with or without a linked session, until done;
+  2. with no Lift session and no block yet, the exercises of its Lift template (`lift_template`);
+  3. with no Lift session, the coach's text (`strengthExercises`, `src/lib/plan/strength-text.mjs`): "1) Standing calf
+     raise 3x15: 3 s up" → 3 × 15, note "3 s up". Then `notes` leaves their lines out (`strengthNotes`).
+  `[]` with structured steps, or when none of these has any. Start workout uses them when no session is linked.
 - `done.activityId`: the Strava activity to open (`null` for a Lift match); `done` is `null` until done.
 - `feedback`: from the workout's day on (see "Feedback", item `plan:<id>`); `null` before it, or when it did not load.
 - `edit`: the form of the phone's Edit (`editForm`, `src/lib/plan/app-edit.mjs`), filled in as the web's Edit fills

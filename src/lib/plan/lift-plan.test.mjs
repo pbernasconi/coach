@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { exerciseLine, intensityText, LIFT_MARKER, mergeDescription, planEntries } from './lift-plan.mjs';
+import { blockExercises, exerciseLine, intensityText, LIFT_MARKER, mergeDescription, planEntries } from './lift-plan.mjs';
 
 const set = (o = {}) => ({ kind: 'working', reps: 8, repMin: null, repMax: null, weight: 100, unit: 'lb', status: 'planned', actualReps: null, actualWeight: null, ...o });
 const squat = { name: 'Made-up squat', loadMode: 'total', sets: [set(), set(), set()] };
@@ -62,4 +62,25 @@ test('a session started from a text workout (no template) is kept unless skipped
   ];
   const entries = planEntries(rows, ['fromTemplate']);
   assert.deepEqual(entries.map((e) => [e.key, e.remove ?? false]), [['w2', true], ['w3', true]]);
+});
+
+test('blockExercises: the planned lines of the generated block, with their loads', () => {
+  const text = `Squat first.\n\n${LIFT_MARKER}\nTemplate: Heavy barbell\n- Back squat 3 × 5 @ 255 lb\n- Deadlift 5 @ 275 lb, 3 @ 295 lb\n` +
+    '- Pull-up 3 × 8 +25 lb\n- Plank 3 × 45\n- Curl 3 × 10–12 @ 30 lb each hand\n- Bench 8×185, 8×185 (2/3 logged)';
+  assert.deepEqual(blockExercises(text), [
+    { name: 'Back squat', sets: 3, reps: 5, repsMax: null, note: '255 lb' },
+    { name: 'Deadlift', sets: 2, reps: 5, repsMax: null, note: '5 @ 275 lb, 3 @ 295 lb' },
+    { name: 'Pull-up', sets: 3, reps: 8, repsMax: null, note: '+25 lb' },
+    { name: 'Plank', sets: 3, reps: 45, repsMax: null, note: null },
+    { name: 'Curl', sets: 3, reps: 10, repsMax: 12, note: '30 lb each hand' },
+  ]);
+  assert.deepEqual(blockExercises('Squat 3x5'), []);
+  assert.deepEqual(blockExercises(null), []);
+});
+
+test('blockExercises reads what sessionBlock writes', () => {
+  const planned = { title: 'Heavy barbell', exercises: [
+    { name: 'Back squat', loadMode: 'total', sets: [1, 2, 3].map(() => ({ kind: 'working', reps: 5, repMin: null, repMax: null, weight: 255, unit: 'lb', status: 'planned', actualReps: null, actualWeight: null })) },
+  ] };
+  assert.deepEqual(blockExercises(mergeDescription('Go.', planned)), [{ name: 'Back squat', sets: 3, reps: 5, repsMax: null, note: '255 lb' }]);
 });

@@ -95,3 +95,40 @@ export function intensityText(planned) {
     .filter(Boolean)
     .join(' · ');
 }
+
+/**
+ * The exercises in the generated block, for a page that lists them (the App API's `exercises`): one per line that
+ * `exerciseLine` wrote with targets, "Back squat 3 × 5 @ 255 lb" → { name: "Back squat", sets: 3, reps: 5,
+ * repsMax: null, note: "255 lb" }. Sets with different targets ("Deadlift 5 @ 275 lb, 3 @ 295 lb") count each set and
+ * take the first set's reps, with every set's target in the note. Logged lines and a description without the block give nothing.
+ * @param {string | null | undefined} description
+ * @returns {{ name: string, sets: number, reps: number, repsMax: number | null, note: string | null }[]}
+ */
+export function blockExercises(description) {
+  const text = String(description ?? '');
+  if (!text.includes(LIFT_MARKER)) return [];
+  const out = [];
+  for (const raw of text.split(LIFT_MARKER)[1].split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line.startsWith('- ') || /\(\d+\/\d+ logged\)$/.test(line)) continue;
+    const body = line.slice(2);
+    const same = /^(.+?) (\d{1,2}) × (\d{1,3})(?:–(\d{1,3}))?(?: (.+))?$/.exec(body);
+    if (same) {
+      out.push({ name: same[1], sets: Number(same[2]), reps: Number(same[3]), repsMax: same[4] ? Number(same[4]) : null, note: loadNote(same[5]) });
+      continue;
+    }
+    // "Deadlift 5 @ 275 lb, 3 @ 295 lb": a target per set.
+    const each = /^(.+?) (\d{1,3})(?:–(\d{1,3}))?((?: [@+][^,]*)?(?:, \d.*)?)$/.exec(body);
+    if (!each) continue;
+    const targets = body.slice(each[1].length + 1);
+    const sets = targets.split(', ').length;
+    out.push({ name: each[1], sets, reps: Number(each[2]), repsMax: each[3] ? Number(each[3]) : null, note: sets > 1 ? targets : loadNote(each[4]) });
+  }
+  return out;
+}
+
+/** "@ 255 lb" → "255 lb"; "+25 lb" stays; nothing → null. @param {string | undefined} text */
+function loadNote(text) {
+  const t = String(text ?? '').trim().replace(/^@\s*/, '');
+  return t || null;
+}

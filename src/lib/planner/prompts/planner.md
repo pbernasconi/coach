@@ -89,7 +89,9 @@ When `submit_plan` says the plan is saved, stop. Never write the plan as text.
   takes `topMin` (minutes at the top of Z2). The planned time comes from start/end. The description is the coach's
   note only: the steps carry the numbers.
 - **Strength.** A gym lift names its Lift template in `liftTemplate`; Lift plans the sets and loads, so the
-  description holds only the coach's note (effort, what to cut when short on time). A home mini session or physio
+  description holds only the coach's note (effort, what to cut when short on time). Write it to Paolo about the
+  session, never about how Coach or Lift work: no "Lift sets the targets", templates, syncing or dates of past logs.
+  Good: "Squat is the priority; cut the last accessory if short on time." Leave it empty rather than fill it. A home mini session or physio
   (`strength-home`, no `liftTemplate`) copies its numbered lines from plan-structure.md into `description` as
   written, so each set can be logged.
 - Each session has a concrete time window, sport, duration, intensity (zone plus HR, power or pace targets), TSS

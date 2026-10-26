@@ -99,3 +99,17 @@ test('a strength workout lists the exercises in its text, until a Lift session i
   assert.deepEqual(linked.exercises, []);
   assert.deepEqual(appWorkout(workout(), sports).exercises, []);
 });
+
+test('a gym lift lists what Lift planned, with or without its session, and the template before Lift plans it', () => {
+  const description = 'Squat first.\n\n— Lift session (log each set in Lift) —\nTemplate: Heavy barbell\n- Back squat 3 × 5 @ 255 lb';
+  const squat = [{ name: 'Back squat', sets: 3, reps: 5, repsMax: null, note: '255 lb' }];
+  const lift = (over) => appWorkout(workout({ steps: null, sport: 'strength', description, ...over }), sports);
+  assert.deepEqual(lift({}).exercises, squat);
+  assert.equal(lift({}).notes, 'Squat first.');
+  assert.deepEqual(lift({ liftSessionId: 'abc' }).exercises, squat);
+  assert.deepEqual(lift({ state: 'done' }).exercises, []);
+  const template = [{ name: 'Deadlift', sets: 3, reps: 5, repsMax: null, note: '275 lb' }];
+  const fresh = lift({ description: 'Squat first.', templateExercises: template });
+  assert.deepEqual(fresh.exercises, template);
+  assert.equal(fresh.notes, 'Squat first.');
+});
