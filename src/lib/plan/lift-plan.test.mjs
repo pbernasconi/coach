@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { blockExercises, exerciseLine, pickTemplate, intensityText, LIFT_MARKER, mergeDescription, planEntries } from './lift-plan.mjs';
+import { blockExercises, exerciseLine, liftRepairs, pickTemplate, intensityText, LIFT_MARKER, mergeDescription, planEntries } from './lift-plan.mjs';
 
 const set = (o = {}) => ({ kind: 'working', reps: 8, repMin: null, repMax: null, weight: 100, unit: 'lb', status: 'planned', actualReps: null, actualWeight: null, ...o });
 const squat = { name: 'Made-up squat', loadMode: 'total', sets: [set(), set(), set()] };
@@ -102,4 +102,22 @@ test('pickTemplate: stored template, summary, title, then workout type; never a 
 test('pickTemplate keeps a known stored name and replaces one Lift does not have', () => {
   const names = ['Heavy barbell', 'Upper (dumbbells)'];
   assert.equal(pickTemplate({ sport: 'strength', workoutType: 'strength-heavy', liftTemplate: 'Heavy Barbell Day', title: 'Heavy lift' }, names), 'Heavy barbell');
+});
+
+test('liftRepairs: lifts with a missing template, no session or a deleted one; never a home session or a planned one', () => {
+  const names = ['Heavy barbell', 'Upper (dumbbells)'];
+  const row = (over) => ({ id: 'x', status: 'planned', sport: 'strength', workoutType: 'strength-heavy', liftTemplate: 'Heavy barbell', intensity: null, title: 'Heavy barbell lift', liftSessionId: 'live', ...over });
+  const rows = [
+    row({ id: 'ok' }),
+    row({ id: 'no-template', liftTemplate: null }),
+    row({ id: 'no-session', liftSessionId: null }),
+    row({ id: 'deleted', liftSessionId: 'GONE' }),
+    row({ id: 'home', workoutType: 'strength-home', title: 'Arm finisher', liftTemplate: null, liftSessionId: null }),
+    row({ id: 'skipped', status: 'skipped', liftSessionId: null }),
+  ];
+  assert.deepEqual(liftRepairs(rows, names, new Set(['gone'])), [
+    { id: 'no-template', template: 'Heavy barbell', sessionId: 'live' },
+    { id: 'no-session', template: 'Heavy barbell', sessionId: null },
+    { id: 'deleted', template: 'Heavy barbell', sessionId: null },
+  ]);
 });
