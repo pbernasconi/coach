@@ -1,6 +1,13 @@
 # Coach tab (exploration)
 
-Status: the server is built (`src/lib/coach-chat/`, lift/APP-API.md "Coach"); the iPhone tab replaces Training. A native tab in the Lift app where Paolo talks to his coach to change the plan.
+Status: the server is built (`src/lib/coach-chat/`, lift/APP-API.md "Coach"). The iPhone tab is built as a concept: a
+native tab in the Lift app where Paolo talks to his coach to change the plan.
+
+The tab (2026-10-26) replaces Training with **Coach** (`Lift/Features/Coach/`). It still answers with sample replies
+from `DemoCoachChat` and changes nothing; a live client for the server routes replaces it behind the `CoachChatting`
+protocol. Its parts are Kobo components (`ios-standards/Kobo/Sources/KoboComponents/Chat/`): `ChatTranscript`,
+`ChatComposer`, `ChatMessageBubble`, `ChatReply`, `ChatTypingIndicator`, `ChatToolStatus`, `ChatActionCard`,
+`ChatPromptSuggestions` and `ChatErrorRow`. Activity pages that Training opened now open on Week.
 
 ## The problem
 
@@ -74,17 +81,21 @@ The model never writes. The system prompt is coach-chat.md, coaching.md and plan
 
 - Tab: **Coach**, symbol `bubble.left.and.text.bubble.right`.
 - A message list and a text field. iOS dictation works in the field, so voice input needs no code at first.
-- A change card under Coach's reply: one row per change ("Heavy barbell · Mon → Tue 09:00", "VO2 B · skip (busy)",
-  "+ Easy Z2 run · Mon 16:00 · 45 min"), the warnings, and **Apply** and **Dismiss**. After Apply, the
-  card shows "Applied" and the Week tab refreshes (`coachPlan` fetch).
+- A change card under Coach's reply: one row per change, the old value struck through before the new one ("Heavy
+  barbell · ~~Mon 17:00~~ → Tue 09:00"), the warnings, and **Apply** and **Dismiss**. After Apply, the card shows
+  "Applied" with **Undo**, and the Week tab refreshes (`coachPlan` fetch). A newer proposal marks the older open one
+  "Replaced".
+- The steps Coach took show above its reply ("Read this week's plan", "Checked Tuesday's calendar"): real tool calls
+  only, never made-up progress. While it works, three dots and the current step.
+- The transcript opens at the latest message and follows new ones while Paolo is at the bottom; scrolled up, it stays
+  and shows a jump-to-latest button.
 - Quick prompts above the field for the common cases: "I'm sore", "Short on time today", "Move today to tomorrow".
 - Offline: the field is off and says so. Nothing queues; a plan change needs the server.
 - Lift's rule "No generated commentary" stays for every other tab. The Coach tab is the one place with model text.
 
 ## Decisions for Paolo
 
-1. **Tab bar.** Lift has five tabs (Week, Today, Training, Lift, Settings). A sixth goes into "More". Options: move
-   Settings to a toolbar button on Week (recommended), or merge Today into Week.
+1. **Tab bar.** Decided: Coach replaces Training (Week, Today, Coach, Lift, Settings).
 2. **Approve every change, or auto-apply small ones?** Recommended: approve every change at first. A later option:
    auto-apply a single move or skip with Undo, as the Week tab does.
 3. **Monthly cap for chat.** About $0.03–0.10 a turn with the cached system prompt. Recommended: $10 a month,

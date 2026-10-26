@@ -17,7 +17,7 @@ extension AppLink {
     var destination: ScreenDestination? {
         switch self {
         case .session(let id): ScreenDestination(tab: .lift, route: .liftSession(id))
-        case .activity(let id): ScreenDestination(tab: .training, route: .activity(id))
+        case .activity(let id): ScreenDestination(tab: .week, route: .activity(id))
         case .weighIn(let day): ScreenDestination(tab: .today, route: .weighIn(day))
         case .today: ScreenDestination(tab: .today, route: nil)
         case .importNote, .templates, .syncCode: nil

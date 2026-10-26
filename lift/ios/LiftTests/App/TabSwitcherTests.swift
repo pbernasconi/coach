@@ -2,7 +2,7 @@ import Testing
 
 @testable import Lift
 
-/// Screens switch the shell's tab through `TabSwitching`; the Training launch openings go to Training.
+/// Screens switch the shell's tab through `TabSwitching`; the activity launch openings go to Week.
 @MainActor
 @Suite struct TabSwitcherTests {
     @Test func aReTapOfTheSelectedTabAsksForItsRoot() {
@@ -24,15 +24,12 @@ import Testing
         #expect(tabs.selected == .today)
     }
 
-    @Test func trainingOpeningsPushTheMadeUpActivitiesOrOpenTrends() {
-        let ride = LaunchOptions(arguments: ["Lift", "-demo", "-tab", "training", "-open", "ride"])
-        #expect(ride.opening?.tab == .training)
+    @Test func activityOpeningsPushTheMadeUpActivitiesOnWeek() {
+        let ride = LaunchOptions(arguments: ["Lift", "-demo", "-open", "ride"])
+        #expect(ride.opening?.tab == .week)
+        #expect(ride.initialTab == .week)
         #expect(ride.initialRoute(upcomingSessionID: nil) == .activity(DemoActivities.ride))
-        #expect(ride.trainingSegment == .activities)
-        let trends = LaunchOptions(arguments: ["Lift", "-demo", "-open", "trends"])
-        #expect(trends.trainingSegment == .trends)
-        #expect(trends.initialRoute(upcomingSessionID: nil) == nil)
-        #expect(LaunchOptions(arguments: ["Lift", "-open", "trends"]).trainingSegment == .activities)
+        #expect(LaunchOptions(arguments: ["Lift", "-demo", "-open", "trends"]).opening == nil)
         #expect(LaunchOptions(arguments: ["Lift", "-demo", "-open", "activity-pending"]).opening == .activityPending)
     }
 }

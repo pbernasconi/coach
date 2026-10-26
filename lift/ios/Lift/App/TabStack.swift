@@ -72,18 +72,8 @@ struct TabRootScreen: View {
                     anchor: options.todayAnchor
                 )
             )
-        case .training:
-            TrainingScreen(
-                viewModel: TrainingViewModel(
-                    data: dependencies.appData,
-                    router: router,
-                    tabs: dependencies.tabs,
-                    seeds: dependencies.activitySeeds,
-                    now: dependencies.now,
-                    calendar: dependencies.calendar,
-                    segment: options.trainingSegment
-                )
-            )
+        case .coach:
+            CoachScreen(viewModel: CoachViewModel(coach: dependencies.coach))
         case .lift:
             LiftTabScreen(
                 dependencies: dependencies,

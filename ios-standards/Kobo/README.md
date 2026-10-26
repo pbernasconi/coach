@@ -78,6 +78,7 @@ header band and its hairline; the canvas and separator by default).
 | Utilities | `AccessibilitySizeReader`, `WideWindowReader`, `AdaptiveColumns`, `HoldsLastValue`, `MaskedValue`, `RevealableValue`, `DeferredRow`, `.pageGutter()`, `.readableWidth()`, `.screenCanvas()`, `.onArrival` |
 | Patterns | `Loadable` + `LoadableView`, `ScreenScaffold`, `.koboConfirm` (system dialog, or `style: .sheet` for stacked buttons), `StateGallery`, `.previewMatrix()` |
 | Lists | `ListRowSkeleton`, `LoadMoreFooter`, `LoadableSection`, `LoadableCaptionSection`, `SectionEmptyCard`, `.koboRefreshable` |
+| Chat | `ChatTranscript`, `ChatComposer`, `ChatMessageBubble`, `ChatReply` (light Markdown), `ChatTypingIndicator`, `ChatToolStatus`, `ChatActionCard` + `ChatActionItem` (old → new rows, Apply, Dismiss, Undo), `ChatPromptSuggestions` + `ChatPrompt`, `ChatErrorRow` |
 | Flows | `FlowStep`, `ProgressFlowStep`, `ValueStep`, `StepIndicator`, `ReviewScaffold`, `ReviewSection`, `ReviewRow`, `ReviewDisclosure`, `OutcomeScaffold`, `PrimerPage`, `UpdateGateScreen`, `FormFocus` |
 
 Open `CatalogGallery()` to browse them all, interactively, under any theme, in light, dark and AX3.

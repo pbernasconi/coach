@@ -54,6 +54,8 @@ final class AppDependencies {
     /// The shell's selected tab, for screens that link to another tab (`TabSwitching`), and the screen a link or a
     /// tapped notice opens (`ScreenLinkOpening`).
     let tabs: TabSwitcher
+    /// Coach's chat (lift/COACH-CHAT.md): the concept's sample replies until the server answers.
+    lazy var coach: any CoachChatting = DemoCoachChat(clock: clock)
     /// What the activity list knew about the activity being opened (`ActivitySeed`).
     let activitySeeds: any ActivitySeeding = ActivitySeeds()
     /// Opens and closes Import from Notes, which the shell shows as a modal page above the tabs.
