@@ -104,7 +104,7 @@ struct ActivityRouteMap: View, Equatable {
         }
     }
 
-    /// Fits the route between the bar and the sheet at `detent`; tilted when 3D is on. With the sheet down, the map's
+    /// Fits the route between the bar and the sheet at `detent`; tilted when 3D is on. The map's
     /// buttons take the right edge.
     private func frame(for detent: BackdropSheetDetent, animated: Bool) {
         guard let route = routeRect, rest.size.height > 0 else { return }
@@ -112,7 +112,7 @@ struct ActivityRouteMap: View, Equatable {
             top: Double(rest.topInset + Space.xl),
             leading: Double(Space.xxl),
             bottom: Double(rest.size.height - rest.top(detent) + Space.xxl),
-            trailing: Double(Space.xxl + (detent == .collapsed ? Size.minTouch : 0))
+            trailing: Double(Space.xxl + Size.minTouch)
         )
         let fit = RouteFraming.rect(
             route: route,

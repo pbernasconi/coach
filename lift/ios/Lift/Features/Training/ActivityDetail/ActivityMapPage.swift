@@ -7,7 +7,7 @@ import SwiftUI
 /// opens in this layout from the first frame (the list said the activity is outdoors): the sheet covers the screen with
 /// the name and a skeleton, and drops to show the map once the page has loaded. It rests at three heights; fully up,
 /// its content scrolls under a solid bar titled with the sport, where the back button turns into a chevron down that
-/// lowers the sheet. With the sheet down the map shows its layers and 3D buttons.
+/// lowers the sheet. While the map shows (the sheet down or at its middle height) it has its layers, colour and 3D buttons.
 struct ActivityMapPage: View {
     /// The route; nil until the page has loaded.
     let route: ActivityRoute?
@@ -120,7 +120,7 @@ struct ActivityMapPage: View {
 }
 
 /// What sits over the map and the sheet: the bar's solid background once the sheet is up, the bar's back button and
-/// title, and the layers and 3D buttons while the sheet is down.
+/// title, and the layers, colour and 3D buttons while the map shows.
 private struct ActivityMapOverlay: View {
     let sheet: BackdropSheetState
     let title: String
@@ -141,8 +141,11 @@ private struct ActivityMapOverlay: View {
         return BackdropSheetMath.unit(Double(sheet.sheetTop), from: Double(sheet.topInset + 96), to: Double(sheet.topInset))
     }
 
-    /// The map's own buttons show once the sheet is most of the way down.
-    private var showsMapButtons: Bool { sheet.collapse > 0.55 }
+    /// The map's own buttons show while the map has room for them above the sheet: with the sheet down, and with the
+    /// small map over the sheet at its middle height. They go as the sheet rises over them.
+    private var showsMapButtons: Bool {
+        isLoaded && sheet.sheetTop - sheet.topInset > Size.minTouch * 3 + Space.xxl
+    }
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
