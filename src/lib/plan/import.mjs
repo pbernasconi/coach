@@ -8,7 +8,7 @@
 // plans the Lift session.
 
 import { createId } from '@paralleldrive/cuid2';
-import { LIFT_MARKER } from './lift-plan.mjs';
+import { LIFT_MARKER, pickTemplate } from './lift-plan.mjs';
 import { sportOf } from './week.mjs';
 import { bankWorkout } from '../workouts/bank.mjs';
 import { totals, validate } from '../workouts/steps.mjs';
@@ -127,6 +127,9 @@ export async function importPlan(sql, userId, plan, markdown, { keepBefore = nul
   const counts = { planId, inserted: 0, updated: 0, kept: 0, deleted: 0 };
   const rows = rowsFromPlan(plan);
   for (const r of rows) while (pastKeys.has(r.sourceKey)) r.sourceKey += '~';
+  // A gym lift always names its Lift template, so Lift plans it and the phone lists its exercises: one the planner
+  // left without (or with a name Lift doesn't have) takes the template its title or workout type points to.
+  await fillLiftTemplates(sql, rows);
   for (const r of rows) {
     const old = bySource.get(r.sourceKey);
     if (old && touched(old)) {
@@ -171,4 +174,29 @@ export async function importPlan(sql, userId, plan, markdown, { keepBefore = nul
     }
   }
   return counts;
+}
+
+/**
+ * Sets `liftTemplate` on each gym lift whose name is missing or not one of Lift's templates (`pickTemplate`). A
+ * failed template read leaves the rows as they are.
+ * @param {any} sql
+ * @param {{ activityType: string, workoutType: string | null, liftTemplate: string | null, intensity: string | null, title: string }[]} rows
+ */
+export async function fillLiftTemplates(sql, rows) {
+  const lifts = rows.filter((r) => r.activityType === 'strength' && r.workoutType !== 'strength-home');
+  if (lifts.length === 0) return;
+  let names = [];
+  try {
+    const t = await sql`
+      SELECT payload->>'name' AS name FROM lift_rows
+      WHERE entity = 'template' AND deleted_at IS NULL AND (payload->>'deletedAt') IS NULL`;
+    names = t.map((x) => x.name).filter(Boolean);
+  } catch (error) {
+    console.error('Lift templates not read for the plan import:', error);
+    return;
+  }
+  for (const r of lifts) {
+    const picked = pickTemplate({ ...r, sport: 'strength' }, names);
+    if (picked) r.liftTemplate = picked;
+  }
 }

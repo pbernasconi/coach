@@ -98,3 +98,8 @@ test('pickTemplate: stored template, summary, title, then workout type; never a 
   assert.equal(lift({ title: 'Arm finisher' }), null);
   assert.equal(pickTemplate({ sport: 'ride', title: 'Heavy barbell' }, names), null);
 });
+
+test('pickTemplate keeps a known stored name and replaces one Lift does not have', () => {
+  const names = ['Heavy barbell', 'Upper (dumbbells)'];
+  assert.equal(pickTemplate({ sport: 'strength', workoutType: 'strength-heavy', liftTemplate: 'Heavy Barbell Day', title: 'Heavy lift' }, names), 'Heavy barbell');
+});

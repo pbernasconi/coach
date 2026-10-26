@@ -16,6 +16,7 @@ Coach is the only source of truth; every client reads or writes through these ro
 | `POST /api/lift/enroll` | one-time code | Lift | `{ code }` → `{ token }`; codes come from Settings → Lift (`lift://sync?code=…`, 15 min, single use) |
 | `GET/POST /api/webhooks/strava` | Strava verify token / athlete id | Strava | Subscription check; a new or edited activity is stored in full at once (detail, streams, weather, TSS: `src/lib/strava-sync/ingest.mjs`), then the workout notice; delete |
 | `GET /api/cron/strava` | `Bearer CRON_SECRET` | Vercel cron (daily), GitHub Actions (every 3 h) | Strava sync, the backup for the webhook; fills in 15 older activities without detail, streams or weather |
+| `GET /api/cron/lift-pending` | `Bearer CRON_SECRET` | GitHub Actions (Sync, hourly) | Count of gym lifts from today on with a Lift template and no Lift session; Sync starts plan-apply.yml when it is above 0 |
 | `GET /api/cron/calendar` | `Bearer CRON_SECRET` | GitHub Actions (every 30 min) | Google Calendar sync (every calendar in Settings) |
 | `GET /api/auth/strava/callback`, `/api/auth/google/callback` | Clerk session | Settings | OAuth connections |
 | Web pages (`/`, `/plan`, `/lift`, `/settings`) | Clerk session (owner by verified email) | Paolo | Performance, the plan (`/plan?week=YYYY-MM-DD` week board, `/plan?view=month&month=YYYY-MM` month calendar), Lift history, settings |

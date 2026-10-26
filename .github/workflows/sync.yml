@@ -19,6 +19,8 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      actions: write # the Lift sessions backstop starts plan-apply.yml
     steps:
       - name: Calendar
         env:
@@ -65,3 +67,16 @@ jobs:
           fi
           curl -fsS --max-time 60 -X POST -H "Authorization: Bearer $CRON_SECRET" -H 'content-type: application/json' \
             -d '{}' https://coach.paolobernasconi.com/api/plan/run
+      - name: Lift sessions backstop
+        if: ${{ !cancelled() }}
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # A gym lift with a template and no Lift session yet (the dispatch after an accept did not run): plan them
+          # now, so a planned lift never shows on the phone without its sets. The answer is a count only.
+          pending=$(curl -fsS --max-time 30 -H "Authorization: Bearer $CRON_SECRET" https://coach.paolobernasconi.com/api/cron/lift-pending | jq -r '.pending // 0')
+          echo "Gym lifts waiting for a Lift session: $pending"
+          if [ "$pending" -gt 0 ] && [ -z "$(gh run list --repo "$GITHUB_REPOSITORY" --workflow plan-apply.yml --status in_progress --json databaseId -q '.[].databaseId')" ]; then
+            gh workflow run plan-apply.yml --repo "$GITHUB_REPOSITORY"
+          fi
