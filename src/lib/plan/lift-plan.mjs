@@ -156,3 +156,24 @@ export function pickTemplate(w, names) {
   if (w.workoutType === 'strength-dumbbell') return names.find((n) => /dumbbell/i.test(n) && !/hotel/i.test(n)) ?? null;
   return null;
 }
+
+/**
+ * The gym lifts Lift still has to plan: each planned strength workout whose Lift template can be found
+ * (`pickTemplate`) but whose stored template differs, or that has no live Lift session (none, or one that was
+ * deleted). The hourly backstop counts them (/api/cron/lift-pending) and scripts/lift-plan.mjs repairs them.
+ * @param {{ id: string, status: string, sport: string, workoutType: string | null, liftTemplate: string | null, intensity: string | null, title: string, liftSessionId: string | null }[]} rows
+ * @param {string[]} names Lift's templates
+ * @param {Set<string>} deleted lower-case ids of deleted Lift sessions
+ * @returns {{ id: string, template: string, sessionId: string | null }[]}
+ */
+export function liftRepairs(rows, names, deleted) {
+  const out = [];
+  for (const r of rows) {
+    if (r.status !== 'planned') continue;
+    const template = pickTemplate(r, names);
+    if (!template) continue;
+    const live = r.liftSessionId && !deleted.has(String(r.liftSessionId).toLowerCase()) ? r.liftSessionId : null;
+    if (template !== r.liftTemplate || !live) out.push({ id: r.id, template, sessionId: live });
+  }
+  return out;
+}

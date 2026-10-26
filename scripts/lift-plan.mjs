@@ -24,6 +24,7 @@ import { join } from 'node:path';
 import { connect } from '../src/db/neon.mjs';
 import { HOME_TZ, pushWeek } from '../src/lib/calendar-sync/push.mjs';
 import { intensityText, mergeDescription, planEntries } from '../src/lib/plan/lift-plan.mjs';
+import { loadLiftRepairs } from '../src/lib/plan/lift-repairs.mjs';
 
 const SERVER = process.env.LIFT_SYNC_BASE_URL ?? 'https://coach.paolobernasconi.com';
 const args = process.argv.slice(2);
@@ -38,6 +39,17 @@ const sql = connect();
 const [user] = await sql`SELECT id, settings FROM users ORDER BY created_at LIMIT 1`;
 const today = new Intl.DateTimeFormat('en-CA', { timeZone: HOME_TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
 const last = new Date(Date.parse(`${today}T00:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10);
+
+// Repairs first: a gym lift with no (or a wrong) template name gets its template, and a link to a deleted Lift
+// session is dropped, so Lift plans a new one below.
+const repairs = await loadLiftRepairs(sql, user.id, today);
+for (const r of repairs) {
+  if (dryRun) {
+    console.log(`Would repair ${r.id}: template ${r.template}${r.sessionId ? '' : ', new Lift session'}`);
+    continue;
+  }
+  await sql`UPDATE training_plan_activities SET lift_template = ${r.template}, lift_session_id = ${r.sessionId}, updated_at = NOW() WHERE id = ${r.id}`;
+}
 
 const rows = await sql`
   SELECT a.id, to_char(a.scheduled_date, 'YYYY-MM-DD') AS day, a.status, a.lift_template, a.lift_session_id,
