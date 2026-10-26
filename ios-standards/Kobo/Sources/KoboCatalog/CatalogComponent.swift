@@ -18,6 +18,7 @@ nonisolated public enum CatalogSection: String, CaseIterable, Identifiable, Send
     case patterns = "Patterns"
     case lists = "Lists"
     case flows = "Flows"
+    case chat = "Chat"
 
     public var id: String { rawValue }
 }
@@ -184,6 +185,14 @@ nonisolated public enum CatalogComponent: String, CaseIterable, Identifiable, Se
     case outcomeScaffold = "OutcomeScaffold"
     case primerPage = "PrimerPage"
     case updateGateScreen = "UpdateGateScreen"
+
+    case chatTranscript = "ChatTranscript"
+    case chatBubble = "ChatBubble"
+    case chatReply = "ChatReply"
+    case typingIndicator = "TypingIndicator"
+    case chatStatusRow = "ChatStatusRow"
+    case chatComposer = "ChatComposer"
+    case changeSetCard = "ChangeSetCard"
 
     public var id: String { rawValue }
 

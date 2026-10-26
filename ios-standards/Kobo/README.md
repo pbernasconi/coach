@@ -15,7 +15,7 @@ accessible, motion-aware, tested building blocks.
 KoboTokens      Space, Radius, Size, Palette, Tone, Typography, Theme, Motion   (no default isolation)
    ↑
 KoboComponents  Controls · Selection · Fields · Search · Feedback · Status        (MainActor)
-                Display · Charts · Layout · Navigation · Overlays · QuickActions · Utilities
+                Display · Charts · Layout · Navigation · Overlays · QuickActions · Utilities · Chat
    ↑
 KoboPatterns    Loadable + LoadableView, ScreenScaffold, koboConfirm, StateGallery · Lists · Flows
    ↑
@@ -76,6 +76,7 @@ header band and its hairline; the canvas and separator by default).
 | Overlays | `KoboSheet` + `.koboSheet`, `.koboActionSheet`, `ModalPage` + `.koboModalPage`, `InputModal`, `InfoButton`, `InfoSheet`, `.itemSheet` |
 | QuickActions | `ActionChipRow`, `ActionCircle`, `SetupChecklistCard`, `SuggestionCard`, `SummaryStrip`, `TonalCardRow` |
 | Utilities | `AccessibilitySizeReader`, `WideWindowReader`, `AdaptiveColumns`, `HoldsLastValue`, `MaskedValue`, `RevealableValue`, `DeferredRow`, `.pageGutter()`, `.readableWidth()`, `.screenCanvas()`, `.onArrival` |
+| Chat | `ChatTranscript` (pinned to the newest, jump to latest), `ChatBubble` (sending, failed + retry), `ChatReply` (streaming markdown, closes open markers, VoiceOver announces once), `TypingIndicator`, `ChatStatusRow`, `ChatComposer` (send / stop, glass), `ChangeSetCard` + `ChangeItem` (proposed changes, Apply / Dismiss / Undo). Suggestions use `ActionChipRow`. |
 | Patterns | `Loadable` + `LoadableView`, `ScreenScaffold`, `.koboConfirm` (system dialog, or `style: .sheet` for stacked buttons), `StateGallery`, `.previewMatrix()` |
 | Lists | `ListRowSkeleton`, `LoadMoreFooter`, `LoadableSection`, `LoadableCaptionSection`, `SectionEmptyCard`, `.koboRefreshable` |
 | Flows | `FlowStep`, `ProgressFlowStep`, `ValueStep`, `StepIndicator`, `ReviewScaffold`, `ReviewSection`, `ReviewRow`, `ReviewDisclosure`, `OutcomeScaffold`, `PrimerPage`, `UpdateGateScreen`, `FormFocus` |

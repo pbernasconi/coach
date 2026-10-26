@@ -59,6 +59,9 @@ extension CatalogComponent {
             .reviewRow,
             .reviewDisclosure, .outcomeScaffold, .primerPage, .updateGateScreen:
             .flows
+        case .chatTranscript, .chatBubble, .chatReply, .typingIndicator, .chatStatusRow, .chatComposer,
+            .changeSetCard:
+            .chat
         }
     }
 }
