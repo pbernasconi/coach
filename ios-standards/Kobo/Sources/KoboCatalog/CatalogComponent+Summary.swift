@@ -147,13 +147,6 @@ extension CatalogComponent {
         case .outcomeScaffold: "Success, failure or pending result screen with facts"
         case .primerPage: "Explains a permission or feature before asking"
         case .updateGateScreen: "Blocks the app until it is updated"
-        case .chatTranscript: "Chat message list pinned to the newest, with jump to latest"
-        case .chatBubble: "The person's own message, with sending and failed states"
-        case .chatReply: "Assistant reply rendered from streaming markdown"
-        case .typingIndicator: "Three dots while the assistant starts a reply"
-        case .chatStatusRow: "One line for a step the assistant is working on"
-        case .chatComposer: "Growing message field with send and stop"
-        case .changeSetCard: "Proposed changes with Apply, Dismiss and Undo"
         }
     }
 }

@@ -43,7 +43,6 @@ struct CatalogDetail: View {
         case .patterns: PatternsDemo(component: component)
         case .lists: ListsDemo(component: component)
         case .flows: FlowsDemo(component: component)
-        case .chat: ChatDemo(component: component)
         }
     }
 }

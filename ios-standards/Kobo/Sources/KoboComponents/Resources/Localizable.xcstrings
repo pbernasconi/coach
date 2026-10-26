@@ -37,18 +37,6 @@
         }
       }
     },
-    "%@: %@" : {
-      "comment" : "ChangeSetCard spoken row: the kind, then the title (\"Add: Team lunch\").",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@: %@"
-          }
-        }
-      }
-    },
     "%lld bars, average %@, highest %@ on %@" : {
       "comment" : "Bar chart summary for VoiceOver (\"8 bars, average 5.2, highest 9 on Mar 4\").",
       "extractionState" : "manual",
@@ -169,18 +157,6 @@
         }
       }
     },
-    "Add" : {
-      "comment" : "ChangeSetCard spoken kind of a row that adds something.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add"
-          }
-        }
-      }
-    },
     "All" : {
       "comment" : "MultiSelectField summary when every option is chosen.",
       "extractionState" : "manual",
@@ -201,30 +177,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Appearance"
-          }
-        }
-      }
-    },
-    "Applied" : {
-      "comment" : "ChangeSetCard phase label: the changes were written.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Applied"
-          }
-        }
-      }
-    },
-    "Apply" : {
-      "comment" : "ChangeSetCard primary button: write the proposed changes.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Apply"
           }
         }
       }
@@ -309,18 +261,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cancel search"
-          }
-        }
-      }
-    },
-    "Change" : {
-      "comment" : "ChangeSetCard spoken kind of a row that changes something.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Change"
           }
         }
       }
@@ -541,18 +481,6 @@
         }
       }
     },
-    "Dismissed" : {
-      "comment" : "ChangeSetCard phase label: the reader turned the proposal down.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dismissed"
-          }
-        }
-      }
-    },
     "Done" : {
       "comment" : "Accessibility value: an AsyncButton that succeeded, or a completed day in DayStrip.",
       "extractionState" : "manual",
@@ -609,18 +537,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Expanded"
-          }
-        }
-      }
-    },
-    "Failed" : {
-      "comment" : "ChatStatusRow spoken state of a step that failed.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Failed"
           }
         }
       }
@@ -753,18 +669,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Increase"
-          }
-        }
-      }
-    },
-    "Jump to latest" : {
-      "comment" : "ChatTranscript button that scrolls to the newest message.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Jump to latest"
           }
         }
       }
@@ -1033,18 +937,6 @@
         }
       }
     },
-    "Not sent" : {
-      "comment" : "ChatBubble line under a message that failed to send.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Not sent"
-          }
-        }
-      }
-    },
     "Off" : {
       "comment" : "KoboToggleStyle accessibility value when off.",
       "extractionState" : "manual",
@@ -1089,18 +981,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Opens your profile"
-          }
-        }
-      }
-    },
-    "Out of date" : {
-      "comment" : "ChangeSetCard phase label: what it would change has changed since.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Out of date"
           }
         }
       }
@@ -1165,42 +1045,6 @@
         }
       }
     },
-    "Proposed" : {
-      "comment" : "ChangeSetCard phase label: waiting for Apply or Dismiss.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Proposed"
-          }
-        }
-      }
-    },
-    "Remove" : {
-      "comment" : "ChangeSetCard spoken kind of a row that removes something.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Remove"
-          }
-        }
-      }
-    },
-    "Responding" : {
-      "comment" : "TypingIndicator spoken label while a reply is on its way.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Responding"
-          }
-        }
-      }
-    },
     "Save" : {
       "comment" : "ModalPage confirm button and InputModal checkmark accessibility label.",
       "extractionState" : "manual",
@@ -1233,18 +1077,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Select"
-          }
-        }
-      }
-    },
-    "Send" : {
-      "comment" : "ChatComposer button that sends the message.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Send"
           }
         }
       }
@@ -1317,18 +1149,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Still working on it…"
-          }
-        }
-      }
-    },
-    "Stop" : {
-      "comment" : "ChatComposer button that stops a reply that is arriving.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Stop"
           }
         }
       }
@@ -1461,18 +1281,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Try again"
-          }
-        }
-      }
-    },
-    "Undo %lld changes" : {
-      "comment" : "ChangeSetCard button after applying: reverses every change in the card (\"Undo 3 changes\").",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Undo %lld changes"
           }
         }
       }
