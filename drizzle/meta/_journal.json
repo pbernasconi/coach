@@ -134,6 +134,13 @@
       "when": 1792902931968,
       "tag": "0018_plan_runs",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1793055798162,
+      "tag": "0019_coach_chat",
+      "breakpoints": true
     }
   ]
 }

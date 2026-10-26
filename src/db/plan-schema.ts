@@ -118,3 +118,69 @@ export const planRuns = pgTable(
     check('plan_runs_status_check', sql`${t.status} IN ('running', 'ok', 'failed')`),
   ],
 );
+
+/**
+ * The Coach tab's conversation (lift/COACH-CHAT.md, src/lib/coach-chat/): one open thread at a time, a new one after
+ * 24 h idle. Its messages, and the change sets Coach proposes. Nothing in the plan changes until Paolo taps Apply.
+ */
+export const coachThreads = pgTable(
+  'coach_threads',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id').notNull(),
+    createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (t) => [index('coach_threads_user_updated_idx').on(t.userId, t.updatedAt)],
+);
+
+/**
+ * One message of a Coach thread. An assistant message can carry a proposal. `cost_usd` is what its Claude calls cost:
+ * the chat's monthly cap (src/lib/coach-chat/cost.mjs) adds it up.
+ */
+export const coachMessages = pgTable(
+  'coach_messages',
+  {
+    id: text('id').primaryKey(),
+    threadId: text('thread_id').notNull(),
+    userId: text('user_id').notNull(),
+    role: text('role').notNull(),
+    text: text('text').notNull(),
+    proposalId: text('proposal_id'),
+    model: text('model'),
+    costUsd: doublePrecision('cost_usd').notNull().default(0),
+    createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('coach_messages_thread_created_idx').on(t.threadId, t.createdAt),
+    index('coach_messages_user_created_idx').on(t.userId, t.createdAt),
+    check('coach_messages_role_check', sql`${t.role} IN ('user', 'assistant')`),
+  ],
+);
+
+/**
+ * A change set Coach proposed (src/lib/coach-chat/changes.mjs): `changes` as the model wrote them and checked,
+ * `items` the rows the card shows, `warnings` the plan rules they break, `undo` what Apply changed so Undo can put it
+ * back. open → applied (→ undone) or dismissed; stale when a workout it touches changed after it.
+ */
+export const coachProposals = pgTable(
+  'coach_proposals',
+  {
+    id: text('id').primaryKey(),
+    threadId: text('thread_id').notNull(),
+    userId: text('user_id').notNull(),
+    title: text('title').notNull(),
+    why: text('why'),
+    changes: jsonb('changes').notNull(),
+    items: jsonb('items').notNull(),
+    warnings: jsonb('warnings').notNull(),
+    status: text('status').notNull(),
+    undo: jsonb('undo'),
+    createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+    decidedAt: timestamp('decided_at', { mode: 'date' }),
+  },
+  (t) => [
+    index('coach_proposals_thread_idx').on(t.threadId),
+    check('coach_proposals_status_check', sql`${t.status} IN ('open', 'applied', 'undone', 'dismissed', 'stale')`),
+  ],
+);

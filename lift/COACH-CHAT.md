@@ -1,6 +1,6 @@
 # Coach tab (exploration)
 
-Status: proposal, nothing built. A native tab in the Lift app where Paolo talks to his coach to change the plan.
+Status: the server is built (`src/lib/coach-chat/`, lift/APP-API.md "Coach"); the iPhone tab replaces Training. A native tab in the Lift app where Paolo talks to his coach to change the plan.
 
 ## The problem
 
@@ -39,25 +39,26 @@ Apply ────────────── POST /api/app/coach/proposals/{
 updated week card ◄──
 ```
 
-### Tools for the model
+### What the model gets
 
-| Tool | Kind | What it does |
-| --- | --- | --- |
-| `get_week(start)` | read | The Week API week (`week-api.mjs`): items, states, done, skips |
-| `get_calendar(from, to)` | read | Free and busy blocks from Google Calendar (as the planner's `day-blocks.mjs`) |
-| `get_readiness()` | read | Readiness, CTL/ATL/TSB, recent feel and soreness (the profile's numbers) |
-| `get_workout_bank(sport)` | read | Bank workouts and levels, so an added run has real steps (`bankOptions`) |
-| `propose_changes(changes, why)` | write proposal | A list of `move`, `skip`, `unskip`, `update`, `add`, `remove`; the server checks it and stores it |
+Built (2026-10-26) simpler than first drawn: no read tools. Each message from Paolo goes with the context, so one
+request usually answers it:
 
-The model never writes. `propose_changes` returns the check result: `ok`, or the broken rules to fix.
+- `<now>`, `<plan>`: every workout from this Monday to the Sunday after next with its id and state (`planText`),
+  and `<profile>`: the planner's profile for two weeks (calendar, readiness, recent sessions, Lift notes, goals).
+- One tool, `propose_changes({ title, why, changes })`, with `move`, `skip`, `unskip`, `update`, `add`, `remove`.
+  The server checks it (`checkProposalInput`): a bad id, a done workout, the past or a bad time goes back to fix; a
+  plan rule the changes newly break goes back once, then shows on the card as a warning. Up to 3 tries.
+
+The model never writes. The system prompt is coach-chat.md, coaching.md and plan-structure.md (cached).
 
 ### Storage (new migration, DATABASE.md)
 
 - `coach_threads`: `id`, `user_id`, `created_at`, `updated_at`. One open thread; a new one after 24 h idle.
 - `coach_messages`: `id`, `thread_id`, `role` (`user | assistant`), `text`, `proposal_id`, `created_at`.
-- `coach_proposals`: `id`, `thread_id`, `changes` jsonb, `why`, `warnings` jsonb, `status`
-  (`open | applied | dismissed | stale`), `applied_at`. A proposal is stale when a workout it touches changed after it.
-- Cost: each turn is a `plan_runs` row with `kind = 'chat'`, under its own monthly cap in `cost.mjs`.
+- `coach_proposals`: `id`, `thread_id`, `title`, `why`, `changes` jsonb (the ops and what each workout looked
+  like), `items` and `warnings` jsonb (the card), `status` (`open | applied | undone | dismissed | stale`), `undo` jsonb. A proposal is stale when a workout it touches changed after it.
+- Cost: each Coach message stores its `cost_usd`; the chat stops at $10 a month (`CHAT_MONTHLY_CAP_USD`).
 
 ### App API (new sections in APP-API.md)
 
