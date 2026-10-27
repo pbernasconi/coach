@@ -35,7 +35,7 @@ export async function followSessionsInPlan(changes: { entity: string; id: string
     const userId = userOf.get(m.id)!;
     const planId = await ensurePlan(userId, mondayOf(m.to));
     await sql`
-      UPDATE training_plan_activities SET scheduled_date = ${m.to}, plan_id = ${planId}, edited_at = NOW(), updated_at = NOW()
+      UPDATE training_plan_activities SET scheduled_date = ${m.to}, plan_id = ${planId}, change_source = 'lift', edited_at = NOW(), updated_at = NOW()
       WHERE id = ${m.id} AND lower(lift_session_id) = ${m.sessionId}`;
     done.push({ id: m.id, userId, from: m.from, to: m.to });
   }

@@ -139,7 +139,8 @@ export function cleanChanges(raw, { rows, today, templates = [] }) {
     if (seen.has(id)) return problems.push(`${at}: ${row.title} has more than one change; merge them into one`);
     seen.add(id);
     if (row.state === 'done') return problems.push(`${at}: ${row.title} is done; a done workout stays as it is`);
-    if (row.date < today) return problems.push(`${at}: ${row.title} is on ${row.date}, in the past`);
+    // A missed workout can be moved to today or later (catching it up); nothing else changes the past.
+    if (row.date < today && op !== 'move') return problems.push(`${at}: ${row.title} is on ${row.date}, in the past; only a move to today or later can change it`);
     if (op === 'move') {
       const date = dayIn(b.date, 'date');
       if (!date) return;
@@ -392,6 +393,36 @@ export function fatigueIssues(rows, changes, today) {
 }
 
 /**
+ * An added gym lift that copies a lift of the same Lift template still open that week (not done, not skipped, not
+ * removed by the same card). "Move the heavy lift to Wednesday" written as an add left the old one in place
+ * (2026-10-27: Heavy barbell on Monday and Tuesday). A missed copy is always wrong (`hard`: move it instead); a
+ * planned one may be on purpose, so it is a rule warning.
+ * @param {PlanRow[]} rows @param {Change[]} changes
+ * @returns {{ hard: string[], soft: string[] }}
+ */
+export function duplicateLiftIssues(rows, changes) {
+  const after = simulate(rows, changes);
+  /** @type {string[]} */
+  const hard = [];
+  /** @type {string[]} */
+  const soft = [];
+  changes.forEach((c, i) => {
+    if (c.op !== 'add' || !c.liftTemplate) return;
+    const week = mondayOf(c.date);
+    const template = c.liftTemplate.toLowerCase();
+    for (const r of after) {
+      if (r.id === `new-${i}` || String(r.id).startsWith('new-')) continue;
+      if ((r.liftTemplate ?? '').toLowerCase() !== template || mondayOf(r.date) !== week) continue;
+      if (r.state === 'done' || r.status === 'skipped' || r.status === 'done') continue;
+      const where = `${r.title} (${r.id}, ${dayLabel(r.date)})`;
+      if (r.state === 'missed') hard.push(`add of ${c.liftTemplate} on ${dayLabel(c.date)} copies ${where}, which is missed and still in the plan: move that workout instead ({ op: "move", id: "${r.id}" }), never add a second one`);
+      else soft.push(`add of ${c.liftTemplate} on ${dayLabel(c.date)}: ${where} is already planned this week; to change its day use { op: "move", id: "${r.id}" } instead of adding a copy`);
+    }
+  });
+  return { hard, soft };
+}
+
+/**
  * What a workout looked like when Coach proposed: Apply refuses a proposal whose workouts changed since (409).
  * @param {PlanRow} r
  */
@@ -458,8 +489,10 @@ export function checkProposalInput(input, plan, attempt) {
   const why = str(input?.why, 400);
   const { changes, problems } = cleanChanges(input?.changes, plan);
   if (!title) problems.unshift('title is missing');
+  const copies = problems.length ? { hard: [], soft: [] } : duplicateLiftIssues(plan.rows, changes);
+  problems.push(...copies.hard);
   if (problems.length) return { ok: false, problems };
-  const warnings = [...newRuleIssues(plan.rows, changes, plan.today), ...fatigueIssues(plan.rows, changes, plan.today)];
+  const warnings = [...newRuleIssues(plan.rows, changes, plan.today), ...fatigueIssues(plan.rows, changes, plan.today), ...copies.soft];
   if (warnings.length && attempt <= 1) {
     return {
       ok: false,

@@ -127,7 +127,8 @@ async function adoptMove(sql, userId, w, f) {
   await sql`
     UPDATE training_plan_activities SET
       plan_id = ${plan.id}, scheduled_date = ${f.scheduled_date}, start_time = ${f.start_time}, end_time = ${f.end_time},
-      time_zone = ${f.time_zone}, duration = COALESCE(${f.duration ?? null}, duration), edited_at = NOW(), updated_at = NOW()
+      time_zone = ${f.time_zone}, duration = COALESCE(${f.duration ?? null}, duration), change_source = 'calendar',
+      edited_at = NOW(), updated_at = NOW()
     WHERE id = ${w.id}`;
   return { ...w, ...f, duration: f.duration ?? w.duration, week };
 }

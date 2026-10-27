@@ -1,3 +1,4 @@
+import { withPlanSource } from '@/lib/plan/change-source.mjs';
 import { isAuthorized } from '@/lib/lift-sync/auth.mjs';
 import { ownerId } from '@/lib/plan/queries';
 import { zoneOrDefault } from '@/lib/plan/week-api.mjs';
@@ -70,7 +71,8 @@ export async function appWrite(
     const timeZone = zoneOrDefault(params.get('tz'));
     const { result, serverTiming } = await withTiming(`${request.method} app ${label}`, async () => {
       const userId = await ownerId();
-      return userId ? await run({ userId, timeZone, today: todayIn(timeZone), params }, body) : null;
+      // Plan writes made here are the iPhone's in the plan's change log (Coach chat's Apply says 'chat' itself).
+      return userId ? await withPlanSource('app', () => run({ userId, timeZone, today: todayIn(timeZone), params }, body)) : null;
     });
     const headers = { ...NO_STORE, 'Server-Timing': serverTiming };
     if (!result) return Response.json({ error: 'no user' }, { status: 404, headers });

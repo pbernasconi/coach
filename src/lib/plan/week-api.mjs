@@ -213,9 +213,11 @@ const byOrder = (a, b) => a.date.localeCompare(b.date) || (a.sortOrder ?? 0) - (
  *   range: { workouts: object[], summaries: object[] },
  *   plans: Map<string, { title: string | null }>,
  *   sports: { known: Set<string>, label: (id: string) => string },
- * }} input  `plans`: the plan rows by Monday (a week without a row has no plan)
+ *   liftSessions?: { id: string, date: string }[],
+ * }} input  `plans`: the plan rows by Monday (a week without a row has no plan). `liftSessions`: every live Lift
+ *   session the server has in these weeks (lower-case ids)
  */
-export function weekResponse({ timeZone, today, mondays, now, range, plans, sports }) {
+export function weekResponse({ timeZone, today, mondays, now, range, plans, sports, liftSessions = [] }) {
   const summaries = new Map(range.summaries.map((s) => [s.monday, s]));
   const workouts = [...range.workouts].sort(byOrder);
   return {
@@ -230,10 +232,14 @@ export function weekResponse({ timeZone, today, mondays, now, range, plans, spor
         fitness: null,
       };
       const plan = plans.get(monday);
+      const sunday = addDays(monday, 6);
       return {
         start: monday,
         title: plan?.title ?? null,
         hasPlan: Boolean(plan),
+        // The week's live Lift sessions on the server, sorted: the phone drops a local session that no item links
+        // and the server doesn't have (a stale copy), so Week shows the server's truth.
+        liftSessions: [...new Set(liftSessions.filter((l) => l.date >= monday && l.date <= sunday).map((l) => l.id.toLowerCase()))].sort(),
         totals: {
           plannedMinutes: s.planned.min,
           plannedTss: s.planned.tss,

@@ -124,10 +124,17 @@ nonisolated enum CoachPlanSamples {
             """
     }
 
-    /// A body with one week from `start`; `items` go on their own days.
-    static func body(start: LocalDay, items: [(LocalDay, String)], generatedAt: String = "2026-03-02T13:05:00.000Z")
-        -> Data
-    {
+    /// A body with one week from `start`; `items` go on their own days. `liftSessions`: the week's server Lift
+    /// sessions (left out when nil, as from a server before it sent them).
+    static func body(
+        start: LocalDay,
+        items: [(LocalDay, String)],
+        generatedAt: String = "2026-03-02T13:05:00.000Z",
+        liftSessions: [String]? = nil
+    ) -> Data {
+        let sessions = liftSessions.map { ids in
+            ",\"liftSessions\":[\(ids.map { "\"\($0)\"" }.joined(separator: ","))]"
+        } ?? ""
         let days = (0..<7).map { index in
             let day = start.adding(days: index)
             let json = items.filter { $0.0 == day }.map(\.1).joined(separator: ",")
@@ -136,7 +143,7 @@ nonisolated enum CoachPlanSamples {
         let week = """
             {"start":"\(CoachPlanDates.plain(start))","title":"Build week 3","hasPlan":true,
             "totals":{"plannedMinutes":540,"plannedTss":520,"doneMinutes":0,"doneTss":0,"plannedCount":9,"doneCount":0,
-            "missedCount":0,"text":"0/9 done · 0:00 of 9:00"},"days":[\(days.joined(separator: ","))]}
+            "missedCount":0,"text":"0/9 done · 0:00 of 9:00"},"days":[\(days.joined(separator: ","))]\(sessions)}
             """
         let json = """
             {"generatedAt":"\(generatedAt)","timeZone":"UTC","today":"\(CoachPlanDates.plain(start))","weeks":[\(week)]}
@@ -145,7 +152,7 @@ nonisolated enum CoachPlanSamples {
     }
 
     /// The body decoded.
-    static func plan(start: LocalDay, items: [(LocalDay, String)]) throws -> CoachPlan {
-        try CoachPlanResponse(data: body(start: start, items: items)).plan
+    static func plan(start: LocalDay, items: [(LocalDay, String)], liftSessions: [String]? = nil) throws -> CoachPlan {
+        try CoachPlanResponse(data: body(start: start, items: items, liftSessions: liftSessions)).plan
     }
 }

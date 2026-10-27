@@ -130,7 +130,7 @@ if (cmd === 'show') {
   if (!a || !DATE.test(b ?? '')) fail('move <workoutId> YYYY-MM-DD');
   const w = await workout(a);
   const planId = await planFor(monday(b));
-  await sql`UPDATE training_plan_activities SET scheduled_date = ${b}, plan_id = ${planId}, edited_at = NOW(), updated_at = NOW() WHERE id = ${a}`;
+  await sql`UPDATE training_plan_activities SET scheduled_date = ${b}, plan_id = ${planId}, change_source = 'script', edited_at = NOW(), updated_at = NOW() WHERE id = ${a}`;
   console.log(`moved ${w.title}: ${day(w.scheduled_date)} → ${b}`);
   await followLift(a);
   await push([day(w.week_start_date), monday(b)]);
@@ -139,7 +139,7 @@ if (cmd === 'show') {
   if (cmd === 'skip' && b && !cleanReason(b)) fail(`Unknown reason "${b}": use one of ${SKIP_REASONS.join(', ')}`);
   const w = await workout(a);
   const reason = cmd === 'skip' ? cleanReason(b) : null;
-  await sql`UPDATE training_plan_activities SET status = ${cmd === 'skip' ? 'skipped' : 'planned'}, skip_reason = ${reason}, edited_at = NOW(), updated_at = NOW() WHERE id = ${a}`;
+  await sql`UPDATE training_plan_activities SET status = ${cmd === 'skip' ? 'skipped' : 'planned'}, skip_reason = ${reason}, change_source = 'script', edited_at = NOW(), updated_at = NOW() WHERE id = ${a}`;
   console.log(`${cmd}ped ${w.title}${reason ? ` (${reason})` : ''}`);
   await followLift(a, { restore: cmd === 'unskip' });
   await push([day(w.week_start_date)]);
@@ -154,7 +154,7 @@ if (cmd === 'show') {
     const raw = pair.slice(i + 1);
     const value = ['duration'].includes(key) ? parseInt(raw, 10) : key === 'tss' ? Number(raw) : raw;
     // Column names come from COLUMNS, never from input.
-    await sql.query(`UPDATE training_plan_activities SET ${col} = $1, edited_at = NOW(), updated_at = NOW() WHERE id = $2`, [value, a]);
+    await sql.query(`UPDATE training_plan_activities SET ${col} = $1, change_source = 'script', edited_at = NOW(), updated_at = NOW() WHERE id = $2`, [value, a]);
   }
   console.log(`updated ${w.title}`);
   await push([day(w.week_start_date)]);
@@ -171,15 +171,15 @@ if (cmd === 'show') {
   const planId = await planFor(monday(a));
   const id = crypto.randomUUID();
   await sql`
-    INSERT INTO training_plan_activities (id, plan_id, activity_type, title, scheduled_date, status, sort_order, edited_at)
+    INSERT INTO training_plan_activities (id, plan_id, activity_type, title, scheduled_date, status, sort_order, edited_at, change_source)
     VALUES (${id}, ${planId}, ${fields.sport}, ${fields.title ?? fields.sport}, ${a}, 'planned',
             (SELECT COALESCE(MAX(sort_order), -1) + 1 FROM training_plan_activities WHERE plan_id = ${planId} AND scheduled_date = ${a}),
-            NOW())`;
+            NOW(), 'script')`;
   for (const [key, raw] of Object.entries(fields)) {
     if (key === 'sport' || key === 'title') continue;
     const value = key === 'duration' ? parseInt(raw, 10) : key === 'tss' ? Number(raw) : raw;
     // Column names come from COLUMNS, never from input.
-    await sql.query(`UPDATE training_plan_activities SET ${COLUMNS[key]} = $1 WHERE id = $2`, [value, id]);
+    await sql.query(`UPDATE training_plan_activities SET ${COLUMNS[key]} = $1, change_source = 'script' WHERE id = $2`, [value, id]);
   }
   console.log(`added ${id}  ${a} ${fields.start_time ?? '--:--'}  ${fields.title ?? fields.sport}`);
   await push([monday(a)]);

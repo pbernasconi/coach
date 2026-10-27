@@ -93,7 +93,8 @@ export function rowsFromPlan(plan) {
  * @param {object} plan  the plan JSON
  * @param {string} [markdown]  the plan's summary, stored as plan_content
  * @param {{ keepBefore?: string | null }} [opts]  a check-in's day: workouts before it are never deleted
- * @returns {Promise<{ planId: string, inserted: number, updated: number, kept: number, deleted: number }>}
+ * @returns {Promise<{ planId: string, inserted: number, updated: number, kept: number, deleted: number, moved: string[], liftGone: string[] }>}
+ *   moved: workouts with a Lift session that changed day; liftGone: the Lift sessions of deleted workouts
  */
 export async function importPlan(sql, userId, plan, markdown, { keepBefore = null } = {}) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(plan.weekStart ?? '')) throw new Error('plan.weekStart must be YYYY-MM-DD');
@@ -124,7 +125,7 @@ export async function importPlan(sql, userId, plan, markdown, { keepBefore = nul
   const pastKeys = new Set(existing.filter((r) => r.source_key && past(r)).map((r) => r.source_key));
   const touched = (r) => r.edited_at != null || r.adapted_from != null;
 
-  const counts = { planId, inserted: 0, updated: 0, kept: 0, deleted: 0 };
+  const counts = { planId, inserted: 0, updated: 0, kept: 0, deleted: 0, moved: /** @type {string[]} */ ([]), liftGone: /** @type {string[]} */ ([]) };
   const rows = rowsFromPlan(plan);
   for (const r of rows) while (pastKeys.has(r.sourceKey)) r.sourceKey += '~';
   // A gym lift always names its Lift template, so Lift plans it and the phone lists its exercises: one the planner
@@ -150,27 +151,32 @@ export async function importPlan(sql, userId, plan, markdown, { keepBefore = nul
           title = ${r.title}, activity_type = ${r.activityType}, workout_type = ${r.workoutType},
           lift_template = ${r.liftTemplate}, steps = ${r.steps ? JSON.stringify(r.steps) : null}::jsonb,
           intensity = ${intensity}, duration = ${r.duration}, tss = ${r.tss},
-          why = ${r.why}, description = ${description}, sort_order = ${r.sortOrder}, updated_at = NOW()
+          why = ${r.why}, description = ${description}, sort_order = ${r.sortOrder}, change_source = 'planner', updated_at = NOW()
         WHERE id = ${old.id}`;
       counts.updated++;
+      // Its Lift session goes to the new day with it (the caller moves it: followWorkoutInLift).
+      if (old.lift_session_id && toDay(old.scheduled_date) !== r.date) counts.moved.push(String(old.id));
     } else {
       await sql`
         INSERT INTO training_plan_activities (
           id, plan_id, source_key, scheduled_date, start_time, end_time, time_zone, title, activity_type,
-          workout_type, lift_template, steps, intensity, duration, tss, why, description, sort_order)
+          workout_type, lift_template, steps, intensity, duration, tss, why, description, sort_order, change_source)
         VALUES (
           ${createId()}, ${planId}, ${r.sourceKey}, ${r.date}, ${r.startTime}, ${r.endTime}, ${r.timeZone}, ${r.title},
           ${r.activityType}, ${r.workoutType}, ${r.liftTemplate}, ${r.steps ? JSON.stringify(r.steps) : null}::jsonb,
           ${r.intensity}, ${r.duration}, ${r.tss}, ${r.why},
-          ${r.description}, ${r.sortOrder})`;
+          ${r.description}, ${r.sortOrder}, 'planner')`;
       counts.inserted++;
     }
   }
   const keys = new Set(rows.map((r) => r.sourceKey));
   for (const old of existing) {
     if (old.source_key && !keys.has(old.source_key) && !touched(old) && !past(old)) {
-      await sql`DELETE FROM training_plan_activities WHERE id = ${old.id}`;
+      await sql`DELETE FROM training_plan_activities WHERE id = ${old.id} AND set_config('coach.change_source', 'planner', true) IS NOT NULL`;
       counts.deleted++;
+      // Its planned Lift session must go too, or the phone keeps it on the old day (the caller removes it:
+      // removeFromLift, which leaves a session with anything logged).
+      if (old.lift_session_id) counts.liftGone.push(String(old.lift_session_id).toLowerCase());
     }
   }
   return counts;

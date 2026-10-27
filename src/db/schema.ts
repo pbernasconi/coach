@@ -236,6 +236,10 @@ export const trainingPlanActivities = pgTable('training_plan_activities', {
   // the copies on Zwift and the Garmin watch (scripts/workout-sync.mjs).
   steps: jsonb('steps').$type<Record<string, unknown> | null>(),
 
+  // Who makes this write (src/lib/plan/change-source.mjs): set by the write, read and cleared by the
+  // plan_changes trigger, so it is always null when stored.
+  changeSource: text('change_source'),
+
   // Metadata
   createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { mode: 'date' }).notNull().defaultNow(),

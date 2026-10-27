@@ -59,3 +59,13 @@ FROM ai_usage GROUP BY 1, 2, 3 ORDER BY 1 DESC, usd DESC;
 
 A new Claude call adds its feature to `FEATURES` (`src/lib/ai-usage/usage.mjs`) and to the table's check in a
 migration, and calls `recordAiUsage` once per answer.
+
+## Plan change log
+
+`plan_changes` keeps every insert, update and delete of a planned workout (`training_plan_activities`): when, who
+(`source`: chat, app, web, planner, calendar, lift, script, unknown), the workout's title, and the fields that changed
+(`before`/`after`; the whole row for an insert or delete). A trigger writes it (`drizzle/0024_plan_changes.sql`), so
+no write path can skip it. A write names its source in the row's `change_source` column (the trigger reads it and
+clears it) or, for a delete, with `set_config('coach.change_source', …, true)` in the same statement; entry points set
+it once with `withPlanSource` (`src/lib/plan/change-source.mjs`). An update of timestamps only logs nothing. Read it
+with `src/lib/plan/change-log.ts`; Coach chat gets the last week's changes as `<plan_changes>`.

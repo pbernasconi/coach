@@ -8,6 +8,7 @@ import { createId } from '@paralleldrive/cuid2';
 import { sql } from '@/db';
 import { toDay, toIso } from '@/lib/db-time.mjs';
 import { pushWeek } from '@/lib/calendar-sync/push.mjs';
+import { followWorkoutInLift, removeFromLift } from '@/lib/lift/edit-store';
 import { importPlan } from '@/lib/plan/import.mjs';
 import { checkPlan } from '@/lib/plan/proposal.mjs';
 import { checkProposal, todayOf } from '@/lib/plan/rules.mjs';
@@ -177,7 +178,10 @@ export async function acceptProposal(
   if (!r) return { error: 'This plan is no longer waiting for you.' };
   const weekStart = (toDay(r.week_start) ?? '');
   const keepBefore = r.kind === 'checkin' ? todayOf(r.context) : null;
-  const counts = await importPlan(sql, userId, r.plan as object, (r.summary as string) ?? undefined, { keepBefore });
+  const { moved, liftGone, ...counts } = await importPlan(sql, userId, r.plan as object, (r.summary as string) ?? undefined, { keepBefore });
+  // Lift follows the plan now, so the phone never shows a session on a day its workout left.
+  for (const sessionId of liftGone) await removeFromLift(sessionId);
+  for (const workoutId of moved) await followWorkoutInLift(workoutId);
   await sql`UPDATE plan_proposals SET status = 'accepted', decided_at = NOW(), updated_at = NOW() WHERE id = ${id}`;
   // Older open requests are now out of date.
   await sql`

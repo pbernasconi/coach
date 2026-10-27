@@ -18,6 +18,7 @@ import { checkCard, type CardRef } from './cards.mjs';
 import { resolveCards, type Attachment } from './cards';
 import { checkProposalInput, isStale, planText, type Change, type Item } from './changes.mjs';
 import { chatMessages, chatRequest, chatWithClaude, EFFORT, MODEL, type ChatEvent, type Turn } from './chat.mjs';
+import { recentChangesText } from '@/lib/plan/change-log';
 import { ApplyError, applyAll, planRows, undoAll, type Undo } from './writes';
 import { fileBlock, fileNote, filesPhrase, filesToSend, type FileData, type FileRef } from './files.mjs';
 import { claimFiles, fileData, unclaimedFiles } from './files-store';
@@ -186,6 +187,8 @@ export async function sendMessage(
   const readyP = timed(chatReady(userId), reads, 'readyMs', started);
   const rowsP = timed(planRows(userId, today), reads, 'planMs', started);
   const profileP = timed(buildProfile(sql, { userId, weeks: 2 }), reads, 'profileMs', started);
+  // The change log is a nice-to-have: a failed read leaves it out instead of failing the answer.
+  const changesP = timed(recentChangesText(userId, timeZone).catch(() => null), reads, 'changesMs', started);
   let threadId = await openThread(userId);
   if (!threadId) {
     threadId = createId();
@@ -216,9 +219,9 @@ export async function sendMessage(
 
   let context: string | null = null;
   try {
-    const [rows, profile, data] = await Promise.all([rowsP, profileP, dataP]);
+    const [rows, profile, data, changes] = await Promise.all([rowsP, profileP, dataP, changesP]);
     const system = chatSystemPrompt();
-    context = chatContext({ today, time: clockIn(timeZone), timeZone, plan: planText(rows, today), profileMd: profile.md });
+    context = chatContext({ today, time: clockIn(timeZone), timeZone, plan: planText(rows, today), profileMd: profile.md, changes });
     prepMs = Date.now() - started;
     const result = await chatWithClaude({
       client: new Anthropic({ timeout: 100_000, maxRetries: 1 }),

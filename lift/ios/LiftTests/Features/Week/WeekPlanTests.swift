@@ -111,6 +111,25 @@ import Testing
         #expect(ids(vm)[4] == ["plan-ride", "session-\(friday.id.uuidString)"])
     }
 
+    /// The server's truth: a planned session no item links and the server doesn't have (a copy it dropped) stays out;
+    /// one the server has, one with logged sets, or one changed after the fetch (not synced yet) shows.
+    @Test func anUnlinkedSessionShowsOnlyWhenTheServerHasIt() async throws {
+        let friday = monday.adding(days: 4)
+        let logged = SessionBuilder.session(id: 3, on: friday, title: "Lower A", done: 1, planned: 2)
+        func shown(_ server: [String], generatedAt: String = "2026-03-02T13:05:00.000Z") async throws -> [String] {
+            let body = CoachPlanSamples.body(start: monday, items: [], generatedAt: generatedAt, liftSessions: server)
+            let book = CoachPlanBook([try CoachPlanResponse(data: body).plan])
+            let (vm, _) = await loaded([self.friday, logged], plan: [CoachPlanSnapshot(status: .ready, book: book)])
+            return ids(vm)[4]
+        }
+        let planned = "session-\(self.friday.id.uuidString)"
+        let done = "session-\(logged.id.uuidString)"
+        #expect(try await shown([lowerCaseID(self.friday)]) == [planned, done])
+        #expect(try await shown([]) == [done])
+        // Changed on this phone after the server answered (09:00 vs a fetch at 08:00): not synced yet, so it shows.
+        #expect(try await shown([], generatedAt: "2026-03-02T08:00:00.000Z") == [planned, done])
+    }
+
     @Test func anItemWhoseSessionIsNotOnThisPhoneShowsAsAnItem() async throws {
         let missing = "00000000-0000-4000-8000-0000000000ff"
         let lift = CoachPlanSamples.item("lift", on: monday, sport: "strength", session: missing)

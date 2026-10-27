@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { check, customType, date, doublePrecision, index, integer, jsonb, pgTable, primaryKey, smallint, text, timestamp } from 'drizzle-orm/pg-core';
+import { bigserial, check, customType, date, doublePrecision, index, integer, jsonb, pgTable, primaryKey, smallint, text, timestamp } from 'drizzle-orm/pg-core';
 
 /**
  * Cloud plan requests and the plans they propose (src/lib/plan/proposals.ts, src/lib/planner/run.ts).
@@ -224,5 +224,33 @@ export const coachFiles = pgTable(
     index('coach_files_user_created_idx').on(t.userId, t.createdAt),
     index('coach_files_message_idx').on(t.messageId),
     check('coach_files_kind_check', sql`${t.kind} IN ('image', 'pdf', 'text')`),
+  ],
+);
+
+/**
+ * Every change to a planned workout (training_plan_activities): an insert, an update of a field that matters, or a
+ * delete, with who made it. A database trigger (drizzle/0024_plan_changes.sql) writes these rows, so no write path can
+ * skip it; the write names its source in `change_source` (src/lib/plan/change-source.mjs). `before`/`after` hold only
+ * the fields that changed (the whole row for an insert or a delete). Read with src/lib/plan/change-log.ts.
+ */
+export const planChanges = pgTable(
+  'plan_changes',
+  {
+    id: bigserial('id', { mode: 'number' }).primaryKey(),
+    workoutId: text('workout_id').notNull(),
+    planId: text('plan_id'),
+    // The workout's title at the change, so a line reads on its own after a delete.
+    title: text('title'),
+    op: text('op').notNull(),
+    // chat | app | web | planner | calendar | lift | script | unknown
+    source: text('source').notNull(),
+    before: jsonb('before'),
+    after: jsonb('after'),
+    at: timestamp('at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('plan_changes_workout_idx').on(t.workoutId, t.at),
+    index('plan_changes_at_idx').on(t.at),
+    check('plan_changes_op_check', sql`${t.op} IN ('insert', 'update', 'delete')`),
   ],
 );

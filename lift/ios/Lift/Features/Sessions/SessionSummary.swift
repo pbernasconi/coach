@@ -20,6 +20,8 @@ nonisolated struct SessionSummary: Equatable, Sendable, Identifiable {
     let templateID: UUID?
     /// When this phone last moved the session to another day (schema v8), or nil.
     let dayMovedAt: Date?
+    /// The session row's last change on this phone or from sync; nil in fixtures.
+    let updatedAt: Date?
 
     init(
         id: UUID,
@@ -31,7 +33,8 @@ nonisolated struct SessionSummary: Equatable, Sendable, Identifiable {
         isDone: Bool,
         note: String? = nil,
         templateID: UUID? = nil,
-        dayMovedAt: Date? = nil
+        dayMovedAt: Date? = nil,
+        updatedAt: Date? = nil
     ) {
         self.id = id
         self.day = day
@@ -43,6 +46,7 @@ nonisolated struct SessionSummary: Equatable, Sendable, Identifiable {
         self.note = note
         self.templateID = templateID
         self.dayMovedAt = dayMovedAt
+        self.updatedAt = updatedAt
     }
 
     init(detail: SessionDetail) {
@@ -59,7 +63,8 @@ nonisolated struct SessionSummary: Equatable, Sendable, Identifiable {
             isDone: logged > 0 && (detail.session.finishedAt != nil || allHandled),
             note: SessionText.notePreview(detail.session.note),
             templateID: detail.session.templateID,
-            dayMovedAt: detail.session.dayMovedAt
+            dayMovedAt: detail.session.dayMovedAt,
+            updatedAt: detail.session.updatedAt
         )
     }
 
