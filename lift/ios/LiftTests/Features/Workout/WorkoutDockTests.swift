@@ -96,6 +96,38 @@ import Testing
         #expect(state([.done, .planned, .planned]).setRowRest == nil)
     }
 
+    @Test func aRestAfterAnExercisesLastSetStaysWithThatExercise() {
+        var resting = state([.done, .done, .planned])
+        resting.rest = RestTimer(run: 1, seconds: 180, setID: .fixture(12))
+
+        #expect(resting.restFinishedExercise?.name == "Back squat")
+        let rest = resting.setRowRest
+        #expect(rest?.setID == .fixture(21))
+        #expect(rest?.afterExerciseID == .fixture(10))
+        #expect(rest?.ringSetID == nil)  // the deadlift's first set is left as it is
+    }
+
+    @Test func aRestBetweenSetsOfOneExerciseRingsTheNextSet() {
+        var resting = state([.done, .planned, .planned])
+        resting.rest = RestTimer(run: 1, seconds: 90, setID: .fixture(11))
+
+        #expect(resting.restFinishedExercise == nil)
+        #expect(resting.setRowRest?.ringSetID == .fixture(12))
+    }
+
+    @Test func theLockScreenKnowsARestLeadsIntoANewExercise() {
+        guard case .lifting(let next, _)? = state([.done, .done, .planned]).dock,
+            case .lifting(let same, _)? = state([.done, .planned, .planned]).dock,
+            case .lifting(let first, _)? = state([.planned, .planned, .planned]).dock
+        else {
+            Issue.record("not lifting")
+            return
+        }
+        #expect(next.opensExercise)
+        #expect(!same.opensExercise)
+        #expect(!first.opensExercise)  // nothing done yet: no exercise before it
+    }
+
     @Test func theFirstSetOfTheNextExerciseOffersStartOnce() {
         var next = state([.done, .done, .planned])
         #expect(next.dockIntroducesExercise)

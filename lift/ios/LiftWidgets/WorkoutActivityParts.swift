@@ -104,9 +104,11 @@ struct WorkoutBar: View {
     }
 }
 
-/// The header of a rest: an orange "RESTING" chip, then the sets done. A chip, not a strip across the top edge: the
+/// The header of a rest: an orange "RESTING" chip, then the sets done, or "Next exercise" when the rest follows an
+/// exercise's last set. A chip, not a strip across the top edge: the
 /// Lock Screen draws a dark rim round the banner that shows as a line over a bright strip.
 struct RestBand: View {
+    @Environment(\.colorScheme) private var colorScheme
     let state: WorkoutActivityAttributes.ContentState
 
     var body: some View {
@@ -119,10 +121,20 @@ struct RestBand: View {
                 .padding(.vertical, 3)
                 .background(WidgetColors.accent, in: Capsule())
             Spacer(minLength: 8)
-            Text("\(state.loggedSets)/\(state.totalSets) sets")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .monospacedDigit()
+            // After an exercise's last set the rest leads into a new one; say so, so the next exercise below reads as
+            // a preview, not the lift under way.
+            if state.opensExercise {
+                Text("Next exercise")
+                    .font(.caption.weight(.bold))
+                    .textCase(.uppercase)
+                    .foregroundStyle(WidgetColors.accentText(for: colorScheme))
+                    .lineLimit(1)
+            } else {
+                Text("\(state.loggedSets)/\(state.totalSets) sets")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+            }
         }
     }
 }
