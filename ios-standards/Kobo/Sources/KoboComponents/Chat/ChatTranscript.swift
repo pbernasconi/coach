@@ -4,12 +4,14 @@ import SwiftUI
 /// The scrolling body of a chat: rows from the top, opening at the latest, with a footer after the last row (a typing
 /// indicator, an error). It follows new rows and a reply that grows while the reader is at the bottom; a reader who
 /// scrolls up stays put and gets a jump-to-latest button (`ChatScrollFollow`). Drag down to hide the keyboard. Put the
-/// composer in `.safeAreaBar(edge: .bottom)` on it.
+/// composer in `.safeAreaBar(edge: .bottom)` on it. `.timestamps { $0.sentAt }` adds quiet time lines between groups.
 ///
 ///     ChatTranscript(messages) { message in row(message) } footer: { if isWaiting { ChatTypingIndicator() } }
 public struct ChatTranscript<Data: RandomAccessCollection, Row: View, Footer: View>: View
 where Data.Element: Identifiable {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.calendar) private var calendar
+    @Environment(\.timeZone) private var timeZone
     @State private var position = ScrollPosition()
     @State private var follow = ChatScrollFollow()
     /// The scroll view's height inside its bars and margins: the content fills at least this much.
@@ -18,6 +20,7 @@ where Data.Element: Identifiable {
     private let row: (Data.Element) -> Row
     private let footer: Footer
     private var onTap: (() -> Void)?
+    private var date: ((Data.Element) -> Date?)?
 
     public init(
         _ data: Data,
@@ -37,12 +40,31 @@ where Data.Element: Identifiable {
         return transcript
     }
 
+    /// Puts a quiet time line ("Today 08:01", "Oct 26 at 11:33") above the first row and wherever an hour or more
+    /// passed, or a day changed, since the row before (`ChatTimestampLogic`). A row without a date reads as now.
+    public func timestamps(_ date: @escaping (Data.Element) -> Date?) -> ChatTranscript {
+        var transcript = self
+        transcript.date = date
+        return transcript
+    }
+
     public var body: some View {
-        ScrollView(.vertical) {
+        let now = Date.now
+        let stamped = separators(now: now)
+        return ScrollView(.vertical) {
             // Not lazy: under a bottom anchor, iOS 26 shifts a lazy stack sideways (a thread stays short).
             // swiftlint:disable:next accessibility_trait_for_button
             VStack(alignment: .leading, spacing: Space.xxl) {
-                ForEach(data) { row($0) }
+                ForEach(Array(data.enumerated()), id: \.element.id) { offset, element in
+                    if stamped.contains(offset), let date {
+                        VStack(alignment: .leading, spacing: Space.lg) {
+                            ChatTimestamp(date(element) ?? now, now: now)
+                            row(element)
+                        }
+                    } else {
+                        row(element)
+                    }
+                }
                 footer
             }
             .pageColumn()
@@ -101,6 +123,13 @@ where Data.Element: Identifiable {
             }
         }
         .koboAnimation(.defaultEffects, value: follow.showsJumpButton)
+    }
+
+    private func separators(now: Date) -> Set<Int> {
+        guard let date else { return [] }
+        var calendar = calendar
+        calendar.timeZone = timeZone
+        return ChatTimestampLogic.separators(data.map(date), now: now, calendar: calendar)
     }
 
     private func scrollToLatest(animated: Bool) {

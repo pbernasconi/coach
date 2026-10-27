@@ -195,6 +195,7 @@ nonisolated public enum CatalogComponent: String, CaseIterable, Identifiable, Se
     case chatToolStatus = "ChatToolStatus"
     case chatActionCard = "ChatActionCard"
     case chatPromptSuggestions = "ChatPromptSuggestions"
+    case chatTimestamp = "ChatTimestamp"
     case chatErrorRow = "ChatErrorRow"
     case chatEmbedCard = "ChatEmbedCard"
 

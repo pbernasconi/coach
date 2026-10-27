@@ -60,7 +60,7 @@ extension CatalogComponent {
             .reviewDisclosure, .outcomeScaffold, .primerPage, .updateGateScreen:
             .flows
         case .chatTranscript, .chatComposer, .chatMessageBubble, .chatReply, .chatTypingIndicator, .chatToolStatus,
-            .chatActionCard, .chatPromptSuggestions, .chatErrorRow, .chatEmbedCard:
+            .chatActionCard, .chatPromptSuggestions, .chatTimestamp, .chatErrorRow, .chatEmbedCard:
             .chat
         }
     }
