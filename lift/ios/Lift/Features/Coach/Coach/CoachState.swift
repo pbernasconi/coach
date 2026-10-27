@@ -27,6 +27,17 @@ nonisolated struct CoachState: Equatable, Sendable {
     /// The microphone: where listening stands (Kobo's rules), and the input level for the bars.
     var voice = ChatVoiceInput()
     var voiceLevel = 0.0
+    /// The photos and files on the next message, as the composer shows them (lift/COACH-CHAT.md, "Attachments").
+    var attachments: [ChatAttachment] = []
+    /// Each attachment's stored file once it has uploaded, by attachment id.
+    var uploaded: [String: CoachFile] = [:]
+    /// Small JPEGs for the tiles: a picked photo's by attachment id, a sent one's by file id once loaded.
+    var previews: [String: Data] = [:]
+    /// The attach sheet is up.
+    var isAttaching = false
+
+    /// Photos and files one message takes.
+    static let attachmentLimit = 6
 
     /// Starter prompts for an empty conversation (the server's when it sends some); a tap fills the composer.
     var prompts = [
@@ -45,6 +56,17 @@ nonisolated struct CoachState: Equatable, Sendable {
         }
     }
 
+    /// Whether the message can go: words or attachments, and every attachment uploaded.
+    var canSend: Bool {
+        guard attachments.allSatisfy({ $0.state == .ready }) else { return false }
+        return !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !attachments.isEmpty
+    }
+
+    mutating func setAttachment(_ id: String, _ state: ChatAttachment.State) {
+        guard let index = attachments.firstIndex(where: { $0.id == id }) else { return }
+        attachments[index].state = state
+    }
+
     /// The status of a proposal's card.
     func status(of id: String) -> ChatActionStatus? {
         messages.lazy.compactMap(\.proposal).first { $0.id == id }?.status
@@ -59,8 +81,8 @@ nonisolated struct CoachState: Equatable, Sendable {
     }
 
     /// A row of the conversation, with the next local id.
-    mutating func append(_ body: CoachMessage.Body) {
-        messages.append(CoachMessage(id: "local-\(nextID)", body: body))
+    mutating func append(_ body: CoachMessage.Body, files: [CoachFile] = []) {
+        messages.append(CoachMessage(id: "local-\(nextID)", body: body, files: files))
         nextID += 1
     }
 

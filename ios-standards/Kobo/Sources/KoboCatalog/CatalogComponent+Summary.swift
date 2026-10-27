@@ -159,6 +159,8 @@ extension CatalogComponent {
         case .chatPromptSuggestions: "Starter prompts in one quiet row that scrolls sideways"
         case .chatErrorRow: "A failed reply with its reason and Retry"
         case .chatEmbedCard: "A card inside a reply: a header that opens the thing, then any content"
+        case .chatAttachmentStrip: "Attached photos and files as tiles, with remove and upload state"
+        case .chatAttachSheet: "The + sheet: camera, recent photos to pick, the library and files"
         }
     }
 }

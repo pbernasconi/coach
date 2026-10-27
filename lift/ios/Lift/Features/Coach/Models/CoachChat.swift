@@ -39,12 +39,25 @@ nonisolated struct CoachMessage: Identifiable, Equatable, Sendable {
     var body: Body
     /// When the server saved it; nil for a row sent from this phone and not read back yet (the transcript shows now).
     var sentAt: Date?
+    /// The photos and files on Paolo's message.
+    var files: [CoachFile] = []
 
     /// The proposal this message carries, if any.
     var proposal: CoachProposal? {
         if case .coach(let reply) = body { return reply.proposal }
         return nil
     }
+}
+
+/// A photo or file on Paolo's message, as the server keeps it (lift/APP-API.md, "Coach attachments"). Its bytes come
+/// from `CoachChatting.fileData`.
+nonisolated struct CoachFile: Identifiable, Equatable, Sendable {
+    let id: String
+    let kind: ChatAttachment.Kind
+    let name: String
+
+    /// The tile under the message.
+    var attachment: ChatAttachment { ChatAttachment(id: id, kind: kind, name: name) }
 }
 
 /// The conversation as the server keeps it: the messages, the quick prompts, and a notice when Coach cannot answer.
@@ -103,6 +116,16 @@ nonisolated protocol CoachChatting: Sendable {
     func reply(to text: String, after history: [CoachMessage]) async throws -> CoachReply
     /// The reply as it is made: progress events, then `.reply` last. Throws `CoachChatError`.
     func replies(to text: String, after history: [CoachMessage]) -> AsyncThrowingStream<CoachReplyEvent, any Error>
+    /// The reply to a message with photos and files (uploaded first with `upload`). `text` may then be empty.
+    func replies(
+        to text: String,
+        files: [CoachFile],
+        after history: [CoachMessage]
+    ) -> AsyncThrowingStream<CoachReplyEvent, any Error>
+    /// Uploads one photo or file for the next message. Throws `CoachChatError` with words to show.
+    func upload(_ file: ChatPickedFile) async throws -> CoachFile
+    /// A sent photo's or file's bytes, for its tile.
+    func fileData(_ id: String) async throws -> Data
     /// Applies a proposal's changes to the plan; answers the card's new status (expired when it went stale).
     func apply(_ proposalID: String) async throws -> ChatActionStatus
     /// Takes an applied proposal's changes back; answers the card's new status.
@@ -126,6 +149,22 @@ nonisolated extension CoachChatting {
             continuation.onTermination = { _ in task.cancel() }
         }
     }
+
+    /// A coach without attachments: the words alone.
+    func replies(
+        to text: String,
+        files: [CoachFile],
+        after history: [CoachMessage]
+    ) -> AsyncThrowingStream<CoachReplyEvent, any Error> {
+        replies(to: text, after: history)
+    }
+
+    /// A coach without uploads keeps the file on the phone under its own id.
+    func upload(_ file: ChatPickedFile) async throws -> CoachFile {
+        CoachFile(id: file.id, kind: file.kind, name: file.name)
+    }
+
+    func fileData(_ id: String) async throws -> Data { throw CoachChatError(message: "No such file.") }
 }
 
 /// Why Coach could not answer, in words for the error row.

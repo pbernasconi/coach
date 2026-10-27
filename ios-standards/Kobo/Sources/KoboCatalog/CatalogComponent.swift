@@ -198,6 +198,8 @@ nonisolated public enum CatalogComponent: String, CaseIterable, Identifiable, Se
     case chatTimestamp = "ChatTimestamp"
     case chatErrorRow = "ChatErrorRow"
     case chatEmbedCard = "ChatEmbedCard"
+    case chatAttachmentStrip = "ChatAttachmentStrip"
+    case chatAttachSheet = "ChatAttachSheet"
 
     public var id: String { rawValue }
 

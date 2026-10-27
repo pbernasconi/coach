@@ -84,6 +84,11 @@ targets:
           Coach uses the microphone when you talk to it instead of typing.
         NSSpeechRecognitionUsageDescription: >-
           Coach turns what you say into text on this iPhone, so you can talk to it instead of typing.
+        # The Coach composer's +: a photo for Coach, from the camera or the library (asked on first use).
+        NSCameraUsageDescription: >-
+          Coach uses the camera when you take a photo to send to your coach.
+        NSPhotoLibraryUsageDescription: >-
+          Coach shows your recent photos when you add one to a message for your coach.
         LiftSyncBaseURL: $(LIFT_SYNC_BASE_URL)
         LiftAppGroup: $(LIFT_APP_GROUP)
         # lift://import opens Import from Notes; lift://templates opens the template link review (AppLink.swift).

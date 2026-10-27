@@ -9,6 +9,9 @@ struct ChatDemo: View {
     @State private var status = ChatActionStatus.pending
     @State private var isResponding = false
     @State private var voice = ChatVoiceInput()
+    @State private var attached = ChatDemoSamples.attachments
+    @State private var picked: [String] = []
+    @State private var isAdding = false
 
     var body: some View {
         switch component {
@@ -32,8 +35,15 @@ struct ChatDemo: View {
                     onTap: { _ = voice.tapped() },
                     onHoldBegan: { _ = voice.holdBegan() },
                     onHoldEnded: { _ = voice.holdEnded() }
+                ),
+                attach: ChatAttach(
+                    items: attached,
+                    preview: { _ in nil },
+                    onAdd: { isAdding = true },
+                    onRemove: { item in attached.removeAll { $0.id == item.id } }
                 )
             )
+            .chatAttachDemoPicker(isPresented: $isAdding) { files in attached += files.map(\.attachment) }
         case .chatMessageBubble:
             ChatMessageBubble(verbatim: "Can we move the review to tomorrow morning?")
         case .chatReply:
@@ -70,6 +80,24 @@ struct ChatDemo: View {
             {
                 Text(verbatim: "Agenda: the launch plan, then questions.")
             }
+        case .chatAttachmentStrip:
+            ChatAttachmentStrip(
+                attached,
+                preview: { _ in nil },
+                onRemove: { item in attached.removeAll { $0.id == item.id } }
+            )
+        case .chatAttachSheet:
+            ChatAttachSheet(
+                "Add to message",
+                recents: (1...8).map { ChatPhotoTile(id: "\($0)") },
+                selection: $picked,
+                onClose: { picked = [] },
+                onCamera: {},
+                onLibrary: {},
+                onFiles: {},
+                onAttach: { picked = [] }
+            )
+            .frame(height: 360)
         default: EmptyView()
         }
     }
@@ -101,9 +129,29 @@ private enum ChatDemoSamples {
         ChatActionItem(id: "call", change: .add, title: "Design call", detail: "Wed 13:30 · 30 min"),
     ]
 
+    static let attachments = [
+        ChatAttachment(id: "map", kind: .image, name: "Map"),
+        ChatAttachment(id: "agenda", kind: .file, name: "Agenda.pdf"),
+    ]
+
     static let prompts = [
         ChatPrompt(id: "move", title: "Move today's review", systemImage: "arrow.right"),
         ChatPrompt(id: "short", title: "I'm short on time", systemImage: "clock"),
         ChatPrompt(id: "week", title: "How did my week go?", systemImage: "calendar"),
     ]
+}
+
+extension View {
+    /// The real picker on iOS; nothing on macOS, where the catalog has no photo library.
+    @ViewBuilder
+    fileprivate func chatAttachDemoPicker(
+        isPresented: Binding<Bool>,
+        onPick: @escaping ([ChatPickedFile]) -> Void
+    ) -> some View {
+        #if os(iOS)
+            chatAttachPicker(isPresented: isPresented, onPick: onPick)
+        #else
+            self
+        #endif
+    }
 }
