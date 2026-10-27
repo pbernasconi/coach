@@ -73,7 +73,7 @@ struct TabRootScreen: View {
                 )
             )
         case .coach:
-            CoachScreen(viewModel: CoachViewModel(coach: dependencies.coach))
+            CoachScreen(viewModel: CoachViewModel(coach: dependencies.coach, plan: dependencies.coachPlan))
         case .lift:
             LiftTabScreen(
                 dependencies: dependencies,

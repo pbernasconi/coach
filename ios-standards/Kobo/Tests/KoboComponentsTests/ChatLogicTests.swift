@@ -132,6 +132,8 @@ import Testing
         #expect(ChatActionStatus.applying.showsActions)
         #expect(!ChatActionStatus.applied.showsActions)
         #expect(!ChatActionStatus.superseded.isCurrent)
+        #expect(!ChatActionStatus.undone.isCurrent)
+        #expect(!ChatActionStatus.undone.showsActions)
         #expect(ChatActionStatus.applied.isCurrent)
     }
 }

@@ -7,14 +7,27 @@ import Observation
 final class CoachViewModel {
     private(set) var state = CoachState()
     private let coach: any CoachChatting
+    private let plan: any CoachPlanProviding
     private var replyTask: Task<Void, Never>?
 
-    init(coach: any CoachChatting) {
+    init(coach: any CoachChatting, plan: any CoachPlanProviding) {
         self.coach = coach
+        self.plan = plan
     }
 
-    /// Nothing to load yet: the conversation starts empty each launch until the server keeps it.
-    func run() async {}
+    /// Reads the open conversation. A failure leaves the tab empty with the reason as its notice.
+    func run() async {
+        do {
+            let thread = try await coach.thread()
+            if state.messages.isEmpty { state.messages = thread.messages }
+            if !thread.prompts.isEmpty { state.prompts = thread.prompts }
+            state.notice = thread.notice
+        } catch let error as CoachChatError {
+            state.notice = error.message
+        } catch {
+            state.notice = "Coach could not load the conversation."
+        }
+    }
 
     @discardableResult
     func send(_ action: CoachAction) -> Task<Void, Never>? {
@@ -40,12 +53,11 @@ final class CoachViewModel {
             state.phase = .idle
             return nil
         case .applyTapped(let id):
-            return change(id, to: .applied, from: .pending) { try await self.coach.apply(id) }
+            return change(id, from: .pending, showing: .applying) { try await self.coach.apply(id) }
         case .undoTapped(let id):
-            return change(id, to: .pending, from: .applied) { try await self.coach.undo(id) }
+            return change(id, from: .applied, showing: nil) { try await self.coach.undo(id) }
         case .dismissTapped(let id):
-            setStatus(.dismissed, of: id)
-            return nil
+            return change(id, from: .pending, showing: nil) { try await self.coach.dismiss(id) }
         }
     }
 
@@ -71,20 +83,22 @@ final class CoachViewModel {
         return task
     }
 
-    /// Applies or undoes a proposal; the card shows the spinner meanwhile and goes back if it fails.
+    /// Applies, undoes or dismisses a proposal: the card takes the status the coach answers, and goes back if the call
+    /// fails. After a change to the plan, the Week tab fetches it again.
     private func change(
         _ id: String,
-        to target: ChatActionStatus,
         from current: ChatActionStatus,
-        _ work: @escaping () async throws -> Void
+        showing busy: ChatActionStatus?,
+        _ work: @escaping () async throws -> ChatActionStatus
     ) -> Task<Void, Never>? {
         guard state.busyProposal == nil, status(of: id) == current else { return nil }
         state.busyProposal = id
-        if target == .applied { setStatus(.applying, of: id) }
+        if let busy { setStatus(busy, of: id) }
         return Task {
             do {
-                try await work()
-                setStatus(target, of: id)
+                let next = try await work()
+                setStatus(next, of: id)
+                if next == .applied || next == .undone { await plan.refresh() }
             } catch {
                 setStatus(current, of: id)
             }
@@ -93,7 +107,7 @@ final class CoachViewModel {
     }
 
     private func append(_ body: CoachMessage.Body) {
-        state.messages.append(CoachMessage(id: "m\(state.nextID)", body: body))
+        state.messages.append(CoachMessage(id: "local-\(state.nextID)", body: body))
         state.nextID += 1
     }
 

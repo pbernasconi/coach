@@ -1,13 +1,15 @@
 # Coach tab (exploration)
 
-Status: the server is built (`src/lib/coach-chat/`, lift/APP-API.md "Coach"). The iPhone tab is built as a concept: a
-native tab in the Lift app where Paolo talks to his coach to change the plan.
+Status: built. The server is `src/lib/coach-chat/` (lift/APP-API.md "Coach"); the iPhone tab replaces Training with
+**Coach** (`Lift/Features/Coach/`). A native tab in the Lift app where Paolo talks to his coach to change the plan.
 
-The tab (2026-10-26) replaces Training with **Coach** (`Lift/Features/Coach/`). It still answers with sample replies
-from `DemoCoachChat` and changes nothing; a live client for the server routes replaces it behind the `CoachChatting`
-protocol. Its parts are Kobo components (`ios-standards/Kobo/Sources/KoboComponents/Chat/`): `ChatTranscript`,
-`ChatComposer`, `ChatMessageBubble`, `ChatReply`, `ChatTypingIndicator`, `ChatToolStatus`, `ChatActionCard`,
-`ChatPromptSuggestions` and `ChatErrorRow`. Activity pages that Training opened now open on Week.
+The tab talks to the server through `LiveCoachChat` (its own App API session, 60 s timeout, the sync token) whenever
+the data syncs; demo and practice data use `DemoCoachChat` (sample replies, changes nothing). Both sit behind
+`CoachChatting`; `CoachWire` maps the JSON (items "added", "removed", "changed" with "old → new" split into the card's
+struck-through rows; status "stale" shows as expired). After Apply or Undo, the Week tab fetches the plan again. Its
+parts are Kobo components (`ios-standards/Kobo/Sources/KoboComponents/Chat/`): `ChatTranscript`, `ChatComposer`,
+`ChatMessageBubble`, `ChatReply`, `ChatTypingIndicator`, `ChatToolStatus`, `ChatActionCard`, `ChatPromptSuggestions`
+and `ChatErrorRow`. Activity pages that Training opened now open on Week.
 
 ## The problem
 

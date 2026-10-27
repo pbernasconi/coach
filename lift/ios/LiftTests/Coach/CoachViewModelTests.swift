@@ -4,26 +4,40 @@ import Testing
 
 @testable import Lift
 
-/// A coach that answers at once with a set reply, or fails; it records applies and undos.
+/// A coach that answers at once with a set reply, or fails; it records the card actions.
 private actor FakeCoach: CoachChatting {
     var reply: Result<CoachReply, CoachChatError>
-    private(set) var applied: [String] = []
-    private(set) var undone: [String] = []
+    var loaded = CoachThread()
+    private(set) var actions: [String] = []
     var failsApply = false
+    var applyAnswer = ChatActionStatus.applied
 
     init(_ reply: Result<CoachReply, CoachChatError>) { self.reply = reply }
 
+    func thread() async throws -> CoachThread { loaded }
+
     func reply(to text: String, after history: [CoachMessage]) async throws -> CoachReply { try reply.get() }
 
-    func apply(_ proposalID: String) async throws {
+    func apply(_ proposalID: String) async throws -> ChatActionStatus {
         if failsApply { throw CoachChatError(message: "no") }
-        applied.append(proposalID)
+        actions.append("apply \(proposalID)")
+        return applyAnswer
     }
 
-    func undo(_ proposalID: String) async throws { undone.append(proposalID) }
+    func undo(_ proposalID: String) async throws -> ChatActionStatus {
+        actions.append("undo \(proposalID)")
+        return .undone
+    }
+
+    func dismiss(_ proposalID: String) async throws -> ChatActionStatus {
+        actions.append("dismiss \(proposalID)")
+        return .dismissed
+    }
 
     func setReply(_ new: Result<CoachReply, CoachChatError>) { reply = new }
     func setFailsApply() { failsApply = true }
+    func setApplyAnswer(_ status: ChatActionStatus) { applyAnswer = status }
+    func setThread(_ thread: CoachThread) { loaded = thread }
 }
 
 private let proposalReply = CoachReply(
@@ -36,24 +50,50 @@ private let proposalReply = CoachReply(
     )
 )
 
-/// One test per Action (TEST-2).
+/// One test per Action, plus `run()` (TEST-2).
 @MainActor
 @Suite struct CoachViewModelTests {
+    let plan = FakeCoachPlan([])
+
+    private func make(_ coach: FakeCoach) -> CoachViewModel { CoachViewModel(coach: coach, plan: plan) }
+
     private func sent(_ coach: FakeCoach, _ text: String = "Move the lift") async -> CoachViewModel {
-        let vm = CoachViewModel(coach: coach)
+        let vm = make(coach)
         vm.send(.draftChanged(text))
         await vm.send(.sendTapped)?.value
         return vm
     }
 
+    @Test func runShowsTheServersConversationPromptsAndNotice() async {
+        let coach = FakeCoach(.success(proposalReply))
+        await coach.setThread(
+            CoachThread(
+                messages: [CoachMessage(id: "m1", body: .mine("Hi"))],
+                prompts: [ChatPrompt(id: "Tomorrow?", title: "Tomorrow?")],
+                notice: "This month's budget is used."
+            )
+        )
+        let vm = make(coach)
+        await vm.run()
+        #expect(vm.state.messages.map(\.id) == ["m1"])
+        #expect(vm.state.prompts.map(\.title) == ["Tomorrow?"])
+        #expect(vm.state.notice == "This month's budget is used.")
+    }
+
+    @Test func runKeepsTheStarterPromptsWhenTheServerSendsNone() async {
+        let vm = make(FakeCoach(.success(proposalReply)))
+        await vm.run()
+        #expect(vm.state.prompts.count == 5)
+    }
+
     @Test func draftChangedKeepsTheDraft() {
-        let vm = CoachViewModel(coach: FakeCoach(.success(proposalReply)))
+        let vm = make(FakeCoach(.success(proposalReply)))
         vm.send(.draftChanged("hi"))
         #expect(vm.state.draft == "hi")
     }
 
     @Test func promptPickedFillsTheComposerWithoutSending() {
-        let vm = CoachViewModel(coach: FakeCoach(.success(proposalReply)))
+        let vm = make(FakeCoach(.success(proposalReply)))
         vm.send(.promptPicked(vm.state.prompts[0]))
         #expect(vm.state.draft == vm.state.prompts[0].title)
         #expect(vm.state.messages.isEmpty)
@@ -61,7 +101,7 @@ private let proposalReply = CoachReply(
 
     @Test func sendTappedPostsTheMessageAndTheReply() async {
         let vm = await sent(FakeCoach(.success(proposalReply)), "  Move the lift \n")
-        #expect(vm.state.messages.map(\.id) == ["m0", "m1"])
+        #expect(vm.state.messages.map(\.id) == ["local-0", "local-1"])
         #expect(vm.state.messages[0].body == .mine("Move the lift"))
         #expect(vm.state.messages[1].proposal?.status == .pending)
         #expect(vm.state.draft.isEmpty)
@@ -69,7 +109,7 @@ private let proposalReply = CoachReply(
     }
 
     @Test func sendTappedIgnoresABlankDraft() {
-        let vm = CoachViewModel(coach: FakeCoach(.success(proposalReply)))
+        let vm = make(FakeCoach(.success(proposalReply)))
         vm.send(.draftChanged("   "))
         #expect(vm.send(.sendTapped) == nil)
         #expect(vm.state.messages.isEmpty)
@@ -86,7 +126,7 @@ private let proposalReply = CoachReply(
     }
 
     @Test func stopTappedEndsTheWait() {
-        let vm = CoachViewModel(coach: FakeCoach(.success(proposalReply)))
+        let vm = make(FakeCoach(.success(proposalReply)))
         vm.send(.draftChanged("hi"))
         vm.send(.sendTapped)
         #expect(vm.state.isResponding)
@@ -94,13 +134,23 @@ private let proposalReply = CoachReply(
         #expect(vm.state.phase == .idle)
     }
 
-    @Test func applyTappedAppliesTheProposal() async {
+    @Test func applyTappedAppliesTheProposalAndRefreshesWeek() async {
         let coach = FakeCoach(.success(proposalReply))
         let vm = await sent(coach)
         await vm.send(.applyTapped(proposalID: "p1"))?.value
         #expect(vm.state.messages[1].proposal?.status == .applied)
-        #expect(await coach.applied == ["p1"])
+        #expect(await coach.actions == ["apply p1"])
         #expect(vm.state.busyProposal == nil)
+        #expect(plan.refreshCount == 1)
+    }
+
+    @Test func aStaleProposalShowsAsExpiredAndWeekStays() async {
+        let coach = FakeCoach(.success(proposalReply))
+        await coach.setApplyAnswer(.expired)
+        let vm = await sent(coach)
+        await vm.send(.applyTapped(proposalID: "p1"))?.value
+        #expect(vm.state.messages[1].proposal?.status == .expired)
+        #expect(plan.refreshCount == 0)
     }
 
     @Test func aFailedApplyPutsTheCardBack() async {
@@ -116,14 +166,17 @@ private let proposalReply = CoachReply(
         let vm = await sent(coach)
         await vm.send(.applyTapped(proposalID: "p1"))?.value
         await vm.send(.undoTapped(proposalID: "p1"))?.value
-        #expect(vm.state.messages[1].proposal?.status == .pending)
-        #expect(await coach.undone == ["p1"])
+        #expect(vm.state.messages[1].proposal?.status == .undone)
+        #expect(await coach.actions == ["apply p1", "undo p1"])
+        #expect(plan.refreshCount == 2)
     }
 
     @Test func dismissTappedDismissesTheProposal() async {
-        let vm = await sent(FakeCoach(.success(proposalReply)))
-        vm.send(.dismissTapped(proposalID: "p1"))
+        let coach = FakeCoach(.success(proposalReply))
+        let vm = await sent(coach)
+        await vm.send(.dismissTapped(proposalID: "p1"))?.value
         #expect(vm.state.messages[1].proposal?.status == .dismissed)
+        #expect(await coach.actions == ["dismiss p1"])
     }
 
     @Test func aNewProposalSupersedesTheOpenOne() async {

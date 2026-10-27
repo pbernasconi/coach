@@ -16,11 +16,13 @@ nonisolated struct CoachState: Equatable, Sendable {
     var phase = CoachReplyPhase.idle
     /// The proposal being applied or undone, so its card shows the spinner.
     var busyProposal: String?
-    /// The next message id ("m0", "m1"…): ids stay stable without a clock or random numbers.
+    /// The next local message id ("local-0"…): ids stay stable without a clock or random numbers.
     var nextID = 0
+    /// Why Coach cannot answer, or what this build is (the demo); shown over the starter prompts.
+    var notice: String?
 
-    /// Starter prompts for an empty conversation; a tap fills the composer.
-    let prompts = [
+    /// Starter prompts for an empty conversation (the server's when it sends some); a tap fills the composer.
+    var prompts = [
         ChatPrompt(id: "swap", title: "Swap today's lift for an easy run", systemImage: "arrow.left.arrow.right"),
         ChatPrompt(id: "move", title: "Move today's session to tomorrow", systemImage: "arrow.right"),
         ChatPrompt(id: "sore", title: "I'm sore, make today easy", systemImage: "bandage"),

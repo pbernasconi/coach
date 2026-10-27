@@ -26,6 +26,29 @@ extension CompositionRoot {
         return LiveAppData(client: client, cache: FileAppAPICache(directory: appSupport("AppAPI")), now: now)
     }
 
+    /// Coach's chat (lift/APP-API.md, "Coach"): the server over its own session, which waits up to 60 s for a reply
+    /// (Claude takes 5–30 s), when this data syncs; sample replies for demo, practice and builds with no server.
+    static func makeCoachChat(
+        source: AppInfo.DataSource,
+        sync: any Syncing,
+        clock: any Clock<Duration>
+    ) -> any CoachChatting {
+        let baseURL = SyncServer.baseURL(from: Bundle.main.object(forInfoDictionaryKey: SyncServer.infoKey))
+        guard source.isSaved, sync.isConfigured, let baseURL else { return DemoCoachChat(clock: clock) }
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.urlCache = nil
+        configuration.httpCookieStorage = nil
+        configuration.timeoutIntervalForRequest = 60
+        configuration.waitsForConnectivity = false
+        let client = URLSessionAppAPIClient(
+            session: URLSession(configuration: configuration),
+            baseURL: baseURL,
+            tokens: syncTokenStore(),
+            timeZone: { TimeZone.current.identifier }
+        )
+        return LiveCoachChat(client: client)
+    }
+
     /// A folder in Application Support, or in the temporary folder when Application Support cannot be made.
     static func appSupport(_ name: String) -> URL {
         let support = try? FileManager.default.url(
