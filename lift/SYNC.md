@@ -26,7 +26,7 @@ server as `LIFT_SYNC_TOKEN` and stored on the iPhone in the Keychain. Wrong or m
   "changes": [
     {
       "idempotencyKey": "0A8B…",
-      "entity": "exercise | session | sessionExercise | set | template | templateExercise",
+      "entity": "exercise | session | sessionExercise | set | template | templateExercise | workoutEvent",
       "rowId": "UUID",
       "op": "insert | update | delete",
       "payload": { "id": "UUID", "updatedAt": "2026-10-15T07:30:00.000Z", "deletedAt": null, "…": "…" }
@@ -60,6 +60,16 @@ server as `LIFT_SYNC_TOKEN` and stored on the iPhone in the Keychain. Wrong or m
   finishing adds the running pause to `pausedSeconds` and clears `pausedAt`. A workout's length is its finish minus
   its start minus `pausedSeconds` (the web's `workoutMinutes`). Payloads from builds before v9 omit both keys, which
   read as never paused.
+- `workoutEvent` (schema v10): the workout timeline, one row per moment of a workout, only ever inserted. Columns:
+  `sessionID` (soft link, may arrive before its session), `kind`, `occurredAt` (ISO 8601 with `Z`, when it happened),
+  `setID` (the set it is about, or `null`), `seconds` (an integer or `null`), `source` (`app` for the Workout screen,
+  `lockScreen` for the Live Activity's buttons), plus the row stamps. Kinds: `workoutStarted`, `workoutPaused`,
+  `workoutResumed`, `workoutFinished`, `workoutDiscarded`, `exerciseStarted` (Start on an exercise's first set),
+  `setLogged`, `setUndone`, `setSkipped`, `setRemoved`, `restStarted` (`seconds`: planned length), `restExtended`
+  (`seconds`: time added), `restSkipped` (ended early by Skip, a pause or Finish; `seconds`: time rested) and
+  `restEnded` (ran its whole length; `occurredAt` is its end, `seconds` the time rested). A rest's actual length is
+  the time from its `restStarted` to the next `restSkipped`, `restEnded` or `setLogged`. Clients keep `kind` and
+  `source` as text, so a kind added later pulls on older builds. The server stores the rows like any other entity.
 - Notes: `session.note`, `sessionExercise.note` and `set.note` (text or `null`) are written by the Notes import and
   typed in the Workout screen. They are plain columns; an edit is a normal `update` of the row.
 - At most 500 changes per request.

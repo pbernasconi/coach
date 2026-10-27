@@ -9,6 +9,8 @@ public enum OutboxEntity: String, Codable, Hashable, Sendable, CaseIterable {
     case set
     case template
     case templateExercise
+    /// The workout timeline (v10).
+    case workoutEvent
 }
 
 /// What happened to the row. A soft delete is `.delete`; the payload still carries the whole row.

@@ -8,4 +8,5 @@ nonisolated enum AppLog {
     static let templates = Logger(subsystem: "com.example.lift", category: "templates")
     static let sync = Logger(subsystem: "com.example.lift", category: "sync")
     static let push = Logger(subsystem: "com.example.lift", category: "push")
+    static let workout = Logger(subsystem: "com.example.lift", category: "workout")
 }
