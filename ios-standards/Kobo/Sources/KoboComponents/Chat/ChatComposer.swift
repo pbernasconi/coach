@@ -102,6 +102,8 @@ public struct ChatComposer: View {
                 HStack(alignment: .bottom, spacing: Space.xs) {
                     if !isExpanded, let attach { attachButton(attach) }
                     field
+                        // Open, the toolbar holds the buttons: the text keeps the same room on both sides.
+                        .padding(.trailing, isExpanded ? Space.lg - Space.xs : 0)
                     if !isExpanded { compactButton }
                 }
                 if isExpanded { toolbar }

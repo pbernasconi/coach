@@ -41,6 +41,8 @@ struct CoachContent: View {
         .screenCanvas()
         .navigationTitle("Coach")
         .navigationBarTitleDisplayMode(.inline)
+        // The transcript is not the bar's scroll view (the jump button sits over it): give the title its own backdrop.
+        .toolbarBackgroundVisibility(.visible, for: .navigationBar)
     }
 }
 

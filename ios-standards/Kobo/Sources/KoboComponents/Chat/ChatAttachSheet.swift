@@ -147,17 +147,14 @@ public struct ChatAttachSheet: View {
             }
             .scrollIndicators(.hidden)
             if let onFiles { ChatAttachFilesRow(action: onFiles).padding(.horizontal, Space.gutter) }
-            Spacer(minLength: 0)
-        }
-        .padding(.top, Space.lg)
-        .safeAreaInset(edge: .bottom) {
             if !selection.wrappedValue.isEmpty {
                 attachButton
                     .padding(.horizontal, Space.gutter)
-                    .padding(.bottom, Space.sm)
                     .transition(Motion.rise(reduceMotion: reduceMotion))
             }
         }
+        .padding(.top, Space.lg)
+        .padding(.bottom, Space.sm)
         .koboAnimation(.present, value: selection.wrappedValue.isEmpty)
         .koboFeedback(.selection, trigger: selection.wrappedValue)
     }
