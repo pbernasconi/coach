@@ -1,17 +1,17 @@
 // @ts-check
-// The Coach tab's prompt (lift/COACH-CHAT.md): the system prompt is coach-chat.md, then the planner's coaching.md
-// and plan-structure.md (src/lib/planner/prompts/, bundled by scripts/planner-prompt.mjs), the same bytes on every
-// call so it is cached. The context goes with each message from Paolo. Pure.
+// The Coach tab's prompt (lift/COACH-CHAT.md): the system prompt is coach-chat.md, then the planner's coaching.md,
+// check-in.md (how a skip changes the week) and plan-structure.md (src/lib/planner/prompts/, bundled by
+// scripts/planner-prompt.mjs), the same bytes on every call so it is cached. The context goes with each message from Paolo. Pure.
 
 import { CHAT_PROMPT, SOURCES } from '../planner/prompt-sources.generated.mjs';
 
 /** The chat stops using the API for the rest of the month at this spend, apart from the planner's cap. */
 export const CHAT_MONTHLY_CAP_USD = 10;
 
-/** coach-chat.md, coaching.md, plan-structure.md, in that order. */
+/** coach-chat.md, coaching.md, check-in.md, plan-structure.md, in that order. */
 export function chatSystemPrompt() {
   const s = /** @type {Record<string, string>} */ (SOURCES);
-  return [CHAT_PROMPT, s['coaching.md'], s['plan-structure.md']].join('\n\n---\n\n');
+  return [CHAT_PROMPT, s['coaching.md'], s['check-in.md'], s['plan-structure.md']].join('\n\n---\n\n');
 }
 
 /**

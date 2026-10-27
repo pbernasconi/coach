@@ -90,9 +90,9 @@ test('the history alternates, starts with Paolo and is capped', () => {
   assert.deepEqual(open[0].content.map((b) => b.text), ['first', 'CTX', '<paolo>\nsecond\n</paolo>']);
 });
 
-test('the system prompt is the chat prompt, then the coaching rules and plan structure', () => {
+test('the system prompt is the chat prompt, then the coaching rules, check-in rules and plan structure', () => {
   const s = chatSystemPrompt();
-  const at = ['# Coach chat', '# Coaching rules', '# Plan Structure'].map((h) => s.indexOf(h));
+  const at = ['# Coach chat', '# Coaching rules', '# Check-ins', '# Plan Structure'].map((h) => s.indexOf(h));
   assert.ok(at.every((i) => i >= 0), String(at));
   assert.deepEqual([...at].sort((a, b) => a - b), at);
   assert.match(s, /propose_changes/);

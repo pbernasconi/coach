@@ -21,7 +21,8 @@ async function snapshot() {
 
 test('Apply runs a card through the plan writes and Undo puts it back', async () => {
   await sql`DELETE FROM users WHERE id = ${user}`;
-  await sql`INSERT INTO users (id, email) VALUES (${user}, 'coach-chat@example.com')`;
+  await sql`INSERT INTO users (id, email, settings) VALUES (${user}, 'coach-chat@example.com', ${JSON.stringify({ coachingNotes: '# Week\n- Bike club Thu\n' })}::jsonb)`;
+  const notes = async () => String(((await sql`SELECT settings ->> 'coachingNotes' AS n FROM users WHERE id = ${user}`) as { n: string }[])[0]?.n);
   try {
     const spin = await add({ sport: 'ride', date: today, startTime: '07:00', title: 'Recovery spin', duration: 40, intensity: 'Recovery' });
     const heavy = await add({ sport: 'strength', date: today, startTime: '17:00', title: 'Heavy barbell', duration: 60 });
@@ -38,6 +39,7 @@ test('Apply runs a card through the plan writes and Undo puts it back', async ()
         { op: 'skip', id: vo2, reason: 'busy' },
         { op: 'add', date: today, sport: 'run', startTime: '16:00', title: 'Easy run with David', duration: 45 },
         { op: 'remove', id: spin },
+        { op: 'remember', text: 'David runs Mondays at 16:00' },
       ],
     }, { rows, today }, 2);
     assert.ok(checked.ok, JSON.stringify(checked));
@@ -51,9 +53,11 @@ test('Apply runs a card through the plan writes and Undo puts it back', async ()
     assert.deepEqual([by['Easy run with David'].date, by['Easy run with David'].intensity, by['Easy run with David'].duration], [today, 'Easy', 45]);
     assert.equal(by['Recovery spin'], undefined);
     assert.ok(isStale(checked.value.basis, after), 'the card is stale once applied');
+    assert.match(await notes(), /# Week\n- Bike club Thu\n\n## From Coach chat\n- David runs Mondays at 16:00\n$/);
 
     await undoAll(user, undo, today);
     assert.deepEqual(await snapshot(), before);
+    assert.equal((await notes()).trim(), '# Week\n- Bike club Thu');
   } finally {
     await sql`DELETE FROM training_plan_activities a USING training_plans p WHERE p.id = a.plan_id AND p.user_id = ${user}`;
     await sql`DELETE FROM training_plans WHERE user_id = ${user}`;

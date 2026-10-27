@@ -4,13 +4,14 @@
  * server.ts pushes the calendar after.
  */
 
+import { sql } from '@/db';
 import { addInput, editForm, editInput } from '@/lib/plan/app-edit.mjs';
 import { loadPlanWorkout } from '@/lib/plan/app-workout';
 import { cleanNewWorkout } from '@/lib/plan/create.mjs';
 import { createWorkout, loadRange, removeWorkout, restoreWorkout, updateWorkout, type WorkoutInput } from '@/lib/plan/month';
 import { setSkipped } from '@/lib/plan/queries';
 import { addDays, mondayOf } from '@/lib/plan/week.mjs';
-import type { Change, PlanRow } from './changes.mjs';
+import { addNote, dropNote, type Change, type PlanRow } from './changes.mjs';
 
 /** The workouts Coach sees: this week and the next two, as the web calendar has them (loadRange). */
 export async function planRows(userId: string, today: string): Promise<PlanRow[]> {
@@ -28,7 +29,8 @@ export type Undo =
   | { op: 'skip'; id: string; reason: string | null }
   | { op: 'unskip'; id: string }
   | { op: 'remove'; id: string }
-  | { op: 'restore'; row: Record<string, unknown> };
+  | { op: 'restore'; row: Record<string, unknown> }
+  | { op: 'forget'; text: string };
 
 /**
  * The Edit sheet's write (PUT /api/app/plan/{id}): the workout's form, with `patch` on top, through the same checks.
@@ -49,7 +51,21 @@ async function editWorkout(userId: string, id: string, patch: Record<string, unk
   return { dates: [moved.from, moved.to], back };
 }
 
+/** Settings → Coaching preferences (users.settings.coachingNotes), changed in place: the planner reads it next time. */
+async function editNotes(userId: string, edit: (notes: string) => string) {
+  const [u] = (await sql`SELECT settings ->> 'coachingNotes' AS notes FROM users WHERE id = ${userId}`) as { notes: string | null }[];
+  if (!u) throw new Error('user not found');
+  const notes = edit(String(u.notes ?? ''));
+  await sql`
+    UPDATE users SET settings = jsonb_set(COALESCE(settings, '{}'::jsonb), '{coachingNotes}', to_jsonb(${notes}::text)), updated_at = NOW()
+    WHERE id = ${userId}`;
+}
+
 async function applyOne(userId: string, c: Change, rows: PlanRow[], today: string): Promise<{ undo: Undo; dates: string[] }> {
+  if (c.op === 'remember') {
+    await editNotes(userId, (n) => addNote(n, c.text));
+    return { undo: { op: 'forget', text: c.text }, dates: [] };
+  }
   if (c.op === 'add') {
     const input = addInput({ sport: c.sport, date: c.date, startTime: c.startTime, title: c.title, duration: c.duration, effort: c.effort, description: c.description });
     if ('error' in input) throw new Error(input.error);
@@ -72,7 +88,8 @@ async function applyOne(userId: string, c: Change, rows: PlanRow[], today: strin
       return { undo: { op: 'edit', id: c.id, body: e.back }, dates: e.dates };
     }
     case 'skip':
-      // No `today`: a chat skip changes only what the card shows (setSkipped would also ease the next sessions).
+      // No `today`: a chat skip changes only what the card shows (setSkipped would also ease the next sessions). The
+      // card eases them itself: checkProposalInput sends a tired skip back until it does (fatigueIssues).
       await setSkipped(userId, c.id, true, c.reason);
       return { undo: { op: 'unskip', id: c.id }, dates: [row.date] };
     case 'unskip':
@@ -93,6 +110,7 @@ async function undoOne(userId: string, u: Undo, today: string): Promise<string[]
     case 'unskip': await setSkipped(userId, u.id, false); return [];
     case 'remove': { const gone = await removeWorkout(userId, u.id); return gone ? [gone.date] : []; }
     case 'restore': { const day = await restoreWorkout(userId, u.row); return day ? [day] : []; }
+    case 'forget': await editNotes(userId, (n) => dropNote(n, u.text)); return [];
   }
 }
 
