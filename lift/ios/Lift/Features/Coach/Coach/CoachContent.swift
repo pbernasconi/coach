@@ -32,6 +32,7 @@ struct CoachContent: View {
             }
         }
         .timestamps(\.sentAt)
+        .ownRows { if case .mine = $0.body { true } else { false } }
         .onTranscriptTap { isComposing = false }
         .safeAreaBar(edge: .bottom) { CoachComposerBar(state: state, send: send, isComposing: $isComposing) }
         .chatAttachPicker(

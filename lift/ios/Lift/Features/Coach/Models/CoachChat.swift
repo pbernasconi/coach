@@ -37,7 +37,7 @@ nonisolated struct CoachMessage: Identifiable, Equatable, Sendable {
 
     let id: String
     var body: Body
-    /// When the server saved it; nil for a row sent from this phone and not read back yet (the transcript shows now).
+    /// When the server saved it, or when this phone sent or got it (until the server copy comes back).
     var sentAt: Date?
     /// The photos and files on Paolo's message.
     var files: [CoachFile] = []
