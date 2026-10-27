@@ -6,6 +6,7 @@
  *   - notifyLiftWorkouts: after a Lift sync push (sessions finished on the iPhone)
  *   - notifyStravaWorkouts: after a Strava sync (new activities)
  *   - notifyWeighIn: after a vitals push from the scale or the Lift app
+ *   - notifyCoachReply: after Coach answers in the Coach tab
  *
  * The rules for a new event are in catalog.mjs; the phone side is lift/PUSH.md.
  */
@@ -118,6 +119,16 @@ export async function notifyWeighIn(rows: { date: string; metric: string; value:
     const userId = await ownerId();
     if (!userId) return;
     await notifier.notify('weigh_in.recorded', await weighInNotice(userId, reading), { userId });
+  });
+}
+
+/**
+ * After Coach answers in the Coach tab: a `coach.replied` notice with the reply, so an answer that lands while the
+ * app is in the background still reaches Paolo. The app hides it while the Coach tab is on screen.
+ */
+export async function notifyCoachReply(userId: string, threadId: string, reply: { id: string; text: string }) {
+  await guarded('coach', async () => {
+    await notifier.notify('coach.replied', { messageId: reply.id, threadId, text: reply.text.slice(0, 4000) || 'Coach answered.' }, { userId });
   });
 }
 

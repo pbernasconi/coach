@@ -25,6 +25,8 @@ const IDLE_HOURS = 24;
 /** The last Claude request starts before this (the route stops at maxDuration 120 s). */
 const BUDGET_MS = 75_000;
 export const MAX_TEXT = 2000;
+/** A message still without a reply this long after it was sent is being answered (the route stops at 120 s). */
+const ANSWERING_MS = 150_000;
 
 export type ProposalView = {
   id: string; title: string; why: string | null; items: Item[]; warnings: string[];
@@ -82,13 +84,25 @@ async function threadMessages(threadId: string): Promise<MessageView[]> {
   }));
 }
 
-/** GET /api/app/coach: the open thread (empty after a day idle), whether Coach can answer, and quick prompts. */
+/** True while Paolo's last message has no reply yet and Coach can still be working on it. */
+export function isAnswering(messages: Pick<MessageView, 'role' | 'createdAt'>[], nowMs: number): boolean {
+  const last = messages.at(-1);
+  if (!last || last.role !== 'user' || !last.createdAt) return false;
+  return nowMs - Date.parse(last.createdAt) < ANSWERING_MS;
+}
+
+/**
+ * GET /api/app/coach: the open thread (empty after a day idle), whether Coach can answer, quick prompts, and
+ * `answering`: Coach is still working on the last message (the app left while it waited), so the phone polls.
+ */
 export async function loadCoach(userId: string) {
   const threadId = await openThread(userId);
   const ready = await chatReady(userId);
+  const messages = threadId ? await threadMessages(threadId) : [];
   return {
     threadId,
-    messages: threadId ? await threadMessages(threadId) : [],
+    messages,
+    answering: isAnswering(messages, Date.now()),
     ready: ready.ready,
     notice: ready.reason,
     suggestions: SUGGESTIONS,
@@ -150,7 +164,7 @@ export async function sendMessage(userId: string, text: string, today: string, t
       id: saved.id, role: 'assistant', text: reply, createdAt: saved.createdAt, proposal,
       attachments: extra.attachments ?? [], quickReplies: extra.quickReplies ?? [],
     };
-    return { message, reply: view };
+    return { threadId, message, reply: view };
   };
 
   const ready = await chatReady(userId);

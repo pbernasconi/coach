@@ -10,7 +10,7 @@ import { appLink, webLink } from '../destinations.mjs';
 
 /**
  * The preference an event belongs to. `system` events (a test push) are never muted.
- * @typedef {'workouts' | 'body' | 'system'} NotificationCategory
+ * @typedef {'workouts' | 'body' | 'coach' | 'system'} NotificationCategory
  */
 
 /**

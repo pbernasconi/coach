@@ -63,9 +63,9 @@ test('opened marks the notice once', async () => {
 test('preferences list the switchable categories, on by default, and can be switched off', async () => {
   const repo = createMemoryNotificationRepository();
   const before = await handlePreferences(USER, repo);
-  assert.deepEqual(before.body.categories.map((c) => [c.id, c.enabled]), [['workouts', true], ['body', true]]);
+  assert.deepEqual(before.body.categories.map((c) => [c.id, c.enabled]), [['workouts', true], ['body', true], ['coach', true]]);
   const after = await handleSetPreferences({ categories: { body: false } }, USER, repo);
-  assert.deepEqual(after.body.categories.map((c) => [c.id, c.enabled]), [['workouts', true], ['body', false]]);
+  assert.deepEqual(after.body.categories.map((c) => [c.id, c.enabled]), [['workouts', true], ['body', false], ['coach', true]]);
   assert.equal((await handleSetPreferences({ categories: { system: false } }, USER, repo)).status, 400);
   assert.equal((await handleSetPreferences({ categories: { nope: true } }, USER, repo)).status, 400);
 });
