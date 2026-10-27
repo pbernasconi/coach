@@ -28,7 +28,7 @@ enum PullApplier {
 
     private static func rank(_ entity: OutboxEntity) -> Int {
         switch entity {
-        case .exercise, .template: 0
+        case .exercise, .template, .workoutEvent: 0
         case .session, .templateExercise: 1
         case .sessionExercise: 2
         case .set: 3
@@ -55,6 +55,8 @@ enum PullApplier {
             return try upsert(TemplateExerciseRecord.self, change, db) { row in
                 try TemplateRecord.exists(db, key: row.templateID)
             }
+        case .workoutEvent:
+            return try upsert(WorkoutEventRecord.self, change, db) { _ in true }  // soft links, like exerciseID
         }
     }
 

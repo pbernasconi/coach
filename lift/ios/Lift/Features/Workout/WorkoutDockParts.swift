@@ -64,16 +64,25 @@ struct WorkoutDockPanel: View {
     }
 }
 
-/// The strip across the top of the dock that names a state no set has: "Resting" (accent), "Rest over +0:12" (soft
+/// The strip across the top of the dock that names a state no set has: "Resting" (accent, "after Back squat" when the
+/// rest follows an exercise's last set), "Rest over +0:12" (soft
 /// accent) and "Paused at 12:47" (dark). Nothing while lifting.
 struct WorkoutDockBand: View {
     @Environment(\.koboTheme) private var theme
     let phase: WorkoutDockPhase
+    /// The exercise a rest between two exercises follows: "Resting · after Back squat".
+    var restAfter: String? = nil
 
     var body: some View {
         switch phase {
         case .resting:
-            band(Text("Resting"), icon: "timer", detail: nil, ink: theme.palette.onAccent, fill: theme.palette.accent)
+            band(
+                Text("Resting"),
+                icon: "timer",
+                detail: restAfter.map { Text("after \($0)") },
+                ink: theme.palette.onAccent,
+                fill: theme.palette.accent
+            )
         case .ready(_, let ready, _):
             band(
                 Text("Rest over"),
@@ -104,7 +113,7 @@ struct WorkoutDockBand: View {
                 .textCase(.uppercase)
             Spacer(minLength: Space.sm)
             if let detail {
-                detail.font(theme.font(.caption).weight(.semibold).monospacedDigit())
+                detail.font(theme.font(.caption).weight(.semibold).monospacedDigit()).lineLimit(1)
             }
         }
         .font(theme.font(.caption))

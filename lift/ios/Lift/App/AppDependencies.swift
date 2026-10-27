@@ -14,6 +14,8 @@ final class AppDependencies {
     let plans: any WorkoutPlanRepository
     /// The logged history of one exercise, for the exercise detail screen.
     let history: any ExerciseHistoryRepository
+    /// The workout timeline: every moment of a workout with its time, synced for analysis later.
+    let workoutEvents: any WorkoutEventRepository
     let now: @Sendable () -> Date
     /// Drives countdowns such as the rest timer; tests and previews pass their own.
     let clock: any Clock<Duration>
@@ -87,6 +89,7 @@ final class AppDependencies {
         templates: any TemplateRepository,
         plans: any WorkoutPlanRepository,
         history: any ExerciseHistoryRepository,
+        workoutEvents: any WorkoutEventRepository,
         now: @escaping @Sendable () -> Date,
         clock: any Clock<Duration>,
         workoutActivity: WorkoutActivityCenter,
@@ -113,6 +116,7 @@ final class AppDependencies {
         self.templates = templates
         self.plans = plans
         self.history = history
+        self.workoutEvents = workoutEvents
         self.now = now
         self.clock = clock
         self.workoutActivity = workoutActivity

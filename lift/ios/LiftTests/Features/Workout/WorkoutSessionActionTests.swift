@@ -49,6 +49,7 @@ import Testing
             health: health,
             gym: InMemoryGymSettings(.standard),
             preferences: InMemoryWorkoutSettings(),
+            events: RecordingWorkoutEvents(),
             now: SessionBuilder.now,
             calendar: SessionBuilder.calendar
         )

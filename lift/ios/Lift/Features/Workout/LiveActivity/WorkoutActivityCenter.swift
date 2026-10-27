@@ -17,6 +17,8 @@ final class WorkoutActivityCenter: RestActivityController {
     /// Workout settings: the default rest, whether a rest starts, and whether the Live Activity shows.
     private let preferences: any WorkoutPreferenceStore
     private let restAlerts: any RestAlerting
+    /// The workout timeline; the buttons record their own moments (`.lockScreen`).
+    private let events: any WorkoutEventRepository
     private let days: DayCalendar
     private let now: @Sendable () -> Date
 
@@ -42,6 +44,7 @@ final class WorkoutActivityCenter: RestActivityController {
         gym: any GymPreference,
         stills: any WorkoutActivityStills = NoWorkoutActivityStills(),
         preferences: any WorkoutPreferenceStore = InMemoryWorkoutSettings(),
+        events: any WorkoutEventRepository = NoWorkoutEvents(),
         restAlerts: any RestAlerting = NoRestAlerts(),
         calendar: Calendar,
         now: @escaping @Sendable () -> Date
@@ -53,6 +56,7 @@ final class WorkoutActivityCenter: RestActivityController {
         self.stills = WorkoutActivityStillCache(stills: stills)
         self.preferences = preferences
         self.restAlerts = restAlerts
+        self.events = events
         self.days = DayCalendar(calendar: calendar)
         self.now = now
     }
@@ -133,9 +137,15 @@ final class WorkoutActivityCenter: RestActivityController {
         let before = rest
         // The rest is set before the write: the open Workout screen asks for it as soon as it sees the logged set.
         rest = seconds > 0 ? RestSnapshot(endsAt: endsAt, totalSeconds: seconds, setID: setID) : nil
+        let at = now()
         do {
-            if detail?.session.pausedAt != nil { _ = try await sessions.changeTime(sessionID: sessionID, .resume) }
+            if detail?.session.pausedAt != nil {
+                _ = try await sessions.changeTime(sessionID: sessionID, .resume)
+                record(.workoutResumed, in: sessionID, at: at)
+            }
             _ = try await sets.log(setID: setID)
+            record(.setLogged, in: sessionID, setID: setID, at: at)
+            if seconds > 0 { record(.restStarted, in: sessionID, setID: setID, seconds: seconds, at: at) }
         } catch {
             rest = before
             AppLog.rest.error(
@@ -158,17 +168,70 @@ final class WorkoutActivityCenter: RestActivityController {
 
     /// +30s on the rest, while there is one left.
     func extendRest() async {
+        let at = now()
+        await showAtOnce { state in
+            if let longer = state.rest?.extended(by: RestSnapshot.extensionSeconds, at: at) { state.rest = longer }
+        }
         await loadRunning()
         guard let next = rest?.extended(by: RestSnapshot.extensionSeconds, at: now()) else { return }
+        if let sessionID {
+            record(.restExtended, in: sessionID, setID: next.setID, seconds: RestSnapshot.extensionSeconds, at: at)
+        }
         rest = next
         await publishNow()
     }
 
     /// Skip: the rest is over now; the workout stays.
     func skipRest() async {
+        let at = now()
+        await showAtOnce { $0.rest = nil }
         await loadRunning()
+        if let sessionID, let skipped = rest, skipped.endsAt > at {
+            let rested = max(0, skipped.totalSeconds - skipped.secondsLeft(at: at))
+            record(.restSkipped, in: sessionID, setID: skipped.setID, seconds: rested, at: at)
+        }
         rest = nil
         await publishNow()
+    }
+
+    /// Stores one moment the Live Activity's buttons made, on the workout timeline. A failed write is only logged.
+    private func record(
+        _ kind: WorkoutEventKind,
+        in sessionID: UUID,
+        setID: UUID? = nil,
+        seconds: Int? = nil,
+        at: Date
+    ) {
+        let event = WorkoutEvent(
+            sessionID: sessionID,
+            kind: kind,
+            occurredAt: at,
+            setID: setID,
+            seconds: seconds,
+            source: .lockScreen
+        )
+        let events = events
+        Task {
+            do {
+                try await events.record(event)
+            } catch {
+                AppLog.workout.error(
+                    "Recording \(kind.rawValue) failed: \(String(describing: error), privacy: .private)"
+                )
+            }
+        }
+    }
+
+    /// Changes what the Live Activity shows now at once, before the workout is read from the store, so the tap shows
+    /// on the Lock Screen straight away. A button that launched Lift, or found it suspended, would otherwise wait for
+    /// the app to start and the workout to load first, which felt broken (Paolo, 2026-10-27). The full publish that
+    /// follows draws the same thing from the store.
+    private func showAtOnce(_ change: (inout WorkoutActivityAttributes.ContentState) -> Void) async {
+        guard let running = presenter.running() else { return }
+        var state = running.state
+        change(&state)
+        guard state != running.state else { return }
+        await presenter.show(running.attributes, state: state)
     }
 
     // MARK: Following the workout

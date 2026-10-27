@@ -69,6 +69,7 @@ struct WorkoutContent: View {
                     phase: dock,
                     introducesExercise: state.dockIntroducesExercise,
                     restAfterLog: state.dockRestSeconds,
+                    restAfter: state.restFinishedExercise?.name,
                     send: send
                 ) {
                     focus($0, proxy)

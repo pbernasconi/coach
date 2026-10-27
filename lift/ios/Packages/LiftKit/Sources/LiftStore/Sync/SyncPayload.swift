@@ -9,12 +9,12 @@ public enum SyncPayload {
     /// Columns that hold dates in every synced table.
     static let dateColumns: Set = [
         "createdAt", "updatedAt", "deletedAt", "startedAt", "finishedAt", "completedAt", "dayMovedAt",
-        "pausedAt",
+        "pausedAt", "occurredAt",
     ]
 
     /// Columns that hold UUIDs (blobs locally, strings on the wire).
     static let uuidColumns: Set = [
-        "id", "sessionID", "exerciseID", "sessionExerciseID", "templateID", "healthWorkoutID",
+        "id", "sessionID", "exerciseID", "sessionExerciseID", "templateID", "healthWorkoutID", "setID",
     ]
 
     private static let isoWithMilliseconds = Date.ISO8601FormatStyle(includingFractionalSeconds: true)

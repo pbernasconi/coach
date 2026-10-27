@@ -62,17 +62,35 @@ extension WorkoutState {
     }
 }
 
-/// The running rest and the set it comes before, for that set's row (its check fills as a ring).
+/// The running rest and the set it comes before. Between two sets of one exercise the next set's check fills as a
+/// ring. After an exercise's last set the rest belongs to the exercise just finished: it shows as a rest row under that
+/// exercise's sets, and the next exercise's first set stays as it is.
 nonisolated struct SetRowRest: Equatable, Sendable {
     var setID: UUID
     var timer: RestTimer
+    /// The exercise just finished, when the rest moves on to a new exercise; nil between sets of one exercise.
+    var afterExerciseID: UUID? = nil
+
+    /// The set whose check fills as a ring: the next set, between sets of one exercise only.
+    var ringSetID: UUID? { afterExerciseID == nil ? setID : nil }
 }
 
 extension WorkoutState {
     /// The rest running now and the set to do after it; nil while no rest runs.
     var setRowRest: SetRowRest? {
         guard case .resting(let content, let rest, _)? = dock, let setID = content.current?.id else { return nil }
-        return SetRowRest(setID: setID, timer: rest)
+        return SetRowRest(setID: setID, timer: rest, afterExerciseID: restFinishedExercise?.id)
+    }
+
+    /// While a rest runs between two exercises, the one just finished ("after Back squat"); nil between sets of one
+    /// exercise, and when the rest's set is unknown.
+    var restFinishedExercise: WorkoutExercise? {
+        guard case .resting(let content, let rest, _)? = dock, let next = content.current?.id, let logged = rest.setID,
+            case .loaded(let workout) = workout,
+            let finished = workout.exercises.first(where: { $0.sets.contains { $0.id == logged } }),
+            !finished.sets.contains(where: { $0.id == next })
+        else { return nil }
+        return finished
     }
 
     /// The dock is on the first set of an exercise that follows a finished one, and Start was not tapped for it yet:

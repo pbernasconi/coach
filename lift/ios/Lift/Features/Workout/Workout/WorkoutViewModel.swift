@@ -7,7 +7,7 @@ import Observation
 final class WorkoutViewModel {
     private(set) var state = WorkoutState()
 
-    private let sessionID: UUID
+    let sessionID: UUID
     private let sessions: any SessionRepository
     let sets: any SetRepository
     private let router: any Navigating
@@ -23,7 +23,9 @@ final class WorkoutViewModel {
     /// The defaults for every workout (Workout settings): rest after each set, its length, alerts, the screen.
     private let preferences: any WorkoutPreferenceStore
     private let days: DayCalendar
-    private let now: @Sendable () -> Date  // today, and when a rest ran out
+    let now: @Sendable () -> Date  // today, and when a rest ran out
+    /// The workout timeline: every moment of the workout with its time (`WorkoutViewModel+Timeline`).
+    let events: any WorkoutEventRepository
     /// The latest session from the store; the source for the editor, Add set and rest times.
     @ObservationIgnored private(set) var detail: SessionDetail?
     /// Add, move and remove exercises, finish, discard and Save as template (`WorkoutViewModel+Session`).
@@ -37,6 +39,8 @@ final class WorkoutViewModel {
     /// Sets with a log, unlog or skip on the way, so a double tap writes once.
     @ObservationIgnored private var inFlight: Set<UUID> = []
     @ObservationIgnored private var serial = 0
+    /// The latest timeline write; each waits for the one before, so moments are stored in order.
+    @ObservationIgnored var recording: Task<Void, Never>?
 
     /// Protocols only, no defaults, no work (SCR-3).
     init(
@@ -52,10 +56,12 @@ final class WorkoutViewModel {
         health: any WorkoutHealthRecording,
         gym: any GymPreference,
         preferences: any WorkoutPreferenceStore,
+        events: any WorkoutEventRepository,
         now: @escaping @Sendable () -> Date,
         calendar: Calendar
     ) {
         self.sessionID = sessionID
+        self.events = events
         self.sessions = sessions
         self.sets = sets
         self.router = router
@@ -117,12 +123,18 @@ final class WorkoutViewModel {
             }
             guard let current = state.rest, current.run == rest.run else { return }
             state.rest = restActivity.tick(current)
-            if state.rest == nil { finishRest(after: current.setID) }
+            if state.rest == nil { finishRest(current) }
         }
     }
 
     @discardableResult
     func send(_ action: WorkoutAction) -> Task<Void, Never>? {
+        recordMoment(for: action)
+        return dispatch(action)
+    }
+
+    /// The write or screen change `action` asks for.
+    private func dispatch(_ action: WorkoutAction) -> Task<Void, Never>? {
         switch action {
         case .setLogTapped(let id): toggleLog(id)
         case .setSkipTapped(let id): skip(id)
@@ -167,6 +179,7 @@ final class WorkoutViewModel {
             state.settings?.preferences = changed
         case .pauseTapped:
             state.options = nil
+            if let rest = state.rest { record(.restSkipped, setID: rest.setID, seconds: rest.elapsed) }
             state.rest = nil  // a pause ends the rest, here and on the Lock Screen, with no "rest over" bar
             state.ready = nil
             restActivity.end()
@@ -208,10 +221,12 @@ final class WorkoutViewModel {
                 if isPlanned {
                     await resumeIfPaused()  // logging a set while paused picks the workout up again
                     _ = try await sets.log(setID: id)
+                    record(.setLogged, setID: id)
                     startRest(seconds: restSeconds, activity: activity, setID: id)
                     await startIfNeeded()
                 } else {
                     _ = try await sets.unlog(setID: id)
+                    record(.setUndone, setID: id)
                 }
             } catch {
                 showToast(.failed)
@@ -288,6 +303,7 @@ extension WorkoutViewModel {
     /// A new rest from full for the set just ticked, even while another is running; also on the Lock Screen.
     private func startRest(seconds: Int, activity: RestActivityStart?, setID: UUID) {
         state.beginRest(seconds: seconds, setID: setID)
+        if state.rest != nil { record(.restStarted, setID: setID, seconds: seconds) }
         if state.rest == nil { restActivity.end() } else { restActivity.start(seconds: seconds, activity: activity) }
     }
 
@@ -295,6 +311,7 @@ extension WorkoutViewModel {
     private func extendRest() {
         guard let rest = state.rest, let next = restActivity.extend(by: RestTimer.extensionSeconds) else { return }
         state.rest = rest.extended(by: next.totalSeconds - rest.total)
+        record(.restExtended, setID: rest.setID, seconds: next.totalSeconds - rest.total)
     }
 
     /// Skip here: the rest ends everywhere and the dock goes straight to the next set (or "Next exercise"), with no
@@ -308,9 +325,12 @@ extension WorkoutViewModel {
     /// Zero, or Skip on the Lock Screen: the countdown ends everywhere and the bar turns to the next set. "Rest over"
     /// counts from the rest's end, as on the Lock Screen, not from the tick that noticed it (ticks stop in the
     /// background, so that tick can come much later).
-    private func finishRest(after setID: UUID?) {
+    private func finishRest(_ rest: RestTimer) {
         let now = now()
-        state.readyNext(after: setID, at: min(restActivity.rest?.endsAt ?? now, now))
+        let endsAt = restActivity.rest?.endsAt ?? now
+        // Run out, not skipped on the Lock Screen (its button records that).
+        if endsAt <= now { record(.restEnded, setID: rest.setID, seconds: rest.total, at: endsAt) }
+        state.readyNext(after: rest.setID, at: min(endsAt, now))
         restActivity.end()
     }
 }

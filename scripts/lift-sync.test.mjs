@@ -372,6 +372,19 @@ test('push and pull: templates and their slots are entities like any other', asy
   assert.deepEqual(body.changes.map((c) => c.entity), ['template', 'templateExercise']);
 });
 
+test('push and pull: workout timeline events are an entity like any other', async () => {
+  const repo = createMemoryRepository();
+  const event = change({
+    entity: 'workoutEvent',
+    payload: { sessionID: uuid(), kind: 'restSkipped', occurredAt: '2026-10-27T19:45:12.345Z', seconds: 42, source: 'lockScreen' },
+  });
+  const { body: pushed } = await handlePush(pushReq([event]), repo);
+  assert.deepEqual(pushed.accepted, [event.idempotencyKey]);
+  assert.deepEqual(pushed.rejected, []);
+  const { body } = await handlePull(pullReq(), repo);
+  assert.deepEqual(body.changes.map((c) => [c.entity, c.payload.kind]), [['workoutEvent', 'restSkipped']]);
+});
+
 // --- Dashboard summaries ---
 
 test('dashboard: Epley, week starts, and session/weekly/exercise summaries', () => {

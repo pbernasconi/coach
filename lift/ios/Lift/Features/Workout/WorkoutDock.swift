@@ -15,6 +15,9 @@ struct WorkoutDock: View {
     var introducesExercise = false
     /// The rest logging the set starts, in seconds; 0 when none follows.
     var restAfterLog = 0
+    /// While resting between two exercises, the one just finished ("after Back squat"); the exercise below reads as
+    /// "Up next".
+    var restAfter: String? = nil
     let send: (WorkoutAction) -> Void
     /// Scrolls the page to a set.
     let onFocus: (UUID) -> Void
@@ -48,6 +51,7 @@ struct WorkoutDock: View {
                     content: content,
                     introducesExercise: introducesExercise,
                     restAfterLog: restAfterLog,
+                    restAfter: restAfter,
                     send: send,
                     onFocus: onFocus
                 )
@@ -67,18 +71,23 @@ private struct WorkoutDockCard: View {
     let content: WorkoutActivityAttributes.ContentState
     let introducesExercise: Bool
     let restAfterLog: Int
+    let restAfter: String?
     let send: (WorkoutAction) -> Void
     let onFocus: (UUID) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            WorkoutDockBand(phase: phase)
+            WorkoutDockBand(phase: phase, restAfter: restAfter)
             VStack(alignment: .leading, spacing: Space.sm) {
                 if showsHeader { WorkoutDockHeader(content: content, phase: phase) }
                 Button {
                     if let id = content.current?.id { onFocus(id) }
                 } label: {
-                    WorkoutDockNow(phase: phase, content: content, introducesExercise: introducesExercise)
+                    WorkoutDockNow(
+                        phase: phase,
+                        content: content,
+                        caption: caption
+                    )
                 }
                 .buttonStyle(.plain)
                 .accessibilityHint(Text("Scrolls to the set"))
@@ -117,6 +126,12 @@ private struct WorkoutDockCard: View {
     private var isResting: Bool {
         if case .resting = phase { return true }
         return false
+    }
+
+    /// "Up next" over the next exercise while resting after the last one; "Next exercise" when it is ready to start.
+    private var caption: LocalizedStringKey? {
+        if isResting { return restAfter == nil ? nil : "Up next" }
+        return introducesExercise ? "Next exercise" : nil
     }
 }
 
@@ -157,12 +172,13 @@ private struct WorkoutDockHeader: View {
 }
 
 /// The exercise and set to do now ("Back squat", dots, "Set 2"), with "Next exercise" above it when it opens a new
-/// one; on the right the load to lift, or a plain check once every set is done.
+/// one, or "Up next" while resting after the last exercise; on the right the load to lift, or a plain check once every
+/// set is done.
 private struct WorkoutDockNow: View {
     @Environment(\.koboTheme) private var theme
     let phase: WorkoutDockPhase
     let content: WorkoutActivityAttributes.ContentState
-    let introducesExercise: Bool
+    let caption: LocalizedStringKey?
 
     var body: some View {
         HStack(alignment: .center, spacing: Space.md) {
@@ -173,8 +189,8 @@ private struct WorkoutDockNow: View {
                     .accessibilityHidden(true)
             }
             VStack(alignment: .leading, spacing: Space.xxs) {
-                if introducesExercise {
-                    Text("Next exercise")
+                if let caption {
+                    Text(caption)
                         .font(theme.font(.caption).weight(.bold))
                         .textCase(.uppercase)
                         .foregroundStyle(theme.palette.accentText)
