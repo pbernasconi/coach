@@ -231,8 +231,45 @@ bool looksLikeQn(NimBLEAdvertisedDevice* d) {
          d->isAdvertisingService(kFFF0);
 }
 
+// Every Bluetooth device heard lately, for the status page: shows whether the scale is in range and how it
+// advertises when the bridge does not recognise it.
+struct Seen {
+  std::string mac, name, data;
+  int rssi;
+  uint32_t at;
+};
+constexpr size_t kSeenMax = 12;
+Seen seen[kSeenMax];
+SemaphoreHandle_t seenLock = xSemaphoreCreateMutex();
+
+void remember(NimBLEAdvertisedDevice* d) {
+  if (xSemaphoreTake(seenLock, 0) != pdTRUE) return;
+  const std::string mac = d->getAddress().toString();
+  size_t slot = kSeenMax;
+  for (size_t i = 0; i < kSeenMax && slot == kSeenMax; i++) if (seen[i].mac == mac) slot = i;
+  const bool fresh = slot == kSeenMax;
+  if (fresh) {  // a new device takes the oldest slot
+    slot = 0;
+    for (size_t i = 1; i < kSeenMax; i++) if (seen[i].at < seen[slot].at) slot = i;
+  }
+  Seen& e = seen[slot];
+  e.mac = mac;
+  if (d->haveName()) e.name = d->getName();
+  else if (fresh) e.name.clear();
+  if (d->haveManufacturerData()) {
+    const std::string m = d->getManufacturerData();
+    e.data = hexOf((const uint8_t*)m.data(), std::min<size_t>(m.size(), 24)).c_str();
+  } else {
+    e.data.clear();
+  }
+  e.rssi = d->getRSSI();
+  e.at = millis() | 1;
+  xSemaphoreGive(seenLock);
+}
+
 class ScanCallbacks : public NimBLEAdvertisedDeviceCallbacks {
   void onResult(NimBLEAdvertisedDevice* d) override {
+    remember(d);
     if (!d->haveManufacturerData() || wantConnect) return;
     const std::string m = d->getManufacturerData();
     const uint8_t* b = (const uint8_t*)m.data();
@@ -363,7 +400,19 @@ void handleRoot() {
   if (lastReading.weightKg > 0.f) {
     s += "Last reading: " + String(lastReading.weightKg, 2) + " kg, body fat " + String(lastReading.bodyFatPct, 1) + " %\n";
   }
-  s += "Uptime: " + String(millis() / 60000) + " min\n\nLog (newest last):\n";
+  s += "Uptime: " + String(millis() / 60000) + " min\n\nBluetooth heard in the last 5 min (step on the scale; it should appear here):\n";
+  if (xSemaphoreTake(seenLock, pdMS_TO_TICKS(100)) == pdTRUE) {
+    size_t n = 0;
+    for (const Seen& e : seen) {
+      if (e.at == 0 || millis() - e.at > 300000) continue;
+      n++;
+      s += "  " + String(e.mac.c_str()) + "  " + String(e.rssi) + " dBm  " + String((millis() - e.at) / 1000) + " s ago  " +
+           (e.name.empty() ? String("(no name)") : String(e.name.c_str())) + (e.data.empty() ? String("") : "  data " + String(e.data.c_str())) + "\n";
+    }
+    xSemaphoreGive(seenLock);
+    if (!n) s += "  nothing\n";
+  }
+  s += "\nLog (newest last):\n";
   for (size_t i = 0; i < kLogLines; i++) {
     const String& line = logRing[(logHead + i) % kLogLines];
     if (!line.isEmpty()) s += line + "\n";
