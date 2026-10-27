@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { checkProposalInput, cleanChanges, describeChanges, isStale, basisOf, newRuleIssues, planText, simulate } from './changes.mjs';
+import { addNote, checkProposalInput, cleanChanges, describeChanges, dropNote, fatigueIssues, isStale, basisOf, newRuleIssues, NOTES_HEADING, planText, simulate } from './changes.mjs';
 
 // Mon 26 Oct 2026: the day Paolo asked to move the heavy lift to Tuesday and run easy with David instead.
 const today = '2026-10-26';
@@ -133,4 +133,47 @@ test('the plan text names ids and states', () => {
   assert.match(text, /heavy {2}2026-10-26 Mon 17:00 {2}Heavy barbell .*\[TODAY\]/);
   assert.match(text, /VO2 B .*\[SKIPPED \(busy\)\]/);
   assert.equal(planText([], today), 'No workouts planned.');
+});
+
+test('a remember change is one line for Coaching preferences, shown on the card', () => {
+  const { changes, problems } = cleanChanges([{ op: 'remember', text: '  Never a run\n after a lift ' }, { op: 'remember', text: 'x' }], plan);
+  assert.equal(problems.length, 1);
+  assert.deepEqual(changes, [{ op: 'remember', text: 'Never a run after a lift' }]);
+  assert.deepEqual(describeChanges(changes, rows), [{ kind: 'added', title: 'Coaching preference', detail: 'Never a run after a lift' }]);
+  assert.deepEqual(simulate(rows, changes), rows);
+  assert.deepEqual(basisOf(changes, rows), {});
+});
+
+test('addNote puts lines under the chat heading and dropNote takes only that line out', () => {
+  const one = addNote('# Week\n- Bike club Thu\n', 'David runs Mondays');
+  assert.equal(one, `# Week\n- Bike club Thu\n\n${NOTES_HEADING}\n- David runs Mondays\n`);
+  const two = addNote(one, 'No lifts on travel days');
+  assert.match(two, /- David runs Mondays\n- No lifts on travel days\n$/);
+  assert.equal(addNote('', 'A'), `${NOTES_HEADING}\n- A\n`);
+  // A section after the chat one: the line still goes under the chat heading.
+  const mid = addNote(`${NOTES_HEADING}\n- A\n\n## Later\n- B\n`, 'C');
+  assert.match(mid, /- A\n- C\n\n## Later/);
+  assert.equal(dropNote(two, 'No lifts on travel days'), one);
+  assert.equal(dropNote(dropNote(two, 'No lifts on travel days'), 'David runs Mondays').trim(), '# Week\n- Bike club Thu');
+  assert.equal(dropNote('# Edited by hand\n', 'gone'), '# Edited by hand\n');
+});
+
+test('a tired skip of today must ease a quality session tomorrow', () => {
+  const tired = [{ op: 'skip', id: 'heavy', reason: 'tired' }];
+  assert.equal(fatigueIssues(rows, cleanChanges(tired, plan).changes, today).length, 1);
+  const first = checkProposalInput({ title: 'Rest today', why: 'Based on…', changes: tired }, plan, 1);
+  assert.equal(first.ok, false);
+  assert.ok(first.problems.some((p) => /fatigue: .*VO2 B/.test(p)));
+  // Easing tomorrow in the same card is fine.
+  const swapped = [...tired, { op: 'skip', id: 'vo2', reason: 'tired' }, { op: 'add', date: '2026-10-27', sport: 'run', startTime: '09:00', title: 'Easy run', duration: 40 }];
+  assert.deepEqual(fatigueIssues(rows, cleanChanges(swapped, plan).changes, today), []);
+  const moved = [...tired, { op: 'move', id: 'vo2', date: '2026-10-28' }];
+  assert.deepEqual(fatigueIssues(rows, cleanChanges(moved, plan).changes, today), []);
+  // Busy says nothing about fatigue; a later day's tired skip doesn't count either.
+  assert.deepEqual(fatigueIssues(rows, cleanChanges([{ op: 'skip', id: 'heavy', reason: 'busy' }], plan).changes, today), []);
+  assert.deepEqual(fatigueIssues(rows, cleanChanges([{ op: 'skip', id: 'upper', reason: 'sore' }], plan).changes, today), []);
+  // Kept on a second try (Paolo asked for it): a warning on the card.
+  const kept = checkProposalInput({ title: 'Rest today', why: 'He asked', changes: tired }, plan, 2);
+  assert.equal(kept.ok, true);
+  assert.ok(kept.value.warnings.some((w) => /fatigue/.test(w)));
 });

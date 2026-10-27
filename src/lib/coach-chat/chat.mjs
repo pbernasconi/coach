@@ -30,7 +30,8 @@ export const PROPOSE_TOOL = {
         description:
           'Each change is one of: { op: "move", id, date, startTime? } | { op: "skip", id, reason } | { op: "unskip", id } | ' +
           '{ op: "remove", id } | { op: "update", id, title?, duration?, effort?, description?, startTime? } | ' +
-          '{ op: "add", date, sport, startTime?, title, duration, effort?, description? }. Dates YYYY-MM-DD, times HH:MM, ' +
+          '{ op: "add", date, sport, startTime?, title, duration, effort?, description? } | { op: "remember", text } (a ' +
+          'lasting preference for his Coaching preferences, one line). Dates YYYY-MM-DD, times HH:MM, ' +
           'duration in minutes, effort recovery | easy | moderate | hard | very-hard, sport run | ride | swim | strength | ' +
           'walk | hike | yoga | rest | other. A skip reason is a short word: tired, sick, sore, busy, travel, other.',
         items: { type: 'object' },

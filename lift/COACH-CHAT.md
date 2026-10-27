@@ -55,11 +55,16 @@ request usually answers it:
 
 - `<now>`, `<plan>`: every workout from this Monday to the Sunday after next with its id and state (`planText`),
   and `<profile>`: the planner's profile for two weeks (calendar, readiness, recent sessions, Lift notes, goals).
-- One tool, `propose_changes({ title, why, changes })`, with `move`, `skip`, `unskip`, `update`, `add`, `remove`.
+- One tool, `propose_changes({ title, why, changes })`, with `move`, `skip`, `unskip`, `update`, `add`, `remove`
+  and `remember` (a lasting preference: on Apply it goes under "## From Coach chat" in Settings → Coaching
+  preferences, which the chat and the planner read; Undo takes only that line out).
   The server checks it (`checkProposalInput`): a bad id, a done workout, the past or a bad time goes back to fix; a
-  plan rule the changes newly break goes back once, then shows on the card as a warning. Up to 3 tries.
+  plan rule the changes newly break goes back once, then shows on the card as a warning. So does a skip of today for
+  tired, sore or sick that leaves a quality session today or tomorrow (`fatigueIssues`): the web's Skip eases the
+  next session by itself, a chat card must do it in its own rows. Up to 3 tries.
 
-The model never writes. The system prompt is coach-chat.md, coaching.md and plan-structure.md (cached).
+The model never writes. The system prompt is coach-chat.md, coaching.md, check-in.md (skips by reason, a missed
+lift moves once) and plan-structure.md (cached).
 
 ### Storage (new migration, DATABASE.md)
 

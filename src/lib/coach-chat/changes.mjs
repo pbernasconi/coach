@@ -5,8 +5,8 @@
 
 import { SPORT_IDS, EFFORTS } from '../plan/create.mjs';
 import { checkRules, sessionsFromRows } from '../plan/rules.mjs';
-import { SKIP_REASONS } from '../plan/skip.mjs';
-import { addDays, mondayOf } from '../plan/week.mjs';
+import { isFatigue, SKIP_REASONS } from '../plan/skip.mjs';
+import { addDays, isHard, mondayOf } from '../plan/week.mjs';
 
 /** At most this many changes in one card: a bigger change is a new plan, from the Plan page. */
 export const MAX_CHANGES = 10;
@@ -15,7 +15,9 @@ export const HORIZON_DAYS = 21;
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
-const OPS = new Set(['move', 'skip', 'unskip', 'add', 'remove', 'update']);
+const OPS = new Set(['move', 'skip', 'unskip', 'add', 'remove', 'update', 'remember']);
+/** A coaching preference Coach keeps (Settings → Coaching preferences), one line. */
+export const MAX_NOTE = 200;
 
 /**
  * A planned workout as Coach sees it (loadRange's workouts, server.ts `planRows`).
@@ -31,7 +33,8 @@ const OPS = new Set(['move', 'skip', 'unskip', 'add', 'remove', 'update']);
  *   | { op: 'remove', id: string }
  *   | { op: 'update', id: string, title?: string, duration?: number, effort?: string, description?: string, startTime?: string | null }
  *   | { op: 'add', date: string, sport: string, startTime: string | null, title: string, duration: number | null,
- *       effort: string, description: string }} Change
+ *       effort: string, description: string }
+ *   | { op: 'remember', text: string }} Change
  */
 /** A row of the card, as Kobo's ChangeItem: added, removed or changed. @typedef {{ kind: 'added' | 'removed' | 'changed', title: string, detail: string }} Item */
 
@@ -75,6 +78,12 @@ export function cleanChanges(raw, { rows, today }) {
       if (t == null || t === '') return { ok: true, value: null };
       return typeof t === 'string' && TIME.test(t) ? { ok: true, value: t } : { ok: false, value: null };
     };
+    if (op === 'remember') {
+      const text = str(b.text, MAX_NOTE + 1).replace(/\s+/g, ' ');
+      if (text.length < 3) return problems.push(`${at}: remember needs the preference as text`);
+      if (text.length > MAX_NOTE) return problems.push(`${at}: a preference is one line, at most ${MAX_NOTE} characters`);
+      return changes.push({ op: 'remember', text });
+    }
     if (op === 'add') {
       const sport = String(b.sport ?? '');
       if (!SPORT_IDS.includes(sport)) return problems.push(`${at}: sport must be one of ${SPORT_IDS.join(', ')}`);
@@ -155,6 +164,7 @@ const when = (/** @type {string} */ date, /** @type {string | null | undefined} 
 export function describeChanges(changes, rows) {
   const byId = new Map(rows.map((r) => [r.id, r]));
   return changes.map((c) => {
+    if (c.op === 'remember') return { kind: 'added', title: 'Coaching preference', detail: c.text };
     if (c.op === 'add') {
       const bits = [when(c.date, c.startTime), c.duration ? `${c.duration} min` : null, EFFORTS[/** @type {keyof typeof EFFORTS} */ (c.effort)]?.label];
       return { kind: 'added', title: c.title, detail: bits.filter(Boolean).join(' · ') };
@@ -188,6 +198,7 @@ export function describeChanges(changes, rows) {
 export function simulate(rows, changes) {
   let out = rows.map((r) => ({ ...r }));
   changes.forEach((c, i) => {
+    if (c.op === 'remember') return;
     if (c.op === 'add') {
       out.push({
         id: `new-${i}`, date: c.date, startTime: c.startTime, title: c.title, sport: c.sport, workoutType: null,
@@ -248,6 +259,62 @@ export function newRuleIssues(rows, changes, today) {
     for (const i of weekIssues(after, week, today)) if (!before.has(i.message)) out.push(`${i.id}: ${i.message}`);
   }
   return out;
+}
+
+/** The heading the chat's preferences go under in Settings → Coaching preferences. */
+export const NOTES_HEADING = '## From Coach chat';
+
+/**
+ * The coaching preferences with one more line from the chat, under NOTES_HEADING (added at the end when missing).
+ * @param {string} notes @param {string} text
+ */
+export function addNote(notes, text) {
+  const line = `- ${text}`;
+  const lines = String(notes ?? '').replace(/\s+$/, '').split('\n');
+  const at = lines.indexOf(NOTES_HEADING);
+  if (at < 0) return [...(lines.join('\n').trim() ? [...lines, ''] : []), NOTES_HEADING, line].join('\n') + '\n';
+  let end = at + 1;
+  while (end < lines.length && !/^#{1,2} /.test(lines[end])) end++;
+  while (end > at + 1 && !lines[end - 1].trim()) end--;
+  lines.splice(end, 0, line);
+  return lines.join('\n') + '\n';
+}
+
+/**
+ * The preferences without that line (Undo of a remember). Paolo may have edited the rest since: only the line goes.
+ * @param {string} notes @param {string} text
+ */
+export function dropNote(notes, text) {
+  const lines = String(notes ?? '').split('\n');
+  const at = lines.lastIndexOf(`- ${text}`);
+  if (at < 0) return String(notes ?? '');
+  lines.splice(at, 1);
+  const h = lines.indexOf(NOTES_HEADING);
+  // An empty heading goes too.
+  if (h >= 0 && (h + 1 >= lines.length || /^#{1,2} /.test(lines[h + 1]) || lines.slice(h + 1).every((l) => !l.trim()))) {
+    lines.splice(h, 1);
+  }
+  return lines.join('\n').replace(/\n{3,}/g, '\n\n').replace(/^\s+$/, '');
+}
+
+/**
+ * A skip of today's workout for tired, sore or sick is a fatigue signal (check-in.md): the web's Skip then eases the
+ * next quality session, so a chat card must too. Returns a problem for each quality session still on today or
+ * tomorrow after such a skip.
+ * @param {PlanRow[]} rows @param {Change[]} changes @param {string} today
+ * @returns {string[]}
+ */
+export function fatigueIssues(rows, changes, today) {
+  const tiredSkip = changes.find((c) => {
+    if (c.op !== 'skip' || !isFatigue(c.reason)) return false;
+    return rows.find((r) => r.id === c.id)?.date === today;
+  });
+  if (!tiredSkip || tiredSkip.op !== 'skip') return [];
+  const after = simulate(rows, changes);
+  const tomorrow = addDays(today, 1);
+  return after
+    .filter((r) => (r.date === today || r.date === tomorrow) && r.status !== 'skipped' && r.state !== 'done' && isHard(r))
+    .map((r) => `fatigue: today is skipped for ${tiredSkip.reason}, but ${r.title} (${dayLabel(r.date)}) is still a quality session; move it a day later, or skip it and add an easy session in its place`);
 }
 
 /**
@@ -314,7 +381,7 @@ export function checkProposalInput(input, plan, attempt) {
   const { changes, problems } = cleanChanges(input?.changes, plan);
   if (!title) problems.unshift('title is missing');
   if (problems.length) return { ok: false, problems };
-  const warnings = newRuleIssues(plan.rows, changes, plan.today);
+  const warnings = [...newRuleIssues(plan.rows, changes, plan.today), ...fatigueIssues(plan.rows, changes, plan.today)];
   if (warnings.length && attempt <= 1) {
     return {
       ok: false,
