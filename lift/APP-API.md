@@ -909,7 +909,8 @@ apart from the planner's.
   `answering` true while the last message is Paolo's, has no reply yet and is under 2.5 minutes old (the app left
   while it waited): show the typing row and read again every few seconds. `ready` false (with `notice`) when there
   is no API key or the month's budget is used; `suggestions` are quick prompts.
-- `POST /api/app/coach/messages?tz=` `{ text }` (1–2000 characters) → `{ threadId, message, reply }`, once Claude is
+- `POST /api/app/coach/messages?tz=` `{ text, files? }` (up to 2000 characters; empty only with `files`, the ids of
+  up to 6 uploads, below) → `{ threadId, message, reply }`, once Claude is
   done (5–30 s). With `Accept: text/event-stream` the answer streams instead (below). A Claude failure is a reply
   that says so, not an error. The answer is finished and
   stored even if the app hangs up (it went to the background), and every reply sends a `coach.replied` push
@@ -978,6 +979,31 @@ Coach saw then. A card that can't be filled is left out. At most 2 per answer.
              { "start": "09:00", "end": "10:15", "kind": "session", "title": "Heavy barbell", "workoutId": "wqw…" },
              { "start": "13:30", "end": "15:00", "kind": "busy", "title": "Call with Rafael", "workoutId": null }] } }
 ```
+
+#### Coach attachments
+
+Paolo can attach photos and files to a message (the composer's + button). Each one is uploaded on its own first,
+then the message names the ids. Claude sees photos as images, PDFs as documents and text files as text; the newest 6
+of the thread go with every later message too, older ones as a line ("[Paolo attached a photo]").
+
+- `POST /api/app/coach/files` with the file itself as the body (not JSON), at most 4 MB → `201 { file }`. Headers:
+  `Content-Type` (`image/jpeg`, `image/png`, `image/gif`, `image/webp`, `application/pdf`, `text/plain`, `text/csv`,
+  `text/markdown`, `application/json`), `X-File-Name` (percent-encoded) and, for a photo, `X-Image-Width` and
+  `X-Image-Height`. The server checks the bytes, not only the header: `415` for anything else (HEIC: convert to JPEG
+  first), `413` over 4 MB. Shrink a photo to 1568 px on its long side, JPEG at about 0.8 (Claude reads no more
+  detail than that). An upload no message takes within a day is deleted.
+- `GET /api/app/coach/files/{id}` → the bytes, with their `Content-Type` (cacheable for a day).
+
+Every message has `files`, `[]` when none:
+
+```json
+{ "id": "m1…", "role": "user", "text": "Is this stretch right?", "files": [
+  { "id": "f3…", "kind": "image", "name": "Photo", "contentType": "image/jpeg", "sizeBytes": 412880, "width": 1179, "height": 1568 },
+  { "id": "f4…", "kind": "pdf", "name": "Physio plan.pdf", "contentType": "application/pdf", "sizeBytes": 220114, "width": null, "height": null }
+] }
+```
+
+`kind` is `image`, `pdf` or `text`.
 
 ### Workout: `GET /api/app/workouts/{ref}?tz=`
 

@@ -17,6 +17,8 @@ import { resolveCards, type Attachment } from './cards';
 import { checkProposalInput, isStale, planText, type Change, type Item } from './changes.mjs';
 import { chatMessages, chatRequest, chatWithClaude, EFFORT, MODEL, type ChatEvent, type Turn } from './chat.mjs';
 import { ApplyError, applyAll, planRows, undoAll, type Undo } from './writes';
+import { fileBlock, fileNote, filesPhrase, filesToSend, type FileData, type FileRef } from './files.mjs';
+import { claimFiles, fileData, unclaimedFiles } from './files-store';
 import { CHAT_MONTHLY_CAP_USD, SUGGESTIONS, chatContext, chatSystemPrompt } from './prompt.mjs';
 
 type Row = Record<string, unknown>;
@@ -36,6 +38,8 @@ export type ProposalView = {
 export type MessageView = {
   id: string; role: 'user' | 'assistant'; text: string; createdAt: string | null; proposal: ProposalView | null;
   attachments: Attachment[]; quickReplies: string[];
+  /** The photos and files on Paolo's message (files.mjs); the phone reads each from GET /api/app/coach/files/{id}. */
+  files: FileRef[];
 };
 
 /** This month's chat spend, in USD. */
@@ -73,7 +77,7 @@ function proposalView(p: Row): ProposalView {
 
 async function threadMessages(threadId: string): Promise<MessageView[]> {
   const rows = (await sql`
-    SELECT m.id, m.role, m.text, m.created_at, m.attachments, m.quick_replies,
+    SELECT m.id, m.role, m.text, m.created_at, m.attachments, m.quick_replies, m.files,
            p.id AS p_id, p.title, p.why, p.items, p.warnings, p.status
     FROM coach_messages m LEFT JOIN coach_proposals p ON p.id = m.proposal_id
     WHERE m.thread_id = ${threadId} ORDER BY m.created_at, m.id`) as Row[];
@@ -82,6 +86,7 @@ async function threadMessages(threadId: string): Promise<MessageView[]> {
     proposal: r.p_id ? proposalView({ ...r, id: r.p_id }) : null,
     attachments: (r.attachments as Attachment[] | null) ?? [],
     quickReplies: (r.quick_replies as string[] | null) ?? [],
+    files: (r.files as FileRef[] | null) ?? [],
   }));
 }
 
@@ -112,30 +117,35 @@ export async function loadCoach(userId: string) {
 
 type Extra = {
   proposalId?: string | null; costUsd?: number; model?: string | null; context?: string | null; meta?: Record<string, unknown> | null;
-  attachments?: Attachment[]; quickReplies?: string[];
+  attachments?: Attachment[]; quickReplies?: string[]; files?: FileRef[];
 };
 
 async function addMessage(threadId: string, userId: string, role: 'user' | 'assistant', text: string, extra: Extra = {}) {
   const id = createId();
   const [r] = (await sql`
-    INSERT INTO coach_messages (id, thread_id, user_id, role, text, proposal_id, model, cost_usd, context, meta, attachments, quick_replies)
+    INSERT INTO coach_messages (id, thread_id, user_id, role, text, proposal_id, model, cost_usd, context, meta, attachments, quick_replies, files)
     VALUES (${id}, ${threadId}, ${userId}, ${role}, ${text}, ${extra.proposalId ?? null}, ${extra.model ?? null},
             ${extra.costUsd ?? 0}, ${extra.context ?? null}, ${extra.meta ? JSON.stringify(extra.meta) : null}::jsonb,
             ${extra.attachments?.length ? JSON.stringify(extra.attachments) : null}::jsonb,
-            ${extra.quickReplies?.length ? JSON.stringify(extra.quickReplies) : null}::jsonb)
+            ${extra.quickReplies?.length ? JSON.stringify(extra.quickReplies) : null}::jsonb,
+            ${extra.files?.length ? JSON.stringify(extra.files) : null}::jsonb)
     RETURNING created_at`) as Row[];
   await sql`UPDATE coach_threads SET updated_at = NOW() WHERE id = ${threadId}`;
   return { id, createdAt: toIso(r?.created_at) };
 }
 
-/** The thread so far as Claude reads it: each card as a line under its message. */
-function historyOf(messages: MessageView[]): Turn[] {
+/**
+ * The thread so far as Claude reads it: each card as a line under its message. The newest photos and files come again
+ * in full (`data` has their bytes); older ones are a line each.
+ */
+function historyOf(messages: MessageView[], data: Map<string, FileData> = new Map()): Turn[] {
   return messages.map((m) => {
-    const lines = [m.text];
+    const blocks = m.files.flatMap((f) => (data.has(f.id) ? [fileBlock(data.get(f.id)!)] : []));
+    const lines = [...m.files.filter((f) => !data.has(f.id)).map(fileNote), m.text].filter(Boolean);
     for (const a of m.attachments) lines.push(`[Showed a ${a.kind} card]`);
     if (m.quickReplies.length) lines.push(`[Offered: ${m.quickReplies.join(' | ')}]`);
     if (m.proposal) lines.push(`[Card "${m.proposal.title}": ${m.proposal.status}]`);
-    return { role: m.role, text: lines.join('\n') };
+    return { role: m.role, text: lines.join('\n'), ...(blocks.length ? { blocks } : {}) };
   });
 }
 
@@ -165,7 +175,9 @@ function timed<T>(p: Promise<T>, into: Record<string, number>, key: string, star
  * a Claude failure: the answer says what went wrong, so the phone shows it in the thread. `onEvent` hears each step
  * as it happens (the stored message, reading, thinking, the reply's words), for the streaming answer.
  */
-export async function sendMessage(userId: string, text: string, today: string, timeZone: string, onEvent?: (e: CoachEvent) => void) {
+export async function sendMessage(
+  userId: string, text: string, today: string, timeZone: string, onEvent?: (e: CoachEvent) => void, fileIds: string[] = [],
+) {
   const started = Date.now();
   const emit = (e: CoachEvent) => { try { onEvent?.(e); } catch { /* the phone hung up */ } };
   emit({ type: 'status', step: 'reading' });
@@ -180,9 +192,13 @@ export async function sendMessage(userId: string, text: string, today: string, t
     threadId = createId();
     await sql`INSERT INTO coach_threads (id, user_id) VALUES (${threadId}, ${userId})`;
   }
-  const before = await threadMessages(threadId);
-  const mine = await addMessage(threadId, userId, 'user', text);
-  const message: MessageView = { id: mine.id, role: 'user', text, createdAt: mine.createdAt, proposal: null, attachments: [], quickReplies: [] };
+  const [before, files] = await Promise.all([threadMessages(threadId), unclaimedFiles(userId, fileIds)]);
+  const mine = await addMessage(threadId, userId, 'user', text, { files });
+  await claimFiles(userId, mine.id, files.map((f) => f.id));
+  const message: MessageView = { id: mine.id, role: 'user', text, createdAt: mine.createdAt, proposal: null, attachments: [], quickReplies: [], files };
+  // The photos Claude sees in full: this message's, then the newest earlier ones.
+  const shown = filesToSend([...before, message]);
+  const dataP = early(fileData(userId, [...before, message].flatMap((m) => m.files).filter((f) => shown.has(f.id))));
   emit({ type: 'message', message });
   let prepMs: number | null = null;
   // Every answer is kept with what led to it (the context, the tries, tokens, time), for analysis later.
@@ -191,7 +207,7 @@ export async function sendMessage(userId: string, text: string, today: string, t
     const saved = await addMessage(threadId, userId, 'assistant', reply, { ...extra, proposalId: proposal?.id ?? null, meta });
     const view: MessageView = {
       id: saved.id, role: 'assistant', text: reply, createdAt: saved.createdAt, proposal,
-      attachments: extra.attachments ?? [], quickReplies: extra.quickReplies ?? [],
+      attachments: extra.attachments ?? [], quickReplies: extra.quickReplies ?? [], files: [],
     };
     return { threadId, message, reply: view };
   };
@@ -201,16 +217,17 @@ export async function sendMessage(userId: string, text: string, today: string, t
 
   let context: string | null = null;
   try {
-    const [rows, profile] = await Promise.all([rowsP, profileP]);
+    const [rows, profile, data] = await Promise.all([rowsP, profileP, dataP]);
     const system = chatSystemPrompt();
     context = chatContext({ today, time: clockIn(timeZone), timeZone, plan: planText(rows, today), profileMd: profile.md });
     prepMs = Date.now() - started;
     const result = await chatWithClaude({
       client: new Anthropic({ timeout: 100_000, maxRetries: 1 }),
       system,
-      history: historyOf(before),
+      history: historyOf(before, data),
       context,
-      text,
+      text: text || `(Paolo sent ${filesPhrase(files)} with no words.)`,
+      files: files.map((f): object => (data.has(f.id) ? fileBlock(data.get(f.id)!) : { type: 'text', text: fileNote(f) })),
       check: (input, attempt) => checkProposalInput(input, { rows, today, templates: templateNames(profile) }, attempt),
       checkCard: (input) => checkCard(input, { rows, today }),
       deadline: started + BUDGET_MS,

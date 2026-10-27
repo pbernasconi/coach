@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { check, date, doublePrecision, index, integer, jsonb, pgTable, primaryKey, smallint, text, timestamp } from 'drizzle-orm/pg-core';
+import { check, customType, date, doublePrecision, index, integer, jsonb, pgTable, primaryKey, smallint, text, timestamp } from 'drizzle-orm/pg-core';
 
 /**
  * Cloud plan requests and the plans they propose (src/lib/plan/proposals.ts, src/lib/planner/run.ts).
@@ -158,6 +158,8 @@ export const coachMessages = pgTable(
     attachments: jsonb('attachments'),
     /** One-tap answers under an answer's question. */
     quickReplies: jsonb('quick_replies'),
+    /** The photos and files on Paolo's message (src/lib/coach-chat/files.mjs `FileRef`); the bytes are in coach_files. */
+    files: jsonb('files'),
     createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
   },
   (t) => [
@@ -191,5 +193,36 @@ export const coachProposals = pgTable(
   (t) => [
     index('coach_proposals_thread_idx').on(t.threadId),
     check('coach_proposals_status_check', sql`${t.status} IN ('open', 'applied', 'undone', 'dismissed', 'stale')`),
+  ],
+);
+
+/** Postgres bytea. The code reads it as base64 (`encode(data, 'base64')`), the same text with either driver. */
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({ dataType: () => 'bytea' });
+
+/**
+ * A photo or file Paolo attached to a Coach message (lift/COACH-CHAT.md, "Attachments"). The phone uploads it first
+ * (POST /api/app/coach/files, shrunk to about 1 MB for a photo), then sends the message with its id: `message_id` is
+ * set then. An upload no message took within a day is deleted. `kind` is what the bytes are (files.mjs `sniffFile`).
+ */
+export const coachFiles = pgTable(
+  'coach_files',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id').notNull(),
+    messageId: text('message_id'),
+    kind: text('kind').notNull(),
+    name: text('name').notNull(),
+    contentType: text('content_type').notNull(),
+    sizeBytes: integer('size_bytes').notNull(),
+    sha256: text('sha256').notNull(),
+    width: integer('width'),
+    height: integer('height'),
+    data: bytea('data').notNull(),
+    createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('coach_files_user_created_idx').on(t.userId, t.createdAt),
+    index('coach_files_message_idx').on(t.messageId),
+    check('coach_files_kind_check', sql`${t.kind} IN ('image', 'pdf', 'text')`),
   ],
 );
