@@ -73,6 +73,20 @@ lift moves once) and plan-structure.md (cached).
 - `coach_proposals`: `id`, `thread_id`, `title`, `why`, `changes` jsonb (the ops and what each workout looked
   like), `items` and `warnings` jsonb (the card), `status` (`open | applied | undone | dismissed | stale`), `undo` jsonb. A proposal is stale when a workout it touches changed after it.
 - Cost: each Coach message stores its `cost_usd`; the chat stops at $10 a month (`CHAT_MONTHLY_CAP_USD`).
+- Kept for analysis (migration 0020): every message, and with each answer `context` (the `<now>`, `<plan>` and
+  `<profile>` Claude got) and `meta` jsonb: `stop`, `turns`, `usage` (tokens and USD), `latencyMs`, `attempts` (each
+  `propose_changes` input and the problems the check sent back), `prompt` (a hash of the system prompt), `error`.
+  A card's outcome is its proposal's `status` and `decided_at`. One row per answer with its card:
+
+  ```sql
+  SELECT u.text AS asked, a.text AS answer, p.title, p.status, p.decided_at, a.cost_usd,
+         a.meta->>'latencyMs' AS ms, jsonb_array_length(COALESCE(a.meta->'attempts', '[]')) AS tries
+  FROM coach_messages a
+  JOIN LATERAL (SELECT text FROM coach_messages u WHERE u.thread_id = a.thread_id AND u.role = 'user'
+                AND u.created_at <= a.created_at ORDER BY u.created_at DESC LIMIT 1) u ON true
+  LEFT JOIN coach_proposals p ON p.id = a.proposal_id
+  WHERE a.role = 'assistant' ORDER BY a.created_at;
+  ```
 
 ### App API (new sections in APP-API.md)
 

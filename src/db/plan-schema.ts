@@ -136,7 +136,8 @@ export const coachThreads = pgTable(
 
 /**
  * One message of a Coach thread. An assistant message can carry a proposal. `cost_usd` is what its Claude calls cost:
- * the chat's monthly cap (src/lib/coach-chat/cost.mjs) adds it up.
+ * the chat's monthly cap (src/lib/coach-chat/cost.mjs) adds it up. Every message is kept, with an answer's context and
+ * meta, so the conversations can be analysed later.
  */
 export const coachMessages = pgTable(
   'coach_messages',
@@ -149,6 +150,10 @@ export const coachMessages = pgTable(
     proposalId: text('proposal_id'),
     model: text('model'),
     costUsd: doublePrecision('cost_usd').notNull().default(0),
+    /** An answer's context as Claude got it (<now>, <plan>, <profile>), kept for analysis. */
+    context: text('context'),
+    /** How an answer came about: stop reason, turns, tokens, latency, every propose_changes try and its problems. */
+    meta: jsonb('meta'),
     createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
   },
   (t) => [

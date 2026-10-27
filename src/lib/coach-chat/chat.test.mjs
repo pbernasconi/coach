@@ -49,6 +49,8 @@ test('problems go back to Claude, and the repaired card is kept', async () => {
   const r = await chatWithClaude({ ...base, client, check });
   assert.equal(r.stop, 'proposed');
   assert.deepEqual(r.proposal, { v: 2 });
+  // Every try is kept for analysis, with what the check said.
+  assert.deepEqual(r.attempts, [{ input: { v: 1 }, problems: ['R3: heavy lift on a VO2 day'] }, { input: { v: 2 }, problems: null }]);
   const back = client.calls[1].messages.at(-1).content[0];
   assert.equal(back.is_error, true);
   assert.match(back.content, /R3: heavy lift/);
