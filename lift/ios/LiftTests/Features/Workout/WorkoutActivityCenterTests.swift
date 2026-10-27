@@ -271,6 +271,31 @@ import Testing
         #expect(presenter.shown == state)
     }
 
+    @Test func skipAfterARelaunchClearsTheRestBeforeTheWorkoutLoads() async {
+        var state = WorkoutActivityAttributes.ContentState(
+            overview: WorkoutOverview(
+                detail: started,
+                days: DayCalendar(calendar: SessionBuilder.calendar),
+                previous: [:],
+                gym: .standard
+            ),
+            currentSetID: sets[1].id,
+            rest: nil
+        )
+        let attributes = WorkoutActivityAttributes(sessionID: started.id, title: "Lower A")
+        let resting = RestSnapshot(endsAt: ManualNow.start.addingTimeInterval(60), totalSeconds: 90)
+        state.rest = resting
+        presenter.leftRunning = (attributes, state)
+        let center = makeCenter([started])
+
+        await center.skipRest()
+
+        var skipped = state
+        skipped.rest = nil
+        #expect(presenter.calls.first == .show(attributes, skipped))  // straight from what the Lock Screen showed
+        #expect(presenter.shown?.rest == nil)
+    }
+
     @Test func resumeEndsTheActivityOfAFinishedWorkout() async {
         presenter.leftRunning = (
             WorkoutActivityAttributes(sessionID: started.id, title: "Lower A"),

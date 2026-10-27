@@ -158,6 +158,10 @@ final class WorkoutActivityCenter: RestActivityController {
 
     /// +30s on the rest, while there is one left.
     func extendRest() async {
+        let at = now()
+        await showAtOnce { state in
+            if let longer = state.rest?.extended(by: RestSnapshot.extensionSeconds, at: at) { state.rest = longer }
+        }
         await loadRunning()
         guard let next = rest?.extended(by: RestSnapshot.extensionSeconds, at: now()) else { return }
         rest = next
@@ -166,9 +170,22 @@ final class WorkoutActivityCenter: RestActivityController {
 
     /// Skip: the rest is over now; the workout stays.
     func skipRest() async {
+        await showAtOnce { $0.rest = nil }
         await loadRunning()
         rest = nil
         await publishNow()
+    }
+
+    /// Changes what the Live Activity shows now at once, before the workout is read from the store, so the tap shows
+    /// on the Lock Screen straight away. A button that launched Lift, or found it suspended, would otherwise wait for
+    /// the app to start and the workout to load first, which felt broken (Paolo, 2026-10-27). The full publish that
+    /// follows draws the same thing from the store.
+    private func showAtOnce(_ change: (inout WorkoutActivityAttributes.ContentState) -> Void) async {
+        guard let running = presenter.running() else { return }
+        var state = running.state
+        change(&state)
+        guard state != running.state else { return }
+        await presenter.show(running.attributes, state: state)
     }
 
     // MARK: Following the workout
