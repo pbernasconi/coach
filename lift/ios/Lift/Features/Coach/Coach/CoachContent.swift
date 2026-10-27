@@ -2,6 +2,7 @@ import KoboComponents
 import KoboPatterns
 import KoboTokens
 import SwiftUI
+import UIKit
 
 /// Dumb view: the conversation, the reply in progress, and the composer (SCR-2).
 struct CoachContent: View {
@@ -15,6 +16,7 @@ struct CoachContent: View {
                 message: message,
                 busyProposal: state.busyProposal,
                 media: state.media,
+                previews: state.previews,
                 showsQuickReplies: message.id == state.messages.last?.id && state.phase == .idle,
                 send: send
             )
@@ -31,36 +33,92 @@ struct CoachContent: View {
         }
         .timestamps(\.sentAt)
         .onTranscriptTap { isComposing = false }
-        .safeAreaBar(edge: .bottom) {
-            VStack(spacing: 0) {
-                if state.messages.isEmpty, state.phase == .idle {
-                    // At most three starters, in one row docked above the field; a tap fills it.
-                    ChatPromptSuggestions(Array(state.prompts.prefix(3))) { prompt in
-                        send(.promptPicked(prompt))
-                        isComposing = true
-                    }
-                }
-                ChatComposer(
-                    text: .action(state.draft) { send(.draftChanged($0)) },
-                    prompt: "Message Coach",
-                    isResponding: state.isResponding,
-                    onSend: { send(.sendTapped) },
-                    onStop: { send(.stopTapped) },
-                    voice: ChatVoice(
-                        phase: state.voice.phase,
-                        level: state.voiceLevel,
-                        onTap: { send(.micTapped) },
-                        onHoldBegan: { send(.micHoldBegan) },
-                        onHoldEnded: { send(.micHoldEnded) },
-                        onOpenSettings: { send(.voiceSettingsTapped) }
-                    )
-                )
-                .focused(by: $isComposing)
-            }
-        }
+        .safeAreaBar(edge: .bottom) { CoachComposerBar(state: state, send: send, isComposing: $isComposing) }
+        .chatAttachPicker(
+            isPresented: .action(state.isAttaching) { send(.attachShown($0)) },
+            limit: CoachState.attachmentLimit - state.attachments.count
+        ) { send(.filesPicked($0)) }
         .screenCanvas()
         .navigationTitle("Coach")
         .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+/// The starter prompts (on an empty conversation) and the composer with its microphone and +.
+private struct CoachComposerBar: View {
+    let state: CoachState
+    let send: (CoachAction) -> Void
+    var isComposing: FocusState<Bool>.Binding
+
+    var body: some View {
+        VStack(spacing: 0) {
+            if state.messages.isEmpty, state.phase == .idle, state.attachments.isEmpty {
+                // At most three starters, in one row docked above the field; a tap fills it.
+                ChatPromptSuggestions(Array(state.prompts.prefix(3))) { prompt in
+                    send(.promptPicked(prompt))
+                    isComposing.wrappedValue = true
+                }
+            }
+            ChatComposer(
+                text: .action(state.draft) { send(.draftChanged($0)) },
+                prompt: "Message Coach",
+                isResponding: state.isResponding,
+                onSend: { send(.sendTapped) },
+                onStop: { send(.stopTapped) },
+                voice: ChatVoice(
+                    phase: state.voice.phase,
+                    level: state.voiceLevel,
+                    onTap: { send(.micTapped) },
+                    onHoldBegan: { send(.micHoldBegan) },
+                    onHoldEnded: { send(.micHoldEnded) },
+                    onOpenSettings: { send(.voiceSettingsTapped) }
+                ),
+                attach: ChatAttach(
+                    items: state.attachments,
+                    preview: { CoachPicture.image(state.previews[$0.id]) },
+                    onAdd: { send(.attachShown(true)) },
+                    onRemove: { send(.attachmentRemoved($0.id)) },
+                    onRetry: { send(.attachmentRetried($0.id)) },
+                    canAdd: state.attachments.count < CoachState.attachmentLimit
+                )
+            )
+            .focused(by: isComposing)
+        }
+    }
+}
+
+/// A tile's picture from its JPEG bytes.
+enum CoachPicture {
+    static func image(_ data: Data?) -> Image? {
+        data.flatMap(UIImage.init(data:)).map(Image.init(uiImage:))
+    }
+}
+
+/// Paolo's message: the photos and files on it, then the bubble (none for photos sent without words).
+private struct CoachMineRow: View {
+    let text: String
+    let files: [CoachFile]
+    let previews: [String: Data]
+    let send: (CoachAction) -> Void
+
+    var body: some View {
+        VStack(alignment: .trailing, spacing: Space.xs) {
+            if !files.isEmpty {
+                ChatAttachmentStrip(
+                    files.map(\.attachment),
+                    size: .regular,
+                    alignment: .trailing,
+                    preview: { CoachPicture.image(previews[$0.id]) }
+                )
+                .onAppear {
+                    for file in files where file.kind == .image && previews[file.id] == nil {
+                        send(.filePreviewNeeded(file.id))
+                    }
+                }
+            }
+            if !text.isEmpty { ChatMessageBubble(verbatim: text) }
+        }
+        .frame(maxWidth: .infinity, alignment: .trailing)
     }
 }
 
@@ -69,6 +127,7 @@ private struct CoachMessageRow: View {
     let message: CoachMessage
     let busyProposal: String?
     let media: [URL: MediaImage]
+    let previews: [String: Data]
     /// Quick replies show only under the latest reply, while nothing is on its way.
     let showsQuickReplies: Bool
     let send: (CoachAction) -> Void
@@ -76,7 +135,7 @@ private struct CoachMessageRow: View {
     var body: some View {
         switch message.body {
         case .mine(let text):
-            ChatMessageBubble(verbatim: text)
+            CoachMineRow(text: text, files: message.files, previews: previews, send: send)
         case .coach(let reply):
             VStack(alignment: .leading, spacing: Space.md) {
                 if !reply.steps.isEmpty {

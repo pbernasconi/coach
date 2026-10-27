@@ -1,3 +1,4 @@
+import Foundation
 import KoboComponents
 import UIKit
 
@@ -15,7 +16,15 @@ nonisolated struct BackgroundCoachChat: CoachChatting {
     }
 
     func replies(to text: String, after history: [CoachMessage]) -> AsyncThrowingStream<CoachReplyEvent, any Error> {
-        let stream = base.replies(to: text, after: history)
+        replies(to: text, files: [], after: history)
+    }
+
+    func replies(
+        to text: String,
+        files: [CoachFile],
+        after history: [CoachMessage]
+    ) -> AsyncThrowingStream<CoachReplyEvent, any Error> {
+        let stream = base.replies(to: text, files: files, after: history)
         return AsyncThrowingStream { continuation in
             let task = Task {
                 let time = await BackgroundTime.begin("Coach reply")
@@ -30,6 +39,10 @@ nonisolated struct BackgroundCoachChat: CoachChatting {
             continuation.onTermination = { _ in task.cancel() }
         }
     }
+
+    func upload(_ file: ChatPickedFile) async throws -> CoachFile { try await base.upload(file) }
+
+    func fileData(_ id: String) async throws -> Data { try await base.fileData(id) }
 
     func apply(_ proposalID: String) async throws -> ChatActionStatus { try await base.apply(proposalID) }
 

@@ -24,6 +24,20 @@ nonisolated enum CoachWire {
         let attachments: Attachments?
         /// One-tap answers when Coach asks a question.
         let quickReplies: [String]?
+        /// The photos and files on Paolo's message; missing in bodies from before they existed.
+        let files: [File]?
+    }
+
+    /// A photo or file on a message (lift/APP-API.md, "Coach attachments").
+    struct File: Decodable, Sendable {
+        let id: String
+        let kind: String
+        let name: String
+    }
+
+    /// `POST /api/app/coach/files`: the stored upload.
+    struct Upload: Decodable, Sendable {
+        let file: File
     }
 
     /// A message's cards, each decoded on its own: one this build cannot read is dropped and the rest stay.
@@ -80,13 +94,19 @@ nonisolated enum CoachWire {
                     quickReplies: wire.quickReplies ?? []
                 )
             )
-        return CoachMessage(id: wire.id, body: body, sentAt: wire.createdAt.flatMap(date))
+        return CoachMessage(
+            id: wire.id, body: body, sentAt: wire.createdAt.flatMap(date), files: (wire.files ?? []).map(file))
     }
 
     /// The server's timestamps, with or without fractional seconds.
     static func date(_ text: String) -> Date? {
         (try? Date(text, strategy: Date.ISO8601FormatStyle(includingFractionalSeconds: true)))
             ?? (try? Date(text, strategy: .iso8601))
+    }
+
+    /// A photo is a picture tile; a PDF or a text file a page tile.
+    static func file(_ wire: File) -> CoachFile {
+        CoachFile(id: wire.id, kind: wire.kind == "image" ? .image : .file, name: wire.name)
     }
 
     static func proposal(_ wire: Proposal) -> CoachProposal {

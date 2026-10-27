@@ -16,6 +16,7 @@ final class CoachViewModel {
     private let clock: any Clock<Duration>
     private let settings: any AppSettingsOpening
     private let presence: CoachPresence
+    @ObservationIgnored private var uploads: CoachUploads?
     private var replyTask: Task<Void, Never>?
     private var pollTask: Task<Void, Never>?
     /// The draft before listening began, and the words heard since.
@@ -42,6 +43,7 @@ final class CoachViewModel {
         self.clock = clock
         self.settings = settings
         self.presence = presence
+        uploads = CoachUploads(coach: coach) { [weak self] change in self.map { change(&$0.state) } }
     }
 
     /// Reads the conversation (each time the tab shows). A failure keeps what is on screen and shows the reason.
@@ -63,15 +65,10 @@ final class CoachViewModel {
         case .promptPicked(let prompt):
             state.draft = prompt.title
         case .sendTapped:
-            let text = state.draft.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !text.isEmpty, !state.isResponding else { return nil }
-            if state.voice.isListening { voice(state.voice.backgrounded()) }
-            state.draft = ""
-            state.append(.mine(text))
-            return ask(text)
+            return sendDraft()
         case .retryTapped:
             guard let text = state.lastMessage, !state.isResponding else { return nil }
-            return ask(text)
+            return ask(text, files: [])
         case .stopTapped:
             for task in [replyTask, pollTask] { task?.cancel() }
             (replyTask, pollTask) = (nil, nil)
@@ -89,8 +86,27 @@ final class CoachViewModel {
             return card(action)
         case .micTapped, .micHoldBegan, .micHoldEnded, .voiceSettingsTapped, .shown, .sceneActive:
             return device(action)
+        case .attachShown, .filesPicked, .attachmentRemoved, .attachmentRetried, .filePreviewNeeded:
+            return uploads?.handle(action, in: state)
         }
         return nil
+    }
+
+    /// Sends the draft with its photos and files (once all have uploaded); a message can be photos alone.
+    private func sendDraft() -> Task<Void, Never>? {
+        guard state.canSend, !state.isResponding else { return nil }
+        let text = state.draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        if state.voice.isListening { voice(state.voice.backgrounded()) }
+        let files = state.attachments.compactMap { state.uploaded[$0.id] }
+        for item in state.attachments {  // the sent tile shows the picked photo at once
+            if let file = state.uploaded[item.id] { state.previews[file.id] = state.previews[item.id] }
+        }
+        state.draft = ""
+        state.attachments = []
+        state.uploaded = [:]
+        uploads?.sent()
+        state.append(.mine(text), files: files)
+        return ask(text, files: files)
     }
 
     /// The microphone, and the tab or the app coming and going.
@@ -197,12 +213,12 @@ final class CoachViewModel {
         return nil
     }
 
-    private func ask(_ text: String) -> Task<Void, Never> {
+    private func ask(_ text: String, files: [CoachFile]) -> Task<Void, Never> {
         state.phase = .waiting
         let history = state.messages
         let task = Task {
             do {
-                for try await event in coach.replies(to: text, after: history) {
+                for try await event in coach.replies(to: text, files: files, after: history) {
                     guard !Task.isCancelled else { return }
                     switch event {
                     case .progress(let progress): state.phase = .answering(progress)
@@ -212,7 +228,9 @@ final class CoachViewModel {
                 replyTask = nil
             } catch {
                 guard !Task.isCancelled, !(error is CancellationError) else { return }
-                state.phase = .failed((error as? CoachChatError)?.message ?? "Coach could not answer. Check your connection.")
+                state.phase = .failed(
+                    (error as? CoachChatError)?.message ?? "Coach could not answer. Check your connection."
+                )
                 replyTask = nil
                 await run()  // the connection may have dropped while the server went on answering
             }

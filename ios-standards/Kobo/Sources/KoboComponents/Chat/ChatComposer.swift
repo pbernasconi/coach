@@ -5,7 +5,8 @@ import SwiftUI
 /// with a draft, stop while a reply can be stopped, else the microphone). With focus, or while the microphone listens,
 /// it opens into a card: the field on top, growing to eight lines, and a toolbar under it with the listening level on
 /// the left and the microphone and Send (dimmed while the draft is blank) on the right. Return adds a line; Send sends.
-/// Place it with `.safeAreaBar(edge: .bottom)`. `voice` adds the microphone (`ChatVoice`).
+/// Place it with `.safeAreaBar(edge: .bottom)`. `voice` adds the microphone (`ChatVoice`); `attach` adds the + at the
+/// leading edge and the attached photos and files above the field (`ChatAttach`), and Send waits for their uploads.
 ///
 ///     ChatComposer(text: $draft, prompt: "Message", isResponding: isWaiting, onSend: send, onStop: stop, voice: voice)
 public struct ChatComposer: View {
@@ -19,6 +20,7 @@ public struct ChatComposer: View {
     private let onSend: () -> Void
     private let onStop: (() -> Void)?
     private let voice: ChatVoice?
+    private let attach: ChatAttach?
     private var focus: FocusState<Bool>.Binding?
 
     /// A composer. `onStop` adds the stop button while `isResponding`; without it the send button waits, disabled.
@@ -28,9 +30,10 @@ public struct ChatComposer: View {
         isResponding: Bool = false,
         onSend: @escaping () -> Void,
         onStop: (() -> Void)? = nil,
-        voice: ChatVoice? = nil
+        voice: ChatVoice? = nil,
+        attach: ChatAttach? = nil
     ) {
-        self.init(text, Text(prompt), isResponding, onSend, onStop, voice)
+        self.init(text, Text(prompt), isResponding, onSend, onStop, voice, attach)
     }
 
     /// A composer whose placeholder is runtime text ("Message Alex").
@@ -40,9 +43,10 @@ public struct ChatComposer: View {
         isResponding: Bool = false,
         onSend: @escaping () -> Void,
         onStop: (() -> Void)? = nil,
-        voice: ChatVoice? = nil
+        voice: ChatVoice? = nil,
+        attach: ChatAttach? = nil
     ) {
-        self.init(text, Text(verbatim: verbatimPrompt), isResponding, onSend, onStop, voice)
+        self.init(text, Text(verbatim: verbatimPrompt), isResponding, onSend, onStop, voice, attach)
     }
 
     private init(
@@ -51,7 +55,8 @@ public struct ChatComposer: View {
         _ isResponding: Bool,
         _ onSend: @escaping () -> Void,
         _ onStop: (() -> Void)?,
-        _ voice: ChatVoice?
+        _ voice: ChatVoice?,
+        _ attach: ChatAttach?
     ) {
         self.text = text
         self.prompt = prompt
@@ -59,6 +64,7 @@ public struct ChatComposer: View {
         self.onSend = onSend
         self.onStop = onStop
         self.voice = voice
+        self.attach = attach
     }
 
     /// Links the field to a screen's focus state (a quick prompt can fill it and raise the keyboard).
@@ -69,7 +75,14 @@ public struct ChatComposer: View {
     }
 
     private var isListening: Bool { voice?.phase == .listening || voice?.phase == .holding }
-    private var isExpanded: Bool { ChatComposerLogic.isExpanded(isFocused: isFocused, isListening: isListening) }
+    private var isExpanded: Bool {
+        ChatComposerLogic.isExpanded(
+            isFocused: isFocused,
+            isListening: isListening,
+            hasAttachments: !(attach?.items.isEmpty ?? true)
+        )
+    }
+    private var attachments: ChatComposerLogic.Attachments { attach?.readiness ?? .none }
 
     public var body: some View {
         VStack(spacing: Space.xs) {
@@ -77,13 +90,23 @@ public struct ChatComposer: View {
                 ChatVoiceDeniedRow(openSettings: open)
             }
             VStack(alignment: .leading, spacing: isExpanded ? Space.xs : 0) {
+                if let attach, !attach.items.isEmpty {
+                    ChatAttachmentStrip(
+                        attach.items,
+                        preview: attach.preview,
+                        onRemove: attach.onRemove,
+                        onRetry: attach.onRetry
+                    )
+                    .padding(.top, Space.sm)
+                }
                 HStack(alignment: .bottom, spacing: Space.xs) {
+                    if !isExpanded, let attach { attachButton(attach) }
                     field
                     if !isExpanded { compactButton }
                 }
                 if isExpanded { toolbar }
             }
-            .padding(.leading, Space.lg)
+            .padding(.leading, attach != nil && !isExpanded ? Space.xxs : Space.lg)
             .padding(.trailing, Space.xs)
             .padding(.vertical, Space.xxs)
             .modifier(ChatComposerSurface(isExpanded: isExpanded))
@@ -126,6 +149,7 @@ public struct ChatComposer: View {
     private var compactButton: some View {
         switch ChatComposerLogic.compactButton(
             draft: text.wrappedValue,
+            attachments: attachments,
             isResponding: isResponding,
             canStop: onStop != nil,
             hasVoice: voice != nil
@@ -140,11 +164,16 @@ public struct ChatComposer: View {
 
     private var toolbar: some View {
         HStack(spacing: Space.xs) {
+            if let attach {
+                // The + lines up with the card's edge as the send button does on the other side.
+                attachButton(attach).padding(.leading, Space.xs - Space.lg)
+            }
             if isListening, let voice { ChatVoiceLevel(phase: voice.phase, level: voice.level) }
             Spacer(minLength: 0)
             if let voice { micButton(voice) }
             switch ChatComposerLogic.button(
                 draft: text.wrappedValue,
+                attachments: attachments,
                 isResponding: isResponding,
                 canStop: onStop != nil
             ) {
@@ -153,6 +182,10 @@ public struct ChatComposer: View {
             case .waiting: sendButton(look: .dimmed)
             }
         }
+    }
+
+    private func attachButton(_ attach: ChatAttach) -> some View {
+        ChatAttachButton(isEnabled: attach.canAdd, action: attach.onAdd)
     }
 
     private func micButton(_ voice: ChatVoice) -> some View {
@@ -190,44 +223,3 @@ private struct ChatComposerSurface: ViewModifier {
             .glassEffect(isGlass ? .regular.interactive() : .identity, in: shape)
     }
 }
-
-#if DEBUG
-    private struct ChatComposerPreview: View {
-        @State private var empty = ""
-        @State private var draft = "Can we move the review to tomorrow morning?"
-
-        var body: some View {
-            VStack(spacing: Space.lg) {
-                Spacer()
-                ChatComposer(text: $empty, prompt: "Message", onSend: {})
-                ChatComposer(text: $draft, prompt: "Message", onSend: {})
-                ChatComposer(
-                    text: $draft,
-                    prompt: "Message",
-                    onSend: {},
-                    voice: ChatVoice(phase: .listening, level: 0.6, onTap: {}, onHoldBegan: {}, onHoldEnded: {})
-                )
-                ChatComposer(
-                    text: $empty,
-                    prompt: "Message",
-                    onSend: {},
-                    voice: ChatVoice(
-                        phase: .unavailable,
-                        onTap: {},
-                        onHoldBegan: {},
-                        onHoldEnded: {},
-                        onOpenSettings: {}
-                    )
-                )
-                ChatComposer(text: $empty, prompt: "Message", isResponding: true, onSend: {}, onStop: {})
-            }
-            .screenCanvas()
-        }
-    }
-
-    #Preview("Composer") { ChatComposerPreview() }
-    #Preview("Composer · dark, solid") {
-        ChatComposerPreview().koboTheme(Theme(palette: .amber, surfaceStyle: .solid)).preferredColorScheme(.dark)
-    }
-    #Preview("Composer · AX3") { ChatComposerPreview().dynamicTypeSize(.accessibility3) }
-#endif

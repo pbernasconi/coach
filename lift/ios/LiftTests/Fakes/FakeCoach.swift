@@ -63,6 +63,17 @@ actor FakeCoach: CoachChatting {
         return .dismissed
     }
 
+    /// The uploads, by name; `failsUpload` makes the next ones fail.
+    private(set) var uploads: [String] = []
+    var failsUpload = false
+
+    func upload(_ file: ChatPickedFile) async throws -> CoachFile {
+        if failsUpload { throw CoachChatError(message: "no") }
+        uploads.append(file.name)
+        return CoachFile(id: "f-\(file.id)", kind: file.kind, name: file.name)
+    }
+
+    func setFailsUpload(_ fails: Bool) { failsUpload = fails }
     func setReply(_ new: Result<CoachReply, CoachChatError>) { reply = new }
     func setFailsApply() { failsApply = true }
     func setApplyAnswer(_ status: ChatActionStatus) { applyAnswer = status }
