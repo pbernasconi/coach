@@ -38,7 +38,7 @@ export type Workout = {
   // Derived for display
   state: 'done' | 'skipped' | 'missed' | 'today' | 'planned';
   /** For a Lift match, `activityId` is the day's Strava strength activity (the watch), when there is one. */
-  match: { source: 'strava' | 'lift'; id: string; name: string; activityId?: string | null } | null;
+  match: { source: 'strava' | 'lift'; id: string; name: string; activityId?: string | null; swapped?: boolean; sport?: string } | null;
 };
 
 export type DayActivity = { id: string; date: string; sport: string; sportType: string; name: string; km: number; min: number };

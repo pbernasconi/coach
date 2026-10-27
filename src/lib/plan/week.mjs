@@ -64,6 +64,9 @@ export function isHard(w) {
   return /vo2|threshold|interval|tempo|race|sweet.?spot|test-10k|10k test/i.test(`${w.workoutType ?? ''} ${w.title ?? ''}`);
 }
 
+/** Endurance sports: one can stand in for another on the day (a run instead of a spin). */
+const CARDIO = new Set(['run', 'ride', 'hike', 'walk', 'swim']);
+
 /** The Strava activity a match holds: the match itself, or the watch activity next to a Lift session. */
 export function matchActivityId(match) {
   if (!match) return null;
@@ -71,7 +74,8 @@ export function matchActivityId(match) {
 }
 
 /**
- * Status for each workout: done (an activity or Lift session on that day matches its sport), skipped,
+ * Status for each workout: done (an activity or Lift session on that day matches its sport, or cardio of another
+ * sport stands in for it: `swapped`), skipped,
  * missed (a past day with no match), today, or planned. Each activity matches at most one workout. A strength
  * workout matches its Lift session and also the day's Strava strength activity (the watch), as `activityId`.
  *
@@ -100,6 +104,7 @@ export function matchWeek(workouts, activities, liftSessions, today) {
   const ordered = [...workouts].sort(
     (a, b) => a.date.localeCompare(b.date) || (a.liftSessionId ? 1 : 0) - (b.liftSessionId ? 1 : 0) || (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
   );
+  const matches = new Map();
   for (const w of ordered) {
     const sport = sportOf(w);
     let match = null;
@@ -126,6 +131,21 @@ export function matchWeek(workouts, activities, liftSessions, today) {
         }
       }
     }
+    matches.set(w.id, match);
+  }
+  // A swap: cardio of another sport counts for the day's open cardio workout (a run instead of the spin). Only after
+  // every same-sport match, so a run never takes a planned run's activity. Never for a lift or a rest day.
+  for (const w of ordered) {
+    if (matches.get(w.id) || w.status === 'skipped' || w.status === 'done' || !CARDIO.has(sportOf(w))) continue;
+    const act = activities.find((a) => a.date === w.date && CARDIO.has(a.sport) && !used.has(`strava:${a.id}`));
+    if (act) {
+      used.add(`strava:${act.id}`);
+      matches.set(w.id, { source: 'strava', id: act.id, name: act.name, swapped: true, sport: act.sport });
+    }
+  }
+  for (const w of ordered) {
+    const sport = sportOf(w);
+    const match = matches.get(w.id) ?? null;
     let status;
     if (match) status = 'done';
     else if (w.status === 'skipped') status = 'skipped';

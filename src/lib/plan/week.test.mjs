@@ -59,9 +59,41 @@ test('matchWeek: Strava by sport and day, Lift for strength, missed and today', 
   assert.equal(result.get('vo2').status, 'done');
   assert.equal(result.get('vo2').match.id, 's1');
   assert.equal(result.get('lift').match.source, 'lift');
-  assert.equal(result.get('easyTue').status, 'missed'); // a ride is not a run
+  assert.equal(result.get('easyTue').status, 'done'); // the ride stands in for the run: a swap
+  assert.equal(result.get('easyTue').match.swapped, true);
   assert.equal(result.get('thr').status, 'today');
   assert.equal(result.get('long').status, 'planned');
+});
+
+test('matchWeek: a run instead of the spin and the lift counts for the spin only (Mon Oct 26)', () => {
+  const ws = [
+    w('spin', 0, 'Recovery spin — Zwift', { workoutType: 'recovery-ride', intensity: 'easy', duration: 45, tss: 35 }),
+    w('heavy', 0, 'Heavy barbell lift', { workoutType: 'strength-heavy', intensity: 'strength', duration: 75 }),
+  ];
+  const result = matchWeek(ws, [{ id: 'r1', date: day(0), sport: 'run', name: 'Afternoon Run' }], [], day(1));
+  assert.deepEqual(result.get('spin'), {
+    status: 'done',
+    match: { source: 'strava', id: 'r1', name: 'Afternoon Run', swapped: true, sport: 'run' },
+  });
+  assert.equal(result.get('heavy').status, 'missed'); // a run never counts as a lift
+  assert.equal(matchActivityId(result.get('spin').match), 'r1');
+});
+
+test('matchWeek: same sport wins before a swap, and a swap needs an activity left over', () => {
+  const ws = [
+    w('ride', 0, 'Easy ride', { workoutType: 'aerobic-ride', intensity: 'easy', duration: 60 }),
+    w('run', 0, 'Easy run', { workoutType: 'aerobic-run', intensity: 'easy', duration: 40 }),
+    w('skip', 1, 'Easy ride', { workoutType: 'aerobic-ride', status: 'skipped' }),
+  ];
+  const acts = [
+    { id: 'r1', date: day(0), sport: 'run', name: 'Run' },
+    { id: 'r2', date: day(1), sport: 'run', name: 'Run' },
+  ];
+  const result = matchWeek(ws, acts, [], day(2));
+  assert.equal(result.get('run').match.id, 'r1'); // the run is the run's, not the ride's (the ride comes first in order)
+  assert.equal(result.get('run').match.swapped, undefined);
+  assert.equal(result.get('ride').status, 'missed');
+  assert.equal(result.get('skip').status, 'skipped'); // a skipped workout stays skipped
 });
 
 test('matchWeek: a Lift session with nothing logged is not a done lift', () => {
