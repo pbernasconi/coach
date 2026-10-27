@@ -4,7 +4,8 @@ import SwiftUI
 extension View {
     /// Presents a `KoboSheet` for `item` while it is non-nil, titled from the item. The sheet keeps a stable
     /// identity: a new payload with the same `id` updates it in place (see `itemSheet`). A swipe or the close button
-    /// sets `item` to `nil`; `onDismiss` runs once the sheet has finished closing.
+    /// sets `item` to `nil`; `onDismiss` runs once the sheet has finished closing. `confirm` is the header's trailing
+    /// action for the item: a checkmark, or a destructive trash that deletes it.
     ///
     ///     .koboSheet(item: $editingLine, title: \.productName) { line in
     ///         StepperField("Quantity", value: $draftQuantity, in: 1...50)
@@ -17,6 +18,7 @@ extension View {
         grabber: Visibility = .automatic,
         background: SheetBackground = .automatic,
         hasChanges: Bool = false,
+        confirm: @escaping (Item) -> SheetHeaderAction? = { _ in nil },
         onDismiss: (() -> Void)? = nil,
         @ViewBuilder content: @escaping (Item) -> Content,
         @ViewBuilder footer: @escaping (Item) -> Footer
@@ -28,7 +30,7 @@ extension View {
                 grabber: grabber,
                 background: background,
                 hasChanges: hasChanges,
-                confirm: nil,
+                confirm: confirm(shown),
                 onClose: nil,
                 content: content(shown),
                 footer: footer(shown)
@@ -45,6 +47,7 @@ extension View {
         grabber: Visibility = .automatic,
         background: SheetBackground = .automatic,
         hasChanges: Bool = false,
+        confirm: @escaping (Item) -> SheetHeaderAction? = { _ in nil },
         onDismiss: (() -> Void)? = nil,
         @ViewBuilder content: @escaping (Item) -> Content
     ) -> some View {
@@ -56,6 +59,7 @@ extension View {
             grabber: grabber,
             background: background,
             hasChanges: hasChanges,
+            confirm: confirm,
             onDismiss: onDismiss,
             content: content,
             footer: { _ in EmptyView() }

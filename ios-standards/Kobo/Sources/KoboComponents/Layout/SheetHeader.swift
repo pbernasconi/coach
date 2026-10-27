@@ -1,31 +1,71 @@
 import KoboTokens
 import SwiftUI
 
-/// An icon-only button in a `SheetHeader`. The accessibility label is required.
+/// An icon-only button in a `SheetHeader`. The accessibility label is required. By default it is the prominent
+/// checkmark (confirm); a `.destructive` role draws a quiet circle with a danger icon instead (a trash that deletes
+/// the record the sheet edits).
+///
+///     SheetHeaderAction(accessibilityLabel: "Delete", systemImage: "trash", role: .destructive, action: delete)
 public struct SheetHeaderAction {
     public var accessibilityLabel: Text
+    public var systemImage: String
+    public var role: ButtonRole?
     public var isEnabled: Bool
     public var action: () -> Void
 
-    public init(accessibilityLabel: LocalizedStringKey, isEnabled: Bool = true, action: @escaping () -> Void) {
-        self.init(label: Text(accessibilityLabel), isEnabled: isEnabled, action: action)
+    public init(
+        accessibilityLabel: LocalizedStringKey,
+        systemImage: String = "checkmark",
+        role: ButtonRole? = nil,
+        isEnabled: Bool = true,
+        action: @escaping () -> Void
+    ) {
+        self.init(
+            label: Text(accessibilityLabel),
+            systemImage: systemImage,
+            role: role,
+            isEnabled: isEnabled,
+            action: action
+        )
     }
 
     /// An action whose accessibility label is shown as is, because it names user data ("Save Garden plan").
-    public init(verbatimAccessibilityLabel: String, isEnabled: Bool = true, action: @escaping () -> Void) {
-        self.init(label: Text(verbatim: verbatimAccessibilityLabel), isEnabled: isEnabled, action: action)
+    public init(
+        verbatimAccessibilityLabel: String,
+        systemImage: String = "checkmark",
+        role: ButtonRole? = nil,
+        isEnabled: Bool = true,
+        action: @escaping () -> Void
+    ) {
+        self.init(
+            label: Text(verbatim: verbatimAccessibilityLabel),
+            systemImage: systemImage,
+            role: role,
+            isEnabled: isEnabled,
+            action: action
+        )
     }
 
-    init(label: Text, isEnabled: Bool = true, action: @escaping () -> Void) {
+    init(
+        label: Text,
+        systemImage: String = "checkmark",
+        role: ButtonRole? = nil,
+        isEnabled: Bool = true,
+        action: @escaping () -> Void
+    ) {
         self.accessibilityLabel = label
+        self.systemImage = systemImage
+        self.role = role
         self.isEnabled = isEnabled
         self.action = action
     }
+
+    var look: SheetHeaderButtonLook.Kind { role == .destructive ? .destructive : .prominent }
 }
 
 /// The header of an iOS 26 sheet, without a grabber: a glass circular close button, a centred title and
-/// optional subtitle, and an optional prominent confirm (checkmark) button. Under a `.solid` theme the buttons are
-/// flat circles (`KoboButtonStyle` `.secondary` and `.primary` at `.icon` size) instead of glass.
+/// optional subtitle, and an optional trailing action: a prominent confirm (checkmark), or a destructive one (trash).
+/// Under a `.solid` theme the buttons are flat circles (`KoboButtonStyle` at `.icon` size) instead of glass.
 ///
 ///     SheetHeader("Edit task", onClose: dismiss, confirm: SheetHeaderAction(accessibilityLabel: "Save", action: save))
 public struct SheetHeader: View {
@@ -89,7 +129,7 @@ public struct SheetHeader: View {
 
     public var body: some View {
         HStack(alignment: .center, spacing: Space.sm) {
-            iconButton(close, systemImage: "xmark", prominent: false)
+            iconButton(close, systemImage: "xmark", look: .plain)
             VStack(spacing: Space.xxs) {
                 title
                     .font(theme.font(.headline))
@@ -104,10 +144,10 @@ public struct SheetHeader: View {
             .multilineTextAlignment(.center)
             .frame(maxWidth: .infinity)
             if let confirm {
-                iconButton(confirm, systemImage: "checkmark", prominent: true)
+                iconButton(confirm, systemImage: confirm.systemImage, look: confirm.look)
             } else {
                 // Balances the close button so the title stays centred.
-                iconButton(close, systemImage: "xmark", prominent: false)
+                iconButton(close, systemImage: "xmark", look: .plain)
                     .hidden()
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)
@@ -118,35 +158,48 @@ public struct SheetHeader: View {
         .padding(.bottom, Space.sm)
     }
 
-    private func iconButton(_ item: SheetHeaderAction, systemImage: String, prominent: Bool) -> some View {
+    private func iconButton(
+        _ item: SheetHeaderAction,
+        systemImage: String,
+        look: SheetHeaderButtonLook.Kind
+    ) -> some View {
         let label = Image(systemName: systemImage)
             .accessibilityHidden(true)  // the button carries the label
             .font(theme.font(.body).weight(.semibold))
             .frame(width: buttonSize, height: buttonSize)
-        return Button(action: item.action) { label }
-            .modifier(SheetHeaderButtonLook(prominent: prominent))
+        return Button(role: item.role, action: item.action) { label }
+            .modifier(SheetHeaderButtonLook(kind: look))
             .disabled(!item.isEnabled)
             .accessibilityLabel(item.accessibilityLabel)
     }
 }
 
 /// Glass circles under a glass theme; flat Kobo circles under a solid one (glass yields to `.solid`, rule 16).
-private struct SheetHeaderButtonLook: ViewModifier {
+/// A destructive action is the plain glass circle with a danger icon, so it stays as quiet as the close button.
+struct SheetHeaderButtonLook: ViewModifier {
+    enum Kind { case plain, prominent, destructive }
+
     @Environment(\.koboTheme) private var theme
-    let prominent: Bool
+    let kind: Kind
 
     func body(content: Content) -> some View {
-        switch (theme.surfaceStyle, prominent) {
-        case (.glass, true): content.buttonStyle(.glassProminent).buttonBorderShape(.circle)
-        case (.glass, false): content.buttonStyle(.glass).buttonBorderShape(.circle)
-        case (.solid, true): content.buttonStyle(.kobo(.primary, size: .icon))
-        case (.solid, false): content.buttonStyle(.kobo(.secondary, size: .icon))
+        switch (theme.surfaceStyle, kind) {
+        case (.glass, .prominent): content.buttonStyle(.glassProminent).buttonBorderShape(.circle)
+        case (.glass, .plain): content.buttonStyle(.glass).buttonBorderShape(.circle)
+        case (.glass, .destructive):
+            content.buttonStyle(.glass).buttonBorderShape(.circle)
+                .tint(theme.palette.danger.ink).foregroundStyle(theme.palette.danger.ink)
+        case (.solid, .prominent): content.buttonStyle(.kobo(.primary, size: .icon))
+        case (.solid, .plain): content.buttonStyle(.kobo(.secondary, size: .icon))
+        case (.solid, .destructive): content.buttonStyle(.kobo(.destructiveTonal, size: .icon))
         }
     }
 }
 
 #if DEBUG
     private struct SheetHeaderPreview: View {
+        static let delete = SheetHeaderAction(accessibilityLabel: "Delete", systemImage: "trash", role: .destructive) {}
+
         var body: some View {
             VStack(spacing: Space.xxl) {
                 SheetHeader("Library", onClose: {})
@@ -163,6 +216,9 @@ private struct SheetHeaderButtonLook: ViewModifier {
                     confirm: SheetHeaderAction(verbatimAccessibilityLabel: "Save Pinned note", isEnabled: false) {}
                 )
                 SheetHeader("Solid theme", onClose: {}, confirm: SheetHeaderAction(accessibilityLabel: "Save") {})
+                    .koboTheme(Theme(palette: .amber, surfaceStyle: .solid))
+                SheetHeader("Edit entry", onClose: {}, confirm: Self.delete)
+                SheetHeader("Solid delete", onClose: {}, confirm: Self.delete)
                     .koboTheme(Theme(palette: .amber, surfaceStyle: .solid))
             }
             .frame(maxHeight: .infinity, alignment: .top)

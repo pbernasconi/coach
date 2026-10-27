@@ -133,7 +133,7 @@ nonisolated struct SetEditor: Equatable, Sendable, Identifiable {
     var lastTime: String?
     /// How many planned sets of the same kind follow this one; the "Apply to later sets" row shows when there are any.
     var laterSets: Int = 0
-    /// Done also saves the weight onto the later planned sets of the same kind, each keeping its own reps.
+    /// Done also saves a new weight and new reps onto the later planned sets of the same kind.
     var appliesToLater = true
     /// The chosen RPE on the `RPE` scale; nil when none is chosen.
     var rpe: Double?

@@ -199,13 +199,33 @@ extension SetEditor {
         return gym.barbellStep(in: unit)
     }
 
-    /// The later planned sets of the same kind that Done also saves `weight` onto: only with "Apply to later sets" on
-    /// and a new weight, and only those that do not already hold it.
-    func laterSets(in item: SessionDetail.Item, weight: Weight?) -> [SetRecord] {
-        guard appliesToLater, let weight, self.weight != savedWeight, let set = item.sets.first(where: { $0.id == id })
-        else { return [] }
-        return item.laterPlanned(after: set).filter {
-            ($0.actualWeight ?? $0.target.weight)?.converted(to: unit) != weight
+    /// What Done also saves onto the later planned sets of the same kind, with "Apply to later sets" on: the new
+    /// weight, the new reps, or both, whichever changed (a cleared value is never carried). A value that did not change
+    /// keeps each set's own, and a set that already holds the new values is left alone.
+    func laterSets(in item: SessionDetail.Item, weight: Weight?, reps: Int?) -> [LaterSetValues] {
+        let newWeight = weight != nil && self.weight != savedWeight
+        let newReps = reps != nil && self.reps != savedReps
+        guard appliesToLater, newWeight || newReps, let set = item.sets.first(where: { $0.id == id }) else {
+            return []
+        }
+        return item.laterPlanned(after: set).compactMap { later in
+            let shownWeight = (later.actualWeight ?? later.target.weight)?.converted(to: unit)
+            let shownReps = later.actualReps ?? later.target.reps ?? later.target.repRange?.lowerBound
+            let changesWeight = newWeight && shownWeight != weight
+            let changesReps = newReps && shownReps != reps
+            guard changesWeight || changesReps else { return nil }
+            return LaterSetValues(
+                id: later.id,
+                reps: newReps ? reps : later.actualReps,
+                weight: newWeight ? weight : later.actualWeight
+            )
         }
     }
+}
+
+/// The values Done saves onto one later planned set.
+nonisolated struct LaterSetValues: Equatable, Sendable {
+    let id: UUID
+    let reps: Int?
+    let weight: Weight?
 }
