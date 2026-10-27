@@ -1,5 +1,6 @@
 import Foundation
 import GRDB
+import LiftCore
 
 /// The Workout screen's Start, Pause and Resume, the start moved, and the name.
 extension LiveSessionRepository {
@@ -61,5 +62,65 @@ extension SessionRecord {
         next.pausedSeconds += max(0, Int(now.timeIntervalSince(pausedAt).rounded(.down)))
         next.pausedAt = nil
         return next
+    }
+}
+
+/// Discard of a workout Start moved from a later day: back to planned, and its Undo.
+extension LiveSessionRepository {
+    public func resetToPlanned(sessionID: UUID, on day: LocalDay) async throws -> SessionReset {
+        let store = store
+        return try await store.transaction { db, stamp in
+            let session = try SessionQueries.liveSession(db, id: sessionID)
+            let done = try SessionQueries.detail(db, id: sessionID)?.items.flatMap(\.sets) ?? []
+            let changed = done.filter { $0.status != .planned }
+            var planned = session
+            planned.startedAt = nil
+            planned.finishedAt = nil
+            planned.pausedAt = nil
+            planned.pausedSeconds = 0
+            if planned.day != day {
+                planned.day = day
+                planned.dayMovedAt = stamp  // the server moves the plan workout back with it
+            }
+            if planned != session { try store.updateRow(planned, at: stamp, db) }
+            for set in changed {
+                var reset = set
+                reset.status = .planned
+                reset.completedAt = nil
+                reset.actualReps = nil
+                reset.actualWeight = nil
+                reset.rpe = nil
+                try store.updateRow(reset, at: stamp, db)
+            }
+            return SessionReset(session: session, sets: changed)
+        }
+    }
+
+    public func undoReset(_ reset: SessionReset) async throws {
+        let store = store
+        try await store.transaction { db, stamp in
+            let session = try SessionQueries.liveSession(db, id: reset.session.id)
+            var back = session
+            back.startedAt = reset.session.startedAt
+            back.finishedAt = reset.session.finishedAt
+            back.pausedAt = reset.session.pausedAt
+            back.pausedSeconds = reset.session.pausedSeconds
+            if back.day != reset.session.day {
+                back.day = reset.session.day
+                back.dayMovedAt = stamp
+            }
+            if back != session { try store.updateRow(back, at: stamp, db) }
+            for before in reset.sets {
+                // A set removed since the reset stays removed.
+                guard let set = try SetRecord.fetchOne(db, key: before.id), set.deletedAt == nil else { continue }
+                var logged = set
+                logged.status = before.status
+                logged.completedAt = before.completedAt
+                logged.actualReps = before.actualReps
+                logged.actualWeight = before.actualWeight
+                logged.rpe = before.rpe
+                if logged != set { try store.updateRow(logged, at: stamp, db) }
+            }
+        }
     }
 }

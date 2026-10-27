@@ -60,6 +60,8 @@ struct WorkoutContent: View {
         .screenCanvas()
         .navigationTitle(Text(verbatim: title))
         .navigationBarTitleDisplayMode(.inline)
+        // A backdrop under the bar: without it the exercise rows stay readable behind the back, pause and menu buttons.
+        .toolbarBackgroundVisibility(.visible, for: .navigationBar)
         .workoutOptions(state: state, send: send)
         // Not a pinnedFooter: the dock runs edge to edge and down to the bottom of the screen, and brings its own panel.
         // A bar, so the list fades and blurs under the floating Start workout, as it does under the tab bar.
@@ -126,6 +128,8 @@ private struct WorkoutEditorSheets: ViewModifier {
             .koboSheet(
                 item: Binding<SetEditor?>.action(state.editor) { if $0 == nil { send(.editorDismissed) } },
                 title: \.title,
+                // Solid: under glass, the set rows and the orange dock show through and crowd the steppers.
+                background: .surface,
                 hasChanges: state.editor?.hasChanges ?? false,
                 // The trash removes at once and closes the sheet; the "Set removed" toast offers Undo (product rule).
                 confirm: { editor in
@@ -144,6 +148,7 @@ private struct WorkoutEditorSheets: ViewModifier {
             .koboSheet(
                 item: Binding<NoteEditor?>.action(state.noteEditor) { if $0 == nil { send(.noteDismissed) } },
                 title: \.title,
+                background: .surface,
                 hasChanges: state.noteEditor?.hasChanges ?? false
             ) { editor in
                 NoteEditorField(editor: editor, send: send)

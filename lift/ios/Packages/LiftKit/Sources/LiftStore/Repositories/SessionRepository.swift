@@ -19,6 +19,17 @@ public struct RescheduleUndo: Hashable, Sendable {
     }
 }
 
+/// What `SessionRepository.undoReset` needs: the session and the sets `resetToPlanned` changed, as they were before.
+public struct SessionReset: Hashable, Sendable {
+    public let session: SessionRecord
+    public let sets: [SetRecord]
+
+    public init(session: SessionRecord, sets: [SetRecord]) {
+        self.session = session
+        self.sets = sets
+    }
+}
+
 /// A change to a running workout's time from the Workout screen.
 public enum SessionTimeChange: Hashable, Sendable {
     /// Stops the clock now. Only a started, unfinished, unpaused session changes.
@@ -84,4 +95,12 @@ public protocol SessionRepository: Sendable {
 
     /// Puts a rescheduled session back on its previous day and clears any tombstone.
     func undo(_ change: RescheduleUndo) async throws
+
+    /// Puts a live session back as planned on `day`, in one write: no start, pause or finish, and each logged or skipped
+    /// set planned again without its values. The session stays, so its plan workout keeps it (Discard of a workout
+    /// that Start moved here from a later day).
+    func resetToPlanned(sessionID: UUID, on day: LocalDay) async throws -> SessionReset
+
+    /// Undoes `resetToPlanned`: the session's day and times and the sets' values as they were.
+    func undoReset(_ reset: SessionReset) async throws
 }
