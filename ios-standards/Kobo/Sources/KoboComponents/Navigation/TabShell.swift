@@ -4,10 +4,11 @@ import SwiftUI
 /// The app's tab controller over the system `TabView`: Kobo tab definitions (title, symbol, badge), the accent text ink
 /// on the selected tab (its label is text, so it never takes the paler fill accent), a selection haptic on each switch
 /// the person makes in the bar (not on programmatic switches), the adaptable sidebar layout on iPad, and an optional
-/// bottom accessory (a `MiniPlayerBar`) through `.tabViewBottomAccessory`. Each
-/// tab owns its own `NavigationStack` inside `content`.
+/// bottom accessory (a `MiniPlayerBar`) through `.tabViewBottomAccessory`, which `showsAccessory` can hide and bring
+/// back (a player with nothing playing) without rebuilding the tabs. Each tab owns its own `NavigationStack` inside
+/// `content`.
 ///
-///     TabShell(tabs: tabs, selection: $router.tab, layout: .forDevice(isPad: isPad)) { tab in
+///     TabShell(tabs: tabs, selection: $router.tab, showsAccessory: episode != nil) { tab in
 ///         NavigationStack(path: $router[tab]) { root(for: tab) }
 ///     } accessory: {
 ///         MiniPlayerBar(verbatim: episode.title, subtitle: elapsed, action: open) { … } trailing: { … }
@@ -19,18 +20,22 @@ public struct TabShell<Value: Hashable, Content: View, Accessory: View>: View {
     private let selection: Binding<Value>
     private let layout: TabShellLayout
     private let minimizesOnScroll: Bool
+    private let showsAccessory: Bool
     private let content: (Value) -> Content
     private let accessory: Accessory
 
     /// - Parameters:
     ///   - layout: `.tabBar` on iPhone, `.sidebarAdaptable` on iPad (`TabShellLayout.forDevice(isPad:)`).
     ///   - minimizesOnScroll: lets the iOS 26 bar shrink while the content scrolls down.
+    ///   - showsAccessory: false hides the accessory and its glass (iOS 26.1). iOS 26.0 cannot hide the glass in place,
+    ///     so there only the accessory's content goes.
     ///   - accessory: drawn above the bar in the system's glass (`.tabViewBottomAccessory`).
     public init(
         tabs: [KoboTab<Value>],
         selection: Binding<Value>,
         layout: TabShellLayout = .tabBar,
         minimizesOnScroll: Bool = false,
+        showsAccessory: Bool = true,
         @ViewBuilder content: @escaping (Value) -> Content,
         @ViewBuilder accessory: () -> Accessory
     ) {
@@ -38,6 +43,7 @@ public struct TabShell<Value: Hashable, Content: View, Accessory: View>: View {
         self.selection = selection
         self.layout = layout
         self.minimizesOnScroll = minimizesOnScroll
+        self.showsAccessory = showsAccessory
         self.content = content
         self.accessory = accessory()
     }
@@ -59,7 +65,7 @@ public struct TabShell<Value: Hashable, Content: View, Accessory: View>: View {
             }
         }
         .modifier(TabShellChrome(layout: layout, minimizesOnScroll: minimizesOnScroll))
-        .modifier(TabShellAccessory(accessory: accessory))
+        .modifier(TabShellAccessory(accessory: accessory, isShown: showsAccessory))
         // The selected tab's label is text, so it takes the accent text ink (4.5:1 in light mode), not the fill accent.
         .tint(theme.palette.accentText)
         .koboFeedback(.selection, trigger: userSwitches)
@@ -123,16 +129,20 @@ private struct TabBarMinimize: ViewModifier {
     }
 }
 
-/// The bottom accessory, attached only when the shell has one.
+/// The bottom accessory, attached only when the shell has one. Hiding it goes through `isEnabled` (iOS 26.1), never by
+/// removing the modifier, which would rebuild the `TabView` and drop every tab's stack.
 private struct TabShellAccessory<Accessory: View>: ViewModifier {
     let accessory: Accessory
+    let isShown: Bool
 
     func body(content: Content) -> some View {
         #if os(iOS)
             if Accessory.self == EmptyView.self {
                 content
+            } else if #available(iOS 26.1, *) {
+                content.tabViewBottomAccessory(isEnabled: isShown) { accessory }
             } else {
-                content.tabViewBottomAccessory { accessory }
+                content.tabViewBottomAccessory { if isShown { accessory } }
             }
         #else
             content

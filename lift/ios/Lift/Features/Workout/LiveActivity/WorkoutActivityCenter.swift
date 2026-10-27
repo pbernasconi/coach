@@ -22,6 +22,9 @@ final class WorkoutActivityCenter: RestActivityController {
     private let days: DayCalendar
     private let now: @Sendable () -> Date
 
+    /// The workout under way, for the bar above the tab bar while the Workout screen is closed. It follows the store
+    /// whether or not the Live Activity is turned on.
+    let underway = UnderwayWorkout()
     /// The workout followed; nil before any.
     private(set) var sessionID: UUID?
     /// The followed workout as the store last had it; nil until it loads.
@@ -104,6 +107,7 @@ final class WorkoutActivityCenter: RestActivityController {
         rest = nil
         focus = nil
         isShown = false
+        underway.bar = nil
         restAlerts.restChanged(endsAt: nil, nextSet: nil)
         await publishing?.value
         await presenter.end()
@@ -303,8 +307,26 @@ final class WorkoutActivityCenter: RestActivityController {
         return (WorkoutActivityAttributes(sessionID: detail.id, title: detail.session.title), state)
     }
 
+    /// The bar above the tab bar for `shown`; nil once the workout is not under way.
+    private func bar(_ shown: (WorkoutActivityAttributes, WorkoutActivityAttributes.ContentState)?) -> ActiveWorkoutBar?
+    {
+        guard let (attributes, state) = shown, let detail else { return nil }
+        let overview = WorkoutOverview(detail: detail, days: days, previous: [:], gym: gym.setup)
+        return ActiveWorkoutBar(
+            sessionID: attributes.sessionID,
+            title: attributes.title,
+            clock: overview.clockPhase,
+            exerciseName: state.current?.exerciseName,
+            setTitle: state.current?.title,
+            rest: state.rest,
+            progress: state.progress
+        )
+    }
+
     private func publish() {
         let shown = content()
+        let next = bar(shown)
+        if isLoaded, underway.bar != next { underway.bar = next }
         // A finished or discarded workout has no rest left to alert for.
         let endsAt = isLoaded && shown == nil ? nil : rest?.endsAt
         restAlerts.restChanged(endsAt: endsAt, nextSet: shown?.1.current.map { "\($0.exerciseName) · \($0.title)" })
