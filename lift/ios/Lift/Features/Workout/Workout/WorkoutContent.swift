@@ -69,6 +69,7 @@ struct WorkoutContent: View {
                     phase: dock,
                     introducesExercise: state.dockIntroducesExercise,
                     restAfterLog: state.dockRestSeconds,
+                    restAfter: state.restFinishedExercise?.name,
                     send: send
                 ) {
                     focus($0, proxy)
@@ -125,7 +126,15 @@ private struct WorkoutEditorSheets: ViewModifier {
             .koboSheet(
                 item: Binding<SetEditor?>.action(state.editor) { if $0 == nil { send(.editorDismissed) } },
                 title: \.title,
-                hasChanges: state.editor?.hasChanges ?? false
+                hasChanges: state.editor?.hasChanges ?? false,
+                // The trash removes at once and closes the sheet; the "Set removed" toast offers Undo (product rule).
+                confirm: { editor in
+                    SheetHeaderAction(
+                        accessibilityLabel: "Remove \(editor.title)",
+                        systemImage: "trash",
+                        role: .destructive
+                    ) { send(.setRemoveTapped(editor.id)) }
+                }
             ) { editor in
                 SetEditorFields(editor: editor, send: send)
             } footer: { _ in
@@ -201,8 +210,8 @@ private struct WorkoutBody: View {
     }
 }
 
-/// Last time's values, the weight and reps steppers, "Apply to later sets", the note and Remove set in the
-/// editor sheet. Done (in the sheet footer) saves; it never logs the set.
+/// Last time's values, the weight and reps steppers, "Apply to later sets" and the note in the editor sheet. Done
+/// (in the sheet footer) saves; it never logs the set. Remove set is the trash in the sheet header.
 private struct SetEditorFields: View {
     @Environment(\.koboTheme) private var theme
     let editor: SetEditor
@@ -237,7 +246,7 @@ private struct SetEditorFields: View {
         if editor.laterSets > 0 {
             ToggleRow(
                 "Apply to later sets",
-                subtitle: "New weight on the next ^[\(editor.laterSets) planned set](inflect: true)",
+                subtitle: "Weight and reps on the next ^[\(editor.laterSets) planned set](inflect: true)",
                 systemImage: "arrow.down.to.line",
                 isOn: .action(editor.appliesToLater) { send(.editorApplyToLaterChanged($0)) }
             )
@@ -248,9 +257,5 @@ private struct SetEditorFields: View {
             prompt: "Optional",
             lines: 1...4
         )
-        // Removes at once and closes the sheet; the "Set removed" toast offers Undo (product rule).
-        Button("Remove set", systemImage: "trash", role: .destructive) { send(.setRemoveTapped(editor.id)) }
-            .buttonStyle(.kobo(.destructiveTonal, width: .full))
-            .accessibilityLabel(Text("Remove \(editor.title)"))
     }
 }

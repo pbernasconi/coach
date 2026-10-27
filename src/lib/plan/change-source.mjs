@@ -1,4 +1,4 @@
-// Who changes the plan, for its change log (plan_changes, drizzle/0023_plan_changes.sql). A database trigger logs
+// Who changes the plan, for its change log (plan_changes, drizzle/0024_plan_changes.sql). A database trigger logs
 // every insert, update and delete of a planned workout; the write names its source in the row's `change_source`
 // column (an insert or update) or, for a delete, in the `coach.change_source` setting of its own statement.
 //

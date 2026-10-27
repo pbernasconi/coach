@@ -29,6 +29,7 @@ import Testing
             health: RecordingHealthRecorder(),
             gym: InMemoryGymSettings(gym),
             preferences: InMemoryWorkoutSettings(),
+            events: RecordingWorkoutEvents(),
             now: SessionBuilder.now,
             calendar: SessionBuilder.calendar
         )

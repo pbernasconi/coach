@@ -10,6 +10,11 @@ source scripts/tools.lock
 TOOLS="${TOOLS_DIR:-$PWD/.tools}"
 mkdir -p "$TOOLS"
 
+# A cached venv points at the Python that made it; after a runner Python update that interpreter is gone and the
+# Python-script tools (yamllint, detect-secrets) stop running, so rebuild it.
+if [ -d "$TOOLS/venv" ] && ! "$TOOLS/venv/bin/python" -c '' 2>/dev/null; then
+  rm -rf "$TOOLS/venv"
+fi
 if [ ! -x "$TOOLS/venv/bin/zizmor" ]; then
   python3 -m venv "$TOOLS/venv"
   "$TOOLS/venv/bin/pip" install -q \

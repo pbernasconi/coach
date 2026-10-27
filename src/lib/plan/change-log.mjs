@@ -1,4 +1,4 @@
-// The plan's change log as text (plan_changes, written by a database trigger; drizzle/0023_plan_changes.sql): one
+// The plan's change log as text (plan_changes, written by a database trigger; drizzle/0024_plan_changes.sql): one
 // line per change, "Tue Oct 27 09:12 · Coach chat · moved Heavy barbell from Mon Oct 26 to Tue Oct 27". Pure.
 
 const SOURCE = {

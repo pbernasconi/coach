@@ -34,6 +34,12 @@ nonisolated struct WorkoutActivityAttributes: ActivityAttributes, Codable, Hasha
 
         /// Every planned set is logged or skipped.
         var isComplete: Bool { current == nil }
+
+        /// The set to do now opens a new exercise after earlier sets were done: none of its sets is logged or skipped
+        /// yet. A rest then follows the last exercise, so the Lock Screen says "Next exercise".
+        var opensExercise: Bool {
+            current != nil && loggedSets > 0 && dots.allSatisfy { $0 == .current || $0 == .planned }
+        }
     }
 
     /// The session, so the buttons log into the workout they show.

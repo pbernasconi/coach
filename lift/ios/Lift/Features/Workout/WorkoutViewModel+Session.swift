@@ -76,13 +76,14 @@ extension WorkoutViewModel {
         guard let session = detail?.session, session.startedAt == nil, session.finishedAt == nil,
             case .loaded(let workout) = state.workout, !workout.isPastDay
         else { return }
-        _ = try? await edits.sessions.start(sessionID: session.id)
+        if (try? await edits.sessions.start(sessionID: session.id)) != nil { record(.workoutStarted) }
     }
 
     /// A paused workout runs again before a set is logged. A failure is left alone: the set still logs.
     func resumeIfPaused() async {
         guard detail?.session.pausedAt != nil else { return }
-        _ = try? await edits.sessions.changeTime(sessionID: edits.sessionID, .resume)
+        let resumed = try? await edits.sessions.changeTime(sessionID: edits.sessionID, .resume)
+        if resumed != nil { record(.workoutResumed) }
     }
 
     /// The start picked in Workout settings. Not one at a time like the other session writes: the picker sends every

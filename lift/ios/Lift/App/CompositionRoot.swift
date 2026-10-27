@@ -71,6 +71,7 @@ enum CompositionRoot {
         let gym = gym(source: source)
         let workoutPreferences = workoutPreferences(source: source)
         let sets = LiveSetRepository(database: database, now: now, makeID: makeID)
+        let workoutEvents = LiveWorkoutEventRepository(database: database, now: now, makeID: makeID)
         let sync = makeSync(database: database, isSaved: source.isSaved, now: now, makeID: makeID)
         let appData = makeAppData(source: source, sync: sync, now: now)
         return AppDependencies(
@@ -80,6 +81,7 @@ enum CompositionRoot {
             templates: LiveTemplateRepository(database: database, now: now, makeID: makeID),
             plans: LiveWorkoutPlanRepository(database: database, now: now, makeID: makeID, gym: { gym.setup }),
             history: sessions,
+            workoutEvents: workoutEvents,
             now: now,
             clock: ContinuousClock(),
             workoutActivity: WorkoutActivityCenter(
@@ -89,6 +91,7 @@ enum CompositionRoot {
                 gym: gym,
                 stills: CatalogWorkoutActivityStills(catalog: catalog),
                 preferences: workoutPreferences,
+                events: workoutEvents,
                 restAlerts: source.isSaved
                     ? LocalRestAlerts(center: .current(), preferences: workoutPreferences, now: now) : NoRestAlerts(),
                 calendar: appCalendar,

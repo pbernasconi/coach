@@ -229,7 +229,7 @@ export const coachFiles = pgTable(
 
 /**
  * Every change to a planned workout (training_plan_activities): an insert, an update of a field that matters, or a
- * delete, with who made it. A database trigger (drizzle/0023_plan_changes.sql) writes these rows, so no write path can
+ * delete, with who made it. A database trigger (drizzle/0024_plan_changes.sql) writes these rows, so no write path can
  * skip it; the write names its source in `change_source` (src/lib/plan/change-source.mjs). `before`/`after` hold only
  * the fields that changed (the whole row for an insert or a delete). Read with src/lib/plan/change-log.ts.
  */

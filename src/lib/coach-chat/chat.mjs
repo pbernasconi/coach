@@ -7,11 +7,15 @@
 import { addUsage, NO_USAGE } from '../planner/cost.mjs';
 import { cleanReplies, MAX_CARDS, REPLIES_TOOL, SHOW_TOOL } from './cards.mjs';
 
-export const MODEL = 'claude-opus-5-5';
+/**
+ * The chat runs on Sonnet 5.5 (Paolo, 2026-10-27): it starts answering in about half the time of Opus 5.5 at half the
+ * price per token. The planner stays on Opus (src/lib/planner/loop.mjs). lift/COACH-CHAT.md, "Speed".
+ */
+export const MODEL = 'claude-sonnet-5-5';
 /**
  * How hard Claude thinks before it answers. A chat reply waits on the thinking, so the chat runs lower than the planner:
- * on Opus 5.5, `low` starts answering in a few seconds where `medium` takes 15–20 (lift/COACH-CHAT.md, "Speed"). The
- * server still checks every change, so a slip comes back to be fixed rather than reaching the plan.
+ * `low` starts answering in a few seconds where `medium` takes much longer (lift/COACH-CHAT.md, "Speed"). The server
+ * still checks every change, so a slip comes back to be fixed rather than reaching the plan.
  */
 export const EFFORT = 'low';
 /** The request settings a warm-up must share with the real call, or it writes a cache the call never reads. */

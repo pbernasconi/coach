@@ -15,7 +15,8 @@ struct WorkoutExerciseSection: View {
     let exercise: WorkoutExercise
     /// The catalog still; nil when the exercise has no catalog entry.
     let thumbnail: MediaImage?
-    /// The running rest and the set it comes before; that set's check fills as a ring.
+    /// The running rest: the next set's check fills as a ring, or, after this exercise's last set, a rest row closes
+    /// its sets.
     let rest: SetRowRest?
     let send: (WorkoutAction) -> Void
 
@@ -30,13 +31,16 @@ struct WorkoutExerciseSection: View {
                     SetRow(
                         item: item,
                         unit: exercise.unit,
-                        rest: rest?.setID == item.id ? rest?.timer : nil,
+                        rest: rest?.ringSetID == item.id ? rest?.timer : nil,
                         onLog: { send(.setLogTapped(item.id)) },
                         onEdit: { send(.setValuesTapped(item.id)) },
                         onSkip: { send(.setSkipTapped(item.id)) },
                         onRemove: { send(.setRemoveTapped(item.id)) }
                     )
                     .id(item.id)
+                }
+                if let rest, rest.afterExerciseID == exercise.id {
+                    ExerciseRestRow(rest: rest.timer)
                 }
             } header: {
                 EmptyView()

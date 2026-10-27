@@ -166,8 +166,15 @@
     {
       "idx": 23,
       "version": "7",
-      "when": 1793129859576,
-      "tag": "0023_plan_changes",
+      "when": 1793128707711,
+      "tag": "0023_ai_usage",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793132801040,
+      "tag": "0024_plan_changes",
       "breakpoints": true
     }
   ]

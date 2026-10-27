@@ -12,6 +12,8 @@ import { toIso } from '@/lib/db-time.mjs';
 import { pushPlanWeeks } from '@/lib/plan/app-writes';
 import { dispatchWorkflow } from '@/lib/plan/proposals';
 import { buildProfile } from '@/lib/planner/profile.mjs';
+import { monthSpend as spendOn, recordAiUsage } from '@/lib/ai-usage/store';
+import { CHAT_FEATURES, usageOf } from '@/lib/ai-usage/usage.mjs';
 import { checkCard, type CardRef } from './cards.mjs';
 import { resolveCards, type Attachment } from './cards';
 import { checkProposalInput, isStale, planText, type Change, type Item } from './changes.mjs';
@@ -43,12 +45,9 @@ export type MessageView = {
   files: FileRef[];
 };
 
-/** This month's chat spend, in USD. */
+/** This month's chat spend (answers and cache warm-ups), in USD. */
 async function monthSpend(userId: string): Promise<number> {
-  const [r] = (await sql`
-    SELECT COALESCE(SUM(cost_usd), 0)::float AS usd FROM coach_messages
-    WHERE user_id = ${userId} AND created_at >= date_trunc('month', NOW())`) as Row[];
-  return Number(r?.usd ?? 0);
+  return spendOn(userId, CHAT_FEATURES);
 }
 
 /** Whether Coach can answer now, and why not. */
@@ -252,7 +251,7 @@ export async function sendMessage(
     const attachments = await resolveCards(userId, result.cards as CardRef[], rows, today, timeZone);
     const reply = result.reply ||
       (proposal ? 'Here is the change.' : attachments.length ? 'Here it is.' : result.stop === 'refusal' ? 'I can\'t help with that one.' : 'I couldn\'t finish that answer. Try again.');
-    return answer(reply, proposal, {
+    const out = await answer(reply, proposal, {
       costUsd: result.usage.usd, model: result.model ?? MODEL, context, attachments, quickReplies: result.replies,
       meta: {
         stop: result.stop, turns: result.turns, usage: result.usage, attempts: result.attempts, cards: result.cards,
@@ -260,10 +259,18 @@ export async function sendMessage(
         timing: result.timing, effort: EFFORT,
       },
     });
+    await recordAiUsage(userId, {
+      feature: 'chat', model: result.model ?? MODEL, effort: EFFORT, usage: result.usage,
+      durationMs: Date.now() - started, ok: result.stop !== 'error', refId: out.reply.id,
+    });
+    return out;
   } catch (error) {
     const why = error instanceof Anthropic.APIError ? `Claude API error ${error.status ?? ''}`.trim() : error instanceof Error ? error.message : 'unknown error';
     console.error('Coach chat failed:', why);
-    return answer(`Coach couldn't answer (${why}). Try again.`, null, { context, meta: { stop: 'error', error: why } });
+    const out = await answer(`Coach couldn't answer (${why}). Try again.`, null, { context, meta: { stop: 'error', error: why } });
+    // What a failed call spent before it threw isn't known; the row still counts the failure.
+    await recordAiUsage(userId, { feature: 'chat', model: MODEL, effort: EFFORT, durationMs: Date.now() - started, ok: false, refId: out.reply.id });
+    return out;
   }
 }
 
@@ -287,9 +294,13 @@ export async function warmCoach(userId: string): Promise<void> {
     params.messages = params.messages.map((m: { role: string; content: unknown }) => ({
       ...m, content: Array.isArray(m.content) ? m.content.map((b: Record<string, unknown>) => ({ type: b.type, text: b.text })) : m.content,
     }));
+    const t0 = Date.now();
     const res = await client.beta.messages.create(params as never);
-    const u = (res as { usage?: { cache_read_input_tokens?: number; cache_creation_input_tokens?: number } }).usage;
+    const r = res as { model?: string; usage?: { cache_read_input_tokens?: number; cache_creation_input_tokens?: number } };
+    const u = r.usage;
     console.log(`[coach] warm-up: cache read ${u?.cache_read_input_tokens ?? 0}, written ${u?.cache_creation_input_tokens ?? 0}`);
+    const model = r.model ?? MODEL;
+    await recordAiUsage(userId, { feature: 'chat_warmup', model, effort: EFFORT, usage: usageOf(u, model), durationMs: Date.now() - t0 });
   } catch (error) {
     warmedAt = 0;
     console.error('Coach warm-up failed:', error instanceof Error ? error.message : 'unknown error');
