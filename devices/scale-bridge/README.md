@@ -33,7 +33,8 @@ password, flash once over USB. If `scale-bridge.local` does not resolve, add `--
 ## Checking on it
 
 - `http://scale-bridge.local/` (same Wi-Fi) shows Wi-Fi strength, the remembered scale, readings waiting to be
-  posted, and the last 80 log lines, including every frame to and from the scale in hex. Send that log when
+  posted, every Bluetooth device heard in the last 5 minutes (address, signal, name, manufacturer data in hex; the
+  scale shows up while you stand on it), and the last 80 log lines, including every frame to and from the scale in hex. Send that log when
   something is off.
 - `http://scale-bridge.local/forget` forgets the remembered scale (for a new scale).
 
