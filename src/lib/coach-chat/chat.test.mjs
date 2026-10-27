@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { HISTORY, MAX_PROPOSALS, chatMessages, chatWithClaude } from './chat.mjs';
+import { HISTORY, MAX_PROPOSALS, chatMessages, chatWithClaude, streamEventToChat } from './chat.mjs';
 import { chatContext, chatSystemPrompt } from './prompt.mjs';
 
 const usage = { input_tokens: 1000, output_tokens: 300, cache_read_input_tokens: 9000, cache_creation_input_tokens: 0 };
@@ -127,4 +127,77 @@ test('a broken card goes back once; a card with a proposal stops at the proposal
   assert.match(client.calls[1].messages.at(-1).content[0].content, /Not shown: no workout with id nope/);
   assert.equal(r.stop, 'proposed');
   assert.deepEqual(r.cards, [{ kind: 'workout', ref: 'v' }]);
+});
+
+test('the stream tells the phone each step and the words as they come', async () => {
+  const events = [
+    { type: 'content_block_start', content_block: { type: 'thinking' } },
+    { type: 'content_block_delta', delta: { type: 'thinking_delta', thinking: 'Tuesday is free.' } },
+    { type: 'content_block_start', content_block: { type: 'text' } },
+    { type: 'content_block_delta', delta: { type: 'text_delta', text: 'The lift ' } },
+    { type: 'content_block_delta', delta: { type: 'text_delta', text: 'goes to Tuesday.' } },
+    { type: 'content_block_start', content_block: { type: 'tool_use', name: 'propose_changes' } },
+  ];
+  const calls = [];
+  const client = {
+    beta: { messages: { stream: (params) => {
+      calls.push(params);
+      const listeners = [];
+      return {
+        on: (name, fn) => { assert.equal(name, 'streamEvent'); listeners.push(fn); },
+        finalMessage: async () => {
+          for (const e of events) for (const fn of listeners) fn(e);
+          return reply([say('The lift goes to Tuesday.'), propose({ title: 'Lift Tuesday' })], 'tool_use');
+        },
+      };
+    } } },
+  };
+  const heard = [];
+  let t = 0;
+  const r = await chatWithClaude({ ...base, client, now: () => (t += 100), check: (input) => ({ ok: true, value: input }), onEvent: (e) => heard.push(e) });
+  assert.deepEqual(heard, [
+    { type: 'status', step: 'thinking' },
+    { type: 'thinking', text: 'Tuesday is free.' },
+    { type: 'status', step: 'writing' },
+    { type: 'text', delta: 'The lift ' },
+    { type: 'text', delta: 'goes to Tuesday.' },
+    { type: 'status', step: 'proposing' },
+  ]);
+  assert.equal(r.stop, 'proposed');
+  assert.ok(r.timing.firstTextMs > r.timing.firstThinkingMs);
+  assert.equal(r.timing.turnMs.length, 1);
+  // Low effort and a thinking summary, and the new message is marked for the cache (a repair reads it back).
+  assert.equal(calls[0].output_config.effort, 'low');
+  assert.equal(calls[0].thinking.display, 'summarized');
+  assert.deepEqual(calls[0].messages[0].content.at(-1).cache_control, { type: 'ephemeral' });
+});
+
+test('a listener that throws never stops the answer', async () => {
+  const client = {
+    beta: { messages: { stream: () => {
+      let fn;
+      return {
+        on: (_, f) => { fn = f; },
+        finalMessage: async () => {
+          fn({ type: 'content_block_start', content_block: { type: 'text' } });
+          return reply([say('Fine.')]);
+        },
+      };
+    } } },
+  };
+  const r = await chatWithClaude({ ...base, client, check: () => assert.fail(), onEvent: () => { throw new Error('hung up'); } });
+  assert.equal(r.reply, 'Fine.');
+});
+
+test('a second text block is set apart from the first', () => {
+  const out = [];
+  const seen = { text: false };
+  for (const e of [
+    { type: 'content_block_start', content_block: { type: 'text' } },
+    { type: 'content_block_delta', delta: { type: 'text_delta', text: 'One.' } },
+    { type: 'content_block_start', content_block: { type: 'tool_use', name: 'show' } },
+    { type: 'content_block_start', content_block: { type: 'text' } },
+  ]) streamEventToChat(e, (x) => out.push(x), seen);
+  assert.deepEqual(out.filter((x) => x.type === 'text').map((x) => x.delta), ['One.', '\n\n']);
+  assert.ok(out.some((x) => x.type === 'status' && x.step === 'card'));
 });

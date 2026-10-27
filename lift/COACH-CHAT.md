@@ -128,6 +128,24 @@ lift moves once) and plan-structure.md (cached).
 - Offline: the field is off and says so. Nothing queues; a plan change needs the server.
 - Lift's rule "No generated commentary" stays for every other tab. The Coach tab is the one place with model text.
 
+## Speed
+
+A reply used to take 15–30 s with nothing on screen but the typing dots. Where the time went, and what changed
+(2026-10-27):
+
+- **Claude's thinking** was most of it: Opus 5.5 at `medium` effort thinks 15–20 s before its first word. The chat
+  runs at `low` (`EFFORT` in chat.mjs), a few seconds; the server still checks every change, so a slip is sent back
+  to be fixed rather than reaching the plan.
+- **Nothing streamed.** The answer now streams (APP-API.md, "Coach answer stream"): a status line within a second,
+  a summary of Claude's thinking, then the words as they are written. The card comes with the last event.
+- **Reads before Claude.** The plan, the profile (about 15 queries and a weather fetch) and the budget check run side
+  by side, while the message is stored.
+- **Cold cache.** Opening the tab warms Claude's cache of the system prompt and tools (`warmCoach`, a `max_tokens: 0`
+  request, at most every 10 minutes per server instance). A repair request reads the message's context from the
+  cache too.
+- Each reply's `meta` keeps `prepMs`, `timing` (first thinking, first word, each request) and `latencyMs`, so the
+  next change can be measured.
+
 ## Decisions for Paolo
 
 1. **Tab bar.** Decided: Coach replaces Training (Week, Today, Coach, Lift, Settings).

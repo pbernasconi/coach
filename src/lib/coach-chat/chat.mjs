@@ -8,6 +8,15 @@ import { addUsage, NO_USAGE } from '../planner/cost.mjs';
 import { cleanReplies, MAX_CARDS, REPLIES_TOOL, SHOW_TOOL } from './cards.mjs';
 
 export const MODEL = 'claude-opus-5-5';
+/**
+ * How hard Claude thinks before it answers. A chat reply waits on the thinking, so the chat runs lower than the planner:
+ * on Opus 5.5, `low` starts answering in a few seconds where `medium` takes 15–20 (lift/COACH-CHAT.md, "Speed"). The
+ * server still checks every change, so a slip comes back to be fixed rather than reaching the plan.
+ */
+export const EFFORT = 'low';
+/** The request settings a warm-up must share with the real call, or it writes a cache the call never reads. */
+export const THINKING = { type: 'adaptive', display: 'summarized' };
+export const BETAS = ['server-side-fallback-2026-07-01'];
 /** propose_changes calls in one turn: the first and two repairs. */
 export const MAX_PROPOSALS = 3;
 /** Requests to Claude in one turn. */
@@ -47,8 +56,35 @@ export const PROPOSE_TOOL = {
  * @typedef {{ ok: true, value: any } | { ok: false, problems: string[] }} ProposalCheck
  * @typedef {{ input: any, problems: string[] | null }} Attempt  one propose_changes call and what the check said
  * @typedef {{ reply: string, proposal: any | null, problems: string[] | null, turns: number, usage: typeof NO_USAGE,
- *   model: string, stop: string, attempts: Attempt[], cards: any[], replies: string[] }} ChatResult
+ *   model: string, stop: string, attempts: Attempt[], cards: any[], replies: string[], timing: Timing }} ChatResult
+ * @typedef {{ firstThinkingMs: number | null, firstTextMs: number | null, turnMs: number[] }} Timing  from the turn's start
+ * @typedef {{ type: 'status', step: 'thinking' | 'writing' | 'proposing' | 'card' | 'fixing' }
+ *   | { type: 'thinking', text: string } | { type: 'text', delta: string }} ChatEvent  what the phone shows while it waits
  */
+
+/**
+ * Turns the SDK's stream events into ChatEvents.
+ * @param {any} event @param {(e: ChatEvent) => void} emit @param {{ text: boolean }} seen  text was sent before
+ */
+export function streamEventToChat(event, emit, seen) {
+  if (event?.type === 'content_block_start') {
+    const block = event.content_block ?? {};
+    if (block.type === 'thinking') emit({ type: 'status', step: 'thinking' });
+    else if (block.type === 'text') {
+      emit({ type: 'status', step: 'writing' });
+      if (seen.text) emit({ type: 'text', delta: '\n\n' });
+    } else if (block.type === 'tool_use') {
+      if (block.name === PROPOSE_TOOL.name) emit({ type: 'status', step: 'proposing' });
+      else if (block.name === SHOW_TOOL.name) emit({ type: 'status', step: 'card' });
+    }
+  } else if (event?.type === 'content_block_delta') {
+    const d = event.delta ?? {};
+    if (d.type === 'text_delta' && d.text) {
+      seen.text = true;
+      emit({ type: 'text', delta: d.text });
+    } else if (d.type === 'thinking_delta' && d.thinking) emit({ type: 'thinking', text: d.thinking });
+  }
+}
 
 /**
  * The messages for Claude: the thread (roles alternate, starting with Paolo), then his new message with the context.
@@ -66,9 +102,10 @@ export function chatMessages(history, context, text) {
     else out.push({ role: t.role, content: t.text });
   }
   while (out.length && out[0].role !== 'user') out.shift();
+  // The cache mark on the new message lets a repair request (same turn) read the context back instead of paying for it.
   const now = [
     { type: 'text', text: context },
-    { type: 'text', text: `<paolo>\n${text}\n</paolo>` },
+    { type: 'text', text: `<paolo>\n${text}\n</paolo>`, cache_control: { type: 'ephemeral' } },
   ];
   if (out.length && out[out.length - 1].role === 'user') {
     // An unanswered message (the last turn failed): this one goes with it.
@@ -85,10 +122,22 @@ export function chatMessages(history, context, text) {
  *   system: string, history: Turn[], context: string, text: string, check: (input: any, attempt: number) => ProposalCheck,
  *   checkCard?: (input: any) => ({ ok: true, value: any } | { ok: false, problems: string[] }),
  *   effort?: 'low' | 'medium' | 'high', deadline?: number, now?: () => number, model?: string,
+ *   onEvent?: (e: ChatEvent) => void,
  * }} p
  * @returns {Promise<ChatResult>}
  */
-export async function chatWithClaude({ client, system, history, context, text, check, checkCard = (input) => ({ ok: true, value: input }), effort = 'medium', deadline = Infinity, now = Date.now, model = MODEL }) {
+export async function chatWithClaude({ client, system, history, context, text, check, checkCard = (input) => ({ ok: true, value: input }), effort = EFFORT, deadline = Infinity, now = Date.now, model = MODEL, onEvent }) {
+  const start = now();
+  /** @type {Timing} */
+  const timing = { firstThinkingMs: null, firstTextMs: null, turnMs: [] };
+  const seen = { text: false };
+  // A listener that throws (the phone hung up) never stops the answer.
+  /** @param {ChatEvent} e */
+  const emit = (e) => {
+    if (e.type === 'thinking' && timing.firstThinkingMs === null) timing.firstThinkingMs = now() - start;
+    if (e.type === 'text' && timing.firstTextMs === null) timing.firstTextMs = now() - start;
+    try { onEvent?.(e); } catch { /* the listener's problem */ }
+  };
   const messages = chatMessages(history, context, text);
   let usage = NO_USAGE;
   /** @type {string[]} */
@@ -109,20 +158,13 @@ export async function chatWithClaude({ client, system, history, context, text, c
   while (turns < MAX_TURNS) {
     if (now() > deadline) return result('deadline');
     turns++;
-    const message = await client.beta.messages
-      .stream({
-        model,
-        max_tokens: 16000,
-        betas: ['server-side-fallback-2026-07-01'],
-        fallbacks: 'default',
-        thinking: { type: 'adaptive' },
-        output_config: { effort },
-        system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral', ttl: '1h' } }],
-        tools: [PROPOSE_TOOL, SHOW_TOOL, REPLIES_TOOL],
-        tool_choice: { type: 'auto' },
-        messages,
-      })
-      .finalMessage();
+    const turnStart = now();
+    const stream = client.beta.messages.stream(chatRequest({ model, effort, system, messages }));
+    if (typeof (/** @type {any} */ (stream).on) === 'function') {
+      /** @type {any} */ (stream).on('streamEvent', (/** @type {any} */ event) => streamEventToChat(event, emit, seen));
+    }
+    const message = await stream.finalMessage();
+    timing.turnMs.push(now() - turnStart);
     usage = addUsage(usage, message.usage, message.model ?? model);
     if (message.stop_reason === 'refusal') return result('refusal');
     const content = message.content ?? [];
@@ -171,6 +213,7 @@ export async function chatWithClaude({ client, system, history, context, text, c
       } else {
         problems = c.problems;
         const last = tries >= MAX_PROPOSALS;
+        emit({ type: 'status', step: 'fixing' });
         retry = retry || !last;
         results.push({
           type: 'tool_result', tool_use_id: call.id, is_error: true,
@@ -190,6 +233,26 @@ export async function chatWithClaude({ client, system, history, context, text, c
 
   /** @param {string} stop @returns {ChatResult} */
   function result(stop) {
-    return { reply: said.join('\n\n'), proposal, problems, turns, usage, model, stop, attempts, cards, replies };
+    return { reply: said.join('\n\n'), proposal, problems, turns, usage, model, stop, attempts, cards, replies, timing };
   }
+}
+
+/**
+ * One request's settings. The warm-up (`max_tokens: 0`) sends the same model, thinking, effort, system and tools, so
+ * the cache it writes is the one the next message reads.
+ * @param {{ model?: string, effort?: string, system: string, messages: any[], maxTokens?: number }} p
+ */
+export function chatRequest({ model = MODEL, effort = EFFORT, system, messages, maxTokens = 16000 }) {
+  return {
+    model,
+    max_tokens: maxTokens,
+    betas: BETAS,
+    fallbacks: 'default',
+    thinking: THINKING,
+    output_config: { effort },
+    system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral', ttl: '1h' } }],
+    tools: [PROPOSE_TOOL, SHOW_TOOL, REPLIES_TOOL],
+    tool_choice: { type: 'auto' },
+    messages,
+  };
 }

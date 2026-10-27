@@ -910,7 +910,8 @@ apart from the planner's.
   while it waited): show the typing row and read again every few seconds. `ready` false (with `notice`) when there
   is no API key or the month's budget is used; `suggestions` are quick prompts.
 - `POST /api/app/coach/messages?tz=` `{ text }` (1–2000 characters) → `{ threadId, message, reply }`, once Claude is
-  done (5–30 s, no streaming yet). A Claude failure is a reply that says so, not an error. The answer is finished and
+  done (5–30 s). With `Accept: text/event-stream` the answer streams instead (below). A Claude failure is a reply
+  that says so, not an error. The answer is finished and
   stored even if the app hangs up (it went to the background), and every reply sends a `coach.replied` push
   (lift/PUSH.md) that opens `lift://coach`; the app shows no banner while the Coach tab is on screen.
 - `POST /api/app/coach/proposals/{id}/apply?tz=` → `{ proposal, dates }`: the days it touched. `409 { error, proposal }`
@@ -938,6 +939,25 @@ apart from the planner's.
 
 `items[].kind` maps to Kobo's change rows (added, removed, changed). `status` is open, applied, undone, dismissed or
 stale. `warnings` are Paolo's plan rules (rules.mjs) the changes break, kept because he asked for them.
+
+#### Coach answer stream
+
+`POST /api/app/coach/messages` with `Accept: text/event-stream` answers `200` at once and sends Server-Sent Events,
+each `event: <type>` with a JSON `data:` line, as the answer is made. Errors before the stream starts (401, 400, 413)
+are JSON as usual. Lines starting with `:` are padding; skip them.
+
+| event | data | when |
+| --- | --- | --- |
+| `status` | `{ type, step }`: `reading`, `thinking`, `writing`, `proposing`, `card` or `fixing` | each step starts |
+| `message` | `{ type, message }`: Paolo's stored message | within a second |
+| `thinking` | `{ type, text }`: a piece of the summary of Claude's thinking | while it thinks |
+| `text` | `{ type, delta }`: a piece of the reply, appended in order | as Claude writes |
+| `done` | `{ threadId, message, reply }`, the same body as the JSON answer | last; it replaces the streamed text |
+| `error` | `{ error }` | last, when the server failed (rare: a Claude failure is a `done` reply that says so) |
+
+Show the status as one quiet line ("Reading your week", "Thinking", "Checking the changes", "Fixing a clash"), the
+thinking summary under it, and the reply's words as they come. `done` carries the card, the quick replies and the
+final text. If the stream breaks, read `GET /api/app/coach`: the answer still finishes on the server.
 
 Every message also has `attachments` (cards under the text) and `quickReplies` (one-tap answers to a question Coach
 asked; a tap sends it as Paolo's message), both `[]` when none. Coach names a card (`show`, src/lib/coach-chat/cards.mjs);

@@ -14,7 +14,7 @@ import { buildProfile } from '@/lib/planner/profile.mjs';
 import { checkCard, type CardRef } from './cards.mjs';
 import { resolveCards, type Attachment } from './cards';
 import { checkProposalInput, isStale, planText, type Change, type Item } from './changes.mjs';
-import { chatWithClaude, MODEL, type Turn } from './chat.mjs';
+import { chatMessages, chatRequest, chatWithClaude, EFFORT, MODEL, type ChatEvent, type Turn } from './chat.mjs';
 import { ApplyError, applyAll, planRows, undoAll, type Undo } from './writes';
 import { CHAT_MONTHLY_CAP_USD, SUGGESTIONS, chatContext, chatSystemPrompt } from './prompt.mjs';
 
@@ -142,12 +142,38 @@ function clockIn(timeZone: string) {
   return new Intl.DateTimeFormat('en-GB', { timeZone, hour: '2-digit', minute: '2-digit', weekday: 'long' }).format(new Date());
 }
 
+/** What the phone hears while Coach answers (the SSE stream of POST /api/app/coach/messages). */
+export type CoachEvent =
+  | ChatEvent
+  | { type: 'status'; step: 'reading' }
+  | { type: 'message'; message: MessageView };
+
+/** Swallows a rejection until the promise is awaited, so a failed read never crashes the function first. */
+function early<T>(p: Promise<T>): Promise<T> {
+  p.catch(() => {});
+  return p;
+}
+
+/** How long each read took, in ms, for the reply's meta. */
+function timed<T>(p: Promise<T>, into: Record<string, number>, key: string, started: number): Promise<T> {
+  return early(p.then((v) => { into[key] = Date.now() - started; return v; }));
+}
+
 /**
  * POST /api/app/coach/messages: stores Paolo's message, asks Claude, stores its answer and any card. Never throws for
- * a Claude failure: the answer says what went wrong, so the phone shows it in the thread.
+ * a Claude failure: the answer says what went wrong, so the phone shows it in the thread. `onEvent` hears each step
+ * as it happens (the stored message, reading, thinking, the reply's words), for the streaming answer.
  */
-export async function sendMessage(userId: string, text: string, today: string, timeZone: string) {
+export async function sendMessage(userId: string, text: string, today: string, timeZone: string, onEvent?: (e: CoachEvent) => void) {
   const started = Date.now();
+  const emit = (e: CoachEvent) => { try { onEvent?.(e); } catch { /* the phone hung up */ } };
+  emit({ type: 'status', step: 'reading' });
+  // The reads Claude needs start at once, side by side with storing the message (they are most of the wait before
+  // Claude starts).
+  const reads: Record<string, number> = {};
+  const readyP = timed(chatReady(userId), reads, 'readyMs', started);
+  const rowsP = timed(planRows(userId, today), reads, 'planMs', started);
+  const profileP = timed(buildProfile(sql, { userId, weeks: 2 }), reads, 'profileMs', started);
   let threadId = await openThread(userId);
   if (!threadId) {
     threadId = createId();
@@ -156,9 +182,11 @@ export async function sendMessage(userId: string, text: string, today: string, t
   const before = await threadMessages(threadId);
   const mine = await addMessage(threadId, userId, 'user', text);
   const message: MessageView = { id: mine.id, role: 'user', text, createdAt: mine.createdAt, proposal: null, attachments: [], quickReplies: [] };
+  emit({ type: 'message', message });
+  let prepMs: number | null = null;
   // Every answer is kept with what led to it (the context, the tries, tokens, time), for analysis later.
   const answer = async (reply: string, proposal: ProposalView | null = null, extra: Extra = {}) => {
-    const meta = { ...extra.meta, latencyMs: Date.now() - started, timeZone, today };
+    const meta = { ...extra.meta, latencyMs: Date.now() - started, prepMs, reads, streamed: Boolean(onEvent), timeZone, today };
     const saved = await addMessage(threadId, userId, 'assistant', reply, { ...extra, proposalId: proposal?.id ?? null, meta });
     const view: MessageView = {
       id: saved.id, role: 'assistant', text: reply, createdAt: saved.createdAt, proposal,
@@ -167,15 +195,15 @@ export async function sendMessage(userId: string, text: string, today: string, t
     return { threadId, message, reply: view };
   };
 
-  const ready = await chatReady(userId);
+  const ready = await readyP;
   if (!ready.ready) return answer(ready.reason ?? 'Coach can\'t answer right now.', null, { meta: { stop: 'not_ready' } });
 
   let context: string | null = null;
   try {
-    const rows = await planRows(userId, today);
-    const profile = await buildProfile(sql, { userId, weeks: 2 });
+    const [rows, profile] = await Promise.all([rowsP, profileP]);
     const system = chatSystemPrompt();
     context = chatContext({ today, time: clockIn(timeZone), timeZone, plan: planText(rows, today), profileMd: profile.md });
+    prepMs = Date.now() - started;
     const result = await chatWithClaude({
       client: new Anthropic({ timeout: 100_000, maxRetries: 1 }),
       system,
@@ -185,6 +213,7 @@ export async function sendMessage(userId: string, text: string, today: string, t
       check: (input, attempt) => checkProposalInput(input, { rows, today }, attempt),
       checkCard: (input) => checkCard(input, { rows, today }),
       deadline: started + BUDGET_MS,
+      onEvent: emit,
     });
     let proposal: ProposalView | null = null;
     if (result.proposal) {
@@ -207,12 +236,42 @@ export async function sendMessage(userId: string, text: string, today: string, t
       meta: {
         stop: result.stop, turns: result.turns, usage: result.usage, attempts: result.attempts, cards: result.cards,
         replyFromModel: Boolean(result.reply), prompt: createHash('sha256').update(system).digest('hex').slice(0, 12),
+        timing: result.timing, effort: EFFORT,
       },
     });
   } catch (error) {
     const why = error instanceof Anthropic.APIError ? `Claude API error ${error.status ?? ''}`.trim() : error instanceof Error ? error.message : 'unknown error';
     console.error('Coach chat failed:', why);
     return answer(`Coach couldn't answer (${why}). Try again.`, null, { context, meta: { stop: 'error', error: why } });
+  }
+}
+
+/** When this instance last warmed the cache; a warm-up within this long is skipped. */
+let warmedAt = 0;
+const WARM_EVERY_MS = 10 * 60_000;
+
+/**
+ * Warms Claude's cache of the chat's system prompt and tools (a `max_tokens: 0` request: no answer, no output
+ * tokens), so the first message after the tab opens doesn't wait for a cold prompt. Runs after GET /api/app/coach
+ * answers. Costs a cache read when it is already warm, a cache write (about $0.07) when it isn't.
+ */
+export async function warmCoach(userId: string): Promise<void> {
+  if (!process.env.ANTHROPIC_API_KEY || Date.now() - warmedAt < WARM_EVERY_MS) return;
+  warmedAt = Date.now();
+  try {
+    if ((await monthSpend(userId)) >= CHAT_MONTHLY_CAP_USD) return;
+    const client = new Anthropic({ timeout: 20_000, maxRetries: 0 });
+    const params = chatRequest({ system: chatSystemPrompt(), messages: chatMessages([], '<now>warm-up</now>', 'warm-up'), maxTokens: 0 });
+    // The warm-up's message isn't shared with a real one: only the system prompt and tools are kept.
+    params.messages = params.messages.map((m: { role: string; content: unknown }) => ({
+      ...m, content: Array.isArray(m.content) ? m.content.map((b: Record<string, unknown>) => ({ type: b.type, text: b.text })) : m.content,
+    }));
+    const res = await client.beta.messages.create(params as never);
+    const u = (res as { usage?: { cache_read_input_tokens?: number; cache_creation_input_tokens?: number } }).usage;
+    console.log(`[coach] warm-up: cache read ${u?.cache_read_input_tokens ?? 0}, written ${u?.cache_creation_input_tokens ?? 0}`);
+  } catch (error) {
+    warmedAt = 0;
+    console.error('Coach warm-up failed:', error instanceof Error ? error.message : 'unknown error');
   }
 }
 
