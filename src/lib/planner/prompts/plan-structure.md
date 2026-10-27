@@ -210,6 +210,27 @@ physio's hip work).
 Runner's split squat hold: 20 s each side, 3 rounds.
 Adductor squeeze hold: a ball or pillow between the knees on a chair, 15–20 s, 3 rounds.
 
+### Back & hip stretch: every day for now (from 2026-10-26)
+
+Paolo asked for more stretching (2026-10-26). A gentle 10 min routine for the low back, hip flexors and glutes, every
+day until he says to stop; the coach checks with him on 2026-11-16.
+
+- **Where.** Straight after the day's session as one block (after the physio on a physio day), or alone on a rest
+  day. Never hours apart from another session.
+- **Format.** `activityType` strength, `workoutType` `mobility`, title "🧘 Back & hip stretch", the lines below copied
+  into `description`. The holds stay plain lines, so only the moving drills are counted as sets.
+- **Feel.** A stretch, never pain: mild tension that eases as he holds it. Anything sharp: stop that one.
+
+**Back & hip stretch** (10 min)
+1) Cat-cow 1x10: slow, breathe out as the back rounds.
+2) Glute bridge 2x10: squeeze the glutes, ribs down, no arch in the low back.
+3) Bird dog 2x8: each side, 2 s hold, hips level.
+4) 90-90 1x10: hip switches, slow.
+Half-kneeling hip flexor stretch: 45 s each side, 2 rounds; tuck the pelvis and squeeze the glute of the back leg (the stretch is high in the front of the hip).
+Figure-4 glute stretch, lying on the back: 45 s each side, 2 rounds.
+Child's pose side reach: 30 s each side, walk both hands to one side (the stretch is along the side of the low back).
+Knees to chest: 30 s, rock gently.
+
 ## Paolo's zone anchors (FTP 265 W, LTHR 168, max ~182+; FTP was 280 W until 2026-10-20)
 
 | Zone | HR | Power |
