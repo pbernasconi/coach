@@ -22,6 +22,10 @@ nonisolated struct CoachReply: Equatable, Sendable {
     let text: String
     var steps: [CoachChatStep] = []
     var proposal: CoachProposal?
+    /// Cards with real data under the text (a workout, a week, an exercise, readiness, a day).
+    var attachments: [CoachAttachment] = []
+    /// One-tap answers when the reply asks a question; a tap sends it.
+    var quickReplies: [String] = []
 }
 
 /// One row of the conversation.

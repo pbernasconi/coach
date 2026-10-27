@@ -20,14 +20,16 @@ nonisolated struct CoachState: Equatable, Sendable {
     var nextID = 0
     /// Why Coach cannot answer, or what this build is (the demo); shown over the starter prompts.
     var notice: String?
+    /// The exercise pictures of the cards, by URL, as they load.
+    var media: [URL: MediaImage] = [:]
 
     /// Starter prompts for an empty conversation (the server's when it sends some); a tap fills the composer.
     var prompts = [
-        ChatPrompt(id: "swap", title: "Swap today's lift for an easy run", systemImage: "arrow.left.arrow.right"),
-        ChatPrompt(id: "move", title: "Move today's session to tomorrow", systemImage: "arrow.right"),
-        ChatPrompt(id: "sore", title: "I'm sore, make today easy", systemImage: "bandage"),
-        ChatPrompt(id: "short", title: "I only have 30 minutes", systemImage: "clock"),
-        ChatPrompt(id: "week", title: "How did my week go?", systemImage: "calendar"),
+        ChatPrompt(id: "tomorrow", title: "What's on tomorrow?"),
+        ChatPrompt(id: "swap", title: "Swap today's lift for an easy run"),
+        ChatPrompt(id: "week", title: "How did my week go?"),
+        ChatPrompt(id: "sore", title: "I'm sore, make today easy"),
+        ChatPrompt(id: "exercise", title: "How do I do a Romanian deadlift?"),
     ]
 
     /// Whether the composer's button stops a reply rather than sending.

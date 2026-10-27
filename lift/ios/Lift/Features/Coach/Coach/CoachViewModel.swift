@@ -8,11 +8,23 @@ final class CoachViewModel {
     private(set) var state = CoachState()
     private let coach: any CoachChatting
     private let plan: any CoachPlanProviding
+    private let router: any Navigating
+    private let tabs: any TabSwitching
+    private let mediaLoader: any ExerciseMediaLoader
     private var replyTask: Task<Void, Never>?
 
-    init(coach: any CoachChatting, plan: any CoachPlanProviding) {
+    init(
+        coach: any CoachChatting,
+        plan: any CoachPlanProviding,
+        router: any Navigating,
+        tabs: any TabSwitching,
+        mediaLoader: any ExerciseMediaLoader
+    ) {
         self.coach = coach
         self.plan = plan
+        self.router = router
+        self.tabs = tabs
+        self.mediaLoader = mediaLoader
     }
 
     /// Reads the open conversation. A failure leaves the tab empty with the reason as its notice.
@@ -58,7 +70,29 @@ final class CoachViewModel {
             return change(id, from: .applied, showing: nil) { try await self.coach.undo(id) }
         case .dismissTapped(let id):
             return change(id, from: .pending, showing: nil) { try await self.coach.dismiss(id) }
+        case .quickReplyTapped(let text):
+            state.draft = text
+            return send(.sendTapped)
+        case .workoutOpened, .exerciseOpened, .weekOpened, .todayOpened, .mediaNeeded:
+            return card(action)
         }
+    }
+
+    /// A card's actions: open its page, or load its picture.
+    private func card(_ action: CoachAction) -> Task<Void, Never>? {
+        switch action {
+        case .workoutOpened(let id): router.open(.plannedWorkout(id))
+        case .exerciseOpened(let key): router.open(.liftExercise(key))
+        case .weekOpened: tabs.show(.week)
+        case .todayOpened: tabs.show(.today)
+        case .mediaNeeded(let url):
+            guard state.media[url] == nil else { return nil }
+            state.media[url] = .loading
+            let loader = mediaLoader
+            return Task { state.media[url] = await MediaImage.load(url, with: loader) }
+        default: break
+        }
+        return nil
     }
 
     private func ask(_ text: String) -> Task<Void, Never> {

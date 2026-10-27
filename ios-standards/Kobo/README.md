@@ -69,7 +69,7 @@ header band and its hairline; the canvas and separator by default).
 | Search | `SearchField`, `HighlightedText`, `.koboSearchable`, `SearchMatch` |
 | Feedback | `Toast` + `ToastCenter` + `.toastHost(_:)`, `Skeleton`, `.shimmering()`, `.skeletonBreath()`, `LoadingState`, `EmptyState`, `EmptyStateArt`, `ErrorState`, `NoticeBanner`, `StatusPill`, `.pulse(active:)` |
 | Status | `BannerStack` + `.bannerStack`, `NudgeBanner`, `SystemNotice`, `OfflineBanner`, `InlineNotice`, `IconNotice`, `InlineProgress`, `SectionState`, `SlowWaitNote` |
-| Display | `ProgressRing`, `CountdownRing`, `AnimatedNumber`, `StatTile`, `Avatar`, `Monogram`, `Thumbnail`, `ThumbnailBadge` |
+| Display | `ProgressRing`, `CountdownRing`, `AnimatedNumber`, `StatTile`, `Avatar`, `Monogram`, `Thumbnail`, `ThumbnailBadge`, `DayTimeline` + `DayTimelineBlock` |
 | Charts | `Sparkline` (also in a `StatTile` footer), `KoboLineChart` (+ `.logarithmicX()`), `KoboLinePanels`, `KoboStackedBarChart`, `KoboHistogram`, `VariableWidthBarChart`, `BandBar`, `ZoneBars`, `ProfileStrip`, `KoboHeatmap`, `KoboDataTable`, `KoboRouteMap` |
 | Layout | `.koboCard()`, `CardSection`, `ListRow`, `ListSection`, `KeyValueRow`, `KeyValueList`, `SectionHeader`, `Separator`, `Collapsible`, `.pinnedFooter`, `SheetHeader`, `DayStrip`, `SegmentedProgress`, `TileGrid`, `MiniPlayerBar` |
 | Navigation | `AppHeader` + `.tabRootHeader`, `HeaderButton`, `HeaderProfileButton`, `CountBadge` + `.countBadge`, `TabShell`, `TextLink` |
@@ -78,7 +78,7 @@ header band and its hairline; the canvas and separator by default).
 | Utilities | `AccessibilitySizeReader`, `WideWindowReader`, `AdaptiveColumns`, `HoldsLastValue`, `MaskedValue`, `RevealableValue`, `DeferredRow`, `.pageGutter()`, `.readableWidth()`, `.screenCanvas()`, `.onArrival` |
 | Patterns | `Loadable` + `LoadableView`, `ScreenScaffold`, `.koboConfirm` (system dialog, or `style: .sheet` for stacked buttons), `StateGallery`, `.previewMatrix()` |
 | Lists | `ListRowSkeleton`, `LoadMoreFooter`, `LoadableSection`, `LoadableCaptionSection`, `SectionEmptyCard`, `.koboRefreshable` |
-| Chat | `ChatTranscript`, `ChatComposer`, `ChatMessageBubble`, `ChatReply` (light Markdown), `ChatTypingIndicator`, `ChatToolStatus`, `ChatActionCard` + `ChatActionItem` (old → new rows, Apply, Dismiss, Undo), `ChatPromptSuggestions` + `ChatPrompt`, `ChatErrorRow` |
+| Chat | `ChatTranscript`, `ChatComposer`, `ChatMessageBubble`, `ChatReply` (light Markdown), `ChatTypingIndicator`, `ChatToolStatus`, `ChatActionCard` + `ChatActionItem` (old → new rows, Apply, Dismiss, Undo), `ChatPromptSuggestions` + `ChatPrompt`, `ChatErrorRow`, `ChatEmbedCard` (a card inside a reply) |
 | Flows | `FlowStep`, `ProgressFlowStep`, `ValueStep`, `StepIndicator`, `ReviewScaffold`, `ReviewSection`, `ReviewRow`, `ReviewDisclosure`, `OutcomeScaffold`, `PrimerPage`, `UpdateGateScreen`, `FormFocus` |
 
 Open `CatalogGallery()` to browse them all, interactively, under any theme, in light, dark and AX3.

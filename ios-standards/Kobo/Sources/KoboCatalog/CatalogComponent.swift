@@ -104,6 +104,7 @@ nonisolated public enum CatalogComponent: String, CaseIterable, Identifiable, Se
     case statTile = "StatTile"
     case avatar = "Avatar"
     case thumbnail = "Thumbnail"
+    case dayTimeline = "DayTimeline"
     // Charts
     case sparkline = "Sparkline"
     case lineChart = "KoboLineChart"
@@ -195,6 +196,7 @@ nonisolated public enum CatalogComponent: String, CaseIterable, Identifiable, Se
     case chatActionCard = "ChatActionCard"
     case chatPromptSuggestions = "ChatPromptSuggestions"
     case chatErrorRow = "ChatErrorRow"
+    case chatEmbedCard = "ChatEmbedCard"
 
     public var id: String { rawValue }
 

@@ -27,25 +27,52 @@ nonisolated struct DemoCoachChat: CoachChatting {
 
     func dismiss(_ proposalID: String) async throws -> ChatActionStatus { .dismissed }
 
-    /// The sample reply for a message: a plan change for a swap or a move, an easier day for soreness, else a note.
+    /// The sample reply for a message: cards for a question, a plan change for a swap, an easier day for soreness.
     static func sample(for text: String, turn: Int) -> CoachReply {
         let words = text.lowercased()
-        if words.contains("lift") || words.contains("move") || words.contains("tomorrow") {
-            return swapReply(turn: turn)
+        if let reply = cardReply(words, turn: turn) { return reply }
+        if words.contains("lift") || words.contains("swap") {
+            var reply = swapReply(turn: turn)
+            reply.attachments = [DemoCoachCards.day]
+            return reply
         }
         if words.contains("sore") || words.contains("tired") || words.contains("easy") {
-            return easyDayReply(turn: turn)
+            var reply = easyDayReply(turn: turn)
+            reply.attachments = [DemoCoachCards.readiness]
+            return reply
+        }
+        return CoachReply(text: "This is the demo: Coach answers with samples. Try *\"What's on tomorrow?\"*.")
+    }
+
+    /// Replies that show cards and change nothing.
+    private static func cardReply(_ words: String, turn: Int) -> CoachReply? {
+        if words.contains("what's on") || words.contains("what’s on") {
+            return CoachReply(
+                text: "Tomorrow is **VO2 B at 09:00**. Your morning is free after the 08:00 call; travel starts at 13:30.",
+                steps: [CoachChatStep(id: "t\(turn)-plan", text: "Read tomorrow's plan")],
+                attachments: [DemoCoachCards.workout, DemoCoachCards.day]
+            )
         }
         if words.contains("week") {
             return CoachReply(
-                text: "**4 of 7 sessions done**, 312 of 520 TSS. The long ride on Sunday is the big one left.",
-                steps: [CoachChatStep(id: "t\(turn)-week", text: "Read this week's plan")]
+                text: "**3 of 8 done** so far, and one easy run missed on Wednesday. Friday's 10k test is the key session.",
+                steps: [CoachChatStep(id: "t\(turn)-week", text: "Read this week's plan")],
+                attachments: [DemoCoachCards.week]
             )
         }
-        return CoachReply(
-            text: "This is the concept build: Coach answers with samples. Try *\"Move today's lift to tomorrow\"*.",
-            steps: []
-        )
+        if words.contains("deadlift") || words.contains("how do i") {
+            return CoachReply(
+                text: "Hinge from the hips and keep the bar close. Today is **3 × 8 at 135 lb**, the same as last time.",
+                attachments: [DemoCoachCards.exercise]
+            )
+        }
+        if words.contains("move") {
+            return CoachReply(
+                text: "Tomorrow has two free windows. Which one suits you?",
+                quickReplies: ["Tuesday 09:00", "Wednesday 07:00"]
+            )
+        }
+        return nil
     }
 
     private static func swapReply(turn: Int) -> CoachReply {

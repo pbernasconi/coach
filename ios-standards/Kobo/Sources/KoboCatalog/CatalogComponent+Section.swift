@@ -30,7 +30,7 @@ extension CatalogComponent {
             .inlineProgress,
             .sectionState, .slowWaitNote:
             .status
-        case .progressRing, .countdownRing, .animatedNumber, .statTile, .avatar, .thumbnail:
+        case .progressRing, .countdownRing, .animatedNumber, .statTile, .avatar, .thumbnail, .dayTimeline:
             .display
         case .sparkline, .lineChart, .linePanels, .stackedBarChart, .histogram, .variableWidthBarChart, .bandBar,
             .zoneBars, .profileStrip, .heatmap, .dataTable, .routeMap:
@@ -60,7 +60,7 @@ extension CatalogComponent {
             .reviewDisclosure, .outcomeScaffold, .primerPage, .updateGateScreen:
             .flows
         case .chatTranscript, .chatComposer, .chatMessageBubble, .chatReply, .chatTypingIndicator, .chatToolStatus,
-            .chatActionCard, .chatPromptSuggestions, .chatErrorRow:
+            .chatActionCard, .chatPromptSuggestions, .chatErrorRow, .chatEmbedCard:
             .chat
         }
     }

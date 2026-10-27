@@ -16,6 +16,19 @@ nonisolated enum CoachWire {
         let role: String
         let text: String
         let proposal: Proposal?
+        /// The cards in the reply; missing in bodies from before they existed.
+        let attachments: Attachments?
+        /// One-tap answers when Coach asks a question.
+        let quickReplies: [String]?
+    }
+
+    /// A message's cards, each decoded on its own: one this build cannot read is dropped and the rest stay.
+    struct Attachments: Decodable, Sendable {
+        let items: [CoachAttachment]
+
+        init(from decoder: any Decoder) throws {
+            items = CoachAttachment.list(from: decoder)
+        }
     }
 
     struct Proposal: Decodable, Sendable {
@@ -53,7 +66,15 @@ nonisolated enum CoachWire {
     static func message(_ wire: Message) -> CoachMessage {
         let body: CoachMessage.Body =
             wire.role == "user"
-            ? .mine(wire.text) : .coach(CoachReply(text: wire.text, proposal: wire.proposal.map(proposal)))
+            ? .mine(wire.text)
+            : .coach(
+                CoachReply(
+                    text: wire.text,
+                    proposal: wire.proposal.map(proposal),
+                    attachments: wire.attachments?.items ?? [],
+                    quickReplies: wire.quickReplies ?? []
+                )
+            )
         return CoachMessage(id: wire.id, body: body)
     }
 
