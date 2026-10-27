@@ -29,14 +29,13 @@
                     },
                     onClose: { isPresented.wrappedValue = false }
                 )
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
             }
         }
     }
 
     /// The attach sheet with its pickers and the recent photos.
     private struct ChatAttachPicker: View {
+        @Environment(\.koboTheme) private var theme
         @ScaledMetric(relativeTo: .body) private var tileSide = Size.thumbnail * 2
         let title: Text
         let limit: Int
@@ -50,6 +49,8 @@
         @State private var showsLibrary = false
         @State private var showsFiles = false
         @State private var libraryItems: [PhotosPickerItem] = []
+        /// The sheet is as tall as its rows (the Attach button adds to it), never a band of empty space.
+        @State private var height: CGFloat = 0
 
         var body: some View {
             ChatAttachSheet(
@@ -65,6 +66,16 @@
                 { showsFiles = true },
                 attachSelection
             )
+            .fixedSize(horizontal: false, vertical: true)
+            .onGeometryChange(for: CGFloat.self) {
+                $0.size.height
+            } action: {
+                height = $0
+            }
+            .frame(maxHeight: .infinity, alignment: .top)
+            .presentationDetents(height > 0 ? [.height(height), .large] : [.medium, .large])
+            .presentationDragIndicator(.visible)
+            .presentationBackground(theme.palette.canvas)
             .task { await recents.load(limit: 24, side: tileSide * 2) }
             .photosPicker(
                 isPresented: $showsLibrary,
