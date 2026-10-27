@@ -67,7 +67,7 @@ final class CoachViewModel {
             guard !text.isEmpty, !state.isResponding else { return nil }
             if state.voice.isListening { voice(state.voice.backgrounded()) }
             state.draft = ""
-            append(.mine(text))
+            state.append(.mine(text))
             return ask(text)
         case .retryTapped:
             guard let text = state.lastMessage, !state.isResponding else { return nil }
@@ -202,11 +202,13 @@ final class CoachViewModel {
         let history = state.messages
         let task = Task {
             do {
-                let reply = try await coach.reply(to: text, after: history)
-                guard !Task.isCancelled else { return }
-                if reply.proposal != nil { state.supersedeOpenProposals() }
-                append(.coach(reply))
-                state.phase = .idle
+                for try await event in coach.replies(to: text, after: history) {
+                    guard !Task.isCancelled else { return }
+                    switch event {
+                    case .progress(let progress): state.phase = .answering(progress)
+                    case .reply(let reply): state.receive(reply)
+                    }
+                }
                 replyTask = nil
             } catch {
                 guard !Task.isCancelled, !(error is CancellationError) else { return }
@@ -240,10 +242,5 @@ final class CoachViewModel {
             }
             state.busyProposal = nil
         }
-    }
-
-    private func append(_ body: CoachMessage.Body) {
-        state.messages.append(CoachMessage(id: "local-\(state.nextID)", body: body))
-        state.nextID += 1
     }
 }

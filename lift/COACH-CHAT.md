@@ -137,7 +137,10 @@ A reply used to take 15–30 s with nothing on screen but the typing dots. Where
   runs at `low` (`EFFORT` in chat.mjs), a few seconds; the server still checks every change, so a slip is sent back
   to be fixed rather than reaching the plan.
 - **Nothing streamed.** The answer now streams (APP-API.md, "Coach answer stream"): a status line within a second,
-  a summary of Claude's thinking, then the words as they are written. The card comes with the last event.
+  a summary of Claude's thinking, then the words as they are written. The card comes with the last event. The
+  Coach tab shows the status line (the latest line of the thinking while Claude thinks) beside the typing dots,
+  then the reply growing word by word (`LiveCoachChat.replies`, `CoachStreamWire`, LiftSync's
+  `ServerSentEventParser`).
 - **Reads before Claude.** The plan, the profile (about 15 queries and a weather fetch) and the budget check run side
   by side, while the message is stored.
 - **Cold cache.** Opening the tab warms Claude's cache of the system prompt and tools (`warmCoach`, a `max_tokens: 0`

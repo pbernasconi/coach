@@ -11,7 +11,13 @@ actor FakeCoach: CoachChatting {
     var failsApply = false
     var applyAnswer = ChatActionStatus.applied
 
-    init(_ reply: Result<CoachReply, CoachChatError>) { self.reply = reply }
+    /// When set, `replies` passes on these events (the test feeds them); otherwise it answers the set reply at once.
+    nonisolated let feed: AsyncThrowingStream<CoachReplyEvent, any Error>?
+
+    init(_ reply: Result<CoachReply, CoachChatError>, feed: AsyncThrowingStream<CoachReplyEvent, any Error>? = nil) {
+        self.reply = reply
+        self.feed = feed
+    }
 
     /// Threads to answer first, in order (a conversation still being answered, then answered); then `loaded`.
     var queued: [CoachThread] = []
@@ -23,6 +29,19 @@ actor FakeCoach: CoachChatting {
     }
 
     func reply(to text: String, after history: [CoachMessage]) async throws -> CoachReply { try reply.get() }
+
+    nonisolated func replies(to text: String, after history: [CoachMessage])
+        -> AsyncThrowingStream<CoachReplyEvent, any Error>
+    {
+        if let feed { return feed }
+        return AsyncThrowingStream { continuation in
+            Task {
+                let answer = await self.reply
+                continuation.yield(with: answer.map { .reply($0) }.mapError { $0 as any Error })
+                continuation.finish()
+            }
+        }
+    }
 
     func apply(_ proposalID: String) async throws -> ChatActionStatus {
         if failsApply { throw CoachChatError(message: "no") }

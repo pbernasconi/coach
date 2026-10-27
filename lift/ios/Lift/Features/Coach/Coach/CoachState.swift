@@ -5,6 +5,8 @@ import KoboComponents
 nonisolated enum CoachReplyPhase: Equatable, Sendable {
     case idle
     case waiting
+    /// The reply is streaming in: its step, thinking and words so far.
+    case answering(CoachProgress)
     /// The last message got no reply; the error row offers Retry.
     case failed(String)
 }
@@ -36,7 +38,12 @@ nonisolated struct CoachState: Equatable, Sendable {
     ]
 
     /// Whether the composer's button stops a reply rather than sending.
-    var isResponding: Bool { phase == .waiting }
+    var isResponding: Bool {
+        switch phase {
+        case .waiting, .answering: true
+        case .idle, .failed: false
+        }
+    }
 
     /// The status of a proposal's card.
     func status(of id: String) -> ChatActionStatus? {
@@ -49,6 +56,19 @@ nonisolated struct CoachState: Equatable, Sendable {
             reply.proposal?.status = status
             messages[index].body = .coach(reply)
         }
+    }
+
+    /// A row of the conversation, with the next local id.
+    mutating func append(_ body: CoachMessage.Body) {
+        messages.append(CoachMessage(id: "local-\(nextID)", body: body))
+        nextID += 1
+    }
+
+    /// Coach's reply arrived: it ends the wait, and its card replaces the ones still open.
+    mutating func receive(_ reply: CoachReply) {
+        if reply.proposal != nil { supersedeOpenProposals() }
+        append(.coach(reply))
+        phase = .idle
     }
 
     /// A new proposal replaces the ones still waiting.
