@@ -1,19 +1,24 @@
 import KoboTokens
 import SwiftUI
 
-/// The message field at the bottom of a chat: a capsule that grows to six lines, with one round button inside it at
-/// the trailing edge that sends, or stops a reply in progress. The button hides while the draft is blank. Return adds a
-/// line; the button sends. Under a glass theme the capsule is Liquid Glass, for a bar over the transcript; place it
-/// with `.safeAreaBar(edge: .bottom)`. The keyboard's microphone dictates into it.
+/// The message field at the bottom of a chat. At rest it is a single-line capsule with one round button inside (send
+/// with a draft, stop while a reply can be stopped, else the microphone). With focus, or while the microphone listens,
+/// it opens into a card: the field on top, growing to eight lines, and a toolbar under it with the listening level on
+/// the left and the microphone and Send (dimmed while the draft is blank) on the right. Return adds a line; Send sends.
+/// Place it with `.safeAreaBar(edge: .bottom)`. `voice` adds the microphone (`ChatVoice`).
 ///
-///     ChatComposer(text: $draft, prompt: "Message", isResponding: isWaiting, onSend: send, onStop: stop)
+///     ChatComposer(text: $draft, prompt: "Message", isResponding: isWaiting, onSend: send, onStop: stop, voice: voice)
 public struct ChatComposer: View {
     @Environment(\.koboTheme) private var theme
+    @FocusState private var isFocused: Bool
+    /// A hold just ended: the mic button's own tap, which can come after, is skipped.
+    @State private var endedHold = false
     private let text: Binding<String>
     private let prompt: Text
     private let isResponding: Bool
     private let onSend: () -> Void
     private let onStop: (() -> Void)?
+    private let voice: ChatVoice?
     private var focus: FocusState<Bool>.Binding?
 
     /// A composer. `onStop` adds the stop button while `isResponding`; without it the send button waits, disabled.
@@ -22,9 +27,10 @@ public struct ChatComposer: View {
         prompt: LocalizedStringKey,
         isResponding: Bool = false,
         onSend: @escaping () -> Void,
-        onStop: (() -> Void)? = nil
+        onStop: (() -> Void)? = nil,
+        voice: ChatVoice? = nil
     ) {
-        self.init(text: text, prompt: Text(prompt), isResponding: isResponding, onSend: onSend, onStop: onStop)
+        self.init(text, Text(prompt), isResponding, onSend, onStop, voice)
     }
 
     /// A composer whose placeholder is runtime text ("Message Alex").
@@ -33,29 +39,26 @@ public struct ChatComposer: View {
         verbatimPrompt: String,
         isResponding: Bool = false,
         onSend: @escaping () -> Void,
-        onStop: (() -> Void)? = nil
+        onStop: (() -> Void)? = nil,
+        voice: ChatVoice? = nil
     ) {
-        self.init(
-            text: text,
-            prompt: Text(verbatim: verbatimPrompt),
-            isResponding: isResponding,
-            onSend: onSend,
-            onStop: onStop
-        )
+        self.init(text, Text(verbatim: verbatimPrompt), isResponding, onSend, onStop, voice)
     }
 
     private init(
-        text: Binding<String>,
-        prompt: Text,
-        isResponding: Bool,
-        onSend: @escaping () -> Void,
-        onStop: (() -> Void)?
+        _ text: Binding<String>,
+        _ prompt: Text,
+        _ isResponding: Bool,
+        _ onSend: @escaping () -> Void,
+        _ onStop: (() -> Void)?,
+        _ voice: ChatVoice?
     ) {
         self.text = text
         self.prompt = prompt
         self.isResponding = isResponding
         self.onSend = onSend
         self.onStop = onStop
+        self.voice = voice
     }
 
     /// Links the field to a screen's focus state (a quick prompt can fill it and raise the keyboard).
@@ -65,107 +68,126 @@ public struct ChatComposer: View {
         return composer
     }
 
+    private var isListening: Bool { voice?.phase == .listening || voice?.phase == .holding }
+    private var isExpanded: Bool { ChatComposerLogic.isExpanded(isFocused: isFocused, isListening: isListening) }
+
     public var body: some View {
-        ChatComposerField(text: text, prompt: prompt, focus: focus, button: button) {
-            switch button {
-            case .send(isEnabled: true):
-                ChatComposerButton(systemImage: "arrow.up", label: Text("Send", bundle: .module), action: onSend)
-            case .stop:
-                ChatComposerButton(systemImage: "stop.fill", label: Text("Stop", bundle: .module)) { onStop?() }
-            case .send(isEnabled: false), .waiting:
-                EmptyView()
+        VStack(spacing: Space.xs) {
+            if voice?.phase == .unavailable, let open = voice?.onOpenSettings {
+                ChatVoiceDeniedRow(openSettings: open)
             }
+            VStack(alignment: .leading, spacing: isExpanded ? Space.xs : 0) {
+                HStack(alignment: .bottom, spacing: Space.xs) {
+                    field
+                    if !isExpanded { compactButton }
+                }
+                if isExpanded { toolbar }
+            }
+            .padding(.leading, Space.lg)
+            .padding(.trailing, Space.xs)
+            .padding(.vertical, Space.xxs)
+            .modifier(ChatComposerSurface(isExpanded: isExpanded))
         }
         .padding(.horizontal, Space.gutter)
         .padding(.vertical, Space.sm)
-    }
-
-    private var button: ChatComposerLogic.Button {
-        ChatComposerLogic.button(draft: text.wrappedValue, isResponding: isResponding, canStop: onStop != nil)
-    }
-}
-
-/// The round send or stop button inside the field: a solid accent circle, never glass (it sits on the field's glass).
-/// The circle is 44 pt, the same as the target.
-private struct ChatComposerButton: View {
-    @Environment(\.koboTheme) private var theme
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @ScaledMetric(relativeTo: .body) private var circle = Size.minTouch
-    let systemImage: String
-    let label: Text
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Image(systemName: systemImage)
-                .font(theme.font(.subheadline).weight(.bold))
-                .foregroundStyle(theme.palette.onAccent)
-                .frame(width: circle, height: circle)
-                .background(theme.palette.accent, in: Circle())
-                .frame(minWidth: Size.minTouch, minHeight: Size.minTouch)
-                .contentShape(Rectangle())
+        .koboAnimation(.present, value: isExpanded)
+        // The finger that holds the microphone lifts here: the button itself moved when listening began.
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in if voice?.phase != .holding { endedHold = false } }
+                .onEnded { _ in
+                    guard let voice, voice.phase == .holding else { return }
+                    endedHold = true
+                    voice.onHoldEnded()
+                }
+        )
+        // The field keeps its own focus, kept equal to the screen's (writes to a focus state no field uses are lost).
+        .onChange(of: focus?.wrappedValue) { _, wanted in
+            if let wanted, wanted != isFocused { isFocused = wanted }
         }
-        .buttonStyle(.plain)
-        .pressFeedback()
-        .accessibilityLabel(label)
-        .transition(Motion.pop(reduceMotion: reduceMotion))
-    }
-}
-
-/// The growing field: a rounded glass shape under a glass theme, else the surface with a hairline.
-private struct ChatComposerField<Trailing: View>: View {
-    @Environment(\.koboTheme) private var theme
-    @FocusState private var isFocused: Bool
-    let text: Binding<String>
-    let prompt: Text
-    let focus: FocusState<Bool>.Binding?
-    let button: ChatComposerLogic.Button
-    @ViewBuilder let trailing: () -> Trailing
-
-    /// Room for the button inside the field while it shows.
-    private var showsButton: Bool {
-        switch button {
-        case .send(isEnabled: true), .stop: true
-        case .send(isEnabled: false), .waiting: false
+        .onChange(of: isFocused) { _, now in
+            if let focus, focus.wrappedValue != now { focus.wrappedValue = now }
         }
     }
 
-    var body: some View {
+    private var field: some View {
         TextField(text: text, prompt: prompt.foregroundStyle(theme.palette.textTertiary), axis: .vertical) { prompt }
             .labelsHidden()
-            .lineLimit(1...6)
+            .lineLimit(1...8)
             .focused($isFocused)
             .font(theme.font(.body))
             .foregroundStyle(theme.palette.textPrimary)
             .tint(theme.palette.accent)
-            .padding(.leading, Space.lg)
-            .padding(.trailing, showsButton ? Size.minTouch + Space.sm : Space.lg)
-            .padding(.vertical, Space.md - Space.xxs)
-            .frame(maxWidth: .infinity, minHeight: Size.minTouch + Space.xs, alignment: .leading)
-            .overlay(alignment: .bottomTrailing) { trailing().padding(Space.xxs) }
-            .koboAnimation(.defaultEffects, value: showsButton)
-            .modifier(ChatComposerSurface())
-            .onChange(of: focus?.wrappedValue) { _, wanted in
-                if let wanted, wanted != isFocused { isFocused = wanted }
+            .padding(.vertical, Space.sm + Space.xxs)
+            .frame(maxWidth: .infinity, minHeight: Size.minTouch, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private var compactButton: some View {
+        switch ChatComposerLogic.compactButton(
+            draft: text.wrappedValue,
+            isResponding: isResponding,
+            canStop: onStop != nil,
+            hasVoice: voice != nil
+        )
+        {
+        case .send: sendButton(look: .accent)
+        case .stop: stopButton
+        case .microphone: if let voice { micButton(voice) }
+        case .none: EmptyView()
+        }
+    }
+
+    private var toolbar: some View {
+        HStack(spacing: Space.xs) {
+            if isListening, let voice { ChatVoiceLevel(phase: voice.phase, level: voice.level) }
+            Spacer(minLength: 0)
+            if let voice { micButton(voice) }
+            switch ChatComposerLogic.button(
+                draft: text.wrappedValue,
+                isResponding: isResponding,
+                canStop: onStop != nil
+            ) {
+            case .send(let isEnabled): sendButton(look: isEnabled ? .accent : .dimmed)
+            case .stop: stopButton
+            case .waiting: sendButton(look: .dimmed)
             }
-            .onChange(of: isFocused) { _, now in
-                if let focus, focus.wrappedValue != now { focus.wrappedValue = now }
-            }
+        }
+    }
+
+    private func micButton(_ voice: ChatVoice) -> some View {
+        ChatMicButton(
+            phase: voice.phase,
+            onTap: { if endedHold { endedHold = false } else { voice.onTap() } },
+            onHoldBegan: voice.onHoldBegan
+        )
+    }
+
+    private func sendButton(look: ChatRoundButton.Look) -> some View {
+        ChatRoundButton(systemImage: "arrow.up", label: Text("Send", bundle: .module), look: look, action: onSend)
+    }
+
+    private var stopButton: some View {
+        ChatRoundButton(systemImage: "stop.fill", label: Text("Stop", bundle: .module), look: .accent) { onStop?() }
     }
 }
 
+/// At rest, a capsule of Liquid Glass (or the surface with a hairline under a solid theme); open, a rounded card with
+/// the surface fill and a hairline. One modifier chain for both shapes: a branch would rebuild the field and drop focus.
 private struct ChatComposerSurface: ViewModifier {
     @Environment(\.koboTheme) private var theme
+    let isExpanded: Bool
 
     func body(content: Content) -> some View {
-        let shape = RoundedRectangle(cornerRadius: Radius.lg + Space.xxs)
-        if theme.surfaceStyle == .glass {
-            content.glassEffect(.regular.interactive(), in: shape)
-        } else {
-            content
-                .background(theme.palette.surface, in: shape)
-                .overlay { shape.strokeBorder(theme.palette.separator, lineWidth: Size.hairline) }
-        }
+        let shape = RoundedRectangle(
+            cornerRadius: isExpanded ? Radius.lg + Space.xs : Radius.lg + Space.xxs,
+            style: .continuous
+        )
+        let isGlass = theme.surfaceStyle == .glass && !isExpanded
+        content
+            .background(isGlass ? Color.clear : theme.palette.surface, in: shape)
+            .overlay { shape.strokeBorder(theme.palette.separator.opacity(isGlass ? 0 : 1), lineWidth: Size.hairline) }
+            .glassEffect(isGlass ? .regular.interactive() : .identity, in: shape)
     }
 }
 
@@ -179,6 +201,24 @@ private struct ChatComposerSurface: ViewModifier {
                 Spacer()
                 ChatComposer(text: $empty, prompt: "Message", onSend: {})
                 ChatComposer(text: $draft, prompt: "Message", onSend: {})
+                ChatComposer(
+                    text: $draft,
+                    prompt: "Message",
+                    onSend: {},
+                    voice: ChatVoice(phase: .listening, level: 0.6, onTap: {}, onHoldBegan: {}, onHoldEnded: {})
+                )
+                ChatComposer(
+                    text: $empty,
+                    prompt: "Message",
+                    onSend: {},
+                    voice: ChatVoice(
+                        phase: .unavailable,
+                        onTap: {},
+                        onHoldBegan: {},
+                        onHoldEnded: {},
+                        onOpenSettings: {}
+                    )
+                )
                 ChatComposer(text: $empty, prompt: "Message", isResponding: true, onSend: {}, onStop: {})
             }
             .screenCanvas()

@@ -8,14 +8,15 @@ nonisolated struct ChatScrollFollow: Equatable, Sendable {
     static let threshold: Double = 48
 
     private(set) var isPinned = true
-    /// The reader is more than half a screen up: only then does the jump-to-latest button show.
+    /// The reader scrolled up by hand to more than one and a half screens above the latest: only then does the
+    /// jump-to-latest button show.
     private(set) var isFar = false
 
     /// The reader's distance from the bottom changed (a scroll, or the content grew under a reader who scrolled up).
     /// `visibleHeight` is the scroll view's height; without it, any distance past the threshold counts as far.
     mutating func scrolled(distanceFromBottom: Double, visibleHeight: Double = 0) {
         isPinned = distanceFromBottom <= Self.threshold
-        isFar = distanceFromBottom > max(Self.threshold, visibleHeight / 2)
+        isFar = distanceFromBottom > max(Self.threshold, visibleHeight * 1.5)
     }
 
     /// Whether new or longer content should scroll the transcript to the bottom.

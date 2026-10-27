@@ -46,7 +46,7 @@ extension CompositionRoot {
             tokens: syncTokenStore(),
             timeZone: { TimeZone.current.identifier }
         )
-        return LiveCoachChat(client: client)
+        return BackgroundCoachChat(base: LiveCoachChat(client: client))
     }
 
     /// A folder in Application Support, or in the temporary folder when Application Support cannot be made.

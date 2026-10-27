@@ -104,15 +104,26 @@ lift moves once) and plan-structure.md (cached).
 ### The iPhone tab
 
 - Tab: **Coach**, symbol `bubble.left.and.text.bubble.right`.
-- A message list and a text field. iOS dictation works in the field, so voice input needs no code at first.
+- A message list and a composer. At rest the composer is a one-line capsule; with focus (or while the microphone
+  listens) it opens into a card: the field on top and a toolbar with the microphone and Send under it. A tap on the
+  conversation closes the keyboard; so does a drag down.
+- The microphone (Kobo's `ChatVoice`, rules in `ChatVoiceInput`): a tap puts the words in the field as they are heard,
+  and a second tap or a 2 s pause stops; holding talks, and the release sends (nothing heard sends nothing). Speech is
+  turned into text on the iPhone (`LiveSpeechTranscriber`, `SFSpeechRecognizer` with on-device recognition). Both
+  permissions are asked on first use; when they are off, a row under the field links to Settings. Listening stops when
+  the tab or the app goes away. Demo data hears a made-up sentence (`-voice denied` shows the denied row).
 - A change card under Coach's reply: one row per change, the old value struck through before the new one ("Heavy
   barbell · ~~Mon 17:00~~ → Tue 09:00"), the warnings, and **Apply** and **Dismiss**. After Apply, the card shows
   "Applied" with **Undo**, and the Week tab refreshes (`coachPlan` fetch). A newer proposal marks the older open one
   "Replaced".
 - The steps Coach took show above its reply ("Read this week's plan", "Checked Tuesday's calendar"): real tool calls
   only, never made-up progress. While it works, three dots and the current step.
-- The transcript opens at the latest message and follows new ones while Paolo is at the bottom; scrolled up, it stays
-  and shows a jump-to-latest button.
+- The transcript opens at the latest message and follows new ones while Paolo is at the bottom; scrolled up by hand
+  more than about one and a half screens, it stays and shows a jump-to-latest button.
+- Leaving the app while Coach answers: the message's request runs as a background task, and the server finishes the
+  answer either way and pushes it (`coach.replied`, `lift://coach`; no banner while the conversation shows). The tab
+  reads the conversation again whenever it shows or the app comes back; while `answering` is true it shows the typing
+  row and reads it again every 3 s.
 - Quick prompts above the field for the common cases: "I'm sore", "Short on time today", "Move today to tomorrow".
 - Offline: the field is off and says so. Nothing queues; a plan change needs the server.
 - Lift's rule "No generated commentary" stays for every other tab. The Coach tab is the one place with model text.
@@ -132,4 +143,4 @@ lift moves once) and plan-structure.md (cached).
 1. Server: tables, `propose_changes` checks with `rules.mjs`, the apply path, the routes, unit tests with a fake
    client (as `loop.test.mjs`), an integration test for apply. Deployed and usable with curl.
 2. iPhone: the tab, the message list, the change card, Week refresh. Goes into the next batched TestFlight build.
-3. Later: streaming, push-started check-ins, voice with the Speech framework.
+3. Later: streaming, push-started check-ins.

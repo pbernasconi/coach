@@ -56,6 +56,12 @@ final class AppDependencies {
     let tabs: TabSwitcher
     /// Coach's chat (lift/COACH-CHAT.md): the server when this data syncs, sample replies for demo and practice data.
     lazy var coach: any CoachChatting = CompositionRoot.makeCoachChat(source: info.dataSource, sync: sync, clock: clock)
+    /// The composer's microphone: the iPhone's on-device recognizer, or a made-up sentence for demo data.
+    lazy var speech: any SpeechTranscribing =
+        info.dataSource == .demo ? DemoSpeechTranscriber(clock: clock, isDenied: false) : LiveSpeechTranscriber()
+    /// Whether Coach's conversation is on screen; a Coach reply then shows no banner (`AppDelegate`).
+    let coachPresence = CoachPresence()
+    let appSettings: any AppSettingsOpening = LiveAppSettings()
     /// What the activity list knew about the activity being opened (`ActivitySeed`).
     let activitySeeds: any ActivitySeeding = ActivitySeeds()
     /// Opens and closes Import from Notes, which the shell shows as a modal page above the tabs.

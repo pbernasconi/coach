@@ -22,6 +22,9 @@ nonisolated struct CoachState: Equatable, Sendable {
     var notice: String?
     /// The exercise pictures of the cards, by URL, as they load.
     var media: [URL: MediaImage] = [:]
+    /// The microphone: where listening stands (Kobo's rules), and the input level for the bars.
+    var voice = ChatVoiceInput()
+    var voiceLevel = 0.0
 
     /// Starter prompts for an empty conversation (the server's when it sends some); a tap fills the composer.
     var prompts = [
@@ -34,6 +37,26 @@ nonisolated struct CoachState: Equatable, Sendable {
 
     /// Whether the composer's button stops a reply rather than sending.
     var isResponding: Bool { phase == .waiting }
+
+    /// The status of a proposal's card.
+    func status(of id: String) -> ChatActionStatus? {
+        messages.lazy.compactMap(\.proposal).first { $0.id == id }?.status
+    }
+
+    mutating func setStatus(_ status: ChatActionStatus, of id: String) {
+        for index in messages.indices {
+            guard case .coach(var reply) = messages[index].body, reply.proposal?.id == id else { continue }
+            reply.proposal?.status = status
+            messages[index].body = .coach(reply)
+        }
+    }
+
+    /// A new proposal replaces the ones still waiting.
+    mutating func supersedeOpenProposals() {
+        for proposal in messages.compactMap(\.proposal) where proposal.status == .pending {
+            setStatus(.superseded, of: proposal.id)
+        }
+    }
 
     /// The last thing Paolo wrote, for Retry.
     var lastMessage: String? {

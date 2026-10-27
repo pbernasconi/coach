@@ -19,6 +19,7 @@ import Testing
             ("lift://weigh-in/2026-10-22", .weighIn("2026-10-22")),
             ("lift://weigh-in/latest", .weighIn("latest")),
             ("lift://today", .today),
+            ("lift://coach", .coach),
         ]
         for (text, expected) in links {
             let parsed = try link(text)
@@ -40,6 +41,7 @@ import Testing
         #expect(AppLink.activity("1").destination == ScreenDestination(tab: .week, route: .activity("1")))
         #expect(AppLink.weighIn("latest").destination == ScreenDestination(tab: .today, route: .weighIn("latest")))
         #expect(AppLink.today.destination == ScreenDestination(tab: .today, route: nil))
+        #expect(AppLink.coach.destination == ScreenDestination(tab: .coach, route: nil))
         #expect(AppLink.syncCode("A").destination == nil)
     }
 

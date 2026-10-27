@@ -41,6 +41,10 @@
 	<string>Coach does not read your Health data. It only saves the workouts you finish.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Coach saves each workout you finish to Apple Health as strength training, with its start and end time.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Coach uses the microphone when you talk to it instead of typing.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Coach turns what you say into text on this iPhone, so you can talk to it instead of typing.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>UILaunchScreen</key>

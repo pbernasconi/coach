@@ -9,11 +9,13 @@ import Testing
         #expect(!follow.showsJumpButton)
         follow.scrolled(distanceFromBottom: 30)
         #expect(follow.followsNewContent())
-        follow.scrolled(distanceFromBottom: 200, visibleHeight: 800)
+        follow.scrolled(distanceFromBottom: 900, visibleHeight: 800)
         #expect(!follow.followsNewContent())
-        #expect(!follow.showsJumpButton)  // a little way up: no button over the last card
-        follow.scrolled(distanceFromBottom: 500, visibleHeight: 800)
-        #expect(follow.showsJumpButton)
+        #expect(!follow.showsJumpButton)  // about a screen up: no button
+        follow.scrolled(distanceFromBottom: 1300, visibleHeight: 800)
+        #expect(follow.showsJumpButton)  // more than one and a half screens up
+        follow.scrolled(distanceFromBottom: 20, visibleHeight: 800)
+        #expect(!follow.showsJumpButton)  // back near the bottom: gone
         follow.jumped()
         #expect(follow.followsNewContent())
     }
@@ -160,5 +162,63 @@ import Testing
             DayTimelineBlock(id: "c", start: "later", end: "?", kind: .busy),
         ]
         #expect(DayTimelineMath.ordered(blocks).map(\.id) == ["a", "b", "c"])
+    }
+
+    @Test func theCapsuleShowsOneUsefulButtonAndNeverADisabledOne() {
+        #expect(
+            ChatComposerLogic.compactButton(draft: "", isResponding: false, canStop: true, hasVoice: true)
+                == .microphone
+        )
+        #expect(
+            ChatComposerLogic.compactButton(draft: "", isResponding: false, canStop: true, hasVoice: false) == .none
+        )
+        #expect(
+            ChatComposerLogic.compactButton(draft: "hi", isResponding: false, canStop: true, hasVoice: true) == .send
+        )
+        #expect(ChatComposerLogic.compactButton(draft: "", isResponding: true, canStop: true, hasVoice: true) == .stop)
+        #expect(ChatComposerLogic.compactButton(draft: "", isResponding: true, canStop: false, hasVoice: true) == .none)
+        #expect(ChatComposerLogic.isExpanded(isFocused: false, isListening: true))
+        #expect(!ChatComposerLogic.isExpanded(isFocused: false, isListening: false))
+    }
+
+    @Test func aTapStartsAndAnotherTapStopsKeepingTheWords() {
+        var voice = ChatVoiceInput()
+        #expect(voice.tapped() == .start)
+        #expect(voice.phase == .listening)
+        #expect(voice.tapped() == .stop)
+        #expect(voice.phase == .idle)
+    }
+
+    @Test func aPauseStopsTapToTalkButNotHolding() {
+        var voice = ChatVoiceInput()
+        _ = voice.tapped()
+        #expect(voice.pausedLongEnough() == .stop)
+        _ = voice.holdBegan()
+        #expect(voice.pausedLongEnough() == .none)
+        #expect(voice.phase == .holding)
+    }
+
+    @Test func holdingTalksAndReleaseSends() {
+        var voice = ChatVoiceInput()
+        #expect(voice.holdBegan() == .start)
+        #expect(voice.holdEnded() == .stopAndSend)
+        #expect(voice.phase == .idle)
+        #expect(ChatVoiceInput.message(toSend: "  ") == nil)
+        #expect(ChatVoiceInput.message(toSend: " move it ") == "move it")
+    }
+
+    @Test func leavingTheAppStopsAndSendsNothing() {
+        var voice = ChatVoiceInput()
+        _ = voice.holdBegan()
+        #expect(voice.backgrounded() == .stop)
+        #expect(voice.holdEnded() == .none)
+    }
+
+    @Test func aDeniedPermissionShowsTheWayToSettingsAndATapTriesAgain() {
+        var voice = ChatVoiceInput()
+        _ = voice.tapped()
+        voice.failed(denied: true)
+        #expect(voice.phase == .unavailable)
+        #expect(voice.tapped() == .start)
     }
 }

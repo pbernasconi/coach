@@ -8,6 +8,7 @@ struct ChatDemo: View {
     @State private var draft = ""
     @State private var status = ChatActionStatus.pending
     @State private var isResponding = false
+    @State private var voice = ChatVoiceInput()
 
     var body: some View {
         switch component {
@@ -24,7 +25,14 @@ struct ChatDemo: View {
                 prompt: "Message",
                 isResponding: isResponding,
                 onSend: { isResponding = true },
-                onStop: { isResponding = false }
+                onStop: { isResponding = false },
+                voice: ChatVoice(
+                    phase: voice.phase,
+                    level: voice.isListening ? 0.5 : 0,
+                    onTap: { _ = voice.tapped() },
+                    onHoldBegan: { _ = voice.holdBegan() },
+                    onHoldEnded: { _ = voice.holdEnded() }
+                )
             )
         case .chatMessageBubble:
             ChatMessageBubble(verbatim: "Can we move the review to tomorrow morning?")

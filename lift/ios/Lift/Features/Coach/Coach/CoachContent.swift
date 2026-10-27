@@ -28,6 +28,7 @@ struct CoachContent: View {
             case .failed(let reason): ChatErrorRow(verbatim: reason) { send(.retryTapped) }
             }
         }
+        .onTranscriptTap { isComposing = false }
         .safeAreaBar(edge: .bottom) {
             VStack(spacing: 0) {
                 if state.messages.isEmpty, state.phase == .idle {
@@ -42,7 +43,15 @@ struct CoachContent: View {
                     prompt: "Message Coach",
                     isResponding: state.isResponding,
                     onSend: { send(.sendTapped) },
-                    onStop: { send(.stopTapped) }
+                    onStop: { send(.stopTapped) },
+                    voice: ChatVoice(
+                        phase: state.voice.phase,
+                        level: state.voiceLevel,
+                        onTap: { send(.micTapped) },
+                        onHoldBegan: { send(.micHoldBegan) },
+                        onHoldEnded: { send(.micHoldEnded) },
+                        onOpenSettings: { send(.voiceSettingsTapped) }
+                    )
                 )
                 .focused(by: $isComposing)
             }

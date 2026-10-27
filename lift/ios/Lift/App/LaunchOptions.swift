@@ -93,6 +93,8 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
     var isFresh = false
     /// A `lift://` link to open at launch (`-open-url`), case kept: an enrollment code is case-sensitive.
     var openURL: URL?
+    /// `-voice denied` with `-demo`: the microphone acts as if it were turned off in Settings (for screenshots).
+    var deniesVoice = false
 
     init(
         isDemo: Bool = false,
@@ -134,6 +136,7 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
             initialTab = opening.tab
             liftSegment = opening.liftSegment ?? liftSegment
         }
+        deniesVoice = isDemo && Self.value(after: "-voice", in: arguments) == "denied"
         if let index = arguments.firstIndex(of: "-open-url"), arguments.indices.contains(index + 1),
             let url = URL(string: arguments[index + 1]), url.scheme?.lowercased() == AppLink.scheme
         {
