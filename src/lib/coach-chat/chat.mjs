@@ -56,7 +56,7 @@ export const PROPOSE_TOOL = {
 };
 
 /**
- * @typedef {{ role: 'user' | 'assistant', text: string }} Turn
+ * @typedef {{ role: 'user' | 'assistant', text: string, blocks?: any[] }} Turn  `blocks`: a message's photos and files
  * @typedef {{ ok: true, value: any } | { ok: false, problems: string[] }} ProposalCheck
  * @typedef {{ input: any, problems: string[] | null }} Attempt  one propose_changes call and what the check said
  * @typedef {{ reply: string, proposal: any | null, problems: string[] | null, turns: number, usage: typeof NO_USAGE,
@@ -90,31 +90,44 @@ export function streamEventToChat(event, emit, seen) {
   }
 }
 
+/** A message's content as blocks. @param {string | any[]} content */
+const asBlocks = (content) => (typeof content === 'string' ? (content ? [{ type: 'text', text: content }] : []) : content);
+
 /**
  * The messages for Claude: the thread (roles alternate, starting with Paolo), then his new message with the context.
+ * A turn's `blocks` (the photos and files on it, server.ts) go before its text; a turn without them stays a string.
  * @param {Turn[]} history  the thread before this message, oldest first
  * @param {string} context  the plan, calendar and profile, as text
  * @param {string} text  Paolo's new message
+ * @param {any[]} [files]  the blocks of the photos and files on the new message (files.mjs `fileBlock`)
  */
-export function chatMessages(history, context, text) {
+export function chatMessages(history, context, text, files = []) {
   /** @type {{ role: 'user' | 'assistant', content: any }[]} */
   const out = [];
   for (const t of history.slice(-HISTORY)) {
-    if (!t.text.trim()) continue;
+    const blocks = t.blocks ?? [];
+    if (!t.text.trim() && !blocks.length) continue;
+    const content = blocks.length ? [...blocks, ...asBlocks(t.text.trim())] : t.text;
     const prev = out[out.length - 1];
-    if (prev && prev.role === t.role) prev.content = `${prev.content}\n\n${t.text}`;
-    else out.push({ role: t.role, content: t.text });
+    if (prev && prev.role === t.role) {
+      prev.content = typeof prev.content === 'string' && typeof content === 'string'
+        ? `${prev.content}\n\n${content}`
+        : [...asBlocks(prev.content), ...asBlocks(content)];
+    } else out.push({ role: t.role, content });
   }
   while (out.length && out[0].role !== 'user') out.shift();
   // The cache mark on the new message lets a repair request (same turn) read the context back instead of paying for it.
+  // Photos go before the words about them.
+  /** @type {any[]} */
   const now = [
     { type: 'text', text: context },
+    ...files,
     { type: 'text', text: `<paolo>\n${text}\n</paolo>`, cache_control: { type: 'ephemeral' } },
   ];
   if (out.length && out[out.length - 1].role === 'user') {
     // An unanswered message (the last turn failed): this one goes with it.
     const last = out.pop();
-    now.unshift({ type: 'text', text: String(last?.content ?? '') });
+    now.unshift(...asBlocks(last?.content ?? ''));
   }
   out.push({ role: 'user', content: now });
   return out;
@@ -123,14 +136,14 @@ export function chatMessages(history, context, text) {
 /**
  * @param {{
  *   client: { beta: { messages: { stream: (params: any, opts?: any) => { finalMessage: () => Promise<any> } } } },
- *   system: string, history: Turn[], context: string, text: string, check: (input: any, attempt: number) => ProposalCheck,
+ *   system: string, history: Turn[], context: string, text: string, files?: any[], check: (input: any, attempt: number) => ProposalCheck,
  *   checkCard?: (input: any) => ({ ok: true, value: any } | { ok: false, problems: string[] }),
  *   effort?: 'low' | 'medium' | 'high', deadline?: number, now?: () => number, model?: string,
  *   onEvent?: (e: ChatEvent) => void,
  * }} p
  * @returns {Promise<ChatResult>}
  */
-export async function chatWithClaude({ client, system, history, context, text, check, checkCard = (input) => ({ ok: true, value: input }), effort = EFFORT, deadline = Infinity, now = Date.now, model = MODEL, onEvent }) {
+export async function chatWithClaude({ client, system, history, context, text, files = [], check, checkCard = (input) => ({ ok: true, value: input }), effort = EFFORT, deadline = Infinity, now = Date.now, model = MODEL, onEvent }) {
   const start = now();
   /** @type {Timing} */
   const timing = { firstThinkingMs: null, firstTextMs: null, turnMs: [] };
@@ -142,7 +155,7 @@ export async function chatWithClaude({ client, system, history, context, text, c
     if (e.type === 'text' && timing.firstTextMs === null) timing.firstTextMs = now() - start;
     try { onEvent?.(e); } catch { /* the listener's problem */ }
   };
-  const messages = chatMessages(history, context, text);
+  const messages = chatMessages(history, context, text, files);
   let usage = NO_USAGE;
   /** @type {string[]} */
   const said = [];

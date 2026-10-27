@@ -14,7 +14,10 @@
  * keeps the function alive for it, and a `coach.replied` push carries the reply. GET /api/app/coach shows
  * `answering: true` until then.
  *
- *   POST /api/app/coach/messages?tz=…  { text }
+ * `files` names photos and files uploaded first (POST /api/app/coach/files); Claude sees them with the text, which can
+ * then be empty.
+ *
+ *   POST /api/app/coach/messages?tz=…  { text, files?: [id] }
  */
 
 import { after } from 'next/server';
@@ -25,6 +28,7 @@ import { zoneOrDefault } from '@/lib/plan/week-api.mjs';
 import { todayIn } from '@/lib/plan/week.mjs';
 import { MAX_TEXT, sendMessage, type CoachEvent } from '@/lib/coach-chat/server';
 import { notifyCoachReply } from '@/lib/notifications';
+import { fileIds } from '@/lib/coach-chat/files.mjs';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -32,12 +36,14 @@ export const maxDuration = 120;
 
 const NO_STORE = { 'Cache-Control': 'no-store' };
 
-function textOf(body: unknown): { text: string } | { error: string } {
-  const raw = body && typeof body === 'object' ? (body as Record<string, unknown>).text : null;
-  const text = typeof raw === 'string' ? raw.trim() : '';
-  if (!text) return { error: 'text is empty' };
+function textOf(body: unknown): { text: string; files: string[] } | { error: string } {
+  const fields = body && typeof body === 'object' ? (body as Record<string, unknown>) : {};
+  const text = typeof fields.text === 'string' ? fields.text.trim() : '';
+  const files = fileIds(fields.files);
+  if ('error' in files) return { error: files.error };
+  if (!text && !files.ids.length) return { error: 'text is empty' };
   if (text.length > MAX_TEXT) return { error: `text is over ${MAX_TEXT} characters` };
-  return { text };
+  return { text, files: files.ids };
 }
 
 export async function POST(request: Request) {
@@ -45,7 +51,7 @@ export async function POST(request: Request) {
   return appWrite(request, 'coach message', async ({ userId, today, timeZone }, body) => {
     const t = textOf(body);
     if ('error' in t) return { status: 400, body: { error: t.error } };
-    const work = sendMessage(userId, t.text, today, timeZone);
+    const work = sendMessage(userId, t.text, today, timeZone, undefined, t.files);
     // Runs even if the phone hung up, so the reply is stored and pushed.
     after(async () => {
       const done = await work.catch(() => null);
@@ -100,7 +106,7 @@ async function stream(request: Request) {
   });
 
   const onEvent = (e: CoachEvent) => send(e.type, e);
-  const work = sendMessage(userId, t.text, todayIn(timeZone), timeZone, onEvent);
+  const work = sendMessage(userId, t.text, todayIn(timeZone), timeZone, onEvent, t.files);
   // The stream ends when the answer is stored (not in `after()`, which waits for the response to finish). `after()`
   // only keeps the function alive for the push when the phone already left.
   const finished = work

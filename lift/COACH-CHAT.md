@@ -155,6 +155,21 @@ A reply used to take 15–30 s with nothing on screen but the typing dots. Where
 - Each reply's `meta` keeps `prepMs`, `timing` (first thinking, first word, each request) and `latencyMs`, so the
   next change can be measured.
 
+## Attachments
+
+Paolo can add photos and files to a message (2026-10-27): a physio sheet, a screenshot of a workout, a photo of a
+stretch or a meal. The composer's + opens the Kobo attach sheet (`ChatAttachSheet`): the camera, his recent photos
+(tap to pick several, then "Attach N photos"), the full photo library, and files. Picked items sit above the field
+as thumbnails with a remove button (`ChatAttachmentStrip`) and upload at once; Send waits for them.
+
+- The phone shrinks a photo to 1568 px (JPEG 0.8) and converts HEIC; each upload is `POST /api/app/coach/files`,
+  then the message names their ids (APP-API.md, "Coach attachments").
+- The bytes live in `coach_files` (Postgres bytea); the message keeps their refs in `coach_messages.files`.
+- Claude gets photos as image blocks, PDFs as document blocks and text files as text documents, before Paolo's
+  words. The newest 6 files of the thread go again with every later message; older ones are a line. A photo costs
+  about 1,600 input tokens (about $0.01).
+- Code: `src/lib/coach-chat/files.mjs` (what a file is, how Claude reads it), `files-store.ts` (storage).
+
 ## Decisions for Paolo
 
 1. **Tab bar.** Decided: Coach replaces Training (Week, Today, Coach, Lift, Settings).
