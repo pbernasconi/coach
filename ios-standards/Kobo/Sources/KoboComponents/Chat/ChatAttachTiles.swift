@@ -97,7 +97,7 @@ struct ChatAttachFilesRow: View {
         Button(action: action) {
             HStack(spacing: Space.md) {
                 Image(systemName: "arrow.up.doc")
-                    .font(theme.font(.title3))
+                    .font(theme.font(.title2))
                     .foregroundStyle(theme.palette.textSecondary)
                     .accessibilityHidden(true)
                 Text("Add files", bundle: .module)

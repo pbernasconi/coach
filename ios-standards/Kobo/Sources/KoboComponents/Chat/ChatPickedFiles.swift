@@ -3,6 +3,7 @@
     import ImageIO
     import Photos
     import PhotosUI
+    import SwiftUI
     import UIKit
     import UniformTypeIdentifiers
 
@@ -36,7 +37,7 @@
         }
 
         @concurrent static func fromFiles(_ urls: [URL]) async -> [ChatPickedFile] {
-            urls.compactMap { url in
+            urls.compactMap { (url: URL) -> ChatPickedFile? in
                 let scoped = url.startAccessingSecurityScopedResource()
                 defer { if scoped { url.stopAccessingSecurityScopedResource() } }
                 guard let data = try? Data(contentsOf: url) else { return nil }
@@ -66,7 +67,7 @@
         static func shrink(_ data: Data, name: String) -> ChatPickedFile? {
             guard let source = CGImageSourceCreateWithData(data as CFData, nil),
                 let image = thumbnail(source, side: ChatImageFit.maxSide),
-                let jpeg = jpeg(image, quality: 0.8)
+                let encoded = jpeg(image, quality: 0.8)
             else { return nil }
             let preview = thumbnail(source, side: ChatImageFit.previewSide).flatMap { jpeg($0, quality: 0.7) }
             return ChatPickedFile(
@@ -74,7 +75,7 @@
                 kind: .image,
                 name: name,
                 contentType: "image/jpeg",
-                data: jpeg,
+                data: encoded,
                 pixelWidth: image.width,
                 pixelHeight: image.height,
                 preview: preview
@@ -93,7 +94,13 @@
 
         static func jpeg(_ image: CGImage, quality: Double) -> Data? {
             let out = NSMutableData()
-            guard let destination = CGImageDestinationCreateWithData(out, UTType.jpeg.identifier as CFString, 1, nil)
+            guard
+                let destination = CGImageDestinationCreateWithData(
+                    out as CFMutableData,
+                    UTType.jpeg.identifier as CFString,
+                    1,
+                    nil
+                )
             else { return nil }
             CGImageDestinationAddImage(
                 destination,

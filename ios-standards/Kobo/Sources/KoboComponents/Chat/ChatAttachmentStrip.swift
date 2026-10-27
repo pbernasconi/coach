@@ -136,11 +136,11 @@ private struct ChatAttachmentTile: View {
         case .file:
             VStack(spacing: Space.xs) {
                 Image(systemName: "doc.text")
-                    .font(theme.font(.title3))
+                    .font(theme.font(.title2))
                     .foregroundStyle(theme.palette.textSecondary)
                     .accessibilityHidden(true)
                 Text(verbatim: item.name)
-                    .font(theme.font(.caption2))
+                    .font(theme.font(.caption))
                     .foregroundStyle(theme.palette.textSecondary)
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
@@ -193,7 +193,7 @@ private struct ChatAttachmentRemoveButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: "xmark")
-                .font(theme.font(.caption2).weight(.bold))
+                .font(theme.font(.caption).weight(.bold))
                 .foregroundStyle(theme.palette.canvas)
                 .frame(width: disc, height: disc)
                 .background(theme.palette.textPrimary.opacity(0.8), in: Circle())
