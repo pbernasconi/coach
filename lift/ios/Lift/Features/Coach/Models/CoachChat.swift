@@ -41,14 +41,25 @@ nonisolated struct CoachMessage: Identifiable, Equatable, Sendable {
     }
 }
 
-/// Talks to Coach: the live server (`POST /api/app/coach/messages`, lift/COACH-CHAT.md) or the demo stand-in.
+/// The conversation as the server keeps it: the messages, the quick prompts, and a notice when Coach cannot answer.
+nonisolated struct CoachThread: Equatable, Sendable {
+    var messages: [CoachMessage] = []
+    var prompts: [ChatPrompt] = []
+    var notice: String?
+}
+
+/// Talks to Coach: the live server (`LiveCoachChat`, lift/APP-API.md "Coach") or the demo stand-in.
 nonisolated protocol CoachChatting: Sendable {
-    /// Coach's reply to `text`, with the conversation before it.
+    /// The open conversation, read when the tab opens.
+    func thread() async throws -> CoachThread
+    /// Coach's reply to `text`, with the conversation before it. Throws `CoachChatError` with words to show.
     func reply(to text: String, after history: [CoachMessage]) async throws -> CoachReply
-    /// Applies a proposal's changes to the plan.
-    func apply(_ proposalID: String) async throws
-    /// Takes an applied proposal's changes back.
-    func undo(_ proposalID: String) async throws
+    /// Applies a proposal's changes to the plan; answers the card's new status (expired when it went stale).
+    func apply(_ proposalID: String) async throws -> ChatActionStatus
+    /// Takes an applied proposal's changes back; answers the card's new status.
+    func undo(_ proposalID: String) async throws -> ChatActionStatus
+    /// Dismisses an open proposal; answers the card's new status.
+    func dismiss(_ proposalID: String) async throws -> ChatActionStatus
 }
 
 /// Why Coach could not answer, in words for the error row.

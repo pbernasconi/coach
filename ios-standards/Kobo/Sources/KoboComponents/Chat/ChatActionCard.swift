@@ -3,8 +3,8 @@ import SwiftUI
 
 /// Changes an assistant proposes, for the reader to apply: a title, one row per change (its glyph, what it changes,
 /// and the old value struck through before the new one), optional notes, then Apply and Dismiss. Nothing changes until
-/// Apply. After it, the card says "Applied" and offers Undo when the caller can take the changes back. A dismissed,
-/// superseded or expired card dims its rows and drops the buttons. At accessibility text sizes the buttons stack.
+/// Apply. After it, the card says "Applied" and offers Undo when the caller can take the changes back. An undone,
+/// dismissed, superseded or expired card dims its rows and drops the buttons. At accessibility text sizes the buttons stack.
 ///
 ///     ChatActionCard(verbatim: "2 changes this week", items: items, status: status,
 ///                    onApply: apply, onDismiss: dismiss, onUndo: undo)
@@ -101,6 +101,7 @@ private struct ChatActionStatusPill: View {
         switch status {
         case .pending, .applying: EmptyView()
         case .applied: StatusPill(verbatim: String(localized: "Applied", bundle: .module), tone: .success)
+        case .undone: StatusPill(verbatim: String(localized: "Undone", bundle: .module), tone: .neutral)
         case .dismissed: StatusPill(verbatim: String(localized: "Dismissed", bundle: .module), tone: .neutral)
         case .superseded: StatusPill(verbatim: String(localized: "Replaced", bundle: .module), tone: .neutral)
         case .expired: StatusPill(verbatim: String(localized: "Out of date", bundle: .module), tone: .warning)

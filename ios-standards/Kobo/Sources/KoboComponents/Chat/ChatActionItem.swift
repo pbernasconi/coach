@@ -46,6 +46,8 @@ nonisolated public enum ChatActionStatus: Equatable, Sendable {
     case applying
     /// The changes were made; Undo when the caller can take them back.
     case applied
+    /// The changes were made, then taken back.
+    case undone
     /// The reader dismissed the proposal.
     case dismissed
     /// A later proposal replaced this one.
@@ -56,5 +58,5 @@ nonisolated public enum ChatActionStatus: Equatable, Sendable {
     /// Whether the card shows Apply and Dismiss.
     public var showsActions: Bool { self == .pending || self == .applying }
     /// Whether the rows read as current (not dimmed).
-    public var isCurrent: Bool { self != .dismissed && self != .superseded && self != .expired }
+    public var isCurrent: Bool { self == .pending || self == .applying || self == .applied }
 }

@@ -16,7 +16,7 @@ struct CoachContent: View {
             switch state.phase {
             case .idle where state.messages.isEmpty:
                 // In the scroll content, so the keyboard scrolls it instead of pushing it under the title.
-                CoachIntro(prompts: state.prompts) { prompt in
+                CoachIntro(prompts: state.prompts, notice: state.notice) { prompt in
                     send(.promptPicked(prompt))
                     isComposing = true
                 }
@@ -74,10 +74,11 @@ private struct CoachMessageRow: View {
     }
 }
 
-/// The empty conversation: what Coach does, a note that this build answers with samples, and starter prompts.
+/// The empty conversation: what Coach does, the notice (why Coach cannot answer, or the demo), and starter prompts.
 private struct CoachIntro: View {
     @Environment(\.koboTheme) private var theme
     let prompts: [ChatPrompt]
+    let notice: String?
     let onSelect: (ChatPrompt) -> Void
 
     var body: some View {
@@ -94,7 +95,7 @@ private struct CoachIntro: View {
                 .foregroundStyle(theme.palette.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
             }
-            InlineNotice("Concept build: Coach answers with sample replies and changes nothing.", tone: .info)
+            if let notice { InlineNotice(verbatim: notice, tone: .info) }
             ChatPromptSuggestions(prompts, onSelect: onSelect)
         }
     }

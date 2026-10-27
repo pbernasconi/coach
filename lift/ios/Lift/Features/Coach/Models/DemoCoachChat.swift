@@ -1,8 +1,8 @@
 import Foundation
 import KoboComponents
 
-/// The concept's stand-in for the server coach: sample replies after a short wait, so the tab can be tried before
-/// `POST /api/app/coach/messages` exists. Apply and Undo change nothing. Made-up content only.
+/// The stand-in for the server coach in demo data, practice mode and screenshots: sample replies after a short wait.
+/// Apply and Undo change nothing. Made-up content only.
 nonisolated struct DemoCoachChat: CoachChatting {
     let clock: any Clock<Duration>
 
@@ -11,13 +11,21 @@ nonisolated struct DemoCoachChat: CoachChatting {
         return Self.sample(for: text, turn: history.count)
     }
 
-    func apply(_ proposalID: String) async throws {
-        try await clock.sleep(for: .milliseconds(600))
+    func thread() async throws -> CoachThread {
+        CoachThread(notice: "Demo: Coach answers with sample replies and changes nothing.")
     }
 
-    func undo(_ proposalID: String) async throws {
-        try await clock.sleep(for: .milliseconds(300))
+    func apply(_ proposalID: String) async throws -> ChatActionStatus {
+        try await clock.sleep(for: .milliseconds(600))
+        return .applied
     }
+
+    func undo(_ proposalID: String) async throws -> ChatActionStatus {
+        try await clock.sleep(for: .milliseconds(300))
+        return .undone
+    }
+
+    func dismiss(_ proposalID: String) async throws -> ChatActionStatus { .dismissed }
 
     /// The sample reply for a message: a plan change for a swap or a move, an easier day for soreness, else a note.
     static func sample(for text: String, turn: Int) -> CoachReply {
