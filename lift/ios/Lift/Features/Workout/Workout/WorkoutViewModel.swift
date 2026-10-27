@@ -130,6 +130,11 @@ final class WorkoutViewModel {
     @discardableResult
     func send(_ action: WorkoutAction) -> Task<Void, Never>? {
         recordMoment(for: action)
+        return dispatch(action)
+    }
+
+    /// The write or screen change `action` asks for.
+    private func dispatch(_ action: WorkoutAction) -> Task<Void, Never>? {
         switch action {
         case .setLogTapped(let id): toggleLog(id)
         case .setSkipTapped(let id): skip(id)
