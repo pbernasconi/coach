@@ -16,11 +16,18 @@ import { addNote, dropNote, type Change, type PlanRow } from './changes.mjs';
 /** The workouts Coach sees: this week and the next two, as the web calendar has them (loadRange). */
 export async function planRows(userId: string, today: string): Promise<PlanRow[]> {
   const monday = mondayOf(today);
-  const range = await loadRange(userId, monday, addDays(monday, 14), today);
+  const [range, lifts] = await Promise.all([
+    loadRange(userId, monday, addDays(monday, 14), today),
+    sql`
+      SELECT a.id, a.lift_template FROM training_plan_activities a JOIN training_plans p ON p.id = a.plan_id
+      WHERE p.user_id = ${userId} AND a.lift_template IS NOT NULL
+        AND a.scheduled_date >= ${monday} AND a.scheduled_date <= ${addDays(monday, 20)}` as unknown as Promise<{ id: string; lift_template: string }[]>,
+  ]);
+  const template = new Map(lifts.map((r) => [String(r.id), r.lift_template]));
   return range.workouts.map((w) => ({
     id: String(w.id), date: w.date, startTime: w.startTime, title: w.title, sport: w.sport, workoutType: w.workoutType,
     intensity: w.intensity, duration: w.duration, description: w.description, status: w.status, skipReason: w.skipReason,
-    state: w.state,
+    state: w.state, liftTemplate: template.get(String(w.id)) ?? null,
   }));
 }
 
@@ -71,7 +78,9 @@ async function applyOne(userId: string, c: Change, rows: PlanRow[], today: strin
     if ('error' in input) throw new Error(input.error);
     const clean = cleanNewWorkout(input.value as never) as { value?: WorkoutInput; error?: string };
     if (!clean.value) throw new Error(clean.error ?? 'the workout is not valid');
-    const id = await createWorkout(userId, clean.value);
+    const id = await createWorkout(userId, { ...clean.value, workoutType: c.workoutType ?? clean.value.workoutType });
+    // A gym lift names its Lift template, as the planner's do: Lift then plans its exercises and sets (lift-plan.mjs).
+    if (c.liftTemplate) await sql`UPDATE training_plan_activities SET lift_template = ${c.liftTemplate} WHERE id = ${id}`;
     return { undo: { op: 'remove', id }, dates: [c.date] };
   }
   const row = rows.find((r) => r.id === c.id);

@@ -177,3 +177,51 @@ test('a tired skip of today must ease a quality session tomorrow', () => {
   assert.equal(kept.ok, true);
   assert.ok(kept.value.warnings.some((w) => /fatigue/.test(w)));
 });
+
+// Paolo, 2026-10-27: a chat-made heavy lift showed its whole warm-up crammed into the Back squat note.
+const WARM_UP = 'Warm up, about 12 min. 1) 5 min stair climber, easy. 2) Mobility, 1 round: 10 slow air squats. 4) Ramp sets: empty bar x 10, 50% x 5, then the work sets.';
+const templates = ['Heavy barbell', 'Upper (dumbbells)', 'Hotel gym (dumbbells)'];
+
+test('an added gym lift names its Lift template and gets its workout type', () => {
+  const { changes, problems } = cleanChanges([
+    { op: 'add', date: '2026-10-28', sport: 'strength', startTime: '11:00', title: 'Heavy barbell lift', duration: 75, effort: 'hard', liftTemplate: 'heavy barbell', description: 'Squat is the priority.' },
+    { op: 'add', date: '2026-10-31', sport: 'strength', title: 'Upper', duration: 60, liftTemplate: 'Upper (dumbbells)' },
+  ], { ...plan, templates });
+  assert.deepEqual(problems, []);
+  assert.equal(changes[0].liftTemplate, 'Heavy barbell');
+  assert.equal(changes[0].workoutType, 'strength-heavy');
+  assert.equal(changes[1].workoutType, 'strength-dumbbell');
+  assert.match(describeChanges(changes, rows)[0].detail, /Heavy barbell/);
+  assert.equal(simulate(rows, changes).find((r) => r.id === 'new-0').workoutType, 'strength-heavy');
+});
+
+test('refuses a strength workout written out by hand', () => {
+  const { problems } = cleanChanges([
+    { op: 'add', date: '2026-10-28', sport: 'strength', title: 'Heavy barbell lift', duration: 75, description: 'Back squat 3x5 @ 255 lb' },
+    { op: 'add', date: '2026-10-28', sport: 'strength', title: 'Heavy barbell lift', duration: 75, liftTemplate: 'Heavy barbell', description: WARM_UP },
+    { op: 'add', date: '2026-10-28', sport: 'strength', title: 'Heavy', duration: 75, liftTemplate: 'Legs day' },
+    { op: 'add', date: '2026-10-28', sport: 'strength', title: 'Knees', duration: 40, workoutType: 'strength-home', description: 'Do some knee work.' },
+    { op: 'update', id: 'heavy', description: WARM_UP },
+    { op: 'update', id: 'upper', description: 'x'.repeat(301) },
+  ], { ...plan, templates });
+  assert.equal(problems.length, 5);
+  assert.match(problems[0], /gym lift .*liftTemplate: one of Heavy barbell/);
+  assert.match(problems[1], /coach's note only/);
+  assert.match(problems[2], /not a Lift template/);
+  assert.match(problems[3], /exercise lines/);
+  assert.match(problems[4], /change 5: .*coach's note only/);
+});
+
+test('a home session is its exercise lines', () => {
+  const { changes, problems } = cleanChanges([
+    { op: 'add', date: '2026-10-28', sport: 'strength', title: 'Running Knee Strength', duration: 40, workoutType: 'strength-home', description: '1) Dumbbell Bulgarian split squat 3x8: each leg.\n2) Step-up with knee raise 3x8: each leg.' },
+  ], { ...plan, templates });
+  assert.deepEqual(problems, []);
+  assert.equal(changes[0].workoutType, 'strength-home');
+  assert.equal(changes[0].liftTemplate, null);
+});
+
+test('the plan text names a lift\'s template', () => {
+  const text = planText([{ ...rows[2], liftTemplate: 'Heavy barbell' }], today);
+  assert.match(text, /Lift template Heavy barbell/);
+});

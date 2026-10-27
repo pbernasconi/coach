@@ -62,6 +62,12 @@ request usually answers it:
   plan rule the changes newly break goes back once, then shows on the card as a warning. So does a skip of today for
   tired, sore or sick that leaves a quality session today or tomorrow (`fatigueIssues`): the web's Skip eases the
   next session by itself, a chat card must do it in its own rows. Up to 3 tries.
+  A lift is structured as the planner writes it: an added gym lift names its Lift template (`liftTemplate`, one of
+  the profile's templates; stored in `lift_template` with `strength-heavy`/`strength-dumbbell`) and its description
+  is a short coach's note (`liftNoteProblem`: no exercise lines or numbered steps, at most 300 characters), on add
+  and on update. A home or physio session is `workoutType` `strength-home`/`mobility` with its `1) Name 3x8: cue`
+  lines. Apply of a new gym lift starts plan-apply.yml, so Lift plans its session (exercises, sets, warm-up sets)
+  right away; the hourly backstop catches a failed start.
 
 - Two more tools: `show({ kind, ref })` puts a card under the text (workout, week, exercise, readiness, day; the
   server fills it, cards.ts) and `suggest_replies({ options })` adds up to 3 one-tap answers to a question.

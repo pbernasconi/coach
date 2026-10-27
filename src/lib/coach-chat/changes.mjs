@@ -5,6 +5,7 @@
 
 import { SPORT_IDS, EFFORTS } from '../plan/create.mjs';
 import { checkRules, sessionsFromRows } from '../plan/rules.mjs';
+import { strengthExercises } from '../plan/strength-text.mjs';
 import { isFatigue, SKIP_REASONS } from '../plan/skip.mjs';
 import { addDays, isHard, mondayOf } from '../plan/week.mjs';
 
@@ -18,12 +19,40 @@ const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 const OPS = new Set(['move', 'skip', 'unskip', 'add', 'remove', 'update', 'remember']);
 /** A coaching preference Coach keeps (Settings → Coaching preferences), one line. */
 export const MAX_NOTE = 200;
+/**
+ * A gym lift's description is the coach's note only (planner.md, "Strength"): Lift plans the exercises, sets, loads and
+ * the barbell warm-up ramp from the template. A longer text is a workout written out by hand, which the phone can't
+ * log set by set.
+ */
+export const MAX_LIFT_NOTE = 300;
+/** The strength sessions without a Lift template: their numbered `1) Name 3x8: cue` lines are the session. */
+export const HOME_TYPES = ['strength-home', 'mobility'];
+
+/** The workout type of a gym lift on a template, as the web's library add sets it. @param {string} template */
+export const liftWorkoutType = (template) => (/dumbbell|hotel/i.test(template) ? 'strength-dumbbell' : 'strength-heavy');
+
+/** Whether a planned workout is a gym lift on a Lift template (not a home or physio session). @param {PlanRow} r */
+export const isGymLift = (r) =>
+  r.sport === 'strength' && (Boolean(r.liftTemplate) || r.workoutType === 'strength-heavy' || r.workoutType === 'strength-dumbbell');
+
+/**
+ * The problem with a gym lift's note, or null: no exercise lines, no numbered steps, short.
+ * @param {string} text
+ */
+export function liftNoteProblem(text) {
+  if (!text) return null;
+  if (strengthExercises(text).length > 0 || /(^|\s)\d{1,2}\)\s/.test(text)) {
+    return 'a gym lift\'s description is the coach\'s note only (effort, what to cut when short on time): Lift plans the exercises, sets, loads and warm-up sets from its template, so leave the exercises, the warm-up steps and ramp sets out';
+  }
+  if (text.length > MAX_LIFT_NOTE) return `a gym lift's description is a short coach's note, at most ${MAX_LIFT_NOTE} characters: Lift plans the exercises and warm-up sets from its template`;
+  return null;
+}
 
 /**
  * A planned workout as Coach sees it (loadRange's workouts, server.ts `planRows`).
  * @typedef {{ id: string, date: string, startTime: string | null, title: string, sport: string,
  *   workoutType: string | null, intensity: string | null, duration: number | null, description?: string | null,
- *   status: string, skipReason?: string | null, state: string }} PlanRow
+ *   status: string, skipReason?: string | null, state: string, liftTemplate?: string | null }} PlanRow
  */
 /**
  * One checked change.
@@ -33,7 +62,7 @@ export const MAX_NOTE = 200;
  *   | { op: 'remove', id: string }
  *   | { op: 'update', id: string, title?: string, duration?: number, effort?: string, description?: string, startTime?: string | null }
  *   | { op: 'add', date: string, sport: string, startTime: string | null, title: string, duration: number | null,
- *       effort: string, description: string }
+ *       effort: string, description: string, liftTemplate?: string | null, workoutType?: string | null }
  *   | { op: 'remember', text: string }} Change
  */
 /** A row of the card, as Kobo's ChangeItem: added, removed or changed. @typedef {{ kind: 'added' | 'removed' | 'changed', title: string, detail: string }} Item */
@@ -49,11 +78,13 @@ const str = (/** @type {unknown} */ v, /** @type {number} */ max) => (typeof v =
 /**
  * The model's changes, checked against the plan: each names a workout that exists and isn't done, a day from today
  * to the horizon, a real time. Returns the clean changes, or the problems for the model to fix.
+ * A strength workout it adds is a gym lift on one of Lift's `templates` (`liftTemplate`), or a home or physio session
+ * whose numbered exercise lines are the session; a gym lift's description is a short coach's note.
  * @param {unknown} raw  propose_changes' `changes`
- * @param {{ rows: PlanRow[], today: string }} plan
+ * @param {{ rows: PlanRow[], today: string, templates?: string[] }} plan
  * @returns {{ changes: Change[], problems: string[] }}
  */
-export function cleanChanges(raw, { rows, today }) {
+export function cleanChanges(raw, { rows, today, templates = [] }) {
   /** @type {string[]} */
   const problems = [];
   /** @type {Change[]} */
@@ -96,7 +127,11 @@ export function cleanChanges(raw, { rows, today }) {
       const effort = typeof b.effort === 'string' && b.effort in EFFORTS ? b.effort : 'easy';
       const title = str(b.title, 120);
       if (!title) return problems.push(`${at}: an added workout needs a title`);
-      return changes.push({ op: 'add', date, sport, startTime: t.value, title, duration, effort, description: str(b.description, 2000) });
+      const description = str(b.description, 2000);
+      if (sport !== 'strength') return changes.push({ op: 'add', date, sport, startTime: t.value, title, duration, effort, description });
+      const lift = strengthAdd(b, description, templates);
+      if ('problem' in lift) return problems.push(`${at}: ${lift.problem}`);
+      return changes.push({ op: 'add', date, sport, startTime: t.value, title, duration, effort, description, ...lift });
     }
     const id = String(b.id ?? '');
     const row = byId.get(id);
@@ -136,7 +171,11 @@ export function cleanChanges(raw, { rows, today }) {
       if (typeof b.effort !== 'string' || !(b.effort in EFFORTS)) return problems.push(`${at}: effort must be one of ${Object.keys(EFFORTS).join(', ')}`);
       u.effort = b.effort;
     }
-    if (b.description != null) u.description = str(b.description, 2000);
+    if (b.description != null) {
+      u.description = str(b.description, 2000);
+      const bad = isGymLift(row) ? liftNoteProblem(u.description) : null;
+      if (bad) return problems.push(`${at}: ${bad}`);
+    }
     if (b.startTime !== undefined) {
       const t = time(b.startTime);
       if (!t.ok) return problems.push(`${at}: startTime must be HH:MM`);
@@ -146,6 +185,40 @@ export function cleanChanges(raw, { rows, today }) {
     return changes.push(u);
   });
   return { changes, problems };
+}
+
+/**
+ * An added strength workout: a gym lift on a Lift template, or a home/physio session written as exercise lines.
+ * @param {Record<string, unknown>} b @param {string} description @param {string[]} templates
+ * @returns {{ liftTemplate: string | null, workoutType: string } | { problem: string }}
+ */
+function strengthAdd(b, description, templates) {
+  const names = templates.length ? templates.join(', ') : 'none synced';
+  const shape =
+    `a strength workout is either a gym lift ({ liftTemplate: one of ${names} }, description a short coach's note) or a ` +
+    `home or physio session ({ workoutType: ${HOME_TYPES.join(' | ')} }, description its numbered lines from the plan ` +
+    'structure, "1) Name 3x8: cue", one per line)';
+  const workoutType = typeof b.workoutType === 'string' ? b.workoutType : null;
+  if (b.liftTemplate != null && b.liftTemplate !== '') {
+    const wanted = String(b.liftTemplate).trim().toLowerCase();
+    const template = templates.find((n) => n.toLowerCase() === wanted);
+    if (!template) return { problem: `liftTemplate "${String(b.liftTemplate)}" is not a Lift template; use one of ${names}` };
+    const bad = liftNoteProblem(description);
+    if (bad) return { problem: bad };
+    return { liftTemplate: template, workoutType: liftWorkoutType(template) };
+  }
+  if (workoutType && HOME_TYPES.includes(workoutType)) {
+    if (strengthExercises(description).length === 0) {
+      return { problem: `a ${workoutType} session's description is its exercise lines ("1) Name 3x8: cue", one per line), so each set can be logged` };
+    }
+    return { liftTemplate: null, workoutType };
+  }
+  // No templates synced (the profile failed): a gym lift without a name; Lift's repair picks the template later.
+  if (templates.length === 0 && (workoutType === 'strength-heavy' || workoutType === 'strength-dumbbell')) {
+    const bad = liftNoteProblem(description);
+    return bad ? { problem: bad } : { liftTemplate: null, workoutType };
+  }
+  return { problem: shape };
 }
 
 /** "Tue 27 Oct" @param {string} day */
@@ -166,7 +239,7 @@ export function describeChanges(changes, rows) {
   return changes.map((c) => {
     if (c.op === 'remember') return { kind: 'added', title: 'Coaching preference', detail: c.text };
     if (c.op === 'add') {
-      const bits = [when(c.date, c.startTime), c.duration ? `${c.duration} min` : null, EFFORTS[/** @type {keyof typeof EFFORTS} */ (c.effort)]?.label];
+      const bits = [when(c.date, c.startTime), c.duration ? `${c.duration} min` : null, c.liftTemplate ?? EFFORTS[/** @type {keyof typeof EFFORTS} */ (c.effort)]?.label];
       return { kind: 'added', title: c.title, detail: bits.filter(Boolean).join(' · ') };
     }
     const row = /** @type {PlanRow} */ (byId.get(c.id));
@@ -201,7 +274,8 @@ export function simulate(rows, changes) {
     if (c.op === 'remember') return;
     if (c.op === 'add') {
       out.push({
-        id: `new-${i}`, date: c.date, startTime: c.startTime, title: c.title, sport: c.sport, workoutType: null,
+        id: `new-${i}`, date: c.date, startTime: c.startTime, title: c.title, sport: c.sport, workoutType: c.workoutType ?? null,
+        liftTemplate: c.liftTemplate ?? null,
         intensity: EFFORTS[/** @type {keyof typeof EFFORTS} */ (c.effort)]?.label ?? null, duration: c.duration, status: 'planned', state: 'planned',
       });
       return;
@@ -361,7 +435,11 @@ export function planText(rows, today) {
   return rows
     .map((r) => {
       const flag = r.state === 'done' ? 'DONE' : r.status === 'skipped' ? `SKIPPED${r.skipReason ? ` (${r.skipReason})` : ''}` : r.date < today ? 'MISSED' : r.date === today ? 'TODAY' : 'planned';
-      const what = [r.sport, r.duration ? `${r.duration} min` : null, r.intensity].filter(Boolean).join(', ');
+      // A lift says what kind it is: a gym lift's template, or a home/physio session.
+      const kind = r.sport !== 'strength' ? null : r.liftTemplate ? `Lift template ${r.liftTemplate}` : r.workoutType;
+      const what = [r.sport, kind, r.duration ? `${r.duration} min` : null, r.intensity]
+        .filter(Boolean)
+        .join(', ');
       return `${r.id}  ${r.date} ${dayLabel(r.date).slice(0, 3)} ${hm(r.startTime) ?? '--:--'}  ${r.title} (${what})  [${flag}]`;
     })
     .join('\n');
@@ -371,7 +449,7 @@ export function planText(rows, today) {
  * propose_changes' input, checked: the changes must be valid (else the model fixes them). Rules they newly break go
  * back to the model on its first try; on a later try (it kept them, or Paolo asked for it) they go on the card as
  * warnings.
- * @param {any} input @param {{ rows: PlanRow[], today: string }} plan @param {number} attempt  1 for the first try
+ * @param {any} input @param {{ rows: PlanRow[], today: string, templates?: string[] }} plan @param {number} attempt  1 for the first try
  * @returns {{ ok: true, value: { title: string, why: string, changes: Change[], items: Item[], warnings: string[],
  *   basis: Record<string, string> } } | { ok: false, problems: string[] }}
  */
