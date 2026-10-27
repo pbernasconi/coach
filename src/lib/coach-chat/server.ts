@@ -10,6 +10,7 @@ import { createId } from '@paralleldrive/cuid2';
 import { sql } from '@/db';
 import { toIso } from '@/lib/db-time.mjs';
 import { pushPlanWeeks } from '@/lib/plan/app-writes';
+import { dispatchWorkflow } from '@/lib/plan/proposals';
 import { buildProfile } from '@/lib/planner/profile.mjs';
 import { checkCard, type CardRef } from './cards.mjs';
 import { resolveCards, type Attachment } from './cards';
@@ -210,7 +211,7 @@ export async function sendMessage(userId: string, text: string, today: string, t
       history: historyOf(before),
       context,
       text,
-      check: (input, attempt) => checkProposalInput(input, { rows, today }, attempt),
+      check: (input, attempt) => checkProposalInput(input, { rows, today, templates: templateNames(profile) }, attempt),
       checkCard: (input) => checkCard(input, { rows, today }),
       deadline: started + BUDGET_MS,
       onEvent: emit,
@@ -280,6 +281,12 @@ async function proposalRow(userId: string, id: string) {
   return p ?? null;
 }
 
+/** The Lift templates' names from the profile (its "Lift templates"), for a chat-added gym lift. */
+function templateNames(profile: unknown): string[] {
+  const list = (profile as { json?: { liftTemplates?: { name?: unknown }[] } } | null)?.json?.liftTemplates ?? [];
+  return list.map((t) => String(t?.name ?? '').trim()).filter(Boolean);
+}
+
 export type DecideResult = { status: number; body: object };
 
 /**
@@ -308,6 +315,12 @@ export async function applyProposal(userId: string, id: string, today: string): 
   }
   await sql`UPDATE coach_proposals SET status = 'applied', undo = ${JSON.stringify(undo)}::jsonb, decided_at = NOW() WHERE id = ${id}`;
   pushPlanWeeks(userId, dates);
+  // A new gym lift gets its Lift session (exercises, sets, loads) now, as after an accepted plan; the hourly backstop
+  // (/api/cron/lift-pending) catches it if the dispatch fails.
+  if (ops.some((c) => c.op === 'add' && c.liftTemplate)) {
+    const started = await dispatchWorkflow('plan-apply.yml').catch((e: unknown) => ({ error: String(e) }));
+    if ('error' in started) console.error('Coach chat: Lift planning:', started.error);
+  }
   return { status: 200, body: { proposal: proposalView({ ...p, status: 'applied' }), dates: [...new Set(dates)].sort() } };
 }
 

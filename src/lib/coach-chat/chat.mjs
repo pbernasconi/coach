@@ -40,10 +40,14 @@ export const PROPOSE_TOOL = {
         description:
           'Each change is one of: { op: "move", id, date, startTime? } | { op: "skip", id, reason } | { op: "unskip", id } | ' +
           '{ op: "remove", id } | { op: "update", id, title?, duration?, effort?, description?, startTime? } | ' +
-          '{ op: "add", date, sport, startTime?, title, duration, effort?, description? } | { op: "remember", text } (a ' +
+          '{ op: "add", date, sport, startTime?, title, duration, effort?, description?, liftTemplate?, workoutType? } | ' +
+          '{ op: "remember", text } (a ' +
           'lasting preference for his Coaching preferences, one line). Dates YYYY-MM-DD, times HH:MM, ' +
           'duration in minutes, effort recovery | easy | moderate | hard | very-hard, sport run | ride | swim | strength | ' +
-          'walk | hike | yoga | rest | other. A skip reason is a short word: tired, sick, sore, busy, travel, other.',
+          'walk | hike | yoga | rest | other. A skip reason is a short word: tired, sick, sore, busy, travel, other. An ' +
+          'added gym lift names its Lift template in liftTemplate (exact name from the profile) and its description is a ' +
+          'short coach\'s note only: Lift plans the exercises, sets, loads and warm-up sets. A home or physio session ' +
+          'has workoutType strength-home | mobility and its numbered "1) Name 3x8: cue" lines as the description.',
         items: { type: 'object' },
       },
     },
