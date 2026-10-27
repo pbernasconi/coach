@@ -118,7 +118,9 @@ test('the response: 7 days a week, Monday first, items in plan order, plan title
     },
     plans: new Map([['2026-10-19', { title: 'Build week 3' }]]),
     sports,
+    liftSessions: [{ id: 'B2', date: '2026-10-21' }, { id: 'a1', date: '2026-10-19' }, { id: 'c3', date: '2026-10-26' }, { id: 'x', date: '2026-11-09' }],
   });
+  assert.deepEqual(body.weeks.map((w) => w.liftSessions), [['a1', 'b2'], ['c3']]);
   assert.equal(body.generatedAt, '2026-10-20T20:30:00.000Z');
   assert.equal(body.weeks.length, 2);
   const [w1, w2] = body.weeks;

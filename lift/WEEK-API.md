@@ -30,6 +30,7 @@ not port plan logic. Change this file first, then both sides.
       "start": "2026-10-19",
       "title": "Build week 3",
       "hasPlan": true,
+      "liftSessions": ["ca4f651b-98c7-4765-83a9-07ab74435d69"],
       "totals": {
         "plannedMinutes": 540, "plannedTss": 520, "doneMinutes": 130, "doneTss": 140,
         "plannedCount": 9, "doneCount": 2, "missedCount": 0,
@@ -114,6 +115,8 @@ Field rules:
 - `totals`: as the web's week column. `doneMinutes`/`doneTss` count every activity of the week (not commutes), planned
   or not. `text` is "x/y done · h:mm of h:mm · a of b TSS" for a week that has started, "9 planned · 11:45 · 630 TSS"
   ahead, or "Nothing planned".
+- `liftSessions` (on each week): the lower-case ids of every live Lift session the server has on a day of the week,
+  planned or logged, sorted. The phone checks its unlinked local sessions against it (Phone behaviour).
 - `liftSessionId`: lower-case UUID of the Lift `session` row (`training_plan_activities.lift_session_id`). The phone
   compares it case-insensitively with its local session ids (LiftStore writes upper-case).
 - Dates are plain `YYYY-MM-DD` calendar days. The phone maps them to its zone-free day type, never to a `Date`.
@@ -125,7 +128,10 @@ Field rules:
 - A strength item with `liftSessionId` that the phone has: show the local Lift session (its progress, tap to open
   the workout) on the plan's day. Exception: when the phone moved the session (`dayMovedAt`) after the shown week
   was downloaded (`generatedAt`), the session shows on its own new day and the item is hidden, until the next
-  download carries the server's answer. A local Lift session that no item links to: show it on its own day, as today.
+  download carries the server's answer. A local Lift session that no item links to: show it on its own day when the
+  week's `liftSessions` has it, when it has a logged set, or when it changed after the week was downloaded (not
+  synced yet). Otherwise it is a stale copy the server no longer has, and Week leaves it out. Without
+  `liftSessions` (an older server) or without a downloaded week, show it as before.
 - Non-strength items open a read-only detail sheet: subtitle, state, why, notes, key targets, steps.
 - Moving a planned Lift session to another day moves its plan workout too. The phone sets `session.dayMovedAt` to
   now whenever it changes `day` (a move, push to next week, the undo of a move; `SYNC.md`, schema v8). After an

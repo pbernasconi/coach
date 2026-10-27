@@ -9,6 +9,7 @@ import { catalogIdByName } from './catalog';
 import { planLiftEdit, planShape, type LiftEdit } from './edit.mjs';
 import { planSessionChanges } from './plan-session.mjs';
 import { followLiftSession, followWorkout } from './follow-plan.mjs';
+import { planSource } from '@/lib/plan/change-source.mjs';
 
 type Row = Record<string, unknown>;
 
@@ -66,7 +67,7 @@ export async function applyLiftEdit(userId: string, sessionId: string, edits: Li
   for (const a of linked) {
     await sql`
       UPDATE training_plan_activities SET description = ${mergeDescription(a.description, shape)}, intensity = ${intensityText(shape)},
-        edited_at = NOW(), updated_at = NOW()
+        change_source = ${planSource()}, edited_at = NOW(), updated_at = NOW()
       WHERE id = ${a.id}`;
   }
   return { weeks: [...new Set(linked.map((a) => a.week))] };

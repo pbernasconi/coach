@@ -8,6 +8,7 @@ import type { Workout } from './queries';
 import { complianceOf } from './compliance.mjs';
 import { libraryFrom, monthWeeks, weekSummary } from './calendar.mjs';
 import { addDays, matchActivityId, matchWeek, mondayOf, sportOf, sportOfStrava } from './week.mjs';
+import { planSource } from './change-source.mjs';
 
 export type Compliance = { level: string; label: string; ratio: number | null; basis: 'duration' | 'tss' | 'sets' | null };
 
@@ -337,9 +338,9 @@ export async function addFromLibrary(userId: string, itemId: string, date: strin
   const id = crypto.randomUUID();
   await sql`
     INSERT INTO training_plan_activities
-      (id, plan_id, activity_type, title, description, scheduled_date, duration, intensity, workout_type, tss, status, sort_order, edited_at)
+      (id, plan_id, activity_type, title, description, scheduled_date, duration, intensity, workout_type, tss, status, change_source, sort_order, edited_at)
     VALUES (${id}, ${planId}, ${fields.sport}, ${fields.title}, ${fields.description}, ${date}, ${fields.duration},
-            ${fields.intensity}, ${fields.workoutType}, ${fields.tss}, 'planned',
+            ${fields.intensity}, ${fields.workoutType}, ${fields.tss}, 'planned', ${planSource()},
             (SELECT COALESCE(MAX(sort_order), -1) + 1 FROM training_plan_activities WHERE plan_id = ${planId} AND scheduled_date = ${date}),
             NOW())`;
   return id;
@@ -356,9 +357,9 @@ export async function createWorkout(userId: string, w: WorkoutInput): Promise<st
   const id = crypto.randomUUID();
   await sql`
     INSERT INTO training_plan_activities
-      (id, plan_id, activity_type, title, description, scheduled_date, start_time, duration, distance, intensity, workout_type, tss, steps, status, sort_order, edited_at)
+      (id, plan_id, activity_type, title, description, scheduled_date, start_time, duration, distance, intensity, workout_type, tss, steps, status, change_source, sort_order, edited_at)
     VALUES (${id}, ${planId}, ${w.sport}, ${w.title}, ${w.description}, ${w.date}, ${w.startTime}, ${w.duration}, ${w.distance},
-            ${w.intensity}, ${w.workoutType}, ${w.tss}, ${w.steps ? JSON.stringify(w.steps) : null}::jsonb, 'planned',
+            ${w.intensity}, ${w.workoutType}, ${w.tss}, ${w.steps ? JSON.stringify(w.steps) : null}::jsonb, 'planned', ${planSource()},
             (SELECT COALESCE(MAX(sort_order), -1) + 1 FROM training_plan_activities WHERE plan_id = ${planId} AND scheduled_date = ${w.date}),
             NOW())`;
   return id;
@@ -385,7 +386,7 @@ export async function updateWorkout(userId: string, id: string, w: WorkoutInput)
       -- A bank workout's type comes from its steps. A workout without steps keeps a non-bank type (strength-heavy),
       -- but loses a bank type, so the rotation does not count a workout that no longer has the steps.
       workout_type = COALESCE(${w.workoutType}, CASE WHEN workout_type ~ '^(run|ride)-(threshold|vo2|tempo|test)' THEN NULL ELSE workout_type END),
-      edited_at = NOW(), updated_at = NOW()
+      change_source = ${planSource()}, edited_at = NOW(), updated_at = NOW()
     WHERE id = ${id}`;
   await followWorkoutInLift(id);
   return { from, to: w.date };
@@ -402,10 +403,10 @@ export async function duplicateWorkout(userId: string, id: string, date: string)
   await sql`
     INSERT INTO training_plan_activities
       (id, plan_id, activity_type, title, description, scheduled_date, start_time, end_time, duration, distance, intensity,
-       workout_type, tss, why, steps, status, sort_order, edited_at)
+       workout_type, tss, why, steps, status, change_source, sort_order, edited_at)
     VALUES (${copy}, ${planId}, ${r.activity_type}, ${r.title}, ${r.description}, ${date}, ${r.start_time}, ${r.end_time},
             ${r.duration}, ${r.distance}, ${r.intensity}, ${r.workout_type}, ${r.tss}, ${r.why},
-            ${r.steps ? JSON.stringify(r.steps) : null}::jsonb, 'planned',
+            ${r.steps ? JSON.stringify(r.steps) : null}::jsonb, 'planned', ${planSource()},
             (SELECT COALESCE(MAX(sort_order), -1) + 1 FROM training_plan_activities WHERE plan_id = ${planId} AND scheduled_date = ${date}),
             NOW())`;
   return copy;
@@ -433,6 +434,8 @@ export async function removeWorkout(userId: string, id: string): Promise<{ date:
   const rows = (await sql`
     DELETE FROM training_plan_activities a USING training_plans p
     WHERE a.id = ${id} AND p.id = a.plan_id AND p.user_id = ${userId}
+      -- The change log's source for this delete (a delete has no row to carry it; change-source.mjs).
+      AND set_config('coach.change_source', ${planSource()}, true) IS NOT NULL
     RETURNING to_jsonb(a.*) AS row, a.scheduled_date`) as Row[];
   if (!rows[0]) return null;
   const row = rows[0].row as Record<string, unknown>;
@@ -444,7 +447,7 @@ export async function removeWorkout(userId: string, id: string): Promise<{ date:
 export async function restoreWorkout(userId: string, row: Record<string, unknown>): Promise<string | null> {
   const rows = (await sql`
     INSERT INTO training_plan_activities
-    SELECT r.* FROM jsonb_populate_record(NULL::training_plan_activities, ${JSON.stringify(row)}::jsonb) r
+    SELECT r.* FROM jsonb_populate_record(NULL::training_plan_activities, ${JSON.stringify({ ...row, change_source: planSource() })}::jsonb) r
     WHERE EXISTS (SELECT 1 FROM training_plans p WHERE p.id = r.plan_id AND p.user_id = ${userId})
     ON CONFLICT (id) DO NOTHING
     RETURNING scheduled_date`) as Row[];

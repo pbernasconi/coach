@@ -48,7 +48,7 @@ for (const r of repairs) {
     console.log(`Would repair ${r.id}: template ${r.template}${r.sessionId ? '' : ', new Lift session'}`);
     continue;
   }
-  await sql`UPDATE training_plan_activities SET lift_template = ${r.template}, lift_session_id = ${r.sessionId}, updated_at = NOW() WHERE id = ${r.id}`;
+  await sql`UPDATE training_plan_activities SET lift_template = ${r.template}, lift_session_id = ${r.sessionId}, change_source = 'script', updated_at = NOW() WHERE id = ${r.id}`;
 }
 
 const rows = await sql`
@@ -97,7 +97,7 @@ for (const res of results) {
   const row = byId.get(res.key);
   if (!row) continue;
   if (res.status === 'removed') {
-    await sql`UPDATE training_plan_activities SET lift_session_id = NULL, updated_at = NOW() WHERE id = ${row.id}`;
+    await sql`UPDATE training_plan_activities SET lift_session_id = NULL, change_source = 'script', updated_at = NOW() WHERE id = ${row.id}`;
     if (row.lift_session_id) made.delete(row.lift_session_id);
     weeks.add(row.week);
     continue;
@@ -107,7 +107,7 @@ for (const res of results) {
   const description = mergeDescription(row.description, res);
   await sql`
     UPDATE training_plan_activities SET lift_session_id = ${res.sessionId}, description = ${description},
-      intensity = ${intensityText(res)}, updated_at = NOW()
+      intensity = ${intensityText(res)}, change_source = 'script', updated_at = NOW()
     WHERE id = ${row.id}`;
   if (description !== row.description) weeks.add(row.week);
 }

@@ -42,16 +42,27 @@ public struct CoachWeek: Decodable, Equatable, Sendable {
     public var totals: CoachTotals
     /// Always seven, Monday first.
     public var days: [CoachDay]
+    /// Every live Lift session the server has in the week (lower-case ids); nil from a server before it was sent. The
+    /// phone shows a local session that no item links only when the server has it (or it changed since the fetch).
+    public var liftSessions: Set<String>?
 
-    public init(start: LocalDay, title: String?, hasPlan: Bool, totals: CoachTotals, days: [CoachDay]) {
+    public init(
+        start: LocalDay,
+        title: String?,
+        hasPlan: Bool,
+        totals: CoachTotals,
+        days: [CoachDay],
+        liftSessions: Set<String>? = nil
+    ) {
         self.start = start
         self.title = title
         self.hasPlan = hasPlan
         self.totals = totals
         self.days = days
+        self.liftSessions = liftSessions
     }
 
-    private enum CodingKeys: String, CodingKey { case start, title, hasPlan, totals, days }
+    private enum CodingKeys: String, CodingKey { case start, title, hasPlan, totals, days, liftSessions }
 
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -60,6 +71,8 @@ public struct CoachWeek: Decodable, Equatable, Sendable {
         hasPlan = try container.decodeIfPresent(Bool.self, forKey: .hasPlan) ?? false
         totals = try container.decode(CoachTotals.self, forKey: .totals)
         days = try container.decode([CoachDay].self, forKey: .days)
+        liftSessions = try container.decodeIfPresent([String].self, forKey: .liftSessions)
+            .map { Set($0.map { $0.lowercased() }) }
     }
 }
 

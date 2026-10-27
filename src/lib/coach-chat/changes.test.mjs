@@ -225,3 +225,29 @@ test('the plan text names a lift\'s template', () => {
   const text = planText([{ ...rows[2], liftTemplate: 'Heavy barbell' }], today);
   assert.match(text, /Lift template Heavy barbell/);
 });
+
+test('an added lift that copies a missed lift of the same template is refused; a planned one is a warning', () => {
+  // Tue 27 Oct 2026, 07:09: "the heavy lift moves to Wednesday" came as an add, and Monday's stayed (two Heavy barbells).
+  const tue = '2026-10-27';
+  const lifts = [
+    row('heavy', today, '17:00:00', 'Heavy barbell', 'strength', 'strength-heavy', { liftTemplate: 'Heavy barbell', state: 'missed' }),
+    row('vo2', tue, '09:00:00', 'VO2 B', 'run', 'run-vo2', { state: 'today' }),
+  ];
+  const add = { op: 'add', date: '2026-10-28', sport: 'strength', startTime: '17:00', title: 'Heavy barbell', duration: 60, liftTemplate: 'Heavy barbell' };
+  const p = { rows: lifts, today: tue, templates: ['Heavy barbell', 'Upper (dumbbells)'] };
+  const refused = checkProposalInput({ title: 'Heavy lift Wed', why: 'x', changes: [add] }, p, 2);
+  assert.equal(refused.ok, false);
+  assert.match(refused.problems.join('\n'), /move that workout instead .*"heavy"/);
+  // What it should have done: move the missed lift itself to Wednesday (a past workout can move to today or later).
+  const moved = checkProposalInput({ title: 'Heavy lift Wed', why: 'x', changes: [{ op: 'move', id: 'heavy', date: '2026-10-28', startTime: '11:00' }] }, p, 2);
+  assert.equal(moved.ok, true);
+  assert.equal(checkProposalInput({ title: 'x', why: 'x', changes: [{ op: 'skip', id: 'heavy', reason: 'busy' }] }, p, 2).ok, false);
+  // A planned copy later in the week: back to the model once, then a warning on the card.
+  const planned = [{ ...lifts[0], date: '2026-10-30', state: 'planned' }, lifts[1]];
+  const first = checkProposalInput({ title: 'Second heavy', why: 'x', changes: [add] }, { ...p, rows: planned }, 1);
+  assert.equal(first.ok, false);
+  assert.match(first.problems.join('\n'), /already planned this week/);
+  const second = checkProposalInput({ title: 'Second heavy', why: 'x', changes: [add] }, { ...p, rows: planned }, 2);
+  assert.equal(second.ok, true);
+  assert.ok(second.value.warnings.some((w) => /already planned this week/.test(w)));
+});

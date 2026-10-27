@@ -9,6 +9,7 @@ import { addInput, editForm, editInput } from '@/lib/plan/app-edit.mjs';
 import { loadPlanWorkout } from '@/lib/plan/app-workout';
 import { cleanNewWorkout } from '@/lib/plan/create.mjs';
 import { createWorkout, loadRange, removeWorkout, restoreWorkout, updateWorkout, type WorkoutInput } from '@/lib/plan/month';
+import { planSource, withPlanSource } from '@/lib/plan/change-source.mjs';
 import { setSkipped } from '@/lib/plan/queries';
 import { addDays, mondayOf } from '@/lib/plan/week.mjs';
 import { addNote, dropNote, type Change, type PlanRow } from './changes.mjs';
@@ -80,7 +81,7 @@ async function applyOne(userId: string, c: Change, rows: PlanRow[], today: strin
     if (!clean.value) throw new Error(clean.error ?? 'the workout is not valid');
     const id = await createWorkout(userId, { ...clean.value, workoutType: c.workoutType ?? clean.value.workoutType });
     // A gym lift names its Lift template, as the planner's do: Lift then plans its exercises and sets (lift-plan.mjs).
-    if (c.liftTemplate) await sql`UPDATE training_plan_activities SET lift_template = ${c.liftTemplate} WHERE id = ${id}`;
+    if (c.liftTemplate) await sql`UPDATE training_plan_activities SET lift_template = ${c.liftTemplate}, change_source = ${planSource()} WHERE id = ${id}`;
     return { undo: { op: 'remove', id }, dates: [c.date] };
   }
   const row = rows.find((r) => r.id === c.id);
@@ -131,7 +132,11 @@ export class ApplyError extends Error {
 }
 
 /** Runs the changes in order. A write that fails puts back the ones before it and throws ApplyError. */
-export async function applyAll(userId: string, ops: Change[], rows: PlanRow[], today: string): Promise<{ undo: Undo[]; dates: string[] }> {
+export function applyAll(userId: string, ops: Change[], rows: PlanRow[], today: string): Promise<{ undo: Undo[]; dates: string[] }> {
+  return withPlanSource('chat', () => applyInOrder(userId, ops, rows, today));
+}
+
+async function applyInOrder(userId: string, ops: Change[], rows: PlanRow[], today: string): Promise<{ undo: Undo[]; dates: string[] }> {
   const undo: Undo[] = [];
   const dates: string[] = [];
   try {
@@ -148,8 +153,10 @@ export async function applyAll(userId: string, ops: Change[], rows: PlanRow[], t
 }
 
 /** Puts back what applyAll changed, last change first. Returns the days touched. */
-export async function undoAll(userId: string, undo: Undo[], today: string): Promise<string[]> {
-  const dates: string[] = [];
-  for (const u of [...undo].reverse()) dates.push(...(await undoOne(userId, u, today)));
-  return dates;
+export function undoAll(userId: string, undo: Undo[], today: string): Promise<string[]> {
+  return withPlanSource('chat', async () => {
+    const dates: string[] = [];
+    for (const u of [...undo].reverse()) dates.push(...(await undoOne(userId, u, today)));
+    return dates;
+  });
 }

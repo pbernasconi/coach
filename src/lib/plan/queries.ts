@@ -5,6 +5,7 @@ import { addDays, adaptForFeel, matchWeek, mondayOf, sportOfStrava, undoAdapts }
 import { toDay } from '@/lib/db-time.mjs';
 import { cleanReason, feelForSkip } from './skip.mjs';
 import { followWorkoutInLift } from '@/lib/lift/edit-store';
+import { planSource } from './change-source.mjs';
 
 /** A structured workout (src/lib/workouts/steps.mjs). */
 export type StructuredWorkout = { version: 1; sport: 'ride' | 'run'; name: string; bank?: string; level?: number; notes?: string; steps: unknown[] };
@@ -212,13 +213,13 @@ async function applyChanges(userId: string, id: string, changes: Record<string, 
   if (!owned) throw new Error('workout not found');
   for (const [key, value] of Object.entries(changes)) {
     if (key === 'adaptedFrom') {
-      await sql`UPDATE training_plan_activities SET adapted_from = ${value == null ? null : JSON.stringify(value)} WHERE id = ${id}`;
+      await sql`UPDATE training_plan_activities SET adapted_from = ${value == null ? null : JSON.stringify(value)}, change_source = ${planSource()} WHERE id = ${id}`;
       continue;
     }
     const col = COLUMN[key];
     if (!col) continue;
     // Column names come from the fixed map above, never from input.
-    await sql.query(`UPDATE training_plan_activities SET ${col} = $1 WHERE id = $2`, [value, id]);
+    await sql.query(`UPDATE training_plan_activities SET ${col} = $1, change_source = $3 WHERE id = $2`, [value, id, planSource()]);
   }
   await sql`UPDATE training_plan_activities SET edited_at = NOW(), updated_at = NOW() WHERE id = ${id}`;
   // A new day or status moves or removes its Lift session now, not at the next lift-plan.mjs run.
@@ -237,7 +238,7 @@ export async function workoutDate(userId: string, id: string): Promise<string | 
 export async function moveWorkout(userId: string, id: string, date: string) {
   const planId = await ensurePlan(userId, mondayOf(date));
   await applyChanges(userId, id, { date });
-  await sql`UPDATE training_plan_activities SET plan_id = ${planId} WHERE id = ${id}`;
+  await sql`UPDATE training_plan_activities SET plan_id = ${planId}, change_source = ${planSource()} WHERE id = ${id}`;
 }
 
 /**
@@ -263,7 +264,7 @@ export async function setDone(userId: string, id: string, done: boolean) {
  */
 export async function linkLiftSession(userId: string, id: string, sessionId: string): Promise<boolean> {
   const rows = (await sql`
-    UPDATE training_plan_activities a SET lift_session_id = ${sessionId}, edited_at = NOW(), updated_at = NOW()
+    UPDATE training_plan_activities a SET lift_session_id = ${sessionId}, change_source = ${planSource()}, edited_at = NOW(), updated_at = NOW()
     FROM training_plans p
     WHERE a.id = ${id} AND p.id = a.plan_id AND p.user_id = ${userId}
       AND (a.lift_session_id IS NULL OR lower(a.lift_session_id) = ${sessionId} OR EXISTS (

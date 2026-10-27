@@ -8,8 +8,10 @@ import LiftSync
 /// - An item that names a local session shows that session, on the item's day (the plan's day wins).
 /// - Except after this phone moved the session later than the item's plan was fetched: the session shows on its own
 ///   day and the item is left out, until a fetch after the server followed the move (WEEK-API.md, `dayMovedAt`).
-/// - A local session that no kept item names shows on its own day, after the day's items.
-/// - Without a plan (sync off), every day is its sessions, as before the plan existed.
+/// - A local session that no kept item names shows on its own day, after the day's items, when the server has it too
+///   (the week's `liftSessions`), something was logged in it, or it changed after the week was fetched (not synced
+///   yet). Any other is a stale copy the server no longer has, and stays out: Week shows the server's truth.
+/// - Without a plan (sync off, or a week not fetched yet), every day is its sessions, as before the plan existed.
 nonisolated struct WeekPlanMerge: Sendable {
     private let itemsByDay: [LocalDay: [CoachItem]]
     private let sessionsByID: [UUID: SessionSummary]
@@ -25,7 +27,11 @@ nonisolated struct WeekPlanMerge: Sendable {
         )
         itemsByDay = Dictionary(grouping: items, by: \.date)
         sessionsByID = byID
-        unlinkedByDay = Dictionary(grouping: summaries.filter { !linked.contains($0.id) }, by: \.day)
+        let known = Self.serverSessions(book)
+        unlinkedByDay = Dictionary(
+            grouping: summaries.filter { !linked.contains($0.id) && Self.isShown($0, known: known) },
+            by: \.day
+        )
         self.dayTitle = dayTitle
     }
 
@@ -41,6 +47,27 @@ nonisolated struct WeekPlanMerge: Sendable {
                 return session.day == item.date || moved <= fetched
             }
         }
+    }
+
+    /// For each day of a kept week that names its Lift sessions: those ids and when the week was fetched.
+    private static func serverSessions(_ book: CoachPlanBook?) -> [LocalDay: (ids: Set<String>, fetched: Date)] {
+        guard let book else { return [:] }
+        var out: [LocalDay: (ids: Set<String>, fetched: Date)] = [:]
+        for (start, week) in book.weeks {
+            guard let ids = week.liftSessions else { continue }
+            let fetched = book.updatedAt(of: start) ?? .distantPast
+            for day in week.days { out[day.date] = (ids, fetched) }
+        }
+        return out
+    }
+
+    /// Whether a local session no item names shows: the server has it, it holds logged sets, it changed after the
+    /// week was fetched, or its week has no server answer to check it against.
+    private static func isShown(_ session: SessionSummary, known: [LocalDay: (ids: Set<String>, fetched: Date)]) -> Bool {
+        guard let server = known[session.day] else { return true }
+        if server.ids.contains(session.id.uuidString.lowercased()) || session.hasLoggedSets { return true }
+        guard let updated = session.updatedAt else { return false }
+        return updated > server.fetched
     }
 
     /// The day's rows: its plan items in the server's order, each linked one as its session, then its other sessions.
