@@ -58,7 +58,7 @@ public protocol AppAPIStreaming: Sendable {
             AsyncThrowingStream { continuation in
                 let task = Task {
                     do {
-                        try await read(method, path, body: body) { continuation.yield($0) }
+                        try await read(method, path, body: body) { _ = continuation.yield($0) }
                         continuation.finish()
                     } catch {
                         continuation.finish(throwing: error)

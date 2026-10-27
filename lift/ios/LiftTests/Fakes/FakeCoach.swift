@@ -36,9 +36,13 @@ actor FakeCoach: CoachChatting {
         if let feed { return feed }
         return AsyncThrowingStream { continuation in
             Task {
-                let answer = await self.reply
-                continuation.yield(with: answer.map { .reply($0) }.mapError { $0 as any Error })
-                continuation.finish()
+                switch await self.reply {
+                case .success(let reply):
+                    continuation.yield(.reply(reply))
+                    continuation.finish()
+                case .failure(let error):
+                    continuation.finish(throwing: error)
+                }
             }
         }
     }

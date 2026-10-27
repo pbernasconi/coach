@@ -109,7 +109,7 @@ nonisolated protocol CoachChatting: Sendable {
     func dismiss(_ proposalID: String) async throws -> ChatActionStatus
 }
 
-extension CoachChatting {
+nonisolated extension CoachChatting {
     /// A coach that doesn't stream answers in one step.
     func replies(to text: String, after history: [CoachMessage]) -> AsyncThrowingStream<CoachReplyEvent, any Error> {
         AsyncThrowingStream { continuation in
