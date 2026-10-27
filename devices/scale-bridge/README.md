@@ -26,7 +26,9 @@ Renpho Elis 1 ──Bluetooth──▶ ESP32 bridge ──Wi-Fi, HTTPS──▶ 
 4. Step on the scale. The light turns blue while it reads the scale, then green for a few seconds once the reading
    is in Coach. Red means the post failed (the log says why; 401 is a wrong token).
 
-Later updates go over Wi-Fi: `pio run -e atoms3-ota -t upload` (asks for the OTA password).
+Later updates go over Wi-Fi: `pio run -e atoms3-ota -t upload`. It sends `OTA_PASSWORD` from `include/config.h`
+(`ota_auth.py`; the `SCALE_OTA_PASSWORD` environment variable overrides it). If the board was flashed with another
+password, flash once over USB. If `scale-bridge.local` does not resolve, add `--upload-port <the board's IP>`.
 
 ## Checking on it
 

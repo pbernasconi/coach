@@ -11,6 +11,7 @@ import { locationFrom } from '@/lib/plan/calendar.mjs';
 import { geocodeUrl, placesFrom } from '@/lib/plan/places.mjs';
 import { DEFAULT_PLACE, type Place } from '@/lib/plan/weather';
 import { saveGoals } from '@/lib/goals/goals.mjs';
+import { profileFrom, type Profile } from '@/lib/settings/profile.mjs';
 
 async function owner() {
   const id = await ownerForSignedInUser();
@@ -114,6 +115,18 @@ export async function saveLocationAction(place: { name: string; lat: number; lon
   }
   revalidatePath('/plan');
   revalidatePath('/settings');
+}
+
+/** Saves users.settings.profile (birth date, height, sex), cleaned, and returns what was saved. */
+export async function saveProfileAction(input: Profile): Promise<Profile> {
+  const id = await owner();
+  // UTC's date is today or tomorrow in Pacific time, so a birth date of today always passes.
+  const clean = profileFrom(input, new Date().toISOString().slice(0, 10));
+  await sql`
+    UPDATE users SET settings = jsonb_set(settings, '{profile}', ${JSON.stringify(clean)}::jsonb), updated_at = NOW()
+    WHERE id = ${id}`;
+  revalidatePath('/settings');
+  return clean;
 }
 
 /** Saves the milestone goals. saveGoals drops any goal that is not valid. */
