@@ -9,6 +9,8 @@ nonisolated enum CoachWire {
         let ready: Bool?
         let notice: String?
         let suggestions: [String]?
+        /// Missing in older servers: false.
+        let answering: Bool?
     }
 
     struct Message: Decodable, Sendable {
@@ -59,7 +61,8 @@ nonisolated enum CoachWire {
         CoachThread(
             messages: wire.messages.map(message),
             prompts: (wire.suggestions ?? []).map { ChatPrompt(id: $0, title: $0) },
-            notice: wire.ready == false ? (wire.notice ?? "Coach cannot answer right now.") : wire.notice
+            notice: wire.ready == false ? (wire.notice ?? "Coach cannot answer right now.") : wire.notice,
+            answering: wire.answering ?? false
         )
     }
 

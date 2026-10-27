@@ -8,6 +8,8 @@ final class PushInbox {
     private(set) var token: String?
     /// The latest tap no shell has taken. A newer tap replaces it.
     private(set) var parkedTap: PushTap?
+    /// The shell's Coach presence, so a Coach reply shows no banner over the conversation (`AppDelegate`).
+    var coachPresence: CoachPresence?
     private var onToken: ((String) -> Void)?
     private var onTap: ((PushTap) -> Void)?
 

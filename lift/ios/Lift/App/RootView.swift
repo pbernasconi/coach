@@ -109,6 +109,7 @@ private struct AppShell: View {
     /// Takes the APNs token and tapped notices from the app delegate, a tap that launched Lift included. A tap opens its
     /// link like any `lift://` link and tells the coach it was opened.
     private func attachPush() {
+        push.coachPresence = dependencies.coachPresence
         push.attach(
             onToken: { token in dependencies.push?.registrar.tokenReceived(token) },
             onTap: { tap in

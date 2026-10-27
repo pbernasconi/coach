@@ -79,6 +79,11 @@ targets:
         # Required by App Store validation because the HealthKit entitlement is present; Lift only writes workouts.
         NSHealthShareUsageDescription: >-
           Coach does not read your Health data. It only saves the workouts you finish.
+        # The Coach composer's microphone: speech is turned into text on the iPhone, asked on first use.
+        NSMicrophoneUsageDescription: >-
+          Coach uses the microphone when you talk to it instead of typing.
+        NSSpeechRecognitionUsageDescription: >-
+          Coach turns what you say into text on this iPhone, so you can talk to it instead of typing.
         LiftSyncBaseURL: $(LIFT_SYNC_BASE_URL)
         LiftAppGroup: $(LIFT_APP_GROUP)
         # lift://import opens Import from Notes; lift://templates opens the template link review (AppLink.swift).

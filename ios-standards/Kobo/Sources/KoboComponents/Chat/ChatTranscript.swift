@@ -12,9 +12,12 @@ where Data.Element: Identifiable {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var position = ScrollPosition()
     @State private var follow = ChatScrollFollow()
+    /// The scroll view's height inside its bars and margins: the content fills at least this much.
+    @State private var visibleHeight = 0.0
     private let data: Data
     private let row: (Data.Element) -> Row
     private let footer: Footer
+    private var onTap: (() -> Void)?
 
     public init(
         _ data: Data,
@@ -26,15 +29,30 @@ where Data.Element: Identifiable {
         self.footer = footer()
     }
 
+    /// Runs `action` on any tap in the transcript, alongside the tapped control's own action: a screen uses it to
+    /// close the keyboard. A drag down closes it too.
+    public func onTranscriptTap(_ action: @escaping () -> Void) -> ChatTranscript {
+        var transcript = self
+        transcript.onTap = action
+        return transcript
+    }
+
     public var body: some View {
         ScrollView(.vertical) {
             // Not lazy: under a bottom anchor, iOS 26 shifts a lazy stack sideways (a thread stays short).
+            // swiftlint:disable:next accessibility_trait_for_button
             VStack(alignment: .leading, spacing: Space.xxl) {
                 ForEach(data) { row($0) }
                 footer
             }
             .pageColumn()
             .padding(.vertical, Space.lg)
+            // At least the visible height, so a tap anywhere over the rows closes the keyboard; never the bars over
+            // the scroll view (the composer), which get their own taps.
+            .frame(minHeight: visibleHeight, alignment: .bottom)
+            .contentShape(Rectangle())
+            // The tap only closes the keyboard, beside each row's own controls: the transcript is not a button.
+            .simultaneousGesture(TapGesture().onEnded { onTap?() })
             // Exactly the scroll view's width: scrolling to the bottom edge must never shift the column sideways.
             .containerRelativeFrame(.horizontal)
             .scrollTargetLayout()
@@ -55,9 +73,11 @@ where Data.Element: Identifiable {
                     insetBottom: geometry.contentInsets.bottom
                 ),
                 geometry.containerSize.height,
+                geometry.containerSize.height - geometry.contentInsets.top - geometry.contentInsets.bottom,
             ]
         } action: { _, values in
             let distance = values[0]
+            visibleHeight = max(0, values[2])
             if position.isPositionedByUser || distance <= ChatScrollFollow.threshold {
                 follow.scrolled(distanceFromBottom: distance, visibleHeight: values[1])
             }

@@ -50,6 +50,8 @@ nonisolated struct CoachThread: Equatable, Sendable {
     var messages: [CoachMessage] = []
     var prompts: [ChatPrompt] = []
     var notice: String?
+    /// Coach is still answering Paolo's last message (it went on while the app was away): the tab polls.
+    var answering = false
 }
 
 /// Talks to Coach: the live server (`LiveCoachChat`, lift/APP-API.md "Coach") or the demo stand-in.

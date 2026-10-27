@@ -22,16 +22,19 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         AppLog.push.info("No APNs token: \(String(describing: error), privacy: .private)")
     }
 
-    /// A notice that comes while Lift is open shows as a banner too.
+    /// A notice that comes while Lift is open shows as a banner too, except a Coach reply over the open conversation.
     nonisolated func userNotificationCenter(
         _: UNUserNotificationCenter,
-        willPresent notification: UNNotification,
-        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
-    ) {
+        willPresent notification: UNNotification
+    ) async -> UNNotificationPresentationOptions {
         // "Rest over" is for a phone in a pocket; with Lift open the dock already says it.
-        let isRest = notification.request.identifier == LocalRestAlerts.identifier
-        completionHandler(isRest ? [] : [.banner, .list, .sound])
+        if notification.request.identifier == LocalRestAlerts.identifier { return [] }
+        let type = PushTap(userInfo: notification.request.content.userInfo).data["type"]
+        let coachShown = await isCoachShown()
+        return CoachPresence.showsBanner(type: type, coachShown: coachShown) ? [.banner, .list, .sound] : [.list]
     }
+
+    private func isCoachShown() -> Bool { push.coachPresence?.isShown ?? false }
 
     nonisolated func userNotificationCenter(
         _: UNUserNotificationCenter,

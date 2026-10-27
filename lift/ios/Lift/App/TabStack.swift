@@ -79,7 +79,12 @@ struct TabRootScreen: View {
                     plan: dependencies.coachPlan,
                     router: router,
                     tabs: dependencies.tabs,
-                    mediaLoader: dependencies.mediaLoader
+                    mediaLoader: dependencies.mediaLoader,
+                    speech: options.deniesVoice
+                        ? DemoSpeechTranscriber(clock: dependencies.clock, isDenied: true) : dependencies.speech,
+                    clock: dependencies.clock,
+                    settings: dependencies.appSettings,
+                    presence: dependencies.coachPresence
                 )
             )
         case .lift:

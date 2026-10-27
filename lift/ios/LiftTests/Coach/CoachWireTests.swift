@@ -68,6 +68,12 @@ import Testing
         #expect(thread.prompts.isEmpty)
     }
 
+    @Test func answeringIsReadAndAMissingFieldMeansNotAnswering() throws {
+        let decode = { (json: String) in CoachWire.thread(try JSONDecoder().decode(CoachWire.Thread.self, from: Data(json.utf8))) }
+        #expect(try decode(#"{ "messages": [], "answering": true }"#).answering)
+        #expect(try !decode(#"{ "messages": [] }"#).answering)
+    }
+
     @Test func attachmentsAndQuickRepliesDecodeAndUnknownKindsAreDropped() throws {
         let body = Data(
             """

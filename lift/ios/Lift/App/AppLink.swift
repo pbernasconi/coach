@@ -30,6 +30,8 @@ nonisolated enum AppLink: Equatable, Sendable {
     case weighIn(String)
     /// The Today tab's root.
     case today
+    /// The Coach tab's conversation (a Coach reply's notice).
+    case coach
 
     static let scheme = "lift"
 
@@ -79,6 +81,8 @@ nonisolated enum AppLink: Equatable, Sendable {
             return isWeighInDay(argument) ? .weighIn(argument) : nil
         case "today":
             return argument.isEmpty ? .today : nil
+        case "coach":
+            return argument.isEmpty ? .coach : nil
         default:
             return nil
         }
@@ -126,6 +130,8 @@ nonisolated enum AppLink: Equatable, Sendable {
             components.path = "/" + day
         case .today:
             components.host = "today"
+        case .coach:
+            components.host = "coach"
         }
         return components.url
     }

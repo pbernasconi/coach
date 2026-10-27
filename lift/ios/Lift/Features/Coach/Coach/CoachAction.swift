@@ -20,4 +20,14 @@ nonisolated enum CoachAction: Equatable, Sendable {
     case todayOpened
     /// A card's picture came on screen: load it once.
     case mediaNeeded(URL)
+    /// The microphone: a tap starts or stops listening; holding talks, and the release sends.
+    case micTapped
+    case micHoldBegan
+    case micHoldEnded
+    /// The "turn it on in Settings" row under a denied microphone.
+    case voiceSettingsTapped
+    /// The conversation came on screen or left it (another tab, a pushed page).
+    case shown(Bool)
+    /// The app came to the foreground (true) or went to the background.
+    case sceneActive(Bool)
 }
