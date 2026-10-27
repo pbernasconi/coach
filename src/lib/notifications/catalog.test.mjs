@@ -95,3 +95,20 @@ test('collapse keys fit APNs (64 bytes)', () => {
   assert.equal(Buffer.byteLength(apnsKey('x'.repeat(100))), 64);
   assert.equal(apnsKey('short'), 'short');
 });
+
+test('a Coach reply: the reply as one plain line, a link to the Coach tab, one notice per thread', () => {
+  const r = bindEvent(
+    'coach.replied',
+    { messageId: 'm1', threadId: 't1', text: '**Moved** the lift to Thursday.\n\n- Easy run today\n- [Week](lift://week)' },
+    { origin }
+  );
+  assert.ok(r.ok);
+  assert.equal(r.event.title, 'Coach');
+  assert.equal(r.event.body, 'Moved the lift to Thursday. Easy run today Week');
+  assert.equal(r.event.link, 'lift://coach');
+  assert.equal(r.event.category, 'coach');
+  assert.equal(r.event.collapseKey, 'coach:t1');
+  assert.equal(r.event.threadKey, 'coach');
+  assert.equal(r.event.idempotencyKey, 'coach.replied:m1');
+  assert.equal(CATEGORIES.coach.mandatory, false);
+});

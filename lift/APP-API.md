@@ -905,10 +905,14 @@ Calendar. Code: `src/lib/coach-chat/` (server.ts, writes.ts, changes.mjs, chat.m
 `src/lib/planner/prompts/coach-chat.md`. One open thread; a new one starts after 24 h idle. A $10 monthly cap,
 apart from the planner's.
 
-- `GET /api/app/coach?tz=` → `{ threadId, messages, ready, notice, suggestions }`. `messages` oldest first; `ready`
-  false (with `notice`) when there is no API key or the month's budget is used; `suggestions` are quick prompts.
-- `POST /api/app/coach/messages?tz=` `{ text }` (1–2000 characters) → `{ message, reply }`, once Claude is done
-  (5–30 s, no streaming yet). A Claude failure is a reply that says so, not an error.
+- `GET /api/app/coach?tz=` → `{ threadId, messages, answering, ready, notice, suggestions }`. `messages` oldest first;
+  `answering` true while the last message is Paolo's, has no reply yet and is under 2.5 minutes old (the app left
+  while it waited): show the typing row and read again every few seconds. `ready` false (with `notice`) when there
+  is no API key or the month's budget is used; `suggestions` are quick prompts.
+- `POST /api/app/coach/messages?tz=` `{ text }` (1–2000 characters) → `{ threadId, message, reply }`, once Claude is
+  done (5–30 s, no streaming yet). A Claude failure is a reply that says so, not an error. The answer is finished and
+  stored even if the app hangs up (it went to the background), and every reply sends a `coach.replied` push
+  (lift/PUSH.md) that opens `lift://coach`; the app shows no banner while the Coach tab is on screen.
 - `POST /api/app/coach/proposals/{id}/apply?tz=` → `{ proposal, dates }`: the days it touched. `409 { error, proposal }`
   when the card isn't open, or a workout it touches changed since (the card is then `stale`), or a write failed (the
   writes before it are put back).

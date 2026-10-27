@@ -25,6 +25,7 @@ Vitals push ─────┘   after() the response            ├─ store th
 | --- | --- | --- | --- | --- |
 | `workout.completed` | workouts | A Lift session synced with `finishedAt` set; a new Strava activity (not a strength one within an hour of a Lift session) | "Workout completed!", "Run completed!" | `lift://session/<id>` or `lift://activity/<stravaId>` |
 | `weigh_in.recorded` | body | A vitals push with the Lift token (the scale bridge, Apple Health) that holds a weight from today or yesterday. Garmin's batch never notifies. | "Weigh-in: 83.2 kg" | `lift://weigh-in/<YYYY-MM-DD>` |
+| `coach.replied` | coach | Coach answered in the Coach tab (every reply; the app hides the banner while the Coach tab is on screen). A newer reply in the thread replaces the notice. | "Coach", the reply as one plain line | `lift://coach` |
 | `system.test` | system | `POST /api/app/push/test` | "Coach test" | `lift://today` |
 
 ## The APNs payload
@@ -55,6 +56,7 @@ them; the tab and route are in `DeepLinkNavigator`.
 | `lift://activity/<stravaId>` | Activities | The activity (`GET /api/app/activities/{id}`) |
 | `lift://weigh-in/<YYYY-MM-DD>` | Today | The weigh-in (`GET /api/app/weigh-ins/{date}`, lift/APP-API.md) |
 | `lift://today` | Today | The tab's root |
+| `lift://coach` | Coach | The thread, read again (`GET /api/app/coach`) |
 
 A tap that arrives before the window exists (a cold start) is parked and opened as soon as the tab bar is up.
 

@@ -8,12 +8,14 @@
 //  5. Add a test to catalog.test.mjs that binds a sample payload and checks the text and link.
 
 import { BODY_NOTIFICATION_EVENTS } from './events/body-events.mjs';
+import { COACH_NOTIFICATION_EVENTS } from './events/coach-events.mjs';
 import { SYSTEM_NOTIFICATION_EVENTS } from './events/system-events.mjs';
 import { WORKOUT_NOTIFICATION_EVENTS } from './events/workout-events.mjs';
 
 export const NOTIFICATION_EVENTS = {
   ...WORKOUT_NOTIFICATION_EVENTS,
   ...BODY_NOTIFICATION_EVENTS,
+  ...COACH_NOTIFICATION_EVENTS,
   ...SYSTEM_NOTIFICATION_EVENTS,
 };
 
@@ -26,6 +28,7 @@ export const NOTIFICATION_EVENTS = {
 export const CATEGORIES = {
   workouts: { label: 'Workouts', description: 'When a Lift session or a Strava activity is finished.', mandatory: false },
   body: { label: 'Weigh-ins', description: 'When the bathroom scale sends a weigh-in.', mandatory: false },
+  coach: { label: 'Coach replies', description: 'When Coach answers in the Coach tab while you are elsewhere.', mandatory: false },
   system: { label: 'Coach', description: 'Test pushes from Settings.', mandatory: true },
 };
 

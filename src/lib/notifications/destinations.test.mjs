@@ -7,6 +7,7 @@ test('app links follow lift/PUSH.md', () => {
   assert.equal(appLink({ kind: 'activity', id: '123' }), 'lift://activity/123');
   assert.equal(appLink({ kind: 'weighIn', date: '2026-10-22' }), 'lift://weigh-in/2026-10-22');
   assert.equal(appLink({ kind: 'today' }), 'lift://today');
+  assert.equal(appLink({ kind: 'coach' }), 'lift://coach');
 });
 
 test('web links open the same place on the web app', () => {

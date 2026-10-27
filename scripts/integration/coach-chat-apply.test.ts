@@ -84,3 +84,13 @@ test('a change that fails puts back the ones before it', async () => {
     await sql`DELETE FROM users WHERE id = ${user}`;
   }
 });
+
+test('answering: true only while the last message is Paolo\'s, unanswered and recent', async () => {
+  const { isAnswering } = await import('@/lib/coach-chat/server');
+  const now = Date.parse('2026-10-27T05:00:00.000Z');
+  const at = (s: number) => new Date(now - s * 1000).toISOString();
+  assert.equal(isAnswering([], now), false);
+  assert.equal(isAnswering([{ role: 'user', createdAt: at(20) }], now), true);
+  assert.equal(isAnswering([{ role: 'user', createdAt: at(200) }], now), false);
+  assert.equal(isAnswering([{ role: 'user', createdAt: at(30) }, { role: 'assistant', createdAt: at(5) }], now), false);
+});

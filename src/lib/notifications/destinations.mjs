@@ -8,7 +8,8 @@
  * @typedef {{ kind: 'liftSession', id: string }
  *   | { kind: 'activity', id: string }
  *   | { kind: 'weighIn', date: string }
- *   | { kind: 'today' }} Destination
+ *   | { kind: 'today' }
+ *   | { kind: 'coach' }} Destination
  */
 
 const SESSION_ID = /^[0-9a-f-]{1,64}$/i;
@@ -28,7 +29,8 @@ export function checked(d) {
 }
 
 /**
- * The Lift app link: `lift://session/<id>`, `lift://activity/<id>`, `lift://weigh-in/<YYYY-MM-DD>`, `lift://today`.
+ * The Lift app link: `lift://session/<id>`, `lift://activity/<id>`, `lift://weigh-in/<YYYY-MM-DD>`, `lift://today`,
+ * `lift://coach`.
  * Session ids are lower case, as the App API sends them.
  * @param {Destination} d
  */
@@ -43,6 +45,8 @@ export function appLink(d) {
       return `lift://weigh-in/${c.date}`;
     case 'today':
       return 'lift://today';
+    case 'coach':
+      return 'lift://coach';
   }
 }
 
@@ -62,6 +66,7 @@ export function webLink(d, origin) {
     case 'weighIn':
       return `${base}/health`;
     case 'today':
+    case 'coach':
       return `${base}/`;
   }
 }
