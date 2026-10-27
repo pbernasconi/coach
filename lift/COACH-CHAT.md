@@ -63,6 +63,9 @@ request usually answers it:
   tired, sore or sick that leaves a quality session today or tomorrow (`fatigueIssues`): the web's Skip eases the
   next session by itself, a chat card must do it in its own rows. Up to 3 tries.
 
+- Two more tools: `show({ kind, ref })` puts a card under the text (workout, week, exercise, readiness, day; the
+  server fills it, cards.ts) and `suggest_replies({ options })` adds up to 3 one-tap answers to a question.
+
 The model never writes. The system prompt is coach-chat.md, coaching.md, check-in.md (skips by reason, a missed
 lift moves once) and plan-structure.md (cached).
 

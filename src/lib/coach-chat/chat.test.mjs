@@ -103,3 +103,28 @@ test('the system prompt is the chat prompt, then the coaching rules, check-in ru
   assert.match(c, /<now>\nToday is 2026-10-26, Monday 14:05/);
   assert.match(c, /<plan>\nP\n<\/plan>/);
 });
+
+const tool = (name, input, id) => ({ type: 'tool_use', id, name, input });
+
+test('a card and one-tap answers are shown in one request', async () => {
+  const client = fake([reply([say('Tomorrow is VO2 B. Morning or evening?'), tool('show', { kind: 'workout', ref: 'v' }, 's1'), tool('suggest_replies', { options: ['Morning', 'Evening', 'Morning'] }, 's2')], 'tool_use')]);
+  const r = await chatWithClaude({ ...base, client, check: () => ({ ok: false, problems: [] }) });
+  assert.equal(r.stop, 'shown');
+  assert.equal(client.calls.length, 1);
+  assert.deepEqual(r.cards, [{ kind: 'workout', ref: 'v' }]);
+  assert.deepEqual(r.replies, ['Morning', 'Evening']);
+  assert.equal(client.calls[0].tools.map((t) => t.name).join(), 'propose_changes,show,suggest_replies');
+});
+
+test('a broken card goes back once; a card with a proposal stops at the proposal', async () => {
+  const client = fake([
+    reply([say('Here.'), tool('show', { kind: 'workout', ref: 'nope' }, 's1')], 'tool_use'),
+    reply([tool('show', { kind: 'workout', ref: 'v' }, 's2'), propose({ v: 1 }, 'p1')], 'tool_use'),
+  ]);
+  const checkCard = (i) => (i.ref === 'v' ? { ok: true, value: i } : { ok: false, problems: ['no workout with id nope'] });
+  const r = await chatWithClaude({ ...base, client, checkCard, check: (i) => ({ ok: true, value: i }) });
+  assert.equal(client.calls.length, 2);
+  assert.match(client.calls[1].messages.at(-1).content[0].content, /Not shown: no workout with id nope/);
+  assert.equal(r.stop, 'proposed');
+  assert.deepEqual(r.cards, [{ kind: 'workout', ref: 'v' }]);
+});

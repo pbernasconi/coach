@@ -154,6 +154,10 @@ export const coachMessages = pgTable(
     context: text('context'),
     /** How an answer came about: stop reason, turns, tokens, latency, every propose_changes try and its problems. */
     meta: jsonb('meta'),
+    /** The cards an answer showed (src/lib/coach-chat/cards.ts), as the phone got them. */
+    attachments: jsonb('attachments'),
+    /** One-tap answers under an answer's question. */
+    quickReplies: jsonb('quick_replies'),
     createdAt: timestamp('created_at', { mode: 'date' }).notNull().defaultNow(),
   },
   (t) => [

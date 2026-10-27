@@ -935,6 +935,26 @@ apart from the planner's.
 `items[].kind` maps to Kobo's change rows (added, removed, changed). `status` is open, applied, undone, dismissed or
 stale. `warnings` are Paolo's plan rules (rules.mjs) the changes break, kept because he asked for them.
 
+Every message also has `attachments` (cards under the text) and `quickReplies` (one-tap answers to a question Coach
+asked; a tap sends it as Paolo's message), both `[]` when none. Coach names a card (`show`, src/lib/coach-chat/cards.mjs);
+the server fills it from the loaders below when it answers and stores it with the message, so an old thread shows what
+Coach saw then. A card that can't be filled is left out. At most 2 per answer.
+
+| `kind` | Key | What it holds |
+| --- | --- | --- |
+| `workout` | `workout` | One Week API item (`/api/lift/week` `weeks[].days[].items[]`), as the Week tab shows it. |
+| `week` | `week` | One Week API week (`start`, `title`, `hasPlan`, `totals`, `days[{ date, items }]`). |
+| `exercise` | `exercise` | `{ name, exerciseKey, sessionId, item, stats }`: `item` is the exercise as in `/api/app/lift/sessions/{sessionId}` `exercises.items[]` (muscles, sets, lastTime, best, trend, steps, media) for the next planned Lift session that has it, else the latest; `stats` is `/api/app/lift/exercises/{key}` `stats`. Either can be `null`. |
+| `readiness` | `readiness` | `{ date, header, cue, fitness }`: the Today API's `header`, `todayLine.cue` and `fitness` (its `days` trimmed to the last 42 and the projected ones). |
+| `day` | `day` | `{ date, title, allDay, blocks[{ start, end, kind, title, workoutId }] }`: 06:00–22:00 in `tz`; `kind` `busy` (meetings, overlapping ones merged), `session` (a planned workout), `free` (a gap of 30 min or more). |
+
+```json
+{ "kind": "day", "day": { "date": "2026-10-27", "title": "Tuesday 27 Oct", "allDay": [],
+  "blocks": [{ "start": "06:00", "end": "09:00", "kind": "free", "title": null, "workoutId": null },
+             { "start": "09:00", "end": "10:15", "kind": "session", "title": "Heavy barbell", "workoutId": "wqw…" },
+             { "start": "13:30", "end": "15:00", "kind": "busy", "title": "Call with Rafael", "workoutId": null }] } }
+```
+
 ### Workout: `GET /api/app/workouts/{ref}?tz=`
 
 One workout, planned and done as one: the phone's one workout page. `ref` is `plan-<plan workout id>` (a Week API item's
