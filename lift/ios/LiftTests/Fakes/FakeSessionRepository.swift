@@ -130,4 +130,12 @@ nonisolated final class FakeSessionRepository: SessionRepository {
     func createImportedSession(_: Session) async throws -> SessionRecord {
         throw AppError(.unknown, detail: "not used")
     }
+
+    func resetToPlanned(sessionID _: UUID, on _: LocalDay) async throws -> SessionReset {
+        throw AppError(.unknown, detail: "not used")
+    }
+
+    func undoReset(_: SessionReset) async throws {
+        throw AppError(.unknown, detail: "not used")
+    }
 }

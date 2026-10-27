@@ -21,6 +21,7 @@ where Data.Element: Identifiable {
     private let footer: Footer
     private var onTap: (() -> Void)?
     private var date: ((Data.Element) -> Date?)?
+    private var isOwn: ((Data.Element) -> Bool)?
 
     public init(
         _ data: Data,
@@ -45,6 +46,14 @@ where Data.Element: Identifiable {
     public func timestamps(_ date: @escaping (Data.Element) -> Date?) -> ChatTranscript {
         var transcript = self
         transcript.date = date
+        return transcript
+    }
+
+    /// Marks the reader's own rows: when one is added (they sent a message), the transcript scrolls down to it even if
+    /// they had scrolled up to read.
+    public func ownRows(_ isOwn: @escaping (Data.Element) -> Bool) -> ChatTranscript {
+        var transcript = self
+        transcript.isOwn = isOwn
         return transcript
     }
 
@@ -110,7 +119,9 @@ where Data.Element: Identifiable {
             if new > old, follow.followsNewContent() { scrollToLatest(animated: false) }
         }
         .onChange(of: data.count) { old, new in
-            if new > old, follow.followsNewContent() { scrollToLatest(animated: true) }
+            guard new > old else { return }
+            let own = data.last.map { isOwn?($0) ?? false } ?? false
+            if follow.added(isOwn: own) { scrollToLatest(animated: true) }
         }
         .overlay(alignment: .bottom) {
             if follow.showsJumpButton {

@@ -20,6 +20,18 @@ import Testing
         #expect(follow.followsNewContent())
     }
 
+    @Test func theReadersOwnMessageBringsThemDownFromAnywhere() {
+        var follow = ChatScrollFollow()
+        follow.scrolled(distanceFromBottom: 1300, visibleHeight: 800)
+        let followsReply = follow.added(isOwn: false)
+        #expect(!followsReply)  // a reply while they read up: stay put
+        #expect(follow.showsJumpButton)
+        let followsOwn = follow.added(isOwn: true)
+        #expect(followsOwn)  // they sent a message: scroll to it
+        #expect(follow.followsNewContent())
+        #expect(!follow.showsJumpButton)
+    }
+
     @Test(arguments: [
         (1000.0, 600.0, 400.0, 0.0),
         (1000.0, 500.0, 400.0, 100.0),

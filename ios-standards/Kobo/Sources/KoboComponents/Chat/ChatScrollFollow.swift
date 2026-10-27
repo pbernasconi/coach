@@ -31,6 +31,13 @@ nonisolated struct ChatScrollFollow: Equatable, Sendable {
         isFar = false
     }
 
+    /// A row was added at the end: whether to scroll to it. The reader's own message always brings them down (and pins
+    /// again), wherever they had scrolled; anyone else's follows only while pinned.
+    mutating func added(isOwn: Bool) -> Bool {
+        if isOwn { jumped() }
+        return isPinned
+    }
+
     /// The distance from the visible bottom edge to the end of the content: zero when the content fits between the
     /// insets (a short conversation is always "at the bottom"). `offsetY` is the scroll view's content offset, which
     /// is minus the top inset at the top.

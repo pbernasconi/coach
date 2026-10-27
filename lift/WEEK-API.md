@@ -144,5 +144,6 @@ Field rules:
 - Removing a linked session on the phone (soft delete) leaves its plan workout planned: not skipped, not removed.
   The plan stays the coach's; skip or move the workout in the plan (web, or a check-in). The next `lift-plan.mjs` run
   plans a new session for a workout that still has a Lift template. A move the removal carries still counts (same
-  `dayMovedAt` rule): Start on a workout planned for a later day moves it to today, and Discard puts the session back
-  on its planned day before it removes it, so the plan workout goes back too instead of staying on today as missed.
+  `dayMovedAt` rule). Start on a workout planned for a later day moves it to today; Discard of that workout does not
+  remove it: the phone puts the session back on its planned day as planned (no start, its sets planned again), so the
+  plan workout goes back with it and stays linked.

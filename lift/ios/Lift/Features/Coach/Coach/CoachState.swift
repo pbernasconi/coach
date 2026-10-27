@@ -81,15 +81,15 @@ nonisolated struct CoachState: Equatable, Sendable {
     }
 
     /// A row of the conversation, with the next local id.
-    mutating func append(_ body: CoachMessage.Body, files: [CoachFile] = []) {
-        messages.append(CoachMessage(id: "local-\(nextID)", body: body, files: files))
+    mutating func append(_ body: CoachMessage.Body, files: [CoachFile] = [], sentAt: Date? = nil) {
+        messages.append(CoachMessage(id: "local-\(nextID)", body: body, sentAt: sentAt, files: files))
         nextID += 1
     }
 
     /// Coach's reply arrived: it ends the wait, and its card replaces the ones still open.
-    mutating func receive(_ reply: CoachReply) {
+    mutating func receive(_ reply: CoachReply, at sentAt: Date? = nil) {
         if reply.proposal != nil { supersedeOpenProposals() }
-        append(.coach(reply))
+        append(.coach(reply), sentAt: sentAt)
         phase = .idle
     }
 

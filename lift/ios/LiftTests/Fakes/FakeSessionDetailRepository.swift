@@ -6,7 +6,7 @@ import Synchronization
 
 /// A `SessionRepository` whose `observeSession` yields the given values, then finishes, so `await vm.run()`
 /// returns. Records each requested id. Day ranges yield nothing. The Workout screen's writes (notes, remove, restore
-/// and reorder exercises, finish, start, pause, resume, a new start time, rename, discard and its undo) are recorded, then throw `writeError` when one is
+/// and reorder exercises, finish, start, pause, resume, a new start time, rename, discard, the reset to planned and their undo) are recorded, then throw `writeError` when one is
 /// given; the others are not used by the Workout screen and throw.
 nonisolated final class FakeSessionDetailRepository: SessionRepository {
     enum Call: Equatable, Sendable {
@@ -21,6 +21,8 @@ nonisolated final class FakeSessionDetailRepository: SessionRepository {
         case rename(UUID, String)
         case reschedule(UUID, RescheduleAction)
         case undo(RescheduleUndo)
+        case resetToPlanned(UUID, LocalDay)
+        case undoReset(SessionReset)
     }
 
     private let emissions: [SessionDetail?]
@@ -126,6 +128,18 @@ nonisolated final class FakeSessionDetailRepository: SessionRepository {
     }
 
     func undo(_ change: RescheduleUndo) async throws { try record(.undo(change)) }
+
+    /// Answers with the latest emitted session and its logged or skipped sets, as they were.
+    func resetToPlanned(sessionID: UUID, on day: LocalDay) async throws -> SessionReset {
+        try record(.resetToPlanned(sessionID, day))
+        guard let detail = emissions.compactMap(\.self).last(where: { $0.id == sessionID }) else {
+            throw AppError(.notFound)
+        }
+        let sets = detail.items.flatMap(\.sets).filter { $0.status != .planned }
+        return SessionReset(session: detail.session, sets: sets)
+    }
+
+    func undoReset(_ reset: SessionReset) async throws { try record(.undoReset(reset)) }
 
     private func record(_ call: Call) throws {
         recorded.withLock { $0.append(call) }

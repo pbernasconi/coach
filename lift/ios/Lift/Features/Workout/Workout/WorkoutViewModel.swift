@@ -34,8 +34,10 @@ final class WorkoutViewModel {
     /// Set by Discard: the page keeps showing the session while it closes, instead of "Workout not found".
     @ObservationIgnored var hasDiscarded = false
     /// Set by Start on a workout planned for a later day: the day it was planned for and today, where Start moved it.
-    /// Discard puts it back on the planned day (the plan follows), and the discard's Undo brings it back to today.
+    /// Discard then puts it back on the planned day as planned (the plan follows), instead of removing it.
     @ObservationIgnored var startMove: (planned: LocalDay, today: LocalDay)?
+    /// Set by that Discard: what its Undo needs to bring the workout back to today as it was.
+    @ObservationIgnored var discardReset: SessionReset?
     /// Sets with a log, unlog or skip on the way, so a double tap writes once.
     @ObservationIgnored private var inFlight: Set<UUID> = []
     @ObservationIgnored private var serial = 0
@@ -322,13 +324,16 @@ extension WorkoutViewModel {
         restActivity.end()
     }
 
-    /// Zero, or Skip on the Lock Screen: the countdown ends everywhere and the bar turns to the next set. "Rest over"
-    /// counts from the rest's end, as on the Lock Screen, not from the tick that noticed it (ticks stop in the
-    /// background, so that tick can come much later).
+    /// Zero, or Skip on the Lock Screen. At zero the countdown ends everywhere and the bar turns to "Rest over", counted
+    /// from the rest's end, as on the Lock Screen, not from the tick that noticed it (ticks stop in the background, so
+    /// that tick can come much later). A Skip there ends it as a Skip here does: no "Rest over", the rest did not run out.
     private func finishRest(_ rest: RestTimer) {
+        // The tick found the rest gone outside the app: Skip on the Lock Screen (its button records that).
+        guard let endsAt = restActivity.rest?.endsAt else {
+            state.ready = nil
+            return
+        }
         let now = now()
-        let endsAt = restActivity.rest?.endsAt ?? now
-        // Run out, not skipped on the Lock Screen (its button records that).
         if endsAt <= now { record(.restEnded, setID: rest.setID, seconds: rest.total, at: endsAt) }
         state.readyNext(after: rest.setID, at: min(endsAt, now))
         restActivity.end()

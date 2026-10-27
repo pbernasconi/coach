@@ -14,6 +14,8 @@ final class CoachViewModel {
     private let mediaLoader: any ExerciseMediaLoader
     private let dictation: CoachDictation
     private let clock: any Clock<Duration>
+    /// Stamps a message sent from this phone, so its time line holds still until the server's copy replaces it.
+    private let now: @Sendable () -> Date
     private let settings: any AppSettingsOpening
     private let presence: CoachPresence
     @ObservationIgnored private var uploads: CoachUploads?
@@ -31,6 +33,7 @@ final class CoachViewModel {
         mediaLoader: any ExerciseMediaLoader,
         speech: any SpeechTranscribing,
         clock: any Clock<Duration>,
+        now: @escaping @Sendable () -> Date = { Date() },
         settings: any AppSettingsOpening,
         presence: CoachPresence
     ) {
@@ -41,6 +44,7 @@ final class CoachViewModel {
         self.mediaLoader = mediaLoader
         self.dictation = CoachDictation(speech: speech, clock: clock)
         self.clock = clock
+        self.now = now
         self.settings = settings
         self.presence = presence
         uploads = CoachUploads(coach: coach) { [weak self] change in self.map { change(&$0.state) } }
@@ -105,7 +109,7 @@ final class CoachViewModel {
         state.attachments = []
         state.uploaded = [:]
         uploads?.sent()
-        state.append(.mine(text), files: files)
+        state.append(.mine(text), files: files, sentAt: now())
         return ask(text, files: files)
     }
 
@@ -222,7 +226,7 @@ final class CoachViewModel {
                     guard !Task.isCancelled else { return }
                     switch event {
                     case .progress(let progress): state.phase = .answering(progress)
-                    case .reply(let reply): state.receive(reply)
+                    case .reply(let reply): state.receive(reply, at: now())
                     }
                 }
                 replyTask = nil

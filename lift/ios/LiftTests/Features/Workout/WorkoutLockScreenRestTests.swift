@@ -15,6 +15,7 @@ import Testing
     let activity = RecordingRestActivityController()
     let now = ManualNow()
     let clock = ImmediateClock()
+    let events = RecordingWorkoutEvents()
 
     func makeViewModel() -> WorkoutViewModel {
         WorkoutViewModel(
@@ -30,7 +31,7 @@ import Testing
             health: RecordingHealthRecorder(),
             gym: InMemoryGymSettings(.standard),
             preferences: InMemoryWorkoutSettings(),
-            events: RecordingWorkoutEvents(),
+            events: events,
             now: { [now] in now() },
             calendar: SessionBuilder.calendar
         )
@@ -64,6 +65,21 @@ import Testing
         #expect(clock.sleepCount == 1)
         #expect(vm.state.rest == nil)
         #expect(activity.calls.last == .end)  // the controller lets go of the ended activity
+    }
+
+    @Test func skipOnTheLockScreenShowsTheNextSetWithoutRestOver() async {
+        let vm = await resting()
+        now.advance(seconds: 30)
+        activity.lockScreenSkip()
+        now.advance(seconds: 4)  // the app opens a few seconds later
+
+        await vm.runRestTimer()
+        await vm.timelineSettled()
+
+        // As a Skip in the app: the dock goes to the next set, not "Rest over".
+        #expect(vm.state.rest == nil)
+        #expect(vm.state.ready == nil)
+        #expect(!events.recorded.contains { $0.kind == .restEnded })  // the Lock Screen's button records the skip
     }
 
     @Test func restExtendTappedAddsToTimeAddedOnTheLockScreen() async {

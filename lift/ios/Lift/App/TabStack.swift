@@ -85,6 +85,7 @@ struct TabRootScreen: View {
                     speech: options.deniesVoice
                         ? DemoSpeechTranscriber(clock: dependencies.clock, isDenied: true) : dependencies.speech,
                     clock: dependencies.clock,
+                    now: dependencies.now,
                     settings: dependencies.appSettings,
                     presence: dependencies.coachPresence
                 )

@@ -200,27 +200,47 @@ import Testing
         #expect(sessions.calls == [.reschedule(tomorrow.id, .move(to: Fixtures.monday)), .start(tomorrow.id)])
     }
 
-    @Test func discardAfterStartMovedItPutsItBackOnItsPlannedDay() async {
+    @Test func discardAfterStartMovedItPutsItBackAsPlannedOnItsDay() async {
         let (vm, sessions, _) = await loaded(tomorrow)
         await vm.send(.startTapped)?.value
 
         await vm.send(.discardTapped)?.value
 
+        // Reset, not removed: the Week and the plan keep it on its day with its planned sets.
         #expect(
             sessions.calls == [
                 .reschedule(tomorrow.id, .move(to: Fixtures.monday)), .start(tomorrow.id),
-                .reschedule(tomorrow.id, .move(to: tomorrow.session.day)), .reschedule(tomorrow.id, .remove),
-            ])
+                .resetToPlanned(tomorrow.id, tomorrow.session.day),
+            ]
+        )
+        #expect(
+            vm.state.toast?.kind
+                == .discarded(RescheduleUndo(sessionID: tomorrow.id, previousDay: tomorrow.session.day))
+        )
     }
 
-    @Test func undoOfThatDiscardBringsItBackToToday() async {
+    @Test func undoOfThatDiscardBringsItBackToTodayAsItWas() async {
         let (vm, sessions, _) = await loaded(tomorrow)
         await vm.send(.startTapped)?.value
-        let undo = RescheduleUndo(sessionID: tomorrow.id, previousDay: tomorrow.session.day)
+        await vm.send(.discardTapped)?.value
+        guard case .discarded(let undo)? = vm.state.toast?.kind else {
+            Issue.record("no discarded toast")
+            return
+        }
 
         await vm.send(.discardUndoTapped(undo))?.value
 
-        #expect(Array(sessions.calls.suffix(2)) == [.undo(undo), .reschedule(tomorrow.id, .move(to: Fixtures.monday))])
+        let reset = SessionReset(session: tomorrow.session, sets: [])
+        #expect(sessions.calls.last == .undoReset(reset))
+    }
+
+    @Test func discardOfAWorkoutNotMovedByStartStillRemovesIt() async {
+        let (vm, sessions, _) = await loaded(planned)
+        await vm.send(.startTapped)?.value
+
+        await vm.send(.discardTapped)?.value
+
+        #expect(sessions.calls == [.start(planned.id), .reschedule(planned.id, .remove)])
     }
 
     @Test func aLaterDaysWorkoutAlreadyStartedLogsAsUsual() async {
