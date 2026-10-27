@@ -81,7 +81,8 @@ lift moves once) and plan-structure.md (cached).
 - `coach_messages`: `id`, `thread_id`, `role` (`user | assistant`), `text`, `proposal_id`, `created_at`.
 - `coach_proposals`: `id`, `thread_id`, `title`, `why`, `changes` jsonb (the ops and what each workout looked
   like), `items` and `warnings` jsonb (the card), `status` (`open | applied | undone | dismissed | stale`), `undo` jsonb. A proposal is stale when a workout it touches changed after it.
-- Cost: each Coach message stores its `cost_usd`; the chat stops at $10 a month (`CHAT_MONTHLY_CAP_USD`).
+- Cost: every answer and cache warm-up writes a row to `ai_usage` (DATABASE.md, "What Claude costs"); the chat stops
+  at $10 a month (`CHAT_MONTHLY_CAP_USD`), counted there. Each message also keeps its own `cost_usd`.
 - Kept for analysis (migration 0020): every message, and with each answer `context` (the `<now>`, `<plan>` and
   `<profile>` Claude got) and `meta` jsonb: `stop`, `turns`, `usage` (tokens and USD), `latencyMs`, `attempts` (each
   `propose_changes` input and the problems the check sent back), `prompt` (a hash of the system prompt), `error`.
@@ -152,6 +153,8 @@ A reply used to take 15–30 s with nothing on screen but the typing dots. Where
 - **Cold cache.** Opening the tab warms Claude's cache of the system prompt and tools (`warmCoach`, a `max_tokens: 0`
   request, at most every 10 minutes per server instance). A repair request reads the message's context from the
   cache too.
+- **Model.** Since 2026-10-27 the chat runs on Sonnet 5.5 (`MODEL` in chat.mjs): about 3 s to the first word where Opus
+  5.5 took about 7 (public benchmarks), at half the price per token. The planner stays on Opus 5.5.
 - Each reply's `meta` keeps `prepMs`, `timing` (first thinking, first word, each request) and `latencyMs`, so the
   next change can be measured.
 

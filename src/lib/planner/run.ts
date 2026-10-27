@@ -14,6 +14,8 @@ import { toIso } from '@/lib/db-time.mjs';
 import { checkPlan } from '@/lib/plan/proposal.mjs';
 import { checkProposal, todayOf } from '@/lib/plan/rules.mjs';
 import { claimRequest, failRequest, submitPlan, type PlanRequest } from '@/lib/plan/proposals';
+import { monthSpend as spendOn, recordAiUsage } from '@/lib/ai-usage/store';
+import { PLANNER_FEATURES } from '@/lib/ai-usage/usage.mjs';
 import { PLANNER_MONTHLY_CAP_USD } from './cost.mjs';
 import { currentWeekText } from './current-week.mjs';
 import { MODEL, planWithClaude, type CheckResult } from './loop.mjs';
@@ -22,15 +24,14 @@ import { PROMPT_VERSION, systemPrompt, userMessage } from './prompt.mjs';
 
 /** The last Claude request starts before this; the function stops at 300 s (maxDuration). */
 const BUDGET_MS = 170_000;
+/** How hard the planner thinks: a week plan is worth the wait. */
+const EFFORT = 'medium';
 
 type Row = Record<string, unknown>;
 
 /** What this month's planner runs cost so far, in USD. */
 export async function monthSpend(userId: string): Promise<number> {
-  const [r] = (await sql`
-    SELECT COALESCE(SUM(cost_usd), 0)::float AS usd FROM plan_runs
-    WHERE user_id = ${userId} AND kind = 'plan' AND created_at >= date_trunc('month', NOW())`) as Row[];
-  return Number(r?.usd ?? 0);
+  return spendOn(userId, PLANNER_FEATURES);
 }
 
 export type Readiness = { ready: boolean; reason: string; spent: number };
@@ -110,7 +111,7 @@ export async function runPlanner(userId: string, proposalId: string): Promise<{ 
         currentWeek: checkin ? await currentWeekText(sql, userId, request.weekStart) : null,
       }),
       check: (plan) => checkDraft(plan, { weekStart: request.weekStart, request, context, today }),
-      effort: 'medium',
+      effort: EFFORT,
       deadline: started + BUDGET_MS,
     });
     const saved = result.plan ? await submitPlan(userId, proposalId, result.plan, result.summary, context) : null;
@@ -123,6 +124,9 @@ export async function runPlanner(userId: string, proposalId: string): Promise<{ 
         cost_usd = ${result.usage.usd}, duration_ms = ${Date.now() - started},
         error = ${saved && 'error' in saved ? String(saved.error).slice(0, 500) : null}
       WHERE id = ${runId}`;
+    await recordAiUsage(userId, {
+      feature: 'planner', model: result.model ?? MODEL, effort: EFFORT, usage: result.usage, durationMs: Date.now() - started, ok, refId: runId,
+    });
     // submitPlan already marked a plan that failed the format; this covers a run that produced no plan.
     if (!saved) await failRequest(userId, proposalId, `The planner stopped: ${STOPS[result.stop] ?? result.stop}. Try again.`);
     return { ok, stop: result.stop };
@@ -132,6 +136,7 @@ export async function runPlanner(userId: string, proposalId: string): Promise<{ 
     await sql`
       UPDATE plan_runs SET status = 'failed', error = ${message.slice(0, 500)}, duration_ms = ${Date.now() - started}
       WHERE id = ${runId}`;
+    await recordAiUsage(userId, { feature: 'planner', model: MODEL, effort: EFFORT, durationMs: Date.now() - started, ok: false, refId: runId });
     await failRequest(userId, proposalId, `The planner failed (${message}). Try again.`);
     return { ok: false, stop: 'error' };
   }
