@@ -1,13 +1,13 @@
 import Foundation
 
-/// The rules of talking into a chat composer. A tap starts listening and another tap (or a pause) stops, leaving the
-/// words in the field to edit; holding the microphone listens until release, and the release sends what was heard.
+/// The rules of talking into a chat composer. A tap starts listening and another tap (or a long silence) stops, leaving
+/// the words in the field to edit; holding the microphone listens until release, and the release sends what was heard.
 /// Pure: the caller runs the speech engine and feeds this the events.
 nonisolated public struct ChatVoiceInput: Equatable, Sendable {
     /// Where listening stands.
     public enum Phase: Equatable, Sendable {
         case idle
-        /// Started by a tap: words go into the field; a tap or a pause stops.
+        /// Started by a tap: words go into the field; a tap or a long silence stops.
         case listening
         /// Started by holding the button: release sends.
         case holding
@@ -26,8 +26,9 @@ nonisolated public struct ChatVoiceInput: Equatable, Sendable {
         case stopAndSend
     }
 
-    /// How long a pause in the words ends tap-to-talk.
-    public static let silence: Duration = .seconds(2)
+    /// How long a silence ends tap-to-talk: long enough to think mid-sentence, short enough that a forgotten
+    /// microphone turns itself off.
+    public static let silence: Duration = .seconds(30)
 
     public private(set) var phase: Phase = .idle
 
@@ -81,7 +82,8 @@ nonisolated public struct ChatVoiceInput: Equatable, Sendable {
         phase = denied ? .unavailable : .idle
     }
 
-    /// The engine stopped by itself (it hit its limit): end listening, keep the words.
+    /// The engine stopped by itself (the microphone was taken, or the recognizer gave up): end listening, keep the
+    /// words.
     public mutating func ended() {
         if isListening { phase = .idle }
     }
