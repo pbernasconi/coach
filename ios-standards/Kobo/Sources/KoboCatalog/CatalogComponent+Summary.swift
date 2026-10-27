@@ -148,13 +148,13 @@ extension CatalogComponent {
         case .primerPage: "Explains a permission or feature before asking"
         case .updateGateScreen: "Blocks the app until it is updated"
         case .chatTranscript: "Chat scroll view that opens at the latest and follows new messages"
-        case .chatComposer: "Growing message field with a send or stop button"
+        case .chatComposer: "Growing message capsule with a send or stop button inside it"
         case .chatMessageBubble: "The reader's own message, in a tinted bubble"
         case .chatReply: "The assistant's full-width answer, with light Markdown"
         case .chatTypingIndicator: "Three dots and a status while a reply is on its way"
         case .chatToolStatus: "One step the assistant took, running, done or failed"
         case .chatActionCard: "Proposed changes with old and new values, Apply, Dismiss and Undo"
-        case .chatPromptSuggestions: "Starter prompts as wrapping capsules"
+        case .chatPromptSuggestions: "Starter prompts in one quiet row that scrolls sideways"
         case .chatErrorRow: "A failed reply with its reason and Retry"
         }
     }

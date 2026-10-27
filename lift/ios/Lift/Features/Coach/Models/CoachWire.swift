@@ -52,7 +52,8 @@ nonisolated enum CoachWire {
 
     static func message(_ wire: Message) -> CoachMessage {
         let body: CoachMessage.Body =
-            wire.role == "user" ? .mine(wire.text) : .coach(CoachReply(text: wire.text, proposal: wire.proposal.map(proposal)))
+            wire.role == "user"
+            ? .mine(wire.text) : .coach(CoachReply(text: wire.text, proposal: wire.proposal.map(proposal)))
         return CoachMessage(id: wire.id, body: body)
     }
 

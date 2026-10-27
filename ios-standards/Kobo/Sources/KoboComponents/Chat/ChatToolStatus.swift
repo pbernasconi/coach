@@ -2,7 +2,7 @@ import KoboTokens
 import SwiftUI
 
 /// One thing the assistant did to answer, as a quiet line above its reply: "Read your calendar", "Checked the
-/// forecast". Running shows a spinner, done a check, failed a warning glyph and the reason. Only real steps belong here;
+/// forecast". Done is plain tertiary text; running adds a spinner, failed a warning glyph. Only real steps belong here;
 /// never invent progress.
 ///
 ///     ChatToolStatus(verbatim: "Read this week's plan", state: .done)
@@ -27,23 +27,22 @@ public struct ChatToolStatus: View {
     }
 
     public var body: some View {
-        HStack(spacing: Space.sm) {
-            Group {
-                switch state {
-                case .running:
-                    ProgressView().controlSize(.mini)
-                case .done:
-                    Image(systemName: "checkmark.circle").foregroundStyle(theme.palette.textTertiary)
-                case .failed:
-                    Image(systemName: Tone.warning.feedbackSymbol).foregroundStyle(theme.palette.warning.ink)
+        HStack(spacing: Space.xs) {
+            if state != .done {
+                Group {
+                    if state == .running {
+                        ProgressView().controlSize(.mini)
+                    } else {
+                        Image(systemName: Tone.warning.feedbackSymbol).foregroundStyle(theme.palette.warning.ink)
+                    }
                 }
+                .font(.system(size: glyph))
+                .frame(width: glyph, height: glyph)
+                .accessibilityHidden(true)
             }
-            .font(.system(size: glyph))
-            .frame(width: glyph, height: glyph)
-            .accessibilityHidden(true)
             Text(verbatim: text)
                 .font(theme.font(.footnote))
-                .foregroundStyle(theme.palette.textSecondary)
+                .foregroundStyle(state == .failed ? theme.palette.textSecondary : theme.palette.textTertiary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

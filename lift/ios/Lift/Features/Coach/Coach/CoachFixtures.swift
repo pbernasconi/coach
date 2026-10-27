@@ -7,7 +7,10 @@
         static var fixtureProposal: CoachState {
             var state = CoachState()
             state.messages = [
-                CoachMessage(id: "m0", body: .mine("No heavy lift today. Move it to tomorrow; I'll run easy with a friend.")),
+                CoachMessage(
+                    id: "m0",
+                    body: .mine("No heavy lift today. Move it to tomorrow; I'll run easy with a friend.")
+                ),
                 CoachMessage(id: "m1", body: .coach(DemoCoachChat.sample(for: "move the lift", turn: 1))),
             ]
             state.nextID = 2

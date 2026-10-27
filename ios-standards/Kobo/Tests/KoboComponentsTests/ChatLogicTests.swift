@@ -9,8 +9,10 @@ import Testing
         #expect(!follow.showsJumpButton)
         follow.scrolled(distanceFromBottom: 30)
         #expect(follow.followsNewContent())
-        follow.scrolled(distanceFromBottom: 400)
+        follow.scrolled(distanceFromBottom: 200, visibleHeight: 800)
         #expect(!follow.followsNewContent())
+        #expect(!follow.showsJumpButton)  // a little way up: no button over the last card
+        follow.scrolled(distanceFromBottom: 500, visibleHeight: 800)
         #expect(follow.showsJumpButton)
         follow.jumped()
         #expect(follow.followsNewContent())

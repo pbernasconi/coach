@@ -14,8 +14,9 @@ nonisolated public struct ChatPrompt: Identifiable, Equatable, Sendable {
     }
 }
 
-/// Starter prompts for an empty or quiet chat, as capsules that wrap onto more lines. A tap hands the prompt to the
-/// caller, which usually fills the composer (so the reader can add detail) rather than sending at once.
+/// Starter prompts for an empty chat: quiet capsules in one row that scrolls sideways, docked above the composer. The
+/// row pays the page gutter itself, so place it edge to edge. A tap hands the prompt to the caller, which usually fills
+/// the composer (so the reader can add detail) rather than sending at once. The glyph is not shown.
 ///
 ///     ChatPromptSuggestions(prompts, onSelect: { draft = $0.title; isFocused = true })
 public struct ChatPromptSuggestions: View {
@@ -28,12 +29,16 @@ public struct ChatPromptSuggestions: View {
     }
 
     public var body: some View {
-        FlowLayout(spacing: Space.sm, lineSpacing: Space.sm) {
-            ForEach(prompts) { prompt in
-                ChatPromptButton(prompt: prompt) { onSelect(prompt) }
+        ScrollView(.horizontal) {
+            HStack(spacing: Space.sm) {
+                ForEach(prompts) { prompt in
+                    ChatPromptButton(prompt: prompt) { onSelect(prompt) }
+                }
             }
+            .padding(.horizontal, Space.gutter)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .scrollIndicators(.hidden)
+        .scrollClipDisabled()
     }
 }
 
@@ -44,21 +49,15 @@ private struct ChatPromptButton: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: Space.xs) {
-                if let symbol = prompt.systemImage {
-                    Image(systemName: symbol)
-                        .foregroundStyle(theme.palette.accentText)
-                        .accessibilityHidden(true)
-                }
-                Text(verbatim: prompt.title)
-                    .foregroundStyle(theme.palette.textPrimary)
-            }
-            .font(theme.font(.subheadline))
-            .padding(.horizontal, Space.md)
-            .frame(minHeight: Size.minTouch)
-            .background(theme.palette.surface, in: Capsule())
-            .overlay { Capsule().strokeBorder(theme.palette.separator, lineWidth: Size.hairline) }
-            .contentShape(Capsule())
+            Text(verbatim: prompt.title)
+                .font(theme.font(.subheadline))
+                .foregroundStyle(theme.palette.textPrimary)
+                .lineLimit(1)
+                .padding(.horizontal, Space.md + Space.xxs)
+                .frame(minHeight: Size.buttonHeightCompact)
+                .background(theme.palette.surfaceSunken, in: Capsule())
+                .frame(minHeight: Size.minTouch)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .pressFeedback()

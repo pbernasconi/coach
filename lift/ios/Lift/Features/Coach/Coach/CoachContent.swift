@@ -16,27 +16,34 @@ struct CoachContent: View {
             switch state.phase {
             case .idle where state.messages.isEmpty:
                 // In the scroll content, so the keyboard scrolls it instead of pushing it under the title.
-                CoachIntro(prompts: state.prompts, notice: state.notice) { prompt in
-                    send(.promptPicked(prompt))
-                    isComposing = true
-                }
+                CoachIntro(notice: state.notice)
             case .idle: EmptyView()
             case .waiting: ChatTypingIndicator(verbatim: String(localized: "Reading your plan"))
             case .failed(let reason): ChatErrorRow(verbatim: reason) { send(.retryTapped) }
             }
         }
         .safeAreaBar(edge: .bottom) {
-            ChatComposer(
-                text: .action(state.draft) { send(.draftChanged($0)) },
-                prompt: "Message Coach",
-                isResponding: state.isResponding,
-                onSend: { send(.sendTapped) },
-                onStop: { send(.stopTapped) }
-            )
-            .focused(by: $isComposing)
+            VStack(spacing: 0) {
+                if state.messages.isEmpty, state.phase == .idle {
+                    // At most three starters, in one row docked above the field; a tap fills it.
+                    ChatPromptSuggestions(Array(state.prompts.prefix(3))) { prompt in
+                        send(.promptPicked(prompt))
+                        isComposing = true
+                    }
+                }
+                ChatComposer(
+                    text: .action(state.draft) { send(.draftChanged($0)) },
+                    prompt: "Message Coach",
+                    isResponding: state.isResponding,
+                    onSend: { send(.sendTapped) },
+                    onStop: { send(.stopTapped) }
+                )
+                .focused(by: $isComposing)
+            }
         }
         .screenCanvas()
-        .tabRootHeader { AppHeader("Coach") }
+        .navigationTitle("Coach")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
@@ -52,11 +59,12 @@ private struct CoachMessageRow: View {
             ChatMessageBubble(verbatim: text)
         case .coach(let reply):
             VStack(alignment: .leading, spacing: Space.md) {
-                if !reply.steps.isEmpty {
-                    VStack(alignment: .leading, spacing: Space.xs) {
-                        ForEach(reply.steps) { ChatToolStatus(verbatim: $0.text, state: $0.failed ? .failed : .done) }
-                    }
+                // The steps Coach took, as one quiet line; a failed step gets its own line.
+                let done = reply.steps.filter { !$0.failed }.map(\.text)
+                if !done.isEmpty {
+                    ChatToolStatus(verbatim: done.joined(separator: " · "), state: .done)
                 }
+                ForEach(reply.steps.filter(\.failed)) { ChatToolStatus(verbatim: $0.text, state: .failed) }
                 ChatReply(verbatim: reply.text)
                 if let proposal = reply.proposal {
                     ChatActionCard(
@@ -74,29 +82,24 @@ private struct CoachMessageRow: View {
     }
 }
 
-/// The empty conversation: what Coach does, the notice (why Coach cannot answer, or the demo), and starter prompts.
+/// The empty conversation: one line, and the notice (why Coach cannot answer, or the demo) as a quiet caption. The
+/// starter prompts sit above the composer.
 private struct CoachIntro: View {
     @Environment(\.koboTheme) private var theme
-    let prompts: [ChatPrompt]
     let notice: String?
-    let onSelect: (ChatPrompt) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Space.lg) {
-            VStack(alignment: .leading, spacing: Space.xs) {
-                Text("Change the plan in plain words")
-                    .font(theme.font(.title2))
-                    .foregroundStyle(theme.palette.textPrimary)
-                    .accessibilityAddTraits(.isHeader)
-                Text(
-                    "Tell Coach what changed: your calendar, how you feel, who you train with. Coach proposes the changes, and you apply them."
-                )
-                .font(theme.font(.subheadline))
-                .foregroundStyle(theme.palette.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
+        VStack(alignment: .leading, spacing: Space.xs) {
+            Text("What changed today?")
+                .font(theme.font(.title2).weight(.regular))
+                .foregroundStyle(theme.palette.textPrimary)
+                .accessibilityAddTraits(.isHeader)
+            if let notice {
+                Text(verbatim: notice)
+                    .font(theme.font(.caption))
+                    .foregroundStyle(theme.palette.textTertiary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            if let notice { InlineNotice(verbatim: notice, tone: .info) }
-            ChatPromptSuggestions(prompts, onSelect: onSelect)
         }
     }
 }
