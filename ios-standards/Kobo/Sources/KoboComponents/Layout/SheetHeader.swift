@@ -21,7 +21,11 @@ public struct SheetHeaderAction {
         action: @escaping () -> Void
     ) {
         self.init(
-            label: Text(accessibilityLabel), systemImage: systemImage, role: role, isEnabled: isEnabled, action: action
+            label: Text(accessibilityLabel),
+            systemImage: systemImage,
+            role: role,
+            isEnabled: isEnabled,
+            action: action
         )
     }
 
