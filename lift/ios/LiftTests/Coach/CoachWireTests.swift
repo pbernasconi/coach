@@ -67,4 +67,42 @@ import Testing
         #expect(thread.notice == "No API key")
         #expect(thread.prompts.isEmpty)
     }
+
+    @Test func attachmentsAndQuickRepliesDecodeAndUnknownKindsAreDropped() throws {
+        let body = Data(
+            """
+            { "messages": [ { "id": "m3", "role": "assistant", "text": "Here.", "proposal": null,
+              "quickReplies": ["Yes", "No"],
+              "attachments": [
+                { "kind": "day", "day": { "date": "2026-10-27", "title": "Tuesday",
+                  "blocks": [{ "start": "08:30", "end": "13:30", "kind": "free", "title": null, "workoutId": null }] } },
+                { "kind": "hologram", "hologram": {} },
+                { "kind": "week", "week": "not a week" }
+              ] } ] }
+            """.utf8
+        )
+        let thread = CoachWire.thread(try JSONDecoder().decode(CoachWire.Thread.self, from: body))
+        guard case .coach(let reply) = thread.messages[0].body else { Issue.record("not a reply"); return }
+        #expect(reply.quickReplies == ["Yes", "No"])
+        #expect(reply.attachments.count == 1)
+        guard case .day(let day) = reply.attachments[0] else { Issue.record("not a day"); return }
+        #expect(day.blocks.map(\.kind) == ["free"])
+    }
+
+    @Test func aMessageFromBeforeCardsHasNone() throws {
+        let body = Data(#"{ "messages": [ { "id": "m1", "role": "assistant", "text": "Hi", "proposal": null } ] }"#.utf8)
+        let thread = CoachWire.thread(try JSONDecoder().decode(CoachWire.Thread.self, from: body))
+        guard case .coach(let reply) = thread.messages[0].body else { Issue.record("not a reply"); return }
+        #expect(reply.attachments.isEmpty)
+        #expect(reply.quickReplies.isEmpty)
+    }
+
+    @Test(arguments: ["workout", "day", "week", "exercise", "readiness"])
+    func everyDemoCardDecodes(name: String) {
+        let cards: [String: CoachAttachment] = [
+            "workout": DemoCoachCards.workout, "day": DemoCoachCards.day, "week": DemoCoachCards.week,
+            "exercise": DemoCoachCards.exercise, "readiness": DemoCoachCards.readiness,
+        ]
+        #expect(cards[name] != .unknown, "the demo \(name) card does not decode")
+    }
 }

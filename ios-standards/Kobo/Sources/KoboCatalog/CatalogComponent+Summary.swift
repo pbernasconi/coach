@@ -73,6 +73,7 @@ extension CatalogComponent {
         case .countdownRing: "Ring and timer text driven by start and end dates"
         case .animatedNumber: "Number that rolls between values"
         case .statTile: "Label, value, unit and a delta"
+        case .dayTimeline: "A day as busy, free and highlighted time blocks"
         case .avatar: "Image or initials in a circle"
         case .thumbnail: "Rounded square image or symbol with an optional badge"
         case .sparkline: "Small trend line for tiles and rows, with a last-value dot and a reference"
@@ -156,6 +157,7 @@ extension CatalogComponent {
         case .chatActionCard: "Proposed changes with old and new values, Apply, Dismiss and Undo"
         case .chatPromptSuggestions: "Starter prompts in one quiet row that scrolls sideways"
         case .chatErrorRow: "A failed reply with its reason and Retry"
+        case .chatEmbedCard: "A card inside a reply: a header that opens the thing, then any content"
         }
     }
 }

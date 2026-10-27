@@ -52,6 +52,13 @@ struct DisplayDemo: View {
                     ThumbnailBadge()
                 }
             }
+        case .dayTimeline:
+            DayTimeline([
+                DayTimelineBlock(id: "1", start: "08:00", end: "08:30", kind: .busy, title: "Call with the landlord"),
+                DayTimelineBlock(id: "2", start: "08:30", end: "13:30", kind: .free),
+                DayTimelineBlock(id: "3", start: "09:00", end: "10:15", kind: .highlight, title: "Pottery class"),
+                DayTimelineBlock(id: "4", start: "13:30", end: "17:00", kind: .busy, title: "Train to the coast"),
+            ])
         default: EmptyView()
         }
     }

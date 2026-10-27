@@ -51,6 +51,11 @@ struct ChatDemo: View {
             ChatPromptSuggestions(ChatDemoSamples.prompts) { draft = $0.title }
         case .chatErrorRow:
             ChatErrorRow(verbatim: "The assistant could not answer. Check your connection.", onRetry: {})
+        case .chatEmbedCard:
+            ChatEmbedCard(verbatim: "Team review", subtitle: "Tue 09:00 · 45 min", systemImage: "calendar", action: {})
+            {
+                Text(verbatim: "Agenda: the launch plan, then questions.")
+            }
         default: EmptyView()
         }
     }

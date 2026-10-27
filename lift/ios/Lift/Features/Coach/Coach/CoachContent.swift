@@ -11,7 +11,13 @@ struct CoachContent: View {
 
     var body: some View {
         ChatTranscript(state.messages) { message in
-            CoachMessageRow(message: message, busyProposal: state.busyProposal, send: send)
+            CoachMessageRow(
+                message: message,
+                busyProposal: state.busyProposal,
+                media: state.media,
+                showsQuickReplies: message.id == state.messages.last?.id && state.phase == .idle,
+                send: send
+            )
         } footer: {
             switch state.phase {
             case .idle where state.messages.isEmpty:
@@ -51,6 +57,9 @@ struct CoachContent: View {
 private struct CoachMessageRow: View {
     let message: CoachMessage
     let busyProposal: String?
+    let media: [URL: MediaImage]
+    /// Quick replies show only under the latest reply, while nothing is on its way.
+    let showsQuickReplies: Bool
     let send: (CoachAction) -> Void
 
     var body: some View {
@@ -65,6 +74,9 @@ private struct CoachMessageRow: View {
                     }
                 }
                 ChatReply(verbatim: reply.text)
+                ForEach(Array(reply.attachments.enumerated()), id: \.offset) { _, attachment in
+                    CoachAttachmentView(attachment: attachment, media: media, send: send)
+                }
                 if let proposal = reply.proposal {
                     ChatActionCard(
                         verbatim: proposal.title,
@@ -75,6 +87,12 @@ private struct CoachMessageRow: View {
                         onDismiss: { send(.dismissTapped(proposalID: proposal.id)) },
                         onUndo: busyProposal == nil ? { send(.undoTapped(proposalID: proposal.id)) } : nil
                     )
+                }
+                if showsQuickReplies, !reply.quickReplies.isEmpty {
+                    ChatPromptSuggestions(reply.quickReplies.map { ChatPrompt(id: $0, title: $0) }) {
+                        send(.quickReplyTapped($0.title))
+                    }
+                    .padding(.horizontal, -Space.gutter)  // the row pays the page gutter itself
                 }
             }
         }

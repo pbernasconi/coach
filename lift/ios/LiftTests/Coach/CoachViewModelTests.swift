@@ -54,8 +54,13 @@ private let proposalReply = CoachReply(
 @MainActor
 @Suite struct CoachViewModelTests {
     let plan = FakeCoachPlan([])
+    let router = RecordingNavigator()
+    let tabs = RecordingTabs()
+    let media = LiftSessionMediaLoader()
 
-    private func make(_ coach: FakeCoach) -> CoachViewModel { CoachViewModel(coach: coach, plan: plan) }
+    private func make(_ coach: FakeCoach) -> CoachViewModel {
+        CoachViewModel(coach: coach, plan: plan, router: router, tabs: tabs, mediaLoader: media)
+    }
 
     private func sent(_ coach: FakeCoach, _ text: String = "Move the lift") async -> CoachViewModel {
         let vm = make(coach)
@@ -189,5 +194,40 @@ private let proposalReply = CoachReply(
         await vm.send(.sendTapped)?.value
         #expect(vm.state.messages[1].proposal?.status == .superseded)
         #expect(vm.state.messages[3].proposal?.status == .pending)
+    }
+
+    @Test func quickReplyTappedSendsTheAnswer() async {
+        let vm = make(FakeCoach(.success(proposalReply)))
+        await vm.send(.quickReplyTapped("Tuesday 09:00"))?.value
+        #expect(vm.state.messages.first?.body == .mine("Tuesday 09:00"))
+        #expect(vm.state.messages.count == 2)
+    }
+
+    @Test func workoutOpenedOpensThePlannedWorkout() {
+        let vm = make(FakeCoach(.success(proposalReply)))
+        vm.send(.workoutOpened("w1"))
+        #expect(router.opened == [.plannedWorkout("w1")])
+    }
+
+    @Test func exerciseOpenedOpensTheExercisePage() {
+        let vm = make(FakeCoach(.success(proposalReply)))
+        vm.send(.exerciseOpened("rdl"))
+        #expect(router.opened == [.liftExercise("rdl")])
+    }
+
+    @Test func weekOpenedAndTodayOpenedSwitchTabs() {
+        let vm = make(FakeCoach(.success(proposalReply)))
+        vm.send(.weekOpened)
+        vm.send(.todayOpened)
+        #expect(tabs.shown == [.week, .today])
+    }
+
+    @Test func mediaNeededLoadsEachPictureOnce() async throws {
+        let vm = make(FakeCoach(.success(proposalReply)))
+        let url = try #require(URL(string: "https://example.com/rdl.png"))
+        await vm.send(.mediaNeeded(url))?.value
+        #expect(vm.send(.mediaNeeded(url)) == nil)
+        #expect(vm.state.media[url] == .loaded(LiftSessionMediaLoader.bytes))
+        #expect(media.requested == [url])
     }
 }

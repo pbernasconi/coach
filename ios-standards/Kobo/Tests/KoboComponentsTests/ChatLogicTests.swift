@@ -138,4 +138,27 @@ import Testing
         #expect(!ChatActionStatus.undone.showsActions)
         #expect(ChatActionStatus.applied.isCurrent)
     }
+
+    @Test(arguments: [
+        ("09:00", "09:45", "45 min"), ("09:00", "11:00", "2 h"), ("08:30", "13:00", "4 h 30"),
+        ("08:00", "09:05", "1 h 05"),
+    ])
+    func timelineBlocksSayTheirLength(start: String, end: String, text: String) {
+        #expect(DayTimelineMath.lengthText(start: start, end: end) == text)
+    }
+
+    @Test func timelineRejectsWhatIsNotAClockTime() {
+        #expect(DayTimelineMath.minutes("25:00") == nil)
+        #expect(DayTimelineMath.minutes("9") == nil)
+        #expect(DayTimelineMath.lengthText(start: "10:00", end: "09:00") == nil)
+    }
+
+    @Test func timelineBlocksGoInTimeOrder() {
+        let blocks = [
+            DayTimelineBlock(id: "b", start: "13:30", end: "14:00", kind: .busy),
+            DayTimelineBlock(id: "a", start: "08:00", end: "09:00", kind: .free),
+            DayTimelineBlock(id: "c", start: "later", end: "?", kind: .busy),
+        ]
+        #expect(DayTimelineMath.ordered(blocks).map(\.id) == ["a", "b", "c"])
+    }
 }
