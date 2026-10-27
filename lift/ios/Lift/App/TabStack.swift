@@ -41,13 +41,15 @@ struct TabStack: View {
         .onChange(of: rootRequests) { router.path.removeAll() }  // a re-tap of the tab goes back to its root
         .onChange(of: routeRequest) { show(routeRequest) }  // a link or a notice opened a screen on this tab
         .onAppear { show(routeRequest) }  // one that came before this tab was first shown
+        // The workout bar goes back to the tab that has the workout open.
+        .onChange(of: router.path, initial: true) { dependencies.tabs.stackChanged(tab, path: router.path) }
     }
 
     /// Shows a link's screen over the root, once per request.
     private func show(_ request: TabRouteRequest?) {
         guard let request, request.serial != shownRouteSerial else { return }
         shownRouteSerial = request.serial
-        router.path = request.route.map { [$0] } ?? []
+        router.path = request.path
     }
 }
 

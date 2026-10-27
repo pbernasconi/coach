@@ -48,13 +48,19 @@ private struct AppShell: View {
     var body: some View {
         Group {
             if isReady {
-                TabShell(tabs: tabs, selection: tabSelection) { tab in
+                TabShell(tabs: tabs, selection: tabSelection, showsAccessory: underwayBar != nil) { tab in
                     TabStack(
                         tab: tab,
                         dependencies: dependencies,
                         initialPath: initialPath(for: tab),
                         options: options
                     )
+                } accessory: {
+                    // The workout under way, to go back to it after leaving the Workout screen. The tab bar, and this
+                    // with it, hides on pushed pages, the Workout screen among them.
+                    if let bar = underwayBar {
+                        ActiveWorkoutAccessory(bar: bar) { dependencies.tabs.openWorkout(bar.sessionID) }
+                    }
                 }
                 .koboModalPage(item: importRequest, style: .sheet) { request in
                     ImportFlowPage(request: request, dependencies: dependencies)
@@ -119,6 +125,9 @@ private struct AppShell: View {
         )
         dependencies.push?.registrar.refresh()
     }
+
+    /// The workout under way for the bar above the tab bar; nil while none is.
+    private var underwayBar: ActiveWorkoutBar? { dependencies.workoutActivity.underway.bar }
 
     /// The tab bar's selection: the shared `TabSwitcher`, so screens can switch tabs too.
     private var tabSelection: Binding<AppTab> {
