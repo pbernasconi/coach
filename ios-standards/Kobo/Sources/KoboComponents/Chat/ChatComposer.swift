@@ -86,11 +86,11 @@ public struct ChatComposer: View {
 }
 
 /// The round send or stop button inside the field: a solid accent circle, never glass (it sits on the field's glass).
-/// The visible circle is small; the target stays 44 pt.
+/// The circle is 44 pt, the same as the target.
 private struct ChatComposerButton: View {
     @Environment(\.koboTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @ScaledMetric(relativeTo: .body) private var circle = Size.buttonHeightCompact - Space.xs
+    @ScaledMetric(relativeTo: .body) private var circle = Size.minTouch
     let systemImage: String
     let label: Text
     let action: () -> Void
@@ -139,9 +139,9 @@ private struct ChatComposerField<Trailing: View>: View {
             .foregroundStyle(theme.palette.textPrimary)
             .tint(theme.palette.accent)
             .padding(.leading, Space.lg)
-            .padding(.trailing, showsButton ? Size.minTouch + Space.xs : Space.lg)
+            .padding(.trailing, showsButton ? Size.minTouch + Space.sm : Space.lg)
             .padding(.vertical, Space.md - Space.xxs)
-            .frame(maxWidth: .infinity, minHeight: Size.minTouch, alignment: .leading)
+            .frame(maxWidth: .infinity, minHeight: Size.minTouch + Space.xs, alignment: .leading)
             .overlay(alignment: .bottomTrailing) { trailing().padding(Space.xxs) }
             .koboAnimation(.defaultEffects, value: showsButton)
             .modifier(ChatComposerSurface())
