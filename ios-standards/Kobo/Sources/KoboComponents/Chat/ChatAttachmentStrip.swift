@@ -126,14 +126,19 @@ private struct ChatAttachmentTile: View {
         switch item.kind {
         case .image:
             if let image {
-                image.resizable().scaledToFill()
+                image.resizable().scaledToFill().accessibilityHidden(true)
             } else {
                 theme.palette.surfaceSunken
-                    .overlay { Image(systemName: "photo").foregroundStyle(theme.palette.textTertiary) }
+                    .overlay {
+                        Image(systemName: "photo").foregroundStyle(theme.palette.textTertiary).accessibilityHidden(true)
+                    }
             }
         case .file:
             VStack(spacing: Space.xs) {
-                Image(systemName: "doc.text").font(theme.font(.title3)).foregroundStyle(theme.palette.textSecondary)
+                Image(systemName: "doc.text")
+                    .font(theme.font(.title3))
+                    .foregroundStyle(theme.palette.textSecondary)
+                    .accessibilityHidden(true)
                 Text(verbatim: item.name)
                     .font(theme.font(.caption2))
                     .foregroundStyle(theme.palette.textSecondary)
@@ -159,7 +164,10 @@ private struct ChatAttachmentTile: View {
         case .failed:
             ZStack {
                 theme.palette.scrim
-                Image(systemName: "arrow.clockwise").font(theme.font(.headline)).foregroundStyle(theme.palette.canvas)
+                Image(systemName: "arrow.clockwise")
+                    .font(theme.font(.headline))
+                    .foregroundStyle(theme.palette.canvas)
+                    .accessibilityHidden(true)
             }
             .clipShape(shape)
         }

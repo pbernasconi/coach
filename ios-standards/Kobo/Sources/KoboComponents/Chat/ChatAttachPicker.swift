@@ -142,7 +142,7 @@
             return picker
         }
 
-        func updateUIViewController(_ picker: UIImagePickerController, context: Context) {}
+        func updateUIViewController(_: UIImagePickerController, context _: Context) {}
 
         func makeCoordinator() -> Coordinator { Coordinator(onDone: onDone) }
 
@@ -152,13 +152,13 @@
             init(onDone: @escaping (Data?) -> Void) { self.onDone = onDone }
 
             func imagePickerController(
-                _ picker: UIImagePickerController,
+                _: UIImagePickerController,
                 didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]
             ) {
                 onDone((info[.originalImage] as? UIImage)?.jpegData(compressionQuality: 0.9))
             }
 
-            func imagePickerControllerDidCancel(_ picker: UIImagePickerController) { onDone(nil) }
+            func imagePickerControllerDidCancel(_: UIImagePickerController) { onDone(nil) }
         }
     }
 #endif

@@ -59,6 +59,7 @@ struct ChatAttachPhotoTile: View {
                 .overlay(alignment: .topTrailing) {
                     if isSelected {
                         Image(systemName: "checkmark")
+                            .accessibilityHidden(true)
                             .font(theme.font(.caption).weight(.bold))
                             .foregroundStyle(theme.palette.onAccent)
                             .frame(width: check, height: check)
