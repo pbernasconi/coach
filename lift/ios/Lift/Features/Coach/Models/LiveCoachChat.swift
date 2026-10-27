@@ -69,7 +69,7 @@ nonisolated struct LiveCoachChat: CoachChatting {
             case .ignored: continue
             }
         }
-        throw CoachChatError(message: words(for: .retryable))
+        throw CoachChatError(message: Self.words(for: .retryable(status: nil)))
     }
 
     private func oneStep(_ text: String, _ history: [CoachMessage]) -> AsyncThrowingStream<CoachReplyEvent, any Error> {
