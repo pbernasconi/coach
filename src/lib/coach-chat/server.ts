@@ -11,6 +11,8 @@ import { sql } from '@/db';
 import { toIso } from '@/lib/db-time.mjs';
 import { pushPlanWeeks } from '@/lib/plan/app-writes';
 import { buildProfile } from '@/lib/planner/profile.mjs';
+import { checkCard, type CardRef } from './cards.mjs';
+import { resolveCards, type Attachment } from './cards';
 import { checkProposalInput, isStale, planText, type Change, type Item } from './changes.mjs';
 import { chatWithClaude, MODEL, type Turn } from './chat.mjs';
 import { ApplyError, applyAll, planRows, undoAll, type Undo } from './writes';
@@ -28,7 +30,10 @@ export type ProposalView = {
   id: string; title: string; why: string | null; items: Item[]; warnings: string[];
   status: 'open' | 'applied' | 'undone' | 'dismissed' | 'stale';
 };
-export type MessageView = { id: string; role: 'user' | 'assistant'; text: string; createdAt: string | null; proposal: ProposalView | null };
+export type MessageView = {
+  id: string; role: 'user' | 'assistant'; text: string; createdAt: string | null; proposal: ProposalView | null;
+  attachments: Attachment[]; quickReplies: string[];
+};
 
 /** This month's chat spend, in USD. */
 async function monthSpend(userId: string): Promise<number> {
@@ -65,12 +70,15 @@ function proposalView(p: Row): ProposalView {
 
 async function threadMessages(threadId: string): Promise<MessageView[]> {
   const rows = (await sql`
-    SELECT m.id, m.role, m.text, m.created_at, p.id AS p_id, p.title, p.why, p.items, p.warnings, p.status
+    SELECT m.id, m.role, m.text, m.created_at, m.attachments, m.quick_replies,
+           p.id AS p_id, p.title, p.why, p.items, p.warnings, p.status
     FROM coach_messages m LEFT JOIN coach_proposals p ON p.id = m.proposal_id
     WHERE m.thread_id = ${threadId} ORDER BY m.created_at, m.id`) as Row[];
   return rows.map((r) => ({
     id: String(r.id), role: r.role as 'user' | 'assistant', text: String(r.text), createdAt: toIso(r.created_at),
     proposal: r.p_id ? proposalView({ ...r, id: r.p_id }) : null,
+    attachments: (r.attachments as Attachment[] | null) ?? [],
+    quickReplies: (r.quick_replies as string[] | null) ?? [],
   }));
 }
 
@@ -87,14 +95,19 @@ export async function loadCoach(userId: string) {
   };
 }
 
-type Extra = { proposalId?: string | null; costUsd?: number; model?: string | null; context?: string | null; meta?: Record<string, unknown> | null };
+type Extra = {
+  proposalId?: string | null; costUsd?: number; model?: string | null; context?: string | null; meta?: Record<string, unknown> | null;
+  attachments?: Attachment[]; quickReplies?: string[];
+};
 
 async function addMessage(threadId: string, userId: string, role: 'user' | 'assistant', text: string, extra: Extra = {}) {
   const id = createId();
   const [r] = (await sql`
-    INSERT INTO coach_messages (id, thread_id, user_id, role, text, proposal_id, model, cost_usd, context, meta)
+    INSERT INTO coach_messages (id, thread_id, user_id, role, text, proposal_id, model, cost_usd, context, meta, attachments, quick_replies)
     VALUES (${id}, ${threadId}, ${userId}, ${role}, ${text}, ${extra.proposalId ?? null}, ${extra.model ?? null},
-            ${extra.costUsd ?? 0}, ${extra.context ?? null}, ${extra.meta ? JSON.stringify(extra.meta) : null}::jsonb)
+            ${extra.costUsd ?? 0}, ${extra.context ?? null}, ${extra.meta ? JSON.stringify(extra.meta) : null}::jsonb,
+            ${extra.attachments?.length ? JSON.stringify(extra.attachments) : null}::jsonb,
+            ${extra.quickReplies?.length ? JSON.stringify(extra.quickReplies) : null}::jsonb)
     RETURNING created_at`) as Row[];
   await sql`UPDATE coach_threads SET updated_at = NOW() WHERE id = ${threadId}`;
   return { id, createdAt: toIso(r?.created_at) };
@@ -102,10 +115,13 @@ async function addMessage(threadId: string, userId: string, role: 'user' | 'assi
 
 /** The thread so far as Claude reads it: each card as a line under its message. */
 function historyOf(messages: MessageView[]): Turn[] {
-  return messages.map((m) => ({
-    role: m.role,
-    text: m.proposal ? `${m.text}\n[Card "${m.proposal.title}": ${m.proposal.status}]` : m.text,
-  }));
+  return messages.map((m) => {
+    const lines = [m.text];
+    for (const a of m.attachments) lines.push(`[Showed a ${a.kind} card]`);
+    if (m.quickReplies.length) lines.push(`[Offered: ${m.quickReplies.join(' | ')}]`);
+    if (m.proposal) lines.push(`[Card "${m.proposal.title}": ${m.proposal.status}]`);
+    return { role: m.role, text: lines.join('\n') };
+  });
 }
 
 function clockIn(timeZone: string) {
@@ -125,12 +141,16 @@ export async function sendMessage(userId: string, text: string, today: string, t
   }
   const before = await threadMessages(threadId);
   const mine = await addMessage(threadId, userId, 'user', text);
-  const message: MessageView = { id: mine.id, role: 'user', text, createdAt: mine.createdAt, proposal: null };
+  const message: MessageView = { id: mine.id, role: 'user', text, createdAt: mine.createdAt, proposal: null, attachments: [], quickReplies: [] };
   // Every answer is kept with what led to it (the context, the tries, tokens, time), for analysis later.
   const answer = async (reply: string, proposal: ProposalView | null = null, extra: Extra = {}) => {
     const meta = { ...extra.meta, latencyMs: Date.now() - started, timeZone, today };
     const saved = await addMessage(threadId, userId, 'assistant', reply, { ...extra, proposalId: proposal?.id ?? null, meta });
-    return { message, reply: { id: saved.id, role: 'assistant' as const, text: reply, createdAt: saved.createdAt, proposal } };
+    const view: MessageView = {
+      id: saved.id, role: 'assistant', text: reply, createdAt: saved.createdAt, proposal,
+      attachments: extra.attachments ?? [], quickReplies: extra.quickReplies ?? [],
+    };
+    return { message, reply: view };
   };
 
   const ready = await chatReady(userId);
@@ -149,6 +169,7 @@ export async function sendMessage(userId: string, text: string, today: string, t
       context,
       text,
       check: (input, attempt) => checkProposalInput(input, { rows, today }, attempt),
+      checkCard: (input) => checkCard(input, { rows, today }),
       deadline: started + BUDGET_MS,
     });
     let proposal: ProposalView | null = null;
@@ -164,12 +185,13 @@ export async function sendMessage(userId: string, text: string, today: string, t
                 ${JSON.stringify(p.warnings)}::jsonb, 'open')`;
       proposal = { id, title: p.title, why: p.why || null, items: p.items, warnings: p.warnings, status: 'open' };
     }
+    const attachments = await resolveCards(userId, result.cards as CardRef[], rows, today, timeZone);
     const reply = result.reply ||
-      (proposal ? 'Here is the change.' : result.stop === 'refusal' ? 'I can\'t help with that one.' : 'I couldn\'t finish that answer. Try again.');
+      (proposal ? 'Here is the change.' : attachments.length ? 'Here it is.' : result.stop === 'refusal' ? 'I can\'t help with that one.' : 'I couldn\'t finish that answer. Try again.');
     return answer(reply, proposal, {
-      costUsd: result.usage.usd, model: result.model ?? MODEL, context,
+      costUsd: result.usage.usd, model: result.model ?? MODEL, context, attachments, quickReplies: result.replies,
       meta: {
-        stop: result.stop, turns: result.turns, usage: result.usage, attempts: result.attempts,
+        stop: result.stop, turns: result.turns, usage: result.usage, attempts: result.attempts, cards: result.cards,
         replyFromModel: Boolean(result.reply), prompt: createHash('sha256').update(system).digest('hex').slice(0, 12),
       },
     });

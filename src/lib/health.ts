@@ -1,4 +1,6 @@
 import { loadAppWorkout } from '@/lib/plan/app-workout';
+import { resolveCards } from '@/lib/coach-chat/cards';
+import { planRows } from '@/lib/coach-chat/writes';
 import journal from '../../drizzle/meta/_journal.json';
 import { openProposal, type Proposal } from '@/lib/plan/proposals';
 import { loadPlanHistory } from '@/lib/plan/history';
@@ -111,6 +113,22 @@ export async function runChecks(now = new Date(), { migrations = true }: { migra
     check('app planned workout', async () => {
       const first = (await loadRange(userId, monday, monday, today)).workouts[0];
       if (first && !(await loadAppWorkout(userId, String(first.id), today))) throw new Error('workout not found');
+    }),
+    // The Coach chat's cards (src/lib/coach-chat/cards.ts): each kind fills from real rows, or the check fails.
+    check('coach cards', async () => {
+      const rows = await planRows(userId, today);
+      const { model } = await loadLiftModel();
+      const exercise = [...(model.sessionExercises.values() as Iterable<{ name: string }>)][0]?.name;
+      const refs = [
+        ...(rows[0] ? [{ kind: 'workout' as const, ref: rows[0].id }] : []),
+        { kind: 'week' as const, ref: today },
+        ...(exercise ? [{ kind: 'exercise' as const, ref: exercise }] : []),
+        { kind: 'readiness' as const, ref: today },
+        { kind: 'day' as const, ref: today },
+      ];
+      const cards = await resolveCards(userId, refs, rows, today, 'America/Los_Angeles');
+      const missing = refs.filter((r) => !cards.some((c) => c.kind === r.kind)).map((r) => r.kind);
+      if (missing.length) throw new Error(`cards not filled: ${missing.join(', ')}`);
     }),
     // GET /api/lift/week (the Lift app's Week tab): this week and the next three.
     check('lift week', () => loadLiftWeeks(userId, monday, 4, today, 'America/Los_Angeles', now)),

@@ -5,6 +5,7 @@
 // client is passed in, so the tests drive it with a fake. No database here (server.ts stores the result).
 
 import { addUsage, NO_USAGE } from '../planner/cost.mjs';
+import { cleanReplies, MAX_CARDS, REPLIES_TOOL, SHOW_TOOL } from './cards.mjs';
 
 export const MODEL = 'claude-opus-5-5';
 /** propose_changes calls in one turn: the first and two repairs. */
@@ -46,7 +47,7 @@ export const PROPOSE_TOOL = {
  * @typedef {{ ok: true, value: any } | { ok: false, problems: string[] }} ProposalCheck
  * @typedef {{ input: any, problems: string[] | null }} Attempt  one propose_changes call and what the check said
  * @typedef {{ reply: string, proposal: any | null, problems: string[] | null, turns: number, usage: typeof NO_USAGE,
- *   model: string, stop: string, attempts: Attempt[] }} ChatResult
+ *   model: string, stop: string, attempts: Attempt[], cards: any[], replies: string[] }} ChatResult
  */
 
 /**
@@ -82,11 +83,12 @@ export function chatMessages(history, context, text) {
  * @param {{
  *   client: { beta: { messages: { stream: (params: any, opts?: any) => { finalMessage: () => Promise<any> } } } },
  *   system: string, history: Turn[], context: string, text: string, check: (input: any, attempt: number) => ProposalCheck,
+ *   checkCard?: (input: any) => ({ ok: true, value: any } | { ok: false, problems: string[] }),
  *   effort?: 'low' | 'medium' | 'high', deadline?: number, now?: () => number, model?: string,
  * }} p
  * @returns {Promise<ChatResult>}
  */
-export async function chatWithClaude({ client, system, history, context, text, check, effort = 'medium', deadline = Infinity, now = Date.now, model = MODEL }) {
+export async function chatWithClaude({ client, system, history, context, text, check, checkCard = (input) => ({ ok: true, value: input }), effort = 'medium', deadline = Infinity, now = Date.now, model = MODEL }) {
   const messages = chatMessages(history, context, text);
   let usage = NO_USAGE;
   /** @type {string[]} */
@@ -99,6 +101,10 @@ export async function chatWithClaude({ client, system, history, context, text, c
   let turns = 0;
   /** @type {Attempt[]} */
   const attempts = [];
+  /** @type {any[]} */
+  const cards = [];
+  /** @type {string[]} */
+  let replies = [];
 
   while (turns < MAX_TURNS) {
     if (now() > deadline) return result('deadline');
@@ -112,7 +118,7 @@ export async function chatWithClaude({ client, system, history, context, text, c
         thinking: { type: 'adaptive' },
         output_config: { effort },
         system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral', ttl: '1h' } }],
-        tools: [PROPOSE_TOOL],
+        tools: [PROPOSE_TOOL, SHOW_TOOL, REPLIES_TOOL],
         tool_choice: { type: 'auto' },
         messages,
       })
@@ -128,7 +134,25 @@ export async function chatWithClaude({ client, system, history, context, text, c
 
     /** @type {any[]} */
     const results = [];
+    let retry = false;
     for (const call of calls) {
+      if (call.name === SHOW_TOOL.name) {
+        /** @type {{ ok: true, value: any } | { ok: false, problems: string[] }} */
+        const c = cards.length >= MAX_CARDS ? { ok: false, problems: [`at most ${MAX_CARDS} cards per answer`] } : checkCard(call.input ?? {});
+        if (c.ok) {
+          cards.push(c.value);
+          results.push({ type: 'tool_result', tool_use_id: call.id, content: 'Shown under your text.' });
+        } else {
+          results.push({ type: 'tool_result', tool_use_id: call.id, is_error: true, content: `Not shown: ${c.problems.join('; ')}` });
+          retry = cards.length < MAX_CARDS;
+        }
+        continue;
+      }
+      if (call.name === REPLIES_TOOL.name) {
+        replies = cleanReplies(call.input);
+        results.push({ type: 'tool_result', tool_use_id: call.id, content: 'Shown under your question.' });
+        continue;
+      }
       if (call.name !== PROPOSE_TOOL.name) {
         results.push({ type: 'tool_result', tool_use_id: call.id, is_error: true, content: 'Unknown tool.' });
         continue;
@@ -147,6 +171,7 @@ export async function chatWithClaude({ client, system, history, context, text, c
       } else {
         problems = c.problems;
         const last = tries >= MAX_PROPOSALS;
+        retry = retry || !last;
         results.push({
           type: 'tool_result', tool_use_id: call.id, is_error: true,
           content: last
@@ -157,11 +182,14 @@ export async function chatWithClaude({ client, system, history, context, text, c
     }
     messages.push({ role: 'user', content: results });
     if (proposal) return result('proposed');
+    // Cards and quick replies are shown as they come; another request only to fix a broken card or proposal (or to
+    // let Claude say in words what it couldn't change, after its last try).
+    if (!retry && !problems) return result(cards.length || replies.length ? 'shown' : 'answered');
   }
   return result('turns_used');
 
   /** @param {string} stop @returns {ChatResult} */
   function result(stop) {
-    return { reply: said.join('\n\n'), proposal, problems, turns, usage, model, stop, attempts };
+    return { reply: said.join('\n\n'), proposal, problems, turns, usage, model, stop, attempts, cards, replies };
   }
 }
