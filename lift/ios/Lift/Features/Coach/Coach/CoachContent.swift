@@ -24,7 +24,8 @@ struct CoachContent: View {
                 // In the scroll content, so the keyboard scrolls it instead of pushing it under the title.
                 CoachIntro(notice: state.notice)
             case .idle: EmptyView()
-            case .waiting: ChatTypingIndicator(verbatim: String(localized: "Reading your plan"))
+            case .waiting: ChatTypingIndicator(verbatim: String(localized: "Reading your week"))
+            case .answering(let progress): CoachLiveReply(progress: progress)
             case .failed(let reason): ChatErrorRow(verbatim: reason) { send(.retryTapped) }
             }
         }
@@ -105,6 +106,27 @@ private struct CoachMessageRow: View {
                 }
             }
         }
+    }
+}
+
+/// The reply while it streams in: the status line (the latest line of Claude's thinking while it thinks), then the
+/// words as they come, with the step under them once Coach drafts a change or fetches a card.
+private struct CoachLiveReply: View {
+    let progress: CoachProgress
+
+    var body: some View {
+        if progress.text.isEmpty {
+            ChatTypingIndicator(verbatim: status)
+        } else {
+            VStack(alignment: .leading, spacing: Space.md) {
+                ChatReply(verbatim: progress.text, isStreaming: true)
+                if progress.step != .writing { ChatTypingIndicator(verbatim: progress.label) }
+            }
+        }
+    }
+
+    private var status: String {
+        progress.step == .thinking ? (progress.latestThought ?? progress.label) : progress.label
     }
 }
 

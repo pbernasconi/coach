@@ -34,6 +34,28 @@
             return state
         }
 
+        static var fixtureThinking: CoachState {
+            var state = fixtureWaiting
+            state.phase = .answering(
+                CoachProgress(
+                    step: .thinking,
+                    thinking: "Sore legs today. Today has a heavy lift, tomorrow an easy spin."
+                )
+            )
+            return state
+        }
+
+        static var fixtureStreaming: CoachState {
+            var state = fixtureWaiting
+            state.phase = .answering(
+                CoachProgress(
+                    step: .proposing,
+                    text: "Sore legs and a heavy lift don't mix. I'd move the lift to Thursday"
+                )
+            )
+            return state
+        }
+
         static var fixtureFailed: CoachState {
             var state = fixtureWaiting
             state.phase = .failed("Coach could not answer. Check your connection.")

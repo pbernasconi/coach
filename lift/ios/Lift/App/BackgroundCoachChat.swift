@@ -14,6 +14,23 @@ nonisolated struct BackgroundCoachChat: CoachChatting {
         return try await base.reply(to: text, after: history)
     }
 
+    func replies(to text: String, after history: [CoachMessage]) -> AsyncThrowingStream<CoachReplyEvent, any Error> {
+        let stream = base.replies(to: text, after: history)
+        return AsyncThrowingStream { continuation in
+            let task = Task {
+                let time = await BackgroundTime.begin("Coach reply")
+                do {
+                    for try await event in stream { continuation.yield(event) }
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+                await time.end()
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
+    }
+
     func apply(_ proposalID: String) async throws -> ChatActionStatus { try await base.apply(proposalID) }
 
     func undo(_ proposalID: String) async throws -> ChatActionStatus { try await base.undo(proposalID) }

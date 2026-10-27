@@ -54,18 +54,76 @@ nonisolated struct CoachThread: Equatable, Sendable {
     var answering = false
 }
 
+/// Where a reply stands while it streams in (lift/APP-API.md, "Coach answer stream"): the step, the latest line of
+/// Claude's thinking, and the words so far.
+nonisolated struct CoachProgress: Equatable, Sendable {
+    enum Step: String, Equatable, Sendable {
+        case reading, thinking, writing, proposing, card, fixing
+    }
+
+    var step = Step.reading
+    /// The summary of Claude's thinking so far.
+    var thinking = ""
+    /// The reply's words so far.
+    var text = ""
+
+    /// The quiet status line for the step.
+    var label: String {
+        switch step {
+        case .reading: String(localized: "Reading your week")
+        case .thinking: String(localized: "Thinking")
+        case .writing: String(localized: "Writing")
+        case .proposing: String(localized: "Drafting the change")
+        case .card: String(localized: "Getting your data")
+        case .fixing: String(localized: "Fixing a clash")
+        }
+    }
+
+    /// The last sentence of the thinking, short enough for one or two lines under the dots.
+    var latestThought: String? {
+        let sentences = thinking.split(whereSeparator: { ".!?\n".contains($0) })
+        guard let last = sentences.last?.trimmingCharacters(in: .whitespaces), !last.isEmpty else { return nil }
+        return last.count > 110 ? String(last.prefix(109)) + "…" : last
+    }
+}
+
+/// One step of a streamed reply: how far it got, then the reply itself.
+nonisolated enum CoachReplyEvent: Equatable, Sendable {
+    case progress(CoachProgress)
+    case reply(CoachReply)
+}
+
 /// Talks to Coach: the live server (`LiveCoachChat`, lift/APP-API.md "Coach") or the demo stand-in.
 nonisolated protocol CoachChatting: Sendable {
     /// The open conversation, read when the tab opens.
     func thread() async throws -> CoachThread
     /// Coach's reply to `text`, with the conversation before it. Throws `CoachChatError` with words to show.
     func reply(to text: String, after history: [CoachMessage]) async throws -> CoachReply
+    /// The reply as it is made: progress events, then `.reply` last. Throws `CoachChatError`.
+    func replies(to text: String, after history: [CoachMessage]) -> AsyncThrowingStream<CoachReplyEvent, any Error>
     /// Applies a proposal's changes to the plan; answers the card's new status (expired when it went stale).
     func apply(_ proposalID: String) async throws -> ChatActionStatus
     /// Takes an applied proposal's changes back; answers the card's new status.
     func undo(_ proposalID: String) async throws -> ChatActionStatus
     /// Dismisses an open proposal; answers the card's new status.
     func dismiss(_ proposalID: String) async throws -> ChatActionStatus
+}
+
+nonisolated extension CoachChatting {
+    /// A coach that doesn't stream answers in one step.
+    func replies(to text: String, after history: [CoachMessage]) -> AsyncThrowingStream<CoachReplyEvent, any Error> {
+        AsyncThrowingStream { continuation in
+            let task = Task {
+                do {
+                    continuation.yield(.reply(try await reply(to: text, after: history)))
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
+    }
 }
 
 /// Why Coach could not answer, in words for the error row.

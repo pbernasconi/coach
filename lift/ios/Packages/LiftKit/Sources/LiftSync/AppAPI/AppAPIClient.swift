@@ -30,7 +30,7 @@ extension AppAPIFetching {
 /// The live client: an injected `URLSession` (never `.shared`), the coach web app's origin, the sync token and the
 /// person's time zone, which decides "today" on the server.
 public struct URLSessionAppAPIClient: AppAPIFetching {
-    private let session: URLSession
+    let session: URLSession
     private let baseURL: URL
     private let tokens: any TokenProvider
     private let timeZone: @Sendable () -> String
@@ -73,11 +73,7 @@ public struct URLSessionAppAPIClient: AppAPIFetching {
     /// Runs off the caller's actor.
     @concurrent
     public func send(_ method: String, _ path: String, body: Data) async throws -> Data {
-        guard let token = try await TokenRead.token(from: tokens) else { throw SyncTransportError.missingToken }
-        var request = AppAPIRequest.make(baseURL: baseURL, path: path, query: [], timeZone: timeZone(), token: token)
-        request.httpMethod = method
-        request.httpBody = body
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let request = try await streamRequest(method, path, body: body)
         let result: (Data, URLResponse)
         do {
             result = try await session.data(for: request)
@@ -87,6 +83,18 @@ public struct URLSessionAppAPIClient: AppAPIFetching {
         guard let http = result.1 as? HTTPURLResponse else { throw SyncTransportError.invalidResponse }
         if let error = SyncTransportError.forStatus(http.statusCode) { throw error }
         return result.0
+    }
+}
+
+extension URLSessionAppAPIClient {
+    /// A write request with the token and a JSON body (`send`, and `stream` with another Accept).
+    func streamRequest(_ method: String, _ path: String, body: Data) async throws -> URLRequest {
+        guard let token = try await TokenRead.token(from: tokens) else { throw SyncTransportError.missingToken }
+        var request = AppAPIRequest.make(baseURL: baseURL, path: path, query: [], timeZone: timeZone(), token: token)
+        request.httpMethod = method
+        request.httpBody = body
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        return request
     }
 }
 

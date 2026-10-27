@@ -13,5 +13,9 @@
     #Preview("Proposal, AX3") { coachPreview(.fixtureProposal).dynamicTypeSize(.accessibility3) }
     #Preview("Applied") { coachPreview(.fixtureApplied) }
     #Preview("Waiting") { coachPreview(.fixtureWaiting) }
+    #Preview("Thinking") { coachPreview(.fixtureThinking) }
+    #Preview("Thinking, dark") { coachPreview(.fixtureThinking).preferredColorScheme(.dark) }
+    #Preview("Streaming") { coachPreview(.fixtureStreaming) }
+    #Preview("Streaming, AX3") { coachPreview(.fixtureStreaming).dynamicTypeSize(.accessibility3) }
     #Preview("Failed") { coachPreview(.fixtureFailed) }
 #endif
