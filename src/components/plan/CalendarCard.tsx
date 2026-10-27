@@ -87,6 +87,9 @@ function PlannedCard({ w, actual, roomy, action, drag }: { w: CalendarWorkout; a
   const draggable = Boolean(drag) && !done;
   // Done with a matched activity: what was done leads (time, distance, TSS), the plan is a small line under it.
   const showDone = done && Boolean(actual);
+  // A swap (a run instead of the planned spin) shows what was done: its sport and name, with the plan under it.
+  const swap = showDone && w.match?.swapped ? w.match : null;
+  const cardSport = swap?.sport ?? w.sport;
   const doneParts = actual ? [dur(actual.min), actual.km >= 0.5 ? `${actual.km} km` : null, actual.tss ? `${Math.round(actual.tss)} TSS` : null].filter(Boolean) : [];
   return (
     <div
@@ -99,12 +102,12 @@ function PlannedCard({ w, actual, roomy, action, drag }: { w: CalendarWorkout; a
         filled ? 'plan-done shadow-sm' : 'plan-upcoming shadow',
         draggable && 'cursor-grab hover:shadow-md active:cursor-grabbing'
       )}
-      style={{ borderLeftColor: sport(w.sport).color, '--chip-tint': lvl.color } as React.CSSProperties}
+      style={{ borderLeftColor: sport(cardSport).color, '--chip-tint': lvl.color } as React.CSSProperties}
     >
       <Action action={action}>
         <span className="flex min-w-0 items-center gap-1">
-          <SportIcon id={w.sport} className="h-3.5 w-3.5" />
-          <span className={cn('min-w-0 flex-1 truncate font-medium', 'text-[var(--viz-ink)]')}>{plainTitle(w.title)}</span>
+          <SportIcon id={cardSport} className="h-3.5 w-3.5" />
+          <span className={cn('min-w-0 flex-1 truncate font-medium', 'text-[var(--viz-ink)]')}>{swap ? swap.name || sport(cardSport).label : plainTitle(w.title)}</span>
           <ComplianceMark level={w.compliance.level} title={status} tooltip={false} />
         </span>
         <span className="block truncate tabular-nums text-[var(--viz-ink-2)]">
@@ -119,7 +122,11 @@ function PlannedCard({ w, actual, roomy, action, drag }: { w: CalendarWorkout; a
             plannedText || sport(w.sport).label
           )}
         </span>
-        {showDone && plannedText && <span className="block truncate text-[11px] tabular-nums text-[var(--viz-muted)]">P: {plannedText}</span>}
+        {showDone && plannedText && (
+          <span className="block truncate text-[11px] tabular-nums text-[var(--viz-muted)]">
+            {swap ? `Instead of ${plainTitle(w.title)} · ${plannedText}` : `P: ${plannedText}`}
+          </span>
+        )}
         {w.steps && !showDone && <MiniWorkoutChart workout={w.steps} className={cn('mt-1 block w-full text-[var(--viz-ink-2)]', roomy ? 'h-6' : 'h-5')} />}
       </Action>
     </div>
