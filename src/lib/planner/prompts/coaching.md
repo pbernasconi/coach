@@ -98,6 +98,16 @@ Rehab for the right Achilles, knee and hip (Paolo, 2026-10-25).
 - When a Lift note says the Achilles or knee is sore, keep the physio (it is the treatment) at the last load, and
   make the runs around it easy or a ride.
 
+## Daily back & hip stretch (from 2026-10-26)
+
+Paolo wants more stretching. Until he says to stop (ask him on 2026-11-16):
+
+- The "Back & hip stretch" from plan-structure.md every day, 10 min, as one block straight after the day's session.
+  It is not physio: the 2 physio sessions stay, and the plan check does not count it.
+- Lifts: back squat and other heavy hinges at RPE 7 at most, 2–3 reps in reserve, no new top weights; anything that
+  hurts the back or buttock comes out for a split squat or a machine. Runs and rides as planned when they don't hurt.
+- When a Lift note or a check-in says the back or glute is sore, swap the next run for a ride.
+
 ## Heat and weather are load
 
 - Compare the destination's temperatures to what he's adapted to (SF is 12–22 °C). A jump of more than 8 °C means he
