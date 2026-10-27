@@ -245,7 +245,7 @@ private struct SetEditorFields: View {
         if editor.laterSets > 0 {
             ToggleRow(
                 "Apply to later sets",
-                subtitle: "New weight on the next ^[\(editor.laterSets) planned set](inflect: true)",
+                subtitle: "Weight and reps on the next ^[\(editor.laterSets) planned set](inflect: true)",
                 systemImage: "arrow.down.to.line",
                 isOn: .action(editor.appliesToLater) { send(.editorApplyToLaterChanged($0)) }
             )

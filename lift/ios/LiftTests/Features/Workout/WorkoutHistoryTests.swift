@@ -142,7 +142,28 @@ import Testing
         #expect(!sets.calls.contains { if case .log = $0 { true } else { false } })
     }
 
-    @Test func editorDoneTappedSkipsLoggedLaterSetsAndUnchangedWeights() async {
+    @Test func editorDoneTappedAppliesNewRepsToLaterPlannedSetsKeepingTheirWeight() async {
+        var detail = current
+        detail.items[0].sets[2].actualWeight = .kg(110)
+        let sets = RecordingSetRepository(result: detail.items[0].sets[0])
+        let vm = makeViewModel(detail, history: FakeExerciseHistoryRepository(emissions: [[]]), sets: sets)
+        await vm.run()
+        let ids = detail.items[0].sets.map(\.id)
+        vm.send(.setValuesTapped(ids[0]))
+        vm.send(.editorRepsChanged(8))
+
+        await vm.send(.editorDoneTapped)?.value
+
+        #expect(
+            sets.calls == [
+                .saveValues(setID: ids[0], reps: 8, weight: .kg(100)),
+                .saveValues(setID: ids[1], reps: 8, weight: nil),
+                .saveValues(setID: ids[2], reps: 8, weight: .kg(110)),
+            ]
+        )
+    }
+
+    @Test func editorDoneTappedSkipsLoggedLaterSetsAndUnchangedValues() async {
         var detail = current
         detail.items[0].sets[2].status = .done
         let sets = RecordingSetRepository(result: detail.items[0].sets[0])
@@ -160,6 +181,7 @@ import Testing
         #expect(
             sets.calls == [
                 .saveValues(setID: ids[0], reps: 6, weight: .kg(100)),
+                .saveValues(setID: ids[1], reps: 6, weight: nil),
                 .saveValues(setID: ids[0], reps: 5, weight: .kg(105)),
                 .saveValues(setID: ids[1], reps: nil, weight: .kg(105)),
             ]
