@@ -17,6 +17,8 @@ nonisolated enum CoachWire {
         let id: String
         let role: String
         let text: String
+        /// ISO 8601, for the chat's time lines; missing or unreadable leaves the row undated.
+        let createdAt: String?
         let proposal: Proposal?
         /// The cards in the reply; missing in bodies from before they existed.
         let attachments: Attachments?
@@ -78,7 +80,13 @@ nonisolated enum CoachWire {
                     quickReplies: wire.quickReplies ?? []
                 )
             )
-        return CoachMessage(id: wire.id, body: body)
+        return CoachMessage(id: wire.id, body: body, sentAt: wire.createdAt.flatMap(date))
+    }
+
+    /// The server's timestamps, with or without fractional seconds.
+    static func date(_ text: String) -> Date? {
+        (try? Date(text, strategy: Date.ISO8601FormatStyle(includingFractionalSeconds: true)))
+            ?? (try? Date(text, strategy: .iso8601))
     }
 
     static func proposal(_ wire: Proposal) -> CoachProposal {

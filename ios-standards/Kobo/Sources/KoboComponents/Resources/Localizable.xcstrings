@@ -1,6 +1,18 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%@ at %@" : {
+      "comment" : "Chat time line for an older message: the date, then the time (\"Oct 26 at 11:33\").",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ at %2$@"
+          }
+        }
+      }
+    },
     "%@ available" : {
       "comment" : "Toast announcement suffix naming its action (\"Undo available\").",
       "extractionState" : "manual",
@@ -1249,6 +1261,18 @@
         }
       }
     },
+    "Today %@" : {
+      "comment" : "Chat time line for a message sent today; the argument is the time (\"Today 08:01\").",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today %@"
+          }
+        }
+      }
+    },
     "Tomorrow" : {
       "comment" : "DateField quick pick for tomorrow.",
       "extractionState" : "manual",
@@ -1293,6 +1317,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Upper and lowercase letters"
+          }
+        }
+      }
+    },
+    "Yesterday %@" : {
+      "comment" : "Chat time line for a message sent yesterday; the argument is the time (\"Yesterday 18:31\").",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yesterday %@"
           }
         }
       }

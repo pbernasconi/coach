@@ -55,6 +55,12 @@ struct ChatDemo: View {
                 onDismiss: { status = .dismissed },
                 onUndo: { status = .pending }
             )
+        case .chatTimestamp:
+            VStack(spacing: Space.lg) {
+                ChatTimestamp(.now.addingTimeInterval(-20 * 60), now: .now)
+                ChatTimestamp(.now.addingTimeInterval(-30 * 3600), now: .now)
+                ChatTimestamp(.now.addingTimeInterval(-9 * 86400), now: .now)
+            }
         case .chatPromptSuggestions:
             ChatPromptSuggestions(ChatDemoSamples.prompts) { draft = $0.title }
         case .chatErrorRow:

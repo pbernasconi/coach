@@ -53,6 +53,14 @@ import Testing
             ])
     }
 
+    @Test func messagesKeepWhenTheyWereSentForTheTimeLines() throws {
+        let thread = CoachWire.thread(try JSONDecoder().decode(CoachWire.Thread.self, from: Self.thread))
+        #expect(thread.messages[0].sentAt == Date(timeIntervalSince1970: 1_793_048_460))
+        #expect(thread.messages[1].sentAt == Date(timeIntervalSince1970: 1_793_048_531))
+        #expect(CoachWire.date("2026-10-26T21:01:00Z") == Date(timeIntervalSince1970: 1_793_048_460))
+        #expect(CoachWire.date("yesterday") == nil)
+    }
+
     @Test(arguments: [
         ("open", ChatActionStatus.pending), ("applied", .applied), ("undone", .undone), ("dismissed", .dismissed),
         ("stale", .expired), ("something new", .expired),

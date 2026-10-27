@@ -29,6 +29,7 @@ struct CoachContent: View {
             case .failed(let reason): ChatErrorRow(verbatim: reason) { send(.retryTapped) }
             }
         }
+        .timestamps(\.sentAt)
         .onTranscriptTap { isComposing = false }
         .safeAreaBar(edge: .bottom) {
             VStack(spacing: 0) {
