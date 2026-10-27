@@ -141,6 +141,13 @@
       "when": 1793055798162,
       "tag": "0019_coach_chat",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1793071996770,
+      "tag": "0020_coach_messages_meta",
+      "breakpoints": true
     }
   ]
 }

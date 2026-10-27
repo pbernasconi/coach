@@ -44,8 +44,9 @@ export const PROPOSE_TOOL = {
 /**
  * @typedef {{ role: 'user' | 'assistant', text: string }} Turn
  * @typedef {{ ok: true, value: any } | { ok: false, problems: string[] }} ProposalCheck
+ * @typedef {{ input: any, problems: string[] | null }} Attempt  one propose_changes call and what the check said
  * @typedef {{ reply: string, proposal: any | null, problems: string[] | null, turns: number, usage: typeof NO_USAGE,
- *   model: string, stop: string }} ChatResult
+ *   model: string, stop: string, attempts: Attempt[] }} ChatResult
  */
 
 /**
@@ -96,6 +97,8 @@ export async function chatWithClaude({ client, system, history, context, text, c
   let problems = null;
   let tries = 0;
   let turns = 0;
+  /** @type {Attempt[]} */
+  const attempts = [];
 
   while (turns < MAX_TURNS) {
     if (now() > deadline) return result('deadline');
@@ -136,6 +139,7 @@ export async function chatWithClaude({ client, system, history, context, text, c
       }
       tries++;
       const c = check(call.input ?? {}, tries);
+      attempts.push({ input: call.input ?? {}, problems: c.ok ? null : c.problems });
       if (c.ok) {
         proposal = c.value;
         problems = null;
@@ -158,6 +162,6 @@ export async function chatWithClaude({ client, system, history, context, text, c
 
   /** @param {string} stop @returns {ChatResult} */
   function result(stop) {
-    return { reply: said.join('\n\n'), proposal, problems, turns, usage, model, stop };
+    return { reply: said.join('\n\n'), proposal, problems, turns, usage, model, stop, attempts };
   }
 }

@@ -4,6 +4,7 @@
  * (the ones the Week tab and the Edit sheet use), then the calendar push.
  */
 
+import { createHash } from 'node:crypto';
 import Anthropic from '@anthropic-ai/sdk';
 import { createId } from '@paralleldrive/cuid2';
 import { sql } from '@/db';
@@ -86,11 +87,14 @@ export async function loadCoach(userId: string) {
   };
 }
 
-async function addMessage(threadId: string, userId: string, role: 'user' | 'assistant', text: string, extra: { proposalId?: string | null; costUsd?: number; model?: string | null } = {}) {
+type Extra = { proposalId?: string | null; costUsd?: number; model?: string | null; context?: string | null; meta?: Record<string, unknown> | null };
+
+async function addMessage(threadId: string, userId: string, role: 'user' | 'assistant', text: string, extra: Extra = {}) {
   const id = createId();
   const [r] = (await sql`
-    INSERT INTO coach_messages (id, thread_id, user_id, role, text, proposal_id, model, cost_usd)
-    VALUES (${id}, ${threadId}, ${userId}, ${role}, ${text}, ${extra.proposalId ?? null}, ${extra.model ?? null}, ${extra.costUsd ?? 0})
+    INSERT INTO coach_messages (id, thread_id, user_id, role, text, proposal_id, model, cost_usd, context, meta)
+    VALUES (${id}, ${threadId}, ${userId}, ${role}, ${text}, ${extra.proposalId ?? null}, ${extra.model ?? null},
+            ${extra.costUsd ?? 0}, ${extra.context ?? null}, ${extra.meta ? JSON.stringify(extra.meta) : null}::jsonb)
     RETURNING created_at`) as Row[];
   await sql`UPDATE coach_threads SET updated_at = NOW() WHERE id = ${threadId}`;
   return { id, createdAt: toIso(r?.created_at) };
@@ -122,22 +126,27 @@ export async function sendMessage(userId: string, text: string, today: string, t
   const before = await threadMessages(threadId);
   const mine = await addMessage(threadId, userId, 'user', text);
   const message: MessageView = { id: mine.id, role: 'user', text, createdAt: mine.createdAt, proposal: null };
-  const answer = async (reply: string, proposal: ProposalView | null = null, cost = 0, model: string | null = null) => {
-    const saved = await addMessage(threadId, userId, 'assistant', reply, { proposalId: proposal?.id ?? null, costUsd: cost, model });
+  // Every answer is kept with what led to it (the context, the tries, tokens, time), for analysis later.
+  const answer = async (reply: string, proposal: ProposalView | null = null, extra: Extra = {}) => {
+    const meta = { ...extra.meta, latencyMs: Date.now() - started, timeZone, today };
+    const saved = await addMessage(threadId, userId, 'assistant', reply, { ...extra, proposalId: proposal?.id ?? null, meta });
     return { message, reply: { id: saved.id, role: 'assistant' as const, text: reply, createdAt: saved.createdAt, proposal } };
   };
 
   const ready = await chatReady(userId);
-  if (!ready.ready) return answer(ready.reason ?? 'Coach can\'t answer right now.');
+  if (!ready.ready) return answer(ready.reason ?? 'Coach can\'t answer right now.', null, { meta: { stop: 'not_ready' } });
 
+  let context: string | null = null;
   try {
     const rows = await planRows(userId, today);
     const profile = await buildProfile(sql, { userId, weeks: 2 });
+    const system = chatSystemPrompt();
+    context = chatContext({ today, time: clockIn(timeZone), timeZone, plan: planText(rows, today), profileMd: profile.md });
     const result = await chatWithClaude({
       client: new Anthropic({ timeout: 100_000, maxRetries: 1 }),
-      system: chatSystemPrompt(),
+      system,
       history: historyOf(before),
-      context: chatContext({ today, time: clockIn(timeZone), timeZone, plan: planText(rows, today), profileMd: profile.md }),
+      context,
       text,
       check: (input, attempt) => checkProposalInput(input, { rows, today }, attempt),
       deadline: started + BUDGET_MS,
@@ -157,11 +166,17 @@ export async function sendMessage(userId: string, text: string, today: string, t
     }
     const reply = result.reply ||
       (proposal ? 'Here is the change.' : result.stop === 'refusal' ? 'I can\'t help with that one.' : 'I couldn\'t finish that answer. Try again.');
-    return answer(reply, proposal, result.usage.usd, result.model ?? MODEL);
+    return answer(reply, proposal, {
+      costUsd: result.usage.usd, model: result.model ?? MODEL, context,
+      meta: {
+        stop: result.stop, turns: result.turns, usage: result.usage, attempts: result.attempts,
+        replyFromModel: Boolean(result.reply), prompt: createHash('sha256').update(system).digest('hex').slice(0, 12),
+      },
+    });
   } catch (error) {
     const why = error instanceof Anthropic.APIError ? `Claude API error ${error.status ?? ''}`.trim() : error instanceof Error ? error.message : 'unknown error';
     console.error('Coach chat failed:', why);
-    return answer(`Coach couldn't answer (${why}). Try again.`);
+    return answer(`Coach couldn't answer (${why}). Try again.`, null, { context, meta: { stop: 'error', error: why } });
   }
 }
 
