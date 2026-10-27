@@ -6,8 +6,9 @@ import { MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { Targets } from '@/lib/status';
 import type { Place } from '@/lib/plan/weather';
+import type { Profile } from '@/lib/settings/profile.mjs';
 import {
-  loadLocationAction, saveCoachingNotesAction, saveLocationAction, saveTargetsAction, saveThresholdsAction, searchPlacesAction, syncBodyspecNow, syncStravaNow,
+  loadLocationAction, saveCoachingNotesAction, saveProfileAction, saveLocationAction, saveTargetsAction, saveThresholdsAction, searchPlacesAction, syncBodyspecNow, syncStravaNow,
   type PlaceHit, type ThresholdInput,
 } from './actions';
 
@@ -92,6 +93,74 @@ export function TargetsForm({ targets }: { targets: Targets }) {
         {field('strength', 'Strength', 'x', 1)}
       </div>
       <Button size="sm" className="self-start sm:self-auto" type="submit" disabled={pending || !changed}>{pending ? 'Saving…' : 'Save targets'}</Button>
+    </form>
+  );
+}
+
+/** Birth date, height and sex (users.settings.profile). `measuredHeight` is the newest DEXA scan's, as a hint. */
+export function ProfileForm({ profile, measuredHeight }: { profile: Profile; measuredHeight: { cm: number; date: string } | null }) {
+  const [saved, setSaved] = useState(profile);
+  const [p, setP] = useState(profile);
+  const [pending, start] = useTransition();
+  const changed = p.birthDate !== saved.birthDate || p.heightCm !== saved.heightCm || p.sex !== saved.sex;
+  const box = 'h-10 w-full min-w-0 rounded-md border bg-background px-2 text-base outline-none focus:ring-1 focus:ring-ring md:h-8 md:text-sm';
+  return (
+    <form
+      className="space-y-3"
+      onSubmit={(e) => {
+        e.preventDefault();
+        start(async () => {
+          try {
+            const out = await saveProfileAction(p);
+            setP(out);
+            setSaved(out);
+            toast.success('Profile saved');
+          } catch {
+            toast.error('Profile not saved. Try again.');
+          }
+        });
+      }}
+    >
+      <div className="grid grid-cols-1 gap-3 sm:max-w-lg sm:grid-cols-3">
+        <label className="space-y-1">
+          <span className="text-xs text-muted-foreground">Birth date</span>
+          <input type="date" value={p.birthDate ?? ''} onChange={(e) => setP({ ...p, birthDate: e.target.value || null })} className={box} />
+        </label>
+        <label className="space-y-1">
+          <span className="text-xs text-muted-foreground">Height</span>
+          <span className="flex items-center rounded-md border bg-background focus-within:ring-1 focus-within:ring-ring">
+            <input
+              type="number"
+              min={100}
+              max={250}
+              step={0.5}
+              value={p.heightCm ?? ''}
+              onChange={(e) => setP({ ...p, heightCm: e.target.value === '' ? null : Number(e.target.value) })}
+              className="h-10 w-full min-w-0 bg-transparent px-2 text-base tabular-nums outline-none md:h-8 md:text-sm"
+            />
+            <span className="shrink-0 pr-2 text-xs text-muted-foreground">cm</span>
+          </span>
+        </label>
+        <label className="space-y-1">
+          <span className="text-xs text-muted-foreground">Sex</span>
+          <select value={p.sex ?? ''} onChange={(e) => setP({ ...p, sex: (e.target.value || null) as Profile['sex'] })} className={box}>
+            <option value="">-</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
+        </label>
+      </div>
+      {measuredHeight && (
+        <p className="text-xs text-muted-foreground">
+          DEXA measured {measuredHeight.cm.toFixed(1)} cm on {measuredHeight.date}.
+          {p.heightCm == null && (
+            <button type="button" className="ml-1 underline underline-offset-2 hover:text-foreground" onClick={() => setP({ ...p, heightCm: Math.round(measuredHeight.cm * 2) / 2 })}>
+              Use it
+            </button>
+          )}
+        </p>
+      )}
+      <Button size="sm" type="submit" disabled={pending || !changed}>{pending ? 'Saving…' : 'Save profile'}</Button>
     </form>
   );
 }

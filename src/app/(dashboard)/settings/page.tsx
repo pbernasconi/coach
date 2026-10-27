@@ -19,7 +19,8 @@ import SectionError from '@/components/SectionError';
 import { HelpTooltip, InlineNotice } from '@kobo/web';
 import { loadBodyspecStatus } from '@/lib/vitals/bodyspec-api';
 import { connectionsFrom } from '@/lib/settings/connections.mjs';
-import { BodyspecSyncButton, CoachingNotesForm, LocationForm, StravaSyncButton, TargetsForm, ThresholdsForm, type ThresholdView } from './SettingsControls';
+import { profileFrom } from '@/lib/settings/profile.mjs';
+import { BodyspecSyncButton, CoachingNotesForm, LocationForm, ProfileForm, StravaSyncButton, TargetsForm, ThresholdsForm, type ThresholdView } from './SettingsControls';
 import { BodyspecLogo, GarminLogo, GoogleCalendarLogo, LiftLogo, StravaLogo } from './BrandLogos';
 import ConnectLift from './ConnectLift';
 import EventsEditor from './EventsEditor';
@@ -143,8 +144,19 @@ function Panel({ id, title, help, action, children }: { id: string; title: strin
   );
 }
 
+/** users.settings.profile, and the newest DEXA scan's measured height as a hint for the height field. */
+async function loadProfile(userId: string, today: string) {
+  const [u] = (await sql`SELECT settings -> 'profile' AS profile FROM users WHERE id = ${userId}`) as { profile: unknown }[];
+  const [d] = (await sql`
+    SELECT height_cm, scan_date::text AS scan_date FROM dexa_scans
+    WHERE user_id = ${userId} AND height_cm IS NOT NULL ORDER BY scan_date DESC LIMIT 1`) as { height_cm: unknown; scan_date: string }[];
+  const cm = d ? Number(d.height_cm) : NaN;
+  return { profile: profileFrom(u?.profile, today), measuredHeight: Number.isFinite(cm) && cm > 0 ? { cm, date: d.scan_date } : null };
+}
+
 const SECTIONS = [
   { id: 'connections', label: 'Connections' },
+  { id: 'profile', label: 'Profile' },
   { id: 'events', label: 'Events' },
   { id: 'goals', label: 'Goals' },
   { id: 'targets', label: 'Weekly targets' },
@@ -170,7 +182,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   if (!userId) return <p data-smoke="settings" className="text-sm text-muted-foreground">This account has no Coach data.</p>;
   const today = todayIn(zone((await cookies()).get('tz')?.value));
   const notice = redirectNotice(await searchParams);
-  const [status, targets, coachingNotes, goals, events, thresholds, bodyspec, planner] = await Promise.all([
+  const [status, targets, coachingNotes, goals, events, thresholds, bodyspec, planner, profile] = await Promise.all([
     loadStatus(userId),
     loadTargets(userId),
     loadCoachingNotes(userId),
@@ -179,6 +191,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     load('Thresholds', () => loadThresholdSources(sql, userId)),
     load('BodySpec', () => loadBodyspecStatus(userId)),
     load('Planner', () => loadPlannerStatus(userId)),
+    load('Profile', () => loadProfile(userId, today)),
   ]);
 
   // One source for every connection's state, shared with the phone's Settings (GET /api/app/settings).
@@ -369,6 +382,9 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         </Group>
 
         <Group id="training" title="Training">
+          <Panel id="profile" title="Profile" help="Your birth date, height and sex. The bathroom scale works out body fat from the same three, set on the board.">
+            {profile.ok ? <ProfileForm profile={profile.value.profile} measuredHeight={profile.value.measuredHeight} /> : <SectionError label="Profile" />}
+          </Panel>
           <Panel id="events" title="Events" help="Races and target days. A is the main event of the season; B and C are build-up events.">
             {events.ok ? <EventsEditor upcoming={events.value.upcoming} past={events.value.past} /> : <SectionError label="Events" />}
           </Panel>
