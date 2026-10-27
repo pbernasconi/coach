@@ -1,16 +1,16 @@
 import KoboTokens
 import SwiftUI
 
-/// Changes an assistant proposes, for the reader to apply: a quiet title, one row per change (a plain glyph, what it
-/// changes, and the old value struck through before the new one), optional notes, then Dismiss and Apply. Apply is the
-/// card's only filled control. Nothing changes until Apply. Afterwards one footer line says where the card stands
-/// ("✓ Applied · Undo", "Dismissed"), and a card that no longer applies dims its rows. At accessibility text sizes the
-/// buttons stack, Apply first.
+/// Changes an assistant proposes, for the reader to apply: a title, one row per change (its glyph, what it changes,
+/// and the old value struck through before the new one), optional notes, then Apply and Dismiss. Nothing changes until
+/// Apply. After it, the card says "Applied" and offers Undo when the caller can take the changes back. An undone,
+/// dismissed, superseded or expired card dims its rows and drops the buttons. At accessibility text sizes the buttons stack.
 ///
-///     ChatActionCard(verbatim: "Plan changes", items: items, status: status,
+///     ChatActionCard(verbatim: "2 changes this week", items: items, status: status,
 ///                    onApply: apply, onDismiss: dismiss, onUndo: undo)
 public struct ChatActionCard: View {
     @Environment(\.koboTheme) private var theme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     private let title: String
     private let items: [ChatActionItem]
     private let notes: [String]
@@ -40,80 +40,91 @@ public struct ChatActionCard: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: Space.md) {
-            Text(verbatim: title)
-                .font(theme.font(.subheadline))
-                .foregroundStyle(theme.palette.textSecondary)
-                .accessibilityAddTraits(.isHeader)
+            HStack(alignment: .firstTextBaseline) {
+                Text(verbatim: title)
+                    .font(theme.font(.headline))
+                    .foregroundStyle(theme.palette.textPrimary)
+                    .accessibilityAddTraits(.isHeader)
+                Spacer(minLength: Space.sm)
+                ChatActionStatusPill(status: status)
+            }
             VStack(alignment: .leading, spacing: Space.md) {
                 ForEach(items) { ChatActionRow(item: $0) }
             }
-            .opacity(status.isCurrent ? 1 : 0.5)
+            .opacity(status.isCurrent ? 1 : 0.55)
             ForEach(Array(notes.enumerated()), id: \.offset) { _, note in
-                ChatActionNote(text: note)
+                InlineNotice(verbatim: note, tone: .warning)
             }
-            ChatActionFooter(status: status, onApply: onApply, onDismiss: onDismiss, onUndo: onUndo)
+            footer
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(Space.lg)
-        .modifier(ChatActionCardSurface())
+        .koboCard()
         .koboAnimation(.state, value: status)
         .koboFeedback(status == .applied ? .success : nil, trigger: status)
         .accessibilityElement(children: .contain)
     }
-}
 
-/// The card's surface: the raised fill, a hairline in light mode only, no shadow.
-private struct ChatActionCardSurface: ViewModifier {
-    @Environment(\.koboTheme) private var theme
-    @Environment(\.colorScheme) private var colorScheme
-
-    func body(content: Content) -> some View {
-        let shape = RoundedRectangle(cornerRadius: Radius.lg + Space.xs, style: .continuous)
-        content
-            .background(theme.palette.surface, in: shape)
-            .overlay {
-                if colorScheme == .light { shape.strokeBorder(theme.palette.separator, lineWidth: Size.hairline) }
+    @ViewBuilder
+    private var footer: some View {
+        if status.showsActions, dynamicTypeSize.isAccessibilitySize {
+            VStack(spacing: Space.sm) {  // stacked at accessibility sizes, so neither label breaks; Apply first
+                applyButton
+                dismissButton
             }
+        } else if status.showsActions {
+            HStack(spacing: Space.sm) {
+                dismissButton
+                applyButton
+            }
+        } else if status == .applied, let onUndo {
+            Button(action: onUndo) { Text("Undo", bundle: .module) }
+                .buttonStyle(.kobo(.plain, size: .compact))
+        }
+    }
+
+    private var applyButton: some View {
+        Button(action: onApply) { Text("Apply", bundle: .module) }
+            .buttonStyle(.kobo(.primary, width: .full, isLoading: status == .applying))
+    }
+
+    private var dismissButton: some View {
+        Button(action: onDismiss) { Text("Dismiss", bundle: .module) }
+            .buttonStyle(.kobo(.secondary, width: .full))
+            .disabled(status == .applying)
     }
 }
 
-/// One warning: a small triangle in the warning ink, then the text in the secondary ink. No fill.
-private struct ChatActionNote: View {
-    @Environment(\.koboTheme) private var theme
-    let text: String
+/// The state pill in the card's corner, for every status but pending.
+private struct ChatActionStatusPill: View {
+    let status: ChatActionStatus
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: Space.xs) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(theme.palette.warning.ink)
-                .accessibilityHidden(true)
-            Text(verbatim: text)
-                .foregroundStyle(theme.palette.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
+        switch status {
+        case .pending, .applying: EmptyView()
+        case .applied: StatusPill(verbatim: String(localized: "Applied", bundle: .module), tone: .success)
+        case .undone: StatusPill(verbatim: String(localized: "Undone", bundle: .module), tone: .neutral)
+        case .dismissed: StatusPill(verbatim: String(localized: "Dismissed", bundle: .module), tone: .neutral)
+        case .superseded: StatusPill(verbatim: String(localized: "Replaced", bundle: .module), tone: .neutral)
+        case .expired: StatusPill(verbatim: String(localized: "Out of date", bundle: .module), tone: .warning)
         }
-        .font(theme.font(.footnote))
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(Text("Warning: \(text)", bundle: .module))
     }
 }
 
-/// One change: a plain glyph, the title, and "old → new" (or the caption). VoiceOver: "Move, Team review, from Tue, Wed".
+/// One change: glyph, title, and "old → new" (or the caption). VoiceOver: "Move, Team review, from Tue, to Wed".
 private struct ChatActionRow: View {
     @Environment(\.koboTheme) private var theme
-    @ScaledMetric(relativeTo: .subheadline) private var glyph = Size.iconSm
+    @ScaledMetric(relativeTo: .body) private var glyph = Size.iconMd
     let item: ChatActionItem
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: Space.md) {
-            Image(systemName: Self.symbol(item.change))
-                .font(.system(size: glyph, weight: .semibold))
-                .foregroundStyle(theme.palette.textSecondary)
-                .frame(width: glyph)
+            Image(systemName: item.change.systemImage)
+                .font(.system(size: glyph))
+                .foregroundStyle(tint)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: Space.xxs) {
                 Text(verbatim: item.title)
-                    .font(theme.font(.body).weight(.medium))
-                    .foregroundStyle(item.change == .remove ? theme.palette.textSecondary : theme.palette.textPrimary)
+                    .font(theme.font(.body).weight(.semibold))
+                    .foregroundStyle(theme.palette.textPrimary)
                     .strikethrough(item.change == .remove)
                 detail
             }
@@ -140,13 +151,11 @@ private struct ChatActionRow: View {
         }
     }
 
-    /// A plain symbol per change; no fill and no colour, so the card stays quiet.
-    static func symbol(_ change: ChatActionItem.Change) -> String {
-        switch change {
-        case .add: "plus"
-        case .remove: "minus"
-        case .move: "arrow.right"
-        case .edit: "pencil"
+    private var tint: Color {
+        switch item.change {
+        case .add: theme.palette.success.ink
+        case .remove: theme.palette.danger.ink
+        case .move, .edit: theme.palette.accentText
         }
     }
 
@@ -163,6 +172,7 @@ private struct ChatActionRow: View {
         return Text("\(verb), \(item.title)\(from)\(to)", bundle: .module)
     }
 }
+
 #if DEBUG
     private struct ChatActionCardPreview: View {
         let status: ChatActionStatus

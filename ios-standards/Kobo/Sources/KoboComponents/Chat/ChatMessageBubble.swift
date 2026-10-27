@@ -1,8 +1,7 @@
 import KoboTokens
 import SwiftUI
 
-/// The reader's own message in a chat: a neutral bubble on the trailing side, at most about four fifths of the width
-/// (the accent stays for the controls).
+/// The reader's own message in a chat: a tinted bubble on the trailing side, at most about four fifths of the width.
 /// Long-press offers Copy. A message that is still on its way says so under the bubble. VoiceOver reads "You:" and
 /// the text as one element.
 ///
@@ -30,13 +29,9 @@ public struct ChatMessageBubble: View {
                     .multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)
                     .textSelection(.enabled)
-                    .lineSpacing(Space.xxs)
-                    .padding(.horizontal, Space.lg)
-                    .padding(.vertical, Space.sm + Space.xs - 1)
-                    .background(
-                        theme.palette.surfaceSunken,
-                        in: RoundedRectangle(cornerRadius: Radius.lg + Space.xxs, style: .continuous)
-                    )
+                    .padding(.horizontal, Space.md + Space.xxs)
+                    .padding(.vertical, Space.sm + Space.xxs)
+                    .background(theme.palette.accentSoft, in: RoundedRectangle(cornerRadius: Radius.lg))
                     .contextMenu {
                         Button {
                             ChatPasteboard.copy(text)

@@ -1,8 +1,7 @@
 import KoboTokens
 import SwiftUI
 
-/// A reply that failed, in the assistant's place in the chat: a small danger glyph, the reason in the secondary ink and
-/// a plain Retry; no fill. The reader's
+/// A reply that failed, in the assistant's place in the chat: the danger glyph, a short reason and Retry. The reader's
 /// message above it stays. VoiceOver reads the reason, then the button.
 ///
 ///     ChatErrorRow(verbatim: "Coach could not answer. Check your connection.", onRetry: retry)
@@ -19,25 +18,23 @@ public struct ChatErrorRow: View {
 
     public var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: Space.sm) {
-            Image(systemName: "exclamationmark.circle")
+            Image(systemName: Tone.danger.feedbackSymbol)
                 .foregroundStyle(theme.palette.danger.ink)
                 .accessibilityHidden(true)
             Text(verbatim: message)
-                .foregroundStyle(theme.palette.textSecondary)
+                .font(theme.font(.subheadline))
+                .foregroundStyle(theme.palette.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
             if let onRetry {
                 Button(action: onRetry) {
                     Text("Retry", bundle: .module)
-                        .font(theme.font(.subheadline).weight(.semibold))
-                        .foregroundStyle(theme.palette.accentText)
-                        .frame(minHeight: Size.minTouch)
-                        .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.kobo(.tonal, size: .compact))
             }
         }
-        .font(theme.font(.subheadline))
+        .padding(Space.md)
+        .background(theme.palette.danger.soft, in: RoundedRectangle(cornerRadius: Radius.md))
         .accessibilityElement(children: .contain)
     }
 }
