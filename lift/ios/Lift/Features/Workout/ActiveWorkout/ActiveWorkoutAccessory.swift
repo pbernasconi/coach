@@ -28,7 +28,7 @@ struct ActiveWorkoutAccessory: View {
     private func ring(at now: Date) -> some View {
         ProgressRing(progress: bar.ringProgress(at: now), lineWidth: Space.xs, accessibilityLabel: "Workout progress") {
             Image(systemName: bar.isPaused ? "pause.fill" : "dumbbell.fill")
-                .font(theme.font(.caption2).weight(.bold))
+                .font(theme.font(.caption).weight(.bold))
                 .foregroundStyle(bar.isPaused ? theme.palette.textSecondary : theme.palette.accentText)
         }
         .frame(width: ringSize, height: ringSize)
