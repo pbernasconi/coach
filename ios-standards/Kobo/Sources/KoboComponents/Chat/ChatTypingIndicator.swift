@@ -9,7 +9,7 @@ import SwiftUI
 public struct ChatTypingIndicator: View {
     @Environment(\.koboTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @ScaledMetric(relativeTo: .body) private var dot = Space.sm
+    @ScaledMetric(relativeTo: .body) private var dot = Space.sm - Space.xxs
     private let status: String?
 
     /// Dots, and the status text when there is one.
@@ -27,7 +27,7 @@ public struct ChatTypingIndicator: View {
                     .contentTransition(.opacity)
             }
         }
-        .frame(maxWidth: .infinity, minHeight: Size.minTouch, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .koboAnimation(.defaultEffects, value: status)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text("Responding", bundle: .module))
@@ -50,14 +50,11 @@ public struct ChatTypingIndicator: View {
         HStack(spacing: Space.xs) {
             ForEach(Array(opacities.enumerated()), id: \.offset) { _, opacity in
                 Circle()
-                    .fill(theme.palette.textSecondary)
+                    .fill(theme.palette.textTertiary)
                     .frame(width: dot, height: dot)
                     .opacity(opacity)
             }
         }
-        .padding(.horizontal, Space.md)
-        .padding(.vertical, Space.sm + Space.xxs)
-        .background(theme.palette.surfaceSunken, in: Capsule())
     }
 }
 

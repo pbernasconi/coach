@@ -1,10 +1,10 @@
 import KoboTokens
 import SwiftUI
 
-/// The message field at the bottom of a chat: a field that grows to six lines, and one round button beside it that
-/// sends, or stops a reply in progress. Return adds a line; the button sends. Blank drafts cannot be sent. Under a glass
-/// theme the field and the button are Liquid Glass in one container, for a bar over the transcript; place it with
-/// `.safeAreaBar(edge: .bottom)`. The keyboard's microphone dictates into it.
+/// The message field at the bottom of a chat: a capsule that grows to six lines, with one round button inside it at
+/// the trailing edge that sends, or stops a reply in progress. The button hides while the draft is blank. Return adds a
+/// line; the button sends. Under a glass theme the capsule is Liquid Glass, for a bar over the transcript; place it
+/// with `.safeAreaBar(edge: .bottom)`. The keyboard's microphone dictates into it.
 ///
 ///     ChatComposer(text: $draft, prompt: "Message", isResponding: isWaiting, onSend: send, onStop: stop)
 public struct ChatComposer: View {
@@ -66,38 +66,69 @@ public struct ChatComposer: View {
     }
 
     public var body: some View {
-        GlassEffectContainer(spacing: Space.sm) {
-            HStack(alignment: .bottom, spacing: Space.sm) {
-                ChatComposerField(text: text, prompt: prompt, focus: focus)
-                trailingButton
+        ChatComposerField(text: text, prompt: prompt, focus: focus, button: button) {
+            switch button {
+            case .send(isEnabled: true):
+                ChatComposerButton(systemImage: "arrow.up", label: Text("Send", bundle: .module), action: onSend)
+            case .stop:
+                ChatComposerButton(systemImage: "stop.fill", label: Text("Stop", bundle: .module)) { onStop?() }
+            case .send(isEnabled: false), .waiting:
+                EmptyView()
             }
         }
         .padding(.horizontal, Space.gutter)
         .padding(.vertical, Space.sm)
     }
 
-    @ViewBuilder
-    private var trailingButton: some View {
-        switch ChatComposerLogic.button(draft: text.wrappedValue, isResponding: isResponding, canStop: onStop != nil) {
-        case .send(let isEnabled):
-            IconButton("arrow.up", label: Text("Send", bundle: .module), style: .solid, size: .regular, action: onSend)
-                .disabled(!isEnabled)
-        case .stop:
-            IconButton("stop.fill", label: Text("Stop", bundle: .module), style: .solid, size: .regular) { onStop?() }
-        case .waiting:
-            IconButton("arrow.up", label: Text("Send", bundle: .module), style: .solid, size: .regular, action: onSend)
-                .disabled(true)
+    private var button: ChatComposerLogic.Button {
+        ChatComposerLogic.button(draft: text.wrappedValue, isResponding: isResponding, canStop: onStop != nil)
+    }
+}
+
+/// The round send or stop button inside the field: a solid accent circle, never glass (it sits on the field's glass).
+/// The visible circle is small; the target stays 44 pt.
+private struct ChatComposerButton: View {
+    @Environment(\.koboTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @ScaledMetric(relativeTo: .body) private var circle = Size.buttonHeightCompact - Space.xs
+    let systemImage: String
+    let label: Text
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(theme.font(.subheadline).weight(.bold))
+                .foregroundStyle(theme.palette.onAccent)
+                .frame(width: circle, height: circle)
+                .background(theme.palette.accent, in: Circle())
+                .frame(minWidth: Size.minTouch, minHeight: Size.minTouch)
+                .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        .pressFeedback()
+        .accessibilityLabel(label)
+        .transition(Motion.pop(reduceMotion: reduceMotion))
     }
 }
 
 /// The growing field: a rounded glass shape under a glass theme, else the surface with a hairline.
-private struct ChatComposerField: View {
+private struct ChatComposerField<Trailing: View>: View {
     @Environment(\.koboTheme) private var theme
     @FocusState private var isFocused: Bool
     let text: Binding<String>
     let prompt: Text
     let focus: FocusState<Bool>.Binding?
+    let button: ChatComposerLogic.Button
+    @ViewBuilder let trailing: () -> Trailing
+
+    /// Room for the button inside the field while it shows.
+    private var showsButton: Bool {
+        switch button {
+        case .send(isEnabled: true), .stop: true
+        case .send(isEnabled: false), .waiting: false
+        }
+    }
 
     var body: some View {
         TextField(text: text, prompt: prompt.foregroundStyle(theme.palette.textTertiary), axis: .vertical) { prompt }
@@ -107,9 +138,12 @@ private struct ChatComposerField: View {
             .font(theme.font(.body))
             .foregroundStyle(theme.palette.textPrimary)
             .tint(theme.palette.accent)
-            .padding(.horizontal, Space.lg)
+            .padding(.leading, Space.lg)
+            .padding(.trailing, showsButton ? Size.minTouch + Space.xs : Space.lg)
             .padding(.vertical, Space.md - Space.xxs)
-            .frame(minHeight: Size.minTouch)
+            .frame(maxWidth: .infinity, minHeight: Size.minTouch, alignment: .leading)
+            .overlay(alignment: .bottomTrailing) { trailing().padding(Space.xxs) }
+            .koboAnimation(.defaultEffects, value: showsButton)
             .modifier(ChatComposerSurface())
             .onChange(of: focus?.wrappedValue) { _, wanted in
                 if let wanted, wanted != isFocused { isFocused = wanted }

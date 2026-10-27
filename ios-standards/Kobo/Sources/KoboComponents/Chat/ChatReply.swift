@@ -23,9 +23,9 @@ public struct ChatReply: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: Space.md) {
-            ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in
-                blockView(block)
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(Array(blocks.enumerated()), id: \.offset) { index, block in
+                blockView(block).padding(.top, Self.gap(before: index, in: blocks))
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -72,8 +72,16 @@ public struct ChatReply: View {
         }
     }
 
+    /// Space above a block: none for the first, tight between list items, a paragraph gap otherwise.
+    static func gap(before index: Int, in blocks: [ChatReplyBlock]) -> CGFloat {
+        guard index > 0 else { return 0 }
+        if case .listItem = blocks[index], case .listItem = blocks[index - 1] { return Space.xs }
+        return Space.md
+    }
+
     private func inline(_ text: String) -> some View {
         Text(Self.attributed(text))
+            .lineSpacing(Space.xxs)
             .foregroundStyle(theme.palette.textPrimary)
             .tint(theme.palette.accentText)
             .fixedSize(horizontal: false, vertical: true)

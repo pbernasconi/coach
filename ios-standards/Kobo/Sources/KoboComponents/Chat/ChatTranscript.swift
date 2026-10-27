@@ -29,7 +29,7 @@ where Data.Element: Identifiable {
     public var body: some View {
         ScrollView(.vertical) {
             // Not lazy: under a bottom anchor, iOS 26 shifts a lazy stack sideways (a thread stays short).
-            VStack(alignment: .leading, spacing: Space.lg) {
+            VStack(alignment: .leading, spacing: Space.xxl) {
                 ForEach(data) { row($0) }
                 footer
             }
@@ -43,19 +43,23 @@ where Data.Element: Identifiable {
         .defaultScrollAnchor(.bottomLeading)  // leading: a bottom anchor also centres the column sideways
         .scrollDismissesKeyboard(.interactively)
         .scrollEdgeEffectStyle(.soft, for: .bottom)
-        // Room under the last row for the jump-to-latest button, so it never covers the last card's buttons.
-        .contentMargins(.bottom, Size.minTouch + Space.lg, for: .scrollContent)
-        .onScrollGeometryChange(for: Double.self) { geometry in
-            ChatScrollFollow.distanceFromBottom(
-                contentHeight: geometry.contentSize.height,
-                offsetY: geometry.contentOffset.y,
-                visibleHeight: geometry.containerSize.height,
-                insetTop: geometry.contentInsets.top,
-                insetBottom: geometry.contentInsets.bottom
-            )
-        } action: { _, distance in
+        // A little room under the last row; the jump button shows only half a screen up, so it never covers it.
+        .contentMargins(.bottom, Space.lg, for: .scrollContent)
+        .onScrollGeometryChange(for: [Double].self) { geometry in
+            [
+                ChatScrollFollow.distanceFromBottom(
+                    contentHeight: geometry.contentSize.height,
+                    offsetY: geometry.contentOffset.y,
+                    visibleHeight: geometry.containerSize.height,
+                    insetTop: geometry.contentInsets.top,
+                    insetBottom: geometry.contentInsets.bottom
+                ),
+                geometry.containerSize.height,
+            ]
+        } action: { _, values in
+            let distance = values[0]
             if position.isPositionedByUser || distance <= ChatScrollFollow.threshold {
-                follow.scrolled(distanceFromBottom: distance)
+                follow.scrolled(distanceFromBottom: distance, visibleHeight: values[1])
             }
         }
         .onScrollGeometryChange(for: Double.self) {
@@ -68,8 +72,7 @@ where Data.Element: Identifiable {
         }
         .overlay(alignment: .bottom) {
             if follow.showsJumpButton {
-                IconButton("arrow.down", label: Text("Jump to latest", bundle: .module), style: .glass, size: .regular)
-                {
+                IconButton("arrow.down", label: Text("Jump to latest", bundle: .module), style: .glass, size: .small) {
                     follow.jumped()
                     scrollToLatest(animated: true)
                 }
