@@ -79,6 +79,32 @@ test('matchWeek: a run instead of the spin and the lift counts for the spin only
   assert.equal(matchActivityId(result.get('spin').match), 'r1');
 });
 
+test('sportOf: the sport the plan names wins over the words of the title', () => {
+  assert.equal(sportOf({ title: 'Easy run to the gym', sport: 'run', workoutType: 'easy' }), 'run');
+  assert.equal(sportOf({ title: 'Easy run to the gym', workoutType: 'run-easy' }), 'run');
+  assert.equal(sportOf({ title: 'Ride to the gym', sport: 'ride' }), 'ride');
+  assert.equal(sportOf({ title: 'Heavy barbell', sport: 'strength' }), 'strength');
+  assert.equal(sportOf({ title: 'Rest (instead of Easy run)', sport: 'run', workoutType: 'rest' }), 'rest'); // an adapt
+  assert.equal(sportOf({ title: 'Forest run', sport: 'other' }), 'run'); // "forest" is not a rest day
+  assert.equal(sportOf({ title: 'Ski tour', sport: 'other' }), 'other');
+});
+
+test('matchWeek: the gym recording never counts for the run to the gym (Tue Oct 27)', () => {
+  const ws = [
+    w('run', 0, 'Easy run to the gym', { sport: 'run', workoutType: 'easy', intensity: 'easy', duration: 56, tss: 12 }),
+    w('heavy', 0, 'Heavy barbell', { sport: 'strength', workoutType: 'strength-heavy', liftSessionId: 'L1' }),
+  ];
+  const acts = [{ id: 'g1', date: day(0), sport: 'strength', name: 'Lunch Weight Training' }];
+  const result = matchWeek(ws, acts, [{ id: 'L1', date: day(0), name: 'Heavy barbell', setsLogged: 17 }], day(1));
+  assert.equal(result.get('run').status, 'missed');
+  assert.equal(result.get('run').match, null);
+  assert.deepEqual(result.get('heavy').match, { source: 'lift', id: 'L1', name: 'Heavy barbell', activityId: 'g1' });
+  // With the run done too, each recording goes to its own workout.
+  const both = matchWeek(ws, [...acts, { id: 'r1', date: day(0), sport: 'run', name: 'Run' }], [{ id: 'L1', date: day(0), name: 'Heavy barbell', setsLogged: 17 }], day(1));
+  assert.equal(both.get('run').match.id, 'r1');
+  assert.equal(both.get('heavy').match.activityId, 'g1');
+});
+
 test('matchWeek: same sport wins before a swap, and a swap needs an activity left over', () => {
   const ws = [
     w('ride', 0, 'Easy ride', { workoutType: 'aerobic-ride', intensity: 'easy', duration: 60 }),

@@ -55,10 +55,6 @@ function hhmm(min) {
  * @param {any} e
  */
 export function sportOfSession(e) {
-  const t = String(e?.workoutType ?? '');
-  if (/^run-|-run$/.test(t)) return 'run';
-  if (/^ride-|-ride$|-bike$/.test(t)) return 'ride';
-  if (/^strength/.test(t)) return 'strength';
   return sportOf(e ?? {});
 }
 
