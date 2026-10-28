@@ -26,6 +26,7 @@ import MarkDone from './MarkDone';
 import { SKIP_LABEL } from '@/lib/plan/skip.mjs';
 import { strengthNotes } from '@/lib/plan/strength-text.mjs';
 import SetTable, { isTextSession, setCounts, textNotes } from './SetTable';
+import { MoveDeleteItems, PickDayDialog } from './MoveToDay';
 
 /** Today on this device, as YYYY-MM-DD. */
 const todayLocal = () => new Date().toLocaleDateString('en-CA');
@@ -43,8 +44,9 @@ function liftHero(lift: NonNullable<CalendarWorkout['lift']>): HeroStat[] {
   ].filter(Boolean) as HeroStat[];
 }
 
-export default function PlannedModal({ w, onClose, onCopy, wx, onLiftChanged, onEdited, onSkip, onMarkDone }: { w: CalendarWorkout; onClose: () => void; onCopy?: (w: CalendarWorkout) => void; wx?: DayWeather; onLiftChanged?: (date: string) => Promise<void> | void; onEdited?: (days: { from: string; to: string }) => void; onSkip?: (w: CalendarWorkout, reason?: string | null) => void; onMarkDone?: (w: CalendarWorkout, done: boolean) => void }) {
+export default function PlannedModal({ w, onClose, onCopy, wx, onLiftChanged, onEdited, onSkip, onMarkDone, onMove, onRemove }: { w: CalendarWorkout; onClose: () => void; onCopy?: (w: CalendarWorkout) => void; wx?: DayWeather; onLiftChanged?: (date: string) => Promise<void> | void; onEdited?: (days: { from: string; to: string }) => void; onSkip?: (w: CalendarWorkout, reason?: string | null) => void; onMarkDone?: (w: CalendarWorkout, done: boolean) => void; onMove?: (w: CalendarWorkout, date: string) => void; onRemove?: (w: CalendarWorkout) => void }) {
   const [editing, setEditing] = useState(false);
+  const [picking, setPicking] = useState(false);
   const targets = zonesFor(w) as { zone: string; label: string; target: string }[];
   // With the Lift session shown set by set, the text copy of the sets (scripts/lift-plan.mjs) and the coach's
   // exercise lines it was made from are left out.
@@ -80,7 +82,7 @@ export default function PlannedModal({ w, onClose, onCopy, wx, onLiftChanged, on
             {onMarkDone && !rest && w.status !== 'skipped' && (w.status === 'done' || (w.state !== 'done' && w.date <= todayLocal())) && <MarkDone w={w} onMarkDone={onMarkDone} />}
             {onSkip && !rest && w.status !== 'done' && <SkipWorkout w={w} onSkip={onSkip} />}
             <SyncStatus w={w} />
-            {(onEdited || onCopy) && (
+            {(onEdited || onCopy || onMove || onRemove) && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button type="button" className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs font-medium hover:bg-accent">
@@ -99,6 +101,7 @@ export default function PlannedModal({ w, onClose, onCopy, wx, onLiftChanged, on
                       <Copy aria-hidden className="h-3.5 w-3.5" /> Copy
                     </DropdownMenuItem>
                   )}
+                  <MoveDeleteItems w={w} onMove={onMove} onRemove={onRemove} onPickDay={() => setPicking(true)} />
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
@@ -106,6 +109,7 @@ export default function PlannedModal({ w, onClose, onCopy, wx, onLiftChanged, on
         }
         onClose={onClose}
       />
+      {picking && onMove && <PickDayDialog w={w} open onOpenChange={setPicking} onMove={onMove} />}
       {editing && onEdited && (
         <EditWorkout
           w={w}
