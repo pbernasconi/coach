@@ -22,11 +22,22 @@ export function todayIn(timeZone, now = new Date()) {
   return new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
 }
 
+/** Sport ids a plan workout can name outright (its activity_type); 'other' and 'rest' fall through to the words. */
+const NAMED = new Set(['run', 'ride', 'hike', 'walk', 'swim', 'strength', 'yoga']);
+
 /** A sport id from design/sports.json (run, ride, hike, walk, swim, strength, yoga, rest, other), from a plan
- * workout's type and title. */
+ * workout's sport, type and title. A rest day first (an adapt keeps the old sport), then the sport the plan names,
+ * then the workout type ("run-easy", "strength-heavy"), and only then the title's words: "Easy run to the gym" is a
+ * run, not a lift, so it never takes the gym's strength recording. */
 export function sportOf(w) {
   const t = `${w.workoutType ?? ''} ${w.sport ?? ''} ${w.title ?? ''}`.toLowerCase();
-  if (/rest|off day/.test(t) && !/interval/.test(t)) return 'rest';
+  if (/\brest\b|off day/.test(t) && !/interval/.test(t)) return 'rest';
+  const named = String(w.sport ?? '').toLowerCase();
+  if (NAMED.has(named)) return named;
+  const type = String(w.workoutType ?? '').toLowerCase();
+  if (/^run-|-run$/.test(type)) return 'run';
+  if (/^ride-|-ride$|-bike$/.test(type)) return 'ride';
+  if (/^strength/.test(type)) return 'strength';
   if (/\bski\b/.test(t)) return 'other'; // a ski tour matches Strava's BackcountrySki, which is "other" too
   if (/strength|lift|barbell|dumbbell|gym|squat/.test(t)) return 'strength';
   if (/swim/.test(t)) return 'swim';
