@@ -489,6 +489,14 @@ export default function MonthCalendar({ anchor, openAt, range, bounds, weather, 
           onEdited={({ from, to }) => void reload([...new Set([mondayOf(from), mondayOf(to)])])}
           onSkip={(w, reason) => impl.current.skip(w, reason)}
           onMarkDone={(w, done) => impl.current.markDone(w, done)}
+          onMove={(w, date) => {
+            impl.current.move(w.id, date);
+            toast.success(`Moved ${plainTitle(w.title)} to ${longDate(date)}`);
+          }}
+          onRemove={(w) => {
+            setModalKey(null);
+            impl.current.remove(w.id);
+          }}
         />
       )}
       {createOn && (
