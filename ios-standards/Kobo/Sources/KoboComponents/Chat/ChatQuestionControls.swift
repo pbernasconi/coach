@@ -52,12 +52,12 @@ struct ChatQuestionField: View {
         HStack(spacing: Space.xs) {
             HStack(spacing: Space.xs) {
                 TextField(text: $text, prompt: prompt) { Text(verbatim: placeholder) }
-                .font(theme.font(.body))
-                .foregroundStyle(theme.palette.textPrimary)
-                .tint(theme.palette.accent)
-                .focused($isFocused)
-                .submitLabel(.send)
-                .onSubmit { if ChatQuestionLogic.typed(text) != nil { onSubmit() } }
+                    .font(theme.font(.body))
+                    .foregroundStyle(theme.palette.textPrimary)
+                    .tint(theme.palette.accent)
+                    .focused($isFocused)
+                    .submitLabel(.send)
+                    .onSubmit { if ChatQuestionLogic.typed(text) != nil { onSubmit() } }
                 if !text.isEmpty {
                     Button {
                         text = ""
