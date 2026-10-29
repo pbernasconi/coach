@@ -96,12 +96,13 @@ public struct ChatComposer: View {
 
     private var isListening: Bool { voice?.phase == .listening || voice?.phase == .holding }
     private var isExpanded: Bool {
-        restsAsCard
-            || ChatComposerLogic.isExpanded(
+        let hasAttachments = !(attach?.items.isEmpty ?? true)
+        let opens = ChatComposerLogic.isExpanded(
             draft: text.wrappedValue,
             isListening: isListening,
-            hasAttachments: !(attach?.items.isEmpty ?? true)
+            hasAttachments: hasAttachments
         )
+        return restsAsCard || opens
     }
     private var attachments: ChatComposerLogic.Attachments { attach?.readiness ?? .none }
 

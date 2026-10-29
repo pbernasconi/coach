@@ -62,12 +62,18 @@ struct ChatRoundGlyph: View {
     var body: some View {
         Image(systemName: systemImage)
             .accessibilityHidden(true)  // the button around it carries the label
-            .font(look == .bare ? theme.font(.title2).weight(.light) : theme.font(.body).weight(look == .quiet ? .regular : .semibold))
+            .font(glyphFont)
             .foregroundStyle(ink)
             .frame(width: circle, height: circle)
             .background(fill, in: Circle())
             .frame(minWidth: Size.minTouch, minHeight: Size.minTouch)
             .contentShape(Rectangle())
+    }
+
+    /// The bare glyphs are light and large; the filled circles' glyphs regular (quiet) or semibold.
+    private var glyphFont: Font {
+        if look == .bare { return theme.font(.title2).weight(.light) }
+        return theme.font(.body).weight(look == .quiet ? .regular : .semibold)
     }
 
     private var ink: Color {
