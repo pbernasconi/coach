@@ -32,13 +32,15 @@ export async function planRows(userId: string, today: string): Promise<PlanRow[]
   }));
 }
 
-export type Undo =
+/** One step that puts a change back. `title` names the workout to Paolo when the step can't run. */
+export type Undo = (
   | { op: 'edit'; id: string; body: Record<string, unknown> }
   | { op: 'skip'; id: string; reason: string | null }
   | { op: 'unskip'; id: string }
   | { op: 'remove'; id: string }
   | { op: 'restore'; row: Record<string, unknown> }
-  | { op: 'forget'; text: string };
+  | { op: 'forget'; text: string }
+) & { title?: string };
 
 /**
  * The Edit sheet's write (PUT /api/app/plan/{id}): the workout's form, with `patch` on top, through the same checks.
@@ -53,10 +55,31 @@ async function editWorkout(userId: string, id: string, patch: Record<string, unk
   if ('error' in input) throw new Error(input.error);
   const clean = cleanNewWorkout(input.value as never) as { value?: WorkoutInput; error?: string };
   if (!clean.value) throw new Error(clean.error ?? 'the workout is not valid');
+  // The columns the Edit sheet's form can't hold exactly (no effort reads as Easy; bank steps, TSS), for Undo.
+  const [raw] = (await sql`
+    SELECT intensity, tss, workout_type, steps, distance FROM training_plan_activities WHERE id = ${id}`) as Record<string, unknown>[];
   const moved = await updateWorkout(userId, id, clean.value);
   if (!moved) throw new Error('workout not found');
-  const back = { date: form.date, startTime: form.startTime, title: form.title, duration: form.duration, effort: form.effort, description: form.description };
+  const back = {
+    date: form.date, startTime: form.startTime, title: form.title, duration: form.duration, effort: form.effort, description: form.description,
+    raw: raw ?? null,
+  };
   return { dates: [moved.from, moved.to], back };
+}
+
+/** Undo of an edit: the form fields through the Edit sheet's write, then the raw columns exactly as they were. */
+async function putBack(userId: string, id: string, body: Record<string, unknown>, today: string) {
+  const { raw, ...form } = body as Record<string, unknown> & { raw?: Record<string, unknown> | null };
+  const e = await editWorkout(userId, id, form, today);
+  if (raw) {
+    await sql`
+      UPDATE training_plan_activities SET
+        intensity = ${raw.intensity ?? null}, tss = ${raw.tss ?? null}, workout_type = ${raw.workout_type ?? null},
+        steps = ${raw.steps == null ? null : JSON.stringify(raw.steps)}::jsonb, distance = ${raw.distance ?? null},
+        change_source = ${planSource()}, updated_at = NOW()
+      WHERE id = ${id}`;
+  }
+  return e.dates;
 }
 
 /** Settings → Coaching preferences (users.settings.coachingNotes), changed in place: the planner reads it next time. */
@@ -70,6 +93,12 @@ async function editNotes(userId: string, edit: (notes: string) => string) {
 }
 
 async function applyOne(userId: string, c: Change, rows: PlanRow[], today: string): Promise<{ undo: Undo; dates: string[] }> {
+  const done = await applyStep(userId, c, rows, today);
+  const title = c.op === 'add' ? c.title : c.op === 'remember' ? 'Coaching preference' : rows.find((r) => r.id === c.id)?.title;
+  return { ...done, undo: { ...done.undo, title } };
+}
+
+async function applyStep(userId: string, c: Change, rows: PlanRow[], today: string): Promise<{ undo: Undo; dates: string[] }> {
   if (c.op === 'remember') {
     await editNotes(userId, (n) => addNote(n, c.text));
     return { undo: { op: 'forget', text: c.text }, dates: [] };
@@ -115,7 +144,7 @@ async function applyOne(userId: string, c: Change, rows: PlanRow[], today: strin
 
 async function undoOne(userId: string, u: Undo, today: string): Promise<string[]> {
   switch (u.op) {
-    case 'edit': return (await editWorkout(userId, u.id, u.body, today)).dates;
+    case 'edit': return putBack(userId, u.id, u.body, today);
     case 'skip': await setSkipped(userId, u.id, true, u.reason); return [];
     case 'unskip': await setSkipped(userId, u.id, false); return [];
     case 'remove': { const gone = await removeWorkout(userId, u.id); return gone ? [gone.date] : []; }
@@ -124,39 +153,58 @@ async function undoOne(userId: string, u: Undo, today: string): Promise<string[]
   }
 }
 
-/** A write failed: the ones before it were put back. `dates` are the days touched, for the calendar push. */
+/**
+ * A write failed: the ones before it were put back. `dates` are the days touched, for the calendar push; `stuck` the
+ * workouts whose put-back failed too, so the card can name them instead of saying nothing changed.
+ */
 export class ApplyError extends Error {
-  constructor(message: string, readonly dates: string[]) {
+  constructor(message: string, readonly dates: string[], readonly stuck: string[] = []) {
     super(message);
   }
 }
 
+/** What Apply did: the Undo steps, the days touched, and the new workout's id for each add (null for other changes). */
+export type Applied = { undo: Undo[]; dates: string[]; added: (string | null)[] };
+
 /** Runs the changes in order. A write that fails puts back the ones before it and throws ApplyError. */
-export function applyAll(userId: string, ops: Change[], rows: PlanRow[], today: string): Promise<{ undo: Undo[]; dates: string[] }> {
+export function applyAll(userId: string, ops: Change[], rows: PlanRow[], today: string): Promise<Applied> {
   return withPlanSource('chat', () => applyInOrder(userId, ops, rows, today));
 }
 
-async function applyInOrder(userId: string, ops: Change[], rows: PlanRow[], today: string): Promise<{ undo: Undo[]; dates: string[] }> {
+async function applyInOrder(userId: string, ops: Change[], rows: PlanRow[], today: string): Promise<Applied> {
   const undo: Undo[] = [];
   const dates: string[] = [];
+  const added: (string | null)[] = [];
   try {
     for (const c of ops) {
       const done = await applyOne(userId, c, rows, today);
       undo.push(done.undo);
       dates.push(...done.dates);
+      added.push(c.op === 'add' && done.undo.op === 'remove' ? done.undo.id : null);
     }
   } catch (error) {
-    for (const u of [...undo].reverse()) dates.push(...(await undoOne(userId, u, today).catch(() => [])));
-    throw new ApplyError(error instanceof Error ? error.message : 'a change failed', dates);
+    const back = await undoSteps(userId, undo, today);
+    throw new ApplyError(error instanceof Error ? error.message : 'a change failed', [...dates, ...back.dates], back.failed);
   }
-  return { undo, dates };
+  return { undo, dates, added };
 }
 
-/** Puts back what applyAll changed, last change first. Returns the days touched. */
-export function undoAll(userId: string, undo: Undo[], today: string): Promise<string[]> {
-  return withPlanSource('chat', async () => {
-    const dates: string[] = [];
-    for (const u of [...undo].reverse()) dates.push(...(await undoOne(userId, u, today)));
-    return dates;
-  });
+/** Runs Undo steps, last first; a step that fails doesn't stop the rest. Returns the days touched and the failed titles. */
+async function undoSteps(userId: string, undo: Undo[], today: string): Promise<{ dates: string[]; failed: string[] }> {
+  const dates: string[] = [];
+  const failed: string[] = [];
+  for (const u of [...undo].reverse()) {
+    try {
+      dates.push(...(await undoOne(userId, u, today)));
+    } catch (error) {
+      console.error('Coach undo step failed:', u.op, error instanceof Error ? error.message : error);
+      failed.push(u.title ?? 'A workout');
+    }
+  }
+  return { dates, failed };
+}
+
+/** Puts back what applyAll changed, last change first. Returns the days touched and the workouts it couldn't put back. */
+export function undoAll(userId: string, undo: Undo[], today: string): Promise<{ dates: string[]; failed: string[] }> {
+  return withPlanSource('chat', () => undoSteps(userId, undo, today));
 }

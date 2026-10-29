@@ -926,9 +926,16 @@ apart from the planner's.
   stored even if the app hangs up (it went to the background), and every reply sends a `coach.replied` push
   (lift/PUSH.md) that opens `lift://coach`; the app shows no banner while the Coach tab is on screen.
 - `POST /api/app/coach/proposals/{id}/apply?tz=` → `{ proposal, dates }`: the days it touched. `409 { error, proposal }`
-  when the card isn't open, or a workout it touches changed since (the card is then `stale`), or a write failed (the
-  writes before it are put back).
-- `POST /api/app/coach/proposals/{id}/undo?tz=` → `{ proposal, dates }`: puts back what Apply changed. `409` unless applied.
+  when the card isn't open (a second tap gets this: the first claims the card), or the plan changed since Coach
+  proposed so the card no longer holds (a workout it touches changed, a day is now past, a copy of its lift is now
+  in the week, a new rule break; the card is then `stale`), or a write failed (the writes before it are put back, and
+  the card is open again). `error` says it in Paolo's words; show it. After a 200, `proposal.result` names any change
+  the plan doesn't show where the card said (read back after the writes); usually empty.
+- `POST /api/app/coach/proposals/{id}/undo?tz=` `{ partial? }` → `{ proposal, dates }`: puts back what Apply changed.
+  `409` unless applied. A workout Paolo moved, edited, did or deleted after Apply stays as he set it: without
+  `{ "partial": true }` nothing is undone yet and the answer is `200 { error, needsConfirm: true, kept: [titles],
+  undoable: n, proposal }` (the card still applied; ask "Undo n?"); with it Undo puts back the rest and
+  `proposal.result` says what it left. After a `409` on Apply, read the thread again: the card's `result` says why.
 - `POST /api/app/coach/proposals/{id}/dismiss` → `{ proposal }`. `409` unless open.
 
 ```json
@@ -943,11 +950,26 @@ apart from the planner's.
       { "kind": "removed", "title": "VO2 B", "detail": "Skip · Tue 27 Oct 09:00 · busy" },
       { "kind": "added", "title": "Easy run with David", "detail": "Mon 26 Oct 16:00 · 45 min · Easy" }
     ],
-    "warnings": []
+    "warnings": [],
+    "summary": "3 changes · Mon 26 Oct to Tue 27 Oct",
+    "days": [
+      { "date": "2026-10-26", "label": "Mon 26 Oct", "rows": [
+        { "title": "Easy run with David", "sport": "run", "time": "16:00", "meta": "16:00 · 45 min", "tag": "New", "tone": "new" }
+      ] },
+      { "date": "2026-10-27", "label": "Tue 27 Oct", "rows": [
+        { "title": "Heavy barbell", "sport": "strength", "time": "09:00", "meta": "09:00 · 1 h", "tag": "From Mon", "tone": "move" },
+        { "title": "VO2 B", "sport": "run", "time": "09:00", "meta": "09:00 · 50 min", "tag": "Skipped", "tone": "skip" }
+      ] }
+    ],
+    "result": []
   }
 }
 ```
 
+`days` is the card by day (lift/COACH-CHAT.md, "The change card"): each day the card touches, its rows as they will be
+after Apply, one `tag` each, `tone` move, new or skip. A skip or delete and an add on the same day are one row ("…
+replaces Long ride"); a `remember` is a row under a last day with `date: null`, "Remember". Titles come without
+leading emoji. `days` and `summary` are null on cards made before 2026-10-29: show `items` then.
 `items[].kind` maps to Kobo's change rows (added, removed, changed). `status` is open, applied, undone, dismissed or
 stale. `warnings` are Paolo's plan rules (rules.mjs) the changes break, kept because he asked for them.
 
