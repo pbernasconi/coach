@@ -99,8 +99,11 @@ where Data.Element: Identifiable {
             ]
         } action: { _, values in
             let distance = values[0]
+            let resized = abs(visibleHeight - max(0, values[2])) > 1
             visibleHeight = max(0, values[2])
-            if position.isPositionedByUser || distance <= ChatScrollFollow.threshold {
+            if resized {
+                follow.resized()  // the keyboard moves the bottom: no jump button while it animates
+            } else if position.isPositionedByUser || distance <= ChatScrollFollow.threshold {
                 follow.scrolled(distanceFromBottom: distance, visibleHeight: values[1])
             }
         }

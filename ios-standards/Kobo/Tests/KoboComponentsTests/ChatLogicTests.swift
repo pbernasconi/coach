@@ -16,6 +16,11 @@ import Testing
         #expect(follow.showsJumpButton)  // more than one and a half screens up
         follow.scrolled(distanceFromBottom: 20, visibleHeight: 800)
         #expect(!follow.showsJumpButton)  // back near the bottom: gone
+        follow.scrolled(distanceFromBottom: 350)
+        #expect(!follow.showsJumpButton)  // a few lines up, even without a known height: no button
+        follow.scrolled(distanceFromBottom: 1300, visibleHeight: 800)
+        follow.resized()
+        #expect(!follow.showsJumpButton)  // the keyboard moved the bottom: hidden until the next scroll
         follow.jumped()
         #expect(follow.followsNewContent())
     }

@@ -37,7 +37,7 @@ public struct ChatAttach {
 
 /// The composer's + : a bare glyph, like the microphone.
 struct ChatAttachButton: View {
-    @ScaledMetric(relativeTo: .body) private var circle = Size.buttonHeightCompact + Space.xs
+    @ScaledMetric(relativeTo: .body) private var circle = Size.buttonHeightCompact
     let isEnabled: Bool
     /// In the open card's toolbar: a filled round button; in the capsule: a bare glyph.
     var isFilled = false
