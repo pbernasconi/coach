@@ -133,14 +133,14 @@ public struct ChatComposer: View {
                 }
                 if isExpanded { toolbar }
             }
-            .padding(.leading, attach != nil && !isExpanded ? Space.xxs : Space.lg)
-            .padding(.trailing, isExpanded ? Space.sm : Space.xs)
-            .padding(.top, isExpanded ? Space.xs : Space.xs + Space.xxs)
-            .padding(.bottom, isExpanded ? Space.sm : Space.xs + Space.xxs)
+            .padding(.leading, attach != nil && !isExpanded ? Space.xxs : Space.md + Space.xxs)
+            .padding(.trailing, isExpanded ? Space.xs + Space.xxs : Space.xs)
+            .padding(.top, isExpanded ? Space.xxs : Space.xxs + Space.xxs)
+            .padding(.bottom, isExpanded ? Space.xxs : Space.xxs + Space.xxs)
             .modifier(ChatComposerSurface(isExpanded: isExpanded))
         }
         .padding(.horizontal, Space.gutter)
-        .padding(.vertical, Space.sm)
+        .padding(.vertical, Space.xs)
         .background { ChatComposerBackdrop(color: backdrop) }
         .koboAnimation(.present, value: isExpanded)
         // The finger that holds the microphone lifts here: the button itself moved when listening began.
@@ -170,8 +170,9 @@ public struct ChatComposer: View {
             .font(theme.font(.body))
             .foregroundStyle(theme.palette.textPrimary)
             .tint(theme.palette.accent)
-            .padding(.vertical, Space.sm + Space.xxs)
-            .frame(maxWidth: .infinity, minHeight: Size.minTouch, alignment: .leading)
+            .padding(.top, isExpanded ? Space.sm : Space.sm + Space.xxs)
+            .padding(.bottom, isExpanded ? 0 : Space.sm + Space.xxs)
+            .frame(maxWidth: .infinity, minHeight: isExpanded ? 0 : Size.minTouch, alignment: .leading)
     }
 
     /// Send (grey until there is something to send, then the accent), or the grey stop square while a reply runs.
@@ -193,7 +194,7 @@ public struct ChatComposer: View {
         HStack(spacing: Space.xs) {
             if let attach {
                 // The + lines up with the card's edge as the send button does on the other side.
-                attachButton(attach, isFilled: true).padding(.leading, Space.sm - Space.lg)
+                attachButton(attach, isFilled: true).padding(.leading, Space.xs - Space.md)
             }
             if isListening, let voice { ChatVoiceLevel(phase: voice.phase, level: voice.level) }
             Spacer(minLength: 0)

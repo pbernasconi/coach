@@ -143,8 +143,10 @@ struct ChatChangeFooter: View {
             }
         } else {
             HStack(spacing: Space.sm) {
-                secondary().layoutPriority(0)
-                primary().layoutPriority(1)
+                // The secondary button hugs its label; the primary fills the rest (a layout priority alone
+                // squeezed the secondary to nothing).
+                secondary().fixedSize(horizontal: true, vertical: false)
+                primary()
             }
         }
     }
