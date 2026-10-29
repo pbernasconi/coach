@@ -1,5 +1,5 @@
 // Native tests for the QN protocol: `pio test -e native`. Frames are real captures from renpho-escs20m's tests
-// (Renpho ES-CS20M and an Arboleaf CS20M, the same protocol).
+// (Renpho ES-CS20M and an Arboleaf CS20M, the same protocol) and from Paolo's Renpho Elis 1 (2026-10-29).
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -90,10 +90,10 @@ void test_basic_session_replay() {
   assertWrite(a, 0, "2204153b");
   TEST_ASSERT_FALSE(s.extended());
 
-  // The capture's stored records carry a clock near 2000 (never set), so they are skipped.
+  // The capture's stored record carries a reset clock (seconds since power-on): it waits for finish().
   a = feed(s, "2314150501da0100001c9301f901f300000000ca");
   TEST_ASSERT_EQUAL_UINT(0, a.readingCount);
-  TEST_ASSERT_EQUAL_UINT(1, a.droppedStored);
+  TEST_ASSERT_EQUAL_UINT(0, a.droppedStored);
 
   a = feed(s, "100b151c5c0000000000a8");
   TEST_ASSERT_EQUAL_UINT(0, a.readingCount);
@@ -110,6 +110,78 @@ void test_basic_session_replay() {
 
   a = feed(s, "100b151c660101fa01ee9d");  // the scale repeats the final frame: one reading only
   TEST_ASSERT_EQUAL_UINT(0, a.readingCount);
+
+  // A live reading came too, so the undated stored record cannot be "now": it is dropped.
+  a = s.finish();
+  TEST_ASSERT_EQUAL_UINT(0, a.readingCount);
+  TEST_ASSERT_EQUAL_UINT(1, a.droppedStored);
+}
+
+// Real Renpho Elis 1 session, 2026-10-29 04:38:06 UTC, the first after new batteries: the scale's clock counts
+// from power-on, and it hands over 3 stored weigh-ins (86.30, 85.90, 86.00 kg) and then disconnects.
+void test_elis_reset_clock_batch() {
+  const uint32_t now = 1793248690u;  // 04:38:10 UTC
+  Session s(paolo(), now);
+  assertWrite(feed(s, "120f153946f838c1a43f013f0103cd"), 0, "130915011000000042");
+  TEST_ASSERT_EQUAL_HEX8(0x20, feed(s, "140b150000010000000035").writes[0].bytes[0]);
+  assertWrite(feed(s, "210515013c"), 0, "2204153b");
+  Actions a = feed(s, "23141503011d00000021b6020101f90000000041");
+  TEST_ASSERT_EQUAL_UINT(0, a.readingCount + a.droppedStored);
+  a = feed(s, "23141503028e090000218e01fb01f40000000088");
+  TEST_ASSERT_EQUAL_UINT(0, a.readingCount + a.droppedStored);
+  a = feed(s, "2314150303540d00002198020401f10000000064");
+  TEST_ASSERT_EQUAL_UINT(0, a.readingCount + a.droppedStored);
+  TEST_ASSERT_EQUAL_UINT(3, s.storedCount());
+
+  a = s.finish();
+  TEST_ASSERT_EQUAL_UINT(0, a.droppedStored);
+  TEST_ASSERT_EQUAL_UINT(3, a.readingCount);
+  TEST_ASSERT_FLOAT_WITHIN(0.001f, 86.30f, a.readings[0].weightKg);
+  TEST_ASSERT_FLOAT_WITHIN(0.001f, 85.90f, a.readings[1].weightKg);
+  TEST_ASSERT_FLOAT_WITHIN(0.001f, 86.00f, a.readings[2].weightKg);
+  // Power-on seconds 29, 2446, 3412: the newest is now, the others keep their spacing.
+  TEST_ASSERT_EQUAL_UINT32(now, a.readings[2].unixTime);
+  TEST_ASSERT_EQUAL_UINT32(now - 966, a.readings[1].unixTime);
+  TEST_ASSERT_EQUAL_UINT32(now - 3383, a.readings[0].unixTime);
+  for (size_t i = 0; i < 3; i++) {
+    TEST_ASSERT_TRUE(a.readings[i].stored);
+    TEST_ASSERT_TRUE(a.readings[i].estimatedTime);
+    TEST_ASSERT_TRUE(a.readings[i].bodyFatPct > 10.f);
+  }
+  TEST_ASSERT_EQUAL_UINT16(516, a.readings[2].impedance);
+  TEST_ASSERT_EQUAL_UINT(0, s.finish().readingCount);  // once only
+}
+
+// Real Renpho Elis 1 session 22 s later: the clock is set now, so the stored weigh-in carries its own time.
+void test_elis_set_clock_stored() {
+  const uint32_t now = 1793248712u;  // 04:38:32 UTC
+  Session s(paolo(), now);
+  feed(s, "120f153946f838c1a43f013f0101cb");
+  feed(s, "140b150000010000000035");
+  feed(s, "210515013c");
+  Actions a = feed(s, "2314150101bafa7532219d01fe01f7000000005e");
+  TEST_ASSERT_EQUAL_UINT(1, a.readingCount);
+  TEST_ASSERT_FLOAT_WITHIN(0.001f, 86.05f, a.readings[0].weightKg);
+  TEST_ASSERT_EQUAL_UINT16(510, a.readings[0].impedance);
+  TEST_ASSERT_EQUAL_UINT32(1793248698u, a.readings[0].unixTime);  // 04:38:18 UTC
+  TEST_ASSERT_FALSE(a.readings[0].estimatedTime);
+  // The bridge posted 24.2 % for this reading with 173 cm and age 33.
+  Profile p;
+  p.sex = Sex::Male;
+  p.age = 33;
+  p.heightM = 1.73f;
+  TEST_ASSERT_FLOAT_WITHIN(0.05f, 24.2f, bodyFat(86.05f, p.heightM, p.age, p.sex, 510));
+  TEST_ASSERT_EQUAL_UINT(0, s.finish().readingCount);
+}
+
+// No clock on the bridge yet: undated records cannot be placed and are dropped, not posted as 2000-01-01.
+void test_reset_clock_without_bridge_clock() {
+  Session s(paolo(), 0);
+  feed(s, "210515013c");
+  feed(s, "23141503011d00000021b6020101f90000000041");
+  Actions a = s.finish();
+  TEST_ASSERT_EQUAL_UINT(0, a.readingCount);
+  TEST_ASSERT_EQUAL_UINT(1, a.droppedStored);
 }
 
 // Renpho extended flavor: profile request, then a final frame with the scale's own body fat.
@@ -201,6 +273,9 @@ int main() {
   RUN_TEST(test_body_fat_matches_scale);
   RUN_TEST(test_body_fat_needs_inputs);
   RUN_TEST(test_basic_session_replay);
+  RUN_TEST(test_elis_reset_clock_batch);
+  RUN_TEST(test_elis_set_clock_stored);
+  RUN_TEST(test_reset_clock_without_bridge_clock);
   RUN_TEST(test_extended_session);
   RUN_TEST(test_extended_long_frame);
   RUN_TEST(test_stored_reading_within_window);

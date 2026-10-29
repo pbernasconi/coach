@@ -29,13 +29,16 @@ struct Reading {
   uint16_t impedance = 0;  // ohms, 0 when the scale sent none
   uint32_t unixTime = 0;   // 0 = "now" (live); stored readings carry their own time
   bool stored = false;     // came from the scale's offline memory
+  bool estimatedTime = false;  // stored on a scale whose clock had been reset (new batteries): time worked out
 };
 
 constexpr size_t kMaxWrite = 16;
 constexpr size_t kMaxWrites = 2;
-constexpr size_t kMaxReadings = 4;
+constexpr size_t kMaxReadings = 8;
 // Stored offline readings older than this are not sent: they would add stale points to the Health charts.
 constexpr uint32_t kStoredMaxAgeDays = 30;
+// A scale clock below this (2020-01-01 in scale seconds) was reset by a battery change: it counts from power-on.
+constexpr uint32_t kScaleClockSetMin = 631152000u;
 
 struct Write {
   uint8_t bytes[kMaxWrite];
@@ -47,7 +50,7 @@ struct Actions {
   Write writes[kMaxWrites];
   size_t writeCount = 0;
   Reading readings[kMaxReadings];
-  size_t droppedStored = 0;  // stored records skipped (bad clock or older than kStoredMaxAgeDays)
+  size_t droppedStored = 0;  // stored records skipped (older than kStoredMaxAgeDays, or not datable)
   size_t readingCount = 0;
   bool done = false;  // the live measurement is final: the session can end after the writes
 
@@ -83,7 +86,14 @@ class Session {
   // main.cpp sends this when the scale goes quiet after the unit reply.
   Write currentTimeCommand() const;
 
+  // Call once when the connection ends. Returns the stored readings from a reset clock, dated so that the
+  // newest one is now: the scale only wakes when someone steps on it, so its newest record is that weigh-in.
+  // When the session also gave a live final reading the newest record is older than now by an unknown amount,
+  // so those records are dropped (counted in droppedStored).
+  Actions finish();
+
   bool sawFrame() const { return sawFrame_; }
+  size_t storedCount() const { return storedCount_; }
   bool extended() const { return extended_; }
   uint8_t vendor() const { return vendor_; }
 
@@ -91,7 +101,8 @@ class Session {
   void handleMeasurement(const uint8_t* f, size_t len, Actions& a);
   void handleStored(const uint8_t* f, size_t len, Actions& a);
   void endMeasurement(Actions& a);
-  Reading finish(float weightKg, uint16_t impedance, float scaleBodyFat, uint32_t unixTime, bool stored) const;
+  Reading makeReading(float weightKg, uint16_t impedance, float scaleBodyFat, uint32_t unixTime, bool stored) const;
+  bool fresh(uint32_t unixTime) const;
 
   Profile profile_;
   uint32_t now_;
@@ -104,6 +115,11 @@ class Session {
   bool profileSent_ = false;
   bool storedQueried_ = false;
   bool finalSeen_ = false;
+  size_t storedCount_ = 0;  // stored records received this session
+  // Stored records from a reset clock, waiting for finish(): the reading and its power-on seconds.
+  Reading undated_[kMaxReadings];
+  uint32_t undatedClock_[kMaxReadings];
+  size_t undatedCount_ = 0;
 };
 
 }  // namespace qn

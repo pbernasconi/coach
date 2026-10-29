@@ -173,7 +173,7 @@ void Session::handleMeasurement(const uint8_t* f, size_t len, Actions& a) {
     const uint16_t r1 = be16(f + 7);
     const float scaleBf = be16(f + 11) / 10.f;
     endMeasurement(a);
-    if (plausibleWeight(kg)) a.reading(finish(kg, r1, scaleBf, 0, false));
+    if (plausibleWeight(kg)) a.reading(makeReading(kg, r1, scaleBf, 0, false));
     a.done = true;
   } else if (flen == kLenBasic && len >= kLenBasic) {
     // 10 0b <vendor> <weight BE /100> <status> <r1 BE> <r2 BE> <sum>
@@ -183,7 +183,7 @@ void Session::handleMeasurement(const uint8_t* f, size_t len, Actions& a) {
     const float kg = be16(f + 3) / 100.f;
     const uint16_t r1 = be16(f + 6);
     endMeasurement(a);
-    if (plausibleWeight(kg)) a.reading(finish(kg, r1, 0.f, 0, false));
+    if (plausibleWeight(kg)) a.reading(makeReading(kg, r1, 0.f, 0, false));
     a.done = true;
   }
 }
@@ -206,14 +206,53 @@ void Session::handleStored(const uint8_t* f, size_t len, Actions& a) {
     kg = be16(f + 9) / 100.f;
     r1 = be16(f + 11);
   }
-  const uint32_t unixTime = scaleTime + kScaleEpoch;
-  // A scale whose clock was never set reports times near 2000. Skip those, future ones, and old ones.
-  const bool timeOk = unixTime <= now_ + 3600 && now_ - unixTime <= kStoredMaxAgeDays * 86400u;
-  if (!timeOk || !plausibleWeight(kg)) {
+  storedCount_++;
+  if (!plausibleWeight(kg)) {
     a.droppedStored++;
     return;
   }
-  a.reading(finish(kg, r1, scaleBf, unixTime, true));
+  if (scaleTime < kScaleClockSetMin) {
+    // Reset clock: date it in finish(), when the whole batch is known.
+    if (undatedCount_ < kMaxReadings) {
+      undated_[undatedCount_] = makeReading(kg, r1, scaleBf, 0, true);
+      undatedClock_[undatedCount_] = scaleTime;
+      undatedCount_++;
+    } else {
+      a.droppedStored++;
+    }
+    return;
+  }
+  const uint32_t unixTime = scaleTime + kScaleEpoch;
+  if (!fresh(unixTime)) {
+    a.droppedStored++;
+    return;
+  }
+  a.reading(makeReading(kg, r1, scaleBf, unixTime, true));
+}
+
+bool Session::fresh(uint32_t unixTime) const {
+  // Not in the future (an hour of slack for the scale's clock) and not older than kStoredMaxAgeDays.
+  return now_ > 0 && unixTime <= now_ + 3600 && (unixTime > now_ || now_ - unixTime <= kStoredMaxAgeDays * 86400u);
+}
+
+Actions Session::finish() {
+  Actions a;
+  if (undatedCount_ == 0) return a;
+  if (finalSeen_ || now_ == 0) {
+    a.droppedStored = undatedCount_;
+  } else {
+    uint32_t newest = 0;
+    for (size_t i = 0; i < undatedCount_; i++) newest = undatedClock_[i] > newest ? undatedClock_[i] : newest;
+    for (size_t i = 0; i < undatedCount_; i++) {
+      Reading r = undated_[i];
+      r.unixTime = now_ - (newest - undatedClock_[i]);
+      r.estimatedTime = true;
+      if (fresh(r.unixTime)) a.reading(r);
+      else a.droppedStored++;
+    }
+  }
+  undatedCount_ = 0;
+  return a;
 }
 
 void Session::endMeasurement(Actions& a) {
@@ -222,7 +261,7 @@ void Session::endMeasurement(Actions& a) {
   a.write(c, sizeof c);
 }
 
-Reading Session::finish(float kg, uint16_t impedance, float scaleBf, uint32_t unixTime, bool stored) const {
+Reading Session::makeReading(float kg, uint16_t impedance, float scaleBf, uint32_t unixTime, bool stored) const {
   Reading r;
   r.weightKg = kg;
   r.impedance = impedance;
