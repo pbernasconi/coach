@@ -6,13 +6,19 @@ import Observation
 @MainActor
 protocol TabSwitching: AnyObject {
     func show(_ tab: AppTab)
+    /// Leaves `tab` for the tab shown before it, or `fallback` when there was none.
+    func leave(_ tab: AppTab, fallback: AppTab)
 }
 
 /// The shell's selected tab. `AppShell` binds the tab bar to it; `AppDependencies.tabs` hands it to screens. A tap
 /// on the tab that is already selected asks that tab to go back to its root (`rootRequests`).
 @Observable
 final class TabSwitcher: TabSwitching {
-    private(set) var selected: AppTab
+    private(set) var selected: AppTab {
+        didSet { if oldValue != selected { previous = oldValue } }
+    }
+    /// The tab shown before the selected one, for a screen's close button.
+    private(set) var previous: AppTab?
     /// Counts the re-taps of each tab; its stack pops to the root when its count changes.
     private(set) var rootRequests: [AppTab: Int] = [:]
     /// The screen a link or a notice asked each tab to show (`open(_:)`). The tab's stack applies a request once, when
@@ -29,6 +35,10 @@ final class TabSwitcher: TabSwitching {
 
     func show(_ tab: AppTab) {
         selected = tab
+    }
+
+    func leave(_ tab: AppTab, fallback: AppTab) {
+        selected = previous.flatMap { $0 == tab ? nil : $0 } ?? fallback
     }
 
     /// Selects the destination's tab and asks its stack to show exactly the destination's route over the root (the

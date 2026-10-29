@@ -74,10 +74,10 @@ private let questionReply = CoachReply(
         #expect(vm.state.openQuestions.isEmpty)
     }
 
-    @Test func settingsTappedShowsSettings() {
+    @Test func closeTappedGoesBackToTheTabBeforeCoach() {
         let vm = make(FakeCoach(.success(questionReply)))
-        vm.send(.settingsTapped)
-        #expect(tabs.shown == [.settings])
+        vm.send(.closeTapped)
+        #expect(tabs.shown == [.today])
     }
 
     @Test func breakdownOpenedShowsItsPage() {

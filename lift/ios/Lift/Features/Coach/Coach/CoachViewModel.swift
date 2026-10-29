@@ -93,7 +93,7 @@ final class CoachViewModel {
             guard !text.isEmpty else { return nil }
             state.draft = text
             return send(.sendTapped)
-        case .workoutOpened, .exerciseOpened, .weekOpened, .todayOpened, .mediaNeeded, .settingsTapped, .breakdownOpened:
+        case .workoutOpened, .exerciseOpened, .weekOpened, .todayOpened, .mediaNeeded, .closeTapped, .breakdownOpened:
             return card(action)
         case .feedbackTapped, .historyShown, .newChatTapped, .threadPicked:
             return threads?.handle(action, in: state)
@@ -178,7 +178,7 @@ final class CoachViewModel {
         }
     }
 
-    /// A card's actions (open its page, or load its picture), and the top bar's gear.
+    /// A card's actions (open its page, or load its picture), and the top bar's X.
     private func card(_ action: CoachAction) -> Task<Void, Never>? {
         switch action {
         case .workoutOpened(let id): router.open(.plannedWorkout(id))
@@ -186,7 +186,7 @@ final class CoachViewModel {
         case .weekOpened, .breakdownOpened("plan"): tabs.show(.week)
         case .breakdownOpened("lift"): tabs.show(.lift)
         case .todayOpened, .breakdownOpened: tabs.show(.today)
-        case .settingsTapped: tabs.show(.settings)
+        case .closeTapped: tabs.leave(.coach, fallback: .today)
         case .mediaNeeded(let url):
             guard state.media[url] == nil else { return nil }
             state.media[url] = .loading

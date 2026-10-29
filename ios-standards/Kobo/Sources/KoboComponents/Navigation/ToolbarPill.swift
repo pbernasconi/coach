@@ -27,7 +27,8 @@ public struct ToolbarPillItem: Identifiable {
 
 /// A floating group of icon buttons in one capsule of Liquid Glass (the raised fill under a solid theme), for a screen
 /// that hides its navigation bar and floats its controls over the content (a chat's settings, history and new). The
-/// glyphs are plain inside the one glass shape, never glass on glass.
+/// glyphs are plain inside the one glass shape, never glass on glass. With one item it is a round button of the same
+/// glass, for a close button that sits beside a pill.
 ///
 ///     ToolbarPill([ToolbarPillItem("gearshape", label: "Settings", action: openSettings),
 ///                  ToolbarPillItem("plus", label: "New chat", action: newChat)])
@@ -54,7 +55,8 @@ public struct ToolbarPill: View {
                 .accessibilityLabel(item.label)
             }
         }
-        .padding(.horizontal, Space.xs)
+        // One item is a circle (a close button beside a pill); more spread out in a capsule.
+        .padding(.horizontal, items.count > 1 ? Space.xs : Space.xxs)
         .padding(.vertical, Space.xxs)
         .headerGlass(in: Capsule())
         .overlay {

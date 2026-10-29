@@ -8,4 +8,9 @@ final class RecordingTabs: TabSwitching {
     func show(_ tab: AppTab) {
         shown.append(tab)
     }
+
+    /// Records the fallback (a recording has no tab before).
+    func leave(_ tab: AppTab, fallback: AppTab) {
+        shown.append(fallback)
+    }
 }
