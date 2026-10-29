@@ -13,6 +13,18 @@ nonisolated enum CoachAction: Equatable, Sendable {
     case undoTapped(proposalID: String)
     /// A quick reply under Coach's question: sent as Paolo's message.
     case quickReplyTapped(String)
+    /// Every question card on the latest reply has an answer: they go as one message, a line per question.
+    case questionsAnswered([String: ChatAnswer])
+    /// A thumb under one of Coach's replies (nil clears it).
+    case feedbackTapped(messageID: String, rating: ChatFeedbackRating?)
+    /// The top bar: the gear (Settings), the history sheet (open or closed), and + (a new chat).
+    case settingsTapped
+    case historyShown(Bool)
+    case newChatTapped
+    /// A past chat picked in the history sheet: it becomes the open one.
+    case threadPicked(String)
+    /// A breakdown card's Open: its page ("plan", "lift" or "health").
+    case breakdownOpened(String?)
     /// A card's header: its full page.
     case workoutOpened(String)
     case exerciseOpened(String)

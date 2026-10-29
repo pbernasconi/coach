@@ -120,3 +120,43 @@ import Testing
         #expect(cards[name] != .unknown, "the demo \(name) card does not decode")
     }
 }
+
+/// The Ramp-style fields (lift/APP-API.md, "Coach"): greeting, starter cards, Thought, thumbs, questions, breakdown.
+@Suite struct CoachWireRampTests {
+    @Test func theNewFieldsDecodeAndOldBodiesStillDo() throws {
+        let body = Data(
+            """
+            { "messages": [
+                { "id": "m2", "role": "assistant", "text": "Here", "thought": "Rides first.", "feedback": "down",
+                  "questions": [
+                    { "id": "q1", "title": "When?", "subtitle": null, "kind": "single", "options": ["Mon", "Tue"],
+                      "allowOther": true, "placeholder": null, "confirm": null },
+                    { "id": "q2", "title": "Sure?", "kind": "confirm", "confirm": { "primary": "Yes", "secondary": null } },
+                    { "id": "q3", "title": "New kind", "kind": "slider" } ],
+                  "attachments": [ { "kind": "breakdown", "caption": "This week", "title": "Training time",
+                    "total": "5 h", "unit": "by sport", "link": "plan",
+                    "rows": [ { "label": "Run", "value": 180, "display": "3 h", "tint": "run" } ] } ] } ],
+              "prompts": [ { "title": "How did my week go?", "symbol": "chart.bar" } ], "firstName": "Sam",
+              "suggestions": ["Old"] }
+            """.utf8
+        )
+        let thread = CoachWire.thread(try JSONDecoder().decode(CoachWire.Thread.self, from: body))
+        #expect(thread.firstName == "Sam")
+        #expect(thread.prompts == [ChatPrompt(id: "How did my week go?", title: "How did my week go?", systemImage: "chart.bar")])
+        guard case .coach(let reply) = thread.messages[0].body else { Issue.record("not a reply"); return }
+        #expect(reply.thought == "Rides first.")
+        #expect(reply.feedback == .down)
+        #expect(reply.questions.map(\.id) == ["q1", "q2"])
+        #expect(reply.questions[0].kind == .single(options: ["Mon", "Tue"], allowsOther: true))
+        #expect(reply.questions[1].kind == .confirm(primary: "Yes", secondary: nil))
+        guard case .breakdown(let breakdown) = reply.attachments.first else { Issue.record("no breakdown"); return }
+        #expect(breakdown.total == "5 h")
+        #expect(breakdown.rows.map(\.tint) == ["run"])
+
+        let old = Data(#"{ "messages": [{ "id": "m1", "role": "assistant", "text": "Hi" }], "suggestions": ["Old"] }"#.utf8)
+        let oldThread = CoachWire.thread(try JSONDecoder().decode(CoachWire.Thread.self, from: old))
+        #expect(oldThread.prompts.map(\.title) == ["Old"])
+        guard case .coach(let oldReply) = oldThread.messages[0].body else { return }
+        #expect(oldReply.thought == nil && oldReply.questions.isEmpty && oldReply.feedback == nil)
+    }
+}

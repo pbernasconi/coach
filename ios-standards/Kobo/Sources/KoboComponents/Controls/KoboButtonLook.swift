@@ -20,6 +20,8 @@ extension KoboButtonStyle {
         case destructiveTonal
         /// Ink only, no fill: inline and tertiary actions.
         case plain
+        /// No fill, a hairline outline and primary ink: the calm second choice beside a primary.
+        case outlined
     }
 
     /// The height class of a button.
@@ -79,6 +81,7 @@ struct ButtonLook: Equatable {
         case .destructive: return ButtonLook(fill: palette.danger.ink, foreground: palette.surface)
         case .destructiveTonal: return ButtonLook(fill: palette.danger.soft, foreground: palette.danger.ink)
         case .plain: return ButtonLook(fill: .clear, foreground: palette.accentText)
+        case .outlined: return ButtonLook(fill: .clear, foreground: palette.textPrimary)
         }
     }
 
@@ -86,7 +89,7 @@ struct ButtonLook: Equatable {
         switch variant {
         case .primary, .secondary, .tonal, .destructive, .destructiveTonal:
             ButtonLook(fill: palette.surfaceRaised, foreground: palette.textTertiary)
-        case .glass, .plain:
+        case .glass, .plain, .outlined:
             ButtonLook(fill: .clear, foreground: palette.textTertiary)
         }
     }

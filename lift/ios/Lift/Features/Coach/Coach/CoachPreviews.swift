@@ -8,6 +8,14 @@
 
     #Preview("Empty") { coachPreview(.fixtureEmpty) }
     #Preview("Empty, dark") { coachPreview(.fixtureEmpty).preferredColorScheme(.dark) }
+    #Preview("Typing") { coachPreview(.fixtureTyping) }
+    #Preview("Conversation") { coachPreview(.fixtureConversation) }
+    #Preview("Conversation, dark") { coachPreview(.fixtureConversation).preferredColorScheme(.dark) }
+    #Preview("Conversation, AX3") { coachPreview(.fixtureConversation).dynamicTypeSize(.accessibility3) }
+    #Preview("Questions") { coachPreview(.fixtureQuestions) }
+    #Preview("Questions, dark") { coachPreview(.fixtureQuestions).preferredColorScheme(.dark) }
+    #Preview("Proposal card") { coachPreview(.fixtureProposalCard) }
+    #Preview("History") { coachPreview(.fixtureHistory) }
     #Preview("Proposal") { coachPreview(.fixtureProposal) }
     #Preview("Proposal, dark") { coachPreview(.fixtureProposal).preferredColorScheme(.dark) }
     #Preview("Proposal, AX3") { coachPreview(.fixtureProposal).dynamicTypeSize(.accessibility3) }

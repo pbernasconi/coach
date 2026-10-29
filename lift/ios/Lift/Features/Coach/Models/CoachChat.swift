@@ -26,6 +26,12 @@ nonisolated struct CoachReply: Equatable, Sendable {
     var attachments: [CoachAttachment] = []
     /// One-tap answers when the reply asks a question; a tap sends it.
     var quickReplies: [String] = []
+    /// The summary of Coach's thinking, folded above the reply as "Thought"; nil hides the row.
+    var thought: String?
+    /// Paolo's thumbs on this reply.
+    var feedback: ChatFeedbackRating?
+    /// Question cards; shown on the latest reply only, while nothing is on its way.
+    var questions: [ChatQuestion] = []
 }
 
 /// One row of the conversation.
@@ -67,6 +73,16 @@ nonisolated struct CoachThread: Equatable, Sendable {
     var notice: String?
     /// Coach is still answering Paolo's last message (it went on while the app was away): the tab polls.
     var answering = false
+    /// For the greeting ("Hi Paolo,"); nil says "Hi,".
+    var firstName: String?
+}
+
+/// A past chat in the history sheet: titled by its first message.
+nonisolated struct CoachThreadSummary: Identifiable, Equatable, Sendable {
+    let id: String
+    let title: String
+    let updatedAt: Date?
+    let messageCount: Int
 }
 
 /// Where a reply stands while it streams in (lift/APP-API.md, "Coach answer stream"): the step, the latest line of
@@ -132,6 +148,14 @@ nonisolated protocol CoachChatting: Sendable {
     func undo(_ proposalID: String) async throws -> ChatActionStatus
     /// Dismisses an open proposal; answers the card's new status.
     func dismiss(_ proposalID: String) async throws -> ChatActionStatus
+    /// Paolo's thumbs on one of Coach's replies (nil clears them).
+    func rate(_ messageID: String, _ rating: ChatFeedbackRating?) async throws
+    /// Past chats, newest first, for the history sheet.
+    func threads() async throws -> [CoachThreadSummary]
+    /// Starts a new empty chat; it becomes the open one.
+    func newThread() async throws -> CoachThread
+    /// Opens a past chat again; it becomes the open one and the next message continues it.
+    func openThread(_ id: String) async throws -> CoachThread
 }
 
 nonisolated extension CoachChatting {
@@ -165,6 +189,16 @@ nonisolated extension CoachChatting {
     }
 
     func fileData(_ id: String) async throws -> Data { throw CoachChatError(message: "No such file.") }
+
+    /// A coach without thumbs keeps them on the phone.
+    func rate(_ messageID: String, _ rating: ChatFeedbackRating?) async throws {}
+
+    /// A coach without history has only the open chat.
+    func threads() async throws -> [CoachThreadSummary] { [] }
+
+    func newThread() async throws -> CoachThread { CoachThread() }
+
+    func openThread(_ id: String) async throws -> CoachThread { try await thread() }
 }
 
 /// Why Coach could not answer, in words for the error row.

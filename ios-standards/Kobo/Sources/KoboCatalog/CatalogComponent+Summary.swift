@@ -103,6 +103,7 @@ extension CatalogComponent {
         case .tileGrid: "Tiles two to a row, equal height, one per row at large text sizes"
         case .miniPlayerBar: "Compact live-session bar for the tab bar accessory"
         case .appHeader: "Tab root header with kicker, profile and actions"
+        case .toolbarPill: "Floating glass capsule of icon buttons over the content"
         case .headerButton: "Close, back or symbol button for toolbars"
         case .headerProfileButton: "Avatar and name button that opens the profile"
         case .countBadge: "Capped count bubble for icons and tabs"
@@ -161,6 +162,14 @@ extension CatalogComponent {
         case .chatEmbedCard: "A card inside a reply: a header that opens the thing, then any content"
         case .chatAttachmentStrip: "Attached photos and files as tiles, with remove and upload state"
         case .chatAttachSheet: "The + sheet: camera, recent photos to pick, the library and files"
+        case .chatThoughtRow: "The folded summary of the assistant's thinking, above its reply"
+        case .chatFeedbackRow: "Thumbs up, thumbs down and copy under a finished reply"
+        case .chatQuestionCard: "A question as a card: chips, a field, or a confirm with Skip"
+        case .chatQuestions: "Several question cards one at a time, with a 1 of N pager"
+        case .chatBreakdownCard: "A big total and its parts as rows with bars, plus buttons"
+        case .chatGreeting: "An empty chat's mark and centred two-line greeting"
+        case .chatPromptCards: "Starter prompts as stacked grey cards with a glyph"
+        case .chatGlow: "A soft accent glow rising behind an empty chat's composer"
         }
     }
 }

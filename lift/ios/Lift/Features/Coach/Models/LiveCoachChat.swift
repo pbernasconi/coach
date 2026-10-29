@@ -21,6 +21,48 @@ nonisolated struct LiveCoachChat: CoachChatting {
         try await reply(to: text, files: [])
     }
 
+    /// `PUT /api/app/coach/messages/{id}/feedback`.
+    func rate(_ messageID: String, _ rating: ChatFeedbackRating?) async throws {
+        let id = messageID.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? messageID
+        let body = rating.map { #"{"rating":"\#($0.rawValue)"}"# } ?? #"{"rating":null}"#
+        do {
+            _ = try await client.send("PUT", "api/app/coach/messages/\(id)/feedback", body: Data(body.utf8))
+        } catch let error as SyncTransportError {
+            throw CoachChatError(message: Self.words(for: error))
+        }
+    }
+
+    /// `GET /api/app/coach/threads`.
+    func threads() async throws -> [CoachThreadSummary] {
+        do {
+            let data = try await client.get("api/app/coach/threads")
+            return try Self.decoder.decode(CoachWire.Threads.self, from: data).threads.map(CoachWire.summary)
+        } catch let error as SyncTransportError {
+            throw CoachChatError(message: Self.words(for: error))
+        } catch is DecodingError {
+            throw CoachChatError(message: Self.words(for: .invalidResponse))
+        }
+    }
+
+    /// `POST /api/app/coach/threads`: a new empty chat.
+    func newThread() async throws -> CoachThread { try await postThread("api/app/coach/threads") }
+
+    /// `POST /api/app/coach/threads/{id}`: a past chat becomes the open one.
+    func openThread(_ id: String) async throws -> CoachThread {
+        try await postThread("api/app/coach/threads/\(id.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? id)")
+    }
+
+    private func postThread(_ path: String) async throws -> CoachThread {
+        do {
+            let data = try await client.send("POST", path, body: Data("{}".utf8))
+            return CoachWire.thread(try Self.decoder.decode(CoachWire.Thread.self, from: data))
+        } catch let error as SyncTransportError {
+            throw CoachChatError(message: Self.words(for: error))
+        } catch is DecodingError {
+            throw CoachChatError(message: Self.words(for: .invalidResponse))
+        }
+    }
+
     /// The message's body: its words and the ids of its uploads (lift/APP-API.md, "Coach").
     private struct Outgoing: Encodable {
         let text: String

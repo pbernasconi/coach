@@ -26,6 +26,8 @@ struct CoachAttachmentView: View {
             CoachReadinessCard(readiness: readiness) { send(.todayOpened) }
         case .day(let day):
             CoachDayCard(day: day)
+        case .breakdown(let breakdown):
+            CoachBreakdownView(breakdown: breakdown) { send(.breakdownOpened(breakdown.link)) }
         case .unknown:
             EmptyView()
         }

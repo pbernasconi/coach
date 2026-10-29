@@ -5,15 +5,26 @@ import KoboComponents
 /// Apply and Undo change nothing. Made-up content only.
 nonisolated struct DemoCoachChat: CoachChatting {
     let clock: any Clock<Duration>
+    /// A made-up chat to open on (`-coach`, DemoCoachThreads); nil opens an empty one.
+    var scenario: String?
 
     func reply(to text: String, after history: [CoachMessage]) async throws -> CoachReply {
         try await clock.sleep(for: .seconds(2))
         return Self.sample(for: text, turn: history.count)
     }
 
-    func thread() async throws -> CoachThread {
-        CoachThread(notice: "Demo: Coach answers with sample replies and changes nothing.")
+    func thread() async throws -> CoachThread { DemoCoachThreads.thread(scenario) }
+
+    func threads() async throws -> [CoachThreadSummary] {
+        try await clock.sleep(for: .milliseconds(300))
+        return DemoCoachThreads.history
     }
+
+    func newThread() async throws -> CoachThread { DemoCoachThreads.thread(nil) }
+
+    func openThread(_ id: String) async throws -> CoachThread { DemoCoachThreads.thread(id) }
+
+    func rate(_ messageID: String, _ rating: ChatFeedbackRating?) async throws {}
 
     func apply(_ proposalID: String) async throws -> ChatActionStatus {
         try await clock.sleep(for: .milliseconds(600))
@@ -30,6 +41,8 @@ nonisolated struct DemoCoachChat: CoachChatting {
     /// The sample reply for a message: cards for a question, a plan change for a swap, an easier day for soreness.
     static func sample(for text: String, turn: Int) -> CoachReply {
         let words = text.lowercased()
+        if words.contains("train") || words.contains("month") { return DemoCoachThreads.breakdownReply }
+        if words.contains("plan next") || words.contains("trip") { return DemoCoachThreads.questionsReply }
         if let reply = cardReply(words, turn: turn) { return reply }
         if words.contains("lift") || words.contains("swap") {
             var reply = swapReply(turn: turn)
@@ -75,7 +88,7 @@ nonisolated struct DemoCoachChat: CoachChatting {
         return nil
     }
 
-    private static func swapReply(turn: Int) -> CoachReply {
+    static func swapReply(turn: Int) -> CoachReply {
         CoachReply(
             text: """
                 Tomorrow's only gym window is **09:00**, so the lift goes there. That makes Tuesday a double, so I \

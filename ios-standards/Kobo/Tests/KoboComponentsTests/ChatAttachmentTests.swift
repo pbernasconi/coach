@@ -24,28 +24,14 @@ import Testing
                 == .send(isEnabled: true)
         )
         #expect(
-            ChatComposerLogic.compactButton(
-                draft: "",
-                attachments: .ready,
-                isResponding: false,
-                canStop: true,
-                hasVoice: true
-            ) == .send
-        )
-        #expect(
-            ChatComposerLogic.compactButton(
-                draft: "hi",
-                attachments: .pending,
-                isResponding: false,
-                canStop: true,
-                hasVoice: true
-            ) == .microphone
+            ChatComposerLogic.button(draft: "hi", attachments: .pending, isResponding: false, canStop: true)
+                == .send(isEnabled: false)
         )
     }
 
     @Test func theComposerOpensWhileSomethingIsAttached() {
-        #expect(ChatComposerLogic.isExpanded(isFocused: false, isListening: false, hasAttachments: true))
-        #expect(!ChatComposerLogic.isExpanded(isFocused: false, isListening: false, hasAttachments: false))
+        #expect(ChatComposerLogic.isExpanded(draft: "", isListening: false, hasAttachments: true))
+        #expect(!ChatComposerLogic.isExpanded(draft: "", isListening: false, hasAttachments: false))
     }
 
     @Test func pickingKeepsTheOrderAndTheLimit() {

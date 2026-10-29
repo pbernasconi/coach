@@ -38,6 +38,12 @@ struct NavigationDemo: View {
                 Button("Add one") { unread += 1 }.buttonStyle(.kobo(.secondary))
             }
         case .tabShell: tabShell
+        case .toolbarPill:
+            ToolbarPill([
+                ToolbarPillItem("gearshape", label: "Settings") {},
+                ToolbarPillItem("clock.arrow.circlepath", label: "History") {},
+                ToolbarPillItem("plus", label: "New chat") {},
+            ])
         case .textLink:
             VStack(alignment: .leading, spacing: Space.xs) {
                 TextLink("Forgot your password?") {}

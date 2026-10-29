@@ -77,7 +77,8 @@ struct TabRootScreen: View {
         case .coach:
             CoachScreen(
                 viewModel: CoachViewModel(
-                    coach: dependencies.coach,
+                    coach: options.coachScenario.map { DemoCoachChat(clock: dependencies.clock, scenario: $0) }
+                        ?? dependencies.coach,
                     plan: dependencies.coachPlan,
                     router: router,
                     tabs: dependencies.tabs,

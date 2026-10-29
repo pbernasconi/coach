@@ -12,16 +12,14 @@ final class CoachViewModel {
     private let router: any Navigating
     private let tabs: any TabSwitching
     private let mediaLoader: any ExerciseMediaLoader
-    private let dictation: CoachDictation
     private let clock: any Clock<Duration>
     private let settings: any AppSettingsOpening
     private let presence: CoachPresence
     @ObservationIgnored private var uploads: CoachUploads?
+    @ObservationIgnored private var threads: CoachThreads?
     private var replyTask: Task<Void, Never>?
     private var pollTask: Task<Void, Never>?
-    /// The draft before listening began, and the words heard since.
-    private var draftBeforeVoice = ""
-    private var heard = ""
+    @ObservationIgnored private var microphone: CoachMicrophone?
 
     init(
         coach: any CoachChatting,
@@ -39,11 +37,21 @@ final class CoachViewModel {
         self.router = router
         self.tabs = tabs
         self.mediaLoader = mediaLoader
-        self.dictation = CoachDictation(speech: speech, clock: clock)
         self.clock = clock
         self.settings = settings
         self.presence = presence
         uploads = CoachUploads(coach: coach) { [weak self] change in self.map { change(&$0.state) } }
+        microphone = CoachMicrophone(
+            dictation: CoachDictation(speech: speech, clock: clock),
+            read: { [weak self] in self?.state ?? CoachState() },
+            edit: { [weak self] change in self.map { change(&$0.state) } },
+            send: { [weak self] in self?.send(.sendTapped) }
+        )
+        threads = CoachThreads(
+            coach: coach,
+            edit: { [weak self] change in self.map { change(&$0.state) } },
+            stop: { [weak self] in self?.stopReply() }
+        )
     }
 
     /// Reads the conversation (each time the tab shows). A failure keeps what is on screen and shows the reason.
@@ -70,9 +78,7 @@ final class CoachViewModel {
             guard let text = state.lastMessage, !state.isResponding else { return nil }
             return ask(text, files: [])
         case .stopTapped:
-            for task in [replyTask, pollTask] { task?.cancel() }
-            (replyTask, pollTask) = (nil, nil)
-            state.phase = .idle
+            stopReply()
         case .applyTapped(let id):
             return change(id, from: .pending, showing: .applying) { try await self.coach.apply(id) }
         case .undoTapped(let id):
@@ -82,8 +88,15 @@ final class CoachViewModel {
         case .quickReplyTapped(let text):
             state.draft = text
             return send(.sendTapped)
-        case .workoutOpened, .exerciseOpened, .weekOpened, .todayOpened, .mediaNeeded:
+        case .questionsAnswered(let answers):
+            let text = CoachQuestionText.message(state.openQuestions, answers: answers)
+            guard !text.isEmpty else { return nil }
+            state.draft = text
+            return send(.sendTapped)
+        case .workoutOpened, .exerciseOpened, .weekOpened, .todayOpened, .mediaNeeded, .settingsTapped, .breakdownOpened:
             return card(action)
+        case .feedbackTapped, .historyShown, .newChatTapped, .threadPicked:
+            return threads?.handle(action, in: state)
         case .micTapped, .micHoldBegan, .micHoldEnded, .voiceSettingsTapped, .shown, .sceneActive:
             return device(action)
         case .attachShown, .filesPicked, .attachmentRemoved, .attachmentRetried, .filePreviewNeeded:
@@ -92,11 +105,18 @@ final class CoachViewModel {
         return nil
     }
 
+    /// Ends the reply in progress here (the server may still finish it).
+    private func stopReply() {
+        for task in [replyTask, pollTask] { task?.cancel() }
+        (replyTask, pollTask) = (nil, nil)
+        state.phase = .idle
+    }
+
     /// Sends the draft with its photos and files (once all have uploaded); a message can be photos alone.
     private func sendDraft() -> Task<Void, Never>? {
         guard state.canSend, !state.isResponding else { return nil }
         let text = state.draft.trimmingCharacters(in: .whitespacesAndNewlines)
-        if state.voice.isListening { voice(state.voice.backgrounded()) }
+        if state.voice.isListening { microphone?.run(state.voice.backgrounded()) }
         let files = state.attachments.compactMap { state.uploaded[$0.id] }
         for item in state.attachments {  // the sent tile shows the picked photo at once
             if let file = state.uploaded[item.id] { state.previews[file.id] = state.previews[item.id] }
@@ -112,15 +132,15 @@ final class CoachViewModel {
     /// The microphone, and the tab or the app coming and going.
     private func device(_ action: CoachAction) -> Task<Void, Never>? {
         switch action {
-        case .micTapped: return voice(state.voice.tapped())
-        case .micHoldBegan: return voice(state.voice.holdBegan())
-        case .micHoldEnded: return voice(state.voice.holdEnded())
+        case .micTapped: return microphone?.run(state.voice.tapped())
+        case .micHoldBegan: return microphone?.run(state.voice.holdBegan())
+        case .micHoldEnded: return microphone?.run(state.voice.holdEnded())
         case .voiceSettingsTapped: settings.openAppSettings()
         case .shown(let isShown):
             presence.isShown = isShown
-            if !isShown { voice(state.voice.backgrounded()) }
+            if !isShown { microphone?.run(state.voice.backgrounded()) }
         case .sceneActive(let isActive):
-            guard isActive else { return voice(state.voice.backgrounded()) }
+            guard isActive else { return microphone?.run(state.voice.backgrounded()) }
             return Task { await run() }
         default: break
         }
@@ -130,6 +150,7 @@ final class CoachViewModel {
     /// The server's conversation replaces the one on screen, unless a reply is on its way here (it brings its own).
     private func take(_ thread: CoachThread) {
         if !thread.prompts.isEmpty { state.prompts = thread.prompts }
+        if let name = thread.firstName { state.firstName = name }
         state.notice = thread.notice
         guard replyTask == nil else { return }
         if !thread.messages.isEmpty { state.messages = thread.messages }
@@ -157,52 +178,15 @@ final class CoachViewModel {
         }
     }
 
-    /// Runs what the microphone's rules ask: start or stop the engine, or stop and send what was heard.
-    @discardableResult
-    private func voice(_ effect: ChatVoiceInput.Effect) -> Task<Void, Never>? {
-        switch effect {
-        case .none: return nil
-        case .start:
-            let draft = state.draft
-            draftBeforeVoice = draft.isEmpty || draft.hasSuffix(" ") || draft.hasSuffix("\n") ? draft : draft + " "
-            heard = ""
-            return dictation.start { [weak self] in self?.heard($0) }
-        case .stop:
-            dictation.stop()
-            state.voiceLevel = 0
-            return nil
-        case .stopAndSend:
-            dictation.stop()
-            state.voiceLevel = 0
-            guard ChatVoiceInput.message(toSend: heard) != nil else { return nil }
-            return send(.sendTapped)
-        }
-    }
-
-    private func heard(_ event: CoachDictation.Event) {
-        switch event {
-        case .words(let text):
-            guard state.voice.isListening else { return }
-            heard = text
-            state.draft = draftBeforeVoice + text
-        case .level(let level): state.voiceLevel = level
-        case .paused: voice(state.voice.pausedLongEnough())
-        case .ended:
-            state.voice.ended()
-            state.voiceLevel = 0
-        case .failed(let denied):
-            state.voice.failed(denied: denied)
-            state.voiceLevel = 0
-        }
-    }
-
-    /// A card's actions: open its page, or load its picture.
+    /// A card's actions (open its page, or load its picture), and the top bar's gear.
     private func card(_ action: CoachAction) -> Task<Void, Never>? {
         switch action {
         case .workoutOpened(let id): router.open(.plannedWorkout(id))
         case .exerciseOpened(let key): router.open(.liftExercise(key))
-        case .weekOpened: tabs.show(.week)
-        case .todayOpened: tabs.show(.today)
+        case .weekOpened, .breakdownOpened("plan"): tabs.show(.week)
+        case .breakdownOpened("lift"): tabs.show(.lift)
+        case .todayOpened, .breakdownOpened: tabs.show(.today)
+        case .settingsTapped: tabs.show(.settings)
         case .mediaNeeded(let url):
             guard state.media[url] == nil else { return nil }
             state.media[url] = .loading
