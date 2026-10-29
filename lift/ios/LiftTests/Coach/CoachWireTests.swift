@@ -159,4 +159,47 @@ import Testing
         guard case .coach(let oldReply) = oldThread.messages[0].body else { return }
         #expect(oldReply.thought == nil && oldReply.questions.isEmpty && oldReply.feedback == nil)
     }
+
+    @Test func aCardByDayMapsToSectionsWithSportSymbols() throws {
+        let json = Data(
+            """
+            {
+              "id": "p8", "title": "Swap Fri and Sat", "status": "applied", "items": [], "warnings": [],
+              "summary": "2 changes · Fri 30 Oct to Sat 31 Oct", "result": ["Physio A isn't at Sun 1 Nov 11:30."],
+              "days": [
+                { "date": "2026-10-30", "label": "Fri 30 Oct", "rows": [
+                  { "title": "Upper (dumbbells)", "sport": "strength", "time": "09:45", "meta": "09:45 · 1 h", "tag": "From Sat", "tone": "move" }
+                ] },
+                { "date": null, "label": "Remember", "rows": [
+                  { "title": "No runs before 7", "sport": null, "time": null, "meta": "Coach keeps this in mind", "tag": "Saved", "tone": "new" }
+                ] }
+              ]
+            }
+            """.utf8
+        )
+        let card = CoachWire.proposal(try JSONDecoder().decode(CoachWire.Proposal.self, from: json))
+        #expect(card.summary == "2 changes · Fri 30 Oct to Sat 31 Oct")
+        #expect(card.result == ["Physio A isn't at Sun 1 Nov 11:30."])
+        #expect(card.days.map(\.title) == ["Fri 30 Oct", "Remember"])
+        #expect(
+            card.days[0].rows == [
+                ChatChangeRow(
+                    id: "0-0", title: "Upper (dumbbells)", caption: "09:45 · 1 h", tag: "From Sat", tone: .changed,
+                    systemImage: "dumbbell")
+            ])
+        #expect(card.days[1].rows[0].systemImage == "bookmark")
+        #expect(card.days[1].rows[0].tone == .added)
+    }
+
+    @Test func undoThatAsksFirstMapsToAConfirm() throws {
+        let json = Data(
+            """
+            { "needsConfirm": true, "undoable": 4, "error": "You changed Physio A after this was applied.",
+              "proposal": { "id": "p8", "title": "x", "status": "applied", "items": [], "warnings": [] } }
+            """.utf8
+        )
+        let update = CoachWire.update(try JSONDecoder().decode(CoachWire.ProposalAnswer.self, from: json))
+        #expect(update.status == .applied)
+        #expect(update.undoConfirm == ChatUndoConfirm(message: "You changed Physio A after this was applied.", count: 4))
+    }
 }

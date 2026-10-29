@@ -109,6 +109,17 @@ nonisolated struct CoachState: Equatable, Sendable {
         messages.lazy.compactMap(\.proposal).first { $0.id == id }?.status
     }
 
+    /// A card action's answer: the status, the result lines and Undo's question.
+    mutating func update(_ update: CoachProposalUpdate, of id: String) {
+        for index in messages.indices {
+            guard case .coach(var reply) = messages[index].body, reply.proposal?.id == id else { continue }
+            reply.proposal?.status = update.status
+            reply.proposal?.result = update.result
+            reply.proposal?.undoConfirm = update.undoConfirm
+            messages[index].body = .coach(reply)
+        }
+    }
+
     mutating func setStatus(_ status: ChatActionStatus, of id: String) {
         for index in messages.indices {
             guard case .coach(var reply) = messages[index].body, reply.proposal?.id == id else { continue }

@@ -81,7 +81,23 @@ private struct CoachReplyRow: View {
             ForEach(Array(reply.attachments.enumerated()), id: \.offset) { _, attachment in
                 CoachAttachmentView(attachment: attachment, media: media, send: send)
             }
-            if let proposal = reply.proposal {
+            if let proposal = reply.proposal, !proposal.days.isEmpty {
+                ChatChangeCard(
+                    verbatim: proposal.title,
+                    summary: proposal.summary,
+                    sections: proposal.days,
+                    notes: proposal.notes,
+                    checked: proposal.notes.isEmpty ? "Checked: no clashes, no doubles" : nil,
+                    result: proposal.result,
+                    status: proposal.status,
+                    undoConfirm: proposal.undoConfirm,
+                    onApply: { send(.applyTapped(proposalID: proposal.id)) },
+                    onDismiss: { send(.dismissTapped(proposalID: proposal.id)) },
+                    onUndo: busyProposal == nil ? { send(.undoTapped(proposalID: proposal.id)) } : nil,
+                    onConfirmUndo: { send(.undoConfirmed(proposalID: proposal.id)) },
+                    onCancelUndo: { send(.undoKept(proposalID: proposal.id)) }
+                )
+            } else if let proposal = reply.proposal {
                 ChatActionCard(
                     verbatim: proposal.title,
                     items: proposal.items,

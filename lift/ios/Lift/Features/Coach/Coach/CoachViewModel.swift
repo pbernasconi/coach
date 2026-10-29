@@ -80,11 +80,15 @@ final class CoachViewModel {
         case .stopTapped:
             stopReply()
         case .applyTapped(let id):
-            return change(id, from: .pending, showing: .applying) { try await self.coach.apply(id) }
+            return change(id, from: .pending, showing: .applying) { try await self.coach.decide(.apply, on: id) }
         case .undoTapped(let id):
-            return change(id, from: .applied, showing: nil) { try await self.coach.undo(id) }
+            return change(id, from: .applied, showing: nil) { try await self.coach.decide(.undo(partial: false), on: id) }
+        case .undoConfirmed(let id):
+            return change(id, from: .applied, showing: nil) { try await self.coach.decide(.undo(partial: true), on: id) }
+        case .undoKept(let id):
+            state.update(CoachProposalUpdate(status: .applied), of: id)
         case .dismissTapped(let id):
-            return change(id, from: .pending, showing: nil) { try await self.coach.dismiss(id) }
+            return change(id, from: .pending, showing: nil) { try await self.coach.decide(.dismiss, on: id) }
         case .quickReplyTapped(let text):
             state.draft = text
             return send(.sendTapped)
@@ -229,7 +233,7 @@ final class CoachViewModel {
         _ id: String,
         from current: ChatActionStatus,
         showing busy: ChatActionStatus?,
-        _ work: @escaping () async throws -> ChatActionStatus
+        _ work: @escaping () async throws -> CoachProposalUpdate
     ) -> Task<Void, Never>? {
         guard state.busyProposal == nil, state.status(of: id) == current else { return nil }
         state.busyProposal = id
@@ -237,8 +241,8 @@ final class CoachViewModel {
         return Task {
             do {
                 let next = try await work()
-                state.setStatus(next, of: id)
-                if next == .applied || next == .undone { await plan.refresh() }
+                state.update(next, of: id)
+                if (next.status == .applied && current == .pending) || next.status == .undone { await plan.refresh() }
             } catch {
                 state.setStatus(current, of: id)
             }

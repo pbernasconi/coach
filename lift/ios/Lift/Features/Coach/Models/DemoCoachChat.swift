@@ -117,7 +117,26 @@ nonisolated struct DemoCoachChat: CoachChatting {
                         detail: "Mon 16:00 · 45 min · HR < 145"
                     ),
                 ],
-                notes: ["Tuesday has events from 13:30, so the lift has no later slot."]
+                notes: ["Tuesday has events from 13:30, so the lift has no later slot."],
+                days: [
+                    ChatChangeSection(id: "mon", title: "Mon 26 Oct", rows: [
+                        ChatChangeRow(
+                            id: "run", title: "Easy Z2 run", caption: "16:00 · 45 min", tag: "New", tone: .added,
+                            systemImage: "figure.run"
+                        ),
+                    ]),
+                    ChatChangeSection(id: "tue", title: "Tue 27 Oct", rows: [
+                        ChatChangeRow(
+                            id: "lift", title: "Heavy barbell", caption: "09:00 · 1 h", tag: "From Mon", tone: .changed,
+                            systemImage: "dumbbell"
+                        ),
+                        ChatChangeRow(
+                            id: "vo2", title: "VO2 B", caption: "09:00 · 50 min", tag: "Skipped", tone: .removed,
+                            systemImage: "figure.run"
+                        ),
+                    ]),
+                ],
+                summary: "3 changes · Mon 26 Oct to Tue 27 Oct"
             )
         )
     }

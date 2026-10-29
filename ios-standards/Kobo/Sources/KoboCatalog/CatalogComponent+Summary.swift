@@ -156,6 +156,8 @@ extension CatalogComponent {
         case .chatTypingIndicator: "Three dots and a status while a reply is on its way"
         case .chatToolStatus: "One step the assistant took, running, done or failed"
         case .chatActionCard: "Proposed changes with old and new values, Apply, Dismiss and Undo"
+        case .chatChangeCard:
+            "Proposed changes grouped by day as they will be, one tag each, Apply N changes and a careful Undo"
         case .chatTimestamp: "A quiet, centred time line between groups of messages"
         case .chatPromptSuggestions: "Starter prompts in one quiet row that scrolls sideways"
         case .chatErrorRow: "A failed reply with its reason and Retry"

@@ -15,6 +15,29 @@ nonisolated struct CoachProposal: Identifiable, Equatable, Sendable {
     let items: [ChatActionItem]
     var notes: [String] = []
     var status: ChatActionStatus = .pending
+    /// The card by day ("The change card"); empty on cards from before 2026-10-29, which show `items`.
+    var days: [ChatChangeSection] = []
+    /// "5 changes · Fri 30 Oct to Sun 1 Nov".
+    var summary: String?
+    /// After Apply or Undo: what happened when it isn't simply what the card showed.
+    var result: [String] = []
+    /// Undo can put back only part (Paolo changed something since): the card asks first.
+    var undoConfirm: ChatUndoConfirm?
+}
+
+/// What a card action answers: the card's new status, the result lines, and whether Undo asks first.
+nonisolated struct CoachProposalUpdate: Equatable, Sendable {
+    var status: ChatActionStatus
+    var result: [String] = []
+    var undoConfirm: ChatUndoConfirm?
+}
+
+/// The actions on a change card.
+nonisolated enum CoachDecision: Equatable, Sendable {
+    case apply
+    /// `partial`: Paolo confirmed Undo of only what he hasn't changed since.
+    case undo(partial: Bool)
+    case dismiss
 }
 
 /// Coach's answer to one message: text, the steps it took, and changes to apply, if any.
@@ -148,6 +171,8 @@ nonisolated protocol CoachChatting: Sendable {
     func undo(_ proposalID: String) async throws -> ChatActionStatus
     /// Dismisses an open proposal; answers the card's new status.
     func dismiss(_ proposalID: String) async throws -> ChatActionStatus
+    /// Apply, Undo or Dismiss with the full answer (result lines, Undo's question). The default wraps the three above.
+    func decide(_ decision: CoachDecision, on proposalID: String) async throws -> CoachProposalUpdate
     /// Paolo's thumbs on one of Coach's replies (nil clears them).
     func rate(_ messageID: String, _ rating: ChatFeedbackRating?) async throws
     /// Past chats, newest first, for the history sheet.
@@ -159,6 +184,14 @@ nonisolated protocol CoachChatting: Sendable {
 }
 
 nonisolated extension CoachChatting {
+    func decide(_ decision: CoachDecision, on proposalID: String) async throws -> CoachProposalUpdate {
+        switch decision {
+        case .apply: CoachProposalUpdate(status: try await apply(proposalID))
+        case .undo: CoachProposalUpdate(status: try await undo(proposalID))
+        case .dismiss: CoachProposalUpdate(status: try await dismiss(proposalID))
+        }
+    }
+
     /// A coach that doesn't stream answers in one step.
     func replies(to text: String, after history: [CoachMessage]) -> AsyncThrowingStream<CoachReplyEvent, any Error> {
         AsyncThrowingStream { continuation in
