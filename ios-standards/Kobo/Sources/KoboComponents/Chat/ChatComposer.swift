@@ -25,6 +25,7 @@ public struct ChatComposer: View {
     private let attach: ChatAttach?
     private var focus: FocusState<Bool>.Binding?
     private var backdrop: Color?
+    private var restsAsCard = false
 
     /// A composer. `onStop` adds the stop button while `isResponding`; without it the send button waits, disabled.
     public init(
@@ -85,13 +86,23 @@ public struct ChatComposer: View {
         return composer
     }
 
+    /// Keeps the open card at rest too, as the system's own assistant apps do: the field on top, and the + , the
+    /// microphone and Send as round buttons under it. Focus only raises the keyboard; the card grows with more lines.
+    public func restsAsCard(_ value: Bool = true) -> ChatComposer {
+        var composer = self
+        composer.restsAsCard = value
+        return composer
+    }
+
     private var isListening: Bool { voice?.phase == .listening || voice?.phase == .holding }
     private var isExpanded: Bool {
-        ChatComposerLogic.isExpanded(
+        let hasAttachments = !(attach?.items.isEmpty ?? true)
+        let opens = ChatComposerLogic.isExpanded(
             draft: text.wrappedValue,
             isListening: isListening,
-            hasAttachments: !(attach?.items.isEmpty ?? true)
+            hasAttachments: hasAttachments
         )
+        return restsAsCard || opens
     }
     private var attachments: ChatComposerLogic.Attachments { attach?.readiness ?? .none }
 
@@ -123,8 +134,9 @@ public struct ChatComposer: View {
                 if isExpanded { toolbar }
             }
             .padding(.leading, attach != nil && !isExpanded ? Space.xxs : Space.lg)
-            .padding(.trailing, Space.xs)
-            .padding(.vertical, Space.xs + Space.xxs)
+            .padding(.trailing, isExpanded ? Space.sm : Space.xs)
+            .padding(.top, isExpanded ? Space.xs : Space.xs + Space.xxs)
+            .padding(.bottom, isExpanded ? Space.sm : Space.xs + Space.xxs)
             .modifier(ChatComposerSurface(isExpanded: isExpanded))
         }
         .padding(.horizontal, Space.gutter)
@@ -171,7 +183,7 @@ public struct ChatComposer: View {
             isResponding: isResponding,
             canStop: onStop != nil
         ) {
-        case .send(let isEnabled): sendButton(look: isEnabled ? .accent : .dimmed)
+        case .send(let isEnabled): sendButton(look: isEnabled ? .accent : (isExpanded ? .muted : .dimmed))
         case .stop: stopButton
         case .waiting: sendButton(look: .dimmed)
         }
@@ -181,22 +193,23 @@ public struct ChatComposer: View {
         HStack(spacing: Space.xs) {
             if let attach {
                 // The + lines up with the card's edge as the send button does on the other side.
-                attachButton(attach).padding(.leading, Space.xs - Space.lg)
+                attachButton(attach, isFilled: true).padding(.leading, Space.sm - Space.lg)
             }
             if isListening, let voice { ChatVoiceLevel(phase: voice.phase, level: voice.level) }
             Spacer(minLength: 0)
-            if let voice { micButton(voice) }
+            if let voice { micButton(voice, isFilled: true) }
             sendButton
         }
     }
 
-    private func attachButton(_ attach: ChatAttach) -> some View {
-        ChatAttachButton(isEnabled: attach.canAdd, action: attach.onAdd)
+    private func attachButton(_ attach: ChatAttach, isFilled: Bool = false) -> some View {
+        ChatAttachButton(isEnabled: attach.canAdd, isFilled: isFilled, action: attach.onAdd)
     }
 
-    private func micButton(_ voice: ChatVoice) -> some View {
+    private func micButton(_ voice: ChatVoice, isFilled: Bool = false) -> some View {
         ChatMicButton(
             phase: voice.phase,
+            isFilled: isFilled,
             onTap: { if endedHold { endedHold = false } else { voice.onTap() } },
             onHoldBegan: voice.onHoldBegan
         )

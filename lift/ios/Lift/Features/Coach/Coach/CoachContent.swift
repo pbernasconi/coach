@@ -15,7 +15,15 @@ struct CoachContent: View {
 
     var body: some View {
         conversation
-            .safeAreaBar(edge: .top) { CoachTopBar(send: send) }
+            .safeAreaBar(edge: .top) {
+                CoachTopBar(
+                    onClose: {
+                        isComposing = false
+                        send(.closeTapped)
+                    },
+                    send: send
+                )
+            }
             .safeAreaBar(edge: .bottom) {
                 CoachComposerBar(state: state, send: send, isComposing: $isComposing, isEmpty: isEmpty)
             }
@@ -80,15 +88,17 @@ struct CoachCanvas: ViewModifier {
     }
 }
 
-/// The floating top bar: no title, one glass pill at the trailing edge with Settings, past chats and a new chat.
+/// The floating top bar: no title; a round glass X at the leading edge (back to the tab before Coach), and one glass
+/// pill at the trailing edge with past chats and a new chat.
 private struct CoachTopBar: View {
+    let onClose: () -> Void
     let send: (CoachAction) -> Void
 
     var body: some View {
         HStack {
+            ToolbarPill([ToolbarPillItem("xmark", label: "Close", action: onClose)])
             Spacer(minLength: 0)
             ToolbarPill([
-                ToolbarPillItem("gearshape", label: "Coaching settings") { send(.settingsTapped) },
                 ToolbarPillItem("clock.arrow.circlepath", label: "Past chats") { send(.historyShown(true)) },
                 ToolbarPillItem("plus", label: "New chat") { send(.newChatTapped) },
             ])
@@ -110,7 +120,7 @@ private struct CoachComposerBar: View {
     var body: some View {
         ChatComposer(
             text: .action(state.draft) { send(.draftChanged($0)) },
-            prompt: "Ask anything",
+            prompt: "Ask anything…",
             isResponding: state.isResponding,
             onSend: { send(.sendTapped) },
             onStop: { send(.stopTapped) },
@@ -132,6 +142,7 @@ private struct CoachComposerBar: View {
             )
         )
         .focused(by: isComposing)
+        .restsAsCard()
         .backdrop(isEmpty ? nil : CoachCanvas.color(theme.palette, colorScheme))
     }
 }

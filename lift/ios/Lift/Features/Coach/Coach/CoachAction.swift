@@ -17,8 +17,8 @@ nonisolated enum CoachAction: Equatable, Sendable {
     case questionsAnswered([String: ChatAnswer])
     /// A thumb under one of Coach's replies (nil clears it).
     case feedbackTapped(messageID: String, rating: ChatFeedbackRating?)
-    /// The top bar: the gear (Settings), the history sheet (open or closed), and + (a new chat).
-    case settingsTapped
+    /// The top bar: X (back to the tab before Coach), the history sheet (open or closed), and + (a new chat).
+    case closeTapped
     case historyShown(Bool)
     case newChatTapped
     /// A past chat picked in the history sheet: it becomes the open one.

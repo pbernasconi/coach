@@ -32,7 +32,7 @@ public struct ChatVoice {
 /// stop), or a bare glyph (the + and the microphone at rest). Never glass. The visible circle is 40 pt; the target
 /// stays at least 44 pt.
 struct ChatRoundButton: View {
-    enum Look { case accent, quiet, dimmed, bare }
+    enum Look { case accent, quiet, dimmed, bare, muted }
 
     @Environment(\.koboTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -46,7 +46,7 @@ struct ChatRoundButton: View {
         Button(action: action) { ChatRoundGlyph(systemImage: systemImage, look: look, circle: circle) }
             .buttonStyle(.plain)
             .pressFeedback()
-            .disabled(look == .dimmed)
+            .disabled(look == .dimmed || look == .muted)
             .accessibilityLabel(label)
             .transition(Motion.pop(reduceMotion: reduceMotion))
     }
@@ -62,12 +62,18 @@ struct ChatRoundGlyph: View {
     var body: some View {
         Image(systemName: systemImage)
             .accessibilityHidden(true)  // the button around it carries the label
-            .font(look == .bare ? theme.font(.title2).weight(.light) : theme.font(.body).weight(.semibold))
+            .font(glyphFont)
             .foregroundStyle(ink)
             .frame(width: circle, height: circle)
             .background(fill, in: Circle())
             .frame(minWidth: Size.minTouch, minHeight: Size.minTouch)
             .contentShape(Rectangle())
+    }
+
+    /// The bare glyphs are light and large; the filled circles' glyphs regular (quiet) or semibold.
+    private var glyphFont: Font {
+        if look == .bare { return theme.font(.title2).weight(.light) }
+        return theme.font(.body).weight(look == .quiet ? .regular : .semibold)
     }
 
     private var ink: Color {
@@ -76,6 +82,7 @@ struct ChatRoundGlyph: View {
         case .quiet: theme.palette.textPrimary
         case .dimmed: theme.palette.textTertiary
         case .bare: theme.palette.textSecondary
+        case .muted: theme.palette.accentText.opacity(0.55)
         }
     }
 
@@ -84,6 +91,7 @@ struct ChatRoundGlyph: View {
         case .accent: theme.palette.accent
         case .quiet, .dimmed: theme.palette.surfaceSunken
         case .bare: .clear
+        case .muted: theme.palette.accentSoft
         }
     }
 }
@@ -92,8 +100,10 @@ struct ChatRoundGlyph: View {
 /// circle turns to the accent with a stop glyph. The release of a hold is tracked by `ChatComposer`, which stays put
 /// while this button moves from the capsule into the card.
 struct ChatMicButton: View {
-    @ScaledMetric(relativeTo: .body) private var circle = Size.buttonHeightCompact
+    @ScaledMetric(relativeTo: .body) private var circle = Size.buttonHeightCompact + Space.xs
     let phase: ChatVoiceInput.Phase
+    /// In the open card's toolbar: a filled round button; in the capsule: a bare glyph.
+    var isFilled = false
     let onTap: () -> Void
     let onHoldBegan: () -> Void
 
@@ -103,7 +113,7 @@ struct ChatMicButton: View {
         Button(action: onTap) {
             ChatRoundGlyph(
                 systemImage: isListening ? "stop.fill" : "mic",
-                look: isListening ? .accent : .bare,
+                look: isListening ? .accent : (isFilled ? .quiet : .bare),
                 circle: circle
             )
         }

@@ -18,6 +18,7 @@ import SwiftUI
             VStack(spacing: Space.lg) {
                 Spacer()
                 ChatComposer(text: $empty, prompt: "Message", onSend: {})
+                ChatComposer(text: $empty, prompt: "Ask anything…", onSend: {}, attach: attach([])).restsAsCard()
                 ChatComposer(text: $draft, prompt: "Message", onSend: {})
                 ChatComposer(text: $empty, prompt: "Message", onSend: {}, attach: attach([]))
                 ChatComposer(text: $empty, prompt: "Message", onSend: {}, attach: attach(attached))

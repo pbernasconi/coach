@@ -32,4 +32,14 @@ import Testing
         #expect(LaunchOptions(arguments: ["Lift", "-demo", "-open", "trends"]).opening == nil)
         #expect(LaunchOptions(arguments: ["Lift", "-demo", "-open", "activity-pending"]).opening == .activityPending)
     }
+
+    @Test func leaveGoesBackToTheTabBeforeOrTheFallback() {
+        let tabs = TabSwitcher(selected: .coach)
+        tabs.leave(.coach, fallback: .today)
+        #expect(tabs.selected == .today)
+        tabs.show(.week)
+        tabs.show(.coach)
+        tabs.leave(.coach, fallback: .today)
+        #expect(tabs.selected == .week)
+    }
 }
