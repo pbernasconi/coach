@@ -164,21 +164,14 @@ import Testing
         #expect(DayTimelineMath.ordered(blocks).map(\.id) == ["a", "b", "c"])
     }
 
-    @Test func theCapsuleShowsOneUsefulButtonAndNeverADisabledOne() {
-        #expect(
-            ChatComposerLogic.compactButton(draft: "", isResponding: false, canStop: true, hasVoice: true)
-                == .microphone
-        )
-        #expect(
-            ChatComposerLogic.compactButton(draft: "", isResponding: false, canStop: true, hasVoice: false) == .none
-        )
-        #expect(
-            ChatComposerLogic.compactButton(draft: "hi", isResponding: false, canStop: true, hasVoice: true) == .send
-        )
-        #expect(ChatComposerLogic.compactButton(draft: "", isResponding: true, canStop: true, hasVoice: true) == .stop)
-        #expect(ChatComposerLogic.compactButton(draft: "", isResponding: true, canStop: false, hasVoice: true) == .none)
-        #expect(ChatComposerLogic.isExpanded(isFocused: false, isListening: true))
-        #expect(!ChatComposerLogic.isExpanded(isFocused: false, isListening: false))
+    @Test func theSendButtonAlwaysShowsAndTheCardOpensWithADraft() {
+        #expect(ChatComposerLogic.button(draft: "", isResponding: false, canStop: true) == .send(isEnabled: false))
+        #expect(ChatComposerLogic.button(draft: "hi", isResponding: false, canStop: true) == .send(isEnabled: true))
+        #expect(ChatComposerLogic.button(draft: "", isResponding: true, canStop: true) == .stop)
+        #expect(ChatComposerLogic.button(draft: "", isResponding: true, canStop: false) == .waiting)
+        #expect(ChatComposerLogic.isExpanded(draft: "", isListening: true))
+        #expect(ChatComposerLogic.isExpanded(draft: "hi", isListening: false))
+        #expect(!ChatComposerLogic.isExpanded(draft: "", isListening: false))
     }
 
     @Test func aTapStartsAndAnotherTapStopsKeepingTheWords() {

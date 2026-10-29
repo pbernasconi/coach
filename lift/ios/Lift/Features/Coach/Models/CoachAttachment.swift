@@ -10,6 +10,8 @@ nonisolated enum CoachAttachment: Decodable, Equatable, Sendable {
     case exercise(CoachExerciseData)
     case readiness(CoachReadinessData)
     case day(CoachDayData)
+    /// Training time by sport over a week or a month (flat in the card's JSON).
+    case breakdown(CoachBreakdown)
     /// A kind this build does not know: skipped, so a newer server never breaks an older app.
     case unknown
 
@@ -23,6 +25,7 @@ nonisolated enum CoachAttachment: Decodable, Equatable, Sendable {
         case "exercise": self = .exercise(try container.decode(CoachExerciseData.self, forKey: .exercise))
         case "readiness": self = .readiness(try container.decode(CoachReadinessData.self, forKey: .readiness))
         case "day": self = .day(try container.decode(CoachDayData.self, forKey: .day))
+        case "breakdown": self = .breakdown(try CoachBreakdown(from: decoder))
         default: self = .unknown
         }
     }
@@ -78,5 +81,31 @@ nonisolated struct CoachDayData: Decodable, Equatable, Sendable {
         var kind: String
         var title: String?
         var workoutId: String?
+    }
+}
+
+/// Training time by sport over a week or a month: the caption ("October 2026"), the total ("14 h 20 m"), and a row per
+/// sport, biggest first. `value` is minutes (a bar is value / max); `tint` names the sport's colour.
+nonisolated struct CoachBreakdown: Decodable, Equatable, Sendable {
+    var caption: String
+    var title: String?
+    var total: String
+    var unit: String?
+    var rows: [Row]
+    /// Where Open goes: "plan" (the Week tab), "lift" or "health".
+    var link: String?
+
+    nonisolated struct Row: Decodable, Equatable, Sendable {
+        var label: String
+        var value: Double
+        var display: String
+        /// `run`, `ride`, `swim`, `strength`, `walk`, `other` or `accent`; missing reads as other.
+        var tint: String?
+    }
+
+    /// The card as text, for Share.
+    var shareText: String {
+        ([caption + (title.map { " · \($0)" } ?? ""), total] + rows.map { "\($0.label): \($0.display)" })
+            .joined(separator: "\n")
     }
 }

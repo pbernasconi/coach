@@ -39,7 +39,7 @@ extension CatalogComponent {
             .pinnedFooter, .backdropSheet,
             .sheetHeader, .dayStrip, .segmentedProgress, .miniPlayerBar, .tileGrid:
             .layout
-        case .appHeader, .headerButton, .headerProfileButton, .countBadge, .tabShell, .textLink:
+        case .appHeader, .headerButton, .headerProfileButton, .countBadge, .tabShell, .textLink, .toolbarPill:
             .navigation
         case .sheet, .modalPage, .inputModal, .infoButton, .infoSheet:
             .overlays
@@ -61,7 +61,9 @@ extension CatalogComponent {
             .flows
         case .chatTranscript, .chatComposer, .chatMessageBubble, .chatReply, .chatTypingIndicator, .chatToolStatus,
             .chatActionCard, .chatPromptSuggestions, .chatTimestamp, .chatErrorRow, .chatEmbedCard,
-            .chatAttachmentStrip, .chatAttachSheet:
+            .chatAttachmentStrip, .chatAttachSheet, .chatThoughtRow, .chatFeedbackRow, .chatQuestionCard,
+            .chatQuestions,
+            .chatBreakdownCard, .chatGreeting, .chatPromptCards, .chatGlow:
             .chat
         }
     }

@@ -44,7 +44,7 @@ public struct ChatEmbedCard<Content: View>: View {
             content
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .koboCard()
+        .chatCard()
         .accessibilityElement(children: .contain)
     }
 

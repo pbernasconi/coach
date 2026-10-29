@@ -82,6 +82,16 @@ nonisolated enum DemoCoachCards {
           "fitness": { "today": "2026-10-27", "zones": [], "events": [], "now": null, "days": [\(formDays)] } } }
         """)
 
+    static let breakdown = card(
+        """
+        { "kind": "breakdown", "caption": "October 2026", "title": "Training time", "total": "14 h 20 m",
+          "unit": "by sport", "link": "plan", "rows": [
+            { "label": "Ride", "value": 430, "display": "7 h 10 m", "tint": "ride" },
+            { "label": "Run", "value": 250, "display": "4 h 10 m", "tint": "run" },
+            { "label": "Strength", "value": 140, "display": "2 h 20 m", "tint": "strength" },
+            { "label": "Swim", "value": 40, "display": "40 m", "tint": "swim" } ] }
+        """)
+
     private static func item(_ date: String, _ id: String, _ sport: String, _ state: String, _ title: String) -> String {
         "{ \"id\": \"\(id)\", \"date\": \"\(date)\", \"title\": \"\(title)\", \"sport\": \"\(sport)\", \"state\": \"\(state)\", "
             + "\"stateLabel\": \"\(state.capitalized)\", \"subtitle\": \"\" }"

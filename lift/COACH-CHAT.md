@@ -189,3 +189,17 @@ as thumbnails with a remove button (`ChatAttachmentStrip`) and upload at once; S
    client (as `loop.test.mjs`), an integration test for apply. Deployed and usable with curl.
 2. iPhone: the tab, the message list, the change card, Week refresh. Goes into the next batched TestFlight build.
 3. Later: streaming, push-started check-ins.
+
+## Look (2026-10-29)
+
+The tab follows Ramp's assistant chat, in Coach's orange. No navigation title: a glass pill at the top right holds
+Settings (the Settings tab), past chats (a sheet; a tap reopens that chat, `POST /api/app/coach/threads/{id}`) and
+New chat (`POST /api/app/coach/threads`). An empty chat shows Coach's ring, "Hi Paolo," / "How can Coach help?" and
+three starter cards (`prompts` from the server, else the built-in ones). The composer is a glass capsule that opens
+into a card once there is a draft; Send is always there (grey, orange, or a stop square). Paolo's messages are warm
+grey bubbles; Coach's replies are plain text with a folded "Thought" row above (`thought`), cards under it (a
+`breakdown` card shows training time by sport), question cards on the latest reply (`questions`, sent back as one
+message of `title: answer` lines; quick replies show as a one-tap chip card), and thumbs and copy under every reply
+(`PUT …/messages/{id}/feedback`). The Kobo parts: `ChatThoughtRow`, `ChatFeedbackRow`, `ChatQuestionCard`,
+`ChatQuestions`, `ChatBreakdownCard`, `ChatGreeting`, `ChatPromptCards`, `ToolbarPill` and `.chatCard()`.
+Screenshots: `-demo -tab coach -coach conversation|questions|proposal` (DemoCoachThreads).

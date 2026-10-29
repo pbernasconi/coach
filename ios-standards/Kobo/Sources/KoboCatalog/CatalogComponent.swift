@@ -135,6 +135,7 @@ nonisolated public enum CatalogComponent: String, CaseIterable, Identifiable, Se
     case miniPlayerBar = "MiniPlayerBar"
     // Navigation
     case appHeader = "AppHeader"
+    case toolbarPill = "ToolbarPill"
     case headerButton = "HeaderButton"
     case headerProfileButton = "HeaderProfileButton"
     case countBadge = "CountBadge"
@@ -200,6 +201,14 @@ nonisolated public enum CatalogComponent: String, CaseIterable, Identifiable, Se
     case chatEmbedCard = "ChatEmbedCard"
     case chatAttachmentStrip = "ChatAttachmentStrip"
     case chatAttachSheet = "ChatAttachSheet"
+    case chatThoughtRow = "ChatThoughtRow"
+    case chatFeedbackRow = "ChatFeedbackRow"
+    case chatQuestionCard = "ChatQuestionCard"
+    case chatQuestions = "ChatQuestions"
+    case chatBreakdownCard = "ChatBreakdownCard"
+    case chatGreeting = "ChatGreeting"
+    case chatPromptCards = "ChatPromptCards"
+    case chatGlow = "ChatGlow"
 
     public var id: String { rawValue }
 

@@ -73,6 +73,30 @@ actor FakeCoach: CoachChatting {
         return CoachFile(id: "f-\(file.id)", kind: file.kind, name: file.name)
     }
 
+    /// The thumbs sent ("m2 up", "m2 nil"); `failsRate` makes them fail.
+    private(set) var ratings: [String] = []
+    var failsRate = false
+    var past: [CoachThreadSummary] = []
+
+    func rate(_ messageID: String, _ rating: ChatFeedbackRating?) async throws {
+        if failsRate { throw CoachChatError(message: "no") }
+        ratings.append("\(messageID) \(rating?.rawValue ?? "nil")")
+    }
+
+    func threads() async throws -> [CoachThreadSummary] { past }
+
+    func newThread() async throws -> CoachThread {
+        actions.append("new")
+        return CoachThread(notice: "Fresh", firstName: "Sam")
+    }
+
+    func openThread(_ id: String) async throws -> CoachThread {
+        actions.append("open \(id)")
+        return loaded
+    }
+
+    func setFailsRate() { failsRate = true }
+    func setPast(_ threads: [CoachThreadSummary]) { past = threads }
     func setFailsUpload(_ fails: Bool) { failsUpload = fails }
     func setReply(_ new: Result<CoachReply, CoachChatError>) { reply = new }
     func setFailsApply() { failsApply = true }

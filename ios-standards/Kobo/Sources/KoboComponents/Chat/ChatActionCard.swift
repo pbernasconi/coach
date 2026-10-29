@@ -4,7 +4,8 @@ import SwiftUI
 /// Changes an assistant proposes, for the reader to apply: a title, one row per change (its glyph, what it changes,
 /// and the old value struck through before the new one), optional notes, then Apply and Dismiss. Nothing changes until
 /// Apply. After it, the card says "Applied" and offers Undo when the caller can take the changes back. An undone,
-/// dismissed, superseded or expired card dims its rows and drops the buttons. At accessibility text sizes the buttons stack.
+/// dismissed, superseded or expired card dims its rows and drops the buttons. Apply is the filled accent, Dismiss the
+/// outlined button, on the calm `.chatCard()`. At accessibility text sizes the buttons stack.
 ///
 ///     ChatActionCard(verbatim: "2 changes this week", items: items, status: status,
 ///                    onApply: apply, onDismiss: dismiss, onUndo: undo)
@@ -57,7 +58,7 @@ public struct ChatActionCard: View {
             }
             footer
         }
-        .koboCard()
+        .chatCard()
         .koboAnimation(.state, value: status)
         .koboFeedback(status == .applied ? .success : nil, trigger: status)
         .accessibilityElement(children: .contain)
@@ -88,7 +89,7 @@ public struct ChatActionCard: View {
 
     private var dismissButton: some View {
         Button(action: onDismiss) { Text("Dismiss", bundle: .module) }
-            .buttonStyle(.kobo(.secondary, width: .full))
+            .buttonStyle(.kobo(.outlined, width: .full))
             .disabled(status == .applying)
     }
 }

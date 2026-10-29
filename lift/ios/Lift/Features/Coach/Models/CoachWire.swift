@@ -11,6 +11,43 @@ nonisolated enum CoachWire {
         let suggestions: [String]?
         /// Missing in older servers: false.
         let answering: Bool?
+        /// The starter cards of an empty chat; missing in older servers (then `suggestions`).
+        let prompts: [Prompt]?
+        let firstName: String?
+    }
+
+    struct Prompt: Decodable, Sendable {
+        let title: String
+        let symbol: String?
+    }
+
+    /// `GET /api/app/coach/threads`.
+    struct Threads: Decodable, Sendable {
+        let threads: [ThreadSummary]
+    }
+
+    struct ThreadSummary: Decodable, Sendable {
+        let id: String
+        let title: String?
+        let updatedAt: String?
+        let messageCount: Int?
+    }
+
+    /// A question card (lift/APP-API.md, "Coach"): `kind` single, multi, text or confirm.
+    struct Question: Decodable, Sendable {
+        let id: String
+        let title: String
+        let subtitle: String?
+        let kind: String
+        let options: [String]?
+        let allowOther: Bool?
+        let placeholder: String?
+        let confirm: Confirm?
+    }
+
+    struct Confirm: Decodable, Sendable {
+        let primary: String
+        let secondary: String?
     }
 
     struct Message: Decodable, Sendable {
@@ -26,6 +63,10 @@ nonisolated enum CoachWire {
         let quickReplies: [String]?
         /// The photos and files on Paolo's message; missing in bodies from before they existed.
         let files: [File]?
+        /// Coach's: the summary of its thinking, its question cards and Paolo's thumbs; missing in older bodies.
+        let thought: String?
+        let questions: [Question]?
+        let feedback: String?
     }
 
     /// A photo or file on a message (lift/APP-API.md, "Coach attachments").
@@ -76,9 +117,11 @@ nonisolated enum CoachWire {
     static func thread(_ wire: Thread) -> CoachThread {
         CoachThread(
             messages: wire.messages.map(message),
-            prompts: (wire.suggestions ?? []).map { ChatPrompt(id: $0, title: $0) },
+            prompts: wire.prompts.map { $0.map { ChatPrompt(id: $0.title, title: $0.title, systemImage: $0.symbol) } }
+                ?? (wire.suggestions ?? []).map { ChatPrompt(id: $0, title: $0) },
             notice: wire.ready == false ? (wire.notice ?? "Coach cannot answer right now.") : wire.notice,
-            answering: wire.answering ?? false
+            answering: wire.answering ?? false,
+            firstName: wire.firstName
         )
     }
 
@@ -91,11 +134,39 @@ nonisolated enum CoachWire {
                     text: wire.text,
                     proposal: wire.proposal.map(proposal),
                     attachments: wire.attachments?.items ?? [],
-                    quickReplies: wire.quickReplies ?? []
+                    quickReplies: wire.quickReplies ?? [],
+                    thought: wire.thought.flatMap { $0.isEmpty ? nil : $0 },
+                    feedback: wire.feedback.flatMap(ChatFeedbackRating.init(rawValue:)),
+                    questions: (wire.questions ?? []).compactMap(question)
                 )
             )
         return CoachMessage(
             id: wire.id, body: body, sentAt: wire.createdAt.flatMap(date), files: (wire.files ?? []).map(file))
+    }
+
+    /// A question card; one of a kind this build does not know is left out.
+    static func question(_ wire: Question) -> ChatQuestion? {
+        let options = wire.options ?? []
+        let kind: ChatQuestion.Kind
+        switch wire.kind {
+        case "single": kind = .single(options: options, allowsOther: wire.allowOther ?? false)
+        case "multi": kind = .multi(options: options, allowsOther: wire.allowOther ?? false)
+        case "text": kind = .text(placeholder: wire.placeholder)
+        case "confirm":
+            guard let confirm = wire.confirm else { return nil }
+            kind = .confirm(primary: confirm.primary, secondary: confirm.secondary)
+        default: return nil
+        }
+        return ChatQuestion(id: wire.id, title: wire.title, subtitle: wire.subtitle, kind: kind)
+    }
+
+    static func summary(_ wire: ThreadSummary) -> CoachThreadSummary {
+        CoachThreadSummary(
+            id: wire.id,
+            title: wire.title ?? String(localized: "New chat"),
+            updatedAt: wire.updatedAt.flatMap(date),
+            messageCount: wire.messageCount ?? 0
+        )
     }
 
     /// The server's timestamps, with or without fractional seconds.

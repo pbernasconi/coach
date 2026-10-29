@@ -28,14 +28,15 @@ public struct ChatVoice {
     }
 }
 
-/// A round button of the composer: a solid circle (accent for send and stop, quiet for the microphone), never glass,
-/// since it sits on the field's glass. The visible circle is 36 pt; the target stays 44 pt.
+/// A round button of the composer: a solid circle (the accent for a send that can go, grey for an idle send or a
+/// stop), or a bare glyph (the + and the microphone at rest). Never glass. The visible circle is 40 pt; the target
+/// stays at least 44 pt.
 struct ChatRoundButton: View {
-    enum Look { case accent, quiet, dimmed }
+    enum Look { case accent, quiet, dimmed, bare }
 
     @Environment(\.koboTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @ScaledMetric(relativeTo: .body) private var circle = Size.buttonHeightCompact
+    @ScaledMetric(relativeTo: .body) private var circle = Size.buttonHeightCompact + Space.xs
     let systemImage: String
     let label: Text
     let look: Look
@@ -61,7 +62,7 @@ struct ChatRoundGlyph: View {
     var body: some View {
         Image(systemName: systemImage)
             .accessibilityHidden(true)  // the button around it carries the label
-            .font(theme.font(.subheadline).weight(.bold))
+            .font(look == .bare ? theme.font(.title2).weight(.light) : theme.font(.body).weight(.semibold))
             .foregroundStyle(ink)
             .frame(width: circle, height: circle)
             .background(fill, in: Circle())
@@ -74,6 +75,7 @@ struct ChatRoundGlyph: View {
         case .accent: theme.palette.onAccent
         case .quiet: theme.palette.textPrimary
         case .dimmed: theme.palette.textTertiary
+        case .bare: theme.palette.textSecondary
         }
     }
 
@@ -81,6 +83,7 @@ struct ChatRoundGlyph: View {
         switch look {
         case .accent: theme.palette.accent
         case .quiet, .dimmed: theme.palette.surfaceSunken
+        case .bare: .clear
         }
     }
 }
@@ -99,8 +102,8 @@ struct ChatMicButton: View {
     var body: some View {
         Button(action: onTap) {
             ChatRoundGlyph(
-                systemImage: isListening ? "stop.fill" : "mic.fill",
-                look: isListening ? .accent : .quiet,
+                systemImage: isListening ? "stop.fill" : "mic",
+                look: isListening ? .accent : .bare,
                 circle: circle
             )
         }

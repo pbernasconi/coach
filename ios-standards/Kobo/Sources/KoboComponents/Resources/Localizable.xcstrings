@@ -169,6 +169,18 @@
         }
       }
     },
+    "Add another…" : {
+      "comment" : "Chip on a question card that turns into a field for the reader's own option.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add another…"
+          }
+        }
+      }
+    },
     "All" : {
       "comment" : "MultiSelectField summary when every option is chosen.",
       "extractionState" : "manual",
@@ -253,6 +265,18 @@
         }
       }
     },
+    "Bad reply" : {
+      "comment" : "Accessibility label of the thumbs-down under an assistant's reply.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bad reply"
+          }
+        }
+      }
+    },
     "Cancel" : {
       "comment" : "ModalPage toolbar button that closes the page without saving.",
       "extractionState" : "manual",
@@ -297,6 +321,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Checked"
+          }
+        }
+      }
+    },
+    "Clear" : {
+      "comment" : "Accessibility label of the button that empties a field.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear"
           }
         }
       }
@@ -589,6 +625,18 @@
         }
       }
     },
+    "Good reply" : {
+      "comment" : "Accessibility label of the thumbs-up under an assistant's reply.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Good reply"
+          }
+        }
+      }
+    },
     "Hidden" : {
       "comment" : "MaskedValue accessibility label when nothing of the value is shown.",
       "extractionState" : "manual",
@@ -853,6 +901,18 @@
         }
       }
     },
+    "Next question" : {
+      "comment" : "Accessibility label of the pager arrow that shows the next question.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next question"
+          }
+        }
+      }
+    },
     "No data" : {
       "comment" : "Shown in, and read for, a chart with nothing to plot.",
       "extractionState" : "manual",
@@ -1045,6 +1105,18 @@
         }
       }
     },
+    "Previous question" : {
+      "comment" : "Accessibility label of the pager arrow that shows the question before.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previous question"
+          }
+        }
+      }
+    },
     "Profile" : {
       "comment" : "HeaderProfileButton title and label when there is no name.",
       "extractionState" : "manual",
@@ -1089,6 +1161,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Select"
+          }
+        }
+      }
+    },
+    "Send answer" : {
+      "comment" : "Accessibility label of the round arrow that submits an answer to a question card.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send answer"
           }
         }
       }
@@ -1149,6 +1233,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Shows the content"
+          }
+        }
+      }
+    },
+    "Skip" : {
+      "comment" : "Underlined button under a confirm question card that skips the question.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skip"
           }
         }
       }
@@ -1237,6 +1333,18 @@
         }
       }
     },
+    "Thought" : {
+      "comment" : "Folded row above an assistant's reply that opens the summary of its thinking.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thought"
+          }
+        }
+      }
+    },
     "Timer" : {
       "comment" : "CountdownRing accessibility label when the caller gives none.",
       "extractionState" : "manual",
@@ -1305,6 +1413,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Try again"
+          }
+        }
+      }
+    },
+    "Type your answer" : {
+      "comment" : "Placeholder of a question card's empty answer field.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type your answer"
           }
         }
       }

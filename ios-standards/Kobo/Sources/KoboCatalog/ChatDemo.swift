@@ -98,7 +98,7 @@ struct ChatDemo: View {
                 onAttach: { picked = [] }
             )
             .frame(height: 360)
-        default: EmptyView()
+        default: ChatAssistantDemo(component: component)
         }
     }
 }

@@ -1,12 +1,14 @@
 import KoboTokens
 import SwiftUI
 
-/// The message field at the bottom of a chat. At rest it is a single-line capsule with one round button inside (send
-/// with a draft, stop while a reply can be stopped, else the microphone). With focus, or while the microphone listens,
-/// it opens into a card: the field on top, growing to eight lines, and a toolbar under it with the listening level on
-/// the left and the microphone and Send (dimmed while the draft is blank) on the right. Return adds a line; Send sends.
-/// Place it with `.safeAreaBar(edge: .bottom)`. `voice` adds the microphone (`ChatVoice`); `attach` adds the + at the
-/// leading edge and the attached photos and files above the field (`ChatAttach`), and Send waits for their uploads.
+/// The message field at the bottom of a chat. Empty, it is a raised single-line capsule: the + at the leading edge, the
+/// placeholder, the microphone, and the send button, a grey circle until there is something to send. With a draft,
+/// while the microphone listens, or with attachments, it opens into a rounded card: the field on top, growing to eight
+/// lines, and a toolbar under it with the + on the left and the microphone and Send (an accent circle) on the right.
+/// While a reply runs, Send turns into a grey stop square. Return adds a line; Send sends. Place it with
+/// `.safeAreaBar(edge: .bottom)`; `.backdrop(_:)` paints a fade of the screen's colour behind it, so text scrolls under
+/// cleanly. `voice` adds the microphone (`ChatVoice`); `attach` adds the + and the attached photos and files above the
+/// field (`ChatAttach`), and Send waits for their uploads.
 ///
 ///     ChatComposer(text: $draft, prompt: "Message", isResponding: isWaiting, onSend: send, onStop: stop, voice: voice)
 public struct ChatComposer: View {
@@ -22,6 +24,7 @@ public struct ChatComposer: View {
     private let voice: ChatVoice?
     private let attach: ChatAttach?
     private var focus: FocusState<Bool>.Binding?
+    private var backdrop: Color?
 
     /// A composer. `onStop` adds the stop button while `isResponding`; without it the send button waits, disabled.
     public init(
@@ -74,10 +77,18 @@ public struct ChatComposer: View {
         return composer
     }
 
+    /// Paints `color` behind the composer, fading in above it, so the conversation scrolls under it cleanly. Pass the
+    /// screen's own background; `nil` (the default) leaves what is behind it showing.
+    public func backdrop(_ color: Color?) -> ChatComposer {
+        var composer = self
+        composer.backdrop = color
+        return composer
+    }
+
     private var isListening: Bool { voice?.phase == .listening || voice?.phase == .holding }
     private var isExpanded: Bool {
         ChatComposerLogic.isExpanded(
-            isFocused: isFocused,
+            draft: text.wrappedValue,
             isListening: isListening,
             hasAttachments: !(attach?.items.isEmpty ?? true)
         )
@@ -99,22 +110,26 @@ public struct ChatComposer: View {
                     )
                     .padding(.top, Space.sm)
                 }
-                HStack(alignment: .bottom, spacing: Space.xs) {
+                HStack(alignment: .center, spacing: 0) {
                     if !isExpanded, let attach { attachButton(attach) }
                     field
                         // Open, the toolbar holds the buttons: the text keeps the same room on both sides.
                         .padding(.trailing, isExpanded ? Space.lg - Space.xs : 0)
-                    if !isExpanded { compactButton }
+                    if !isExpanded {
+                        if let voice { micButton(voice) }
+                        sendButton
+                    }
                 }
                 if isExpanded { toolbar }
             }
             .padding(.leading, attach != nil && !isExpanded ? Space.xxs : Space.lg)
             .padding(.trailing, Space.xs)
-            .padding(.vertical, Space.xxs)
+            .padding(.vertical, Space.xs + Space.xxs)
             .modifier(ChatComposerSurface(isExpanded: isExpanded))
         }
         .padding(.horizontal, Space.gutter)
         .padding(.vertical, Space.sm)
+        .background { ChatComposerBackdrop(color: backdrop) }
         .koboAnimation(.present, value: isExpanded)
         // The finger that holds the microphone lifts here: the button itself moved when listening began.
         .simultaneousGesture(
@@ -136,7 +151,7 @@ public struct ChatComposer: View {
     }
 
     private var field: some View {
-        TextField(text: text, prompt: prompt.foregroundStyle(theme.palette.textTertiary), axis: .vertical) { prompt }
+        TextField(text: text, prompt: prompt.foregroundStyle(theme.palette.textSecondary), axis: .vertical) { prompt }
             .labelsHidden()
             .lineLimit(1...8)
             .focused($isFocused)
@@ -147,20 +162,18 @@ public struct ChatComposer: View {
             .frame(maxWidth: .infinity, minHeight: Size.minTouch, alignment: .leading)
     }
 
+    /// Send (grey until there is something to send, then the accent), or the grey stop square while a reply runs.
     @ViewBuilder
-    private var compactButton: some View {
-        switch ChatComposerLogic.compactButton(
+    private var sendButton: some View {
+        switch ChatComposerLogic.button(
             draft: text.wrappedValue,
             attachments: attachments,
             isResponding: isResponding,
-            canStop: onStop != nil,
-            hasVoice: voice != nil
-        )
-        {
-        case .send: sendButton(look: .accent)
+            canStop: onStop != nil
+        ) {
+        case .send(let isEnabled): sendButton(look: isEnabled ? .accent : .dimmed)
         case .stop: stopButton
-        case .microphone: if let voice { micButton(voice) }
-        case .none: EmptyView()
+        case .waiting: sendButton(look: .dimmed)
         }
     }
 
@@ -173,16 +186,7 @@ public struct ChatComposer: View {
             if isListening, let voice { ChatVoiceLevel(phase: voice.phase, level: voice.level) }
             Spacer(minLength: 0)
             if let voice { micButton(voice) }
-            switch ChatComposerLogic.button(
-                draft: text.wrappedValue,
-                attachments: attachments,
-                isResponding: isResponding,
-                canStop: onStop != nil
-            ) {
-            case .send(let isEnabled): sendButton(look: isEnabled ? .accent : .dimmed)
-            case .stop: stopButton
-            case .waiting: sendButton(look: .dimmed)
-            }
+            sendButton
         }
     }
 
@@ -203,25 +207,6 @@ public struct ChatComposer: View {
     }
 
     private var stopButton: some View {
-        ChatRoundButton(systemImage: "stop.fill", label: Text("Stop", bundle: .module), look: .accent) { onStop?() }
-    }
-}
-
-/// At rest, a capsule of Liquid Glass (or the surface with a hairline under a solid theme); open, a rounded card with
-/// the surface fill and a hairline. One modifier chain for both shapes: a branch would rebuild the field and drop focus.
-private struct ChatComposerSurface: ViewModifier {
-    @Environment(\.koboTheme) private var theme
-    let isExpanded: Bool
-
-    func body(content: Content) -> some View {
-        let shape = RoundedRectangle(
-            cornerRadius: isExpanded ? Radius.lg + Space.xs : Radius.lg + Space.xxs,
-            style: .continuous
-        )
-        let isGlass = theme.surfaceStyle == .glass && !isExpanded
-        content
-            .background(isGlass ? Color.clear : theme.palette.surface, in: shape)
-            .overlay { shape.strokeBorder(theme.palette.separator.opacity(isGlass ? 0 : 1), lineWidth: Size.hairline) }
-            .glassEffect(isGlass ? .regular.interactive() : .identity, in: shape)
+        ChatRoundButton(systemImage: "stop.fill", label: Text("Stop", bundle: .module), look: .quiet) { onStop?() }
     }
 }

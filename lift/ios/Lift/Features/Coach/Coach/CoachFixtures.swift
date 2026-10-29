@@ -2,7 +2,37 @@
     import Foundation
 
     extension CoachState {
-        static var fixtureEmpty: CoachState { CoachState() }
+        static var fixtureEmpty: CoachState {
+            var state = CoachState()
+            state.firstName = DemoCoachThreads.firstName
+            state.notice = DemoCoachThreads.notice
+            return state
+        }
+
+        static var fixtureTyping: CoachState {
+            var state = fixtureEmpty
+            state.draft = "Can you move Thursday's run to the morning? I have a dinner that evening."
+            return state
+        }
+
+        /// A user bubble, then Coach's Thought, reply, breakdown card and thumbs.
+        static var fixtureConversation: CoachState { scenario("conversation") }
+        static var fixtureQuestions: CoachState { scenario("questions") }
+        static var fixtureProposalCard: CoachState { scenario("proposal") }
+
+        static var fixtureHistory: CoachState {
+            var state = fixtureConversation
+            state.history = .loaded(DemoCoachThreads.history)
+            return state
+        }
+
+        private static func scenario(_ name: String) -> CoachState {
+            var state = CoachState()
+            let thread = DemoCoachThreads.thread(name)
+            state.messages = thread.messages
+            state.firstName = thread.firstName
+            return state
+        }
 
         static var fixtureProposal: CoachState {
             var state = CoachState()

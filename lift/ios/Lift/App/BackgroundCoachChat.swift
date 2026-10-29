@@ -49,6 +49,14 @@ nonisolated struct BackgroundCoachChat: CoachChatting {
     func undo(_ proposalID: String) async throws -> ChatActionStatus { try await base.undo(proposalID) }
 
     func dismiss(_ proposalID: String) async throws -> ChatActionStatus { try await base.dismiss(proposalID) }
+
+    func rate(_ messageID: String, _ rating: ChatFeedbackRating?) async throws { try await base.rate(messageID, rating) }
+
+    func threads() async throws -> [CoachThreadSummary] { try await base.threads() }
+
+    func newThread() async throws -> CoachThread { try await base.newThread() }
+
+    func openThread(_ id: String) async throws -> CoachThread { try await base.openThread(id) }
 }
 
 /// One UIKit background task, ended once: by the work, or by iOS when the time runs out.

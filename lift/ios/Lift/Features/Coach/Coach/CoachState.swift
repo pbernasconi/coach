@@ -11,6 +11,16 @@ nonisolated enum CoachReplyPhase: Equatable, Sendable {
     case failed(String)
 }
 
+/// The history sheet: closed, loading, its past chats, or why they could not load.
+nonisolated enum CoachHistory: Equatable, Sendable {
+    case closed
+    case loading
+    case loaded([CoachThreadSummary])
+    case failed(String)
+
+    var isOpen: Bool { self != .closed }
+}
+
 /// The Coach tab: the conversation, the draft and the reply in progress.
 nonisolated struct CoachState: Equatable, Sendable {
     var messages: [CoachMessage] = []
@@ -35,18 +45,45 @@ nonisolated struct CoachState: Equatable, Sendable {
     var previews: [String: Data] = [:]
     /// The attach sheet is up.
     var isAttaching = false
+    /// For the greeting of an empty chat ("Hi Paolo,").
+    var firstName: String?
+    var history = CoachHistory.closed
 
     /// Photos and files one message takes.
     static let attachmentLimit = 6
 
-    /// Starter prompts for an empty conversation (the server's when it sends some); a tap fills the composer.
+    /// Starter cards for an empty conversation (the server's when it sends some); a tap fills the composer.
     var prompts = [
-        ChatPrompt(id: "tomorrow", title: "What's on tomorrow?"),
-        ChatPrompt(id: "swap", title: "Swap today's lift for an easy run"),
-        ChatPrompt(id: "week", title: "How did my week go?"),
-        ChatPrompt(id: "sore", title: "I'm sore, make today easy"),
-        ChatPrompt(id: "exercise", title: "How do I do a Romanian deadlift?"),
+        ChatPrompt(id: "tomorrow", title: "What's on tomorrow?", systemImage: "calendar"),
+        ChatPrompt(id: "swap", title: "Swap today's lift for an easy run", systemImage: "arrow.triangle.swap"),
+        ChatPrompt(id: "week", title: "How did my week go?", systemImage: "chart.bar"),
+        ChatPrompt(id: "sore", title: "I'm sore, make today easy", systemImage: "bandage"),
+        ChatPrompt(id: "exercise", title: "How do I do a Romanian deadlift?", systemImage: "figure.strengthtraining.traditional"),
     ]
+
+    /// The greeting's first line.
+    var greeting: String {
+        firstName.map { String(localized: "Hi \($0),") } ?? String(localized: "Hi,")
+    }
+
+    /// The question cards to show: the latest message's, when it is Coach's and nothing is on its way.
+    var openQuestions: [ChatQuestion] {
+        guard phase == .idle, case .coach(let reply)? = messages.last?.body else { return [] }
+        return reply.questions
+    }
+
+    mutating func setFeedback(_ rating: ChatFeedbackRating?, of messageID: String) {
+        guard let index = messages.firstIndex(where: { $0.id == messageID }),
+            case .coach(var reply) = messages[index].body
+        else { return }
+        reply.feedback = rating
+        messages[index].body = .coach(reply)
+    }
+
+    func feedback(of messageID: String) -> ChatFeedbackRating? {
+        guard case .coach(let reply)? = messages.first(where: { $0.id == messageID })?.body else { return nil }
+        return reply.feedback
+    }
 
     /// Whether the composer's button stops a reply rather than sending.
     var isResponding: Bool {

@@ -4,88 +4,135 @@ import KoboTokens
 import SwiftUI
 import UIKit
 
-/// Dumb view: the conversation, the reply in progress, and the composer (SCR-2).
+/// Dumb view: the conversation (or, empty, the greeting and starter cards), the reply in progress, the floating top bar
+/// and the composer (SCR-2).
 struct CoachContent: View {
     let state: CoachState
     let send: (CoachAction) -> Void
     @FocusState private var isComposing: Bool
 
+    private var isEmpty: Bool { state.messages.isEmpty && state.phase == .idle }
+
     var body: some View {
-        ChatTranscript(state.messages) { message in
-            CoachMessageRow(
-                message: message,
-                busyProposal: state.busyProposal,
-                media: state.media,
-                previews: state.previews,
-                showsQuickReplies: message.id == state.messages.last?.id && state.phase == .idle,
-                send: send
-            )
-        } footer: {
-            switch state.phase {
-            case .idle where state.messages.isEmpty:
-                // In the scroll content, so the keyboard scrolls it instead of pushing it under the title.
-                CoachIntro(notice: state.notice)
-            case .idle: EmptyView()
-            case .waiting: ChatTypingIndicator(verbatim: String(localized: "Reading your week"))
-            case .answering(let progress): CoachLiveReply(progress: progress)
-            case .failed(let reason): ChatErrorRow(verbatim: reason) { send(.retryTapped) }
+        conversation
+            .safeAreaBar(edge: .top) { CoachTopBar(send: send) }
+            .safeAreaBar(edge: .bottom) {
+                CoachComposerBar(state: state, send: send, isComposing: $isComposing, isEmpty: isEmpty)
             }
+            .chatAttachPicker(
+                isPresented: .action(state.isAttaching) { send(.attachShown($0)) },
+                limit: CoachState.attachmentLimit - state.attachments.count
+            ) { send(.filesPicked($0)) }
+            .koboSheet(
+                isPresented: .action(state.history.isOpen) { send(.historyShown($0)) },
+                title: "Past chats",
+                detents: [.medium, .large]
+            ) {
+                CoachHistoryList(history: state.history, send: send)
+            }
+            .modifier(CoachCanvas())
+            .toolbarVisibility(.hidden, for: .navigationBar)
+    }
+
+    @ViewBuilder
+    private var conversation: some View {
+        if isEmpty {
+            CoachEmptyState(state: state) { prompt in
+                send(.promptPicked(prompt))
+                isComposing = true
+            }
+        } else {
+            ChatTranscript(state.messages) { message in
+                CoachMessageRow(
+                    message: message,
+                    busyProposal: state.busyProposal,
+                    media: state.media,
+                    previews: state.previews,
+                    isLatest: message.id == state.messages.last?.id && state.phase == .idle,
+                    send: send
+                )
+            } footer: {
+                switch state.phase {
+                case .idle: EmptyView()
+                case .waiting: ChatTypingIndicator(verbatim: String(localized: "Reading your week"))
+                case .answering(let progress): CoachLiveReply(progress: progress)
+                case .failed(let reason): ChatErrorRow(verbatim: reason) { send(.retryTapped) }
+                }
+            }
+            .timestamps(\.sentAt)
+            .onTranscriptTap { isComposing = false }
         }
-        .timestamps(\.sentAt)
-        .onTranscriptTap { isComposing = false }
-        .safeAreaBar(edge: .bottom) { CoachComposerBar(state: state, send: send, isComposing: $isComposing) }
-        .chatAttachPicker(
-            isPresented: .action(state.isAttaching) { send(.attachShown($0)) },
-            limit: CoachState.attachmentLimit - state.attachments.count
-        ) { send(.filesPicked($0)) }
-        .screenCanvas()
-        .navigationTitle("Coach")
-        .navigationBarTitleDisplayMode(.inline)
-        // The transcript is not the bar's scroll view (the jump button sits over it): give the title its own backdrop.
-        .toolbarBackgroundVisibility(.visible, for: .navigationBar)
     }
 }
 
-/// The starter prompts (on an empty conversation) and the composer with its microphone and +.
+/// The chat's background: white in light mode, black in dark (the grey canvas would hide the grey bubbles). Nothing
+/// coloured sits behind the bars, so the tab bar looks as it does on every other tab.
+struct CoachCanvas: ViewModifier {
+    @Environment(\.koboTheme) private var theme
+    @Environment(\.colorScheme) private var colorScheme
+
+    static func color(_ palette: Palette, _ scheme: ColorScheme) -> Color {
+        scheme == .dark ? palette.canvas : palette.surface
+    }
+
+    func body(content: Content) -> some View {
+        content.background { Self.color(theme.palette, colorScheme).ignoresSafeArea() }
+    }
+}
+
+/// The floating top bar: no title, one glass pill at the trailing edge with Settings, past chats and a new chat.
+private struct CoachTopBar: View {
+    let send: (CoachAction) -> Void
+
+    var body: some View {
+        HStack {
+            Spacer(minLength: 0)
+            ToolbarPill([
+                ToolbarPillItem("gearshape", label: "Coaching settings") { send(.settingsTapped) },
+                ToolbarPillItem("clock.arrow.circlepath", label: "Past chats") { send(.historyShown(true)) },
+                ToolbarPillItem("plus", label: "New chat") { send(.newChatTapped) },
+            ])
+        }
+        .padding(.horizontal, Space.gutter)
+        .padding(.bottom, Space.xs)
+    }
+}
+
+/// The composer with its microphone and +, over a fade of the chat's background once there is a conversation.
 private struct CoachComposerBar: View {
+    @Environment(\.koboTheme) private var theme
+    @Environment(\.colorScheme) private var colorScheme
     let state: CoachState
     let send: (CoachAction) -> Void
     var isComposing: FocusState<Bool>.Binding
+    let isEmpty: Bool
 
     var body: some View {
-        VStack(spacing: 0) {
-            if state.messages.isEmpty, state.phase == .idle, state.attachments.isEmpty {
-                // At most three starters, in one row docked above the field; a tap fills it.
-                ChatPromptSuggestions(Array(state.prompts.prefix(3))) { prompt in
-                    send(.promptPicked(prompt))
-                    isComposing.wrappedValue = true
-                }
-            }
-            ChatComposer(
-                text: .action(state.draft) { send(.draftChanged($0)) },
-                prompt: "Message Coach",
-                isResponding: state.isResponding,
-                onSend: { send(.sendTapped) },
-                onStop: { send(.stopTapped) },
-                voice: ChatVoice(
-                    phase: state.voice.phase,
-                    level: state.voiceLevel,
-                    onTap: { send(.micTapped) },
-                    onHoldBegan: { send(.micHoldBegan) },
-                    onHoldEnded: { send(.micHoldEnded) },
-                    onOpenSettings: { send(.voiceSettingsTapped) }
-                ),
-                attach: ChatAttach(
-                    items: state.attachments,
-                    preview: { CoachPicture.image(state.previews[$0.id]) },
-                    onAdd: { send(.attachShown(true)) },
-                    onRemove: { send(.attachmentRemoved($0.id)) },
-                    onRetry: { send(.attachmentRetried($0.id)) },
-                    canAdd: state.attachments.count < CoachState.attachmentLimit
-                )
+        ChatComposer(
+            text: .action(state.draft) { send(.draftChanged($0)) },
+            prompt: "Ask anything",
+            isResponding: state.isResponding,
+            onSend: { send(.sendTapped) },
+            onStop: { send(.stopTapped) },
+            voice: ChatVoice(
+                phase: state.voice.phase,
+                level: state.voiceLevel,
+                onTap: { send(.micTapped) },
+                onHoldBegan: { send(.micHoldBegan) },
+                onHoldEnded: { send(.micHoldEnded) },
+                onOpenSettings: { send(.voiceSettingsTapped) }
+            ),
+            attach: ChatAttach(
+                items: state.attachments,
+                preview: { CoachPicture.image(state.previews[$0.id]) },
+                onAdd: { send(.attachShown(true)) },
+                onRemove: { send(.attachmentRemoved($0.id)) },
+                onRetry: { send(.attachmentRetried($0.id)) },
+                canAdd: state.attachments.count < CoachState.attachmentLimit
             )
-            .focused(by: isComposing)
-        }
+        )
+        .focused(by: isComposing)
+        .backdrop(isEmpty ? nil : CoachCanvas.color(theme.palette, colorScheme))
     }
 }
 
@@ -96,120 +143,37 @@ enum CoachPicture {
     }
 }
 
-/// Paolo's message: the photos and files on it, then the bubble (none for photos sent without words).
-private struct CoachMineRow: View {
-    let text: String
-    let files: [CoachFile]
-    let previews: [String: Data]
-    let send: (CoachAction) -> Void
-
-    var body: some View {
-        VStack(alignment: .trailing, spacing: Space.xs) {
-            if !files.isEmpty {
-                ChatAttachmentStrip(
-                    files.map(\.attachment),
-                    size: .regular,
-                    alignment: .trailing,
-                    preview: { CoachPicture.image(previews[$0.id]) }
-                )
-                .onAppear {
-                    for file in files where file.kind == .image && previews[file.id] == nil {
-                        send(.filePreviewNeeded(file.id))
-                    }
-                }
-            }
-            if !text.isEmpty { ChatMessageBubble(verbatim: text) }
-        }
-        .frame(maxWidth: .infinity, alignment: .trailing)
-    }
-}
-
-/// One row: Paolo's bubble, or Coach's steps, reply and proposal card.
-private struct CoachMessageRow: View {
-    let message: CoachMessage
-    let busyProposal: String?
-    let media: [URL: MediaImage]
-    let previews: [String: Data]
-    /// Quick replies show only under the latest reply, while nothing is on its way.
-    let showsQuickReplies: Bool
-    let send: (CoachAction) -> Void
-
-    var body: some View {
-        switch message.body {
-        case .mine(let text):
-            CoachMineRow(text: text, files: message.files, previews: previews, send: send)
-        case .coach(let reply):
-            VStack(alignment: .leading, spacing: Space.md) {
-                if !reply.steps.isEmpty {
-                    VStack(alignment: .leading, spacing: Space.xs) {
-                        ForEach(reply.steps) { ChatToolStatus(verbatim: $0.text, state: $0.failed ? .failed : .done) }
-                    }
-                }
-                ChatReply(verbatim: reply.text)
-                ForEach(Array(reply.attachments.enumerated()), id: \.offset) { _, attachment in
-                    CoachAttachmentView(attachment: attachment, media: media, send: send)
-                }
-                if let proposal = reply.proposal {
-                    ChatActionCard(
-                        verbatim: proposal.title,
-                        items: proposal.items,
-                        notes: proposal.notes,
-                        status: proposal.status,
-                        onApply: { send(.applyTapped(proposalID: proposal.id)) },
-                        onDismiss: { send(.dismissTapped(proposalID: proposal.id)) },
-                        onUndo: busyProposal == nil ? { send(.undoTapped(proposalID: proposal.id)) } : nil
-                    )
-                }
-                if showsQuickReplies, !reply.quickReplies.isEmpty {
-                    ChatPromptSuggestions(reply.quickReplies.map { ChatPrompt(id: $0, title: $0) }) {
-                        send(.quickReplyTapped($0.title))
-                    }
-                    .padding(.horizontal, -Space.gutter)  // the row pays the page gutter itself
-                }
-            }
-        }
-    }
-}
-
-/// The reply while it streams in: the status line (the latest line of Claude's thinking while it thinks), then the
-/// words as they come, with the step under them once Coach drafts a change or fetches a card.
-private struct CoachLiveReply: View {
-    let progress: CoachProgress
-
-    var body: some View {
-        if progress.text.isEmpty {
-            ChatTypingIndicator(verbatim: status)
-        } else {
-            VStack(alignment: .leading, spacing: Space.md) {
-                ChatReply(verbatim: progress.text, isStreaming: true)
-                if progress.step != .writing { ChatTypingIndicator(verbatim: progress.label) }
-            }
-        }
-    }
-
-    private var status: String {
-        progress.step == .thinking ? (progress.latestThought ?? progress.label) : progress.label
-    }
-}
-
-/// The empty conversation: one line, and the notice (why Coach cannot answer, or the demo) as a quiet caption. The
-/// starter prompts sit above the composer.
-private struct CoachIntro: View {
+/// The empty chat: Coach's mark and the greeting in the upper half, the starter cards under it, and the notice (why
+/// Coach cannot answer, or the demo) as a quiet caption. A tap on a card fills the composer.
+private struct CoachEmptyState: View {
     @Environment(\.koboTheme) private var theme
-    let notice: String?
+    let state: CoachState
+    let onPick: (ChatPrompt) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Space.xs) {
-            Text("What changed today?")
-                .font(theme.font(.title2).weight(.regular))
-                .foregroundStyle(theme.palette.textPrimary)
-                .accessibilityAddTraits(.isHeader)
-            if let notice {
-                Text(verbatim: notice)
-                    .font(theme.font(.caption))
-                    .foregroundStyle(theme.palette.textTertiary)
-                    .fixedSize(horizontal: false, vertical: true)
+        GeometryReader { proxy in
+            ScrollView {
+                VStack(spacing: Space.xxxl) {
+                    ChatGreeting(verbatim: state.greeting, String(localized: "How can Coach help?")) {
+                        CoachMark(size: Size.iconLg)
+                    }
+                    VStack(spacing: Space.md) {
+                        ChatPromptCards(Array(state.prompts.prefix(3)), onSelect: onPick)
+                        if let notice = state.notice {
+                            Text(verbatim: notice)
+                                .font(theme.font(.caption))
+                                .foregroundStyle(theme.palette.textTertiary)
+                                .multilineTextAlignment(.center)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+                .padding(.top, proxy.size.height * 0.14)
+                .pageColumn()
+                .frame(minHeight: proxy.size.height, alignment: .top)
             }
+            .scrollDismissesKeyboard(.interactively)
+            .scrollBounceBehavior(.basedOnSize)
         }
     }
 }

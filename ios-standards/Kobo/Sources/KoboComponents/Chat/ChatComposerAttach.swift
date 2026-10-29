@@ -35,7 +35,7 @@ public struct ChatAttach {
     var readiness: ChatComposerLogic.Attachments { ChatAttachmentLogic.readiness(items) }
 }
 
-/// The composer's + : a quiet round button, like the microphone.
+/// The composer's + : a bare glyph, like the microphone.
 struct ChatAttachButton: View {
     @ScaledMetric(relativeTo: .body) private var circle = Size.buttonHeightCompact
     let isEnabled: Bool
@@ -43,7 +43,7 @@ struct ChatAttachButton: View {
 
     var body: some View {
         Button(action: action) {
-            ChatRoundGlyph(systemImage: "plus", look: isEnabled ? .quiet : .dimmed, circle: circle)
+            ChatRoundGlyph(systemImage: "plus", look: isEnabled ? .bare : .dimmed, circle: circle)
         }
         .buttonStyle(.plain)
         .pressFeedback()

@@ -96,6 +96,9 @@ private struct ButtonSurface: ViewModifier {
                 ZStack {
                     Capsule().fill(variant == .glass ? theme.palette.surfaceRaised : look.fill)
                     Capsule().fill(theme.palette.pressVeil(isPressed))
+                    if variant == .outlined {
+                        Capsule().strokeBorder(theme.palette.separator, lineWidth: KoboTokens.Size.hairline * 2)
+                    }
                 }
             }
         }
@@ -112,7 +115,7 @@ private enum ButtonGlass {
         case .tonal: return isEnabled ? Glass.regular.tint(palette.accentSoft).interactive() : nil
         case .secondary: return isEnabled ? Glass.regular.interactive() : nil
         case .destructiveTonal: return isEnabled ? Glass.regular.tint(palette.danger.soft).interactive() : nil
-        case .destructive, .plain: return nil
+        case .destructive, .plain, .outlined: return nil
         }
     }
 }
@@ -130,6 +133,7 @@ private enum ButtonGlass {
                     Button("Glass") {}.buttonStyle(.kobo(.glass, width: .full))
                     Button("Delete set") {}.buttonStyle(.kobo(.destructive, width: .full))
                     Button("Plain") {}.buttonStyle(.kobo(.plain))
+                    Button("Outlined") {}.buttonStyle(.kobo(.outlined, width: .full))
                     Button("Inline, on the keyline") {}
                         .buttonStyle(.kobo(.plain, size: .compact, width: .inline))
                         .frame(maxWidth: .infinity, alignment: .leading)

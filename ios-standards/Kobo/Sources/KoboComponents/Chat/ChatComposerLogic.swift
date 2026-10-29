@@ -1,6 +1,7 @@
 import Foundation
 
-/// The rules of a chat composer: its shape, and what its round buttons do and whether they are enabled.
+/// The rules of a chat composer: its shape, and what its send button does and whether it is enabled. The send button
+/// always shows: grey while there is nothing to send, the accent once there is, a stop square while a reply runs.
 nonisolated enum ChatComposerLogic {
     /// The trailing button of the composer.
     enum Button: Equatable, Sendable {
@@ -10,14 +11,6 @@ nonisolated enum ChatComposerLogic {
         case stop
         /// A reply is in progress and cannot be stopped: a disabled send button.
         case waiting
-    }
-
-    /// The one round button inside the single-line capsule.
-    enum CompactButton: Equatable, Sendable {
-        case send
-        case stop
-        case microphone
-        case none
     }
 
     /// Where the photos and files on the message stand.
@@ -50,25 +43,9 @@ nonisolated enum ChatComposerLogic {
         return .send(isEnabled: canSend(draft, attachments: attachments))
     }
 
-    /// The composer opens into a card with a toolbar while the field has focus, the microphone listens or something is
-    /// attached (the thumbnails sit above the field); otherwise it is a single-line capsule.
-    static func isExpanded(isFocused: Bool, isListening: Bool, hasAttachments: Bool = false) -> Bool {
-        isFocused || isListening || hasAttachments
-    }
-
-    /// The capsule's button: stop while a reply can be stopped, send with a draft, else the microphone when there is
-    /// one, else none (never a disabled circle).
-    static func compactButton(
-        draft: String,
-        attachments: Attachments = .none,
-        isResponding: Bool,
-        canStop: Bool,
-        hasVoice: Bool
-    ) -> CompactButton {
-        switch button(draft: draft, attachments: attachments, isResponding: isResponding, canStop: canStop) {
-        case .stop: .stop
-        case .send(isEnabled: true): .send
-        case .send(isEnabled: false), .waiting: hasVoice && !isResponding ? .microphone : .none
-        }
+    /// The composer opens into a card with a toolbar once there is a draft, while the microphone listens, or while
+    /// something is attached (the thumbnails sit above the field); empty, it is a single-line capsule.
+    static func isExpanded(draft: String, isListening: Bool, hasAttachments: Bool = false) -> Bool {
+        !draft.isEmpty || isListening || hasAttachments
     }
 }
