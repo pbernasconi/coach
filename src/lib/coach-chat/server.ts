@@ -16,10 +16,11 @@ import { monthSpend as spendOn, recordAiUsage } from '@/lib/ai-usage/store';
 import { CHAT_FEATURES, usageOf } from '@/lib/ai-usage/usage.mjs';
 import { checkCard, type CardRef, type Question } from './cards.mjs';
 import { resolveCards, type Attachment } from './cards';
-import { checkProposalInput, isStale, planText, type Change, type Item } from './changes.mjs';
+import { checkProposalInput, isStale, landedIssues, planText, recheck, undoPlan, fingerprint, type Card, type Change, type Item } from './changes.mjs';
 import { chatMessages, chatRequest, chatWithClaude, EFFORT, MODEL, type ChatEvent, type Turn } from './chat.mjs';
 import { recentChangesText } from '@/lib/plan/change-log';
-import { ApplyError, applyAll, planRows, undoAll, type Undo } from './writes';
+import { ApplyError, applyAll, planRows, undoAll } from './writes';
+import { undoRecord, type UndoRecord } from './undo-record.mjs';
 import { fileBlock, fileNote, filesPhrase, filesToSend, type FileData, type FileRef } from './files.mjs';
 import { claimFiles, fileData, unclaimedFiles } from './files-store';
 import { CHAT_MONTHLY_CAP_USD, PROMPTS, SUGGESTIONS, chatContext, chatSystemPrompt } from './prompt.mjs';
@@ -37,6 +38,10 @@ const ANSWERING_MS = 150_000;
 export type ProposalView = {
   id: string; title: string; why: string | null; items: Item[]; warnings: string[];
   status: 'open' | 'applied' | 'undone' | 'dismissed' | 'stale';
+  /** The card by day (changes.mjs `cardOf`); null on cards from before 2026-10-29, which show `items`. */
+  summary: string | null; days: Card['days'] | null;
+  /** After Apply or Undo: what happened, in Paolo's words, when it isn't simply what the card showed. */
+  result: string[];
 };
 export type MessageView = {
   id: string; role: 'user' | 'assistant'; text: string; createdAt: string | null; proposal: ProposalView | null;
@@ -72,10 +77,13 @@ async function openThread(userId: string): Promise<string | null> {
 }
 
 function proposalView(p: Row): ProposalView {
+  const card = (p.changes as { card?: Card } | null)?.card ?? null;
   return {
     id: String(p.id), title: String(p.title), why: (p.why as string) ?? null,
     items: (p.items as Item[]) ?? [], warnings: (p.warnings as string[]) ?? [],
     status: p.status as ProposalView['status'],
+    summary: card?.summary ?? null, days: card?.days ?? null,
+    result: undoRecord(p.undo).result,
   };
 }
 
@@ -83,7 +91,7 @@ async function threadMessages(threadId: string): Promise<MessageView[]> {
   const rows = (await sql`
     SELECT m.id, m.role, m.text, m.created_at, m.attachments, m.quick_replies, m.files,
            m.meta->>'thought' AS thought, m.meta->'questions' AS questions, m.meta->>'feedback' AS feedback,
-           p.id AS p_id, p.title, p.why, p.items, p.warnings, p.status
+           p.id AS p_id, p.title, p.why, p.items, p.warnings, p.status, p.changes, p.undo
     FROM coach_messages m LEFT JOIN coach_proposals p ON p.id = m.proposal_id
     WHERE m.thread_id = ${threadId} ORDER BY m.created_at, m.id`) as Row[];
   return rows.map((r) => ({
@@ -318,16 +326,19 @@ export async function sendMessage(
     });
     let proposal: ProposalView | null = null;
     if (result.proposal) {
-      const p = result.proposal as { title: string; why: string; changes: Change[]; items: Item[]; warnings: string[]; basis: Record<string, string> };
+      const p = result.proposal as { title: string; why: string; changes: Change[]; items: Item[]; card: Card; warnings: string[]; basis: Record<string, string> };
       const id = createId();
       // A new card replaces the thread's older open ones: their changes were planned on the old week.
       await sql`UPDATE coach_proposals SET status = 'stale', decided_at = NOW() WHERE thread_id = ${threadId} AND status = 'open'`;
       await sql`
         INSERT INTO coach_proposals (id, thread_id, user_id, title, why, changes, items, warnings, status)
         VALUES (${id}, ${threadId}, ${userId}, ${p.title}, ${p.why || null},
-                ${JSON.stringify({ ops: p.changes, basis: p.basis })}::jsonb, ${JSON.stringify(p.items)}::jsonb,
+                ${JSON.stringify({ ops: p.changes, basis: p.basis, card: p.card })}::jsonb, ${JSON.stringify(p.items)}::jsonb,
                 ${JSON.stringify(p.warnings)}::jsonb, 'open')`;
-      proposal = { id, title: p.title, why: p.why || null, items: p.items, warnings: p.warnings, status: 'open' };
+      proposal = {
+        id, title: p.title, why: p.why || null, items: p.items, warnings: p.warnings, status: 'open',
+        summary: p.card.summary, days: p.card.days, result: [],
+      };
     }
     const attachments = await resolveCards(userId, result.cards as CardRef[], rows, today, timeZone);
     const reply = result.reply ||
@@ -401,50 +412,123 @@ function templateNames(profile: unknown): string[] {
 
 export type DecideResult = { status: number; body: object };
 
+/** The calendar push after a write. A push that can't start never fails the write it follows (the hourly sync catches up). */
+function pushWeeks(userId: string, dates: string[]) {
+  try {
+    pushPlanWeeks(userId, dates);
+  } catch (error) {
+    console.error('Coach chat: calendar push failed to start:', error instanceof Error ? error.message : error);
+  }
+}
+
+/** The days touched, once each, in order. */
+const daysOf = (dates: string[]) => [...new Set(dates)].sort();
+
 /**
- * POST /api/app/coach/proposals/{id}/apply: runs the changes in order, then pushes the weeks to Google Calendar.
- * 409 when the proposal isn't open, or when a workout it touches changed since Coach proposed (it is then stale). A
- * write that fails puts back the ones before it.
+ * POST /api/app/coach/proposals/{id}/apply: runs the changes, then pushes the weeks to Google Calendar
+ * (lift/COACH-CHAT.md, "Applying"). In order:
+ * 1. Claims the card (open → applied in one UPDATE), so a second tap or a retry can't apply it twice.
+ * 2. Checks the plan as it is now: every workout the card touches unchanged since Coach proposed (else stale), and
+ *    the changes still valid, with no new double lift or rule break (recheck). Else nothing is written: 409, stale.
+ * 3. Runs the writes. A write that fails puts back the ones before it: 409, the card open again, and the workouts
+ *    it couldn't put back named.
+ * 4. Reads the plan back and checks every change landed; what didn't goes in `result`.
  */
 export async function applyProposal(userId: string, id: string, today: string): Promise<DecideResult> {
   const p = await proposalRow(userId, id);
   if (!p) return { status: 404, body: { error: 'not found' } };
-  if (p.status !== 'open') return { status: 409, body: { error: `this change is ${p.status}`, proposal: proposalView(p) } };
+  const [claimed] = (await sql`
+    UPDATE coach_proposals SET status = 'applied', undo = NULL, decided_at = NOW()
+    WHERE id = ${id} AND user_id = ${userId} AND status = 'open' RETURNING id`) as Row[];
+  if (!claimed) {
+    const now = (await proposalRow(userId, id)) ?? p;
+    return { status: 409, body: { error: `this change is ${now.status}`, proposal: proposalView(now) } };
+  }
+  const reopen = (status: 'open' | 'stale', result: string[] = []) =>
+    sql`UPDATE coach_proposals SET status = ${status}, undo = ${JSON.stringify({ steps: [], result })}::jsonb, decided_at = NOW() WHERE id = ${id}`;
   const { ops, basis } = p.changes as { ops: Change[]; basis: Record<string, string> };
-  const rows = await planRows(userId, today);
-  if (isStale(basis, rows)) {
-    await sql`UPDATE coach_proposals SET status = 'stale', decided_at = NOW() WHERE id = ${id}`;
-    return { status: 409, body: { error: 'the plan changed since Coach proposed this; ask again', proposal: proposalView({ ...p, status: 'stale' }) } };
-  }
-  let undo: Undo[];
-  let dates: string[];
+  const warned = (p.warnings as string[]) ?? [];
+  let rows;
   try {
-    ({ undo, dates } = await applyAll(userId, ops, rows, today));
+    rows = await planRows(userId, today);
   } catch (error) {
-    if (!(error instanceof ApplyError)) throw error;
-    pushPlanWeeks(userId, error.dates);
-    return { status: 409, body: { error: `Coach couldn't apply it (${error.message}); nothing changed`, proposal: proposalView(p) } };
+    await reopen('open');
+    throw error;
   }
-  await sql`UPDATE coach_proposals SET status = 'applied', undo = ${JSON.stringify(undo)}::jsonb, decided_at = NOW() WHERE id = ${id}`;
-  pushPlanWeeks(userId, dates);
+  const problems = isStale(basis, rows) ? ['a workout on this card changed after Coach suggested it'] : recheck(ops, { rows, today }, warned);
+  if (problems.length) {
+    const result = [`Nothing changed: ${problems[0]}. Ask Coach again and it will plan from the week as it is now.`];
+    await reopen('stale', result);
+    return { status: 409, body: { error: result[0], proposal: proposalView({ ...p, status: 'stale', undo: { steps: [], result } }) } };
+  }
+  let applied;
+  try {
+    applied = await applyAll(userId, ops, rows, today);
+  } catch (error) {
+    if (!(error instanceof ApplyError)) {
+      await reopen('open');
+      throw error;
+    }
+    pushWeeks(userId, error.dates);
+    const result = error.stuck.length
+      ? [`Coach couldn't apply it (${error.message}). It put the rest back, but check ${error.stuck.join(', ')} on the Week tab.`]
+      : [`Coach couldn't apply it (${error.message}), so nothing changed.`];
+    await reopen('open', result);
+    return { status: 409, body: { error: result[0], proposal: proposalView({ ...p, status: 'open', undo: { steps: [], result } }) } };
+  }
+  // What the plan looks like now: each change where the card said, and each touched workout's fingerprint for Undo.
+  const now = await planRows(userId, today).catch(() => null);
+  const result = now ? landedIssues(ops, applied.added, now).map((t) => `${t}. Check it on the Week tab.`) : [];
+  const touched = new Set([...Object.keys(basis), ...applied.added.filter((x): x is string => Boolean(x))]);
+  const after = now ? Object.fromEntries(now.filter((r) => touched.has(r.id)).map((r) => [r.id, fingerprint(r)])) : null;
+  const record: UndoRecord = { steps: applied.undo, after, result };
+  await sql`UPDATE coach_proposals SET undo = ${JSON.stringify(record)}::jsonb WHERE id = ${id}`;
+  pushWeeks(userId, applied.dates);
   // A new gym lift gets its Lift session (exercises, sets, loads) now, as after an accepted plan; the hourly backstop
   // (/api/cron/lift-pending) catches it if the dispatch fails.
   if (ops.some((c) => c.op === 'add' && c.liftTemplate)) {
     const started = await dispatchWorkflow('plan-apply.yml').catch((e: unknown) => ({ error: String(e) }));
     if ('error' in started) console.error('Coach chat: Lift planning:', started.error);
   }
-  return { status: 200, body: { proposal: proposalView({ ...p, status: 'applied' }), dates: [...new Set(dates)].sort() } };
+  return { status: 200, body: { proposal: proposalView({ ...p, status: 'applied', undo: record }), dates: daysOf(applied.dates) } };
 }
 
-/** POST /api/app/coach/proposals/{id}/undo: puts back what Apply changed, last change first. */
-export async function undoProposal(userId: string, id: string, today: string): Promise<DecideResult> {
+/**
+ * POST /api/app/coach/proposals/{id}/undo: puts back what Apply changed, last change first. A workout Paolo moved,
+ * edited, did or deleted after Apply stays as he left it: without `{ "partial": true }` that is a 409 with
+ * `needsConfirm`, `kept` (those workouts) and `undoable` (how many changes Undo would put back), so the phone can ask.
+ */
+export async function undoProposal(userId: string, id: string, today: string, partial = false): Promise<DecideResult> {
   const p = await proposalRow(userId, id);
   if (!p) return { status: 404, body: { error: 'not found' } };
   if (p.status !== 'applied') return { status: 409, body: { error: `this change is ${p.status}`, proposal: proposalView(p) } };
-  const dates = await undoAll(userId, (p.undo as Undo[]) ?? [], today);
-  await sql`UPDATE coach_proposals SET status = 'undone', decided_at = NOW() WHERE id = ${id}`;
-  pushPlanWeeks(userId, dates);
-  return { status: 200, body: { proposal: proposalView({ ...p, status: 'undone' }), dates: [...new Set(dates)].sort() } };
+  const record = undoRecord(p.undo);
+  if (p.undo == null) return { status: 409, body: { error: 'this change is still being applied', proposal: proposalView(p) } };
+  const plan = undoPlan(record.steps, record.after, await planRows(userId, today));
+  if (plan.kept.length && !partial) {
+    return {
+      status: 409,
+      body: {
+        error: `You changed ${plan.kept.join(', ')} after this was applied, so Undo leaves ${plan.kept.length === 1 ? 'it' : 'them'} as you set ${plan.kept.length === 1 ? 'it' : 'them'}.`,
+        needsConfirm: true, kept: plan.kept, undoable: plan.run.length, proposal: proposalView(p),
+      },
+    };
+  }
+  const [claimed] = (await sql`
+    UPDATE coach_proposals SET status = 'undone', decided_at = NOW() WHERE id = ${id} AND status = 'applied' RETURNING id`) as Row[];
+  if (!claimed) {
+    const now = (await proposalRow(userId, id)) ?? p;
+    return { status: 409, body: { error: `this change is ${now.status}`, proposal: proposalView(now) } };
+  }
+  const { dates, failed } = await undoAll(userId, plan.run, today);
+  const result = [
+    ...(plan.kept.length ? [`Left ${plan.kept.join(', ')} as you set ${plan.kept.length === 1 ? 'it' : 'them'}.`] : []),
+    ...(failed.length ? [`Couldn't put back ${failed.join(', ')}. Check ${failed.length === 1 ? 'it' : 'them'} on the Week tab.`] : []),
+  ];
+  const done: UndoRecord = { ...record, result };
+  await sql`UPDATE coach_proposals SET undo = ${JSON.stringify(done)}::jsonb WHERE id = ${id}`;
+  pushWeeks(userId, dates);
+  return { status: 200, body: { proposal: proposalView({ ...p, status: 'undone', undo: done }), dates: daysOf(dates) } };
 }
 
 /** POST /api/app/coach/proposals/{id}/dismiss. */

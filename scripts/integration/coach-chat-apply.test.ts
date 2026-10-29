@@ -94,3 +94,76 @@ test('answering: true only while the last message is Paolo\'s, unanswered and re
   assert.equal(isAnswering([{ role: 'user', createdAt: at(200) }], now), false);
   assert.equal(isAnswering([{ role: 'user', createdAt: at(30) }, { role: 'assistant', createdAt: at(5) }], now), false);
 });
+
+async function card(changes: unknown[], title = 'Card') {
+  const { checkProposalInput: check } = await import('@/lib/coach-chat/changes.mjs');
+  const rows = await planRows(user, today);
+  const checked = check({ title, why: '', changes }, { rows, today, templates: ['Heavy barbell'] }, 2);
+  assert.ok(checked.ok, JSON.stringify(checked));
+  const id = `p${Math.random().toString(36).slice(2, 12)}`;
+  const v = checked.value;
+  await sql`
+    INSERT INTO coach_proposals (id, thread_id, user_id, title, why, changes, items, warnings, status)
+    VALUES (${id}, 'thread', ${user}, ${title}, null, ${JSON.stringify({ ops: v.changes, basis: v.basis, card: v.card })}::jsonb,
+            ${JSON.stringify(v.items)}::jsonb, ${JSON.stringify(v.warnings)}::jsonb, 'open')`;
+  return id;
+}
+
+async function withUser(run: () => Promise<void>) {
+  await sql`DELETE FROM users WHERE id = ${user}`;
+  await sql`INSERT INTO users (id, email) VALUES (${user}, 'coach-chat@example.com')`;
+  try {
+    await run();
+  } finally {
+    await sql`DELETE FROM coach_proposals WHERE user_id = ${user}`;
+    await sql`DELETE FROM training_plan_activities a USING training_plans p WHERE p.id = a.plan_id AND p.user_id = ${user}`;
+    await sql`DELETE FROM training_plans WHERE user_id = ${user}`;
+    await sql`DELETE FROM users WHERE id = ${user}`;
+  }
+}
+
+test('two taps on Apply apply the card once', () => withUser(async () => {
+  const { applyProposal } = await import('@/lib/coach-chat/server');
+  const id = await card([{ op: 'add', date: today, sport: 'run', startTime: '16:00', title: 'Easy run', duration: 45 }]);
+  const [a, b] = await Promise.all([applyProposal(user, id, today), applyProposal(user, id, today)]);
+  assert.deepEqual([a.status, b.status].sort(), [200, 409]);
+  assert.equal((await planRows(user, today)).filter((r) => r.title === 'Easy run').length, 1);
+}));
+
+test('Apply refuses a card once the plan has a copy of its lift, and changes nothing', () => withUser(async () => {
+  const { applyProposal } = await import('@/lib/coach-chat/server');
+  const id = await card([{ op: 'add', date: '2026-10-28', sport: 'strength', startTime: '17:00', title: 'Heavy barbell', duration: 60, liftTemplate: 'Heavy barbell' }]);
+  const other = await add({ sport: 'strength', date: '2026-10-29', startTime: '17:00', title: 'Heavy barbell', duration: 60 });
+  await sql`UPDATE training_plan_activities SET lift_template = 'Heavy barbell' WHERE id = ${other}`;
+  const res = await applyProposal(user, id, today);
+  assert.equal(res.status, 409);
+  const body = res.body as { error: string; proposal: { status: string; result: string[] } };
+  assert.equal(body.proposal.status, 'stale');
+  assert.match(body.error, /^Nothing changed: .*already planned this week/);
+  assert.equal((await planRows(user, today)).length, 1);
+}));
+
+test('Undo asks first when Paolo changed a workout since, then leaves it as he set it', () => withUser(async () => {
+  const { applyProposal, undoProposal } = await import('@/lib/coach-chat/server');
+  const heavy = await add({ sport: 'strength', date: today, startTime: '17:00', title: 'Heavy barbell', duration: 60 });
+  const vo2 = await add({ sport: 'run', date: '2026-10-27', startTime: '09:00', title: 'VO2 B', duration: 50, intensity: 'Very hard' });
+  const id = await card([
+    { op: 'move', id: heavy, date: '2026-10-27', startTime: '09:00' },
+    { op: 'skip', id: vo2, reason: 'busy' },
+  ]);
+  const applied = await applyProposal(user, id, today);
+  assert.equal(applied.status, 200, JSON.stringify(applied.body));
+  assert.deepEqual((applied.body as { proposal: { result: string[] } }).proposal.result, []);
+  // Paolo moves the lift again on the Week tab.
+  await sql`UPDATE training_plan_activities SET start_time = '18:00' WHERE id = ${heavy}`;
+  const ask = await undoProposal(user, id, today);
+  assert.equal(ask.status, 409);
+  assert.deepEqual((ask.body as { needsConfirm: boolean; kept: string[]; undoable: number }).kept, ['Heavy barbell']);
+  assert.equal((ask.body as { undoable: number }).undoable, 1);
+  const undone = await undoProposal(user, id, today, true);
+  assert.equal(undone.status, 200);
+  assert.match((undone.body as { proposal: { result: string[] } }).proposal.result[0], /Left Heavy barbell as you set it/);
+  const by = Object.fromEntries((await planRows(user, today)).map((r) => [r.title, r]));
+  assert.deepEqual([by['Heavy barbell'].date, by['Heavy barbell'].startTime?.slice(0, 5)], ['2026-10-27', '18:00']);
+  assert.equal(by['VO2 B'].status, 'planned');
+}));

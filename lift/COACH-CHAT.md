@@ -103,8 +103,8 @@ lift moves once) and plan-structure.md (cached).
 - `GET /api/app/coach?tz=`: the open thread, its messages and open proposals.
 - `POST /api/app/coach/messages?tz=` `{ text }`: answers `{ reply, proposal | null }`. First version: one JSON answer
   after the model is done (5–20 s); the phone shows a typing row. Server-sent events can come later.
-- `POST /api/app/coach/proposals/{id}/apply?tz=`: applies it in one transaction, then the calendar push. Answers the
-  new week items it touched. `409` when stale.
+- `POST /api/app/coach/proposals/{id}/apply?tz=`: applies it (see "Applying"), then the calendar push. Answers the
+  days it touched. `409` when stale.
 - `POST /api/app/coach/proposals/{id}/dismiss`.
 - `POST /api/app/plan` (missing today): add a workout from the phone (`createWorkout`). Apply needs the same function.
 
@@ -119,10 +119,37 @@ lift moves once) and plan-structure.md (cached).
   turned into text on the iPhone (`LiveSpeechTranscriber`, `SFSpeechRecognizer` with on-device recognition). Both
   permissions are asked on first use; when they are off, a row under the field links to Settings. Listening stops when
   the tab or the app goes away. Demo data hears a made-up sentence (`-voice denied` shows the denied row).
-- A change card under Coach's reply: one row per change, the old value struck through before the new one ("Heavy
-  barbell · ~~Mon 17:00~~ → Tue 09:00"), the warnings, and **Apply** and **Dismiss**. After Apply, the card shows
-  "Applied" with **Undo**, and the Week tab refreshes (`coachPlan` fetch). A newer proposal marks the older open one
-  "Replaced".
+- A change card under Coach's reply (see "The change card"), the warnings, and **Apply** and **Dismiss**. After
+  Apply, the card shows "Applied" with **Undo**, and the Week tab refreshes (`coachPlan` fetch). A newer proposal
+  marks the older open one "Replaced".
+
+### The change card
+
+Paolo, 2026-10-29: the first card (a glyph, an emoji and struck-through times on every row) was cluttered, and scary to
+apply after Apply had made bugs. The card is the plan by day (`cardOf` in changes.mjs, `days` in APP-API.md): a header
+per day the card touches, each row as it will be after Apply with a sport icon, the time and length, and one quiet tag
+("From Sat", "Earlier", "Skipped", "New"). A skip and an add on the same day are one row ("replaces Long ride").
+Concepts and the states after Apply: https://claude.ai/artifact/RPhYcmJgGfjG3Kmh8NYca2.
+
+### Applying
+
+Apply (`applyProposal` in server.ts) has to be safe to tap without reading every row twice:
+
+1. **Once.** It claims the card first (`open → applied` in one UPDATE): a double tap or a retry gets 409.
+2. **On the plan as it is now.** Every workout the card touches must be as Coach saw it (`basis`, fingerprints of
+   day, time, status, title, length, effort, Lift template and notes), and `recheck` runs the change checks again
+   at the tap: no day now in the past, no workout now done, no new copy of a lift in the week, no new rule break.
+   Else nothing is written and the card is stale, with the reason.
+3. **All or nothing.** A write that fails puts back the writes before it. A put-back that fails too is named on the
+   card ("check Heavy barbell on the Week tab"), never "nothing changed".
+4. **Read back.** After the writes the plan is read again and each change checked (`landedIssues`); one that didn't
+   land is named in `result`. The fingerprints then are kept with the Undo steps (`undo` jsonb: `{ steps, after,
+   result }`, undo-record.mjs).
+5. **Undo never overwrites Paolo.** Undo puts a workout back only while it is as Apply left it (`undoPlan`); one he
+   moved, edited or did since stays, after he confirms ("Undo 4 of 5?"). An edit's Undo puts back the exact effort,
+   TSS, steps and type too, not the Edit sheet's defaults.
+6. **Moves stay moves.** A skip or delete plus an add of the same workout in the week goes back to the model as "use
+   move" (`moveAsAddIssues`), as a copy of a lift already does (2026-10-27).
 - The steps Coach took show above its reply ("Read this week's plan", "Checked Tuesday's calendar"): real tool calls
   only, never made-up progress. While it works, three dots and the current step.
 - The transcript opens at the latest message and follows new ones while Paolo is at the bottom; scrolled up by hand

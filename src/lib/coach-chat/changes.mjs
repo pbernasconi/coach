@@ -427,8 +427,21 @@ export function duplicateLiftIssues(rows, changes) {
  * @param {PlanRow} r
  */
 export function fingerprint(r) {
-  return [r.date, hm(r.startTime) ?? '', r.status, r.title, r.duration ?? ''].join('|');
+  return [r.date, hm(r.startTime) ?? '', r.status, r.title, r.duration ?? '', r.intensity ?? '', r.liftTemplate ?? '', textHash(r.description)].join('|');
 }
+
+/** The five-field fingerprint cards stored before 2026-10-29; isStale still reads them. @param {PlanRow} r */
+const legacyFingerprint = (r) => [r.date, hm(r.startTime) ?? '', r.status, r.title, r.duration ?? ''].join('|');
+
+/** A short hash of a workout's notes, so an edit to them shows in the fingerprint. @param {unknown} text */
+function textHash(text) {
+  let h = 5381;
+  for (const ch of String(text ?? '')) h = ((h * 33) ^ (ch.codePointAt(0) ?? 0)) >>> 0;
+  return h.toString(36);
+}
+
+/** The fingerprint `print` was made with, of `r`. @param {PlanRow} r @param {string} print */
+const printOf = (r, print) => (print.split('|').length === 5 ? legacyFingerprint(r) : fingerprint(r));
 
 /**
  * The ids a proposal touches, with their fingerprints, stored with it.
@@ -453,7 +466,7 @@ export function isStale(basis, rows) {
   const byId = new Map(rows.map((r) => [r.id, r]));
   return Object.entries(basis).some(([id, print]) => {
     const r = byId.get(id);
-    return !r || r.state === 'done' || fingerprint(r) !== print;
+    return !r || r.state === 'done' || printOf(r, print) !== print;
   });
 }
 
@@ -481,7 +494,7 @@ export function planText(rows, today) {
  * back to the model on its first try; on a later try (it kept them, or Paolo asked for it) they go on the card as
  * warnings.
  * @param {any} input @param {{ rows: PlanRow[], today: string, templates?: string[] }} plan @param {number} attempt  1 for the first try
- * @returns {{ ok: true, value: { title: string, why: string, changes: Change[], items: Item[], warnings: string[],
+ * @returns {{ ok: true, value: { title: string, why: string, changes: Change[], items: Item[], card: Card, warnings: string[],
  *   basis: Record<string, string> } } | { ok: false, problems: string[] }}
  */
 export function checkProposalInput(input, plan, attempt) {
@@ -491,6 +504,7 @@ export function checkProposalInput(input, plan, attempt) {
   if (!title) problems.unshift('title is missing');
   const copies = problems.length ? { hard: [], soft: [] } : duplicateLiftIssues(plan.rows, changes);
   problems.push(...copies.hard);
+  if (!problems.length) problems.push(...moveAsAddIssues(plan.rows, changes));
   if (problems.length) return { ok: false, problems };
   const warnings = [...newRuleIssues(plan.rows, changes, plan.today), ...fatigueIssues(plan.rows, changes, plan.today), ...copies.soft];
   if (warnings.length && attempt <= 1) {
@@ -502,5 +516,235 @@ export function checkProposalInput(input, plan, attempt) {
       ],
     };
   }
-  return { ok: true, value: { title, why, changes, items: describeChanges(changes, plan.rows), warnings, basis: basisOf(changes, plan.rows) } };
+  return {
+    ok: true,
+    value: { title, why, changes, items: describeChanges(changes, plan.rows), card: cardOf(changes, plan.rows), warnings, basis: basisOf(changes, plan.rows) },
+  };
+}
+
+/**
+ * A card that takes a workout off the plan (skip or remove) and adds the same workout in the same week: that is a
+ * move, and must be written as one, or Undo, the Lift session and the calendar event drift apart (2026-10-27: Heavy
+ * barbell on Monday and Tuesday). Same workout = the same Lift template, or the same sport and title.
+ * @param {PlanRow[]} rows @param {Change[]} changes
+ * @returns {string[]}
+ */
+export function moveAsAddIssues(rows, changes) {
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  /** @type {string[]} */
+  const out = [];
+  for (const c of changes) {
+    if (c.op !== 'add') continue;
+    for (const o of changes) {
+      if (o.op !== 'skip' && o.op !== 'remove') continue;
+      const r = byId.get(o.id);
+      if (!r || mondayOf(r.date) !== mondayOf(c.date)) continue;
+      const sameLift = c.liftTemplate && (r.liftTemplate ?? '').toLowerCase() === c.liftTemplate.toLowerCase();
+      const sameWorkout = r.sport === c.sport && plainTitle(r.title).toLowerCase() === plainTitle(c.title).toLowerCase();
+      if (sameLift || sameWorkout) {
+        out.push(`${o.op} of ${r.title} (${r.id}) plus an add of ${c.title} on ${dayLabel(c.date)} is a move: use { op: "move", id: "${r.id}", date: "${c.date}" } instead`);
+      }
+    }
+  }
+  return out;
+}
+
+/** A title without the emoji some planned workouts start with ("🏋️ Upper" → "Upper"). @param {string} title */
+export function plainTitle(title) {
+  return String(title ?? '').replace(/^[\p{Extended_Pictographic}\p{Emoji_Modifier}️‍\s]+/u, '').trim() || String(title ?? '').trim();
+}
+
+/**
+ * The card as the phone draws it (lift/COACH-CHAT.md, "The change card"): the days it touches, each with its rows as
+ * they will be after Apply. A row has one tag (`tone` colours it: move, new, skip). A skip or delete and an add on the
+ * same day are one row, the new workout "replaces" the old.
+ * @typedef {{ title: string, sport: string | null, time: string | null, meta: string, tag: string,
+ *   tone: 'move' | 'new' | 'skip' }} CardRow
+ * @typedef {{ date: string | null, label: string, rows: CardRow[] }} CardDay
+ * @typedef {{ summary: string, days: CardDay[] }} Card
+ */
+
+/** "45 min", "1 h", "1 h 30". @param {number | null | undefined} min */
+export function durationText(min) {
+  if (!min) return null;
+  if (min < 60) return `${min} min`;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return m ? `${h} h ${m}` : `${h} h`;
+}
+
+const weekday = (/** @type {string} */ day) => dayLabel(day).split(' ')[0];
+
+/** "From Sat", or "From 24 Oct" when the old day is more than six days away. @param {string} from @param {string} to */
+function fromTag(from, to) {
+  const days = Math.abs(Date.parse(`${to}T12:00:00Z`) - Date.parse(`${from}T12:00:00Z`)) / 86_400_000;
+  return days <= 6 ? `From ${weekday(from)}` : `From ${dayLabel(from).split(' ').slice(1).join(' ')}`;
+}
+
+/**
+ * The card's days and rows (see Card).
+ * @param {Change[]} changes @param {PlanRow[]} rows
+ * @returns {Card}
+ */
+export function cardOf(changes, rows) {
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  /** @type {Map<string, (CardRow & { order: number })[]>} */
+  const days = new Map();
+  /** @type {CardRow[]} */
+  const notes = [];
+  const put = (/** @type {string} */ day, /** @type {CardRow} */ row, /** @type {number} */ order) => {
+    if (!days.has(day)) days.set(day, []);
+    days.get(day)?.push({ ...row, order });
+  };
+  const meta = (/** @type {(string | null | undefined)[]} */ bits) => bits.filter(Boolean).join(' · ');
+  // An add takes the place of a skip or delete on its day: "Long easy hike · replaces Long ride".
+  /** @type {Map<number, PlanRow>} */
+  const replaces = new Map();
+  const taken = new Set();
+  changes.forEach((c, i) => {
+    if (c.op !== 'add') return;
+    const j = changes.findIndex((o, k) => !taken.has(k) && (o.op === 'skip' || o.op === 'remove') && byId.get(o.id)?.date === c.date);
+    if (j < 0) return;
+    const gone = byId.get(/** @type {{ id: string }} */ (changes[j]).id);
+    if (!gone) return;
+    taken.add(j);
+    replaces.set(i, gone);
+  });
+  changes.forEach((c, i) => {
+    if (c.op === 'remember') return notes.push({ title: c.text, sport: null, time: null, meta: 'Coach keeps this in mind', tag: 'Saved', tone: 'new' });
+    if (c.op === 'add') {
+      const gone = replaces.get(i);
+      return put(c.date, {
+        title: plainTitle(c.title), sport: c.sport, time: c.startTime,
+        meta: meta([c.startTime, durationText(c.duration), gone ? `replaces ${plainTitle(gone.title)}` : null]),
+        tag: 'New', tone: 'new',
+      }, i);
+    }
+    if (taken.has(i)) return;
+    const row = byId.get(c.id);
+    if (!row) return;
+    const title = plainTitle(row.title);
+    const was = hm(row.startTime);
+    switch (c.op) {
+      case 'move': {
+        const sameDay = c.date === row.date;
+        const later = (c.startTime ?? '') > (was ?? '');
+        return put(c.date, {
+          title, sport: row.sport, time: c.startTime,
+          meta: sameDay ? meta([`${c.startTime ?? 'no time'}, was ${was ?? 'no time'}`, durationText(row.duration)]) : meta([c.startTime, durationText(row.duration)]),
+          tag: sameDay ? (later ? 'Later' : 'Earlier') : fromTag(row.date, c.date), tone: 'move',
+        }, i);
+      }
+      case 'skip': return put(row.date, { title, sport: row.sport, time: was, meta: meta([was, durationText(row.duration)]), tag: 'Skipped', tone: 'skip' }, i);
+      case 'remove': return put(row.date, { title, sport: row.sport, time: was, meta: meta([was, durationText(row.duration)]), tag: 'Deleted', tone: 'skip' }, i);
+      case 'unskip': return put(row.date, { title, sport: row.sport, time: was, meta: meta([was, durationText(row.duration)]), tag: 'Back on', tone: 'new' }, i);
+      default: {
+        const bits = [];
+        if (c.startTime !== undefined) bits.push(`${c.startTime ?? 'no time'}, was ${was ?? 'no time'}`);
+        if (c.duration != null) bits.push(`${durationText(c.duration)}, was ${durationText(row.duration) ?? 'no time'}`);
+        if (c.effort != null) bits.push(`${EFFORTS[/** @type {keyof typeof EFFORTS} */ (c.effort)].label}, was ${row.intensity ?? 'no effort'}`);
+        if (c.title != null && c.title !== row.title) bits.push(`was ${title}`);
+        if (c.description != null) bits.push('new notes');
+        const time = c.startTime !== undefined ? c.startTime : was;
+        return put(row.date, { title: plainTitle(c.title || row.title), sport: row.sport, time, meta: bits.join(' · '), tag: 'Changed', tone: 'move' }, i);
+      }
+    }
+  });
+  /** @type {CardDay[]} */
+  const out = [...days.keys()].sort().map((date) => ({
+    date,
+    label: dayLabel(date),
+    rows: (days.get(date) ?? [])
+      .sort((a, b) => (a.time ?? '99').localeCompare(b.time ?? '99') || a.order - b.order)
+      .map((r) => ({ title: r.title, sport: r.sport, time: r.time, meta: r.meta, tag: r.tag, tone: r.tone })),
+  }));
+  if (notes.length) out.push({ date: null, label: 'Remember', rows: notes });
+  const count = changes.length;
+  const dated = out.filter((d) => d.date);
+  const span = dated.length === 0 ? null : dated.length === 1 ? dated[0].label : `${dated[0].label} to ${dated[dated.length - 1].label}`;
+  return { summary: [`${count} ${count === 1 ? 'change' : 'changes'}`, span].filter(Boolean).join(' · '), days: out };
+}
+
+/**
+ * Apply's last check, on the plan as it is at the tap (not as it was when Coach wrote the card): every change is still
+ * valid (no day now in the past, every workout still there and not done), no new copy of a lift, nothing that
+ * breaks a rule the card didn't warn about. Returns what is wrong, in Paolo's words; empty when Apply can go.
+ * @param {Change[]} changes @param {{ rows: PlanRow[], today: string }} plan @param {string[]} warned  the card's warnings
+ * @returns {string[]}
+ */
+export function recheck(changes, { rows, today }, warned) {
+  const templates = [...new Set(changes.flatMap((c) => (c.op === 'add' && c.liftTemplate ? [c.liftTemplate] : [])))];
+  const raw = changes.map((c) => ({ ...c }));
+  const { problems } = cleanChanges(raw, { rows, today, templates });
+  if (problems.length) return problems.map((p) => p.replace(/^change \d+: /, ''));
+  const copies = duplicateLiftIssues(rows, changes);
+  const known = new Set(warned);
+  const fresh = [...copies.hard, ...newRuleIssues(rows, changes, today), ...fatigueIssues(rows, changes, today), ...copies.soft]
+    .filter((w) => !known.has(w));
+  return fresh;
+}
+
+/**
+ * After Apply: whether the plan now shows each change where the card said. `added[i]` is the new id of change i when
+ * it is an add. Returns the changes that didn't land, in Paolo's words.
+ * @param {Change[]} changes @param {(string | null)[]} added @param {PlanRow[]} rows  the plan read back after Apply
+ * @returns {string[]}
+ */
+export function landedIssues(changes, added, rows) {
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  /** @type {string[]} */
+  const out = [];
+  changes.forEach((c, i) => {
+    if (c.op === 'remember') return;
+    if (c.op === 'add') {
+      const r = byId.get(added[i] ?? '');
+      if (!r || r.date !== c.date) out.push(`${plainTitle(c.title)} isn't on ${dayLabel(c.date)}`);
+      return;
+    }
+    const r = byId.get(c.id);
+    if (c.op === 'remove') {
+      if (r) out.push(`${plainTitle(r.title)} is still in the plan`);
+      return;
+    }
+    if (!r) return out.push('a workout the card changed is gone from the plan');
+    const name = plainTitle(r.title);
+    if (c.op === 'move' && (r.date !== c.date || hm(r.startTime) !== c.startTime)) out.push(`${name} isn't at ${when(c.date, c.startTime)}`);
+    if (c.op === 'skip' && r.status !== 'skipped') out.push(`${name} isn't skipped`);
+    if (c.op === 'unskip' && r.status === 'skipped') out.push(`${name} is still skipped`);
+    if (c.op === 'update') {
+      if (c.duration != null && r.duration !== c.duration) out.push(`${name} isn't ${c.duration} min`);
+      if (c.startTime !== undefined && hm(r.startTime) !== c.startTime) out.push(`${name} isn't at ${c.startTime ?? 'no time'}`);
+    }
+  });
+  return out;
+}
+
+/**
+ * Which Undo steps are still safe: a step puts back a workout only while it is as Apply left it (`after`, its
+ * fingerprint then). One Paolo moved, edited, did or deleted since stays as he left it. `after` null: a card applied
+ * before 2026-10-29, which kept no fingerprints; every step goes.
+ * @template {{ op: string, id?: string, row?: Record<string, unknown>, title?: string }} U
+ * @param {U[]} steps @param {Record<string, string> | null} after @param {PlanRow[]} rows  the plan now
+ * @returns {{ run: U[], kept: string[] }}  kept: the titles Undo leaves alone
+ */
+export function undoPlan(steps, after, rows) {
+  if (!after) return { run: steps, kept: [] };
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  /** @type {U[]} */
+  const run = [];
+  /** @type {string[]} */
+  const kept = [];
+  for (const s of steps) {
+    if (s.op === 'forget') { run.push(s); continue; }
+    if (s.op === 'restore') {
+      // A deleted workout comes back unless something took its id since (it never does).
+      if (!byId.has(String(s.row?.id ?? ''))) run.push(s);
+      continue;
+    }
+    const r = byId.get(String(s.id ?? ''));
+    const print = after[String(s.id ?? '')];
+    if (r && r.state !== 'done' && print && printOf(r, print) === print) run.push(s);
+    else kept.push(plainTitle(r?.title ?? s.title ?? 'A workout'));
+  }
+  return { run, kept };
 }
