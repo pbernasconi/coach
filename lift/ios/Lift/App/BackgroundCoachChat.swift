@@ -50,6 +50,10 @@ nonisolated struct BackgroundCoachChat: CoachChatting {
 
     func dismiss(_ proposalID: String) async throws -> ChatActionStatus { try await base.dismiss(proposalID) }
 
+    func decide(_ decision: CoachDecision, on proposalID: String) async throws -> CoachProposalUpdate {
+        try await base.decide(decision, on: proposalID)
+    }
+
     func rate(_ messageID: String, _ rating: ChatFeedbackRating?) async throws { try await base.rate(messageID, rating) }
 
     func threads() async throws -> [CoachThreadSummary] { try await base.threads() }

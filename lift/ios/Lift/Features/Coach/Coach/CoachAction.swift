@@ -11,6 +11,9 @@ nonisolated enum CoachAction: Equatable, Sendable {
     case applyTapped(proposalID: String)
     case dismissTapped(proposalID: String)
     case undoTapped(proposalID: String)
+    /// Undo asked first (Paolo changed some of its workouts since): put back the rest, or keep it all.
+    case undoConfirmed(proposalID: String)
+    case undoKept(proposalID: String)
     /// A quick reply under Coach's question: sent as Paolo's message.
     case quickReplyTapped(String)
     /// Every question card on the latest reply has an answer: they go as one message, a line per question.

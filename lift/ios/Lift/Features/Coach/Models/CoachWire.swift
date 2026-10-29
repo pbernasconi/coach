@@ -96,6 +96,24 @@ nonisolated enum CoachWire {
         let items: [Item]
         let warnings: [String]?
         let status: String
+        let summary: String?
+        let days: [Day]?
+        let result: [String]?
+    }
+
+    /// A day of the card by day (lift/APP-API.md, "Coach"): its rows as they will be after Apply.
+    struct Day: Decodable, Sendable {
+        let date: String?
+        let label: String
+        let rows: [Row]
+    }
+
+    struct Row: Decodable, Sendable {
+        let title: String
+        let sport: String?
+        let meta: String?
+        let tag: String
+        let tone: String
     }
 
     struct Item: Decodable, Sendable {
@@ -109,9 +127,13 @@ nonisolated enum CoachWire {
         let reply: Message
     }
 
-    /// `POST …/proposals/{id}/apply|undo|dismiss`.
+    /// `POST …/proposals/{id}/apply|undo|dismiss`. Undo asks first with `needsConfirm`, `error` (the question's
+    /// words) and `undoable` (how many it would put back).
     struct ProposalAnswer: Decodable, Sendable {
         let proposal: Proposal
+        let needsConfirm: Bool?
+        let error: String?
+        let undoable: Int?
     }
 
     static func thread(_ wire: Thread) -> CoachThread {
@@ -186,8 +208,46 @@ nonisolated enum CoachWire {
             title: wire.title,
             items: wire.items.enumerated().map { item($0.element, index: $0.offset) },
             notes: wire.warnings ?? [],
-            status: status(wire.status)
+            status: status(wire.status),
+            days: (wire.days ?? []).enumerated().map { section($0.element, index: $0.offset) },
+            summary: wire.summary,
+            result: wire.result ?? []
         )
+    }
+
+    /// A day of the card: its heading and rows, each with its sport's symbol.
+    static func section(_ wire: Day, index: Int) -> ChatChangeSection {
+        ChatChangeSection(
+            id: wire.date ?? "day-\(index)",
+            title: wire.label,
+            rows: wire.rows.enumerated().map { offset, row in
+                ChatChangeRow(
+                    id: "\(index)-\(offset)",
+                    title: row.title,
+                    caption: row.meta,
+                    tag: row.tag,
+                    tone: tone(row.tone),
+                    systemImage: wire.date == nil ? "bookmark" : CoachSportSymbol.name(row.sport, title: row.title)
+                )
+            }
+        )
+    }
+
+    static func tone(_ wire: String) -> ChatChangeRow.Tone {
+        switch wire {
+        case "new": .added
+        case "skip": .removed
+        default: .changed
+        }
+    }
+
+    /// A card action's answer as the card takes it.
+    static func update(_ wire: ProposalAnswer) -> CoachProposalUpdate {
+        let card = proposal(wire.proposal)
+        let confirm = wire.needsConfirm == true
+            ? ChatUndoConfirm(message: wire.error ?? "Some of these changed since.", count: wire.undoable ?? 0)
+            : nil
+        return CoachProposalUpdate(status: card.status, result: card.result, undoConfirm: confirm)
     }
 
     /// A row: "changed" with "old → new" shows the old value struck through; without an arrow it is an edit.

@@ -190,6 +190,24 @@ nonisolated struct LiveCoachChat: CoachChatting {
 
     func dismiss(_ proposalID: String) async throws -> ChatActionStatus { try await act("dismiss", on: proposalID) }
 
+    func decide(_ decision: CoachDecision, on proposalID: String) async throws -> CoachProposalUpdate {
+        let id = proposalID.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? proposalID
+        let (action, body): (String, String) =
+            switch decision {
+            case .apply: ("apply", "{}")
+            case .undo(let partial): ("undo", partial ? #"{"partial":true}"# : "{}")
+            case .dismiss: ("dismiss", "{}")
+            }
+        do {
+            let data = try await client.send("POST", "api/app/coach/proposals/\(id)/\(action)", body: Data(body.utf8))
+            return CoachWire.update(try Self.decoder.decode(CoachWire.ProposalAnswer.self, from: data))
+        } catch SyncTransportError.rejected(status: 409) {
+            // The card went stale or isn't open: the thread has its status and, on a refused Apply, why.
+            let card = try await thread().messages.compactMap(\.proposal).first { $0.id == proposalID }
+            return CoachProposalUpdate(status: card?.status ?? .expired, result: card?.result ?? [])
+        }
+    }
+
     /// One card action. A 409 (the card is no longer open, or went stale) reads the thread again for its status.
     private func act(_ action: String, on proposalID: String) async throws -> ChatActionStatus {
         let id = proposalID.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? proposalID
