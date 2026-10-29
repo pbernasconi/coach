@@ -27,7 +27,7 @@ public struct ChatBreakdownRow: Identifiable, Equatable {
 ///     }
 public struct ChatBreakdownCard<Footer: View>: View {
     @Environment(\.koboTheme) private var theme
-    @ScaledMetric(relativeTo: .body) private var bar = Space.sm
+    @ScaledMetric(relativeTo: .body) private var bar = Space.xs + Space.xxs
     private let caption: String
     private let total: String
     private let unit: String?
@@ -57,7 +57,7 @@ public struct ChatBreakdownCard<Footer: View>: View {
                     .foregroundStyle(theme.palette.textSecondary)
                 HStack(alignment: .firstTextBaseline, spacing: Space.sm) {
                     Text(verbatim: total)
-                        .font(theme.font(.largeTitle).weight(.semibold).monospacedDigit())
+                        .font(theme.font(.title).weight(.medium).monospacedDigit())
                         .foregroundStyle(theme.palette.textPrimary)
                     if let unit {
                         Text(verbatim: unit)
@@ -67,7 +67,7 @@ public struct ChatBreakdownCard<Footer: View>: View {
                 }
             }
             .accessibilityElement(children: .combine)
-            Grid(alignment: .leading, horizontalSpacing: Space.md, verticalSpacing: Space.md) {
+            Grid(alignment: .leading, horizontalSpacing: Space.md, verticalSpacing: Space.sm + Space.xxs) {
                 ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
                     GridRow {
                         Text(verbatim: row.label)
