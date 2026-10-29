@@ -905,10 +905,20 @@ Calendar. Code: `src/lib/coach-chat/` (server.ts, writes.ts, changes.mjs, chat.m
 `src/lib/planner/prompts/coach-chat.md`. One open thread; a new one starts after 24 h idle. A $10 monthly cap,
 apart from the planner's.
 
-- `GET /api/app/coach?tz=` → `{ threadId, messages, answering, ready, notice, suggestions }`. `messages` oldest first;
+- `GET /api/app/coach?tz=` → `{ threadId, messages, answering, ready, notice, suggestions, prompts, firstName }`. `messages` oldest first;
   `answering` true while the last message is Paolo's, has no reply yet and is under 2.5 minutes old (the app left
   while it waited): show the typing row and read again every few seconds. `ready` false (with `notice`) when there
-  is no API key or the month's budget is used; `suggestions` are quick prompts.
+  is no API key or the month's budget is used; `suggestions` are quick prompts (older builds); `prompts` are the
+  starter cards of an empty chat, `[{ title, symbol }]` with an SF Symbol each; `firstName` is for the greeting ("Hi
+  Paolo,"), or `null`.
+- `GET /api/app/coach/threads` → `{ threads: [{ id, title, updatedAt, messageCount }] }`: past chats for the history
+  sheet, newest first, at most 50, titled by their first message. Empty chats are left out.
+- `POST /api/app/coach/threads` → a new empty chat becomes the open one (the + in the top bar); the same body as
+  `GET /api/app/coach`.
+- `POST /api/app/coach/threads/{id}` → that past chat becomes the open one again, and the next message continues it;
+  the same body as `GET /api/app/coach`. `404` when there is no such chat.
+- `PUT /api/app/coach/messages/{id}/feedback` `{ rating: "up" | "down" | null }` → `{ ok: true }`: the thumbs under a
+  reply (`null` clears them). `404` unless it is one of Coach's replies.
 - `POST /api/app/coach/messages?tz=` `{ text, files? }` (up to 2000 characters; empty only with `files`, the ids of
   up to 6 uploads, below) → `{ threadId, message, reply }`, once Claude is
   done (5–30 s). With `Accept: text/event-stream` the answer streams instead (below). A Claude failure is a reply
@@ -961,7 +971,9 @@ thinking summary under it, and the reply's words as they come. `done` carries th
 final text. If the stream breaks, read `GET /api/app/coach`: the answer still finishes on the server.
 
 Every message also has `attachments` (cards under the text) and `quickReplies` (one-tap answers to a question Coach
-asked; a tap sends it as Paolo's message), both `[]` when none. Coach names a card (`show`, src/lib/coach-chat/cards.mjs);
+asked; a tap sends it as Paolo's message), both `[]` when none; `thought` (the summary of Claude's thinking, for the
+folded "Thought" row above the reply, or `null`), `questions` (question cards, below, `[]` when none) and `feedback`
+(`"up"`, `"down"` or `null`). Coach names a card (`show`, src/lib/coach-chat/cards.mjs);
 the server fills it from the loaders below when it answers and stores it with the message, so an old thread shows what
 Coach saw then. A card that can't be filled is left out. At most 2 per answer.
 
@@ -972,6 +984,7 @@ Coach saw then. A card that can't be filled is left out. At most 2 per answer.
 | `exercise` | `exercise` | `{ name, exerciseKey, sessionId, item, stats }`: `item` is the exercise as in `/api/app/lift/sessions/{sessionId}` `exercises.items[]` (muscles, sets, lastTime, best, trend, steps, media) for the next planned Lift session that has it, else the latest; `stats` is `/api/app/lift/exercises/{key}` `stats`. Either can be `null`. |
 | `readiness` | `readiness` | `{ date, header, cue, fitness }`: the Today API's `header`, `todayLine.cue` and `fitness` (its `days` trimmed to the last 42 and the projected ones). |
 | `day` | `day` | `{ date, title, allDay, blocks[{ start, end, kind, title, workoutId }] }`: 06:00–22:00 in `tz`; `kind` `busy` (meetings, overlapping ones merged), `session` (a planned workout), `free` (a gap of 30 min or more). |
+| `breakdown` | (flat) | `{ caption, title, total, unit, rows[{ label, value, display, tint }], link }`: training time by sport over a week or a month, biggest first. `caption` "October 2026" or "This week"; `total` "14 h 20 m"; `value` in minutes (a bar is `value / max`); `tint` `run`, `ride`, `swim`, `strength`, `walk` or `other`; `link` `plan`. |
 
 ```json
 { "kind": "day", "day": { "date": "2026-10-27", "title": "Tuesday 27 Oct", "allDay": [],
@@ -979,6 +992,13 @@ Coach saw then. A card that can't be filled is left out. At most 2 per answer.
              { "start": "09:00", "end": "10:15", "kind": "session", "title": "Heavy barbell", "workoutId": "wqw…" },
              { "start": "13:30", "end": "15:00", "kind": "busy", "title": "Call with Rafael", "workoutId": null }] } }
 ```
+
+Coach's question cards (`ask_questions`, cards.mjs): one to five, each `{ id, title, subtitle, kind, options,
+allowOther, placeholder, confirm }`. `kind` `single` (pick one; a tap answers), `multi` (pick any, then the arrow;
+`allowOther` adds an "Add another…" chip to type one), `text` (a field with `placeholder`) or `confirm` (`confirm.primary`
+the filled button, `confirm.secondary` the outlined one, or null; Skip is always there). Show them on the latest reply
+only, one at a time with "1 of N" when there are several. The answers go back as one ordinary message, a line per
+question: `title: answer` (several picks joined by ", "; a confirm's button label; `skip`).
 
 #### Coach attachments
 
