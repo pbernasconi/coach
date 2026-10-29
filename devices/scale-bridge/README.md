@@ -28,15 +28,27 @@ Renpho Elis 1 ──Bluetooth──▶ ESP32 bridge ──Wi-Fi, HTTPS──▶ 
 
 Later updates go over Wi-Fi: `pio run -e atoms3-ota -t upload`. It sends `OTA_PASSWORD` from `include/config.h`
 (`ota_auth.py`; the `SCALE_OTA_PASSWORD` environment variable overrides it). If the board was flashed with another
-password, flash once over USB. If `scale-bridge.local` does not resolve, add `--upload-port <the board's IP>`.
+password, flash once over USB. `ota_auth.py` also looks up `scale-bridge.local` itself (espota's own lookup often
+fails on macOS); if that fails too, add `--upload-port <the board's IP>` or set `SCALE_BRIDGE_IP`.
 
 ## Checking on it
 
-- `http://scale-bridge.local/` (same Wi-Fi) shows Wi-Fi strength, the remembered scale, readings waiting to be
-  posted, every Bluetooth device heard in the last 5 minutes (address, signal, name, manufacturer data in hex; the
-  scale shows up while you stand on it), and the last 80 log lines, including every frame to and from the scale in hex. Send that log when
-  something is off.
-- `http://scale-bridge.local/forget` forgets the remembered scale (for a new scale).
+- `http://scale-bridge.local/` (same Wi-Fi) shows Wi-Fi strength, the clock, the remembered scale and when it was
+  last heard, the last session and the last post (HTTP status and reply), readings waiting to be posted, the
+  firmware build and height, the restart count and its reason, free memory, every Bluetooth device heard in the
+  last 5 minutes (address, signal, name, manufacturer data in hex; the scale keeps its row), the log lines from
+  before the last restart, and the last 80 log lines, including every frame to and from the scale in hex. Send
+  that page when something is off.
+- `http://scale-bridge.local/status.json` has the same state for scripts.
+- `http://scale-bridge.local/restart` restarts the board; `/forget` forgets the remembered scale (for a new scale).
+
+**Watchdogs.** The bridge fixes itself where it can, and the page says what it did:
+- Wi-Fi down 1 minute: join again; down 20 minutes: restart.
+- No Bluetooth advertisement from any device for 3 minutes: restart the scan; 10 minutes: restart.
+- `loop()` stuck for 90 seconds (a hung TLS or Bluetooth call): the task watchdog restarts the board.
+- Free memory below 24 KB: restart. The scan's device list is cleared every 5 minutes so it cannot fill memory.
+
+Readings waiting to be posted are in flash, so no restart loses a weigh-in.
 
 ## How it works
 
@@ -54,9 +66,14 @@ password, flash once over USB. If `scale-bridge.local` does not resolve, add `--
   by about one point. Treat it as a trend.
 - **Missed weigh-ins.** The scale keeps readings taken while nobody was connected. The bridge collects them on
   the next weigh-in and posts those from the last 30 days, unless a newer live reading already covers the day.
+  The Elis 1 usually finishes before the bridge connects, so most weigh-ins arrive this way, a few seconds late.
+- **New batteries.** They reset the scale's clock: it then counts seconds from power-on, so stored readings carry
+  times near 2000. The bridge dates them from the newest one, which is the weigh-in that just woke the scale, and
+  keeps their spacing. It drops them only when the same session also gave a live reading (the newest is then not
+  "now"). The same session sets the scale's clock again (`0x20`).
 - **Broadcast-only firmware.** Some Elis 1 units never accept a connection and put the weight in their
   advertisement. The bridge reads those too, weight only.
-- **Posting.** Readings wait in memory and are retried every minute. Each day keeps its latest reading
+- **Posting.** Readings wait in flash and are retried every minute. Each day keeps its latest reading
   (the server upserts on date and metric). `source` is `Renpho Elis 1 (scale bridge)`.
 
 Not covered: the newer ES-CS20M revision on service `0x1A10` (HVIN `ESCS20MB2`). The log would say "no QN

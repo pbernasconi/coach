@@ -2,8 +2,10 @@
 //
 // Loop: scan for the scale; when it wakes (someone stepped on), connect, answer its handshake (lib/qn), take the
 // final reading, disconnect, then post weight_kg and body_fat_pct for that day to POST /api/vitals/sync.
-// Readings wait in memory and are retried every minute while Coach or Wi-Fi is down.
-// The last 80 log lines are at http://scale-bridge.local/ for debugging without a cable.
+// Readings wait in flash and are retried every minute while Coach or Wi-Fi is down, also across a restart.
+// http://scale-bridge.local/ shows the state and the last 80 log lines (and the lines from before the last
+// restart); /status.json has the same for scripts. Watchdogs restart Wi-Fi, the Bluetooth scan or the board when
+// one of them stops working.
 #include <Arduino.h>
 #include <ArduinoOTA.h>
 #include <ESPmDNS.h>
@@ -13,6 +15,8 @@
 #include <WebServer.h>
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
+#include <esp_system.h>
+#include <esp_task_wdt.h>
 #include <time.h>
 
 #include "certs.h"
@@ -33,6 +37,13 @@ constexpr uint32_t kQuietFallbackMs = 3000;    // no frame this long after the u
 constexpr uint32_t kCooldownMs = 15000;        // ignore the scale's leftover advertising after a session
 constexpr uint32_t kRetryMs = 60000;
 constexpr size_t kMaxPending = 24;
+constexpr uint32_t kTaskWatchdogS = 90;          // loop() stuck this long (a hung TLS or BLE call): restart
+constexpr uint32_t kWifiKickMs = 60000;          // offline this long: disconnect and join again
+constexpr uint32_t kWifiRestartMs = 20 * 60000;  // offline this long: restart the board
+constexpr uint32_t kScanKickMs = 3 * 60000;      // no advertisement at all this long: restart the scan
+constexpr uint32_t kScanRestartMs = 10 * 60000;  // still nothing: restart the board
+constexpr uint32_t kMinFreeHeap = 24000;         // below this: restart before an allocation fails
+const char* const kBuilt = __DATE__ " " __TIME__;
 
 // The QN service layouts (renpho-escs20m const.py). Renpho uses FFF0; some rebrands use FFE0.
 const NimBLEUUID kFFF0("fff0"), kFFF1("fff1"), kFFF2("fff2");
@@ -43,6 +54,28 @@ const NimBLEUUID kFFE0("ffe0"), kFFE1("ffe1"), kFFE2("ffe2"), kFFE3("ffe3"), kFF
 constexpr size_t kLogLines = 80;
 String logRing[kLogLines];
 size_t logHead = 0;
+
+// The newest lines also go to RTC memory, which keeps its contents through a software restart, a crash or a
+// watchdog reset (not through a power cut). After a restart they show as "before the last restart".
+constexpr size_t kKeptLines = 24, kKeptLen = 160;
+constexpr uint32_t kKeptMagic = 0x5CA1E001;
+RTC_NOINIT_ATTR uint32_t keptMagic;
+RTC_NOINIT_ATTR uint32_t keptHead;
+RTC_NOINIT_ATTR char kept[kKeptLines][kKeptLen];
+String previousLog[kKeptLines];
+
+void takeKeptLog() {
+  if (keptMagic == kKeptMagic && keptHead < kKeptLines) {
+    for (size_t i = 0; i < kKeptLines; i++) {
+      char* line = kept[(keptHead + i) % kKeptLines];
+      line[kKeptLen - 1] = 0;
+      previousLog[i] = String(line);
+    }
+  }
+  memset(kept, 0, sizeof kept);
+  keptHead = 0;
+  keptMagic = kKeptMagic;
+}
 
 void logf(const char* fmt, ...) {
   char msg[220];
@@ -63,6 +96,24 @@ void logf(const char* fmt, ...) {
   Serial.println(line);
   logRing[logHead] = line;
   logHead = (logHead + 1) % kLogLines;
+  if (keptMagic == kKeptMagic) {
+    strlcpy(kept[keptHead], line.c_str(), kKeptLen);
+    keptHead = (keptHead + 1) % kKeptLines;
+  }
+}
+
+const char* resetReason() {
+  switch (esp_reset_reason()) {
+    case ESP_RST_POWERON: return "power on";
+    case ESP_RST_SW: return "restart by the firmware";
+    case ESP_RST_PANIC: return "crash";
+    case ESP_RST_INT_WDT:
+    case ESP_RST_TASK_WDT:
+    case ESP_RST_WDT: return "watchdog";
+    case ESP_RST_BROWNOUT: return "brownout (weak power)";
+    case ESP_RST_DEEPSLEEP: return "deep sleep";
+    default: return "other";
+  }
 }
 
 String hexOf(const uint8_t* b, size_t n) {
@@ -123,6 +174,28 @@ Pending pending[kMaxPending];
 size_t pendingCount = 0;
 qn::Reading lastReading;
 Preferences prefs;
+constexpr const char* kPendingKey = "pending2";  // a new name when Reading changes layout
+
+// The waiting readings live in flash too, so a restart (watchdog, update, power cut) does not lose a weigh-in.
+void savePending() {
+  if (pendingCount) prefs.putBytes(kPendingKey, pending, sizeof(Pending) * pendingCount);
+  else prefs.remove(kPendingKey);
+}
+
+void loadPending() {
+  prefs.remove("pending");  // an older layout, if any
+  const size_t n = prefs.getBytesLength(kPendingKey);
+  if (n == 0 || n % sizeof(Pending) != 0 || n > sizeof pending) return;
+  prefs.getBytes(kPendingKey, pending, n);
+  pendingCount = n / sizeof(Pending);
+}
+
+// For the status page.
+uint32_t lastPostAt = 0;  // unix time
+int lastPostCode = 0;
+String lastPostReply;
+uint32_t lastSessionAt = 0;  // unix time
+String lastSessionResult = "none since the restart";
 uint32_t ledOffAt = 0;
 uint32_t lastLiveUnix = 0;  // newest live weigh-in sent: older stored readings must not overwrite its day
 
@@ -141,9 +214,10 @@ void enqueue(qn::Reading r) {
     pendingCount--;
   }
   pending[pendingCount++].r = r;
+  savePending();
   lastReading = r;
-  logf("%s reading: %.2f kg, body fat %.1f %%, impedance %u", r.stored ? "stored" : "live", r.weightKg,
-       r.bodyFatPct, r.impedance);
+  logf("%s reading: %.2f kg, body fat %.1f %%, impedance %u%s", r.stored ? "stored" : "live", r.weightKg,
+       r.bodyFatPct, r.impedance, r.estimatedTime ? " (time worked out: the scale's clock was reset)" : "");
 }
 
 // Posts every waiting reading in one request, oldest first so the newest of a day wins (the server keeps the last).
@@ -182,7 +256,9 @@ bool postPending() {
 
   WiFiClientSecure tls;
   tls.setCACert(kRootCAs);
+  tls.setHandshakeTimeout(20);  // seconds; the default (120) is longer than the task watchdog
   HTTPClient http;
+  http.setConnectTimeout(10000);
   http.setTimeout(15000);
   if (!http.begin(tls, COACH_URL)) {
     logf("post: bad COACH_URL");
@@ -193,15 +269,21 @@ bool postPending() {
   const int code = http.POST(body);
   const String resp = http.getString();
   http.end();
-  logf("post %u reading(s): HTTP %d %s", (unsigned)pendingCount, code, resp.substring(0, 120).c_str());
+  logf("post %u reading(s): HTTP %d %s", (unsigned)pendingCount, code,
+       code < 0 ? http.errorToString(code).c_str() : resp.substring(0, 120).c_str());
+  lastPostAt = (uint32_t)time(nullptr);
+  lastPostCode = code;
+  lastPostReply = code < 0 ? http.errorToString(code) : resp.substring(0, 120);
   if (code >= 200 && code < 300) {
     pendingCount = 0;
+    savePending();
     led(0, 40, 0);  // green for a few seconds: in Coach
     ledOffAt = millis() + 5000;
     return true;
   }
   if (code == 400 || code == 413) {
     pendingCount = 0;  // the server will never take this batch (COACH-API.md): drop it
+    savePending();
   }
   led(40, 0, 0);  // red: not sent; 401 means the token in config.h is wrong
   return false;
@@ -216,7 +298,10 @@ uint32_t cooldownUntil = 0;
 float lastBroadcastKg = 0.f;
 uint32_t lastBroadcastAt = 0;
 QueueHandle_t frames;
-QueueHandle_t broadcasts;  // weights from broadcast-only scales, handed from the BLE task to loop()
+QueueHandle_t broadcasts;
+volatile uint32_t lastAdvAt = 0;        // any advertisement: the scan is alive
+volatile uint32_t scaleHeardAt = 0;     // the remembered scale's last advertisement (millis)
+volatile int scaleRssi = 0;  // weights from broadcast-only scales, handed from the BLE task to loop()
 
 struct Frame {
   uint8_t len;
@@ -238,7 +323,7 @@ struct Seen {
   int rssi;
   uint32_t at;
 };
-constexpr size_t kSeenMax = 12;
+constexpr size_t kSeenMax = 16;
 Seen seen[kSeenMax];
 SemaphoreHandle_t seenLock = xSemaphoreCreateMutex();
 
@@ -248,9 +333,12 @@ void remember(NimBLEAdvertisedDevice* d) {
   size_t slot = kSeenMax;
   for (size_t i = 0; i < kSeenMax && slot == kSeenMax; i++) if (seen[i].mac == mac) slot = i;
   const bool fresh = slot == kSeenMax;
-  if (fresh) {  // a new device takes the oldest slot
-    slot = 0;
-    for (size_t i = 1; i < kSeenMax; i++) if (seen[i].at < seen[slot].at) slot = i;
+  if (fresh) {  // a new device takes the oldest slot, never the scale's
+    const std::string scale = scaleMac.c_str();
+    for (size_t i = 0; i < kSeenMax; i++) {
+      if (!scale.empty() && seen[i].mac == scale) continue;
+      if (slot == kSeenMax || seen[i].at < seen[slot].at) slot = i;
+    }
   }
   Seen& e = seen[slot];
   e.mac = mac;
@@ -269,7 +357,12 @@ void remember(NimBLEAdvertisedDevice* d) {
 
 class ScanCallbacks : public NimBLEAdvertisedDeviceCallbacks {
   void onResult(NimBLEAdvertisedDevice* d) override {
+    lastAdvAt = millis();
     remember(d);
+    if (!scaleMac.isEmpty() && d->getAddress().toString() == std::string(scaleMac.c_str())) {
+      scaleHeardAt = millis() | 1;
+      scaleRssi = d->getRSSI();
+    }
     if (!d->haveManufacturerData() || wantConnect) return;
     const std::string m = d->getManufacturerData();
     const uint8_t* b = (const uint8_t*)m.data();
@@ -359,7 +452,7 @@ void runSession() {
           enqueue(a.readings[i]);
           gotReading = true;
         }
-        if (a.droppedStored) logf("skipped %u stored reading(s): clock unset or older than 30 days", (unsigned)a.droppedStored);
+        if (a.droppedStored) logf("skipped %u stored reading(s): older than 30 days or not a weight", (unsigned)a.droppedStored);
         if (a.done && !done) {
           done = true;
           doneAt = millis();
@@ -372,9 +465,27 @@ void runSession() {
         (alt ? alt : write)->writeValue(w.bytes, w.len, true);
       }
       if (done && millis() - doneAt > 1500) break;  // let stored records and the end command finish
+      esp_task_wdt_reset();
     }
-    if (!done) logf("session ended without a final reading (stepped off early, or the scale went to sleep)");
+    const qn::Actions late = session.finish();
+    for (size_t i = 0; i < late.readingCount; i++) {
+      enqueue(late.readings[i]);
+      gotReading = true;
+    }
+    if (late.droppedStored) {
+      logf("skipped %u stored reading(s) from a reset scale clock: %s", (unsigned)late.droppedStored,
+           done ? "a live reading came too, so their time is unknown" : "the bridge clock is not set yet");
+    }
+    char result[96];
+    snprintf(result, sizeof result, "%s, %u stored record(s), %s", done ? "live reading" : "no live reading",
+             (unsigned)session.storedCount(), gotReading ? "weigh-in queued" : "nothing to send");
+    lastSessionResult = result;
+    logf("session ended: %s", result);
+    if (!done && !gotReading) logf("no weigh-in: step on again and stay until the number flashes");
+  } else {
+    lastSessionResult = "could not talk to the scale";
   }
+  lastSessionAt = (uint32_t)time(nullptr);
   if (client->isConnected()) client->disconnect();
   NimBLEDevice::deleteClient(client);
   cooldownUntil = millis() + kCooldownMs;
@@ -391,16 +502,43 @@ void runSession() {
 
 WebServer web(80);
 
+String ago(uint32_t at) {
+  if (!at) return "never";
+  const uint32_t s = (millis() - at) / 1000;
+  if (s < 120) return String(s) + " s ago";
+  if (s < 7200) return String(s / 60) + " min ago";
+  return String(s / 3600) + " h ago";
+}
+
+String when(uint32_t unix) {
+  if (!unix) return "never";
+  const time_t t = unix;
+  struct tm tm;
+  localtime_r(&t, &tm);
+  char b[24];
+  strftime(b, sizeof b, "%m-%d %H:%M:%S", &tm);
+  return String(b);
+}
+
+uint32_t bootCount = 0;
+
 void handleRoot() {
   String s = "Scale bridge\n\n";
   s += "Wi-Fi: " + (WiFi.status() == WL_CONNECTED ? WiFi.localIP().toString() + " (" + String(WiFi.RSSI()) + " dBm)" : String("not connected")) + "\n";
-  s += "Clock: " + String(timeValid() ? "set" : "not set yet") + "\n";
-  s += "Scale: " + (scaleMac.isEmpty() ? String("not seen yet") : scaleMac) + "\n";
+  s += "Clock: " + (timeValid() ? when((uint32_t)time(nullptr)) : String("not set yet")) + "\n";
+  s += "Scale: " + (scaleMac.isEmpty() ? String("not seen yet") : scaleMac + ", heard " + ago(scaleHeardAt) +
+                    (scaleHeardAt ? " at " + String(scaleRssi) + " dBm" : String(""))) + "\n";
+  s += "Last session: " + (lastSessionAt ? when(lastSessionAt) + ", " : String("")) + lastSessionResult + "\n";
   s += "Waiting to post: " + String(pendingCount) + "\n";
+  s += "Last post: " + (lastPostAt ? when(lastPostAt) + ", HTTP " + String(lastPostCode) + " " + lastPostReply : String("none since the restart")) + "\n";
   if (lastReading.weightKg > 0.f) {
-    s += "Last reading: " + String(lastReading.weightKg, 2) + " kg, body fat " + String(lastReading.bodyFatPct, 1) + " %\n";
+    s += "Last reading: " + String(lastReading.weightKg, 2) + " kg, body fat " + String(lastReading.bodyFatPct, 1) + " %, " +
+         when(lastReading.unixTime) + "\n";
   }
-  s += "Uptime: " + String(millis() / 60000) + " min\n\nBluetooth heard in the last 5 min (step on the scale; it should appear here):\n";
+  s += "Firmware: built " + String(kBuilt) + ", height " + String(PROFILE_HEIGHT_CM) + " cm\n";
+  s += "Restart #" + String(bootCount) + ": " + resetReason() + ", up " + String(millis() / 60000) + " min, free memory " +
+       String(ESP.getFreeHeap() / 1024) + " KB (lowest " + String(ESP.getMinFreeHeap() / 1024) + " KB)\n";
+  s += "\nBluetooth heard in the last 5 min (step on the scale; it should appear here):\n";
   if (xSemaphoreTake(seenLock, pdMS_TO_TICKS(100)) == pdTRUE) {
     size_t n = 0;
     for (const Seen& e : seen) {
@@ -412,12 +550,53 @@ void handleRoot() {
     xSemaphoreGive(seenLock);
     if (!n) s += "  nothing\n";
   }
+  bool any = false;
+  for (const String& line : previousLog) any = any || !line.isEmpty();
+  if (any) {
+    s += "\nLog before the last restart:\n";
+    for (const String& line : previousLog) if (!line.isEmpty()) s += line + "\n";
+  }
   s += "\nLog (newest last):\n";
   for (size_t i = 0; i < kLogLines; i++) {
     const String& line = logRing[(logHead + i) % kLogLines];
     if (!line.isEmpty()) s += line + "\n";
   }
   web.send(200, "text/plain; charset=utf-8", s);
+}
+
+String jsonEscape(const String& in) {
+  String o;
+  for (size_t i = 0; i < in.length(); i++) {
+    const char ch = in[i];
+    if (ch == '"' || ch == '\\') o += '\\';
+    if ((uint8_t)ch < 0x20) continue;
+    o += ch;
+  }
+  return o;
+}
+
+void handleJson() {
+  String s = "{";
+  s += "\"wifiConnected\":" + String(WiFi.status() == WL_CONNECTED ? "true" : "false");
+  s += ",\"rssi\":" + String(WiFi.RSSI());
+  s += ",\"clockSet\":" + String(timeValid() ? "true" : "false");
+  s += ",\"scale\":\"" + scaleMac + "\"";
+  s += ",\"scaleHeardSecondsAgo\":" + (scaleHeardAt ? String((millis() - scaleHeardAt) / 1000) : String("null"));
+  s += ",\"lastSessionAt\":" + String(lastSessionAt) + ",\"lastSession\":\"" + jsonEscape(lastSessionResult) + "\"";
+  s += ",\"pending\":" + String(pendingCount);
+  s += ",\"lastPostAt\":" + String(lastPostAt) + ",\"lastPostCode\":" + String(lastPostCode);
+  s += ",\"lastWeightKg\":" + String(lastReading.weightKg, 2) + ",\"lastReadingAt\":" + String(lastReading.unixTime);
+  s += ",\"built\":\"" + String(kBuilt) + "\",\"boot\":" + String(bootCount) + ",\"resetReason\":\"" + resetReason() + "\"";
+  s += ",\"uptimeSeconds\":" + String(millis() / 1000) + ",\"freeHeap\":" + String(ESP.getFreeHeap());
+  s += ",\"minFreeHeap\":" + String(ESP.getMinFreeHeap()) + "}";
+  web.send(200, "application/json", s);
+}
+
+void handleRestart() {
+  logf("restart asked for on the web page");
+  web.send(200, "text/plain", "Restarting.\n");
+  delay(300);
+  ESP.restart();
 }
 
 void handleForget() {
@@ -439,6 +618,9 @@ void connectWifi() {
 void setup() {
   Serial.begin(115200);
   delay(300);
+  setenv("TZ", TIMEZONE, 1);  // before the first log line: the clock survives a software restart
+  tzset();
+  takeKeptLog();
   led(20, 20, 20);
   frames = xQueueCreate(32, sizeof(Frame));
   broadcasts = xQueueCreate(4, sizeof(float));
@@ -446,18 +628,33 @@ void setup() {
   scaleMac = String(SCALE_MAC).length() ? String(SCALE_MAC) : prefs.getString("scale_mac", "");
   scaleMac.toLowerCase();
   lastLiveUnix = prefs.getUInt("last_live", 0);
-  logf("scale bridge starting; scale %s", scaleMac.isEmpty() ? "not known yet" : scaleMac.c_str());
+  bootCount = prefs.getUInt("boots", 0) + 1;
+  prefs.putUInt("boots", bootCount);
+  loadPending();
+  logf("scale bridge starting (restart #%u: %s, built %s); scale %s; %u reading(s) waiting", (unsigned)bootCount,
+       resetReason(), kBuilt, scaleMac.isEmpty() ? "not known yet" : scaleMac.c_str(), (unsigned)pendingCount);
 
   connectWifi();
   configTzTime(TIMEZONE, "pool.ntp.org", "time.google.com");
 
   ArduinoOTA.setHostname(kHostname);
   ArduinoOTA.setPassword(OTA_PASSWORD);
-  ArduinoOTA.onStart([] { NimBLEDevice::getScan()->stop(); logf("update starting"); });
+  ArduinoOTA.onStart([] {
+    NimBLEDevice::getScan()->stop();
+    esp_task_wdt_delete(nullptr);  // the upload blocks loop() for longer than the watchdog allows
+    logf("update starting");
+  });
+  ArduinoOTA.onEnd([] { logf("update written, restarting"); });
+  ArduinoOTA.onError([](ota_error_t e) {
+    logf("update failed (error %u)", (unsigned)e);
+    esp_task_wdt_add(nullptr);
+  });
   ArduinoOTA.begin();  // also starts mDNS as scale-bridge.local
   MDNS.addService("http", "tcp", 80);
   web.on("/", handleRoot);
   web.on("/forget", handleForget);
+  web.on("/status.json", handleJson);
+  web.on("/restart", handleRestart);
   web.begin();
 
   NimBLEDevice::init(kHostname);
@@ -467,15 +664,81 @@ void setup() {
   scan->setInterval(100);
   scan->setWindow(90);
   startScan();
+  lastAdvAt = millis();
+  esp_task_wdt_init(kTaskWatchdogS, true);  // panics (and so restarts) when loop() stops feeding it
+  esp_task_wdt_add(nullptr);
   led(0, 0, 0);
+}
+
+// Wi-Fi, scan and memory checks, once a second. Each one first tries a soft fix, then restarts the board; the
+// waiting readings are in flash, so a restart loses nothing.
+void watchdogs() {
+  static uint32_t lastCheck = 0, offlineSince = 0, lastKick = 0, lastScanKick = 0, lastClear = 0;
+  if (millis() - lastCheck < 1000) return;
+  lastCheck = millis();
+
+  if (WiFi.status() == WL_CONNECTED) {
+    offlineSince = 0;
+  } else {
+    if (!offlineSince) offlineSince = millis();
+    const uint32_t off = millis() - offlineSince;
+    if (off > kWifiRestartMs) {
+      logf("Wi-Fi down for %u min: restarting", (unsigned)(off / 60000));
+      delay(200);
+      ESP.restart();
+    }
+    if (off > kWifiKickMs && millis() - lastKick > kWifiKickMs) {
+      lastKick = millis();
+      logf("Wi-Fi down for %u s: joining again", (unsigned)(off / 1000));
+      WiFi.disconnect();
+      WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+    }
+  }
+
+  const uint32_t quiet = millis() - lastAdvAt;
+  if (!wantConnect && quiet > kScanRestartMs) {
+    logf("no Bluetooth advertisement for %u min: restarting", (unsigned)(quiet / 60000));
+    delay(200);
+    ESP.restart();
+  }
+  if (!wantConnect && quiet > kScanKickMs && millis() - lastScanKick > kScanKickMs) {
+    lastScanKick = millis();
+    logf("no Bluetooth advertisement for %u s: restarting the scan", (unsigned)(quiet / 1000));
+    NimBLEScan* scan = NimBLEDevice::getScan();
+    scan->stop();
+    scan->clearResults();
+    startScan();
+  }
+  // The continuous scan keeps every device it has heard (phones change their address every few minutes), so the
+  // list grows until the memory runs out. Clear it every 5 min; stop first, because the scan writes to it.
+  if (!wantConnect && millis() - lastClear > 300000) {
+    lastClear = millis();
+    NimBLEScan* scan = NimBLEDevice::getScan();
+    scan->stop();
+    scan->clearResults();
+    startScan();
+  }
+
+  if (ESP.getFreeHeap() < kMinFreeHeap) {
+    logf("free memory down to %u bytes: restarting", (unsigned)ESP.getFreeHeap());
+    delay(200);
+    ESP.restart();
+  }
 }
 
 void loop() {
   static uint32_t lastTry = 0;
   static bool wasOnline = false;
+  esp_task_wdt_reset();
   ArduinoOTA.handle();
   web.handleClient();
+  watchdogs();
 
+  static bool clockLogged = false;
+  if (!clockLogged && timeValid()) {
+    clockLogged = true;
+    logf("clock set");
+  }
   const bool online = WiFi.status() == WL_CONNECTED;
   if (online != wasOnline) {
     wasOnline = online;
