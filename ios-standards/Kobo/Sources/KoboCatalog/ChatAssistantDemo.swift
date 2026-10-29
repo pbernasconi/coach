@@ -52,9 +52,17 @@ struct ChatAssistantDemo: View {
 private enum ChatAssistantSamples {
     static let questions = [
         ChatQuestion(id: "when", title: "When suits you?", kind: .single(options: ["Thursday 09:00", "Friday 07:30"])),
-        ChatQuestion(id: "who", title: "Who should join?", kind: .multi(options: ["Design", "Support"], allowsOther: true)),
+        ChatQuestion(
+            id: "who",
+            title: "Who should join?",
+            kind: .multi(options: ["Design", "Support"], allowsOther: true)
+        ),
         ChatQuestion(id: "note", title: "Anything to add?", kind: .text(placeholder: "A note for the invite")),
-        ChatQuestion(id: "send", title: "Send the invites now?", kind: .confirm(primary: "Send now", secondary: "Later")),
+        ChatQuestion(
+            id: "send",
+            title: "Send the invites now?",
+            kind: .confirm(primary: "Send now", secondary: "Later")
+        ),
     ]
 
     static let prompts = [

@@ -66,6 +66,8 @@ private struct ChatPromptCard: View {
     let prompt: ChatPrompt
     let action: () -> Void
 
+    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: Radius.md + Space.xxs, style: .continuous) }
+
     var body: some View {
         Button(action: action) {
             HStack(alignment: .top, spacing: Space.md) {
@@ -86,8 +88,8 @@ private struct ChatPromptCard: View {
             .padding(.horizontal, Space.lg + Space.xxs)
             .padding(.vertical, Space.lg)
             .frame(maxWidth: .infinity, minHeight: Size.minTouch, alignment: .leading)
-            .background(theme.palette.surfaceRaised, in: RoundedRectangle(cornerRadius: Radius.md + Space.xxs, style: .continuous))
-            .contentShape(RoundedRectangle(cornerRadius: Radius.md + Space.xxs, style: .continuous))
+            .background(theme.palette.surfaceRaised, in: shape)
+            .contentShape(shape)
         }
         .buttonStyle(.plain)
         .pressFeedback()

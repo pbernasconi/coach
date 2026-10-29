@@ -59,13 +59,23 @@ public struct ChatQuestionCard: View {
             ChatQuestionChoices(options: options, allowsOther: allowsOther, isMulti: true, onAnswer: onAnswer)
         case .confirm(let primary, let secondary):
             VStack(spacing: Space.sm) {
-                Button { onAnswer(.button(primary)) } label: { Text(verbatim: primary) }
-                    .buttonStyle(.kobo(.primary, width: .full))
-                if let secondary {
-                    Button { onAnswer(.button(secondary)) } label: { Text(verbatim: secondary) }
-                        .buttonStyle(.kobo(.outlined, width: .full))
+                Button {
+                    onAnswer(.button(primary))
+                } label: {
+                    Text(verbatim: primary)
                 }
-                Button { onAnswer(.skipped) } label: {
+                .buttonStyle(.kobo(.primary, width: .full))
+                if let secondary {
+                    Button {
+                        onAnswer(.button(secondary))
+                    } label: {
+                        Text(verbatim: secondary)
+                    }
+                    .buttonStyle(.kobo(.outlined, width: .full))
+                }
+                Button {
+                    onAnswer(.skipped)
+                } label: {
                     Text("Skip", bundle: .module)
                         .underline()
                         .font(theme.font(.subheadline))

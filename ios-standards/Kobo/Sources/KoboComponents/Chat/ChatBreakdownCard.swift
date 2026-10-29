@@ -125,16 +125,18 @@ private struct ChatBreakdownBar: View {
         @Environment(\.koboTheme) private var theme
 
         var body: some View {
-            ChatBreakdownCard(
+            let palette = theme.palette
+            let rows = [
+                ChatBreakdownRow(id: "a", label: "Design", value: 960, display: "16 h", tint: palette.accent),
+                ChatBreakdownRow(id: "b", label: "Writing", value: 690, display: "11 h 30 m", tint: palette.info.ink),
+                ChatBreakdownRow(id: "c", label: "Calls", value: 465, display: "7 h 45 m", tint: palette.success.ink),
+                ChatBreakdownRow(id: "d", label: "Admin", value: 180, display: "3 h", tint: palette.textTertiary),
+            ]
+            return ChatBreakdownCard(
                 caption: "October 2026",
                 total: "38 h 15 m",
                 unit: "by project",
-                rows: [
-                    ChatBreakdownRow(id: "a", label: "Design", value: 960, display: "16 h", tint: theme.palette.accent),
-                    ChatBreakdownRow(id: "b", label: "Writing", value: 690, display: "11 h 30 m", tint: theme.palette.info.ink),
-                    ChatBreakdownRow(id: "c", label: "Calls", value: 465, display: "7 h 45 m", tint: theme.palette.success.ink),
-                    ChatBreakdownRow(id: "d", label: "Admin", value: 180, display: "3 h", tint: theme.palette.textTertiary),
-                ]
+                rows: rows
             ) {
                 HStack(spacing: Space.sm) {
                     Button("Open") {}.buttonStyle(.kobo(.outlined, size: .compact, width: .full))

@@ -25,7 +25,9 @@ struct ChatChoiceChip: View {
             .padding(.vertical, Space.sm)
             .frame(minHeight: Size.buttonHeightCompact)
             .background(isPicked ? theme.palette.surfaceRaised : .clear, in: Capsule())
-            .overlay { Capsule().strokeBorder(isPicked ? .clear : theme.palette.separator, lineWidth: Size.hairline * 2) }
+            .overlay {
+                Capsule().strokeBorder(isPicked ? .clear : theme.palette.separator, lineWidth: Size.hairline * 2)
+            }
             .frame(minHeight: Size.minTouch)
             .contentShape(Rectangle())
         }
@@ -44,12 +46,12 @@ struct ChatQuestionField: View {
     var focusesAtOnce = false
     let onSubmit: () -> Void
 
+    private var prompt: Text { Text(verbatim: placeholder).foregroundStyle(theme.palette.textTertiary) }
+
     var body: some View {
         HStack(spacing: Space.xs) {
             HStack(spacing: Space.xs) {
-                TextField(text: $text, prompt: Text(verbatim: placeholder).foregroundStyle(theme.palette.textTertiary)) {
-                    Text(verbatim: placeholder)
-                }
+                TextField(text: $text, prompt: prompt) { Text(verbatim: placeholder) }
                 .font(theme.font(.body))
                 .foregroundStyle(theme.palette.textPrimary)
                 .tint(theme.palette.accent)

@@ -61,7 +61,8 @@ extension CatalogComponent {
             .flows
         case .chatTranscript, .chatComposer, .chatMessageBubble, .chatReply, .chatTypingIndicator, .chatToolStatus,
             .chatActionCard, .chatPromptSuggestions, .chatTimestamp, .chatErrorRow, .chatEmbedCard,
-            .chatAttachmentStrip, .chatAttachSheet, .chatThoughtRow, .chatFeedbackRow, .chatQuestionCard, .chatQuestions,
+            .chatAttachmentStrip, .chatAttachSheet, .chatThoughtRow, .chatFeedbackRow, .chatQuestionCard,
+            .chatQuestions,
             .chatBreakdownCard, .chatGreeting, .chatPromptCards, .chatGlow:
             .chat
         }

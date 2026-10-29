@@ -19,7 +19,10 @@ struct ChatComposerSurface: ViewModifier {
                     .overlay {
                         shape.fill(
                             LinearGradient(
-                                colors: [theme.palette.surface.opacity(0.5), theme.palette.surfaceRaised.opacity(0.35)],
+                                colors: [
+                                    theme.palette.surface.opacity(0.5),
+                                    theme.palette.surfaceRaised.opacity(0.35),
+                                ],
                                 startPoint: .top,
                                 endPoint: .bottom
                             )
