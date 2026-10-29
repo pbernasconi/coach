@@ -120,7 +120,7 @@ private struct CoachComposerBar: View {
     var body: some View {
         ChatComposer(
             text: .action(state.draft) { send(.draftChanged($0)) },
-            prompt: "Ask anything",
+            prompt: "Ask anything…",
             isResponding: state.isResponding,
             onSend: { send(.sendTapped) },
             onStop: { send(.stopTapped) },
@@ -142,6 +142,7 @@ private struct CoachComposerBar: View {
             )
         )
         .focused(by: isComposing)
+        .restsAsCard()
         .backdrop(isEmpty ? nil : CoachCanvas.color(theme.palette, colorScheme))
     }
 }
