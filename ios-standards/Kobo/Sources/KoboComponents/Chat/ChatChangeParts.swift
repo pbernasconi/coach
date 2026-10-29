@@ -1,33 +1,28 @@
 import KoboTokens
 import SwiftUI
 
-/// A row of a `ChatChangeCard`: icon tile, title over caption, and the tag. VoiceOver reads it as one line.
+/// A row of a `ChatChangeCard`: a small glyph, title over caption, and the tag. VoiceOver reads it as one line.
 struct ChatChangeRowView: View {
     @Environment(\.koboTheme) private var theme
-    @ScaledMetric(relativeTo: .body) private var tile = Size.minTouch - Space.sm
-    @ScaledMetric(relativeTo: .body) private var glyph = Size.iconSm + 2
+    @ScaledMetric(relativeTo: .subheadline) private var glyph = Size.iconSm
     let row: ChatChangeRow
 
     var body: some View {
-        HStack(alignment: .center, spacing: Space.md) {
+        HStack(alignment: .firstTextBaseline, spacing: Space.sm) {
             if let symbol = row.systemImage {
                 Image(systemName: symbol)
                     .font(.system(size: glyph, weight: .medium))
-                    .foregroundStyle(row.tone == .removed ? theme.palette.textTertiary : theme.palette.textSecondary)
-                    .frame(width: tile, height: tile)
-                    .background(
-                        theme.palette.surfaceRaised,
-                        in: RoundedRectangle(cornerRadius: Radius.sm, style: .continuous)
-                    )
+                    .foregroundStyle(theme.palette.textTertiary)
+                    .frame(width: glyph + Space.xs)
                     .accessibilityHidden(true)
             }
-            VStack(alignment: .leading, spacing: Space.xxs) {
+            VStack(alignment: .leading, spacing: 0) {
                 Text(verbatim: row.title)
-                    .font(theme.font(.body).weight(.semibold))
+                    .font(theme.font(.subheadline).weight(.semibold))
                     .foregroundStyle(row.tone == .removed ? theme.palette.textSecondary : theme.palette.textPrimary)
                 if let caption = row.caption, !caption.isEmpty {
                     Text(verbatim: caption)
-                        .font(theme.font(.subheadline))
+                        .font(theme.font(.footnote))
                         .foregroundStyle(theme.palette.textSecondary)
                 }
             }
@@ -35,7 +30,6 @@ struct ChatChangeRowView: View {
             .fixedSize(horizontal: false, vertical: true)
             ChatChangeTag(text: row.tag, tone: row.tone)
         }
-        .frame(minHeight: Size.minTouch)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(verbatim: row.spoken))
     }
@@ -50,10 +44,10 @@ private struct ChatChangeTag: View {
     var body: some View {
         let colors = theme.palette.status(tone.paletteTone)
         Text(verbatim: text)
-            .font(theme.font(.footnote).weight(.semibold))
+            .font(theme.font(.caption).weight(.semibold))
             .foregroundStyle(colors.ink)
             .padding(.horizontal, Space.sm)
-            .padding(.vertical, Space.xs)
+            .padding(.vertical, Space.xxs)
             .background(colors.soft, in: Capsule())
             .fixedSize()
     }
@@ -69,7 +63,7 @@ extension ChatChangeRow.Tone {
     }
 }
 
-/// "Checked against your plan: no clashes, no doubles", on a raised strip with a shield.
+/// "Checked against your plan: no clashes, no doubles": one quiet line with a small check.
 struct ChatChangeChecked: View {
     @Environment(\.koboTheme) private var theme
     let text: String
@@ -78,13 +72,10 @@ struct ChatChangeChecked: View {
         Label {
             Text(verbatim: text).foregroundStyle(theme.palette.textSecondary)
         } icon: {
-            Image(systemName: "checkmark.shield").foregroundStyle(theme.palette.success.ink)
+            Image(systemName: "checkmark").foregroundStyle(theme.palette.success.ink)
         }
         .font(theme.font(.footnote))
-        .padding(.horizontal, Space.md)
-        .padding(.vertical, Space.sm)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(theme.palette.surfaceRaised, in: RoundedRectangle(cornerRadius: Radius.sm, style: .continuous))
     }
 }
 

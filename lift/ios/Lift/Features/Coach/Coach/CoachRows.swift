@@ -87,7 +87,7 @@ private struct CoachReplyRow: View {
                     summary: proposal.summary,
                     sections: proposal.days,
                     notes: proposal.notes,
-                    checked: proposal.notes.isEmpty ? "Checked against your plan: no clashes, no doubles" : nil,
+                    checked: proposal.notes.isEmpty ? "Checked: no clashes, no doubles" : nil,
                     result: proposal.result,
                     status: proposal.status,
                     undoConfirm: proposal.undoConfirm,

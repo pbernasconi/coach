@@ -2,10 +2,11 @@ import KoboTokens
 import SwiftUI
 
 /// Changes an assistant proposes, shown as they will be: a title and summary, then sections (usually days), each row
-/// with an icon, its caption and one quiet tag ("From Sat", "Skipped", "New"). Under them the warnings, an optional
+/// with a small glyph, its caption and one quiet tag ("From Sat", "Skipped", "New"). Under them the warnings, an optional
 /// check line ("Checked against your plan"), and Not now / Apply N changes. After Apply the card says so with Undo;
 /// `result` lines say what didn't go as shown. When Undo can put back only part, `undoConfirm` asks first. Calm on
-/// purpose: no struck-through text, no coloured change glyphs, one filled button.
+/// purpose and compact, so a week of changes fits one screen: no struck-through text, no coloured change glyphs, one
+/// filled button.
 ///
 ///     ChatChangeCard(verbatim: "Move the review", summary: "2 changes · Tue to Wed", sections: days,
 ///                    status: status, onApply: apply, onDismiss: dismiss, onUndo: undo)
@@ -60,7 +61,7 @@ public struct ChatChangeCard: View {
     public var body: some View {
         VStack(alignment: .leading, spacing: Space.md) {
             header
-            VStack(alignment: .leading, spacing: Space.lg) {
+            VStack(alignment: .leading, spacing: Space.md) {
                 ForEach(sections) { ChatChangeSectionView(section: $0, dimmed: !status.isCurrent) }
             }
             ForEach(Array(notes.enumerated()), id: \.offset) { _, note in
@@ -114,25 +115,21 @@ struct ChatChangeActions {
     let cancelUndo: (() -> Void)?
 }
 
-/// A day: its small heading over a hairline, then its rows.
+/// A day: a small plain label, then its rows close under it. No rules or capitals, so a week of changes stays short.
 private struct ChatChangeSectionView: View {
     @Environment(\.koboTheme) private var theme
     let section: ChatChangeSection
     let dimmed: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Space.sm) {
-            HStack(spacing: Space.sm) {
-                Text(verbatim: section.title.uppercased())
-                    .font(theme.font(.caption).weight(.semibold))
-                    .tracking(0.6)
-                    .foregroundStyle(theme.palette.textSecondary)
-                    .accessibilityAddTraits(.isHeader)
-                    .accessibilityLabel(Text(verbatim: section.title))
-                Rectangle().fill(theme.palette.separator).frame(height: Size.hairline * 2)
-                    .accessibilityHidden(true)
+        VStack(alignment: .leading, spacing: Space.xs) {
+            Text(verbatim: section.title)
+                .font(theme.font(.footnote).weight(.semibold))
+                .foregroundStyle(theme.palette.textSecondary)
+                .accessibilityAddTraits(.isHeader)
+            VStack(alignment: .leading, spacing: Space.sm) {
+                ForEach(section.rows) { ChatChangeRowView(row: $0) }
             }
-            ForEach(section.rows) { ChatChangeRowView(row: $0) }
         }
         .opacity(dimmed ? 0.55 : 1)
     }
