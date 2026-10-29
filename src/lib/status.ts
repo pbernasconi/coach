@@ -3,7 +3,7 @@ import { cached } from '@/lib/data-cache';
 import { toDay, toIso } from '@/lib/db-time.mjs';
 import type { GarminStatus } from '@/lib/vitals/garmin.mjs';
 import { loadGarminStatus } from '@/lib/vitals/queries';
-import { SCALE_SOURCE, scaleWarning } from '@/lib/vitals/scale.mjs';
+import { SCALE_SOURCE, bridgeWarning, scaleWarning, type BridgeHeartbeat } from '@/lib/vitals/scale.mjs';
 
 export type Targets = { runKm: number; rideHours: number; strength: number };
 export const DEFAULT_TARGETS: Targets = { runKm: 35, rideHours: 4, strength: 2 };
@@ -26,7 +26,8 @@ export type Status = {
   calendars: { email: string; active: boolean; lastSyncedAt: string | null }[];
   garmin: GarminStatus;
   functionSync: FunctionSync;
-  scale: { lastWeighIn: string | null }; // newest day the bathroom scale bridge sent a weight
+  // newest day the bathroom scale bridge sent a weight, and the bridge's last heartbeat (POST /api/vitals/sync/bridge)
+  scale: { lastWeighIn: string | null; bridge: BridgeHeartbeat | null };
   warnings: Warning[];
 };
 
@@ -91,10 +92,11 @@ export async function loadStatus(userId: string, now = Date.now()): Promise<Stat
         warning: { level: 'info', text: 'Garmin status could not be read.' },
       };
     }),
-    sql`SELECT settings -> 'functionSync' AS s FROM users WHERE id = ${userId}` as Promise<Row[]>,
+    sql`SELECT settings -> 'functionSync' AS s, settings -> 'scaleBridge' AS bridge FROM users WHERE id = ${userId}` as Promise<Row[]>,
     sql`SELECT max(date) AS day FROM health_samples WHERE user_id = ${userId} AND metric = 'weight_kg' AND source = ${SCALE_SOURCE}` as Promise<Row[]>,
   ]);
-  const scale = { lastWeighIn: toDay(scaleRows[0]?.day) };
+  const bridge = (fn[0]?.bridge ?? null) as BridgeHeartbeat | null;
+  const scale = { lastWeighIn: toDay(scaleRows[0]?.day), bridge: bridge && typeof bridge.receivedAt === 'string' ? bridge : null };
   const f = (fn[0]?.s ?? {}) as Record<string, unknown>;
   const functionSync: FunctionSync = {
     lastSuccessAt: typeof f.lastSuccessAt === 'string' ? f.lastSuccessAt : null,
@@ -148,6 +150,8 @@ export async function loadStatus(userId: string, now = Date.now()): Promise<Stat
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Los_Angeles' }).format(new Date(now));
   const scaleNote = scaleWarning(scale.lastWeighIn, today);
   if (scaleNote) warnings.push({ ...scaleNote, source: 'scale' });
+  const bridgeNote = bridgeWarning(scale.bridge, now);
+  if (bridgeNote) warnings.push({ ...bridgeNote, source: 'scale' });
   // A Vercel preview reads a copy of the data and must not sync (a Strava refresh there would rotate production's
   // token), so its missing secrets are expected: show them on Settings only, not as a banner.
   if (env.VERCEL_ENV === 'preview') {
