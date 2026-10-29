@@ -195,6 +195,52 @@ void test_advertisements() {
   TEST_ASSERT_EQUAL_FLOAT(0.f, parseBroadcast(bc, sizeof bc));
 }
 
+// Paolo's Renpho Elis 1 (QN-Scale a4:c1:38:f8:46:39, basic flavor, vendor 0x15), captured 2026-10-29 after new
+// batteries. Session 1: three stored readings with the clock restarted from zero, all skipped as clock resets.
+void test_elis1_after_new_batteries() {
+  const uint32_t now = 1793248689u;  // 2026-10-29 04:38:09 UTC, the clock the bridge sent
+  Profile p;
+  p.sex = Sex::Male;
+  p.age = 33;
+  p.heightM = 1.75f;
+  Session s(p, now);
+  Actions a = feed(s, "120f153946f838c1a43f013f0103cd");
+  assertWrite(a, 0, "130915011000000042");
+  a = feed(s, "140b150000010000000035");
+  TEST_ASSERT_EQUAL_HEX8(0x20, a.writes[0].bytes[0]);
+  a = feed(s, "210515013c");
+  assertWrite(a, 0, "2204153b");
+  const char* stored[] = {"23141503011d00000021b6020101f90000000041", "23141503028e090000218e01fb01f40000000088",
+                          "2314150303540d00002198020401f10000000064"};
+  for (const char* f : stored) {
+    a = feed(s, f);
+    TEST_ASSERT_EQUAL_UINT(0, a.readingCount);
+    TEST_ASSERT_EQUAL_UINT(1, a.droppedStored);
+    TEST_ASSERT_EQUAL_UINT(1, a.droppedClock);
+  }
+}
+
+// Session 2, 20 s later: the weigh-in the scale finished while nobody was connected, now with a real clock.
+void test_elis1_stored_weigh_in() {
+  const uint32_t now = 1793248711u;  // 04:38:31 UTC
+  Profile p;
+  p.sex = Sex::Male;
+  p.age = 33;
+  p.heightM = 1.75f;
+  Session s(p, now);
+  feed(s, "210515013c");
+  Actions a = feed(s, "2314150101bafa7532219d01fe01f7000000005e");
+  TEST_ASSERT_EQUAL_UINT(1, a.readingCount);
+  TEST_ASSERT_EQUAL_UINT(0, a.droppedStored);
+  const Reading& r = a.readings[0];
+  TEST_ASSERT_TRUE(r.stored);
+  TEST_ASSERT_FLOAT_WITHIN(0.001f, 86.05f, r.weightKg);
+  TEST_ASSERT_EQUAL_UINT16(510, r.impedance);
+  TEST_ASSERT_EQUAL_UINT32(1793248698u, r.unixTime);  // 04:38:18 UTC, when the scale locked the weight
+  TEST_ASSERT_FLOAT_WITHIN(0.01f, bodyFat(86.05f, 1.75f, 33, Sex::Male, 510), r.bodyFatPct);
+  TEST_ASSERT_TRUE(r.bodyFatPct > 15.f && r.bodyFatPct < 30.f);
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_checksum);
@@ -207,5 +253,7 @@ int main() {
   RUN_TEST(test_stored_reading_too_old);
   RUN_TEST(test_current_time_command);
   RUN_TEST(test_advertisements);
+  RUN_TEST(test_elis1_after_new_batteries);
+  RUN_TEST(test_elis1_stored_weigh_in);
   return UNITY_END();
 }

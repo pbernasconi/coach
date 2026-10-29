@@ -188,6 +188,9 @@ void Session::handleMeasurement(const uint8_t* f, size_t len, Actions& a) {
   }
 }
 
+// A stored time before 2020 means the scale's clock restarted from zero (batteries out) and was not set yet.
+constexpr uint32_t kClockSetAfter = 1577836800u;
+
 void Session::handleStored(const uint8_t* f, size_t len, Actions& a) {
   if (len < kLenStored || f[3] == 0) return;  // f[3] = records in the batch, 0 = none
   uint32_t scaleTime;
@@ -211,6 +214,7 @@ void Session::handleStored(const uint8_t* f, size_t len, Actions& a) {
   const bool timeOk = unixTime <= now_ + 3600 && now_ - unixTime <= kStoredMaxAgeDays * 86400u;
   if (!timeOk || !plausibleWeight(kg)) {
     a.droppedStored++;
+    if (unixTime < kClockSetAfter) a.droppedClock++;
     return;
   }
   a.reading(finish(kg, r1, scaleBf, unixTime, true));

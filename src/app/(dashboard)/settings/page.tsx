@@ -154,6 +154,26 @@ async function loadProfile(userId: string, today: string) {
   return { profile: profileFrom(u?.profile, today), measuredHeight: Number.isFinite(cm) && cm > 0 ? { cm, date: d.scan_date } : null };
 }
 
+/** The Settings rows for the scale bridge: its last heartbeat, Wi-Fi, firmware and last session. */
+function bridgeDetails(scale: Awaited<ReturnType<typeof loadStatus>>['scale']): [string, React.ReactNode][] {
+  const b = scale.bridge;
+  const rows: [string, React.ReactNode][] = [['Last weigh-in', scale.lastWeighIn ?? 'never']];
+  if (!b) return [...rows, ['Bridge', 'Not reporting yet (firmware before the heartbeat)'], ['Bridge status page', 'http://scale-bridge.local/ (home Wi-Fi)']];
+  const up = b.uptimeS == null ? '-' : b.uptimeS >= 86400 ? `${Math.floor(b.uptimeS / 86400)} d` : b.uptimeS >= 3600 ? `${Math.floor(b.uptimeS / 3600)} h` : `${Math.floor(b.uptimeS / 60)} min`;
+  const session = b.lastSession?.at ? `${when(b.lastSession.at)} · ${b.lastSession.result ?? 'unknown'}` : 'none since restart';
+  return [
+    ...rows,
+    ['Bridge seen', when(b.receivedAt)],
+    ['Wi-Fi', b.rssi == null ? '-' : `${b.rssi} dBm${b.ip ? ` · ${b.ip}` : ''}`],
+    ['Up', `${up}${b.resetReason ? ` · last restart: ${b.resetReason}` : ''}${b.bootCount != null ? ` · boot ${b.bootCount}` : ''}`],
+    ['Firmware', b.firmware ?? '-'],
+    ['Scale', b.scaleMac ?? 'not paired yet'],
+    ['Last session', session],
+    ['Waiting to post', b.pending ?? '-'],
+    ['Bridge status page', `http://scale-bridge.local/${b.ip ? ` or http://${b.ip}/` : ''}`],
+  ];
+}
+
 const SECTIONS = [
   { id: 'connections', label: 'Connections' },
   { id: 'profile', label: 'Profile' },
@@ -334,19 +354,23 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
             <Connection
               logo={<Weight aria-hidden className="h-5 w-5 text-muted-foreground" />}
               name="Bathroom scale"
-              connected={Boolean(status.scale.lastWeighIn)}
+              connected={Boolean(status.scale.lastWeighIn || status.scale.bridge)}
               level={levelOf('scale')}
               summary={
                 status.scale.lastWeighIn
-                  ? `Last weigh-in ${status.scale.lastWeighIn} · Renpho Elis 1 through the scale bridge`
+                  ? `Last weigh-in ${status.scale.lastWeighIn} · bridge ${status.scale.bridge ? `seen ${when(status.scale.bridge.receivedAt)}` : 'not reporting yet'}`
                   : 'The Renpho Elis 1 sends weigh-ins through an ESP32 bridge (devices/scale-bridge). None yet.'
               }
               notes={notes('scale')}
-              details={[
-                ['Last weigh-in', status.scale.lastWeighIn ?? 'never'],
-                ['Bridge status page', 'http://scale-bridge.local/ (home Wi-Fi)'],
-              ]}
-            />
+              details={bridgeDetails(status.scale)}
+            >
+              {status.scale.bridge?.lastSession?.log.length ? (
+                <details className="group">
+                  <summary className="cursor-pointer select-none text-xs text-muted-foreground hover:text-foreground">Last scale session log</summary>
+                  <pre className="mt-2 max-h-64 overflow-auto rounded-md bg-muted p-2 text-[11px] leading-snug">{status.scale.bridge.lastSession.log.join('\n')}</pre>
+                </details>
+              ) : null}
+            </Connection>
             <Connection
               logo={<BodyspecLogo />}
               name="BodySpec (DEXA)"

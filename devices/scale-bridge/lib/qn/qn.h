@@ -48,6 +48,7 @@ struct Actions {
   size_t writeCount = 0;
   Reading readings[kMaxReadings];
   size_t droppedStored = 0;  // stored records skipped (bad clock or older than kStoredMaxAgeDays)
+  size_t droppedClock = 0;   // of those, taken while the scale's clock was reset (new batteries, before 2020)
   size_t readingCount = 0;
   bool done = false;  // the live measurement is final: the session can end after the writes
 
