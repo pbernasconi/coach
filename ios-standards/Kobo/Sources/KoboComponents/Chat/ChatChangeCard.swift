@@ -49,7 +49,11 @@ public struct ChatChangeCard: View {
         self.status = status
         self.undoConfirm = undoConfirm
         self.actions = ChatChangeActions(
-            apply: onApply, dismiss: onDismiss, undo: onUndo, confirmUndo: onConfirmUndo, cancelUndo: onCancelUndo
+            apply: onApply,
+            dismiss: onDismiss,
+            undo: onUndo,
+            confirmUndo: onConfirmUndo,
+            cancelUndo: onCancelUndo
         )
     }
 
@@ -69,7 +73,10 @@ public struct ChatChangeCard: View {
                 ChatChangeChecked(text: checked)
             }
             ChatChangeFooter(
-                status: status, count: sections.rowCount, undoConfirm: undoConfirm, actions: actions
+                status: status,
+                count: sections.rowCount,
+                undoConfirm: undoConfirm,
+                actions: actions
             )
         }
         .chatCard()

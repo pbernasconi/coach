@@ -15,7 +15,10 @@ struct ChatChangeRowView: View {
                     .font(.system(size: glyph, weight: .medium))
                     .foregroundStyle(row.tone == .removed ? theme.palette.textTertiary : theme.palette.textSecondary)
                     .frame(width: tile, height: tile)
-                    .background(theme.palette.surfaceRaised, in: RoundedRectangle(cornerRadius: Radius.sm, style: .continuous))
+                    .background(
+                        theme.palette.surfaceRaised,
+                        in: RoundedRectangle(cornerRadius: Radius.sm, style: .continuous)
+                    )
                     .accessibilityHidden(true)
             }
             VStack(alignment: .leading, spacing: Space.xxs) {
@@ -108,16 +111,30 @@ struct ChatChangeFooter: View {
             VStack(alignment: .leading, spacing: Space.md) {
                 InlineNotice(verbatim: undoConfirm.message, tone: .neutral)
                 pair {
-                    Button { actions.cancelUndo?() } label: { Text("Keep", bundle: .module) }
-                        .buttonStyle(.kobo(.outlined, width: .full))
+                    Button {
+                        actions.cancelUndo?()
+                    } label: {
+                        Text("Keep", bundle: .module)
+                    }
+                    .buttonStyle(.kobo(.outlined, width: .full))
                 } primary: {
-                    Button { actions.confirmUndo?() } label: { Text("Undo \(undoConfirm.count)", bundle: .module) }
-                        .buttonStyle(.kobo(.primary, width: .full))
+                    Button {
+                        actions.confirmUndo?()
+                    } label: {
+                        Text("Undo \(undoConfirm.count)", bundle: .module)
+                    }
+                    .buttonStyle(.kobo(.primary, width: .full))
                 }
             }
         } else if status == .applied, let undo = actions.undo {
-            Button(action: undo) { Label { Text("Undo", bundle: .module) } icon: { Image(systemName: "arrow.uturn.backward") } }
-                .buttonStyle(.kobo(.plain, size: .compact))
+            Button(action: undo) {
+                Label {
+                    Text("Undo", bundle: .module)
+                } icon: {
+                    Image(systemName: "arrow.uturn.backward")
+                }
+            }
+            .buttonStyle(.kobo(.plain, size: .compact))
         }
     }
 
@@ -153,27 +170,50 @@ struct ChatChangeFooter: View {
                     verbatim: "Move the review, lunch on Wednesday",
                     summary: "3 changes · Tue 3 to Wed 4 Mar",
                     sections: [
-                        ChatChangeSection(id: "tue", title: "Tue 3 Mar", rows: [
-                            ChatChangeRow(
-                                id: "1", title: "Design sync", caption: "10:00 · 30 min", tag: "Skipped",
-                                tone: .removed, systemImage: "person.2"
-                            ),
-                        ]),
-                        ChatChangeSection(id: "wed", title: "Wed 4 Mar", rows: [
-                            ChatChangeRow(
-                                id: "2", title: "Team review", caption: "09:00 · 1 h", tag: "From Tue",
-                                tone: .changed, systemImage: "person.3"
-                            ),
-                            ChatChangeRow(
-                                id: "3", title: "Lunch with the new hire", caption: "12:30 · 1 h", tag: "New",
-                                tone: .added, systemImage: "fork.knife"
-                            ),
-                        ]),
+                        ChatChangeSection(
+                            id: "tue",
+                            title: "Tue 3 Mar",
+                            rows: [
+                                ChatChangeRow(
+                                    id: "1",
+                                    title: "Design sync",
+                                    caption: "10:00 · 30 min",
+                                    tag: "Skipped",
+                                    tone: .removed,
+                                    systemImage: "person.2"
+                                )
+                            ]
+                        ),
+                        ChatChangeSection(
+                            id: "wed",
+                            title: "Wed 4 Mar",
+                            rows: [
+                                ChatChangeRow(
+                                    id: "2",
+                                    title: "Team review",
+                                    caption: "09:00 · 1 h",
+                                    tag: "From Tue",
+                                    tone: .changed,
+                                    systemImage: "person.3"
+                                ),
+                                ChatChangeRow(
+                                    id: "3",
+                                    title: "Lunch with the new hire",
+                                    caption: "12:30 · 1 h",
+                                    tag: "New",
+                                    tone: .added,
+                                    systemImage: "fork.knife"
+                                ),
+                            ]
+                        ),
                     ],
                     checked: "Checked against your calendar: no clashes",
                     status: status,
                     undoConfirm: confirming
-                        ? ChatUndoConfirm(message: "You moved Team review since, so Undo leaves it as you set it.", count: 2)
+                        ? ChatUndoConfirm(
+                            message: "You moved Team review since, so Undo leaves it as you set it.",
+                            count: 2
+                        )
                         : nil,
                     onApply: {},
                     onDismiss: {},

@@ -31,7 +31,8 @@ nonisolated public struct ChatChangeRow: Identifiable, Equatable, Sendable {
     /// An SF Symbol for what the row is (a sport, a meeting); nil draws no icon tile.
     public let systemImage: String?
 
-    public init(id: String, title: String, caption: String? = nil, tag: String, tone: Tone, systemImage: String? = nil) {
+    public init(id: String, title: String, caption: String? = nil, tag: String, tone: Tone, systemImage: String? = nil)
+    {
         self.id = id
         self.title = title
         self.caption = caption
@@ -42,7 +43,7 @@ nonisolated public struct ChatChangeRow: Identifiable, Equatable, Sendable {
 
     /// The words VoiceOver reads for the row: "Upper, 09:45 · 1 h, From Sat".
     public var spoken: String {
-        [title, caption, tag].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: ", ")
+        [title, caption, tag].compactMap(\.self).filter { !$0.isEmpty }.joined(separator: ", ")
     }
 }
 

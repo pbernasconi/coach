@@ -70,12 +70,34 @@ struct ChatDemo: View {
                 verbatim: "Move the review",
                 summary: "2 changes · Tue 3 to Wed 4 Mar",
                 sections: [
-                    ChatChangeSection(id: "tue", title: "Tue 3 Mar", rows: [
-                        ChatChangeRow(id: "1", title: "Design sync", caption: "10:00 · 30 min", tag: "Skipped", tone: .removed, systemImage: "person.2"),
-                    ]),
-                    ChatChangeSection(id: "wed", title: "Wed 4 Mar", rows: [
-                        ChatChangeRow(id: "2", title: "Team review", caption: "09:00 · 1 h", tag: "From Tue", tone: .changed, systemImage: "person.3"),
-                    ]),
+                    ChatChangeSection(
+                        id: "tue",
+                        title: "Tue 3 Mar",
+                        rows: [
+                            ChatChangeRow(
+                                id: "1",
+                                title: "Design sync",
+                                caption: "10:00 · 30 min",
+                                tag: "Skipped",
+                                tone: .removed,
+                                systemImage: "person.2"
+                            )
+                        ]
+                    ),
+                    ChatChangeSection(
+                        id: "wed",
+                        title: "Wed 4 Mar",
+                        rows: [
+                            ChatChangeRow(
+                                id: "2",
+                                title: "Team review",
+                                caption: "09:00 · 1 h",
+                                tag: "From Tue",
+                                tone: .changed,
+                                systemImage: "person.3"
+                            )
+                        ]
+                    ),
                 ],
                 checked: "Checked against your calendar: no clashes",
                 status: status,
