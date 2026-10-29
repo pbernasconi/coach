@@ -113,7 +113,7 @@ test('a card and one-tap answers are shown in one request', async () => {
   assert.equal(client.calls.length, 1);
   assert.deepEqual(r.cards, [{ kind: 'workout', ref: 'v' }]);
   assert.deepEqual(r.replies, ['Morning', 'Evening']);
-  assert.equal(client.calls[0].tools.map((t) => t.name).join(), 'propose_changes,show,suggest_replies');
+  assert.equal(client.calls[0].tools.map((t) => t.name).join(), 'propose_changes,show,suggest_replies,ask_questions');
 });
 
 test('a broken card goes back once; a card with a proposal stops at the proposal', async () => {
@@ -200,4 +200,24 @@ test('a second text block is set apart from the first', () => {
   ]) streamEventToChat(e, (x) => out.push(x), seen);
   assert.deepEqual(out.filter((x) => x.type === 'text').map((x) => x.delta), ['One.', '\n\n']);
   assert.ok(out.some((x) => x.type === 'status' && x.step === 'card'));
+});
+
+test('question cards end the turn, and the thinking summary comes back as the thought', async () => {
+  const ask = {
+    type: 'tool_use', id: 'q', name: 'ask_questions',
+    input: { questions: [{ title: 'Which days are you away?', kind: 'multi', options: ['Mon', 'Tue', 'Wed'] }] },
+  };
+  const client = fake([reply([{ type: 'thinking', thinking: 'He travels; I need the days.' }, say('Two quick ones.'), ask], 'tool_use')]);
+  const r = await chatWithClaude({ ...base, client, check: () => assert.fail('no proposal') });
+  assert.equal(client.calls.length, 1);
+  assert.equal(r.stop, 'shown');
+  assert.equal(r.questions.length, 1);
+  assert.equal(r.questions[0].id, 'q1');
+  assert.equal(r.thought, 'He travels; I need the days.');
+});
+
+test('a reply without thinking has an empty thought', async () => {
+  const r = await chatWithClaude({ ...base, client: fake([reply([say('Fine.')])]), check: () => assert.fail('no tool call') });
+  assert.equal(r.thought, '');
+  assert.deepEqual(r.questions, []);
 });

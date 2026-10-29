@@ -5,7 +5,7 @@
 // client is passed in, so the tests drive it with a fake. No database here (server.ts stores the result).
 
 import { addUsage, NO_USAGE } from '../planner/cost.mjs';
-import { cleanReplies, MAX_CARDS, REPLIES_TOOL, SHOW_TOOL } from './cards.mjs';
+import { ASK_TOOL, cleanQuestions, cleanReplies, MAX_CARDS, REPLIES_TOOL, SHOW_TOOL } from './cards.mjs';
 
 /**
  * The chat runs on Sonnet 5.5 (Paolo, 2026-10-27): it starts answering in about half the time of Opus 5.5 at half the
@@ -64,7 +64,8 @@ export const PROPOSE_TOOL = {
  * @typedef {{ ok: true, value: any } | { ok: false, problems: string[] }} ProposalCheck
  * @typedef {{ input: any, problems: string[] | null }} Attempt  one propose_changes call and what the check said
  * @typedef {{ reply: string, proposal: any | null, problems: string[] | null, turns: number, usage: typeof NO_USAGE,
- *   model: string, stop: string, attempts: Attempt[], cards: any[], replies: string[], timing: Timing }} ChatResult
+ *   model: string, stop: string, attempts: Attempt[], cards: any[], replies: string[], questions: any[], thought: string,
+ *   timing: Timing }} ChatResult  `thought`: the summary of Claude's thinking, shown folded above the reply
  * @typedef {{ firstThinkingMs: number | null, firstTextMs: number | null, turnMs: number[] }} Timing  from the turn's start
  * @typedef {{ type: 'status', step: 'thinking' | 'writing' | 'proposing' | 'card' | 'fixing' }
  *   | { type: 'thinking', text: string } | { type: 'text', delta: string }} ChatEvent  what the phone shows while it waits
@@ -157,6 +158,7 @@ export async function chatWithClaude({ client, system, history, context, text, f
   const emit = (e) => {
     if (e.type === 'thinking' && timing.firstThinkingMs === null) timing.firstThinkingMs = now() - start;
     if (e.type === 'text' && timing.firstTextMs === null) timing.firstTextMs = now() - start;
+    if (e.type === 'thinking') streamedThought += e.text;
     try { onEvent?.(e); } catch { /* the listener's problem */ }
   };
   const messages = chatMessages(history, context, text, files);
@@ -175,6 +177,11 @@ export async function chatWithClaude({ client, system, history, context, text, f
   const cards = [];
   /** @type {string[]} */
   let replies = [];
+  /** @type {any[]} */
+  let questions = [];
+  /** @type {string[]} */
+  const thoughts = [];
+  let streamedThought = '';
 
   while (turns < MAX_TURNS) {
     if (now() > deadline) return result('deadline');
@@ -189,7 +196,10 @@ export async function chatWithClaude({ client, system, history, context, text, f
     usage = addUsage(usage, message.usage, message.model ?? model);
     if (message.stop_reason === 'refusal') return result('refusal');
     const content = message.content ?? [];
-    for (const b of content) if (b.type === 'text' && b.text.trim()) said.push(b.text.trim());
+    for (const b of content) {
+      if (b.type === 'text' && b.text.trim()) said.push(b.text.trim());
+      else if (b.type === 'thinking' && typeof b.thinking === 'string' && b.thinking.trim()) thoughts.push(b.thinking.trim());
+    }
     const calls = content.filter((/** @type {any} */ b) => b.type === 'tool_use');
     if (message.stop_reason === 'max_tokens') return result('max_tokens');
     if (!calls.length) return result('answered');
@@ -209,6 +219,14 @@ export async function chatWithClaude({ client, system, history, context, text, f
           results.push({ type: 'tool_result', tool_use_id: call.id, is_error: true, content: `Not shown: ${c.problems.join('; ')}` });
           retry = cards.length < MAX_CARDS;
         }
+        continue;
+      }
+      if (call.name === ASK_TOOL.name) {
+        questions = cleanQuestions(call.input);
+        results.push({
+          type: 'tool_result', tool_use_id: call.id,
+          ...(questions.length ? { content: 'Shown as cards; his answers come as his next message. Stop here.' } : { is_error: true, content: 'No valid question: ask in your text instead.' }),
+        });
         continue;
       }
       if (call.name === REPLIES_TOOL.name) {
@@ -248,13 +266,14 @@ export async function chatWithClaude({ client, system, history, context, text, f
     if (proposal) return result('proposed');
     // Cards and quick replies are shown as they come; another request only to fix a broken card or proposal (or to
     // let Claude say in words what it couldn't change, after its last try).
-    if (!retry && !problems) return result(cards.length || replies.length ? 'shown' : 'answered');
+    if (!retry && !problems) return result(cards.length || replies.length || questions.length ? 'shown' : 'answered');
   }
   return result('turns_used');
 
   /** @param {string} stop @returns {ChatResult} */
   function result(stop) {
-    return { reply: said.join('\n\n'), proposal, problems, turns, usage, model, stop, attempts, cards, replies, timing };
+    const thought = (thoughts.length ? thoughts.join('\n\n') : streamedThought.trim()).slice(0, 4000);
+    return { reply: said.join('\n\n'), proposal, problems, turns, usage, model, stop, attempts, cards, replies, questions, thought, timing };
   }
 }
 
@@ -272,7 +291,7 @@ export function chatRequest({ model = MODEL, effort = EFFORT, system, messages, 
     thinking: THINKING,
     output_config: { effort },
     system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral', ttl: '1h' } }],
-    tools: [PROPOSE_TOOL, SHOW_TOOL, REPLIES_TOOL],
+    tools: [PROPOSE_TOOL, SHOW_TOOL, REPLIES_TOOL, ASK_TOOL],
     tool_choice: { type: 'auto' },
     messages,
   };

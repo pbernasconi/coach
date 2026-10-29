@@ -14,7 +14,7 @@ import { dispatchWorkflow } from '@/lib/plan/proposals';
 import { buildProfile } from '@/lib/planner/profile.mjs';
 import { monthSpend as spendOn, recordAiUsage } from '@/lib/ai-usage/store';
 import { CHAT_FEATURES, usageOf } from '@/lib/ai-usage/usage.mjs';
-import { checkCard, type CardRef } from './cards.mjs';
+import { checkCard, type CardRef, type Question } from './cards.mjs';
 import { resolveCards, type Attachment } from './cards';
 import { checkProposalInput, isStale, planText, type Change, type Item } from './changes.mjs';
 import { chatMessages, chatRequest, chatWithClaude, EFFORT, MODEL, type ChatEvent, type Turn } from './chat.mjs';
@@ -22,7 +22,7 @@ import { recentChangesText } from '@/lib/plan/change-log';
 import { ApplyError, applyAll, planRows, undoAll, type Undo } from './writes';
 import { fileBlock, fileNote, filesPhrase, filesToSend, type FileData, type FileRef } from './files.mjs';
 import { claimFiles, fileData, unclaimedFiles } from './files-store';
-import { CHAT_MONTHLY_CAP_USD, SUGGESTIONS, chatContext, chatSystemPrompt } from './prompt.mjs';
+import { CHAT_MONTHLY_CAP_USD, PROMPTS, SUGGESTIONS, chatContext, chatSystemPrompt } from './prompt.mjs';
 
 type Row = Record<string, unknown>;
 
@@ -43,6 +43,10 @@ export type MessageView = {
   attachments: Attachment[]; quickReplies: string[];
   /** The photos and files on Paolo's message (files.mjs); the phone reads each from GET /api/app/coach/files/{id}. */
   files: FileRef[];
+  /** Coach's: the summary of its thinking (shown folded as "Thought"), its question cards, and Paolo's thumbs. */
+  thought: string | null;
+  questions: Question[];
+  feedback: 'up' | 'down' | null;
 };
 
 /** This month's chat spend (answers and cache warm-ups), in USD. */
@@ -78,6 +82,7 @@ function proposalView(p: Row): ProposalView {
 async function threadMessages(threadId: string): Promise<MessageView[]> {
   const rows = (await sql`
     SELECT m.id, m.role, m.text, m.created_at, m.attachments, m.quick_replies, m.files,
+           m.meta->>'thought' AS thought, m.meta->'questions' AS questions, m.meta->>'feedback' AS feedback,
            p.id AS p_id, p.title, p.why, p.items, p.warnings, p.status
     FROM coach_messages m LEFT JOIN coach_proposals p ON p.id = m.proposal_id
     WHERE m.thread_id = ${threadId} ORDER BY m.created_at, m.id`) as Row[];
@@ -87,6 +92,9 @@ async function threadMessages(threadId: string): Promise<MessageView[]> {
     attachments: (r.attachments as Attachment[] | null) ?? [],
     quickReplies: (r.quick_replies as string[] | null) ?? [],
     files: (r.files as FileRef[] | null) ?? [],
+    thought: (r.thought as string | null) || null,
+    questions: Array.isArray(r.questions) ? (r.questions as Question[]) : [],
+    feedback: r.feedback === 'up' || r.feedback === 'down' ? r.feedback : null,
   }));
 }
 
@@ -112,8 +120,76 @@ export async function loadCoach(userId: string) {
     ready: ready.ready,
     notice: ready.reason,
     suggestions: SUGGESTIONS,
+    prompts: PROMPTS,
+    firstName: await firstName(userId),
   };
 }
+
+/** Paolo's first name for the greeting ("Hi Paolo,"), or null. */
+async function firstName(userId: string): Promise<string | null> {
+  const [u] = (await sql`SELECT first_name, full_name FROM users WHERE id = ${userId} LIMIT 1`) as Row[];
+  const name = String(u?.first_name ?? '').trim() || String(u?.full_name ?? '').trim().split(/\s+/)[0] || '';
+  return name || null;
+}
+
+/**
+ * GET /api/app/coach/threads: past chats, newest first, for the history sheet. Each is titled by its first message.
+ * Empty chats (a New chat nobody wrote in) are left out.
+ */
+export async function listThreads(userId: string) {
+  const rows = (await sql`
+    SELECT t.id, t.updated_at, COUNT(m.id)::int AS n,
+           (SELECT text FROM coach_messages f WHERE f.thread_id = t.id AND f.role = 'user' ORDER BY f.created_at, f.id LIMIT 1) AS first
+    FROM coach_threads t JOIN coach_messages m ON m.thread_id = t.id
+    WHERE t.user_id = ${userId}
+    GROUP BY t.id, t.updated_at
+    ORDER BY t.updated_at DESC
+    LIMIT 50`) as Row[];
+  return {
+    threads: rows.map((r) => ({
+      id: String(r.id),
+      title: threadTitle(r.first as string | null),
+      updatedAt: toIso(r.updated_at),
+      messageCount: Number(r.n),
+    })),
+  };
+}
+
+/** A chat's title: its first message on one line, cut at about 60 characters. */
+export function threadTitle(first: string | null): string {
+  const line = String(first ?? '').replace(/\s+/g, ' ').trim();
+  if (!line) return 'Photos';
+  return line.length > 60 ? `${line.slice(0, 57).trimEnd()}…` : line;
+}
+
+/** POST /api/app/coach/threads: a new, empty chat becomes the open one. Returns the Coach tab's body. */
+export async function startThread(userId: string) {
+  const current = await openThread(userId);
+  // The open chat is already empty: keep it rather than pile up empty ones.
+  const [has] = current ? ((await sql`SELECT 1 FROM coach_messages WHERE thread_id = ${current} LIMIT 1`) as Row[]) : [];
+  if (!current || has) await sql`INSERT INTO coach_threads (id, user_id) VALUES (${createId()}, ${userId})`;
+  return loadCoach(userId);
+}
+
+/** POST /api/app/coach/threads/{id}: a past chat becomes the open one again. Null when it isn't Paolo's. */
+export async function reopenThread(userId: string, id: string) {
+  const rows = (await sql`UPDATE coach_threads SET updated_at = NOW() WHERE id = ${id} AND user_id = ${userId} RETURNING id`) as Row[];
+  return rows.length ? loadCoach(userId) : null;
+}
+
+/** PUT /api/app/coach/messages/{id}/feedback: Paolo's thumbs on a reply (null clears it). False when not found. */
+export async function setFeedback(userId: string, id: string, rating: 'up' | 'down' | null): Promise<boolean> {
+  const rows = (await sql`
+    UPDATE coach_messages
+    SET meta = CASE WHEN ${rating}::text IS NULL THEN COALESCE(meta, '{}'::jsonb) - 'feedback' - 'feedbackAt'
+                    ELSE COALESCE(meta, '{}'::jsonb) || jsonb_build_object('feedback', ${rating}::text, 'feedbackAt', NOW()) END
+    WHERE id = ${id} AND user_id = ${userId} AND role = 'assistant'
+    RETURNING id`) as Row[];
+  return rows.length > 0;
+}
+
+/** What the reply shows besides its text, kept in its meta. */
+type Shown = { thought?: string; questions?: Question[] };
 
 type Extra = {
   proposalId?: string | null; costUsd?: number; model?: string | null; context?: string | null; meta?: Record<string, unknown> | null;
@@ -144,6 +220,7 @@ function historyOf(messages: MessageView[], data: Map<string, FileData> = new Ma
     const lines = [...m.files.filter((f) => !data.has(f.id)).map(fileNote), m.text].filter(Boolean);
     for (const a of m.attachments) lines.push(`[Showed a ${a.kind} card]`);
     if (m.quickReplies.length) lines.push(`[Offered: ${m.quickReplies.join(' | ')}]`);
+    for (const q of m.questions) lines.push(`[Asked: ${q.title}${q.options.length ? ` (${q.options.join(' | ')})` : ''}]`);
     if (m.proposal) lines.push(`[Card "${m.proposal.title}": ${m.proposal.status}]`);
     return { role: m.role, text: lines.join('\n'), ...(blocks.length ? { blocks } : {}) };
   });
@@ -197,19 +274,23 @@ export async function sendMessage(
   const [before, files] = await Promise.all([threadMessages(threadId), unclaimedFiles(userId, fileIds)]);
   const mine = await addMessage(threadId, userId, 'user', text, { files });
   await claimFiles(userId, mine.id, files.map((f) => f.id));
-  const message: MessageView = { id: mine.id, role: 'user', text, createdAt: mine.createdAt, proposal: null, attachments: [], quickReplies: [], files };
+  const message: MessageView = {
+    id: mine.id, role: 'user', text, createdAt: mine.createdAt, proposal: null, attachments: [], quickReplies: [], files,
+    thought: null, questions: [], feedback: null,
+  };
   // The photos Claude sees in full: this message's, then the newest earlier ones.
   const shown = filesToSend([...before, message]);
   const dataP = early(fileData(userId, [...before, message].flatMap((m) => m.files).filter((f) => shown.has(f.id))));
   emit({ type: 'message', message });
   let prepMs: number | null = null;
   // Every answer is kept with what led to it (the context, the tries, tokens, time), for analysis later.
-  const answer = async (reply: string, proposal: ProposalView | null = null, extra: Extra = {}) => {
-    const meta = { ...extra.meta, latencyMs: Date.now() - started, prepMs, reads, streamed: Boolean(onEvent), timeZone, today };
+  const answer = async (reply: string, proposal: ProposalView | null = null, extra: Extra = {}, shown: Shown = {}) => {
+    const meta = { ...extra.meta, ...(shown.thought ? { thought: shown.thought } : {}), ...(shown.questions?.length ? { questions: shown.questions } : {}), latencyMs: Date.now() - started, prepMs, reads, streamed: Boolean(onEvent), timeZone, today };
     const saved = await addMessage(threadId, userId, 'assistant', reply, { ...extra, proposalId: proposal?.id ?? null, meta });
     const view: MessageView = {
       id: saved.id, role: 'assistant', text: reply, createdAt: saved.createdAt, proposal,
       attachments: extra.attachments ?? [], quickReplies: extra.quickReplies ?? [], files: [],
+      thought: shown.thought || null, questions: shown.questions ?? [], feedback: null,
     };
     return { threadId, message, reply: view };
   };
@@ -250,7 +331,7 @@ export async function sendMessage(
     }
     const attachments = await resolveCards(userId, result.cards as CardRef[], rows, today, timeZone);
     const reply = result.reply ||
-      (proposal ? 'Here is the change.' : attachments.length ? 'Here it is.' : result.stop === 'refusal' ? 'I can\'t help with that one.' : 'I couldn\'t finish that answer. Try again.');
+      (proposal ? 'Here is the change.' : attachments.length ? 'Here it is.' : result.questions.length ? 'A few quick questions first.' : result.stop === 'refusal' ? 'I can\'t help with that one.' : 'I couldn\'t finish that answer. Try again.');
     const out = await answer(reply, proposal, {
       costUsd: result.usage.usd, model: result.model ?? MODEL, context, attachments, quickReplies: result.replies,
       meta: {
@@ -258,7 +339,7 @@ export async function sendMessage(
         replyFromModel: Boolean(result.reply), prompt: createHash('sha256').update(system).digest('hex').slice(0, 12),
         timing: result.timing, effort: EFFORT,
       },
-    });
+    }, { thought: result.thought, questions: result.questions as Question[] });
     await recordAiUsage(userId, {
       feature: 'chat', model: result.model ?? MODEL, effort: EFFORT, usage: result.usage,
       durationMs: Date.now() - started, ok: result.stop !== 'error', refId: out.reply.id,

@@ -30,3 +30,13 @@ export function chatContext({ today, time, timeZone, plan, profileMd, changes = 
 
 /** Quick prompts above the field for the common cases (the iPhone shows them on an empty thread). */
 export const SUGGESTIONS = ["I'm sore", 'Short on time today', 'Move today to tomorrow', 'Something came up'];
+
+/**
+ * The starter cards on an empty chat (newer iPhone builds; older ones read SUGGESTIONS): what to ask and an SF Symbol
+ * for each. A tap fills the field.
+ */
+export const PROMPTS = [
+  { title: "I'm sore. Adjust the next few days", symbol: 'bandage' },
+  { title: 'How much did I train this month, by sport?', symbol: 'chart.bar.xaxis' },
+  { title: 'Short on time today. What should I do?', symbol: 'clock' },
+];

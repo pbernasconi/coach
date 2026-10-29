@@ -10,7 +10,9 @@ import { loadLiftModel } from '@/lib/lift-dashboard/queries';
 import { loadAppToday } from '@/lib/performance/app-pages';
 import { loadLiftWeeks } from '@/lib/plan/week-api';
 import { addDays, mondayOf } from '@/lib/plan/week.mjs';
-import { dayTimeline, type CardRef } from './cards.mjs';
+import { sql } from '@/db';
+import { sportOfStrava } from '@/lib/plan/week.mjs';
+import { breakdownCard, breakdownSpan, dayTimeline, type CardRef } from './cards.mjs';
 import type { PlanRow } from './changes.mjs';
 
 type Json = Record<string, unknown>;
@@ -88,6 +90,16 @@ async function dayCard(userId: string, date: string, rows: PlanRow[], timeZone: 
   });
 }
 
+/** Training time by sport over a week or a month, from his activities (local start day). */
+async function breakdown(userId: string, ref: string, today: string) {
+  const span = breakdownSpan(ref, today);
+  if (!span) return null;
+  const rows = (await sql`
+    SELECT sport_type, moving_time FROM strava_activities
+    WHERE user_id = ${userId} AND start_date_local >= ${span.from}::date AND start_date_local < ${span.to}::date`) as Json[];
+  return breakdownCard(rows.map((r) => ({ sport: sportOfStrava(r.sport_type), minutes: Number(r.moving_time ?? 0) / 60 })), span.caption);
+}
+
 /** Fills each card. One that fails or finds nothing is dropped (logged), so the answer still shows. */
 export async function resolveCards(userId: string, refs: CardRef[], rows: PlanRow[], today: string, timeZone: string): Promise<Attachment[]> {
   const out = await Promise.all(
@@ -114,6 +126,8 @@ export async function resolveCards(userId: string, refs: CardRef[], rows: PlanRo
             return { kind: 'readiness', readiness: await readinessCard(userId, today, timeZone) };
           case 'day':
             return { kind: 'day', day: await dayCard(userId, c.ref, rows, timeZone) };
+          case 'breakdown':
+            return await breakdown(userId, c.ref, today);
         }
       } catch (error) {
         console.error(`Coach card ${c.kind} ${c.ref} failed:`, error instanceof Error ? error.message : error);

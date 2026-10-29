@@ -1,13 +1,14 @@
 // @ts-check
 // Cards Coach can show in the chat (lift/APP-API.md "Coach", lift/COACH-CHAT.md): a workout, a week, an exercise,
-// readiness, or a day's timeline. Claude only names what to show (`show`, kind + ref); the server fills in the real
+// readiness, a day's timeline, or a breakdown of training time by sport. Claude only names what to show (`show`, kind + ref); the server fills in the real
 // data (cards.ts), so a card never carries a number the model made up. `suggest_replies` adds one-tap answers to a
-// question. Pure: the tool definitions, the checks and the day timeline.
+// question; `ask_questions` asks one to five questions as cards (choices, a typed answer, or a confirm). Pure: the
+// tool definitions, the checks, the day timeline and the breakdown.
 
 import { addDays, mondayOf } from '../plan/week.mjs';
 import { hm } from './changes.mjs';
 
-export const CARD_KINDS = ['workout', 'week', 'exercise', 'readiness', 'day'];
+export const CARD_KINDS = ['workout', 'week', 'exercise', 'readiness', 'day', 'breakdown'];
 /** Cards in one answer. */
 export const MAX_CARDS = 2;
 /** One-tap answers under a question. */
@@ -21,12 +22,14 @@ export const SHOW_TOOL = {
     '"week": ref = any YYYY-MM-DD in that week ("how did my week go"). "exercise": ref = the exercise name as in ' +
     'his Lift templates ("how do I do an RDL", "what\'s my squat today"). "readiness": ref = today\'s YYYY-MM-DD ' +
     '("am I recovered", "I\'m flat"). "day": ref = YYYY-MM-DD, the day\'s meetings, free windows and sessions ("when ' +
-    'can I fit the lift in"). At most 2 cards per answer; only when the card answers better than words.',
+    'can I fit the lift in"). "breakdown": ref = "week:YYYY-MM-DD" (any day of that week) or "month:YYYY-MM", his ' +
+    'training time by sport with a bar each ("how much did I train this month", "what did my week look like by ' +
+    'sport"). At most 2 cards per answer; only when the card answers better than words.',
   input_schema: {
     type: 'object',
     properties: {
       kind: { type: 'string', enum: CARD_KINDS },
-      ref: { type: 'string', description: 'A workout id, a YYYY-MM-DD day, or an exercise name.' },
+      ref: { type: 'string', description: 'A workout id, a YYYY-MM-DD day, an exercise name, or week:/month: for a breakdown.' },
     },
     required: ['kind', 'ref'],
   },
@@ -47,7 +50,7 @@ export const REPLIES_TOOL = {
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
- * @typedef {{ kind: 'workout' | 'week' | 'exercise' | 'readiness' | 'day', ref: string }} CardRef
+ * @typedef {{ kind: 'workout' | 'week' | 'exercise' | 'readiness' | 'day' | 'breakdown', ref: string }} CardRef
  * @typedef {{ ok: true, value: CardRef } | { ok: false, problems: string[] }} CardCheck
  */
 
@@ -66,12 +69,164 @@ export function checkCard(input, { rows, today }) {
     return rows.some((r) => r.id === ref) ? { ok: true, value: { kind: k, ref } } : { ok: false, problems: [`no workout with id ${ref} in <plan>`] };
   }
   if (k === 'exercise') return { ok: true, value: { kind: k, ref: ref.slice(0, 80) } };
+  if (k === 'breakdown') {
+    const span = breakdownSpan(ref, today);
+    return span ? { ok: true, value: { kind: k, ref } } : { ok: false, problems: ['ref for breakdown must be week:YYYY-MM-DD or month:YYYY-MM, up to this week or month'] };
+  }
   if (!DATE.test(ref)) return { ok: false, problems: [`ref for ${k} must be YYYY-MM-DD`] };
   if (k === 'readiness' && ref !== today) return { ok: false, problems: [`readiness is for today (${today}) only`] };
   if (ref < addDays(mondayOf(today), -28) || ref > addDays(today, 21)) {
     return { ok: false, problems: [`${ref} is out of range: from 4 weeks back to 3 weeks ahead`] };
   }
   return { ok: true, value: { kind: k, ref } };
+}
+
+/**
+ * The days a breakdown covers, `to` exclusive and never past tomorrow: a week (Monday on) or a calendar month, up to
+ * now and at most a year back. Null for a ref that isn't one.
+ * @param {string} ref @param {string} today
+ * @returns {{ from: string, to: string, caption: string } | null}
+ */
+export function breakdownSpan(ref, today) {
+  const week = /^week:(\d{4}-\d{2}-\d{2})$/.exec(ref);
+  const month = /^month:(\d{4})-(\d{2})$/.exec(ref);
+  const yearBack = addDays(today, -366);
+  if (week) {
+    const from = mondayOf(week[1]);
+    if (Number.isNaN(Date.parse(week[1])) || from > today || from < yearBack) return null;
+    const label = (/** @type {string} */ d) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+    const caption = from === mondayOf(today) ? 'This week' : `Week of ${label(from)}`;
+    return { from, to: minDay(addDays(from, 7), addDays(today, 1)), caption };
+  }
+  if (month) {
+    const m = Number(month[2]);
+    if (m < 1 || m > 12) return null;
+    const from = `${month[1]}-${month[2]}-01`;
+    if (from > today || from < yearBack.slice(0, 8) + '01') return null;
+    const next = m === 12 ? `${Number(month[1]) + 1}-01-01` : `${month[1]}-${String(m + 1).padStart(2, '0')}-01`;
+    const caption = new Date(`${from}T12:00:00Z`).toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+    return { from, to: minDay(next, addDays(today, 1)), caption };
+  }
+  return null;
+}
+
+const minDay = (/** @type {string} */ a, /** @type {string} */ b) => (a < b ? a : b);
+
+/** "5 h 20 m", "45 m". @param {number} minutes */
+export function hoursText(minutes) {
+  const m = Math.round(minutes);
+  const h = Math.floor(m / 60);
+  return h ? (m % 60 ? `${h} h ${m % 60} m` : `${h} h`) : `${m} m`;
+}
+
+const SPORT_LABEL = /** @type {Record<string, string>} */ ({
+  run: 'Run', ride: 'Ride', swim: 'Swim', strength: 'Strength', walk: 'Walk', hike: 'Hike', yoga: 'Yoga', other: 'Other',
+});
+
+/**
+ * A breakdown card: training time by sport, biggest first, with the total. Hikes count with walks' colour; yoga
+ * with other.
+ * @param {{ sport: string, minutes: number }[]} activities  one per activity, sport as sportOfStrava names it
+ * @param {string} caption
+ * @returns {{ kind: 'breakdown', caption: string, title: string, total: string, unit: string,
+ *   rows: { label: string, value: number, display: string, tint: string }[], link: 'plan' }}
+ */
+export function breakdownCard(activities, caption) {
+  /** @type {Map<string, number>} */
+  const by = new Map();
+  for (const a of activities) {
+    if (!(a.minutes > 0)) continue;
+    by.set(a.sport, (by.get(a.sport) ?? 0) + a.minutes);
+  }
+  const total = [...by.values()].reduce((s, v) => s + v, 0);
+  const tintOf = (/** @type {string} */ s) => (['run', 'ride', 'swim', 'strength', 'walk'].includes(s) ? s : s === 'hike' ? 'walk' : 'other');
+  const rows = [...by.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([sport, minutes]) => ({ label: SPORT_LABEL[sport] ?? 'Other', value: Math.round(minutes), display: hoursText(minutes), tint: tintOf(sport) }));
+  return { kind: 'breakdown', caption, title: 'Training time', total: hoursText(total), unit: 'by sport', rows, link: 'plan' };
+}
+
+/** Questions in one answer. */
+export const MAX_QUESTIONS = 5;
+const QUESTION_KINDS = ['single', 'multi', 'text', 'confirm'];
+
+export const ASK_TOOL = {
+  name: 'ask_questions',
+  description:
+    'Ask Paolo one to five short questions as cards he answers by tapping, instead of asking in prose, when you need ' +
+    'details before you can plan (e.g. which days he travels, what hurts, how long he has). Each question: kind ' +
+    '"single" (pick one option), "multi" (pick any; allowOther lets him type another), "text" (he types; give a ' +
+    'placeholder), or "confirm" (a yes/no step: confirm.primary is the filled button, confirm.secondary the other; he ' +
+    'can always skip). His answers come back as one message, a "title: answer" line per question. Use instead of ' +
+    'suggest_replies when there is more than one question or the answer needs choices; keep your text to one line.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      questions: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            title: { type: 'string', description: 'The question, under 60 characters.' },
+            subtitle: { type: 'string', description: 'Optional: why you ask, one short line.' },
+            kind: { type: 'string', enum: QUESTION_KINDS },
+            options: { type: 'array', items: { type: 'string' }, description: 'For single and multi: 2 to 6 options, under 30 characters.' },
+            allowOther: { type: 'boolean', description: 'For multi and single: an "Add another…" chip he can type in.' },
+            placeholder: { type: 'string', description: 'For text: the hint in the empty field.' },
+            confirm: {
+              type: 'object',
+              properties: { primary: { type: 'string' }, secondary: { type: 'string' } },
+              required: ['primary'],
+            },
+          },
+          required: ['title', 'kind'],
+        },
+      },
+    },
+    required: ['questions'],
+  },
+};
+
+/**
+ * @typedef {{ id: string, title: string, subtitle: string | null, kind: 'single' | 'multi' | 'text' | 'confirm',
+ *   options: string[], allowOther: boolean, placeholder: string | null, confirm: { primary: string, secondary: string | null } | null }} Question
+ */
+
+/**
+ * An `ask_questions` call, cleaned: bad questions are dropped (a choice without two options, a confirm without its
+ * button), texts trimmed, at most five. Ids are q1, q2… in order.
+ * @param {any} input @returns {Question[]}
+ */
+export function cleanQuestions(input) {
+  /** @type {unknown[]} */
+  const list = Array.isArray(input?.questions) ? input.questions : [];
+  const str = (/** @type {unknown} */ v, /** @type {number} */ max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
+  /** @type {Question[]} */
+  const out = [];
+  for (const raw of list) {
+    const q = /** @type {any} */ (raw ?? {});
+    const title = str(q.title, 90);
+    const kind = String(q.kind ?? '');
+    if (!title || !QUESTION_KINDS.includes(kind)) continue;
+    const options = Array.isArray(q.options)
+      ? [...new Set(q.options.map((/** @type {unknown} */ o) => str(o, 40)).filter(Boolean))].slice(0, 6)
+      : [];
+    if ((kind === 'single' || kind === 'multi') && options.length < 2 && !(kind === 'multi' && q.allowOther && options.length)) continue;
+    const primary = str(q.confirm?.primary, 30);
+    if (kind === 'confirm' && !primary) continue;
+    out.push({
+      id: `q${out.length + 1}`,
+      title,
+      subtitle: str(q.subtitle, 140) || null,
+      kind: /** @type {Question['kind']} */ (kind),
+      options: kind === 'single' || kind === 'multi' ? /** @type {string[]} */ (options) : [],
+      allowOther: (kind === 'single' || kind === 'multi') && q.allowOther === true,
+      placeholder: kind === 'text' ? str(q.placeholder, 60) || null : null,
+      confirm: kind === 'confirm' ? { primary, secondary: str(q.confirm?.secondary, 30) || null } : null,
+    });
+    if (out.length >= MAX_QUESTIONS) break;
+  }
+  return out;
 }
 
 /** @param {any} input @returns {string[]} */
