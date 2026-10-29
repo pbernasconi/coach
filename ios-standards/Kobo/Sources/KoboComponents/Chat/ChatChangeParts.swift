@@ -155,49 +155,51 @@ struct ChatChangeFooter: View {
         let status: ChatActionStatus
         var confirming = false
 
+        static let sections: [ChatChangeSection] = [
+            ChatChangeSection(
+                id: "tue",
+                title: "Tue 3 Mar",
+                rows: [
+                    ChatChangeRow(
+                        id: "1",
+                        title: "Design sync",
+                        caption: "10:00 · 30 min",
+                        tag: "Skipped",
+                        tone: .removed,
+                        systemImage: "person.2"
+                    )
+                ]
+            ),
+            ChatChangeSection(
+                id: "wed",
+                title: "Wed 4 Mar",
+                rows: [
+                    ChatChangeRow(
+                        id: "2",
+                        title: "Team review",
+                        caption: "09:00 · 1 h",
+                        tag: "From Tue",
+                        tone: .changed,
+                        systemImage: "person.3"
+                    ),
+                    ChatChangeRow(
+                        id: "3",
+                        title: "Lunch with the new hire",
+                        caption: "12:30 · 1 h",
+                        tag: "New",
+                        tone: .added,
+                        systemImage: "fork.knife"
+                    ),
+                ]
+            ),
+        ]
+
         var body: some View {
             ScrollView {
                 ChatChangeCard(
                     verbatim: "Move the review, lunch on Wednesday",
                     summary: "3 changes · Tue 3 to Wed 4 Mar",
-                    sections: [
-                        ChatChangeSection(
-                            id: "tue",
-                            title: "Tue 3 Mar",
-                            rows: [
-                                ChatChangeRow(
-                                    id: "1",
-                                    title: "Design sync",
-                                    caption: "10:00 · 30 min",
-                                    tag: "Skipped",
-                                    tone: .removed,
-                                    systemImage: "person.2"
-                                )
-                            ]
-                        ),
-                        ChatChangeSection(
-                            id: "wed",
-                            title: "Wed 4 Mar",
-                            rows: [
-                                ChatChangeRow(
-                                    id: "2",
-                                    title: "Team review",
-                                    caption: "09:00 · 1 h",
-                                    tag: "From Tue",
-                                    tone: .changed,
-                                    systemImage: "person.3"
-                                ),
-                                ChatChangeRow(
-                                    id: "3",
-                                    title: "Lunch with the new hire",
-                                    caption: "12:30 · 1 h",
-                                    tag: "New",
-                                    tone: .added,
-                                    systemImage: "fork.knife"
-                                ),
-                            ]
-                        ),
-                    ],
+                    sections: Self.sections,
                     checked: "Checked against your calendar: no clashes",
                     status: status,
                     undoConfirm: confirming
