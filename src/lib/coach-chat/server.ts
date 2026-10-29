@@ -495,8 +495,9 @@ export async function applyProposal(userId: string, id: string, today: string): 
 
 /**
  * POST /api/app/coach/proposals/{id}/undo: puts back what Apply changed, last change first. A workout Paolo moved,
- * edited, did or deleted after Apply stays as he left it: without `{ "partial": true }` that is a 409 with
- * `needsConfirm`, `kept` (those workouts) and `undoable` (how many changes Undo would put back), so the phone can ask.
+ * edited, did or deleted after Apply stays as he left it: without `{ "partial": true }` nothing is undone yet and the
+ * answer is `needsConfirm`, `kept` (those workouts) and `undoable` (how many changes Undo would put back), so the phone
+ * can ask.
  */
 export async function undoProposal(userId: string, id: string, today: string, partial = false): Promise<DecideResult> {
   const p = await proposalRow(userId, id);
@@ -506,8 +507,9 @@ export async function undoProposal(userId: string, id: string, today: string, pa
   if (p.undo == null) return { status: 409, body: { error: 'this change is still being applied', proposal: proposalView(p) } };
   const plan = undoPlan(record.steps, record.after, await planRows(userId, today));
   if (plan.kept.length && !partial) {
+    // A 200 the phone can read (its client drops a 409's body); nothing changed and the card stays applied.
     return {
-      status: 409,
+      status: 200,
       body: {
         error: `You changed ${plan.kept.join(', ')} after this was applied, so Undo leaves ${plan.kept.length === 1 ? 'it' : 'them'} as you set ${plan.kept.length === 1 ? 'it' : 'them'}.`,
         needsConfirm: true, kept: plan.kept, undoable: plan.run.length, proposal: proposalView(p),

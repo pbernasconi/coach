@@ -157,7 +157,8 @@ test('Undo asks first when Paolo changed a workout since, then leaves it as he s
   // Paolo moves the lift again on the Week tab.
   await sql`UPDATE training_plan_activities SET start_time = '18:00' WHERE id = ${heavy}`;
   const ask = await undoProposal(user, id, today);
-  assert.equal(ask.status, 409);
+  assert.equal(ask.status, 200);
+  assert.equal((ask.body as { needsConfirm: boolean }).needsConfirm, true);
   assert.deepEqual((ask.body as { needsConfirm: boolean; kept: string[]; undoable: number }).kept, ['Heavy barbell']);
   assert.equal((ask.body as { undoable: number }).undoable, 1);
   const undone = await undoProposal(user, id, today, true);

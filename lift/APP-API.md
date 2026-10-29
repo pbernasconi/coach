@@ -933,8 +933,9 @@ apart from the planner's.
   the plan doesn't show where the card said (read back after the writes); usually empty.
 - `POST /api/app/coach/proposals/{id}/undo?tz=` `{ partial? }` → `{ proposal, dates }`: puts back what Apply changed.
   `409` unless applied. A workout Paolo moved, edited, did or deleted after Apply stays as he set it: without
-  `{ "partial": true }` that is `409 { error, needsConfirm: true, kept: [titles], undoable: n, proposal }` (ask "Undo
-  n of m?"), with it Undo puts back the rest and `proposal.result` says what it left.
+  `{ "partial": true }` nothing is undone yet and the answer is `200 { error, needsConfirm: true, kept: [titles],
+  undoable: n, proposal }` (the card still applied; ask "Undo n?"); with it Undo puts back the rest and
+  `proposal.result` says what it left. After a `409` on Apply, read the thread again: the card's `result` says why.
 - `POST /api/app/coach/proposals/{id}/dismiss` → `{ proposal }`. `409` unless open.
 
 ```json

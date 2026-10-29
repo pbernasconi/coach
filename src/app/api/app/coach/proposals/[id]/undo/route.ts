@@ -1,6 +1,7 @@
 /**
- * Undoes an applied card of plan changes from Coach, last change first. 409 when it isn't applied, or, with
- * `needsConfirm`, when Paolo changed some of its workouts since: send `{ "partial": true }` to put back the rest.
+ * Undoes an applied card of plan changes from Coach, last change first. 409 when it isn't applied. When Paolo changed
+ * some of its workouts since, nothing is undone and the answer has `needsConfirm`: send `{ "partial": true }` to put
+ * back the rest.
  * (lift/APP-API.md, "Coach"). Bearer LIFT_SYNC_TOKEN.
  *
  *   POST /api/app/coach/proposals/<id>/undo?tz=…   body (optional): { "partial": true }
