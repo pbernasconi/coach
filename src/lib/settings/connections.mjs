@@ -136,10 +136,11 @@ export function connectionsFrom({ status, bodyspec, now }) {
   });
 
   const scale = worst(warnings, 'scale');
+  const bridge = status.scale.bridge ?? null;
   add({
-    id: 'scale', name: 'Bathroom scale', connected: Boolean(status.scale.lastWeighIn), level: scale.level, required: false,
+    id: 'scale', name: 'Bathroom scale', connected: Boolean(status.scale.lastWeighIn || bridge), level: scale.level, required: false,
     statusText: status.scale.lastWeighIn ? `Last weigh-in ${dayText(status.scale.lastWeighIn)}` : 'No weigh-ins yet',
-    detailText: null, note: scale.text, lastSyncedAt: null,
+    detailText: bridge ? `Bridge seen ${agoText(bridge.receivedAt, now)}` : null, note: scale.text, lastSyncedAt: bridge?.receivedAt ?? null,
   });
 
   const required = items.filter((i) => i.required);

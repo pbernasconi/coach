@@ -34,7 +34,9 @@ constexpr const char* kHostname = "scale-bridge";
 constexpr const char* kSource = "Renpho Elis 1 (scale bridge)";
 constexpr uint32_t kSessionTimeoutMs = 45000;  // the scale sleeps well before this
 constexpr uint32_t kQuietFallbackMs = 3000;    // no frame this long after the unit reply: send "current time"
-constexpr uint32_t kCooldownMs = 15000;        // ignore the scale's leftover advertising after a session
+constexpr uint32_t kCooldownMs = 15000;        // after a reading: ignore the scale's leftover advertising
+constexpr uint32_t kRetryCooldownMs = 800;     // after a session with no reading: the scale may still be measuring
+constexpr uint32_t kHeartbeatMs = 15 * 60000;  // health report to Coach (POST /api/vitals/sync/bridge)
 constexpr uint32_t kRetryMs = 60000;
 constexpr size_t kMaxPending = 24;
 constexpr uint32_t kTaskWatchdogS = 90;          // loop() stuck this long (a hung TLS or BLE call): restart
@@ -77,6 +79,8 @@ void takeKeptLog() {
   keptMagic = kKeptMagic;
 }
 
+uint32_t logSeq = 0;  // lines written since boot: a session's lines are those from its start
+
 void logf(const char* fmt, ...) {
   char msg[220];
   va_list ap;
@@ -96,6 +100,7 @@ void logf(const char* fmt, ...) {
   Serial.println(line);
   logRing[logHead] = line;
   logHead = (logHead + 1) % kLogLines;
+  logSeq++;
   if (keptMagic == kKeptMagic) {
     strlcpy(kept[keptHead], line.c_str(), kKeptLen);
     keptHead = (keptHead + 1) % kKeptLines;
@@ -196,6 +201,10 @@ int lastPostCode = 0;
 String lastPostReply;
 uint32_t lastSessionAt = 0;  // unix time
 String lastSessionResult = "none since the restart";
+uint32_t lastSessionSeq = 0;  // the session's first log line, for the heartbeat
+bool haveSession = false;
+bool heartbeatDue = false;
+uint8_t failedInARow = 0;  // sessions without a reading in a row
 uint32_t ledOffAt = 0;
 uint32_t lastLiveUnix = 0;  // newest live weigh-in sent: older stored readings must not overwrite its day
 
@@ -376,7 +385,7 @@ class ScanCallbacks : public NimBLEAdvertisedDeviceCallbacks {
       }
       return;
     }
-    if (!qn::isQnAdvertisement(b, m.size()) || millis() < cooldownUntil || !looksLikeQn(d)) return;
+    if (!qn::isQnAdvertisement(b, m.size()) || (int32_t)(millis() - cooldownUntil) < 0 || !looksLikeQn(d)) return;
     connectTo = d->getAddress();
     wantConnect = true;
     NimBLEDevice::getScan()->stop();
@@ -398,6 +407,8 @@ void startScan() {
 // One connection: handshake, final reading, end command. Returns when the scale is done or gone.
 void runSession() {
   wantConnect = false;
+  lastSessionSeq = logSeq;
+  haveSession = true;
   const String mac = connectTo.toString().c_str();
   logf("scale %s awake, connecting", mac.c_str());
   led(0, 0, 40);  // blue: talking to the scale
@@ -488,7 +499,11 @@ void runSession() {
   lastSessionAt = (uint32_t)time(nullptr);
   if (client->isConnected()) client->disconnect();
   NimBLEDevice::deleteClient(client);
-  cooldownUntil = millis() + kCooldownMs;
+  // After a reading the scale keeps advertising for a while: ignore it. Without one it is often still measuring
+  // (it dropped the link mid-way on 2026-10-29) and stores the result, so connect again at once to collect it.
+  failedInARow = gotReading ? 0 : (uint8_t)min(failedInARow + 1, 20);
+  cooldownUntil = millis() + (gotReading ? kCooldownMs : failedInARow > 4 ? 10000 : kRetryCooldownMs);
+  heartbeatDue = true;
 
   if (gotReading && scaleMac.isEmpty()) {
     scaleMac = mac;
@@ -590,6 +605,61 @@ void handleJson() {
   s += ",\"uptimeSeconds\":" + String(millis() / 1000) + ",\"freeHeap\":" + String(ESP.getFreeHeap());
   s += ",\"minFreeHeap\":" + String(ESP.getMinFreeHeap()) + "}";
   web.send(200, "application/json", s);
+}
+
+// ---- health report to Coach (src/lib/vitals/scale.mjs heartbeatFrom; Settings > Bathroom scale) ---------------
+
+#ifndef COACH_HEARTBEAT_URL
+#define COACH_HEARTBEAT_URL COACH_URL "/bridge"  // https://…/api/vitals/sync/bridge
+#endif
+
+uint32_t lastHeartbeat = 0;  // millis of the last attempt
+
+String heartbeatJson() {
+  String j = "{\"firmware\":\"" + jsonEscape(kBuilt) + "\"";
+  j += ",\"uptimeS\":" + String(millis() / 1000) + ",\"bootCount\":" + String(bootCount);
+  j += ",\"resetReason\":\"" + jsonEscape(resetReason()) + "\"";
+  if (WiFi.status() == WL_CONNECTED) {
+    j += ",\"rssi\":" + String(WiFi.RSSI()) + ",\"ip\":\"" + WiFi.localIP().toString() + "\"";
+  }
+  if (!scaleMac.isEmpty()) j += ",\"scaleMac\":\"" + jsonEscape(scaleMac) + "\"";
+  j += ",\"pending\":" + String(pendingCount);
+  if (haveSession) {
+    j += ",\"lastSession\":{\"at\":" + String(lastSessionAt) + ",\"result\":\"" + jsonEscape(lastSessionResult) + "\",\"log\":[";
+    uint32_t n = logSeq - lastSessionSeq;
+    if (n > kLogLines) n = kLogLines;
+    if (n > 40) n = 40;
+    for (uint32_t i = n; i > 0; i--) {
+      j += "\"" + jsonEscape(logRing[(logHead + kLogLines - i) % kLogLines]) + "\"";
+      if (i > 1) j += ",";
+    }
+    j += "]}";
+  }
+  if (lastPostAt) j += ",\"lastPost\":{\"at\":" + String(lastPostAt) + ",\"code\":" + String(lastPostCode) + "}";
+  return j + "}";
+}
+
+void sendHeartbeat() {
+  lastHeartbeat = millis();
+  heartbeatDue = false;
+  if (WiFi.status() != WL_CONNECTED || !timeValid()) return;
+  WiFiClientSecure tls;
+  tls.setCACert(kRootCAs);
+  tls.setHandshakeTimeout(20);  // under the task watchdog
+  HTTPClient http;
+  http.setConnectTimeout(10000);
+  http.setTimeout(15000);
+  if (!http.begin(tls, COACH_HEARTBEAT_URL)) return;
+  http.addHeader("Content-Type", "application/json");
+  http.addHeader("Authorization", String("Bearer ") + COACH_TOKEN);
+  const int code = http.POST(heartbeatJson());
+  http.end();
+  // Quiet while it works: one line when it starts failing and one when it recovers.
+  static int lastCode = 200;
+  const bool ok = code >= 200 && code < 300, wasOk = lastCode >= 200 && lastCode < 300;
+  if (!ok && (wasOk || code != lastCode)) logf("health report to Coach failed: HTTP %d", code);
+  if (ok && !wasOk) logf("health report to Coach OK again");
+  lastCode = code;
 }
 
 void handleRestart() {
@@ -766,6 +836,14 @@ void loop() {
   if (pendingCount > 0 && (lastTry == 0 || millis() - lastTry > kRetryMs)) {
     lastTry = millis();
     postPending();
+  }
+  // Health report: once the clock is set after boot, after each session (once its weigh-in is posted), then
+  // every 15 minutes.
+  static bool firstHeartbeat = true;
+  if (online && timeValid() && (firstHeartbeat || (heartbeatDue && pendingCount == 0) || millis() - lastHeartbeat > kHeartbeatMs)) {
+    firstHeartbeat = false;
+    esp_task_wdt_reset();
+    sendHeartbeat();
   }
   // NimBLE stops a continuous scan on some errors; keep it running.
   if (!wantConnect) startScan();

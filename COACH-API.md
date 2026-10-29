@@ -76,7 +76,10 @@ Daily vitals and lab results. They are shown on `/health`, and `scripts/health-p
   metric with `source: "garmin"`.
 - **Apple Health**: the Lift app can push in the same way later.
 - **Bathroom scale**: an ESP32 bridge (`devices/scale-bridge/`) reads the Renpho Elis 1 over Bluetooth and posts
-  `weight_kg` and `body_fat_pct` with the Lift token and `source: "Renpho Elis 1 (scale bridge)"`.
+  `weight_kg` and `body_fat_pct` with the Lift token and `source: "Renpho Elis 1 (scale bridge)"`. Every 15 minutes
+  and after each scale session it also posts its health to `POST /api/vitals/sync/bridge` (same token; firmware,
+  uptime, restart reason, Wi-Fi signal, the last session's result and log), kept in `users.settings.scaleBridge`.
+  Settings shows it, and a status warning appears when the bridge stops reporting (2 hours: Settings, a day: banner).
 - **Lab results**: they come from Function Health. The "Function Health sync" workflow (by hand, after new results)
   runs `scripts/function-sync.mjs`, which posts to `POST /api/vitals/function`. `/labs` (`scripts/labs-import.mjs`)
   still imports a PDF.

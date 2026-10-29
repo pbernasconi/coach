@@ -33,6 +33,10 @@ fails on macOS); if that fails too, add `--upload-port <the board's IP>` or set 
 
 ## Checking on it
 
+- **Coach > Settings > Bathroom scale**, from anywhere: the bridge reports its health to Coach at boot, after each
+  scale session and every 15 minutes (`POST /api/vitals/sync/bridge`): Wi-Fi signal, uptime and why it last
+  restarted, firmware, waiting readings, and the last session with its log. Coach warns when the reports stop
+  (2 hours on Settings, a day as a banner).
 - `http://scale-bridge.local/` (same Wi-Fi) shows Wi-Fi strength, the clock, the remembered scale and when it was
   last heard, the last session and the last post (HTTP status and reply), readings waiting to be posted, the
   firmware build and height, the restart count and its reason, free memory, every Bluetooth device heard in the
@@ -73,6 +77,9 @@ Readings waiting to be posted are in flash, so no restart loses a weigh-in.
   "now"). The same session sets the scale's clock again (`0x20`).
 - **Broadcast-only firmware.** Some Elis 1 units never accept a connection and put the weight in their
   advertisement. The bridge reads those too, weight only.
+- **Reconnecting.** A session that ends without a reading (the scale dropped the link mid-measurement, as on
+  2026-10-29) is retried after under a second: the scale stores the finished weigh-in and hands it over on the next
+  connection. Only after a reading does the bridge ignore the scale's leftover advertising, for 15 s.
 - **Posting.** Readings wait in flash and are retried every minute. Each day keeps its latest reading
   (the server upserts on date and metric). `source` is `Renpho Elis 1 (scale bridge)`.
 
