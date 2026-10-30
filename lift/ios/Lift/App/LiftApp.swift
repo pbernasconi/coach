@@ -20,9 +20,15 @@ struct LiftApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView(launcher: launcher, options: options, push: appDelegate.push)
-                .koboTheme(.lift)
-                .preferredColorScheme(colorScheme)
+            Group {
+                if options.showsWidgetGallery {
+                    HomeWidgetGallery()
+                } else {
+                    RootView(launcher: launcher, options: options, push: appDelegate.push)
+                }
+            }
+            .koboTheme(.lift)
+            .preferredColorScheme(colorScheme)
         }
     }
 

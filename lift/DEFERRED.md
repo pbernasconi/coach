@@ -45,6 +45,10 @@ already done around it. The build keeps going around these; nothing here blocks 
   Glass rendering, the workout Live Activity with its Done, Next, +30s and Skip buttons, and sharing a note from Apple Notes
   to Lift can only be confirmed on your iPhone (CI builds them for the simulator without signing, so the App Group
   is not provisioned there).
+- **Coach widget (Home Screen and Lock Screen).** Long-press the Home Screen → + → Coach. It shows fitness, form and
+  fatigue and today's workouts, fetched from `/api/app/today` with the sync token, which it reads from the app's
+  Keychain group (`keychain-access-groups`, no App Group or portal step). Only a signed build on the phone can check
+  that it finds the token; CI's simulator builds are unsigned. The CI screenshots show its faces (`-open widgets`).
 
 - **Sync is on (done 2026-10-19).** The server runs at https://coach.paolobernasconi.com (also
   coach-paolo.vercel.app) with `LIFT_SYNC_TOKEN` set and the Lift tables in its schema (DATABASE.md). The repository

@@ -34,7 +34,11 @@ targets:
   Lift:
     type: application
     platform: iOS
-    sources: [Lift]
+    sources:
+      - Lift
+      # The Coach widget's badge and colours, so the demo gallery (`-open widgets`) draws the widget as it is.
+      - LiftWidgets/Design/LiftMark.swift
+      - LiftWidgets/Design/WidgetColors.swift
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(LIFT_BUNDLE_ID)
@@ -60,6 +64,10 @@ targets:
         # Push notifications from the coach (lift/PUSH.md). "development" while signing for development; the App Store
         # export signs it as "production", and the app reads which from its profile (ApnsEnvironmentResolver).
         aps-environment: development
+        # The app's own Keychain group, named so LiftWidgets can share it: the Coach widget reads the sync token from
+        # it. Items already saved are in this group (it is the app's default), and no portal setup is needed: Apple's
+        # profiles allow any group under the team's prefix.
+        keychain-access-groups: [$(AppIdentifierPrefix)$(LIFT_BUNDLE_ID)]
     info:
       path: Lift/Info.plist
       properties:
@@ -105,13 +113,19 @@ targets:
       - Lift/Features/Workout/LiveActivity/WorkoutActivityAttributes.swift
       - Lift/Features/Workout/LiveActivity/RestSnapshot.swift
       - Lift/App/WorkoutActivityIntents.swift
+      # The Coach widget: its snapshot of /api/app/today, its faces, and the coach's origin from Info.plist.
+      - Lift/Features/HomeWidget
+      - Lift/App/Sync/SyncServer.swift
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(LIFT_BUNDLE_ID).widgets   # must start with the app's bundle id
         SWIFT_ACTIVE_COMPILATION_CONDITIONS: $(inherited) LIFT_EXTENSION
     entitlements:
       path: LiftWidgets/LiftWidgets.entitlements
-      properties: {}   # App Group left out for now; see the Lift target.
+      properties:
+        # App Group left out for now; see the Lift target. The app's Keychain group: the Coach widget reads the sync
+        # token the app saved.
+        keychain-access-groups: [$(AppIdentifierPrefix)$(LIFT_BUNDLE_ID)]
     info:
       path: LiftWidgets/Info.plist
       properties:
@@ -119,6 +133,7 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)   # must match the app's (see the Lift target)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LiftAppGroup: $(LIFT_APP_GROUP)
+        LiftSyncBaseURL: $(LIFT_SYNC_BASE_URL)   # the Coach widget fetches /api/app/today from here
         NSExtension: { NSExtensionPointIdentifier: com.apple.widgetkit-extension }
   LiftShare:
     type: app-extension

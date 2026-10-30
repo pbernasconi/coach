@@ -1,6 +1,7 @@
 import KoboComponents
 import KoboTokens
 import SwiftUI
+import WidgetKit
 
 /// The app shell: the tab bar once the data is ready, or an error when the database could not be opened. Turning
 /// practice mode on or off opens other data, and the shell starts over on it.
@@ -98,6 +99,9 @@ private struct AppShell: View {
             await syncCoordinator.launched()  // after the tabs show: logging never waits for the network
         }
         .onChange(of: scenePhase) { _, phase in
+            if phase == .background, options.dataSource == .device {
+                WidgetCenter.shared.reloadAllTimelines()  // the Coach widget shows what was just logged or moved
+            }
             guard phase == .active else { return }
             dependencies.incomingNotes.checkInbox()
             dependencies.push?.registrar.refresh()  // the permission may have changed in iOS Settings

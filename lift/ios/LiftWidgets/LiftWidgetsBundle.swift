@@ -1,10 +1,11 @@
 import SwiftUI
 import WidgetKit
 
-/// The LiftWidgets extension. For now it only draws the workout Live Activity.
+/// The LiftWidgets extension: the workout Live Activity and the Coach widget (fitness, form, fatigue and today).
 @main
 struct LiftWidgetsBundle: WidgetBundle {
     var body: some Widget {
         WorkoutActivityWidget()
+        HomeWidget()
     }
 }
