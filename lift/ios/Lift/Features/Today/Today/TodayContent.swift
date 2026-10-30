@@ -4,7 +4,7 @@ import KoboTokens
 import LiftSync
 import SwiftUI
 
-/// Dumb view: fitness, form and fatigue with their chart and today's workouts (as TrainingPeaks opens), then the web's
+/// Dumb view (the Fitness tab): fitness, form and fatigue with their chart (as TrainingPeaks opens), then the web's
 /// Health page section by section, and the plan item sheet (SCR-2).
 struct TodayContent: View {
     let state: TodayState
@@ -30,7 +30,7 @@ struct TodayContent: View {
             }
         }
         .screenCanvas()
-        .tabRootHeader { AppHeader("Today") }
+        .tabRootHeader { AppHeader("Fitness") }
         .planItemSheet(item: state.planItemTarget, onOpenActivity: { send(.planActivityTapped($0)) }) {
             send(.destinationDismissed)
         }
@@ -42,11 +42,11 @@ struct TodayContent: View {
     }
 }
 
-/// The page's sections: the fitness hero and today's workouts, then the web Health page's order without its readiness
+/// The page's sections: the fitness hero, then the web Health page's order without its readiness
 /// card. Each `{ok}` section fails alone.
 struct TodaySections: View {
     @Environment(\.calendar) private var calendar
-    /// Fitness, form and fatigue and today's plan; nil until it loads (or when it failed: the health page still shows).
+    /// Fitness, form and fatigue; nil until it loads (or when it failed: the health page still shows).
     let today: AppToday?
     let health: AppHealth
     let range: HealthRange
@@ -57,9 +57,6 @@ struct TodaySections: View {
             TodaySyncWarning(status: health.status.value)
             if let summary = today?.fitness.value.flatMap({ TodayFitnessSummary($0, calendar: calendar) }) {
                 TodayFitnessHero(summary: summary)
-            }
-            if let line = today?.todayLine {
-                AppSectionView("Workouts", section: line) { line in TodayLineView(line: line, send: send) }
             }
             if let empty = health.emptyText {
                 SectionEmptyCard(verbatim: empty, systemImage: "heart.text.square")
