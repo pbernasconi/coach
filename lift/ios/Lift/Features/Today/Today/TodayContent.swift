@@ -4,8 +4,8 @@ import KoboTokens
 import LiftSync
 import SwiftUI
 
-/// Dumb view: the date and Garmin lines, today's plan, then the web's Health page section by section, and the plan item
-/// sheet (SCR-2).
+/// Dumb view: fitness, form and fatigue with their chart and today's workouts (as TrainingPeaks opens), then the web's
+/// Health page section by section, and the plan item sheet (SCR-2).
 struct TodayContent: View {
     let state: TodayState
     let send: (TodayAction) -> Void
@@ -42,9 +42,11 @@ struct TodayContent: View {
     }
 }
 
-/// The page's sections in the web Health page's order, after today's plan. Each `{ok}` section fails alone.
+/// The page's sections: the fitness hero and today's workouts, then the web Health page's order without its readiness
+/// card. Each `{ok}` section fails alone.
 struct TodaySections: View {
-    /// Today's date line and plan; nil until it loads (or when it failed: the health page still shows).
+    @Environment(\.calendar) private var calendar
+    /// Fitness, form and fatigue and today's plan; nil until it loads (or when it failed: the health page still shows).
     let today: AppToday?
     let health: AppHealth
     let range: HealthRange
@@ -52,14 +54,16 @@ struct TodaySections: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Space.section) {
-            TodayHeaderView(dateText: today?.dateText, status: health.status.value)
+            TodaySyncWarning(status: health.status.value)
+            if let summary = today?.fitness.value.flatMap({ TodayFitnessSummary($0, calendar: calendar) }) {
+                TodayFitnessHero(summary: summary)
+            }
             if let line = today?.todayLine {
-                AppSectionView("Planned today", section: line) { line in TodayLineView(line: line, send: send) }
+                AppSectionView("Workouts", section: line) { line in TodayLineView(line: line, send: send) }
             }
             if let empty = health.emptyText {
                 SectionEmptyCard(verbatim: empty, systemImage: "heart.text.square")
             } else {
-                AppSectionView("Readiness", section: health.readiness) { TodayReadinessCard(readiness: $0) }
                 AppSectionView("Vitals", section: health.vitals) { TodayVitalsView(vitals: $0) }
                 AppSectionView("Trends", section: health.trends) { trends in
                     TodayTrendsView(trends: trends, range: range) { send(.trendRangeChanged($0)) }
