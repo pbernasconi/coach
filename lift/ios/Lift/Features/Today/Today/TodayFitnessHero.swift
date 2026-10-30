@@ -74,6 +74,7 @@ struct TodayFitnessChart: View {
             }
         }
         .chartLegend(.hidden)
+        .chartYScale(domain: yDomain)
         .chartXAxis {
             AxisMarks(values: .stride(by: .weekOfYear, count: 2)) { _ in
                 AxisValueLabel(format: .dateTime.month(.abbreviated).day())
@@ -91,6 +92,15 @@ struct TodayFitnessChart: View {
         }
         .frame(height: height)
         .accessibilityHidden(true)
+    }
+
+    /// From the lowest to the highest value shown (zero always in), a little padded, so the lines fill the height.
+    private var yDomain: ClosedRange<Double> {
+        let values = summary.points.flatMap { [$0.ctl, $0.atl, $0.tsb] }
+        let low = min(values.min() ?? 0, 0)
+        let high = max(values.max() ?? 1, 1)
+        let pad = (high - low) * 0.08
+        return (low - pad)...(high + pad)
     }
 
     /// The days up to today.

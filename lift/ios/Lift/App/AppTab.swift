@@ -12,7 +12,7 @@ nonisolated enum AppTab: String, CaseIterable, Hashable, Sendable {
     /// The SF Symbol shown in the tab bar.
     var systemImage: String {
         switch self {
-        case .today: "sun.max"
+        case .today: "chart.line.uptrend.xyaxis"  // shown as Fitness
         case .week: "calendar"
         case .coach: "bubble.left.and.text.bubble.right"
         case .lift: "dumbbell"

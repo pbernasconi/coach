@@ -22,7 +22,7 @@ final class LiveEndToEndUITests: XCTestCase {
         shot("01-settings")
         scrollShot("02-settings-foot")
 
-        tab("Today")
+        tab("Fitness")
         wait(6)
         shot("10-today")
         scrollShot("11-today-vitals")

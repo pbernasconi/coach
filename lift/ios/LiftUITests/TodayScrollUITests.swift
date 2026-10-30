@@ -7,7 +7,7 @@ final class TodayScrollUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-demo", "-tab", "today"]
         app.launch()
-        XCTAssertTrue(app.staticTexts["Workouts"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Vitals"].waitForExistence(timeout: 10))
         for index in 0..<4 {
             app.swipeUp(velocity: .slow)
             _ = XCTWaiter.wait(for: [XCTestExpectation(description: "scroll")], timeout: 1)
