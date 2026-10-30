@@ -23,6 +23,7 @@ import LiftCore
 ///     -open plates                            with -demo: pushes Plates and bars on Settings
 ///     -open activity|ride|activity-pending   with -demo: pushes a made-up activity on Week (DemoActivities)
 ///     -open today-trends|today-end            with -demo: Today scrolled to its trends or its end
+///     -open widgets                           with -demo: the Coach widget's faces on a made-up Home Screen
 ///     -coach conversation|questions|proposal  with -demo: the Coach tab opens on that made-up chat (DemoCoachThreads)
 ///     -open template-link                     with -demo: opens the template link review over Exercises with the
 ///                                             made-up `TemplateLinkSample`
@@ -63,6 +64,8 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
         case todayTrends = "today-trends"
         /// Today scrolled to its end (body and labs), for screenshots.
         case todayEnd = "today-end"
+        /// The Coach widget's faces on a made-up Home Screen, instead of the app (`HomeWidgetGallery`).
+        case widgets
 
         /// The Lift segment the screen belongs to; nil outside the Lift tab.
         var liftSegment: LiftSegment? {
@@ -79,7 +82,7 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
             case .workout, .summary, .activity, .ride, .activityPending: .week
             case .exercise, .catalog, .templates, .template, .templateLink, .importNotes, .progress, .liftSession: .lift
             case .plates: .settings
-            case .todayTrends, .todayEnd: .today
+            case .todayTrends, .todayEnd, .widgets: .today
             }
         }
     }
@@ -169,7 +172,7 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
         case .activityPending: return .activity(DemoActivities.pending)
         // A modal page (`opensImportSample`), a sheet (`opensTemplateLinkSample`), or a segment of History
         // (`historySegment`).
-        case .importNotes, .templateLink, .progress, .todayTrends, .todayEnd: return nil
+        case .importNotes, .templateLink, .progress, .todayTrends, .todayEnd, .widgets: return nil
         }
     }
 
@@ -194,6 +197,9 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
 
     /// `-open template-link` in demo mode: the shell opens the template link review with the made-up sample link.
     var opensTemplateLinkSample: Bool { isDemo && opening == .templateLink }
+
+    /// `-open widgets` in demo mode: the app shows the Coach widget's gallery instead of its tabs (screenshots).
+    var showsWidgetGallery: Bool { isDemo && opening == .widgets }
 
     private static func value(after flag: String, in arguments: [String]) -> String? {
         guard let index = arguments.firstIndex(of: flag), arguments.indices.contains(index + 1) else { return nil }

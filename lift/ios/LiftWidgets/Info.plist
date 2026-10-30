@@ -22,6 +22,8 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LiftAppGroup</key>
 	<string>$(LIFT_APP_GROUP)</string>
+	<key>LiftSyncBaseURL</key>
+	<string>$(LIFT_SYNC_BASE_URL)</string>
 	<key>NSExtension</key>
 	<dict>
 		<key>NSExtensionPointIdentifier</key>
