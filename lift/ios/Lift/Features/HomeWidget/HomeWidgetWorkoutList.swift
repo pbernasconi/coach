@@ -67,15 +67,16 @@ struct HomeWidgetWorkoutRow: View {
     var body: some View {
         HStack(spacing: 8) {
             HomeWidgetSportIcon(sport: workout.sport, size: 24)
+            // Plain colours, not .primary and .secondary: a Link tints hierarchical styles with the accent.
             Text(verbatim: workout.title)
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(workout.isDone ? .secondary : .primary)
+                .foregroundStyle(workout.isDone ? Color.secondary : Color.primary)
                 .lineLimit(1)
             Spacer(minLength: 6)
             Text(verbatim: workout.detail)
                 .font(.caption)
                 .monospacedDigit()
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.secondary)
                 .lineLimit(1)
                 .layoutPriority(1)
             if workout.isDone {
