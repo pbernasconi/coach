@@ -10,7 +10,7 @@
 set -euo pipefail
 APP="$1"
 OUT="$2"
-SCREENS="${SCREENS:-week:-tab,week workout:-open,workout history:-tab,history progress:-tab,history,-open,progress import:-tab,history,-open,import exercises:-tab,exercises exercise:-tab,exercises,-open,exercise catalog:-tab,exercises,-open,catalog templates:-tab,exercises,-open,templates template:-tab,exercises,-open,template template-link:-tab,exercises,-open,template-link summary:-tab,week,-open,summary lift-session:-open,lift-session settings:-tab,settings plates:-tab,settings,-open,plates fresh-week:-fresh,-tab,week fresh-history:-fresh,-tab,history fresh-exercises:-fresh,-tab,exercises widgets:-open,widgets}"
+SCREENS="${SCREENS:-week:-tab,week workout:-open,workout history:-tab,history progress:-tab,history,-open,progress import:-tab,history,-open,import exercises:-tab,exercises exercise:-tab,exercises,-open,exercise catalog:-tab,exercises,-open,catalog templates:-tab,exercises,-open,templates template:-tab,exercises,-open,template template-link:-tab,exercises,-open,template-link summary:-tab,week,-open,summary lift-session:-open,lift-session settings:-tab,settings plates:-tab,settings,-open,plates fresh-week:-fresh,-tab,week fresh-history:-fresh,-tab,history fresh-exercises:-fresh,-tab,exercises widgets:-open,widgets today:-tab,today}"
 SETTLE_FRAMES="${SETTLE_FRAMES:-2}"
 SETTLE_MAX="${SETTLE_MAX:-6}"
 MIN_BYTES="${MIN_BYTES:-120000}"

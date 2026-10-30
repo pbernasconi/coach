@@ -3,17 +3,13 @@ import KoboPatterns
 import KoboTokens
 import SwiftUI
 
-/// The Today page while it loads, in `TodaySections`' layout: the date and Garmin lines, today's plan rows, the
-/// readiness card, the vitals tiles, then the trends card.
+/// The Today page while it loads, in `TodaySections`' layout: the fitness card with its chart, today's workouts, the
+/// vitals tiles, then the trends card.
 struct TodaySkeleton: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Space.section) {
-            VStack(alignment: .leading, spacing: Space.xs) {
-                Skeleton(.line, textRole: .headline).frame(maxWidth: Size.minTouch * 4)
-                Skeleton(.line, textRole: .footnote).frame(maxWidth: Size.minTouch * 6)
-            }
+            SkeletonCard(title: .none, lines: 1, blockHeight: AppSkeletonMetrics.tallChartHeight)
             SkeletonListSection(rows: 2)
-            SkeletonCard(title: .above, lines: 2)
             VStack(alignment: .leading, spacing: Space.sm) {
                 SkeletonSectionTitle()
                 SkeletonStatGrid(count: 4, style: .tiles)
