@@ -87,6 +87,7 @@ Tailwind uses `text-` as a prefix. The optional `shadcn-aliases.css` maps the sh
 | Overlays | `Dialog` family, `AlertDialog` family, `Sheet` family (four sides and a non-modal panel), `Popover`, `Tooltip`, `StandardTooltip`, `HelpTooltip`, `DropdownMenu` family, `Command` family + `CommandDialog` (cmdk), `Toaster` + `toast` (sonner), `FormDialog`, `ConfirmDialog`, `ConfirmProvider` + `useConfirm` |
 | Layout | `PageHeader`, `StepHeader`, `SectionRail`, `FlowShell`, `FlowFooter`, `FlowFooterSlot`, `FullScreenWizard`, `WizardStepRail` |
 | Navigation | `Breadcrumb`, `CollapsibleNavGroup`, `FilterPills`, `StepNav`, `Sidebar` family (collapses to icons, a sheet on a phone) |
+| Chat | `ChatConversation` + `ChatScrollButton` (wraps `use-stick-to-bottom`, as Vercel's AI Elements), `ChatMessage`, `ChatMarkdown` (wraps Vercel's `streamdown`: Markdown that is still streaming), `ChatThought`, `ChatStatusLine` + `ChatTypingDots`, `ChatComposer` (Enter sends, paste and drop files, stop), `ChatAttachmentStrip`, `ChatWelcome`, `ChatQuickReplies`, `ChatFeedbackRow`, `ChatChangeCard`, `ChatQuestionCard`, `ChatBreakdownCard`, `ChatTimestamp`, `createEventStreamParser` (SSE) |
 | Patterns | `QueryBoundary`, `SkeletonRegion`, `SkipLink`, `RouteErrorScreen`, `PageGateState` |
 | Print | `PrintDocument`, `PrintButton` (paper always uses the light palette) |
 | Hooks | `useStoredValue`, `useIsMobile`, `useMountEffect` |

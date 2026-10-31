@@ -4,6 +4,8 @@ import { ownerForSignedInUser } from '@/lib/owner';
 import { safe } from '@/lib/safe';
 import { loadStatusCached, type Warning } from '@/lib/status';
 import HotkeysProvider from '@/components/hotkeys/HotkeysProvider';
+import CoachProvider from '@/components/coach-chat/CoachProvider';
+import CoachPanel from '@/components/coach-chat/CoachPanel';
 import DashboardNav from './DashboardNav';
 import MainContainer from './MainContainer';
 import { cn } from '@/lib/utils';
@@ -34,13 +36,21 @@ async function StatusBanner() {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <HotkeysProvider>
-      <div className="min-h-screen bg-background">
-        <DashboardNav />
-        <Suspense fallback={null}>
-          <StatusBanner />
-        </Suspense>
-        <MainContainer>{children}</MainContainer>
-      </div>
+      <CoachProvider>
+        <div className="min-h-screen bg-background">
+          <DashboardNav />
+          {/* The Coach panel docks on the right and the page narrows to make room (src/components/coach-chat/). */}
+          <div className="flex items-start">
+            <div className="min-w-0 flex-1">
+              <Suspense fallback={null}>
+                <StatusBanner />
+              </Suspense>
+              <MainContainer>{children}</MainContainer>
+            </div>
+            <CoachPanel />
+          </div>
+        </div>
+      </CoachProvider>
     </HotkeysProvider>
   );
 }

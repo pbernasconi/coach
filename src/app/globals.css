@@ -4,6 +4,8 @@
 /* Calendar workout cards and status colours (CalendarCard.tsx), used on /plan and the home page. */
 @import "../components/plan/calendar-card.css";
 @source "../../web-standards/kobo-web/src";
+/* The Markdown renderer behind Kobo ChatMarkdown (its tables and code blocks carry their own classes). */
+@source "../../node_modules/streamdown/dist/*.js";
 
 @layer base {
   :root {
