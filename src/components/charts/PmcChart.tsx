@@ -20,7 +20,7 @@ const DASH = '5 4';
  * The Performance Management Chart with the plan's projection: fitness (CTL) and fatigue (ATL) on one TSS-per-day
  * scale, form (TSB) in its own panel under it. Days after today are dashed on a shaded background; a line marks
  * today, and thin vertical lines mark events (A events are labeled). One crosshair runs through both panels.
- * A timeframe control (90 days, 180 days, 1 year, all; remembered in this browser) sets how far back it reaches;
+ * A timeframe control (30 days, 90 days, 180 days, 1 year, all; remembered in this browser) sets how far back it reaches;
  * the projection always shows.
  */
 export default function PmcChart({ days: allDays, today, events = [], note }: { days: PmcChartDay[]; today: string; events?: PmcChartEvent[]; note?: string | null }) {

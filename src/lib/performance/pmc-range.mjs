@@ -3,6 +3,7 @@
 
 /** The chart's timeframes. `days: null` is all history. */
 export const PMC_RANGES = [
+  { id: '30', label: '30D', days: 30 },
   { id: '90', label: '90D', days: 90 },
   { id: '180', label: '180D', days: 180 },
   { id: '365', label: '1Y', days: 365 },
@@ -36,6 +37,7 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
  * The x axis for a span: vertical grid lines (Mondays on short spans, month starts on longer ones) and month
  * labels, thinned to quarters or years when months get too close. January reads as the year when the span
  * crosses a year.
+ * Very short spans label each Monday with its date instead.
  * @param {{ date: string }[]} days @param {number} plotWidth
  * @returns {{ grid: number[], labels: { i: number, text: string }[] }}
  */
@@ -51,6 +53,11 @@ export function pmcAxis(days, plotWidth) {
     ? days.flatMap((d, i) => (new Date(`${d.date}T12:00:00Z`).getUTCDay() === 1 ? [i] : []))
     : months.filter(({ m }) => monthPx >= 10 || m % 3 === 1).map(({ i }) => i);
 
+  // Zoomed in (30 days plus the projection): a dated label on each Monday.
+  if (pxPerDay * 7 >= 60) {
+    const labels = grid.map((i) => ({ i, text: `${MONTHS[Number(days[i].date.slice(5, 7)) - 1]} ${Number(days[i].date.slice(8, 10))}` }));
+    return { grid, labels };
+  }
   const every = monthPx >= 36 ? 1 : monthPx * 3 >= 36 ? 3 : 12;
   const labels = months
     .filter(({ m }) => (m - 1) % every === 0)

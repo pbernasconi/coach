@@ -11,6 +11,7 @@ test('daysInRange keeps the last N days and the whole projection', () => {
   const d90 = daysInRange(days, today, '90');
   assert.equal(d90.filter((d) => !d.projected).length, 91, '90 days back plus today');
   assert.equal(d90.filter((d) => d.projected).length, 31);
+  assert.equal(daysInRange(days, today, '30').filter((d) => !d.projected).length, 31);
   assert.equal(daysInRange(days, today, 'all').length, 700);
   assert.equal(daysInRange(days, today, 'nope').length, 700);
   assert.equal(daysInRange(days, today, '365').filter((d) => !d.projected).length, 366);
@@ -18,7 +19,7 @@ test('daysInRange keeps the last N days and the whole projection', () => {
 
 test('isPmcRange', () => {
   assert.ok(PMC_RANGES.every((r) => isPmcRange(r.id)));
-  assert.equal(isPmcRange('30'), false);
+  assert.equal(isPmcRange('60'), false);
   assert.equal(isPmcRange(90), false);
 });
 
@@ -27,6 +28,11 @@ test('pmcAxis: Mondays and every month on short spans', () => {
   const { grid, labels } = pmcAxis(days, 1000);
   assert.ok(grid.length >= 16 && grid.length <= 18, 'weekly lines');
   assert.deepEqual(labels.map((l) => l.text), ['Aug', 'Sep', 'Oct', 'Nov']);
+});
+
+test('pmcAxis: dated Mondays when zoomed in', () => {
+  const { labels } = pmcAxis(series('2026-10-01', 60), 1000);
+  assert.deepEqual(labels.slice(0, 2).map((l) => l.text), ['Oct 5', 'Oct 12']);
 });
 
 test('pmcAxis: month lines, quarters and years on long spans', () => {
