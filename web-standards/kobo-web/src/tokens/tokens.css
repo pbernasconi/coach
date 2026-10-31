@@ -248,6 +248,9 @@
   --text-headline: 0.9375rem;
   --text-headline--line-height: 1.375rem;
   --text-headline--font-weight: 600;
+  /* Reading: long assistant replies in a chat, a little larger and airier than body. */
+  --text-reading: 0.9375rem;
+  --text-reading--line-height: 1.625rem;
   --text-body: 0.875rem;
   --text-body--line-height: 1.25rem;
   --text-subhead: 0.8125rem;

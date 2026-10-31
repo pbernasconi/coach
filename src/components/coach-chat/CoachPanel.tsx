@@ -13,7 +13,7 @@ export default function CoachPanel() {
   return (
     <aside
       aria-label="Coach"
-      className="fixed inset-x-0 top-14 bottom-0 z-40 border-l border-line bg-background md:sticky md:inset-auto md:top-14 md:z-auto md:h-[calc(100dvh-3.5rem)] md:w-[26rem] md:shrink-0 lg:w-[28rem]"
+      className="fixed inset-x-0 top-14 bottom-0 z-40 border-l border-line bg-background md:sticky md:inset-auto md:top-14 md:z-auto md:h-[calc(100dvh-3.5rem)] md:w-[26rem] md:shrink-0 lg:w-[30rem]"
     >
       <CoachChat chat={chat} variant="panel" onClose={() => setOpen(false)} />
     </aside>

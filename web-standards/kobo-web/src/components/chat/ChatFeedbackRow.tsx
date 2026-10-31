@@ -31,7 +31,7 @@ export function ChatFeedbackRow({ text, rating = null, onRate, className }: Chat
   return (
     <div className={cn('-ml-1 flex items-center gap-0.5', className)}>
       <span className="inline-flex size-7 items-center justify-center">
-        <CopyButton value={text} copyLabel="Copy reply" className="text-ink-faint [&_svg]:size-4" />
+        <CopyButton value={text} copyLabel="Copy reply" className="text-ink-faint [&_svg]:size-3.5" />
       </span>
       {onRate && (
         <>
@@ -42,7 +42,7 @@ export function ChatFeedbackRow({ text, rating = null, onRate, className }: Chat
             onClick={() => onRate(rating === 'up' ? null : 'up')}
             className={cn(thumb, rating === 'up' && 'text-ink')}
           >
-            <ThumbsUp aria-hidden="true" className={cn('size-4', rating === 'up' && 'fill-current')} />
+            <ThumbsUp aria-hidden="true" className={cn('size-3.5', rating === 'up' && 'fill-current')} />
           </button>
           <button
             type="button"
@@ -51,7 +51,7 @@ export function ChatFeedbackRow({ text, rating = null, onRate, className }: Chat
             onClick={() => onRate(rating === 'down' ? null : 'down')}
             className={cn(thumb, rating === 'down' && 'text-ink')}
           >
-            <ThumbsDown aria-hidden="true" className={cn('size-4', rating === 'down' && 'fill-current')} />
+            <ThumbsDown aria-hidden="true" className={cn('size-3.5', rating === 'down' && 'fill-current')} />
           </button>
         </>
       )}

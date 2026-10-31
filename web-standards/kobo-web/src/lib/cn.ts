@@ -2,7 +2,7 @@ import { clsx, type ClassValue } from 'clsx'
 import { extendTailwindMerge } from 'tailwind-merge'
 
 /** The Kobo type roles. tailwind-merge must know them, or it drops `text-title` when a `text-ink` follows it. */
-export const TEXT_ROLES = ['display', 'title', 'title2', 'headline', 'body', 'subhead', 'footnote', 'caption'] as const
+export const TEXT_ROLES = ['display', 'title', 'title2', 'headline', 'reading', 'body', 'subhead', 'footnote', 'caption'] as const
 
 const merge = extendTailwindMerge({
   extend: {

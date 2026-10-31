@@ -22,15 +22,15 @@ export function ChatMessage({ from, header, footer, className, children, ...prop
   return (
     <div
       data-from={from}
-      className={cn('group/message flex w-full flex-col gap-2', user ? 'items-end' : 'items-start', className)}
+      className={cn('group/message flex w-full flex-col gap-3', user ? 'items-end' : 'items-start', className)}
       {...props}
     >
       {header}
       {children != null && children !== '' && (
         <div
           className={cn(
-            'text-body text-ink',
-            user ? 'max-w-[85%] rounded-sheet bg-surface-raised px-4 py-2.5 whitespace-pre-wrap break-words' : 'w-full',
+            'text-reading text-ink',
+            user ? 'max-w-[80%] rounded-sheet bg-surface-raised px-4 py-2 whitespace-pre-wrap break-words' : 'w-full',
           )}
         >
           {children}

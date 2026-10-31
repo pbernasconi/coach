@@ -26,7 +26,7 @@ export default function CoachPage() {
   }, []);
 
   return (
-    <div ref={box} data-smoke="coach" className="-mt-8 -mb-8 h-[calc(100dvh-3.5rem)]" style={height ? { height } : undefined}>
+    <div ref={box} data-smoke="coach" className="h-[calc(100dvh-3.5rem)]" style={height ? { height } : undefined}>
       <CoachChat chat={chat} variant="page" />
     </div>
   );
