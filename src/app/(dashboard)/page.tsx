@@ -73,7 +73,7 @@ export default async function HomePage() {
       },
       null
     ),
-    load('Fitness and form', () => loadPmc(userId, today)),
+    load('Fitness and form', () => loadPmc(userId, today, { pastDays: Infinity })), // all history: the chart's timeframes cut it
     safe('recovery today', () => loadRecoveryToday(userId, today), null),
     safe('body', () => loadBody(userId, today), null),
     load('Goals', async () => measureGoals(sql, userId, await loadGoals(sql, userId), today)),
