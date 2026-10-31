@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { MAIN_CONTENT_ID, SkipLink, cn } from '../src'
+import { ChatSection } from './sections/ChatSection'
 import { ControlsSection } from './sections/ControlsSection'
 import { DataSection } from './sections/DataSection'
 import { DisplaySection } from './sections/DisplaySection'
@@ -30,6 +31,7 @@ const SECTIONS = [
   ['menus', 'Menus', MenusSection],
   ['layout', 'Layout', LayoutSection],
   ['patterns', 'Patterns', PatternsSection],
+  ['chat', 'Chat', ChatSection],
 ] as const
 
 /** Every Kobo web component, live, with dark-mode and brand switches. */
