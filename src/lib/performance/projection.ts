@@ -27,10 +27,10 @@ const dayOf = (v: unknown) => toDay(v) ?? '';
 
 /**
  * Fitness, fatigue and form for the last `pastDays` days and projected to the end of the plan or the next
- * event (at most `maxAhead` days), with ramp rates over 7 / 28 / 90 / 365 days.
+ * event (at most `maxAhead` days), with ramp rates over 7 / 28 / 90 / 365 days. `pastDays: Infinity` is all history.
  */
 export async function loadPmc(userId: string, today: string, { pastDays = 120, maxAhead = 120 } = {}): Promise<Pmc> {
-  const since = addDays(today, -Math.max(pastDays, 365 + 3));
+  const since = Number.isFinite(pastDays) ? addDays(today, -Math.max(pastDays, 365 + 3)) : '1900-01-01';
   const [load, plan, events] = await Promise.all([
     sql`
       SELECT date, ctl, atl, tsb, tss FROM daily_training_load
@@ -63,7 +63,7 @@ export async function loadPmc(userId: string, today: string, { pastDays = 120, m
 
   const until = projectionEnd(today, planned.filter((p) => p.tss > 0).map((p) => p.date), events.map((e) => e.date), { maxDays: maxAhead });
   const series = projectLoad(history, planned, { today, until }) as PmcDay[];
-  const first = addDays(today, -pastDays);
+  const first = Number.isFinite(pastDays) ? addDays(today, -pastDays) : '';
   const days = series.filter((d) => d.date >= first);
   const actual = series.filter((d) => !d.projected);
   return {

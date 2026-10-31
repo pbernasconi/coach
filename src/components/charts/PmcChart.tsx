@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import { Info } from 'lucide-react';
-import { HelpTooltip } from '@kobo/web';
+import { HelpTooltip, Tabs, TabsContent, TabsList, TabsTrigger, useStoredValue } from '@kobo/web';
 import { ChartTooltip, LegendItem } from './ChartTooltip';
 import { niceTicks, useMeasure } from './useMeasure';
 import { FORM_ZONES as ZONES, zoneOf } from '@/lib/performance/form';
+import { DEFAULT_PMC_RANGE, PMC_RANGES, daysInRange, isPmcRange, pmcAxis } from '@/lib/performance/pmc-range.mjs';
 
 export type PmcChartDay = { date: string; ctl: number; atl: number; tsb: number; tss: number; projected: boolean };
 export type PmcChartEvent = { id: string; name: string; date: string; priority: 'A' | 'B' | 'C' };
@@ -19,10 +20,14 @@ const DASH = '5 4';
  * The Performance Management Chart with the plan's projection: fitness (CTL) and fatigue (ATL) on one TSS-per-day
  * scale, form (TSB) in its own panel under it. Days after today are dashed on a shaded background; a line marks
  * today, and thin vertical lines mark events (A events are labeled). One crosshair runs through both panels.
+ * A timeframe control (90 days, 180 days, 1 year, all; remembered in this browser) sets how far back it reaches;
+ * the projection always shows.
  */
-export default function PmcChart({ days, today, events = [], note }: { days: PmcChartDay[]; today: string; events?: PmcChartEvent[]; note?: string | null }) {
+export default function PmcChart({ days: allDays, today, events = [], note }: { days: PmcChartDay[]; today: string; events?: PmcChartEvent[]; note?: string | null }) {
   const [ref, width] = useMeasure<HTMLDivElement>();
   const [hover, setHover] = useState<number | null>(null);
+  const [range, setRange] = useStoredValue('coach.pmc.range', DEFAULT_PMC_RANGE, isPmcRange);
+  const days = daysInRange(allDays, today, range);
   if (days.length < 2) return null;
 
   const narrow = width < 520;
@@ -58,8 +63,7 @@ export default function PmcChart({ days, today, events = [], note }: { days: Pmc
   const futureX = future.length ? x(split) : null;
   const marks = events.filter((e) => index.has(e.date)).map((e) => ({ ...e, i: index.get(e.date)! }));
 
-  const months = days.map((d, i) => ({ d, i })).filter(({ d }) => d.date.endsWith('-01'));
-  const mondays = days.map((d, i) => ({ d, i })).filter(({ d }) => new Date(`${d.date}T12:00:00Z`).getUTCDay() === 1);
+  const axis = pmcAxis(days, plotW);
   const H = top2 + H2 + XAX;
   const end = days[days.length - 1];
   const now = days[split];
@@ -88,7 +92,7 @@ export default function PmcChart({ days, today, events = [], note }: { days: Pmc
     ' Use arrow keys to read days, Page Up and Page Down for weeks, Home for today.';
 
   return (
-    <div className="rounded-lg border bg-[var(--viz-surface)] p-4">
+    <Tabs value={range} onValueChange={(v) => { if (isPmcRange(v)) { setRange(v); setHover(null); } }} className="rounded-lg border bg-[var(--viz-surface)] p-4">
       <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="inline-flex items-center gap-1.5 font-semibold text-[var(--viz-ink)]">
           Fitness, fatigue and form
@@ -97,7 +101,7 @@ export default function PmcChart({ days, today, events = [], note }: { days: Pmc
             {note ? ` ${note}` : ''}
           </HelpTooltip>
         </h2>
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <LegendItem color="var(--viz-ctl)" label="Fitness (CTL)" shape="line" />
           <LegendItem color="var(--viz-atl)" label="Fatigue (ATL)" shape="line" />
           <LegendItem color="var(--viz-tsb)" label="Form (TSB)" shape="line" />
@@ -107,8 +111,14 @@ export default function PmcChart({ days, today, events = [], note }: { days: Pmc
               icon={<svg width={14} height={4} aria-hidden><line x1={0} x2={14} y1={2} y2={2} stroke="var(--viz-ink-2)" strokeWidth={2} strokeDasharray="3 2" /></svg>}
             />
           )}
+          <TabsList aria-label="Timeframe" className="ml-1 h-8">
+            {PMC_RANGES.map((r) => (
+              <TabsTrigger key={r.id} value={r.id} className="px-2.5 py-0.5 text-[12px]">{r.label}</TabsTrigger>
+            ))}
+          </TabsList>
         </div>
       </div>
+      <TabsContent value={range} className="mt-0">
       <div ref={ref} className="relative">
         <svg
           width={width}
@@ -131,7 +141,7 @@ export default function PmcChart({ days, today, events = [], note }: { days: Pmc
           )}
 
           {/* Panel 1 grid */}
-          {mondays.map(({ i, d }) => <line key={`m${d.date}`} x1={x(i)} x2={x(i)} y1={M.top} y2={M.top + H1} stroke="var(--viz-grid)" strokeWidth={1} opacity={0.6} />)}
+          {axis.grid.map((i) => <line key={`g${days[i].date}`} x1={x(i)} x2={x(i)} y1={M.top} y2={M.top + H1} stroke="var(--viz-grid)" strokeWidth={1} opacity={0.6} />)}
           {t1.map((t) => (
             <g key={`t1${t}`}>
               <line x1={M.left} x2={M.left + plotW} y1={y1(t)} y2={y1(t)} stroke={t === 0 ? 'var(--viz-axis)' : 'var(--viz-grid)'} strokeWidth={1} />
@@ -211,11 +221,11 @@ export default function PmcChart({ days, today, events = [], note }: { days: Pmc
           )}
 
           {/* Shared x axis (month labels, skipped next to the today label) */}
-          {months
-            .filter(({ i }) => todayI === null || Math.abs(x(i) - x(todayI)) > 30)
-            .map(({ i, d }) => (
-              <text key={`mo${d.date}`} x={x(i)} y={top2 + H2 + 18} textAnchor="middle" className="fill-[var(--viz-muted)] text-[11px]">
-                {new Date(`${d.date}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' })}
+          {axis.labels
+            .filter(({ i }) => x(i) >= M.left + 14 && (todayI === null || Math.abs(x(i) - x(todayI)) > 30))
+            .map(({ i, text }) => (
+              <text key={`mo${days[i].date}`} x={x(i)} y={top2 + H2 + 18} textAnchor="middle" className="fill-[var(--viz-muted)] text-[11px]">
+                {text}
               </text>
             ))}
 
@@ -245,6 +255,7 @@ export default function PmcChart({ days, today, events = [], note }: { days: Pmc
           />
         )}
       </div>
-    </div>
+      </TabsContent>
+    </Tabs>
   );
 }
