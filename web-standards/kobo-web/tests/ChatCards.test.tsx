@@ -7,6 +7,7 @@ import { ChatQuestionCard } from '../src/components/chat/ChatQuestionCard'
 import { ChatQuickReplies } from '../src/components/chat/ChatQuickReplies'
 import { ChatThought } from '../src/components/chat/ChatThought'
 import { ChatWelcome } from '../src/components/chat/ChatWelcome'
+import { ChatHistoryList } from '../src/components/chat/ChatHistoryList'
 import { ChatMarkdown } from '../src/components/chat/ChatMarkdown'
 import { ChatAttachmentStrip } from '../src/components/chat/ChatAttachmentStrip'
 import { ChatBreakdownCard } from '../src/components/chat/ChatBreakdownCard'
@@ -125,10 +126,22 @@ describe('reply parts', () => {
   it('fills the composer from a starter prompt', async () => {
     const user = userEvent.setup()
     const pick = vi.fn()
-    render(<ChatWelcome greeting="Hi Sam," title="How can I help?" prompts={[{ title: 'Plan a trip' }]} onPrompt={pick} />)
+    render(<ChatWelcome title="How can I help?" prompts={[{ title: 'Plan a trip' }]} onPrompt={pick}><p>composer</p></ChatWelcome>)
+    expect(screen.getByText('composer')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'How can I help?' })).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Plan a trip' }))
     expect(pick).toHaveBeenCalledWith({ title: 'Plan a trip' })
+  })
+
+  it('lists past chats, marks the open one and opens a pick', async () => {
+    const user = userEvent.setup()
+    const pick = vi.fn()
+    const today = new Date().toISOString()
+    render(<ChatHistoryList activeId="b" onSelect={pick} items={[{ id: 'a', title: 'Trip', updatedAt: today }, { id: 'b', title: 'Review', updatedAt: today }]} />)
+    expect(screen.getByRole('region', { name: 'Today' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Review' })).toHaveAttribute('aria-current', 'page')
+    await user.click(screen.getByRole('button', { name: 'Trip' }))
+    expect(pick).toHaveBeenCalledWith('a')
   })
 
   it('renders Markdown and leaves raw HTML out', () => {

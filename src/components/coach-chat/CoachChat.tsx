@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { BarChart3, Bandage, Clock, History, Maximize2, MessageCircle, SquarePen, X } from 'lucide-react';
 import {
@@ -8,6 +8,7 @@ import {
   ChatComposer,
   ChatConversation,
   ChatConversationContent,
+  ChatHistoryList,
   ChatMarkdown,
   ChatMessage,
   ChatScrollButton,
@@ -47,11 +48,10 @@ const iconButton = cn(
   'outline-none focus-visible:ring-2 focus-visible:ring-ring',
 );
 
-/** Past chats, newest first, read when the menu opens. */
-function HistoryMenu({ chat }: { chat: CoachChatState }) {
-  const [threads, setThreads] = useState<ThreadSummary[] | null>(null);
+/** Past chats, newest first (the side panel's menu; the full page lists them on the left). */
+function HistoryMenu({ chat, threads, onOpen }: { chat: CoachChatState; threads: ThreadSummary[] | null; onOpen: () => void }) {
   return (
-    <DropdownMenu onOpenChange={(open) => open && void chat.listThreads().then(setThreads)}>
+    <DropdownMenu onOpenChange={(open) => open && onOpen()}>
       <DropdownMenuTrigger className={iconButton} aria-label="Past chats" title="Past chats">
         <History aria-hidden className="size-4" />
       </DropdownMenuTrigger>
@@ -70,16 +70,35 @@ function HistoryMenu({ chat }: { chat: CoachChatState }) {
   );
 }
 
+/** "Good morning" before noon, "Good afternoon" to six, then "Good evening". */
+function greeting(now = new Date()) {
+  const h = now.getHours();
+  return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+}
+
+/** Coach is working: a small ring in the logo's orange, turning. */
+function Working() {
+  return (
+    <svg viewBox="0 0 16 16" aria-hidden className="size-4 shrink-0 animate-spin">
+      <circle cx="8" cy="8" r="6" fill="none" strokeWidth="2" className="stroke-line" />
+      <path d="M8 2a6 6 0 0 1 6 6" fill="none" strokeWidth="2" strokeLinecap="round" stroke="var(--coach-accent)" />
+    </svg>
+  );
+}
+
 type Props = {
   chat: CoachChatState;
-  /** `panel`: the side panel (expand and close buttons); `page`: the full /coach page. */
+  /** `panel`: the side panel (past chats in a menu, expand and close); `page`: the full /coach page with past chats on the left. */
   variant: 'panel' | 'page';
   onClose?: () => void;
 };
 
+const HINT = 'Coach can make mistakes. Plan changes wait for your Apply.';
+
 /** The Coach chat: the thread, the answer as it streams, change cards, and the composer with photos and files. */
 export default function CoachChat({ chat, variant, onClose }: Props) {
   const [text, setText] = useState('');
+  const [threads, setThreads] = useState<ThreadSummary[] | null>(null);
   const uploads = useCoachUploads();
   const { data, live } = chat;
   const messages = data?.messages ?? [];
@@ -87,6 +106,16 @@ export default function CoachChat({ chat, variant, onClose }: Props) {
   const ready = canSend(text, uploads.items.map((u) => ({ state: u.state ?? 'ready' })), Boolean(live) || data?.ready === false);
   const lastReply = [...messages].reverse().find((m) => m.role === 'assistant')?.id;
   const lastIsReply = messages.at(-1)?.role === 'assistant';
+  const page = variant === 'page';
+  const { listThreads } = chat;
+
+  // Past chats: on the page they are always shown, so they reload when a chat starts, changes or gets a reply.
+  const loadThreads = () => void listThreads().then(setThreads);
+  const threadKey = `${data?.threadId}:${messages.length}`;
+  useEffect(() => {
+    if (page && data && !live) void listThreads().then(setThreads);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reload when the chat or its length changes
+  }, [page, threadKey, Boolean(live)]);
 
   const submit = () => {
     if (!ready) return;
@@ -96,106 +125,141 @@ export default function CoachChat({ chat, variant, onClose }: Props) {
   };
   const sendText = (t: string) => void chat.send(t);
   const empty = messages.length === 0 && !live;
-  const column = variant === 'page' ? 'max-w-3xl' : 'max-w-none';
+  const column = page ? 'max-w-[46rem]' : 'max-w-none';
+  const firstWords = (live?.user.text || messages.find((m) => m.role === 'user')?.text || '').split('\n')[0];
+  const title = threads?.find((t) => t.id === data?.threadId)?.title ?? (firstWords || (empty ? 'New chat' : 'Coach'));
+
+  const composer = data && (
+    <ChatComposer
+      value={text}
+      onValueChange={setText}
+      onSubmit={submit}
+      canSend={ready}
+      busy={Boolean(live)}
+      onStop={chat.stop}
+      onAttach={uploads.add}
+      accept={COACH_ACCEPT}
+      disabled={!data.ready}
+      autoFocus
+      placeholder={empty ? 'How can Coach help today?' : 'Reply to Coach'}
+      hint={HINT}
+      attachments={<ChatAttachmentStrip size="compact" items={uploads.items} onRemove={uploads.remove} />}
+    />
+  );
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-background">
-      <header className="flex h-12 shrink-0 items-center gap-1 border-b border-line px-3">
-        <MessageCircle aria-hidden className="size-4 text-brand-ink" />
-        <h2 className="mr-auto text-headline">Coach</h2>
-        <HistoryMenu chat={chat} />
-        <button type="button" className={iconButton} aria-label="New chat" title="New chat" onClick={() => void chat.newChat()} disabled={Boolean(live)}>
-          <SquarePen aria-hidden className="size-4" />
-        </button>
-        {variant === 'panel' && (
-          <>
-            <Link href="/coach" className={iconButton} aria-label="Open Coach full page" title="Open full page">
-              <Maximize2 aria-hidden className="size-4" />
-            </Link>
-            <button type="button" className={iconButton} aria-label="Close Coach" title="Close · c" onClick={onClose}>
-              <X aria-hidden className="size-4" />
-            </button>
-          </>
-        )}
-      </header>
-
-      {!data && !chat.error && (
-        <SkeletonRegion label="Loading the chat" className="flex-1 p-4">
-          <div className="h-4 w-2/3 rounded-inner bg-surface-raised" />
-        </SkeletonRegion>
-      )}
-      {!data && chat.error && (
-        <div className="flex-1 p-4">
-          <ErrorState error={new Error(chat.error)} title="Could not load the chat" onRetry={() => void chat.load()} />
-        </div>
-      )}
-
-      {data && empty && (
-        <div className="flex min-h-0 flex-1 flex-col justify-center overflow-y-auto px-4">
-          <ChatWelcome
-            className={cn('mx-auto w-full', column)}
-            mark={<CoachMark className="size-9" />}
-            greeting={data.firstName ? `Hi ${data.firstName},` : 'Hi,'}
-            title="How can Coach help?"
-            prompts={data.prompts.map((p) => ({ title: p.title, icon: PROMPT_ICON[p.symbol] ?? <MessageCircle /> }))}
-            onPrompt={(p) => setText(p.title)}
-          />
-        </div>
-      )}
-
-      {data && !empty && (
-        <ChatConversation label="Conversation with Coach">
-          <ChatConversationContent className={column}>
-            {messages.map((m, i) => (
-              <Fragment key={m.id}>
-                {times.has(i) && m.createdAt && <ChatTimestamp at={m.createdAt} />}
-                <CoachMessage message={m} latest={m.id === lastReply && lastIsReply && !live} chat={chat} onSend={sendText} />
-              </Fragment>
-            ))}
-            {live && (
-              <>
-                <ChatMessage from="user" header={live.user.files.length ? <ChatAttachmentStrip items={fileItems(live.user.files)} className="justify-end" /> : undefined}>
-                  {live.user.text || null}
-                </ChatMessage>
-                <ChatMessage from="assistant" header={live.thought ? <ChatThought thinking={!live.text}>{live.thought}</ChatThought> : undefined}>
-                  {live.text ? <ChatMarkdown streaming>{live.text}</ChatMarkdown> : <ChatStatusLine>{stepText(live.step)}</ChatStatusLine>}
-                </ChatMessage>
-              </>
+    <div className="flex h-full min-h-0 bg-background">
+      {page && (
+        <aside aria-label="Chats" className="hidden w-64 shrink-0 flex-col gap-3 border-r border-line bg-surface-raised/40 p-3 md:flex">
+          <button
+            type="button"
+            onClick={() => void chat.newChat()}
+            disabled={Boolean(live)}
+            className="flex h-9 items-center gap-2 rounded-control px-2 text-subhead font-medium text-ink transition-colors hover:bg-surface-raised disabled:opacity-60 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <SquarePen aria-hidden className="size-4 text-brand-ink" />
+            New chat
+          </button>
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            {threads ? (
+              <ChatHistoryList items={threads} activeId={data?.threadId} onSelect={(id) => void chat.openThread(id)} disabled={Boolean(live)} />
+            ) : (
+              <SkeletonRegion label="Loading past chats" className="flex flex-col gap-2 px-2">
+                <div className="h-3 w-3/4 rounded-inner bg-surface-raised" />
+                <div className="h-3 w-1/2 rounded-inner bg-surface-raised" />
+              </SkeletonRegion>
             )}
-            {!live && data.answering && <ChatStatusLine>Coach is still answering</ChatStatusLine>}
-            {chat.failed && (
-              <InlineNotice tone="danger" title="Coach could not answer">
-                {chat.failed}
+          </div>
+        </aside>
+      )}
+
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="flex h-12 shrink-0 items-center gap-1 border-b border-line px-3">
+          {!page && <MessageCircle aria-hidden className="size-4 shrink-0 text-brand-ink" />}
+          <h2 className={cn('mr-auto min-w-0 truncate text-subhead font-medium text-ink', !page && 'ml-1')} title={title}>{title}</h2>
+          {!page && <HistoryMenu chat={chat} threads={threads} onOpen={loadThreads} />}
+          <button type="button" className={cn(iconButton, page && 'md:hidden')} aria-label="New chat" title="New chat" onClick={() => void chat.newChat()} disabled={Boolean(live)}>
+            <SquarePen aria-hidden className="size-4" />
+          </button>
+          {!page && (
+            <>
+              <Link href="/coach" className={iconButton} aria-label="Open Coach full page" title="Open full page">
+                <Maximize2 aria-hidden className="size-4" />
+              </Link>
+              <button type="button" className={iconButton} aria-label="Close Coach" title="Close · c" onClick={onClose}>
+                <X aria-hidden className="size-4" />
+              </button>
+            </>
+          )}
+        </header>
+
+        {!data && !chat.error && (
+          <SkeletonRegion label="Loading the chat" className="flex-1 p-4">
+            <div className="h-4 w-2/3 rounded-inner bg-surface-raised" />
+          </SkeletonRegion>
+        )}
+        {!data && chat.error && (
+          <div className="flex-1 p-4">
+            <ErrorState error={new Error(chat.error)} title="Could not load the chat" onRetry={() => void chat.load()} />
+          </div>
+        )}
+
+        {data && empty && (
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pb-[12vh]">
+            <ChatWelcome
+              className={cn('m-auto', column)}
+              mark={<CoachMark className={page ? 'size-8' : 'size-7'} />}
+              title={data.firstName ? `${greeting()}, ${data.firstName}` : greeting()}
+              prompts={data.prompts.map((p) => ({ title: p.title, icon: PROMPT_ICON[p.symbol] ?? <MessageCircle /> }))}
+              onPrompt={(p) => setText(p.title)}
+            >
+              {data.notice && <InlineNotice tone="warning" className="w-full">{data.notice}</InlineNotice>}
+              {composer}
+            </ChatWelcome>
+          </div>
+        )}
+
+        {data && !empty && (
+          <ChatConversation label="Conversation with Coach">
+            <ChatConversationContent className={cn('gap-8 pt-8 pb-10', column)}>
+              {messages.map((m, i) => (
+                <Fragment key={m.id}>
+                  {times.has(i) && m.createdAt && <ChatTimestamp at={m.createdAt} className="-mb-4" />}
+                  <CoachMessage message={m} latest={m.id === lastReply && lastIsReply && !live} chat={chat} onSend={sendText} />
+                </Fragment>
+              ))}
+              {live && (
+                <>
+                  <ChatMessage from="user" header={live.user.files.length ? <ChatAttachmentStrip items={fileItems(live.user.files)} className="justify-end" /> : undefined}>
+                    {live.user.text || null}
+                  </ChatMessage>
+                  <ChatMessage from="assistant" header={live.thought ? <ChatThought thinking={!live.text}>{live.thought}</ChatThought> : undefined}>
+                    {live.text ? <ChatMarkdown streaming>{live.text}</ChatMarkdown> : live.thought ? null : <ChatStatusLine icon={<Working />}>{stepText(live.step)}</ChatStatusLine>}
+                  </ChatMessage>
+                </>
+              )}
+              {!live && data.answering && <ChatStatusLine icon={<Working />}>Coach is still answering</ChatStatusLine>}
+              {chat.failed && (
+                <InlineNotice tone="danger" title="Coach could not answer">
+                  {chat.failed}
+                </InlineNotice>
+              )}
+            </ChatConversationContent>
+            <ChatScrollButton />
+          </ChatConversation>
+        )}
+
+        {data && !empty && (
+          <div className={cn('mx-auto w-full shrink-0 px-4 pt-1 pb-3', column)}>
+            {data.notice && (
+              <InlineNotice tone="warning" className="mb-2">
+                {data.notice}
               </InlineNotice>
             )}
-          </ChatConversationContent>
-          <ChatScrollButton />
-        </ChatConversation>
-      )}
-
-      {data && (
-        <div className={cn('mx-auto w-full shrink-0 px-3 pt-1 pb-3', column)}>
-          {data.notice && (
-            <InlineNotice tone="warning" className="mb-2">
-              {data.notice}
-            </InlineNotice>
-          )}
-          <ChatComposer
-            value={text}
-            onValueChange={setText}
-            onSubmit={submit}
-            canSend={ready}
-            busy={Boolean(live)}
-            onStop={chat.stop}
-            onAttach={uploads.add}
-            accept={COACH_ACCEPT}
-            disabled={!data.ready}
-            autoFocus
-            placeholder="Ask Coach anything"
-            attachments={<ChatAttachmentStrip size="compact" items={uploads.items} onRemove={uploads.remove} />}
-          />
-        </div>
-      )}
+            {composer}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

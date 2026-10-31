@@ -6,47 +6,55 @@ import { focusRing } from '../controls/Button'
 export type ChatPrompt = { title: string; icon?: React.ReactNode }
 
 export interface ChatWelcomeProps {
-  /** The first line, quiet ("Hi Sam,"). */
-  greeting?: string
-  /** The second line, big ("How can I help?"). */
+  /** The greeting, one big line ("Good evening, Sam"). */
   title: string
-  /** A small mark above the words (the app's logo). */
+  /** A quiet line under it, if any. */
+  greeting?: string
+  /** The app's mark, left of the title. */
   mark?: React.ReactNode
   prompts?: ChatPrompt[]
   /** A tap on a starter prompt. */
   onPrompt?: (prompt: ChatPrompt) => void
+  /** The composer, between the greeting and the starter prompts. */
+  children?: React.ReactNode
   className?: string
 }
 
 /**
- * The empty state of a chat: a small mark, a two-line greeting in the middle, and up to four starter cards. A card
- * fills the composer (or sends, as the app decides).
+ * The empty state of a chat, as the big assistants do it: the app's mark and a one-line greeting in the middle, the
+ * composer right under it, then up to four starter prompts as small pills. A pill fills the composer (or sends, as
+ * the app decides).
  *
- *     <ChatWelcome greeting="Hi Sam," title="How can I help?" prompts={prompts} onPrompt={(p) => setText(p.title)} />
+ *     <ChatWelcome mark={<Logo />} title="Good evening, Sam" prompts={prompts} onPrompt={(p) => setText(p.title)}>
+ *       <ChatComposer … />
+ *     </ChatWelcome>
  */
-export function ChatWelcome({ greeting, title, mark, prompts = [], onPrompt, className }: ChatWelcomeProps) {
+export function ChatWelcome({ title, greeting, mark, prompts = [], onPrompt, children, className }: ChatWelcomeProps) {
   return (
-    <div className={cn('flex flex-col items-center gap-6 py-6 text-center', className)}>
-      {mark}
-      <div>
-        {greeting && <p className="text-title2 font-normal text-ink-muted">{greeting}</p>}
-        <h2 className="text-title text-ink">{title}</h2>
+    <div className={cn('flex w-full flex-col items-center gap-6 py-6', className)}>
+      <div className="flex flex-col items-center gap-1 text-center">
+        <h2 className="flex items-center gap-3 text-title text-ink">
+          {mark && <span aria-hidden="true" className="shrink-0">{mark}</span>}
+          {title}
+        </h2>
+        {greeting && <p className="text-body text-ink-muted">{greeting}</p>}
       </div>
+      {children}
       {prompts.length > 0 && (
-        <ul className="grid w-full max-w-xl gap-2 sm:grid-cols-3">
+        <ul className="flex flex-wrap justify-center gap-2">
           {prompts.slice(0, 4).map((p) => (
             <li key={p.title}>
               <button
                 type="button"
                 onClick={() => onPrompt?.(p)}
                 className={cn(
-                  'flex h-full w-full flex-col items-start gap-3 rounded-card border border-line bg-surface p-3 text-left',
-                  'text-subhead text-ink transition-colors duration-(--motion-state) ease-standard hover:bg-surface-raised',
+                  'inline-flex h-8 items-center gap-2 rounded-full border border-line bg-surface px-3 text-subhead text-ink-muted',
+                  'transition-colors duration-(--motion-state) ease-standard hover:border-line-strong hover:bg-surface-raised hover:text-ink',
                   focusRing,
                 )}
               >
                 {p.icon && (
-                  <span aria-hidden="true" className="text-brand-ink [&_svg]:size-4">
+                  <span aria-hidden="true" className="text-ink-faint [&_svg]:size-3.5">
                     {p.icon}
                   </span>
                 )}

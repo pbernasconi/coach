@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { historyGroups } from '../src/components/chat/chatHistory'
 import { barFractions } from '../src/components/chat/breakdownBars'
 import { applyLabel, changeStatusPill } from '../src/components/chat/changeCard'
 import { answersText, joinPicks, nextQuestion, type ChatQuestion } from '../src/components/chat/chatQuestions'
@@ -100,6 +101,34 @@ describe('event stream parser', () => {
       { event: 'text', data: '{"delta":"Hi"}' },
       { event: 'done', data: '{}' },
       { event: 'message', data: 'plain' },
+    ])
+  })
+})
+
+describe('history groups', () => {
+  const now = new Date(2026, 9, 31, 15, 0)
+  const at = (y: number, m: number, d: number) => new Date(y, m, d, 9, 0).toISOString()
+  it('groups past chats by age, keeping order and leaving empty groups out', () => {
+    const groups = historyGroups(
+      [
+        { id: 'a', title: 'A', updatedAt: at(2026, 9, 31) },
+        { id: 'b', title: 'B', updatedAt: at(2026, 9, 30) },
+        { id: 'c', title: 'C', updatedAt: at(2026, 9, 27) },
+        { id: 'd', title: 'D', updatedAt: at(2026, 9, 10) },
+        { id: 'e', title: 'E', updatedAt: at(2026, 7, 2) },
+        { id: 'f', title: 'F', updatedAt: at(2025, 7, 2) },
+        { id: 'g', title: 'G', updatedAt: null },
+      ],
+      now,
+    )
+    expect(groups.map((g) => [g.label, g.items.map((i) => i.id).join('')])).toEqual([
+      ['Today', 'a'],
+      ['Yesterday', 'b'],
+      ['Previous 7 days', 'c'],
+      ['Previous 30 days', 'd'],
+      ['August', 'e'],
+      ['August 2025', 'f'],
+      ['Older', 'g'],
     ])
   })
 })

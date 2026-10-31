@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CalendarDays, Clock, NotebookPen, Plane } from 'lucide-react'
+import { CalendarDays, Clock, NotebookPen, Plane, Sparkles } from 'lucide-react'
 import {
   Button,
   ChatAttachmentStrip,
@@ -20,6 +20,7 @@ import {
   ChatTimestamp,
   ChatTypingDots,
   ChatWelcome,
+  ChatHistoryList,
   type ChatRating,
 } from '../../src'
 import { Grid, Specimen } from './Specimen'
@@ -72,14 +73,27 @@ export function ChatSection() {
       </Specimen>
       <Specimen title="ChatWelcome" wide>
         <ChatWelcome
-          greeting="Hi Sam,"
-          title="How can I help?"
+          mark={<Sparkles className="size-6 text-brand-ink" />}
+          title="Good evening, Sam"
           prompts={[
             { title: 'Plan my trip to Lisbon', icon: <Plane /> },
             { title: 'What is on this week?', icon: <CalendarDays /> },
             { title: 'Short on time today', icon: <Clock /> },
           ]}
           onPrompt={(p) => setText(p.title)}
+        >
+          <ChatComposer value={text} onValueChange={setText} placeholder="How can I help today?" canSend={text.trim().length > 0} onSubmit={() => setText('')} onAttach={() => {}} hint="Answers can be wrong. Check before you act on them." />
+        </ChatWelcome>
+      </Specimen>
+      <Specimen title="ChatHistoryList">
+        <ChatHistoryList
+          activeId="t2"
+          onSelect={() => {}}
+          items={[
+            { id: 't1', title: 'Plan my trip to Lisbon', updatedAt: new Date().toISOString() },
+            { id: 't2', title: 'Move the review to Thursday', updatedAt: new Date(Date.now() - 86_400_000).toISOString() },
+            { id: 't3', title: 'What is on this week?', updatedAt: new Date(Date.now() - 4 * 86_400_000).toISOString() },
+          ]}
         />
       </Specimen>
       <Specimen title="ChatChangeCard" wide>

@@ -11,7 +11,7 @@ type Json = Record<string, unknown>;
 const str = (v: unknown) => (typeof v === 'string' && v ? v : null);
 const list = (v: unknown) => (Array.isArray(v) ? (v as Json[]) : []);
 
-const CARD = 'w-full max-w-xl rounded-card border border-line bg-surface p-4 shadow-card';
+const CARD = 'w-full rounded-card border border-line bg-surface p-4';
 
 /** One planned or done workout as a row: sport icon, title, the subtitle, its state. Opens it on the Plan page. */
 function WorkoutRow({ item }: { item: Json }) {
@@ -29,8 +29,8 @@ function WorkoutRow({ item }: { item: Json }) {
         <span className="block truncate text-body text-ink">{str(item.title) ?? 'Workout'}</span>
         <span className="block truncate text-footnote text-ink-muted">{str(done?.text) ?? str(item.subtitle) ?? ''}</span>
       </span>
-      {str(item.stateLabel) && <span className="text-footnote text-ink-muted">{str(item.stateLabel)}</span>}
-      <ChevronRight aria-hidden className="size-4 text-ink-faint group-hover:text-ink-muted" />
+      {str(item.stateLabel) && <span className="min-w-[4.75rem] shrink-0 text-right text-footnote whitespace-nowrap text-ink-muted">{str(item.stateLabel)}</span>}
+      <ChevronRight aria-hidden className="size-4 shrink-0 text-ink-faint group-hover:text-ink-muted" />
     </Link>
   );
 }
@@ -68,9 +68,9 @@ function WeekCard({ week }: { week: Json }) {
         {days.map((d) => {
           const items = list(d.items);
           return (
-            <li key={String(d.date)} className="grid grid-cols-[5.5rem_1fr] gap-2 py-1.5">
+            <li key={String(d.date)} className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-2 py-1.5">
               <span className="pt-2 text-footnote text-ink-muted">{shortDay(String(d.date))}</span>
-              <div>
+              <div className="min-w-0">
                 {items.length ? items.map((it) => <WorkoutRow key={String(it.id)} item={it} />) : <p className="py-2 text-footnote text-ink-faint">Free</p>}
               </div>
             </li>

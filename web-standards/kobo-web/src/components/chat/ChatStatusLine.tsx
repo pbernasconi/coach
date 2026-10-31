@@ -19,19 +19,21 @@ export function ChatTypingDots({ className }: { className?: string }) {
 export interface ChatStatusLineProps {
   /** What the assistant is doing now, in a few words ("Reading your week", "Checking the changes"). */
   children: React.ReactNode
+  /** The app's own working mark in place of the typing dots (a spinning logo, say). */
+  icon?: React.ReactNode
   className?: string
 }
 
 /**
- * One quiet line while an answer is on its way: typing dots and what is happening. A polite live region, so a
+ * One quiet line while an answer is on its way: typing dots (or the app's mark) and what is happening. A polite live region, so a
  * screen reader hears each step once.
  *
  *     <ChatStatusLine>Reading your notes</ChatStatusLine>
  */
-export function ChatStatusLine({ children, className }: ChatStatusLineProps) {
+export function ChatStatusLine({ children, icon, className }: ChatStatusLineProps) {
   return (
     <div role="status" aria-live="polite" className={cn('flex items-center gap-2 text-subhead text-ink-muted', className)}>
-      <ChatTypingDots />
+      {icon ?? <ChatTypingDots />}
       <span className="animate-shimmer">{children}</span>
     </div>
   )

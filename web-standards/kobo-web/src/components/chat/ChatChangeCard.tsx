@@ -48,7 +48,7 @@ export function ChatChangeCard({
   return (
     <section
       aria-label={title}
-      className={cn('w-full max-w-xl rounded-card border border-line bg-surface p-4 shadow-card', status !== 'open' && status !== 'applied' && 'opacity-80', className)}
+      className={cn('w-full rounded-card border border-line bg-surface p-4', status !== 'open' && status !== 'applied' && 'opacity-80', className)}
     >
       <header className="flex items-start gap-3">
         <div className="min-w-0 flex-1">

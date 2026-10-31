@@ -39,7 +39,7 @@ export function ChatQuestionCard({ questions, onSubmit, disabled = false, classN
   }
 
   return (
-    <section aria-label="Questions" className={cn('w-full max-w-xl rounded-card border border-line bg-surface p-4 shadow-card', className)}>
+    <section aria-label="Questions" className={cn('w-full rounded-card border border-line bg-surface p-4', className)}>
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
           <h3 className="text-headline text-ink">{question.title}</h3>

@@ -9,6 +9,7 @@ const TYPE: Record<(typeof TEXT_ROLES)[number], string> = {
   title: 'text-title',
   title2: 'text-title2',
   headline: 'text-headline',
+  reading: 'text-reading',
   body: 'text-body',
   subhead: 'text-subhead',
   footnote: 'text-footnote',

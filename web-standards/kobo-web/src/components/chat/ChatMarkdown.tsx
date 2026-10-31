@@ -6,12 +6,12 @@ import { cn } from '../../lib/cn'
 
 /** Kobo type and colour for each Markdown element, so a reply reads like the rest of the app. */
 const COMPONENTS: Components = {
-  p: ({ node: _node, className, ...props }) => <p className={cn('my-2 first:mt-0 last:mb-0', className)} {...props} />,
-  h1: ({ node: _node, className, ...props }) => <h3 className={cn('mt-4 mb-1 text-headline first:mt-0', className)} {...props} />,
-  h2: ({ node: _node, className, ...props }) => <h3 className={cn('mt-4 mb-1 text-headline first:mt-0', className)} {...props} />,
-  h3: ({ node: _node, className, ...props }) => <h4 className={cn('mt-3 mb-1 text-body font-semibold first:mt-0', className)} {...props} />,
-  ul: ({ node: _node, className, ...props }) => <ul className={cn('my-2 list-disc space-y-1 pl-5 marker:text-ink-faint', className)} {...props} />,
-  ol: ({ node: _node, className, ...props }) => <ol className={cn('my-2 list-decimal space-y-1 pl-5 marker:text-ink-muted', className)} {...props} />,
+  p: ({ node: _node, className, ...props }) => <p className={cn('my-3 first:mt-0 last:mb-0', className)} {...props} />,
+  h1: ({ node: _node, className, ...props }) => <h3 className={cn('mt-5 mb-2 text-title2 first:mt-0', className)} {...props} />,
+  h2: ({ node: _node, className, ...props }) => <h3 className={cn('mt-5 mb-2 text-headline first:mt-0', className)} {...props} />,
+  h3: ({ node: _node, className, ...props }) => <h4 className={cn('mt-4 mb-1 font-semibold first:mt-0', className)} {...props} />,
+  ul: ({ node: _node, className, ...props }) => <ul className={cn('my-3 list-disc space-y-1.5 pl-6 marker:text-ink-faint', className)} {...props} />,
+  ol: ({ node: _node, className, ...props }) => <ol className={cn('my-3 list-decimal space-y-1.5 pl-6 marker:text-ink-muted', className)} {...props} />,
   li: ({ node: _node, className, ...props }) => <li className={cn('pl-0.5 [&>p]:my-0', className)} {...props} />,
   strong: ({ node: _node, className, ...props }) => <strong className={cn('font-semibold', className)} {...props} />,
   a: ({ node: _node, className, ...props }) => (
@@ -43,7 +43,7 @@ export interface ChatMarkdownProps {
  */
 export const ChatMarkdown = React.memo(function ChatMarkdown({ children, streaming = false, className }: ChatMarkdownProps) {
   return (
-    <div className={cn('text-body text-ink break-words', className)}>
+    <div className={cn('text-reading text-ink break-words', className)}>
       <Streamdown
         mode={streaming ? 'streaming' : 'static'}
         parseIncompleteMarkdown

@@ -30,7 +30,7 @@ export interface ChatBreakdownCardProps {
 export function ChatBreakdownCard({ caption, title, total, rows, action, className }: ChatBreakdownCardProps) {
   const fractions = barFractions(rows.map((r) => r.value))
   return (
-    <section aria-label={title} className={cn('w-full max-w-xl rounded-card border border-line bg-surface p-4 shadow-card', className)}>
+    <section aria-label={title} className={cn('w-full rounded-card border border-line bg-surface p-4', className)}>
       {caption && <p className="text-footnote text-ink-muted">{caption}</p>}
       <h3 className="text-subhead text-ink-muted">{title}</h3>
       <p className="mt-0.5 text-title text-ink tabular-nums">{total}</p>
