@@ -75,8 +75,8 @@ final class CoachViewModel {
         case .sendTapped:
             return sendDraft()
         case .retryTapped:
-            guard let text = state.lastMessage, !state.isResponding else { return nil }
-            return ask(text, files: [])
+            guard let last = state.lastSent, !state.isResponding else { return nil }
+            return ask(last.text, files: last.files)
         case .stopTapped:
             stopReply()
         case .applyTapped(let id):
@@ -244,7 +244,9 @@ final class CoachViewModel {
                 state.update(next, of: id)
                 if (next.status == .applied && current == .pending) || next.status == .undone { await plan.refresh() }
             } catch {
-                state.setStatus(current, of: id)
+                // The card goes back and says why, so a tap that didn't reach Coach doesn't look like nothing happened.
+                let words = String(localized: "Coach couldn't be reached. Check your connection and try again.")
+                state.update(CoachProposalUpdate(status: current, result: [words]), of: id)
             }
             state.busyProposal = nil
         }

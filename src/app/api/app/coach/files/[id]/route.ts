@@ -6,6 +6,7 @@
 import { isAuthorized } from '@/lib/lift-sync/auth.mjs';
 import { ownerId } from '@/lib/plan/queries';
 import { readCoachFile } from '@/lib/coach-chat/files-store';
+import { contentDisposition } from '@/lib/coach-chat/files.mjs';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -18,12 +19,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   if (!userId) return Response.json({ error: 'no user' }, { status: 404 });
   const file = await readCoachFile(userId, (await params).id);
   if (!file) return Response.json({ error: 'not found' }, { status: 404 });
-  const name = file.name.replace(/["\\\r\n]/g, '');
   return new Response(new Uint8Array(file.data), {
     headers: {
       'Content-Type': file.contentType,
       'Content-Length': String(file.data.byteLength),
-      'Content-Disposition': `inline; filename="${name}"; filename*=UTF-8''${encodeURIComponent(file.name)}`,
+      'Content-Disposition': contentDisposition(file.name),
       'Cache-Control': 'private, max-age=86400, immutable',
       'X-Content-Type-Options': 'nosniff',
     },

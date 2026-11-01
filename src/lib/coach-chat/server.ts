@@ -539,7 +539,14 @@ export async function undoProposal(userId: string, id: string, today: string, pa
 export async function dismissProposal(userId: string, id: string): Promise<DecideResult> {
   const p = await proposalRow(userId, id);
   if (!p) return { status: 404, body: { error: 'not found' } };
-  if (p.status !== 'open') return { status: 409, body: { error: `this change is ${p.status}`, proposal: proposalView(p) } };
-  await sql`UPDATE coach_proposals SET status = 'dismissed', decided_at = NOW() WHERE id = ${id}`;
+  // One UPDATE that only takes an open card: an Apply that claimed it a moment ago keeps it (else the plan changed
+  // while the card said "Dismissed", with no Undo).
+  const [claimed] = (await sql`
+    UPDATE coach_proposals SET status = 'dismissed', decided_at = NOW()
+    WHERE id = ${id} AND user_id = ${userId} AND status = 'open' RETURNING id`) as Row[];
+  if (!claimed) {
+    const now = (await proposalRow(userId, id)) ?? p;
+    return { status: 409, body: { error: `this change is ${now.status}`, proposal: proposalView(now) } };
+  }
   return { status: 200, body: { proposal: proposalView({ ...p, status: 'dismissed' }) } };
 }

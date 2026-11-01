@@ -130,6 +130,18 @@ test('two taps on Apply apply the card once', () => withUser(async () => {
   assert.equal((await planRows(user, today)).filter((r) => r.title === 'Easy run').length, 1);
 }));
 
+test('Not now tapped while Apply runs leaves the card applied', () => withUser(async () => {
+  const { applyProposal, dismissProposal } = await import('@/lib/coach-chat/server');
+  const id = await card([{ op: 'add', date: today, sport: 'run', startTime: '16:00', title: 'Easy run', duration: 45 }]);
+  const [applied, dismissed] = await Promise.all([applyProposal(user, id, today), dismissProposal(user, id)]);
+  const [row] = (await sql`SELECT status FROM coach_proposals WHERE id = ${id}`) as { status: string }[];
+  const added = (await planRows(user, today)).filter((r) => r.title === 'Easy run').length;
+  // Exactly one wins, and the card says what the plan shows.
+  assert.deepEqual([applied.status, dismissed.status].sort(), [200, 409]);
+  assert.equal(row.status, applied.status === 200 ? 'applied' : 'dismissed');
+  assert.equal(added, applied.status === 200 ? 1 : 0);
+}));
+
 test('Apply refuses a card once the plan has a copy of its lift, and changes nothing', () => withUser(async () => {
   const { applyProposal } = await import('@/lib/coach-chat/server');
   const id = await card([{ op: 'add', date: '2026-10-28', sport: 'strength', startTime: '17:00', title: 'Heavy barbell', duration: 60, liftTemplate: 'Heavy barbell' }]);

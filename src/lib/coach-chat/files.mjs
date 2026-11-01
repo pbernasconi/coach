@@ -120,3 +120,14 @@ export function filesToSend(messages, limit = HISTORY_FILES) {
   }
   return ids;
 }
+
+/**
+ * The Content-Disposition of a stored file. Headers only carry bytes up to 0xFF, so `filename=` is the name in plain
+ * ASCII and `filename*=` has the real one, percent-encoded. A macOS screenshot's name has a narrow no-break space
+ * before "AM" (U+202F), which in `filename=` made the whole response throw.
+ * @param {string} name
+ */
+export function contentDisposition(name) {
+  const plain = String(name ?? '').normalize('NFKD').replace(/[^\x20-\x7e]/g, '').replace(/["\\]/g, '').trim() || 'file';
+  return `inline; filename="${plain}"; filename*=UTF-8''${encodeURIComponent(String(name ?? ''))}`;
+}

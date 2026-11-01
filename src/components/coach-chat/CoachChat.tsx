@@ -103,7 +103,11 @@ export default function CoachChat({ chat, variant, onClose }: Props) {
   const { data, live } = chat;
   const messages = data?.messages ?? [];
   const times = timestampIndexes(messages.map((m) => m.createdAt));
-  const ready = canSend(text, uploads.items.map((u) => ({ state: u.state ?? 'ready' })), Boolean(live) || data?.ready === false);
+  // Busy while an answer is on its way here or still finishing on the server (after Stop or a reload). A photo that
+  // failed to upload holds Send until it is removed, so a message never goes without it unnoticed.
+  const busy = Boolean(live) || Boolean(data?.answering);
+  const uploadFailed = uploads.items.some((u) => u.state === 'failed');
+  const ready = !uploadFailed && canSend(text, uploads.items.map((u) => ({ state: u.state ?? 'ready' })), busy || data?.ready === false);
   const lastReply = [...messages].reverse().find((m) => m.role === 'assistant')?.id;
   const lastIsReply = messages.at(-1)?.role === 'assistant';
   const page = variant === 'page';
@@ -119,7 +123,11 @@ export default function CoachChat({ chat, variant, onClose }: Props) {
 
   const submit = () => {
     if (!ready) return;
-    void chat.send(text.trim(), uploads.ready);
+    const words = text.trim();
+    void chat.send(words, uploads.ready).then((r) => {
+      // The server never stored it (a dropped connection, too long): the words come back to the composer.
+      if (r === 'unsent') setText((now) => now || words);
+    });
     setText('');
     uploads.clear();
   };
@@ -135,14 +143,14 @@ export default function CoachChat({ chat, variant, onClose }: Props) {
       onValueChange={setText}
       onSubmit={submit}
       canSend={ready}
-      busy={Boolean(live)}
-      onStop={chat.stop}
+      busy={busy}
+      onStop={live ? chat.stop : undefined}
       onAttach={uploads.add}
       accept={COACH_ACCEPT}
       disabled={!data.ready}
       autoFocus
       placeholder={empty ? 'How can Coach help today?' : 'Reply to Coach'}
-      hint={HINT}
+      hint={uploadFailed ? 'A file did not upload. Remove it to send without it.' : HINT}
       attachments={<ChatAttachmentStrip size="compact" items={uploads.items} onRemove={uploads.remove} />}
     />
   );
@@ -214,6 +222,7 @@ export default function CoachChat({ chat, variant, onClose }: Props) {
               onPrompt={(p) => setText(p.title)}
             >
               {data.notice && <InlineNotice tone="warning" className="w-full">{data.notice}</InlineNotice>}
+              {chat.failed && <InlineNotice tone="danger" title={chat.failed.title} className="w-full">{chat.failed.message}</InlineNotice>}
               {composer}
             </ChatWelcome>
           </div>
@@ -240,8 +249,8 @@ export default function CoachChat({ chat, variant, onClose }: Props) {
               )}
               {!live && data.answering && <ChatStatusLine icon={<Working />}>Coach is still answering</ChatStatusLine>}
               {chat.failed && (
-                <InlineNotice tone="danger" title="Coach could not answer">
-                  {chat.failed}
+                <InlineNotice tone="danger" title={chat.failed.title}>
+                  {chat.failed.message}
                 </InlineNotice>
               )}
             </ChatConversationContent>
