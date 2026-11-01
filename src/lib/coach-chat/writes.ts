@@ -11,7 +11,7 @@ import { cleanNewWorkout } from '@/lib/plan/create.mjs';
 import { createWorkout, loadRange, removeWorkout, restoreWorkout, updateWorkout, type WorkoutInput } from '@/lib/plan/month';
 import { planSource, withPlanSource } from '@/lib/plan/change-source.mjs';
 import { setSkipped } from '@/lib/plan/queries';
-import { addDays, mondayOf } from '@/lib/plan/week.mjs';
+import { addDays, matchActivityId, mondayOf } from '@/lib/plan/week.mjs';
 import { addNote, dropNote, type Change, type PlanRow } from './changes.mjs';
 
 /** The workouts Coach sees: this week and the next two, as the web calendar has them (loadRange). */
@@ -29,6 +29,7 @@ export async function planRows(userId: string, today: string): Promise<PlanRow[]
     id: String(w.id), date: w.date, startTime: w.startTime, title: w.title, sport: w.sport, workoutType: w.workoutType,
     intensity: w.intensity, duration: w.duration, description: w.description, status: w.status, skipReason: w.skipReason,
     state: w.state, liftTemplate: template.get(String(w.id)) ?? null,
+    activityId: w.state === 'done' ? matchActivityId(w.match) : null,
   }));
 }
 

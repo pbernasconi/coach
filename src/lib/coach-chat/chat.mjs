@@ -6,6 +6,7 @@
 
 import { addUsage, NO_USAGE } from '../planner/cost.mjs';
 import { ASK_TOOL, cleanQuestions, cleanReplies, MAX_CARDS, REPLIES_TOOL, SHOW_TOOL } from './cards.mjs';
+import { DATA_TOOLS, DATA_TOOL_NAMES } from './data-tools.mjs';
 
 /**
  * The chat runs on Sonnet 5.5 (Paolo, 2026-10-27): it starts answering in about half the time of Opus 5.5 at half the
@@ -23,8 +24,10 @@ export const THINKING = { type: 'adaptive', display: 'summarized' };
 export const BETAS = ['server-side-fallback-2026-07-01'];
 /** propose_changes calls in one turn: the first and two repairs. */
 export const MAX_PROPOSALS = 3;
-/** Requests to Claude in one turn. */
-export const MAX_TURNS = 4;
+/** Requests to Claude in one turn: room for two rounds of reads (data-tools.mjs) before the answer and a repair. */
+export const MAX_TURNS = 6;
+/** Read tool calls in one turn (get_activity, find_activities, get_bests, get_load). */
+export const MAX_READS = 6;
 /** The thread messages sent back to Claude: the recent ones are enough for a chat about this week. */
 export const HISTORY = 20;
 
@@ -65,9 +68,9 @@ export const PROPOSE_TOOL = {
  * @typedef {{ input: any, problems: string[] | null }} Attempt  one propose_changes call and what the check said
  * @typedef {{ reply: string, proposal: any | null, problems: string[] | null, turns: number, usage: typeof NO_USAGE,
  *   model: string, stop: string, attempts: Attempt[], cards: any[], replies: string[], questions: any[], thought: string,
- *   timing: Timing }} ChatResult  `thought`: the summary of Claude's thinking, shown folded above the reply
+ *   timing: Timing, reads: { name: string, input: any, ok: boolean, chars: number }[] }} ChatResult  `thought`: the summary of Claude's thinking, shown folded above the reply
  * @typedef {{ firstThinkingMs: number | null, firstTextMs: number | null, turnMs: number[] }} Timing  from the turn's start
- * @typedef {{ type: 'status', step: 'thinking' | 'writing' | 'proposing' | 'card' | 'fixing' }
+ * @typedef {{ type: 'status', step: 'reading' | 'thinking' | 'writing' | 'proposing' | 'card' | 'fixing' }
  *   | { type: 'thinking', text: string } | { type: 'text', delta: string }} ChatEvent  what the phone shows while it waits
  */
 
@@ -85,6 +88,7 @@ export function streamEventToChat(event, emit, seen) {
     } else if (block.type === 'tool_use') {
       if (block.name === PROPOSE_TOOL.name) emit({ type: 'status', step: 'proposing' });
       else if (block.name === SHOW_TOOL.name) emit({ type: 'status', step: 'card' });
+      else if (DATA_TOOL_NAMES.includes(block.name)) emit({ type: 'status', step: 'reading' });
     }
   } else if (event?.type === 'content_block_delta') {
     const d = event.delta ?? {};
@@ -145,10 +149,11 @@ export function chatMessages(history, context, text, files = []) {
  *   checkCard?: (input: any) => ({ ok: true, value: any } | { ok: false, problems: string[] }),
  *   effort?: 'low' | 'medium' | 'high', deadline?: number, now?: () => number, model?: string,
  *   onEvent?: (e: ChatEvent) => void,
- * }} p
+ *   readData?: (name: string, input: any) => Promise<{ ok: boolean, text: string }>,
+ * }} p  `readData` answers the read tools (data.ts); without it they answer that the data is not available
  * @returns {Promise<ChatResult>}
  */
-export async function chatWithClaude({ client, system, history, context, text, files = [], check, checkCard = (input) => ({ ok: true, value: input }), effort = EFFORT, deadline = Infinity, now = Date.now, model = MODEL, onEvent }) {
+export async function chatWithClaude({ client, system, history, context, text, files = [], check, checkCard = (input) => ({ ok: true, value: input }), effort = EFFORT, deadline = Infinity, now = Date.now, model = MODEL, onEvent, readData }) {
   const start = now();
   /** @type {Timing} */
   const timing = { firstThinkingMs: null, firstTextMs: null, turnMs: [] };
@@ -182,6 +187,8 @@ export async function chatWithClaude({ client, system, history, context, text, f
   /** @type {string[]} */
   const thoughts = [];
   let streamedThought = '';
+  /** @type {{ name: string, input: any, ok: boolean, chars: number }[]} */
+  const reads = [];
 
   while (turns < MAX_TURNS) {
     if (now() > deadline) return result('deadline');
@@ -208,7 +215,27 @@ export async function chatWithClaude({ client, system, history, context, text, f
     /** @type {any[]} */
     const results = [];
     let retry = false;
+    // The reads run together; Claude needs their answers for another request.
+    const readCalls = calls.filter((/** @type {any} */ c) => DATA_TOOL_NAMES.includes(c.name));
+    /** @type {Map<string, { ok: boolean, text: string }>} */
+    const readAnswers = new Map(await Promise.all(readCalls.map(async (/** @type {any} */ c) => {
+      /** @type {{ ok: boolean, text: string }} */
+      let a;
+      if (reads.length >= MAX_READS) a = { ok: false, text: `At most ${MAX_READS} reads per answer: answer with what you have.` };
+      else if (!readData) a = { ok: false, text: 'This data is not available here.' };
+      else {
+        try { a = await readData(c.name, c.input ?? {}); } catch (e) { a = { ok: false, text: `The read failed: ${String(e).slice(0, 120)}` }; }
+      }
+      reads.push({ name: c.name, input: c.input ?? {}, ok: a.ok, chars: a.text.length });
+      return /** @type {[string, { ok: boolean, text: string }]} */ ([c.id, a]);
+    })));
     for (const call of calls) {
+      const read = readAnswers.get(call.id);
+      if (read) {
+        results.push({ type: 'tool_result', tool_use_id: call.id, ...(read.ok ? {} : { is_error: true }), content: read.text });
+        retry = true;
+        continue;
+      }
       if (call.name === SHOW_TOOL.name) {
         /** @type {{ ok: true, value: any } | { ok: false, problems: string[] }} */
         const c = cards.length >= MAX_CARDS ? { ok: false, problems: [`at most ${MAX_CARDS} cards per answer`] } : checkCard(call.input ?? {});
@@ -273,7 +300,7 @@ export async function chatWithClaude({ client, system, history, context, text, f
   /** @param {string} stop @returns {ChatResult} */
   function result(stop) {
     const thought = (thoughts.length ? thoughts.join('\n\n') : streamedThought.trim()).slice(0, 4000);
-    return { reply: said.join('\n\n'), proposal, problems, turns, usage, model, stop, attempts, cards, replies, questions, thought, timing };
+    return { reply: said.join('\n\n'), proposal, problems, turns, usage, model, stop, attempts, cards, replies, questions, thought, timing, reads };
   }
 }
 
@@ -291,7 +318,7 @@ export function chatRequest({ model = MODEL, effort = EFFORT, system, messages, 
     thinking: THINKING,
     output_config: { effort },
     system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral', ttl: '1h' } }],
-    tools: [PROPOSE_TOOL, SHOW_TOOL, REPLIES_TOOL, ASK_TOOL],
+    tools: [PROPOSE_TOOL, SHOW_TOOL, REPLIES_TOOL, ASK_TOOL, ...DATA_TOOLS],
     tool_choice: { type: 'auto' },
     messages,
   };

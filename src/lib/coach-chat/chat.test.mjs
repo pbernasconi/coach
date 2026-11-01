@@ -113,7 +113,7 @@ test('a card and one-tap answers are shown in one request', async () => {
   assert.equal(client.calls.length, 1);
   assert.deepEqual(r.cards, [{ kind: 'workout', ref: 'v' }]);
   assert.deepEqual(r.replies, ['Morning', 'Evening']);
-  assert.equal(client.calls[0].tools.map((t) => t.name).join(), 'propose_changes,show,suggest_replies,ask_questions');
+  assert.equal(client.calls[0].tools.map((t) => t.name).join(), 'propose_changes,show,suggest_replies,ask_questions,get_activity,find_activities,get_bests,get_load');
 });
 
 test('a broken card goes back once; a card with a proposal stops at the proposal', async () => {
@@ -220,4 +220,50 @@ test('a reply without thinking has an empty thought', async () => {
   const r = await chatWithClaude({ ...base, client: fake([reply([say('Fine.')])]), check: () => assert.fail('no tool call') });
   assert.equal(r.thought, '');
   assert.deepEqual(r.questions, []);
+});
+
+test('read tools: Claude reads an activity, then answers with it', async () => {
+  const read = (id, name, input) => ({ type: 'tool_use', id, name, input });
+  const client = fake([
+    reply([read('r1', 'get_activity', { ref: '208' }), read('r2', 'get_bests', {})], 'tool_use'),
+    reply([say('Keep it as a 5k benchmark: the last 5 km took 22:48.')]),
+  ]);
+  const seen = [];
+  const events = [];
+  const r = await chatWithClaude({
+    ...base, client, check: () => assert.fail('no proposal'),
+    readData: async (name, input) => { seen.push([name, input]); return { ok: true, text: `${name} data` }; },
+    onEvent: (e) => events.push(e),
+  });
+  assert.equal(r.stop, 'answered');
+  assert.equal(r.turns, 2);
+  assert.deepEqual(seen, [['get_activity', { ref: '208' }], ['get_bests', {}]]);
+  assert.deepEqual(r.reads.map((x) => [x.name, x.ok]), [['get_activity', true], ['get_bests', true]]);
+  const results = client.calls[1].messages.at(-1).content;
+  assert.deepEqual(results.map((b) => [b.tool_use_id, b.content, b.is_error]), [['r1', 'get_activity data', undefined], ['r2', 'get_bests data', undefined]]);
+  assert.ok(client.calls[0].tools.some((t) => t.name === 'get_activity'));
+});
+
+test('read tools: without a reader, or a failed read, Claude gets an error and still answers', async () => {
+  const client = fake([
+    reply([{ type: 'tool_use', id: 'r1', name: 'get_load', input: {} }], 'tool_use'),
+    reply([say('I could not read your load.')]),
+  ]);
+  const r = await chatWithClaude({ ...base, client, check: () => assert.fail('no proposal') });
+  assert.equal(r.stop, 'answered');
+  assert.equal(client.calls[1].messages.at(-1).content[0].is_error, true);
+
+  const client2 = fake([
+    reply([{ type: 'tool_use', id: 'r1', name: 'get_load', input: {} }], 'tool_use'),
+    reply([say('ok')]),
+  ]);
+  const r2 = await chatWithClaude({ ...base, client: client2, check: () => assert.fail(), readData: async () => { throw new Error('db down'); } });
+  assert.equal(r2.reads[0].ok, false);
+  assert.match(client2.calls[1].messages.at(-1).content[0].content, /db down/);
+});
+
+test('a read tool shows the reading step', () => {
+  const out = [];
+  streamEventToChat({ type: 'content_block_start', content_block: { type: 'tool_use', name: 'get_activity' } }, (e) => out.push(e), { text: false });
+  assert.deepEqual(out, [{ type: 'status', step: 'reading' }]);
 });
