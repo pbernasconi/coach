@@ -7,6 +7,7 @@
 import { sql } from '@/db';
 import { loadActivity, loadActivityContext } from '@/lib/activity/queries';
 import { loadPeakPerformances } from '@/lib/performance/peaks';
+import { toDay } from '@/lib/db-time.mjs';
 import { addDays } from '@/lib/plan/week.mjs';
 import {
   activityBrief, activitiesList, bestsText, checkDataCall, loadText, peakRanks, sportMatches,
@@ -42,12 +43,13 @@ async function answer(userId: string, today: string, call: DataCall): Promise<st
   if (call.tool === 'get_bests') return bestsText(await loadPeakPerformances(userId, today));
   const from = addDays(today, -7 * call.weeks - 14);
   const [days, acts] = await Promise.all([
-    sql`SELECT to_char(date, 'YYYY-MM-DD') AS date, ctl, atl, tsb, tss FROM daily_training_load
-         WHERE user_id = ${userId} AND date >= ${from}::date ORDER BY date` as Promise<Row[]>,
+    // daily_training_load.date is 'YYYY-MM-DD' text.
+    sql`SELECT date, ctl, atl, tsb, tss FROM daily_training_load
+         WHERE user_id = ${userId} AND date >= ${from} ORDER BY date` as Promise<Row[]>,
     sql`SELECT to_char(start_date_local, 'YYYY-MM-DD') AS day, sport_type, moving_time FROM strava_activities
          WHERE user_id = ${userId} AND start_date_local >= ${from}::date AND COALESCE(commute, false) = false` as Promise<Row[]>,
   ]);
-  const load: LoadDay[] = days.map((d) => ({ date: String(d.date), ctl: Number(d.ctl), atl: Number(d.atl), tsb: Number(d.tsb), tss: Number(d.tss ?? 0) }));
+  const load: LoadDay[] = days.map((d) => ({ date: toDay(d.date) ?? String(d.date), ctl: Number(d.ctl), atl: Number(d.atl), tsb: Number(d.tsb), tss: Number(d.tss ?? 0) }));
   return loadText(load, acts as unknown as LoadAct[], today, call.weeks);
 }
 

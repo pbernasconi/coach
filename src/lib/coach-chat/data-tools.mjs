@@ -91,7 +91,7 @@ export function checkDataCall(name, input, today) {
   if (name === ACTIVITY_TOOL.name) {
     const ref = typeof input?.ref === 'string' ? input.ref.trim() : '';
     if (!ref) return { ok: false, problem: 'ref is missing: an activity id, "latest" or YYYY-MM-DD' };
-    if (!(ref === 'latest' || DATE.test(ref) || /^[\w-]{4,40}$/.test(ref))) return { ok: false, problem: `ref ${ref.slice(0, 40)} is not an activity id, "latest" or YYYY-MM-DD` };
+    if (!(ref === 'latest' || DATE.test(ref) || /^[\w-]{1,40}$/.test(ref))) return { ok: false, problem: `ref ${ref.slice(0, 40)} is not an activity id, "latest" or YYYY-MM-DD` };
     if (DATE.test(ref) && ref > today) return { ok: false, problem: `${ref} is in the future` };
     return { ok: true, value: { tool: 'get_activity', ref, sport } };
   }
