@@ -18,6 +18,14 @@ async function json<T>(path: string, init?: RequestInit): Promise<{ status: numb
 
 const DECIDE_TITLE = { apply: 'Could not apply the change', dismiss: 'Could not dismiss the change', undo: 'Could not undo the change' } as const;
 
+/** The server's reason for turning a message down, in Paolo's words. */
+function unsentWords(reason: string) {
+  if (reason === 'text is empty') return 'Write something first.';
+  const long = /^text is over (\d+) characters$/.exec(reason);
+  if (long) return `It's over ${Number(long[1]).toLocaleString('en-US')} characters. Shorten it and send again.`;
+  return reason;
+}
+
 const emptyMessage = (text: string, files: FileRef[]): Message => ({
   id: `local-${Date.now()}`, role: 'user', text, createdAt: new Date().toISOString(), proposal: null,
   attachments: [], quickReplies: [], files, thought: null, questions: [], feedback: null,
@@ -130,7 +138,7 @@ export function useCoachChat(enabled: boolean, onPlanChanged?: () => void) {
       if (!stopped) {
         setFailed(stored
           ? { title: 'Coach could not answer', message: reason }
-          : { title: 'Your message did not send', message: reason === 'text is empty' ? 'Write something first.' : reason });
+          : { title: 'Your message did not send', message: unsentWords(reason) });
       }
       setLive(null);
       // The server keeps going: read the thread, which shows the answer once it is stored.
