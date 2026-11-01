@@ -23,6 +23,7 @@ import { ApplyError, applyAll, planRows, undoAll } from './writes';
 import { undoRecord, type UndoRecord } from './undo-record.mjs';
 import { fileBlock, fileNote, filesPhrase, filesToSend, type FileData, type FileRef } from './files.mjs';
 import { claimFiles, fileData, unclaimedFiles } from './files-store';
+import { runDataTool } from './data';
 import { CHAT_MONTHLY_CAP_USD, PROMPTS, SUGGESTIONS, chatContext, chatSystemPrompt } from './prompt.mjs';
 
 type Row = Record<string, unknown>;
@@ -323,6 +324,7 @@ export async function sendMessage(
       checkCard: (input) => checkCard(input, { rows, today }),
       deadline: started + BUDGET_MS,
       onEvent: emit,
+      readData: (name, input) => runDataTool(userId, today, name, input),
     });
     let proposal: ProposalView | null = null;
     if (result.proposal) {
@@ -348,7 +350,7 @@ export async function sendMessage(
       meta: {
         stop: result.stop, turns: result.turns, usage: result.usage, attempts: result.attempts, cards: result.cards,
         replyFromModel: Boolean(result.reply), prompt: createHash('sha256').update(system).digest('hex').slice(0, 12),
-        timing: result.timing, effort: EFFORT,
+        timing: result.timing, effort: EFFORT, dataReads: result.reads,
       },
     }, { thought: result.thought, questions: result.questions as Question[] });
     await recordAiUsage(userId, {

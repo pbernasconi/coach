@@ -52,7 +52,8 @@ export function liftNoteProblem(text) {
  * A planned workout as Coach sees it (loadRange's workouts, server.ts `planRows`).
  * @typedef {{ id: string, date: string, startTime: string | null, title: string, sport: string,
  *   workoutType: string | null, intensity: string | null, duration: number | null, description?: string | null,
- *   status: string, skipReason?: string | null, state: string, liftTemplate?: string | null }} PlanRow
+ *   status: string, skipReason?: string | null, state: string, liftTemplate?: string | null,
+ *   activityId?: string | null }} PlanRow  `activityId`: the Strava activity a done workout matched (get_activity reads it)
  */
 /**
  * One checked change.
@@ -478,7 +479,7 @@ export function planText(rows, today) {
   if (!rows.length) return 'No workouts planned.';
   return rows
     .map((r) => {
-      const flag = r.state === 'done' ? 'DONE' : r.status === 'skipped' ? `SKIPPED${r.skipReason ? ` (${r.skipReason})` : ''}` : r.date < today ? 'MISSED' : r.date === today ? 'TODAY' : 'planned';
+      const flag = r.state === 'done' ? `DONE${r.activityId ? `, activity ${r.activityId}` : ''}` : r.status === 'skipped' ? `SKIPPED${r.skipReason ? ` (${r.skipReason})` : ''}` : r.date < today ? 'MISSED' : r.date === today ? 'TODAY' : 'planned';
       // A lift says what kind it is: a gym lift's template, or a home/physio session.
       const kind = r.sport !== 'strength' ? null : r.liftTemplate ? `Lift template ${r.liftTemplate}` : r.workoutType;
       const what = [r.sport, kind, r.duration ? `${r.duration} min` : null, r.intensity]

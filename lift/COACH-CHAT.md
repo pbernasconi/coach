@@ -50,7 +50,7 @@ updated week card ◄──
 
 ### What the model gets
 
-Built (2026-10-26) simpler than first drawn: no read tools. Each message from Paolo goes with the context, so one
+Built (2026-10-26) simpler than first drawn: no read tools at first (they came 2026-11-01, below). Each message from Paolo goes with the context, so one
 request usually answers it:
 
 - `<now>`, `<plan>`: every workout from this Monday to the Sunday after next with its id and state (`planText`),
@@ -71,6 +71,17 @@ request usually answers it:
 
 - Two more tools: `show({ kind, ref })` puts a card under the text (workout, week, exercise, readiness, day; the
   server fills it, cards.ts) and `suggest_replies({ options })` adds up to 3 one-tap answers to a question.
+
+- Read tools (2026-11-01, `data-tools.mjs`, run by `data.ts`). The chat told Paolo "my data has no splits" about a
+  run whose splits, laps and best efforts were stored, and asked him for the time. Now it reads them:
+  `get_activity({ ref })` (an activity id: `<plan>` shows it after DONE; "latest"; or a day) answers with km splits
+  (pace, GAP, HR), manual laps, halves and HR drift, best efforts ranked against his `activity_peaks` history (year
+  and all time), zones, the watch's training effect, weather, the planned workout, the load around it and earlier
+  runs on the route, all from `loadActivity` (the activity page's loader). `find_activities({ from, to, sport })`,
+  `get_bests()` (`loadPeakPerformances`) and `get_load({ weeks })` (`daily_training_load` and hours by sport per
+  week). Reads run side by side, the phone shows "reading", at most 6 per answer, 6 requests per turn
+  (`MAX_TURNS`). Each answer's `meta.dataReads` lists them. coach-chat.md "Looking things up" says to read before
+  judging a session, test or load, and to explain the numbers.
 
 The model never writes. The system prompt is coach-chat.md, coaching.md, check-in.md (skips by reason, a missed
 lift moves once) and plan-structure.md (cached).
