@@ -125,12 +125,24 @@ private let proposalReply = CoachReply(
         #expect(plan.refreshCount == 0)
     }
 
-    @Test func aFailedApplyPutsTheCardBack() async {
+    @Test func aFailedApplyPutsTheCardBackAndSaysWhy() async {
         let coach = FakeCoach(.success(proposalReply))
         await coach.setFailsApply()
         let vm = await sent(coach)
         await vm.send(.applyTapped(proposalID: "p1"))?.value
         #expect(vm.state.messages[1].proposal?.status == .pending)
+        #expect(vm.state.messages[1].proposal?.result.count == 1)
+        #expect(vm.state.busyProposal == nil)
+    }
+
+    @Test func retryOfAPhotoOnlyMessageSendsItsPhotosAgain() {
+        var state = CoachState()
+        state.append(.mine("Earlier"))
+        state.append(.coach(CoachReply(text: "Ok")))
+        state.append(.mine(""), files: [CoachFile(id: "f1", kind: .image, name: "Photo")])
+        #expect(state.lastSent?.text == "")
+        #expect(state.lastSent?.files.map(\.id) == ["f1"])
+        #expect(CoachState().lastSent == nil)
     }
 
     @Test func undoTappedTakesTheChangesBack() async {

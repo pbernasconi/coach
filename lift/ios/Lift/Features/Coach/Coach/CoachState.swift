@@ -148,10 +148,12 @@ nonisolated struct CoachState: Equatable, Sendable {
         }
     }
 
-    /// The last thing Paolo wrote, for Retry.
-    var lastMessage: String? {
-        messages.last { if case .mine = $0.body { true } else { false } }.flatMap {
-            if case .mine(let text) = $0.body { text } else { nil }
+    /// The last message Paolo sent, words and files, for Retry. A message of photos alone has no words, so Retry
+    /// sends its files again rather than an empty message the server turns down.
+    var lastSent: (text: String, files: [CoachFile])? {
+        for message in messages.reversed() {
+            if case .mine(let text) = message.body { return (text, message.files) }
         }
+        return nil
     }
 }

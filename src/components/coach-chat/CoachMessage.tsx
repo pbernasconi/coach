@@ -55,7 +55,8 @@ export default function CoachMessage({ message: m, latest, chat, onSend }: Props
       </ChatMessage>
     );
   }
-  const busy = Boolean(chat.live);
+  // Quick replies and question cards wait while an answer is on its way, here or still finishing on the server.
+  const busy = Boolean(chat.live) || Boolean(chat.data?.answering);
   const p = m.proposal;
   const ask = p && chat.undoAsk?.proposalId === p.id ? chat.undoAsk : null;
   return (
@@ -87,7 +88,7 @@ export default function CoachMessage({ message: m, latest, chat, onSend }: Props
           <ChatFeedbackRow
             text={m.text}
             rating={m.feedback}
-            onRate={(r) => chat.rate(m.id, r)}
+            onRate={(r) => chat.rate(m.id, r, m.feedback)}
             className="opacity-0 transition-opacity group-hover/message:opacity-100 group-focus-within/message:opacity-100 [[data-latest]_&]:opacity-100"
           />
         </div>

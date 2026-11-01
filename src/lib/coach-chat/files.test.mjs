@@ -64,3 +64,14 @@ test('photos go before the words, in the history and on the new message', () => 
   const open = chatMessages([{ role: 'user', text: '', blocks: [img] }], 'CTX', 'well?');
   assert.deepEqual(open[0].content.map((b) => b.type), ['image', 'text', 'text']);
 });
+
+test('a file name with characters past Latin-1 still makes a header', async () => {
+  const { contentDisposition } = await import('./files.mjs');
+  const name = 'Screenshot 2026-10-31 at 9.41\u202fAM.png';
+  const value = contentDisposition(name);
+  assert.equal(value, `inline; filename="Screenshot 2026-10-31 at 9.41 AM.png"; filename*=UTF-8''${encodeURIComponent(name)}`);
+  assert.doesNotThrow(() => new Headers({ 'Content-Disposition': value }));
+  assert.doesNotThrow(() => new Headers({ 'Content-Disposition': contentDisposition('run 🏃 café "x".pdf') }));
+  assert.match(contentDisposition('café.pdf'), /filename="cafe\.pdf"/);
+  assert.match(contentDisposition('🏃'), /filename="file"/);
+});

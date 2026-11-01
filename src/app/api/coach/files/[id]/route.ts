@@ -5,6 +5,7 @@
  */
 
 import { readCoachFile } from '@/lib/coach-chat/files-store';
+import { contentDisposition } from '@/lib/coach-chat/files.mjs';
 import { COACH_ID, webOwner } from '@/lib/coach-chat/web-route';
 
 export const runtime = 'nodejs';
@@ -17,12 +18,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   if (!COACH_ID.test(id)) return Response.json({ error: 'not found' }, { status: 404 });
   const file = await readCoachFile(ctx.userId, id);
   if (!file) return Response.json({ error: 'not found' }, { status: 404 });
-  const name = file.name.replace(/["\\\r\n]/g, '');
   return new Response(new Uint8Array(file.data), {
     headers: {
       'Content-Type': file.contentType,
       'Content-Length': String(file.data.byteLength),
-      'Content-Disposition': `inline; filename="${name}"; filename*=UTF-8''${encodeURIComponent(file.name)}`,
+      'Content-Disposition': contentDisposition(file.name),
       'Cache-Control': 'private, max-age=86400, immutable',
       'X-Content-Type-Options': 'nosniff',
     },
