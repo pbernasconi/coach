@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { daysInRange, isPmcRange, pmcAxis, PMC_RANGES } from './pmc-range.mjs';
+import { daysInRange, isPmcRange, packPmcDays, pmcAxis, PMC_RANGES, unpackPmcDays } from './pmc-range.mjs';
 
 const series = (from, n, projectedFrom = Infinity) =>
   Array.from({ length: n }, (_, k) => ({ date: new Date(Date.parse(`${from}T00:00:00Z`) + k * 86400000).toISOString().slice(0, 10), projected: k >= projectedFrom }));
@@ -45,4 +45,31 @@ test('pmcAxis: month lines, quarters and years on long spans', () => {
   const year = pmcAxis(series('2025-10-01', 400), 1000);
   assert.ok(year.labels.some((l) => l.text === '2026'), 'January reads as the year');
   assert.ok(year.labels.some((l) => l.text === 'Nov'));
+});
+
+test('packPmcDays round-trips daily days with a projected tail, and is much smaller', () => {
+  const days = series('2014-03-01', 4500, 4400).map((d, k) => ({ ...d, ctl: 40 + (k % 13) / 3, atl: 50 - (k % 7) / 3, tsb: -10 + (k % 5) / 3, tss: (k * 37) % 180 }));
+  const packed = packPmcDays(days);
+  assert.equal(packed.dates, undefined, 'consecutive days need no dates');
+  assert.equal(packed.projectedFrom, 4400);
+  const back = unpackPmcDays(packed);
+  assert.equal(back.length, 4500);
+  assert.deepEqual(back[0], { date: '2014-03-01', ctl: 40, atl: 50, tsb: -10, tss: 0, projected: false });
+  assert.equal(back[4399].projected, false);
+  assert.equal(back[4400].projected, true);
+  assert.equal(back[4499].date, days[4499].date);
+  assert.equal(back[17].ctl, Math.round(days[17].ctl * 10) / 10);
+  const objects = JSON.stringify(days.map((d) => ({ ...d, ctl: Math.round(d.ctl * 10) / 10, atl: Math.round(d.atl * 10) / 10, tsb: Math.round(d.tsb * 10) / 10 }))).length;
+  assert.ok(JSON.stringify(packed).length < objects / 3, 'under a third of the objects');
+});
+
+test('packPmcDays keeps dates and flags when days skip or projections interleave', () => {
+  const days = [
+    { date: '2026-01-01', ctl: 1, atl: 2, tsb: -1, tss: 10, projected: false },
+    { date: '2026-01-03', ctl: 1.26, atl: 2, tsb: -0.74, tss: 0, projected: true },
+    { date: '2026-01-04', ctl: 1, atl: 2, tsb: -1, tss: 0, projected: false },
+  ];
+  const back = unpackPmcDays(packPmcDays(days));
+  assert.deepEqual(back.map((d) => [d.date, d.projected, d.ctl]), [['2026-01-01', false, 1], ['2026-01-03', true, 1.3], ['2026-01-04', false, 1]]);
+  assert.deepEqual(unpackPmcDays(packPmcDays([])), []);
 });

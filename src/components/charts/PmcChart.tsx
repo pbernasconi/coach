@@ -1,14 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Info } from 'lucide-react';
 import { HelpTooltip, Tabs, TabsContent, TabsList, TabsTrigger, useStoredValue } from '@kobo/web';
 import { ChartTooltip, LegendItem } from './ChartTooltip';
 import { niceTicks, useMeasure } from './useMeasure';
 import { FORM_ZONES as ZONES, zoneOf } from '@/lib/performance/form';
-import { DEFAULT_PMC_RANGE, PMC_RANGES, daysInRange, isPmcRange, pmcAxis } from '@/lib/performance/pmc-range.mjs';
+import { DEFAULT_PMC_RANGE, PMC_RANGES, daysInRange, isPmcRange, pmcAxis, unpackPmcDays, type packPmcDays } from '@/lib/performance/pmc-range.mjs';
 
 export type PmcChartDay = { date: string; ctl: number; atl: number; tsb: number; tss: number; projected: boolean };
+/** The days as `packPmcDays` sends them (src/lib/performance/pmc-range.mjs). */
+export type PmcChartPacked = ReturnType<typeof packPmcDays>;
 export type PmcChartEvent = { id: string; name: string; date: string; priority: 'A' | 'B' | 'C' };
 
 const fmtDay = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
@@ -23,7 +25,8 @@ const DASH = '5 4';
  * A timeframe control (30 days, 90 days, 180 days, 1 year, all; remembered in this browser) sets how far back it reaches;
  * the projection always shows.
  */
-export default function PmcChart({ days: allDays, today, events = [], note }: { days: PmcChartDay[]; today: string; events?: PmcChartEvent[]; note?: string | null }) {
+export default function PmcChart({ days: packed, today, events = [], note }: { days: PmcChartPacked; today: string; events?: PmcChartEvent[]; note?: string | null }) {
+  const allDays: PmcChartDay[] = useMemo(() => unpackPmcDays(packed), [packed]);
   const [ref, width] = useMeasure<HTMLDivElement>();
   const [hover, setHover] = useState<number | null>(null);
   const [range, setRange] = useStoredValue('coach.pmc.range', DEFAULT_PMC_RANGE, isPmcRange);
