@@ -64,3 +64,42 @@ export function pmcAxis(days, plotWidth) {
     .map(({ i, m, y }) => ({ i, text: m === 1 && crossesYear ? y : MONTHS[m - 1] }));
   return { grid, labels };
 }
+
+/**
+ * The chart's days in a compact form for the page: one array per series instead of an object per day. "All" is
+ * every day since the first activity (thousands of days), and as objects with their keys it was most of the
+ * Today page's HTML. Dates are left out when they run day by day (the usual case), and projected days are the
+ * tail. `unpackPmcDays` turns it back into the days.
+ * @param {{ date: string, ctl: number, atl: number, tsb: number, tss: number, projected: boolean }[]} days
+ */
+export function packPmcDays(days) {
+  const r1 = (/** @type {number} */ n) => Math.round(n * 10) / 10;
+  const daily = days.every((d, i) => i === 0 || d.date === addDays(days[i - 1].date, 1));
+  const firstProjected = days.findIndex((d) => d.projected);
+  const tail = firstProjected < 0 || days.slice(firstProjected).every((d) => d.projected);
+  return {
+    start: days[0]?.date ?? '',
+    ...(daily ? {} : { dates: days.map((d) => d.date) }),
+    ...(tail ? { projectedFrom: firstProjected < 0 ? days.length : firstProjected } : { projected: days.map((d) => (d.projected ? 1 : 0)) }),
+    ctl: days.map((d) => r1(d.ctl)),
+    atl: days.map((d) => r1(d.atl)),
+    tsb: days.map((d) => r1(d.tsb)),
+    tss: days.map((d) => Math.round(d.tss)),
+  };
+}
+
+/**
+ * @param {ReturnType<typeof packPmcDays>} p
+ * @returns {{ date: string, ctl: number, atl: number, tsb: number, tss: number, projected: boolean }[]}
+ */
+export function unpackPmcDays(p) {
+  const out = [];
+  let date = p.start;
+  for (let i = 0; i < p.ctl.length; i++) {
+    if (p.dates) date = p.dates[i];
+    else if (i > 0) date = addDays(date, 1);
+    const projected = p.projected ? p.projected[i] === 1 : i >= (p.projectedFrom ?? p.ctl.length);
+    out.push({ date, ctl: p.ctl[i], atl: p.atl[i], tsb: p.tsb[i], tss: p.tss[i], projected });
+  }
+  return out;
+}
