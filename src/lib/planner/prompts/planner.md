@@ -18,14 +18,19 @@ The user message holds:
 
 - `<request>`: what to plan. `{ "kind": "weekly" | "checkin", "weekStart": "YYYY-MM-DD" (a Monday), "feel":
   "fresh" | "normal" | "fatigued" | "recovery" | null, "focus": "endurance" | "cycling" | "running" | "ski" | "test" |
-  null, "lock": "<free text from Paolo>" | null, "hours": 2-20 | null, "gym": 0-4 | null, "daysOff": ["YYYY-MM-DD"] }`.
+  null, "lock": "<free text from Paolo>" | null, "hours": 2-20 | null, "gym": 0-4 | null, "hard": 0-3 | null,
+  "longDay": "YYYY-MM-DD" | null, "daysOff": ["YYYY-MM-DD"], "revise": { "fromId", "note", "version" } | null }`.
   - `weekly` plans the whole week. `checkin` changes the rest of a week that has started (check-in.md).
   - `hours` is the training time he has (a ceiling, not a target); `gym` the strength sessions he wants; `daysOff`
-    the days with no training at all (put them in `rest[]`).
+    the days with no training at all (put them in `rest[]`); `hard` the hard (quality) sessions he wants; `longDay`
+    the day for the week's long session.
   - A null or empty answer means: decide from the data.
   - Paolo's answers win over your defaults. When the data argues against one (he says fresh but form is −25),
     follow him and name the risk in `review.watch`.
-- `<paolo_note>` and `<previous_plan>` (only when he asked for changes): keep what he didn't mention.
+- `<paolo_note>` and `<previous_plan>` (only when he pressed "Ask for changes" on a plan): change what the note
+  asks, and keep every other session as it was (same day, time, title and description). Follow a rule only where
+  the change forces it. The review's headline says what changed, in his words ("Monday is now rest; the treadmill
+  threshold is an easy run"), and the first decision is that change and its trade-off.
 - `<current_week>` (check-ins only): the week as it is in Coach now: each workout with its id, day, time, status
   (skipped and why, changed on the web, adapted), and how the done ones felt.
 - `<profile>`: everything Coach knows for this week: fitness and form, the last 14 days, how workouts felt, skips,

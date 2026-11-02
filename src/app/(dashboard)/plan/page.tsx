@@ -7,16 +7,11 @@ import { cookieTimeZone } from '@/lib/plan/timezone';
 import { loadForecast, placeFrom } from '@/lib/plan/weather';
 import { addDays, mondayOf, todayIn } from '@/lib/plan/week.mjs';
 import MonthCalendar from './MonthCalendar';
-import CoachPlanner from './CoachPlanner';
-import { openProposal } from '@/lib/plan/proposals';
-import { loadOutlook } from '@/lib/plan/planning-context';
 import './plan.css';
 
 export const metadata: Metadata = { title: 'Plan' };
 
 export const dynamic = 'force-dynamic';
-// "Plan with Coach" plans on the server in the background of its request (src/lib/planner/run.ts): up to 5 minutes.
-export const maxDuration = 300;
 
 type Search = { week?: string; month?: string; open?: string };
 
@@ -40,15 +35,11 @@ export default async function PlanPage({ searchParams }: { searchParams: Promise
   const anchor = weekAnchor ?? startWeek(monthParam, today);
   const bounds = await safe('plan data bounds', () => dataBounds(userId), { earliest: null, planEnd: null });
   const first = initialRange(anchor, bounds.earliest);
-  const [range, weather, library, proposal] = await Promise.all([
+  const [range, weather, library] = await Promise.all([
     loadRange(userId, first.from, first.to, today),
     loadForecast(place, timeZone),
     safe('workout library', () => loadLibrary(userId), []),
-    // The cloud coach bar is optional: without it the calendar still renders.
-    safe('plan proposal', () => openProposal(userId), null),
   ]);
-  // A plan waiting for review: its load outlook now, so the review opens complete.
-  const outlook = proposal?.status === 'proposed' ? await safe('plan outlook', () => loadOutlook(userId, proposal), null) : null;
   const openAt = weekAnchor ?? openWeek(monthParam, today, bounds.earliest);
   return (
     <div data-smoke="plan">
@@ -58,7 +49,6 @@ export default async function PlanPage({ searchParams }: { searchParams: Promise
         range={range}
         bounds={bounds}
         weather={weather}
-        coach={<CoachPlanner initial={proposal} thisWeek={mondayOf(today)} nextWeek={addDays(mondayOf(today), 7)} today={today} outlook={outlook} weather={weather} />}
         library={library}
         timeZone={timeZone}
         openItem={openParam && ITEM.test(openParam) ? openParam : undefined}

@@ -17,14 +17,14 @@ A personal training app for one athlete (the owner is the first row in `users`; 
 pages and loaders). It plans endurance and strength training and shows what was done. Live at
 https://coach.paolobernasconi.com (Vercel Hobby, Neon Postgres with hard monthly quotas, Clerk sign-in).
 
-- **Pages** (`src/app/(dashboard)/`): Performance (`/`), Plan (`/plan`, the month calendar), Lift, Goals, Health
+- **Pages** (`src/app/(dashboard)/`): Performance (`/`), Plan (`/plan`, the month calendar; `/plan/week`, weekly planning), Lift, Goals, Health
   (vitals, labs, DEXA at `/health/dexa`), Settings, and an activity page (`/activities/[id]`).
 - **Data in**: Strava (webhook and `sync.yml`), Garmin (`garmin.yml`, a Python job), the Lift iPhone app
   (`lift/`, its own sync), Google Calendar, Function Health (`function.yml`, by hand), the bathroom scale
   (`devices/scale-bridge/`, an ESP32), BodySpec DEXA scans (OAuth from Settings, daily in `sync.yml`). COACH-API.md has every
   route and source.
 - **Planning**: one planner on the Claude API in Coach (`src/lib/planner/`, prompts in `src/lib/planner/prompts/`): the
-  Plan page and a Sunday run plan weeks and check-ins; Paolo accepts each plan (COACH.md).
+  planning screen (`/plan/week`, the navbar's Plan pill) and a Sunday evening run plan weeks and check-ins; Paolo accepts each plan (COACH.md).
 
 ## Code map
 

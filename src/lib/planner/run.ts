@@ -13,7 +13,7 @@ import { sql } from '@/db';
 import { toIso } from '@/lib/db-time.mjs';
 import { checkPlan } from '@/lib/plan/proposal.mjs';
 import { checkProposal, todayOf } from '@/lib/plan/rules.mjs';
-import { claimRequest, failRequest, submitPlan, type PlanRequest } from '@/lib/plan/proposals';
+import { claimRequest, failRequest, planOf, submitPlan, type PlanRequest } from '@/lib/plan/proposals';
 import { monthSpend as spendOn, recordAiUsage } from '@/lib/ai-usage/store';
 import { PLANNER_FEATURES } from '@/lib/ai-usage/usage.mjs';
 import { PLANNER_MONTHLY_CAP_USD } from './cost.mjs';
@@ -103,11 +103,13 @@ export async function runPlanner(userId: string, proposalId: string): Promise<{ 
     delete context.user;
     const checkin = request.kind === 'checkin';
     const today = checkin ? todayOf(context) : null;
+    // "Ask for changes": the plan Paolo commented on, so the planner keeps what he didn't mention.
+    const revise = request.revise ? { note: request.revise.note, plan: await planOf(userId, request.revise.fromId) } : null;
     const result = await planWithClaude({
       client: new Anthropic({ timeout: 280_000, maxRetries: 2 }),
       system: systemPrompt(),
       user: userMessage({
-        request, profileMd: profile.md, today,
+        request, profileMd: profile.md, today, revise,
         currentWeek: checkin ? await currentWeekText(sql, userId, request.weekStart) : null,
       }),
       check: (plan) => checkDraft(plan, { weekStart: request.weekStart, request, context, today }),

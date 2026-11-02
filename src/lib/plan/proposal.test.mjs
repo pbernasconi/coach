@@ -4,12 +4,16 @@ import { checkPlan, cleanRequest } from './proposal.mjs';
 
 test('a request is cleaned to a Monday, and unknown answers become "decide from the data"', () => {
   assert.deepEqual(cleanRequest({ weekStart: '2026-10-29', feel: 'fresh', focus: 'dance', lock: '  keep bike club  ' }).value, {
-    kind: 'weekly', weekStart: '2026-10-26', feel: 'fresh', focus: null, lock: 'keep bike club', hours: null, gym: null, daysOff: [],
+    kind: 'weekly', weekStart: '2026-10-26', feel: 'fresh', focus: null, lock: 'keep bike club', hours: null, gym: null, hard: null, longDay: null, daysOff: [],
   });
   const v = cleanRequest({ weekStart: '2026-10-26', hours: 8, gym: 9, daysOff: ['2026-10-30', '2026-11-04', 'x', '2026-10-30'] }).value;
   assert.equal(v.hours, 8);
   assert.equal(v.gym, null);
   assert.deepEqual(v.daysOff, ['2026-10-30']);
+  const w = cleanRequest({ weekStart: '2026-10-26', hard: 1, longDay: '2026-10-31' }).value;
+  assert.equal(w.hard, 1);
+  assert.equal(w.longDay, '2026-10-31');
+  assert.equal(cleanRequest({ weekStart: '2026-10-26', hard: 5, longDay: '2026-11-05' }).value.longDay, null);
   assert.ok(cleanRequest({ weekStart: 'next week' }).error);
   assert.equal(cleanRequest({ kind: 'checkin', weekStart: '2026-10-26' }).value.kind, 'checkin');
 });
