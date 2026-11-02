@@ -222,6 +222,13 @@ export function CoachPanel({ data, onAsk, onUndo, busy }: { data: PlannerWeek; o
           )}
         </div>
       )}
+      {!review && !p?.summary && (
+        <p className="leading-relaxed text-muted-foreground">
+          {p?.status === 'requested' || p?.status === 'running'
+            ? 'Coach is drafting. Why the week looks the way it does shows here when it is ready.'
+            : 'Once Coach drafts the week, this is where it explains why: the reasoning, the trade-offs and what to watch. Then ask for changes below.'}
+        </p>
+      )}
       {review?.headline && <p className="text-base font-semibold">{review.headline}</p>}
       {review?.reasoning.map((r, i) => <p key={i} className="leading-relaxed">{r}</p>)}
       {!review && p?.summary && <p className="leading-relaxed whitespace-pre-line">{p.summary}</p>}

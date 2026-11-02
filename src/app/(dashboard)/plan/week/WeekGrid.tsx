@@ -1,15 +1,15 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import type { DraftEvent } from '@/lib/plan/planner-week';
 import type { CalendarBlock } from '@/lib/plan/planning-context';
 import { clock, dayNum, days, hm, minutesOf, sportStyle, weekday } from './plannerUi';
 
-/** The grid runs 5:00 to 22:00, 44 px an hour; a drag snaps to 15 minutes. */
+/** The grid runs 5:00 to 23:00, at least 44 px an hour and taller to fill the screen; a drag snaps to 15 minutes. */
 const H0 = 5;
-const H1 = 22;
-const HOUR = 44;
+const H1 = 23;
+const MIN_HOUR = 44;
 const SNAP = 15;
 
 type Drag = { index: number; x0: number; y0: number; dx: number; dy: number; moved: boolean };
@@ -32,7 +32,23 @@ export default function WeekGrid({
   onMove: (index: number, date: string, time: string) => void;
 }) {
   const cols = useRef<HTMLDivElement>(null);
+  const root = useRef<HTMLDivElement>(null);
   const [drag, setDrag] = useState<Drag | null>(null);
+  const [HOUR, setHour] = useState(MIN_HOUR);
+  // Fill the space below the day headers: the scroll area's height, less what sits above the hour grid and its 24 px bottom padding.
+  useEffect(() => {
+    const box = root.current?.parentElement;
+    if (!box || typeof ResizeObserver === 'undefined') return;
+    const fit = () => {
+      const above = (cols.current?.getBoundingClientRect().top ?? 0) - (root.current?.getBoundingClientRect().top ?? 0);
+      setHour(Math.max(MIN_HOUR, Math.floor((box.clientHeight - above - 24) / (H1 - H0))));
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(box);
+    return () => ro.disconnect();
+  }, []);
+  const bottom = (H1 - H0) * HOUR;
   const week = days(weekStart);
   const timed = events.filter((e) => e.start && e.minutes);
   const untimed = events.filter((e) => !e.start || !e.minutes);
@@ -50,7 +66,7 @@ export default function WeekGrid({
   };
 
   return (
-    <div className="flex min-w-[760px] flex-col">
+    <div ref={root} className="flex min-w-[760px] flex-col">
       <div className="sticky top-0 z-20 grid grid-cols-[48px_repeat(7,minmax(0,1fr))] border-b bg-background/95 backdrop-blur">
         <span />
         {week.map((d) => {
@@ -103,7 +119,7 @@ export default function WeekGrid({
                   return (
                     <div key={i} title={`${clock(c.start)} ${c.title}`}
                       className="absolute inset-x-1 overflow-hidden rounded-md bg-muted px-1.5 py-0.5 text-[11px] leading-tight text-muted-foreground"
-                      style={{ top: Math.max(0, top) + 1, height: Math.max(14, (c.minutes / 60) * HOUR - 2) }}>
+                      style={{ top: Math.max(0, top) + 1, height: Math.max(14, Math.min(top + (c.minutes / 60) * HOUR, bottom) - Math.max(0, top) - 2) }}>
                       {c.title}
                     </div>
                   );
@@ -114,7 +130,7 @@ export default function WeekGrid({
                 {timed.filter((e) => e.date === d).map((e) => {
                   const dragging = drag?.index === e.index ? drag : null;
                   const top = ((minutesOf(e.start!) - H0 * 60) / 60) * HOUR;
-                  const height = Math.max(20, ((e.minutes ?? 30) / 60) * HOUR - 2);
+                  const height = Math.max(20, Math.min(((e.minutes ?? 30) / 60) * HOUR, bottom - top) - 2);
                   const small = height < 34;
                   return (
                     <button
