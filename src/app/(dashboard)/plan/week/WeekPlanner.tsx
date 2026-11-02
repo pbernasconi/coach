@@ -170,7 +170,7 @@ export default function WeekPlanner({ initial }: { initial: PlannerWeek }) {
             onMove={move}
           />
           {!ready && (
-            <div className="pointer-events-none absolute inset-0 flex items-start justify-center pt-40">
+            <div className="absolute inset-0 z-30 flex items-start justify-center bg-background/50 pt-40 backdrop-blur-[1px]">
               <div className="pointer-events-auto flex max-w-sm flex-col items-center gap-3 rounded-2xl border bg-card px-6 py-5 text-center shadow-lg">
                 {drafting ? (
                   <>
