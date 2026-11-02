@@ -38,7 +38,7 @@ type Props = {
   range: CalendarRange; // the first weeks loaded (anchor ± 4 weeks)
   bounds: DataBounds;
   weather: Record<string, DayWeather>;
-  /** The Coach bar (CoachPlanner), shown on the title row. */
+  /** Anything to show on the title row. */
   coach?: React.ReactNode;
   library: LibraryItem[];
   timeZone: string; // the zone the server used for "today" (the tz cookie)

@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils';
 import { PAGE_FRAME } from '@/lib/page-frame';
 import CoachMark from '@/components/brand/CoachMark';
 import CoachButton from '@/components/coach-chat/CoachButton';
+import PlanWeekButton from './PlanWeekButton';
 
 // The nav links use Next's default (partial) prefetch: the page shell and its loading.tsx, not its data. A full
 // prefetch rendered all six pages, with their database reads, on every page view (Neon compute and transfer).
@@ -106,7 +107,8 @@ export default function DashboardNav() {
         </nav>
 
         {/* Right side. The links render at once; only the account button waits for Clerk's script. */}
-        <div className="ml-auto flex items-center">
+        <div className="ml-auto flex items-center gap-1">
+          <PlanWeekButton />
           <CoachButton />
           {isLoaded ? <UserButton afterSignOutUrl="/sign-in" /> : <div className="h-7 w-7 rounded-full bg-muted" />}
         </div>

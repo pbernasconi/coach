@@ -12,8 +12,9 @@ const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
  * A clean planning request, or { error }. weekStart becomes the Monday of the given day. `hours` is the time Paolo
- * has for the week (2 to 20), `gym` the strength sessions he wants (0 to 4), `daysOff` the days with no training
- * (in the week); null or empty means Coach decides from the data.
+ * has for the week (2 to 20), `gym` the strength sessions he wants (0 to 4), `hard` the hard sessions he wants (0 to
+ * 3), `longDay` the day of the long session (in the week), `daysOff` the days with no training (in the week); null
+ * or empty means Coach decides from the data.
  * @param {Record<string, unknown>} input
  */
 export function cleanRequest(input) {
@@ -27,11 +28,13 @@ export function cleanRequest(input) {
   const n = (v, lo, hi) => (typeof v === 'number' && Number.isInteger(v) && v >= lo && v <= hi ? v : null);
   const hours = n(input?.hours, 2, 20);
   const gym = n(input?.gym, 0, 4);
+  const hard = n(input?.hard, 0, 3);
   const last = addDays(weekStart, 6);
+  const longDay = DAY.test(String(input?.longDay)) && input.longDay >= weekStart && input.longDay <= last ? String(input.longDay) : null;
   const daysOff = Array.isArray(input?.daysOff)
     ? [...new Set(input.daysOff.map(String).filter((d) => DAY.test(d) && d >= weekStart && d <= last))].sort()
     : [];
-  return { value: { kind, weekStart, feel, focus, lock, hours, gym, daysOff } };
+  return { value: { kind, weekStart, feel, focus, lock, hours, gym, hard, longDay, daysOff } };
 }
 
 /**

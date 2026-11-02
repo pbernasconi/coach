@@ -1,8 +1,8 @@
 /**
- * POST /api/plan/run: the Sunday plan. sync.yml calls it every hour on Sunday from 15:00 UTC (08:00 PDT); the first
+ * POST /api/plan/run: the Sunday plan. sync.yml calls it every hour on Sunday evening (Monday 02:17 to 07:17 UTC); the first
  * call makes a weekly request for next week (no answers: the planner decides from the data) and plans it with the
  * planner (src/lib/planner/run.ts) in the background, up to 5 minutes. Later calls find that request and do nothing,
- * so a week is planned once, and a failed run waits for Paolo's "Try again" on the Plan page. Bearer CRON_SECRET.
+ * so a week is planned once, and a failed run waits for Paolo's "Try again" on the planning screen (/plan/week). Bearer CRON_SECRET.
  *   → { started: id } | { skipped: reason }
  */
 

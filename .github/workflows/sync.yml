@@ -59,10 +59,12 @@ jobs:
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          # Sundays from 15:17 UTC (08:17 PDT): the planner plans next week (Claude API, in Coach). The first call starts
-          # it; later calls see the week has a request and do nothing. Answers hold ids and reasons only.
-          if [ "$(date -u +%u)" != "7" ] || [ "$(date -u +%H)" -lt 15 ]; then
-            echo "The Sunday plan runs on Sundays from 15:17 UTC; not now."
+          # Sunday evening, after the weekend's sessions have synced: Mondays 02:17 to 07:17 UTC (Sunday 18:17 PST or
+          # 19:17 PDT onwards). The planner drafts next week (Claude API, in Coach) for the planning screen, where the
+          # navbar's Plan button shows its dot. The first call starts it; later calls see the week has a request and
+          # do nothing. Answers hold ids and reasons only.
+          if [ "$(date -u +%u)" != "1" ] || [ "$(date -u +%H)" -lt 2 ] || [ "$(date -u +%H)" -gt 7 ]; then
+            echo "The Sunday plan runs Sunday evening (Mondays 02:17 to 07:17 UTC); not now."
             exit 0
           fi
           curl -fsS --max-time 60 -X POST -H "Authorization: Bearer $CRON_SECRET" -H 'content-type: application/json' \

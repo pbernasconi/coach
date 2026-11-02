@@ -12,13 +12,16 @@ import { followWorkoutInLift, removeFromLift } from '@/lib/lift/edit-store';
 import { importPlan } from '@/lib/plan/import.mjs';
 import { checkPlan } from '@/lib/plan/proposal.mjs';
 import { checkProposal, todayOf } from '@/lib/plan/rules.mjs';
+import { editPlan } from '@/lib/plan/draft.mjs';
 import { cleanReview } from '@/lib/plan/review.mjs';
 import type { StructuredWorkout } from '@/lib/plan/queries';
 import { mondayOf } from '@/lib/plan/week.mjs';
 
 export type PlanRequest = {
   kind: 'weekly' | 'checkin'; weekStart: string; feel: string | null; focus: string | null; lock: string | null;
-  hours?: number | null; gym?: number | null; daysOff?: string[];
+  hours?: number | null; gym?: number | null; hard?: number | null; longDay?: string | null; daysOff?: string[];
+  /** A change Paolo asked for on the plan `fromId` (a note, or new answers on the planning screen); `version` counts from 1. */
+  revise?: { fromId: string; note: string; version: number } | null;
 };
 export type ProposalStatus = 'requested' | 'running' | 'proposed' | 'accepted' | 'rejected' | 'failed';
 export type ProposalRow = {
@@ -38,6 +41,8 @@ export type Proposal = {
   review: ProposalReview | null;
   /** Paolo's planning rules on the plan as the planner wrote it (rules.mjs), or null for a plan from before them. */
   checks: ProposalChecks | null;
+  /** 1 for a first draft, then one more for each change Paolo asked for. */
+  version: number;
 };
 
 type Row = Record<string, unknown>;
@@ -62,6 +67,7 @@ function toProposal(r: Row): Proposal {
     })),
     review: r.plan ? cleanReview((r.plan as { review?: unknown }).review) : null,
     checks: cleanChecks(r.checks),
+    version: Number((r.request as PlanRequest | null)?.revise?.version ?? 1),
   };
 }
 
@@ -188,6 +194,88 @@ export async function acceptProposal(
     UPDATE plan_proposals SET status = 'rejected', decided_at = NOW(), updated_at = NOW(), error = 'Replaced by a newer plan.'
     WHERE user_id = ${userId} AND id <> ${id} AND status IN ('proposed', 'failed') AND week_start = ${weekStart}`;
   return { weekStart, counts };
+}
+
+/**
+ * A change Paolo asked for on a draft: a new request for the same week with his note (and any new answers from the
+ * planning screen), pointing at the draft it changes, so the planner keeps what he didn't mention (run.ts). The old
+ * draft is set aside ("Changed on request.") and comes back on Undo. Returns the new request's id.
+ */
+export async function reviseRequest(
+  userId: string, id: string, note: string, answers: Partial<PlanRequest> = {},
+): Promise<{ id: string } | { error: string }> {
+  const text = note.trim().slice(0, 1000);
+  if (!text) return { error: 'Write what to change.' };
+  const [r] = (await sql`SELECT request FROM plan_proposals WHERE id = ${id} AND user_id = ${userId} AND status = 'proposed'`) as Row[];
+  if (!r) return { error: 'This draft is no longer open.' };
+  const old = r.request as PlanRequest;
+  const newId = await createRequest(userId, {
+    ...old, ...answers, kind: old.kind, weekStart: old.weekStart, revise: { fromId: id, note: text, version: (old.revise?.version ?? 1) + 1 },
+  });
+  await sql`
+    UPDATE plan_proposals SET status = 'rejected', decided_at = NOW(), updated_at = NOW(), error = 'Changed on request.'
+    WHERE id = ${id} AND user_id = ${userId} AND status = 'proposed'`;
+  return { id: newId };
+}
+
+/** The plan JSON of a proposal (the one a change starts from), or null. */
+export async function planOf(userId: string, id: string): Promise<unknown> {
+  const [r] = (await sql`SELECT plan FROM plan_proposals WHERE id = ${id} AND user_id = ${userId}`) as Row[];
+  return r?.plan ?? null;
+}
+
+/**
+ * Undo a change: the draft it was made from is open again and the change is set aside. Works on a changed draft
+ * that is ready, still being planned, or failed.
+ */
+export async function undoRevision(userId: string, id: string): Promise<{ id: string } | { error: string }> {
+  const [r] = (await sql`
+    SELECT request FROM plan_proposals
+    WHERE id = ${id} AND user_id = ${userId} AND status IN ('proposed', 'failed', 'requested', 'running')`) as Row[];
+  const fromId = (r?.request as PlanRequest | undefined)?.revise?.fromId;
+  if (!fromId) return { error: 'There is nothing to undo.' };
+  const back = (await sql`
+    UPDATE plan_proposals SET status = 'proposed', decided_at = NULL, updated_at = NOW(), error = NULL
+    WHERE id = ${fromId} AND user_id = ${userId} AND status = 'rejected' AND error = 'Changed on request.'
+    RETURNING id`) as Row[];
+  if (!back.length) return { error: 'The draft before this change is gone.' };
+  await sql`
+    UPDATE plan_proposals SET status = 'rejected', decided_at = NOW(), updated_at = NOW(), error = 'Undone.'
+    WHERE id = ${id} AND user_id = ${userId}`;
+  return { id: fromId };
+}
+
+/**
+ * Paolo moves, shortens or removes a session in a draft (draft.mjs). The plan checks run again on the changed week.
+ */
+export async function editDraft(
+  userId: string, id: string, op: { kind: string; index: number; date?: string; time?: string; minutes?: number },
+): Promise<{ ok: true } | { error: string }> {
+  const [r] = (await sql`
+    SELECT week_start, request, plan, context FROM plan_proposals WHERE id = ${id} AND user_id = ${userId} AND status = 'proposed'`) as Row[];
+  if (!r) return { error: 'This draft is no longer open.' };
+  const edited = editPlan(r.plan, op) as { plan?: unknown; error?: string };
+  if (!edited.plan) return { error: edited.error ?? 'That change did not work.' };
+  const weekStart = toDay(r.week_start) ?? '';
+  const { errors } = checkPlan(edited.plan, weekStart);
+  if (errors.length) return { error: errors[0] };
+  const request = r.request as PlanRequest;
+  const ctx = r.context && typeof r.context === 'object' ? r.context : null;
+  const checks = checkProposal(edited.plan, { weekStart, request, context: ctx, today: request?.kind === 'checkin' ? todayOf(ctx) : null });
+  await sql`
+    UPDATE plan_proposals SET plan = ${JSON.stringify(edited.plan)}::jsonb, checks = ${JSON.stringify(checks)}::jsonb, updated_at = NOW()
+    WHERE id = ${id} AND user_id = ${userId} AND status = 'proposed'`;
+  return { ok: true };
+}
+
+/** The newest open request or draft for the week of `weekStart` (requested, running, proposed or failed), or null. */
+export async function weekProposal(userId: string, weekStart: string): Promise<Proposal | null> {
+  await sweepServerRuns(userId);
+  const [r] = (await sql`
+    SELECT id, user_id, kind, week_start, status, request, plan, summary, error, checks, created_at, updated_at, decided_at FROM plan_proposals
+    WHERE user_id = ${userId} AND week_start = ${weekStart} AND status IN ('requested', 'running', 'proposed', 'failed')
+    ORDER BY created_at DESC LIMIT 1`) as Row[];
+  return r ? toProposal(r) : null;
 }
 
 export async function rejectProposal(userId: string, id: string) {

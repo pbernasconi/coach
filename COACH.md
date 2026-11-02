@@ -7,12 +7,20 @@ Nothing plans locally or in a GitHub job.
 
 ## When it plans
 
-- **Every Sunday from 08:17 PDT** it plans next week from the data alone. `sync.yml` calls `POST /api/plan/run`
-  each hour on Sunday from 15:17 UTC; the first call starts the plan, later calls see the week has one.
-- **Any time**, Plan page → **Plan with Coach**: next week, or the rest of this week (a check-in). The dialog shows
-  what Coach sees (fitness, form, recent weeks, readiness, how sessions felt, skips, the next event, the week's
-  calendar and weather) and asks how you feel (pre-filled from the data), time available, days off, gym sessions,
-  the focus and notes. A plan takes 1–3 minutes.
+- **Every Sunday evening** it drafts next week from the data alone. `sync.yml` calls `POST /api/plan/run` each
+  hour on Monday 02:17–07:17 UTC (Sunday 6–11 pm Pacific); the first call starts the plan, later calls see the week
+  has one.
+- **Any time**, the **Plan <week>** pill in the navbar opens the planning screen (`/plan/week`, full screen; an orange
+  dot from Sunday 6 pm). It shows last week (what was done, fitness, how you feel), the week's shape (hours, lifts,
+  hard sessions, long day, days off, the calendar events it plans around) and Coach's draft on the real calendar.
+  A week that has started is planned as a check-in. A plan takes 1–3 minutes.
+
+## Changing a draft
+
+On the planning screen: drag a session to another time or day, or click it to move it to a free slot, change its
+length or remove it (`draft.mjs` `editPlan`, saved in place). A note to Coach ("Tell Coach what to change", the
+quick asks) or new answers on Shape make a new version (v2, v3): the screen lists what changed and what the week gave
+up, and **Undo** brings the version before back (`proposals.ts` `reviseRequest`, `undoRevision`).
 
 ## How a plan is made
 
@@ -25,16 +33,16 @@ Nothing plans locally or in a GitHub job.
    Paolo's rules (`rules.mjs`). A failed check goes back to Claude as a list to fix, 3 tries at most (`loop.mjs`).
 5. The plan is saved as a proposal; each run is recorded in `plan_runs` (tokens, cost, tries, the rules the first
    draft broke).
-6. **Review** on the Plan page shows the week, each session's reason, the key decisions and trade-offs, and what to
-   watch (`review.mjs`). **Accept** writes it into Coach (workouts changed on the web stay; a check-in keeps the days
+6. The **Coach** tab of the planning screen shows the week, each session's reason, the key decisions and trade-offs, and what to
+   watch (`review.mjs`). **Accept week** writes it into Coach (workouts changed on the web stay; a check-in keeps the days
    before it) and onto Google Calendar, then `plan-apply.yml` plans the Lift sessions and puts the runs on Garmin.
-   **Reject** changes nothing.
+   Every workout always syncs.
 
 Nothing reaches the calendar before Accept: the profile holds calendar text from other people, and the review is
 the gate.
 
 A run that can't plan (no key, over the budget, an API error, no valid plan in time) marks the request failed with
-the reason, and the Plan page offers to try again.
+the reason, and the planning screen offers to try again.
 
 ## The prompts
 

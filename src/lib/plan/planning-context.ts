@@ -57,16 +57,7 @@ export async function loadPlanningContext(userId: string, weekStart: string, { s
       WHERE p.user_id = ${userId} AND a.status = 'skipped'
         AND a.scheduled_date >= ${addDays(today, -14)}::date AND a.scheduled_date <= ${today}::date` as Promise<Row[]>, []),
     quiet(loadUpcomingEvents(userId, today, 180), []),
-    quiet(sql`
-      SELECT ce.summary, ce.start_time, ce.end_time, ce.is_all_day
-      FROM calendar_events ce JOIN calendar_connections cc ON cc.id = ce.connection_id
-      WHERE cc.user_id = ${userId} AND ce.status <> 'cancelled'
-        AND ce.start_time >= ${addDays(weekStart, -1)}::date AND ce.start_time < ${addDays(weekStart, 8)}::date
-        -- Coach's own workouts (pushWeek writes this line into each event) are not busy time.
-        AND COALESCE(ce.description, '') NOT LIKE '%Open in Coach: %'
-        AND NOT COALESCE(ce.attendees::jsonb @> '[{"self": true, "responseStatus": "declined"}]', false)
-      ORDER BY ce.start_time
-      LIMIT 80` as Promise<Row[]>, []),
+    quiet(loadWeekCalendar(userId, weekStart), []),
   ]);
 
   // Week TSS from the load history (the same TSS the Fitness numbers use).
@@ -80,11 +71,6 @@ export async function loadPlanningContext(userId: string, weekStart: string, { s
   const minByWeek = new Map(weeks.map((w) => [String(w.monday), { min: Number(w.min), sessions: Number(w.sessions) }]));
   const mondays = [0, 1, 2, 3].map((i) => addDays(monday, -7 * (i + 1))).filter((m) => tssByWeek.has(m) || minByWeek.has(m));
 
-  // Paolo's wall clock, as on /plan (an event's own time zone is often UTC).
-  const localDay = (d: unknown) => new Date(d as Date).toLocaleDateString('en-CA', { timeZone: HOME_TZ });
-  const localTime = (d: unknown) =>
-    new Date(d as Date).toLocaleTimeString('en-GB', { timeZone: HOME_TZ, hour: '2-digit', minute: '2-digit' });
-
   return planningContext({
     load,
     weeks: mondays.map((m) => ({ monday: m, tss: tssByWeek.get(m) ?? 0, min: minByWeek.get(m)?.min ?? 0, sessions: minByWeek.get(m)?.sessions ?? 0 })),
@@ -92,19 +78,43 @@ export async function loadPlanningContext(userId: string, weekStart: string, { s
     feedback: feedback.map((f) => ({ date: toDay(f.date) ?? '', title: (f.title as string) ?? null, feel: f.feel == null ? null : Number(f.feel), rpe: f.rpe == null ? null : Number(f.rpe) })),
     skips: skips.map((s) => ({ date: toDay(s.scheduled_date) ?? '', title: String(s.title), reason: (s.skip_reason as string) ?? null })),
     events: events.map((e) => ({ name: e.name, date: e.date, priority: e.priority, days: e.countdown.days })),
-    calendar: calendar.map((c) => {
-      const allDay = Boolean(c.is_all_day);
-      return {
-        date: allDay ? (toDay(c.start_time) ?? '') : localDay(c.start_time),
-        title: String(c.summary ?? 'Busy').slice(0, 60),
-        allDay,
-        start: allDay ? null : localTime(c.start_time),
-        minutes: allDay ? 0 : Math.max(0, Math.round((new Date(c.end_time as Date).getTime() - new Date(c.start_time as Date).getTime()) / 60_000)),
-      };
-    }),
+    calendar,
     weekStart,
     today,
   }) as PlanningContext;
+}
+
+export type CalendarBlock = { date: string; title: string; allDay: boolean; start: string | null; minutes: number };
+
+/**
+ * Paolo's calendar from the day before the week of `weekStart` to the day after, in his wall clock (an event's own
+ * time zone is often UTC): what the planner and the planning screen plan around. Coach's own workouts, declined
+ * events and cancelled ones are not busy time.
+ */
+export async function loadWeekCalendar(userId: string, weekStart: string): Promise<CalendarBlock[]> {
+  const rows = (await sql`
+    SELECT ce.summary, ce.start_time, ce.end_time, ce.is_all_day
+    FROM calendar_events ce JOIN calendar_connections cc ON cc.id = ce.connection_id
+    WHERE cc.user_id = ${userId} AND ce.status <> 'cancelled'
+      AND ce.start_time >= ${addDays(weekStart, -1)}::date AND ce.start_time < ${addDays(weekStart, 8)}::date
+      -- Coach's own workouts (pushWeek writes this line into each event) are not busy time.
+      AND COALESCE(ce.description, '') NOT LIKE '%Open in Coach: %'
+      AND NOT COALESCE(ce.attendees::jsonb @> '[{"self": true, "responseStatus": "declined"}]', false)
+    ORDER BY ce.start_time
+    LIMIT 80`) as Row[];
+  const localDay = (d: unknown) => new Date(d as Date).toLocaleDateString('en-CA', { timeZone: HOME_TZ });
+  const localTime = (d: unknown) =>
+    new Date(d as Date).toLocaleTimeString('en-GB', { timeZone: HOME_TZ, hour: '2-digit', minute: '2-digit' });
+  return rows.map((c) => {
+    const allDay = Boolean(c.is_all_day);
+    return {
+      date: allDay ? (toDay(c.start_time) ?? '') : localDay(c.start_time),
+      title: String(c.summary ?? 'Busy').slice(0, 60),
+      allDay,
+      start: allDay ? null : localTime(c.start_time),
+      minutes: allDay ? 0 : Math.max(0, Math.round((new Date(c.end_time as Date).getTime() - new Date(c.start_time as Date).getTime()) / 60_000)),
+    };
+  });
 }
 
 export type WeekOutlook = ReturnType<typeof weekOutlook>;
