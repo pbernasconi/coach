@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { ArrowUp, Undo2, X } from 'lucide-react';
 import { Button, Textarea, cn } from '@kobo/web';
 import type { DraftEvent, PlannerWeek } from '@/lib/plan/planner-week';
-import { clock, dayNum, days, hm, minutesOf, sportVar, timeOf, weekday } from './plannerUi';
+import { freeSlots } from '@/lib/plan/planner-app.mjs';
+import { clock, dayNum, days, hm, sportVar, weekday } from './plannerUi';
 
 export type Answers = {
   feel: string | null; hours: number | null; gym: number | null; hard: number | null; longDay: string | null; daysOff: string[]; lock: string;
@@ -283,34 +284,6 @@ export function Composer({ onSend, disabled }: { onSend: (note: string) => void;
       <Button size="icon-compact" aria-label="Send to Coach" disabled={disabled || !text.trim()} onClick={send}><ArrowUp aria-hidden /></Button>
     </div>
   );
-}
-
-/** Free starts for a session of `minutes` on each day: no clash with the calendar or another session, 6:00 to 20:30. */
-export function freeSlots(data: PlannerWeek, e: DraftEvent, limit = 4): { date: string; time: string }[] {
-  const len = e.minutes ?? 60;
-  const out: { date: string; time: string }[] = [];
-  const order = [...days(data.weekStart)].sort((a, b) => Number(b === e.date) - Number(a === e.date));
-  for (const d of order) {
-    if (d < data.today) continue;
-    const busy = [
-      ...data.calendar.filter((c) => c.date === d && !c.allDay && c.start).map((c) => [minutesOf(c.start!), minutesOf(c.start!) + c.minutes]),
-      ...data.events.filter((x) => x.date === d && x.index !== e.index && x.start).map((x) => [minutesOf(x.start!), minutesOf(x.start!) + (x.minutes ?? 60)]),
-    ];
-    // No split doubles: a day that has another session only takes this one straight before or after it.
-    const others = data.events.filter((x) => x.date === d && x.index !== e.index && x.start);
-    const candidates = others.length
-      ? others.flatMap((x) => [minutesOf(x.start!) - len, minutesOf(x.start!) + (x.minutes ?? 60)])
-      : [6 * 60 + 30, 7 * 60, 12 * 60, 17 * 60, 17 * 60 + 30, 18 * 60];
-    for (const s of candidates) {
-      if (s < 6 * 60 || s + len > 20 * 60 + 30) continue;
-      if (busy.some(([a, b]) => s < b && s + len > a)) continue;
-      if (d === e.date && timeOf(s) === e.start) continue;
-      out.push({ date: d, time: timeOf(s) });
-      break;
-    }
-    if (out.length >= limit) break;
-  }
-  return out;
 }
 
 /** One session: what it is, why, and Move, Shorten, Remove, or ask Coach to swap it. */
