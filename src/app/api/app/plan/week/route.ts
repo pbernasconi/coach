@@ -3,8 +3,8 @@
  * and its actions. Authenticated by the LIFT_SYNC_TOKEN bearer token, as the other /api/app routes.
  *
  *   GET  /api/app/plan/week?week=YYYY-MM-DD&tz=…   the week (default next week): draft, calendar, last week, shape
- *   PUT  /api/app/plan/week?tz=…  { action, … }    draft | revise | undo | edit | accept → the week as GET, or
- *        { error } (400 bad input, 409 the draft cannot take it)
+ *   PUT  /api/app/plan/week?tz=…  { action, … }    draft | revise | undo | edit | accept → the week as GET, with
+ *        `refusedText` when the draft could not take it; 400 for bad input
  */
 
 import { appRoute, appWrite } from '@/lib/app-api/route';
@@ -67,7 +67,8 @@ export async function PUT(request: Request) {
       default:
         return { status: 400, body: { error: 'action must be draft, revise, undo, edit or accept' } };
     }
-    if ('error' in r) return { status: 409, body: { error: r.error } };
-    return { status: 200, body: { ...plannerApp(await loadPlannerWeek(userId, monday)), note } };
+    // A refusal still answers 200 with the week, so the phone can show the reason (it does not read a 4xx body).
+    const refusedText = 'error' in r ? r.error : null;
+    return { status: 200, body: { ...plannerApp(await loadPlannerWeek(userId, monday)), note, refusedText } };
   });
 }

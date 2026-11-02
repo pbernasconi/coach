@@ -1345,7 +1345,8 @@ web's (`src/lib/plan/planner-ops.ts`). `week` is any day of the week (default: n
 - `answers` is what the open draft was made with (`null` without one): start the Shape controls there, else empty.
 
 PUT body `{ "action": …, "proposalId": …, … }`, answered with the week as GET plus `note` (Accept's line, else
-`null`); `409 { "error" }` when the draft cannot take it (shown as is), `400` for bad input:
+`null`) and `refusedText` (why the draft could not take it, shown as is, else `null`; still a `200`, so the phone
+can read it); `400` for a malformed body:
 
 | action | body | what it does |
 | --- | --- | --- |
