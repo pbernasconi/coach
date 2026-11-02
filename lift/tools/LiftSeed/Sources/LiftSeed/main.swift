@@ -18,6 +18,10 @@ import LiftSync
 //   A session with a logged set, or one that was started, is never changed. Otherwise the session moves to `day` and
 //   its sets are planned again from the template (fresh progression), or it is removed with "remove".
 //   --out writes every session as planned: exercises, sets, targets and anything logged.
+// --add: [{ "template": name | "*", "unless": [text], "except": [text], "exercise": slot as in --templates }]. Adds
+//   the slot to the end of the template ("*": every template not named by another entry), unless one of its exercises
+//   has an `unless` text in its name and no `except` text ("curl" but not "leg curl"), so it is safe to re-run.
+//   Prints every template's slots first.
 
 struct TemplateFile: Decodable {
     struct Slot: Decodable {
@@ -33,6 +37,13 @@ struct TemplateFile: Decodable {
     }
     let name: String
     let exercises: [Slot]
+}
+
+struct AddEntry: Decodable {
+    let template: String
+    let unless: [String]?
+    let except: [String]?
+    let exercise: TemplateFile.Slot
 }
 
 struct PlanEntry: Decodable {
@@ -120,7 +131,7 @@ func dayText(_ day: LocalDay) -> String {
 
 guard let dbPath = value("--db") else {
     fail(
-        "usage: LiftSeed --db new.sqlite [--templates t.json [--replace]] [--plan plan.json [--out out.json]] "
+        "usage: LiftSeed --db new.sqlite [--templates t.json [--replace]] [--add add.json] [--plan plan.json [--out out.json]] "
             + "[--push --server https://…]  (token in LIFT_SYNC_TOKEN)"
     )
 }
@@ -201,6 +212,58 @@ if let path = value("--templates") {
             item.note = slot.note
             _ = try await templates.updateExercise(item)
         }
+    }
+}
+
+// MARK: - Add a slot to templates
+
+if let path = value("--add") {
+    let wanted = try JSONDecoder().decode([AddEntry].self, from: Data(contentsOf: URL(fileURLWithPath: path)))
+    var library = await first(exercises.observeExercises()) ?? []
+    let existing = await first(templates.observeTemplates()) ?? []
+    for template in existing {
+        log("template: \(template.name)")
+        for slot in template.exercises {
+            log("    \(slot.sets) × \(slot.repRange.lowerBound)–\(slot.repRange.upperBound)  \(slot.displayName)")
+        }
+    }
+    let logged = library.filter { $0.name.lowercased().contains("curl") }.map(\.name).sorted()
+    log("library curls: \(logged.joined(separator: ", "))")
+    // The first entry that names a template wins over "*".
+    for template in existing {
+        guard
+            let entry = wanted.first(where: { $0.template.lowercased() == template.name.lowercased() })
+                ?? wanted.first(where: { $0.template == "*" })
+        else { continue }
+        let names = template.exercises.map { $0.displayName.lowercased() }
+        let isCovered = { (name: String) in
+            (entry.unless ?? []).contains { name.contains($0.lowercased()) }
+                && !(entry.except ?? []).contains { name.contains($0.lowercased()) }
+        }
+        if let hit = names.first(where: isCovered) {
+            log("keep \(template.name): already has \(hit)")
+            continue
+        }
+        let slot = entry.exercise
+        let exercise: Exercise
+        if let match = ExerciseMatcher.match(name: slot.name, in: library) {
+            exercise = match.exercise
+        } else {
+            let equipment = slot.equipment.flatMap(Equipment.init(rawValue:)) ?? .other
+            exercise = try await exercises.create(
+                name: slot.name, equipment: equipment, loadMode: loadMode(slot.load), primary: [], secondary: [])
+            library.append(exercise)
+            log("    + new exercise: \(slot.name)")
+        }
+        var item = try await templates.addExercise(exercise, to: template.id)
+        item.sets = slot.sets
+        if let lo = slot.reps.first, let hi = slot.reps.last { item.repRange = min(lo, hi)...max(lo, hi) }
+        item.weight = slot.weight.flatMap { w in WeightUnit(rawValue: w.unit).map { Weight(w.value, $0) } }
+        item.restSeconds = slot.rest ?? item.restSeconds
+        item.note = slot.note
+        _ = try await templates.updateExercise(item)
+        let reps = slot.reps.map(String.init).joined(separator: "–")
+        log("add to \(template.name): \(slot.sets) × \(reps)  \(slot.name) → \(exercise.name)")
     }
 }
 

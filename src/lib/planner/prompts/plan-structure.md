@@ -100,13 +100,21 @@ Zones: prescribe by HR for all but Z5 (HR needs ~5 min at wattage to settle); ca
 - Warm up circuit × 3: 15 stair climbers, 5 air squats, 5 burpees, 10 split jumps, 60 s rest
 - 3 × 5: squat, Bulgarian split squats, single-leg RDL, weighted calf raises, [optional] pullups
 - 3–5 reps, work to 3 × 5 at a weight then add weight, 3–5 min rest
-- Short on time: squat + calf raise only
+- Short on time: squat + calf raise + curls only
+- Curls every lift (Paolo, 2026-11-02): see "Curls in every lift" below.
+
+### Curls in every lift (Paolo, 2026-11-02)
+
+Every lift has a biceps curl, 3 sets: barbell curl 3 × 8–12 in Heavy barbell, dumbbell curl 3 × 10–12 in the
+dumbbell lifts, slow 3 s down. The Lift templates carry it, so a gym lift gets it from its template. A shortened lift
+keeps its curls, and so does a home lift in place of a gym one (the Arm finisher's dumbbell curl counts).
 
 ### Hotel Lift (power focus)
 - ~50% 1RM, explosive intent, 60–90 s rest, not to failure
 - Same warm-up circuit × 3
 - Explosive: box split jump 3 × 5, box jump from seated × 3 (unweighted)
 - Main: hamstring curl (ball) or single-leg DB RDL 3 × 8; pistol squat 3 × 8 (band-assisted OK); single-leg calf raise 3 × 8
+- Dumbbell biceps curl 3 × 10–12
 
 ### Home mini sessions (no gym; from the coach's TrainingPeaks library)
 

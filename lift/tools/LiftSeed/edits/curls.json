@@ -1,0 +1,14 @@
+[
+  {
+    "template": "Heavy barbell",
+    "unless": ["curl"],
+    "except": ["leg curl", "hamstring curl", "wrist curl", "nordic"],
+    "exercise": { "name": "Barbell Curl", "sets": 3, "reps": [8, 12], "weight": null, "rest": 90, "note": "Strict, slow 3 s down.", "equipment": "barbell" }
+  },
+  {
+    "template": "*",
+    "unless": ["curl"],
+    "except": ["leg curl", "hamstring curl", "wrist curl", "nordic"],
+    "exercise": { "name": "Dumbbell Biceps Curl", "sets": 3, "reps": [10, 12], "weight": null, "rest": 90, "note": "Strict, slow 3 s down.", "equipment": "dumbbell", "load": "hand" }
+  }
+]

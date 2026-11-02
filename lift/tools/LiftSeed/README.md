@@ -19,6 +19,11 @@ Without `--push` it is a dry run: it pulls and prints, and pushes nothing. The t
   that was started or has a logged set is never changed; any other moves to `day` and gets its sets planned again
   (`changeTemplate`), or is removed. `--out` writes each session with its exercises, set targets and logged values.
 
+- `--add`: a list of `{ "template": name | "*", "unless": [text], "except": [text], "exercise": slot }` adds one slot to
+  the end of each template unless it already has a matching exercise; safe to re-run. The edits live in `edits/`, and
+  the Lift templates workflow (`lift-templates.yml`, dry run unless `push`) runs one from GitHub, then Plan apply.
+  `edits/curls.json` (2026-11-02) puts a biceps curl in every lift.
+
 `scripts/lift-plan.mjs` (repository root) runs `--plan` for the strength workouts of the Coach plan.
 
 The real templates live in Lift and the database, never in this repository. History, 2026-10-19: the Apple Notes

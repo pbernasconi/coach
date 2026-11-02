@@ -77,6 +77,8 @@ dropped (both lifts missed in the week of 2026-10-19 were the PM half of a split
   durability.
 - The 2 lifts are at least 24 h apart: `Heavy barbell` (lower + pull, at the gym) and `Upper (dumbbells)` at home.
   `Hotel gym (dumbbells)` replaces either one when traveling.
+- **Curls in every lift** (Paolo, 2026-11-02): each lift has 3 sets of biceps curls; the Lift templates carry them.
+  A lift cut short, or swapped for a home session, keeps its curls.
 - **Never a heavy lift on the same day as a workout** (Paolo's rule; it overrides the coach's plan). Put the heavy
   lift on an aerobic day; the hotel lift can follow an aerobic day or travel.
 - **Short weeks** (travel, newborn): a home mini session from plan-structure.md ("Home mini sessions") keeps the
