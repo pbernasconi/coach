@@ -105,8 +105,8 @@ Zones: prescribe by HR for all but Z5 (HR needs ~5 min at wattage to settle); ca
 
 ### Curls in every lift (Paolo, 2026-11-02)
 
-Every lift has a biceps curl, 3 sets: barbell curl 3 × 8–12 in Heavy barbell, dumbbell curl 3 × 10–12 in the
-dumbbell lifts, slow 3 s down. The Lift templates carry it, so a gym lift gets it from its template. A shortened lift
+Every lift has a biceps curl: dumbbell curl 3 × 10–12, slow 3 s down (one exercise in every template, so its
+history and progression are shared). The Lift templates carry it, so a gym lift gets it from its template. A shortened lift
 keeps its curls, and so does a home lift in place of a gym one (the Arm finisher's dumbbell curl counts).
 
 ### Hotel Lift (power focus)
@@ -114,7 +114,7 @@ keeps its curls, and so does a home lift in place of a gym one (the Arm finisher
 - Same warm-up circuit × 3
 - Explosive: box split jump 3 × 5, box jump from seated × 3 (unweighted)
 - Main: hamstring curl (ball) or single-leg DB RDL 3 × 8; pistol squat 3 × 8 (band-assisted OK); single-leg calf raise 3 × 8
-- Dumbbell biceps curl 3 × 10–12
+- Dumbbell curl 3 × 10–12
 
 ### Home mini sessions (no gym; from the coach's TrainingPeaks library)
 

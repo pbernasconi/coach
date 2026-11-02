@@ -22,7 +22,7 @@ Without `--push` it is a dry run: it pulls and prints, and pushes nothing. The t
 - `--add`: a list of `{ "template": name | "*", "unless": [text], "except": [text], "exercise": slot }` adds one slot to
   the end of each template unless it already has a matching exercise; safe to re-run. The edits live in `edits/`, and
   the Lift templates workflow (`lift-templates.yml`, dry run unless `push`) runs one from GitHub, then Plan apply.
-  `edits/curls.json` (2026-11-02) puts a biceps curl in every lift.
+  `edits/curls.json` (2026-11-02) puts a dumbbell curl in every lift.
 
 `scripts/lift-plan.mjs` (repository root) runs `--plan` for the strength workouts of the Coach plan.
 
