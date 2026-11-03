@@ -31,13 +31,18 @@ test('a plain answer has no card', async () => {
   assert.deepEqual(p.messages.at(-1).content.map((b) => b.text), ['CTX', '<paolo>\nMove the lift\n</paolo>']);
 });
 
-test('a card that passes ends the turn at once', async () => {
-  const client = fake([reply([say('The lift goes to Tuesday 09:00.'), propose({ title: 'Lift Tuesday' })], 'tool_use')]);
+test('a card that passes is followed by the words, in one more request', async () => {
+  const client = fake([
+    reply([say('Let me move it.'), propose({ title: 'Lift Tuesday' })], 'tool_use'),
+    reply([say('The lift goes to Tuesday 09:00.')]),
+  ]);
   const r = await chatWithClaude({ ...base, client, check: (input, attempt) => ({ ok: true, value: { ...input, attempt } }) });
   assert.equal(r.stop, 'proposed');
   assert.deepEqual(r.proposal, { title: 'Lift Tuesday', attempt: 1 });
+  // Text before the tool call is a working note, not the reply.
   assert.equal(r.reply, 'The lift goes to Tuesday 09:00.');
-  assert.equal(client.calls.length, 1);
+  assert.equal(client.calls.length, 2);
+  assert.match(client.calls[1].messages.at(-1).content[0].content, /write your reply/);
   assert.ok(r.usage.usd > 0);
 });
 
@@ -45,11 +50,13 @@ test('problems go back to Claude, and the repaired card is kept', async () => {
   const client = fake([
     reply([say('Moving it.'), propose({ v: 1 }, 'a')], 'tool_use'),
     reply([propose({ v: 2 }, 'b')], 'tool_use'),
+    reply([say('Tuesday 09:00 it is.')]),
   ]);
   const check = (input) => (input.v === 2 ? { ok: true, value: input } : { ok: false, problems: ['R3: heavy lift on a VO2 day'] });
   const r = await chatWithClaude({ ...base, client, check });
   assert.equal(r.stop, 'proposed');
   assert.deepEqual(r.proposal, { v: 2 });
+  assert.equal(r.reply, 'Tuesday 09:00 it is.');
   // Every try is kept for analysis, with what the check said.
   assert.deepEqual(r.attempts, [{ input: { v: 1 }, problems: ['R3: heavy lift on a VO2 day'] }, { input: { v: 2 }, problems: null }]);
   const back = client.calls[1].messages.at(-1).content[0];
@@ -108,10 +115,12 @@ test('the system prompt is the chat prompt, then the coaching rules, check-in ru
 const tool = (name, input, id) => ({ type: 'tool_use', id, name, input });
 
 test('a card and one-tap answers are shown in one request', async () => {
-  const client = fake([reply([say('Tomorrow is VO2 B. Morning or evening?'), tool('show', { kind: 'workout', ref: 'v' }, 's1'), tool('suggest_replies', { options: ['Morning', 'Evening', 'Morning'] }, 's2')], 'tool_use')]);
+  const client = fake([reply([say('Tomorrow is VO2 B. Morning or evening?'), tool('show', { kind: 'workout', ref: 'v' }, 's1'), tool('suggest_replies', { options: ['Morning', 'Evening', 'Morning'] }, 's2')], 'tool_use'),
+    reply([say('Tomorrow is VO2 B. Morning or evening?')])]);
   const r = await chatWithClaude({ ...base, client, check: () => ({ ok: false, problems: [] }) });
   assert.equal(r.stop, 'shown');
-  assert.equal(client.calls.length, 1);
+  assert.equal(r.reply, 'Tomorrow is VO2 B. Morning or evening?');
+  assert.equal(client.calls.length, 2);
   assert.deepEqual(r.cards, [{ kind: 'workout', ref: 'v' }]);
   assert.deepEqual(r.replies, ['Morning', 'Evening']);
   assert.equal(
@@ -124,11 +133,13 @@ test('a broken card goes back once; a card with a proposal stops at the proposal
   const client = fake([
     reply([say('Here.'), tool('show', { kind: 'workout', ref: 'nope' }, 's1')], 'tool_use'),
     reply([tool('show', { kind: 'workout', ref: 'v' }, 's2'), propose({ v: 1 }, 'p1')], 'tool_use'),
+    reply([say('Here it is.')]),
   ]);
   const checkCard = (i) => (i.ref === 'v' ? { ok: true, value: i } : { ok: false, problems: ['no workout with id nope'] });
   const r = await chatWithClaude({ ...base, client, checkCard, check: (i) => ({ ok: true, value: i }) });
-  assert.equal(client.calls.length, 2);
+  assert.equal(client.calls.length, 3);
   assert.match(client.calls[1].messages.at(-1).content[0].content, /Not shown: no workout with id nope/);
+  assert.equal(r.reply, 'Here it is.');
   assert.equal(r.stop, 'proposed');
   assert.deepEqual(r.cards, [{ kind: 'workout', ref: 'v' }]);
 });
@@ -150,6 +161,7 @@ test('the stream tells the phone each step and the words as they come', async ()
       return {
         on: (name, fn) => { assert.equal(name, 'streamEvent'); listeners.push(fn); },
         finalMessage: async () => {
+          if (calls.length > 1) return reply([say('The lift goes to Tuesday.')]);
           for (const e of events) for (const fn of listeners) fn(e);
           return reply([say('The lift goes to Tuesday.'), propose({ title: 'Lift Tuesday' })], 'tool_use');
         },
@@ -169,7 +181,8 @@ test('the stream tells the phone each step and the words as they come', async ()
   ]);
   assert.equal(r.stop, 'proposed');
   assert.ok(r.timing.firstTextMs > r.timing.firstThinkingMs);
-  assert.equal(r.timing.turnMs.length, 1);
+  assert.equal(r.reply, 'The lift goes to Tuesday.');
+  assert.equal(r.timing.turnMs.length, 2);
   // Low effort and a thinking summary, and the new message is marked for the cache (a repair reads it back).
   assert.equal(calls[0].output_config.effort, 'low');
   assert.equal(calls[0].thinking.display, 'summarized');
@@ -211,9 +224,10 @@ test('question cards end the turn, and the thinking summary comes back as the th
     type: 'tool_use', id: 'q', name: 'ask_questions',
     input: { questions: [{ title: 'Which days are you away?', kind: 'multi', options: ['Mon', 'Tue', 'Wed'] }] },
   };
-  const client = fake([reply([{ type: 'thinking', thinking: 'He travels; I need the days.' }, say('Two quick ones.'), ask], 'tool_use')]);
+  const client = fake([reply([{ type: 'thinking', thinking: 'He travels; I need the days.' }, say('Two quick ones.'), ask], 'tool_use'), reply([say('Two quick ones.')])]);
   const r = await chatWithClaude({ ...base, client, check: () => assert.fail('no proposal') });
-  assert.equal(client.calls.length, 1);
+  assert.equal(client.calls.length, 2);
+  assert.equal(r.reply, 'Two quick ones.');
   assert.equal(r.stop, 'shown');
   assert.equal(r.questions.length, 1);
   assert.equal(r.questions[0].id, 'q1');
@@ -318,4 +332,28 @@ test('a Lift read tool goes to the reader like the others', async () => {
   assert.deepEqual(asked, ['get_lift_templates']);
   assert.equal(r.reads[0].name, 'get_lift_templates');
   assert.equal(r.stop, 'answered');
+});
+
+test('the web: a note before a search is not the reply, and an uncited answer still names where it looked', async () => {
+  const search = { type: 'server_tool_use', id: 'srv1', name: 'web_search', input: { query: 'RDL rest' } };
+  const results = { type: 'web_search_tool_result', tool_use_id: 'srv1', content: [
+    { type: 'web_search_result', url: 'https://pubmed.ncbi.nlm.nih.gov/2', title: 'Rest and strength' },
+    { type: 'web_search_result', url: 'https://www.nsca.com/x', title: 'NSCA' },
+  ] };
+  const webUsage = { ...usage, server_tool_use: { web_search_requests: 1 } };
+  const client = fake([
+    { content: [say('Not useful; one more search.'), search, results, say('Three minutes is right for heavy RDLs.')], stop_reason: 'end_turn', usage: webUsage, model: 'claude-sonnet-5-5' },
+  ]);
+  const r = await chatWithClaude({ ...base, client, check: () => assert.fail() });
+  assert.equal(r.reply, 'Three minutes is right for heavy RDLs.\n\nSources: [Rest and strength](https://pubmed.ncbi.nlm.nih.gov/2), [NSCA](https://www.nsca.com/x)');
+});
+
+test('with no words after the cards, the last note is the reply', async () => {
+  let t = 0;
+  const client = fake([reply([say('Moving the lift to Tuesday.'), propose({ v: 1 })], 'tool_use')]);
+  // The deadline passes during the first request, so no words request is made.
+  const r = await chatWithClaude({ ...base, client, deadline: 250, now: () => (t += 100), check: (i) => ({ ok: true, value: i }) });
+  assert.equal(client.calls.length, 1);
+  assert.equal(r.stop, 'proposed');
+  assert.equal(r.reply, 'Moving the lift to Tuesday.');
 });

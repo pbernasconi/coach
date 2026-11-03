@@ -52,6 +52,13 @@ export function sourcesOf(content) {
   for (const b of content ?? []) {
     if (b?.type === 'web_fetch_tool_result' && b.content?.type === 'web_fetch_result') add(b.content.url, b.content.content?.title);
   }
+  // No citation and no page read: the top search results it read, so the reply still says where it looked.
+  if (!found.size) {
+    for (const b of content ?? []) {
+      if (b?.type !== 'web_search_tool_result' || !Array.isArray(b.content)) continue;
+      for (const r of b.content.slice(0, 3)) if (r?.type === 'web_search_result') add(r.url, r.title);
+    }
+  }
   return [...found].slice(0, MAX_SOURCES).map(([url, title]) => ({ url, title: title.slice(0, 80) }));
 }
 

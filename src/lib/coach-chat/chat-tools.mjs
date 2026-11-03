@@ -13,7 +13,7 @@ export const PROPOSE_TOOL = {
   name: 'propose_changes',
   description:
     'Show Paolo a card with plan changes and an Apply button. Nothing changes until he taps Apply. Call it at most ' +
-    'once per answer, after your text. Workouts are named by the id from <plan>. The server checks the changes and ' +
+    'once per answer, before your reply (write the reply after it answers ok). Workouts are named by the id from <plan>. The server checks the changes and ' +
     'answers ok or the problems to fix; the card also shows any of his rules the changes break.',
   input_schema: {
     type: 'object',
