@@ -583,6 +583,39 @@ function fromTag(from, to) {
 }
 
 /**
+ * The adds that take the place of a skip or delete on their day, as add index → skip/delete index ("Long ride ·
+ * replaces VO2 A run"). Each skip or delete pairs with one add at most.
+ * @param {Change[]} changes @param {PlanRow[]} rows
+ * @returns {Map<number, number>}
+ */
+export function replacePairs(changes, rows) {
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  /** @type {Map<number, number>} */
+  const pairs = new Map();
+  const taken = new Set();
+  changes.forEach((c, i) => {
+    if (c.op !== 'add') return;
+    const j = changes.findIndex((o, k) => !taken.has(k) && (o.op === 'skip' || o.op === 'remove') && byId.has(o.id) && byId.get(o.id)?.date === c.date);
+    if (j < 0) return;
+    taken.add(j);
+    pairs.set(i, j);
+  });
+  return pairs;
+}
+
+/**
+ * The changes as Apply writes them: a skip that a new workout replaces on its day becomes a delete, so the old
+ * workout leaves the plan instead of showing as Not done (Paolo, 2026-11-03: "changing a planned event shouldn't turn
+ * the old one red with X"). Undo puts it back as it was. A skip on its own stays a skip.
+ * @param {Change[]} changes @param {PlanRow[]} rows
+ * @returns {Change[]}
+ */
+export function asReplacements(changes, rows) {
+  const replaced = new Set(replacePairs(changes, rows).values());
+  return changes.map((c, i) => (replaced.has(i) && c.op === 'skip' ? { op: 'remove', id: c.id } : c));
+}
+
+/**
  * The card's days and rows (see Card).
  * @param {Change[]} changes @param {PlanRow[]} rows
  * @returns {Card}
@@ -599,18 +632,11 @@ export function cardOf(changes, rows) {
   };
   const meta = (/** @type {(string | null | undefined)[]} */ bits) => bits.filter(Boolean).join(' · ');
   // An add takes the place of a skip or delete on its day: "Long easy hike · replaces Long ride".
+  const pairs = replacePairs(changes, rows);
   /** @type {Map<number, PlanRow>} */
   const replaces = new Map();
-  const taken = new Set();
-  changes.forEach((c, i) => {
-    if (c.op !== 'add') return;
-    const j = changes.findIndex((o, k) => !taken.has(k) && (o.op === 'skip' || o.op === 'remove') && byId.get(o.id)?.date === c.date);
-    if (j < 0) return;
-    const gone = byId.get(/** @type {{ id: string }} */ (changes[j]).id);
-    if (!gone) return;
-    taken.add(j);
-    replaces.set(i, gone);
-  });
+  const taken = new Set(pairs.values());
+  for (const [i, j] of pairs) replaces.set(i, /** @type {PlanRow} */ (byId.get(/** @type {{ id: string }} */ (changes[j]).id)));
   changes.forEach((c, i) => {
     if (c.op === 'remember') return notes.push({ title: c.text, sport: null, time: null, meta: 'Coach keeps this in mind', tag: 'Saved', tone: 'new' });
     if (c.op === 'add') {
