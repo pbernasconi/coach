@@ -13,6 +13,7 @@ import { planSource, withPlanSource } from '@/lib/plan/change-source.mjs';
 import { setSkipped } from '@/lib/plan/queries';
 import { addDays, matchActivityId, mondayOf } from '@/lib/plan/week.mjs';
 import { addNote, dropNote, type Change, type PlanRow } from './changes.mjs';
+import { applyTemplateChange, undoTemplateChange } from './lift-tools';
 
 /** The workouts Coach sees: this week and the next two, as the web calendar has them (loadRange). */
 export async function planRows(userId: string, today: string): Promise<PlanRow[]> {
@@ -41,6 +42,7 @@ export type Undo = (
   | { op: 'remove'; id: string }
   | { op: 'restore'; row: Record<string, unknown> }
   | { op: 'forget'; text: string }
+  | { op: 'template'; slotId: string; before: Record<string, unknown> | null }
 ) & { title?: string };
 
 /**
@@ -95,7 +97,7 @@ async function editNotes(userId: string, edit: (notes: string) => string) {
 
 async function applyOne(userId: string, c: Change, rows: PlanRow[], today: string): Promise<{ undo: Undo; dates: string[] }> {
   const done = await applyStep(userId, c, rows, today);
-  const title = c.op === 'add' ? c.title : c.op === 'remember' ? 'Coaching preference' : rows.find((r) => r.id === c.id)?.title;
+  const title = c.op === 'add' ? c.title : c.op === 'remember' ? 'Coaching preference' : c.op === 'template' ? `${c.exercise} in ${c.template}` : rows.find((r) => r.id === c.id)?.title;
   return { ...done, undo: { ...done.undo, title } };
 }
 
@@ -103,6 +105,10 @@ async function applyStep(userId: string, c: Change, rows: PlanRow[], today: stri
   if (c.op === 'remember') {
     await editNotes(userId, (n) => addNote(n, c.text));
     return { undo: { op: 'forget', text: c.text }, dates: [] };
+  }
+  if (c.op === 'template') {
+    const done = await applyTemplateChange(c);
+    return { undo: { op: 'template', slotId: done.slotId, before: done.before }, dates: [] };
   }
   if (c.op === 'add') {
     const input = addInput({ sport: c.sport, date: c.date, startTime: c.startTime, title: c.title, duration: c.duration, effort: c.effort, description: c.description });
@@ -151,6 +157,7 @@ async function undoOne(userId: string, u: Undo, today: string): Promise<string[]
     case 'remove': { const gone = await removeWorkout(userId, u.id); return gone ? [gone.date] : []; }
     case 'restore': { const day = await restoreWorkout(userId, u.row); return day ? [day] : []; }
     case 'forget': await editNotes(userId, (n) => dropNote(n, u.text)); return [];
+    case 'template': await undoTemplateChange(u.slotId, u.before); return [];
   }
 }
 

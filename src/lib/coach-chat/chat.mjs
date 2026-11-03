@@ -6,7 +6,10 @@
 
 import { addUsage, NO_USAGE } from '../planner/cost.mjs';
 import { ASK_TOOL, cleanQuestions, cleanReplies, MAX_CARDS, REPLIES_TOOL, SHOW_TOOL } from './cards.mjs';
-import { DATA_TOOLS, DATA_TOOL_NAMES } from './data-tools.mjs';
+import { CHAT_TOOLS, PROPOSE_TOOL } from './chat-tools.mjs';
+import { sourcesLine, sourcesOf, webUses } from './web-tools.mjs';
+
+export { PROPOSE_TOOL };
 
 /**
  * The chat runs on Sonnet 5.5 (Paolo, 2026-10-27): it starts answering in about half the time of Opus 5.5 at half the
@@ -24,43 +27,16 @@ export const THINKING = { type: 'adaptive', display: 'summarized' };
 export const BETAS = ['server-side-fallback-2026-07-01'];
 /** propose_changes calls in one turn: the first and two repairs. */
 export const MAX_PROPOSALS = 3;
-/** Requests to Claude in one turn: room for two rounds of reads (data-tools.mjs) before the answer and a repair. */
-export const MAX_TURNS = 6;
-/** Read tool calls in one turn (get_activity, find_activities, get_bests, get_load). */
+/**
+ * Requests to Claude in one turn: room for two rounds of reads (data-tools.mjs) before the answer and a repair, and
+ * for a web search that pauses (pause_turn) and goes on.
+ */
+export const MAX_TURNS = 8;
+/** Read tool calls in one turn (the `read` tools of chat-tools.mjs). Searches and fetches have their own caps (web-tools.mjs). */
 export const MAX_READS = 6;
 /** The thread messages sent back to Claude: the recent ones are enough for a chat about this week. */
 export const HISTORY = 20;
 
-export const PROPOSE_TOOL = {
-  name: 'propose_changes',
-  description:
-    'Show Paolo a card with plan changes and an Apply button. Nothing changes until he taps Apply. Call it at most ' +
-    'once per answer, after your text. Workouts are named by the id from <plan>. The server checks the changes and ' +
-    'answers ok or the problems to fix; the card also shows any of his rules the changes break.',
-  input_schema: {
-    type: 'object',
-    properties: {
-      title: { type: 'string', description: 'The card title, under 50 characters: "Move the heavy lift to Tuesday".' },
-      why: { type: 'string', description: 'One line, starting with what it is based on: "Based on your calendar for Tuesday: …".' },
-      changes: {
-        type: 'array',
-        description:
-          'Each change is one of: { op: "move", id, date, startTime? } | { op: "skip", id, reason } | { op: "unskip", id } | ' +
-          '{ op: "remove", id } | { op: "update", id, title?, duration?, effort?, description?, startTime? } | ' +
-          '{ op: "add", date, sport, startTime?, title, duration, effort?, description?, liftTemplate?, workoutType? } | ' +
-          '{ op: "remember", text } (a ' +
-          'lasting preference for his Coaching preferences, one line). Dates YYYY-MM-DD, times HH:MM, ' +
-          'duration in minutes, effort recovery | easy | moderate | hard | very-hard, sport run | ride | swim | strength | ' +
-          'walk | hike | yoga | rest | other. A skip reason is a short word: tired, sick, sore, busy, travel, other. An ' +
-          'added gym lift names its Lift template in liftTemplate (exact name from the profile) and its description is a ' +
-          'short coach\'s note only: Lift plans the exercises, sets, loads and warm-up sets. A home or physio session ' +
-          'has workoutType strength-home | mobility and its numbered "1) Name 3x8: cue" lines as the description.',
-        items: { type: 'object' },
-      },
-    },
-    required: ['title', 'why', 'changes'],
-  },
-};
 
 /**
  * @typedef {{ role: 'user' | 'assistant', text: string, blocks?: any[] }} Turn  `blocks`: a message's photos and files
@@ -68,27 +44,34 @@ export const PROPOSE_TOOL = {
  * @typedef {{ input: any, problems: string[] | null }} Attempt  one propose_changes call and what the check said
  * @typedef {{ reply: string, proposal: any | null, problems: string[] | null, turns: number, usage: typeof NO_USAGE,
  *   model: string, stop: string, attempts: Attempt[], cards: any[], replies: string[], questions: any[], thought: string,
- *   timing: Timing, reads: { name: string, input: any, ok: boolean, chars: number }[] }} ChatResult  `thought`: the summary of Claude's thinking, shown folded above the reply
+ *   timing: Timing, reads: { name: string, input: any, ok: boolean, chars: number }[],
+ *   web: { searches: number, fetches: number, sources: { title: string, url: string }[] } }} ChatResult  `thought`: the summary of Claude's thinking, shown folded above the reply
  * @typedef {{ firstThinkingMs: number | null, firstTextMs: number | null, turnMs: number[] }} Timing  from the turn's start
- * @typedef {{ type: 'status', step: 'reading' | 'thinking' | 'writing' | 'proposing' | 'card' | 'fixing' }
+ * @typedef {{ type: 'status', step: import('./tool-registry.mjs').Step }
  *   | { type: 'thinking', text: string } | { type: 'text', delta: string }} ChatEvent  what the phone shows while it waits
  */
 
 /**
- * Turns the SDK's stream events into ChatEvents.
- * @param {any} event @param {(e: ChatEvent) => void} emit @param {{ text: boolean }} seen  text was sent before
+ * Turns the SDK's stream events into ChatEvents. Text blocks right after each other are one paragraph (a cited
+ * answer comes split at its citations); text after anything else starts a new one.
+ * @param {any} event @param {(e: ChatEvent) => void} emit
+ * @param {{ text: boolean, lastText?: boolean }} seen  text was sent before; the last block was text
  */
 export function streamEventToChat(event, emit, seen) {
+  if (event?.type === 'message_start') seen.lastText = false;
   if (event?.type === 'content_block_start') {
     const block = event.content_block ?? {};
+    const wasText = seen.lastText;
+    seen.lastText = block.type === 'text';
     if (block.type === 'thinking') emit({ type: 'status', step: 'thinking' });
     else if (block.type === 'text') {
-      emit({ type: 'status', step: 'writing' });
-      if (seen.text) emit({ type: 'text', delta: '\n\n' });
-    } else if (block.type === 'tool_use') {
-      if (block.name === PROPOSE_TOOL.name) emit({ type: 'status', step: 'proposing' });
-      else if (block.name === SHOW_TOOL.name) emit({ type: 'status', step: 'card' });
-      else if (DATA_TOOL_NAMES.includes(block.name)) emit({ type: 'status', step: 'reading' });
+      if (!wasText) {
+        emit({ type: 'status', step: 'writing' });
+        if (seen.text) emit({ type: 'text', delta: '\n\n' });
+      }
+    } else if (block.type === 'tool_use' || block.type === 'server_tool_use') {
+      const step = CHAT_TOOLS.stepOf(block.name);
+      if (step) emit({ type: 'status', step });
     }
   } else if (event?.type === 'content_block_delta') {
     const d = event.delta ?? {};
@@ -157,7 +140,7 @@ export async function chatWithClaude({ client, system, history, context, text, f
   const start = now();
   /** @type {Timing} */
   const timing = { firstThinkingMs: null, firstTextMs: null, turnMs: [] };
-  const seen = { text: false };
+  const seen = { text: false, lastText: false };
   // A listener that throws (the phone hung up) never stops the answer.
   /** @param {ChatEvent} e */
   const emit = (e) => {
@@ -189,6 +172,9 @@ export async function chatWithClaude({ client, system, history, context, text, f
   let streamedThought = '';
   /** @type {{ name: string, input: any, ok: boolean, chars: number }[]} */
   const reads = [];
+  const web = { searches: 0, fetches: 0 };
+  /** @type {any[]} */
+  const answered = [];
 
   while (turns < MAX_TURNS) {
     if (now() > deadline) return result('deadline');
@@ -201,14 +187,28 @@ export async function chatWithClaude({ client, system, history, context, text, f
     const message = await stream.finalMessage();
     timing.turnMs.push(now() - turnStart);
     usage = addUsage(usage, message.usage, message.model ?? model);
+    const uses = webUses(message.usage);
+    web.searches += uses.searches;
+    web.fetches += uses.fetches;
     if (message.stop_reason === 'refusal') return result('refusal');
     const content = message.content ?? [];
+    answered.push(...content);
+    // Text blocks in a row are one paragraph: a cited answer comes split at each citation.
+    let run = '';
     for (const b of content) {
-      if (b.type === 'text' && b.text.trim()) said.push(b.text.trim());
-      else if (b.type === 'thinking' && typeof b.thinking === 'string' && b.thinking.trim()) thoughts.push(b.thinking.trim());
+      if (b.type === 'text') { run += b.text; continue; }
+      if (run.trim()) said.push(run.trim());
+      run = '';
+      if (b.type === 'thinking' && typeof b.thinking === 'string' && b.thinking.trim()) thoughts.push(b.thinking.trim());
+    }
+    if (run.trim()) said.push(run.trim());
+    if (message.stop_reason === 'max_tokens') return result('max_tokens');
+    // A long web search pauses; the same request with Claude's message so far goes on from there.
+    if (message.stop_reason === 'pause_turn') {
+      messages.push({ role: 'assistant', content });
+      continue;
     }
     const calls = content.filter((/** @type {any} */ b) => b.type === 'tool_use');
-    if (message.stop_reason === 'max_tokens') return result('max_tokens');
     if (!calls.length) return result('answered');
     messages.push({ role: 'assistant', content });
 
@@ -216,7 +216,7 @@ export async function chatWithClaude({ client, system, history, context, text, f
     const results = [];
     let retry = false;
     // The reads run together; Claude needs their answers for another request.
-    const readCalls = calls.filter((/** @type {any} */ c) => DATA_TOOL_NAMES.includes(c.name));
+    const readCalls = calls.filter((/** @type {any} */ c) => CHAT_TOOLS.isRead(c.name));
     /** @type {Map<string, { ok: boolean, text: string }>} */
     const readAnswers = new Map(await Promise.all(readCalls.map(async (/** @type {any} */ c) => {
       /** @type {{ ok: boolean, text: string }} */
@@ -300,7 +300,10 @@ export async function chatWithClaude({ client, system, history, context, text, f
   /** @param {string} stop @returns {ChatResult} */
   function result(stop) {
     const thought = (thoughts.length ? thoughts.join('\n\n') : streamedThought.trim()).slice(0, 4000);
-    return { reply: said.join('\n\n'), proposal, problems, turns, usage, model, stop, attempts, cards, replies, questions, thought, timing, reads };
+    // A reply that used the web ends with the pages it leaned on.
+    const sources = (web.searches || web.fetches) && said.length ? sourcesOf(answered) : [];
+    const reply = [said.join('\n\n'), sourcesLine(sources)].filter(Boolean).join('\n\n');
+    return { reply, proposal, problems, turns, usage, model, stop, attempts, cards, replies, questions, thought, timing, reads, web: { ...web, sources } };
   }
 }
 
@@ -318,7 +321,7 @@ export function chatRequest({ model = MODEL, effort = EFFORT, system, messages, 
     thinking: THINKING,
     output_config: { effort },
     system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral', ttl: '1h' } }],
-    tools: [PROPOSE_TOOL, SHOW_TOOL, REPLIES_TOOL, ASK_TOOL, ...DATA_TOOLS],
+    tools: CHAT_TOOLS.definitions(),
     tool_choice: { type: 'auto' },
     messages,
   };

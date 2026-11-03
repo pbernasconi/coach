@@ -36,7 +36,7 @@ export type CoachBody = {
 export type ThreadSummary = { id: string; title: string; updatedAt: string | null; messageCount: number };
 
 /** A step of the streamed answer (the `status` event). */
-export type Step = 'reading' | 'thinking' | 'writing' | 'proposing' | 'card' | 'fixing';
+export type Step = 'reading' | 'searching' | 'thinking' | 'writing' | 'proposing' | 'card' | 'fixing';
 
 /** The answer on its way: Paolo's message, then what Coach is doing, its thinking and its words so far. */
 export type Live = { user: Message; step: Step; thought: string; text: string };

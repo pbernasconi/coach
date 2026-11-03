@@ -5,7 +5,7 @@
  *
  * Two ways to answer, chosen by the Accept header:
  * - `text/event-stream`: the answer streams as it is made (lift/APP-API.md, "Coach answer stream"): `message` (the
- *   stored message), `status` (reading, thinking, writing, proposing, card, fixing), `thinking` (a summary of
+ *   stored message), `status` (reading, searching, thinking, writing, proposing, card, fixing), `thinking` (a summary of
  *   Claude's thinking, in pieces), `text` (the reply's words, in pieces), then `done` with the same body as the JSON
  *   answer, or `error`. The first event comes within a second; words follow a few seconds later.
  * - anything else: one JSON answer once Claude is done (5–30 s), as older app builds expect.

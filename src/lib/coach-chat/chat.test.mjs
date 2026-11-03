@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { HISTORY, MAX_PROPOSALS, chatMessages, chatWithClaude, streamEventToChat } from './chat.mjs';
 import { chatContext, chatSystemPrompt } from './prompt.mjs';
+import { costOf } from '../planner/cost.mjs';
 
 const usage = { input_tokens: 1000, output_tokens: 300, cache_read_input_tokens: 9000, cache_creation_input_tokens: 0 };
 const say = (text) => ({ type: 'text', text });
@@ -113,7 +114,10 @@ test('a card and one-tap answers are shown in one request', async () => {
   assert.equal(client.calls.length, 1);
   assert.deepEqual(r.cards, [{ kind: 'workout', ref: 'v' }]);
   assert.deepEqual(r.replies, ['Morning', 'Evening']);
-  assert.equal(client.calls[0].tools.map((t) => t.name).join(), 'propose_changes,show,suggest_replies,ask_questions,get_activity,find_activities,get_bests,get_load');
+  assert.equal(
+    client.calls[0].tools.map((t) => t.name).join(),
+    'propose_changes,show,suggest_replies,ask_questions,get_activity,find_activities,get_bests,get_load,get_lift_templates,get_exercise_history,web_search,web_fetch',
+  );
 });
 
 test('a broken card goes back once; a card with a proposal stops at the proposal', async () => {
@@ -266,4 +270,52 @@ test('a read tool shows the reading step', () => {
   const out = [];
   streamEventToChat({ type: 'content_block_start', content_block: { type: 'tool_use', name: 'get_activity' } }, (e) => out.push(e), { text: false });
   assert.deepEqual(out, [{ type: 'status', step: 'reading' }]);
+});
+
+test('the web: a search pauses, goes on, and the cited answer is one paragraph with its sources', async () => {
+  const search = { type: 'server_tool_use', id: 'srv1', name: 'web_search', input: { query: 'rest between sets RDL' } };
+  const results = { type: 'web_search_tool_result', tool_use_id: 'srv1', content: [{ type: 'web_search_result', url: 'https://pubmed.ncbi.nlm.nih.gov/1', title: 'Rest intervals' }] };
+  const cited = (text) => ({ type: 'text', text, citations: [{ type: 'web_search_result_location', url: 'https://pubmed.ncbi.nlm.nih.gov/1', title: 'Rest intervals', cited_text: 'x' }] });
+  const webUsage = { ...usage, server_tool_use: { web_search_requests: 2 } };
+  const client = fake([
+    { content: [search, results], stop_reason: 'pause_turn', usage: webUsage, model: 'claude-sonnet-5-5' },
+    { content: [say('Yes. '), cited('Longer rests of about 3 min gave more strength'), say(' than 1 min.')], stop_reason: 'end_turn', usage, model: 'claude-sonnet-5-5' },
+  ]);
+  const r = await chatWithClaude({ ...base, client, check: () => assert.fail() });
+  assert.equal(r.stop, 'answered');
+  assert.equal(client.calls.length, 2);
+  // The paused message goes back as it was, with no new message from Paolo after it.
+  assert.equal(client.calls[1].messages.at(-1).role, 'assistant');
+  assert.deepEqual(client.calls[1].messages.at(-1).content, [search, results]);
+  assert.equal(r.reply, 'Yes. Longer rests of about 3 min gave more strength than 1 min.\n\nSources: [Rest intervals](https://pubmed.ncbi.nlm.nih.gov/1)');
+  assert.deepEqual(r.web, { searches: 2, fetches: 0, sources: [{ url: 'https://pubmed.ncbi.nlm.nih.gov/1', title: 'Rest intervals' }] });
+  // Two searches cost $0.02 on top of the tokens.
+  assert.ok(Math.abs(r.usage.usd - (2 * costOf(usage, 'claude-sonnet-5-5') + 0.02)) < 1e-9);
+});
+
+test('the stream: a search shows the searching step, and cited text runs on without a break', () => {
+  const out = [];
+  const seen = { text: false };
+  for (const e of [
+    { type: 'message_start' },
+    { type: 'content_block_start', content_block: { type: 'server_tool_use', name: 'web_search' } },
+    { type: 'content_block_start', content_block: { type: 'text' } },
+    { type: 'content_block_delta', delta: { type: 'text_delta', text: 'Yes, ' } },
+    { type: 'content_block_start', content_block: { type: 'text' } },
+    { type: 'content_block_delta', delta: { type: 'text_delta', text: 'three minutes.' } },
+  ]) streamEventToChat(e, (x) => out.push(x), seen);
+  assert.deepEqual(out.filter((x) => x.type === 'text').map((x) => x.delta), ['Yes, ', 'three minutes.']);
+  assert.deepEqual(out.filter((x) => x.type === 'status').map((x) => x.step), ['searching', 'writing']);
+});
+
+test('a Lift read tool goes to the reader like the others', async () => {
+  const client = fake([
+    reply([tool('get_lift_templates', {}, 'r1')], 'tool_use'),
+    reply([say('Heavy barbell has 2 sets of RDLs at 2:00 rest.')]),
+  ]);
+  const asked = [];
+  const r = await chatWithClaude({ ...base, client, check: () => assert.fail(), readData: async (name) => { asked.push(name); return { ok: true, text: '## Heavy barbell' }; } });
+  assert.deepEqual(asked, ['get_lift_templates']);
+  assert.equal(r.reads[0].name, 'get_lift_templates');
+  assert.equal(r.stop, 'answered');
 });
