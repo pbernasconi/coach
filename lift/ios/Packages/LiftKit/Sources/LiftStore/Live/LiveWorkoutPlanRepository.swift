@@ -79,6 +79,22 @@ public struct LiveWorkoutPlanRepository: WorkoutPlanRepository {
         }
     }
 
+    public func swapExercise(_ id: UUID, to exercise: Exercise) async throws -> SessionExerciseRecord {
+        let store = store
+        return try await store.transaction { db, stamp in
+            guard var row = try SessionExerciseRecord.fetchOne(db, key: id), row.deletedAt == nil else {
+                throw AppError(.notFound, detail: "session exercise \(id)")
+            }
+            guard row.exerciseID != exercise.id else { return row }
+            row.exerciseID = exercise.id
+            row.displayName = exercise.name
+            row.loadMode = exercise.loadMode
+            row.equipment = exercise.equipment
+            row.nextTimeHint = nil
+            return try store.updateRow(row, at: stamp, db)
+        }
+    }
+
     public func changeTemplate(of sessionID: UUID, to templateID: UUID) async throws -> TemplateChangeUndo {
         let store = store
         let gym = gym()

@@ -109,6 +109,47 @@ import Testing
         #expect(router.backCount == 1)
     }
 
+    @Test func libraryTappedWhenSwappingSwapsTheSessionExerciseAndGoesBack() async {
+        let plans = FakeWorkoutPlanRepository()
+        let swappedID = IDSequence.id(2, prefix: 0xB0)
+        let vm = await loaded(.swap(sessionExerciseID: swappedID, exerciseID: Fixtures.squat.id), plans: plans)
+        #expect(vm.state.isSwap)
+
+        await vm.send(.libraryTapped(Fixtures.dumbbellBench.id))?.value
+
+        #expect(plans.calls == [.swapExercise(swappedID, to: Fixtures.dumbbellBench.id)])
+        #expect(router.backCount == 1)
+    }
+
+    @Test func swappingSuggestsExercisesForTheSameMusclesFirst() async {
+        let swappedID = IDSequence.id(2, prefix: 0xB0)
+        let legs = ExerciseLibrary.seed.filter { !Set($0.primary).isDisjoint(with: Fixtures.squat.primary) }
+        let library = [Fixtures.squat, Fixtures.dumbbellBench] + legs.filter { $0.id != Fixtures.squat.id }
+        let vm = await loaded(
+            .swap(sessionExerciseID: swappedID, exerciseID: Fixtures.squat.id),
+            exercises: RecordingCatalogExerciseRepository(emissions: [library])
+        )
+
+        #expect(!vm.state.suggested.isEmpty)
+        #expect(!vm.state.suggested.contains { $0.id == Fixtures.squat.id })
+        #expect(!vm.state.suggested.contains { $0.id == Fixtures.dumbbellBench.id })
+        guard case .loaded(let rows) = vm.state.catalog else {
+            Issue.record("expected the catalog")
+            return
+        }
+        #expect(rows.first?.id == "0043")  // the squat entry (glutes) before the bench press
+
+        vm.send(.queryChanged("bench"))
+        #expect(vm.state.visibleSuggestions.isEmpty)
+    }
+
+    @Test func addingSuggestsNothing() async {
+        let vm = await loaded(.session(sessionID))
+
+        #expect(!vm.state.isSwap)
+        #expect(vm.state.suggested.isEmpty)
+    }
+
     @Test func aFailedAddStaysAndCountsTheFailure() async {
         let plans = FakeWorkoutPlanRepository(error: AppError(.notFound))
         let vm = await loaded(.session(sessionID), plans: plans)

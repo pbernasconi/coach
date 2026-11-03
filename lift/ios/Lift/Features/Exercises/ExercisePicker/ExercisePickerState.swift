@@ -19,6 +19,12 @@ nonisolated struct ExercisePickerState: Equatable, Sendable {
 
     var query = ""
     var source = Source.library
+    /// True when the pick swaps a workout's exercise instead of adding one: the title, the rows' symbol and the
+    /// suggestions follow.
+    var isSwap = false
+    /// When swapping: the person's other exercises for the same main muscles, most shared first. Shown above the
+    /// library while the search is blank.
+    var suggested: [ExerciseItem] = []
     /// The library (archived exercises left out), sorted by name.
     var library: Loadable<[ExerciseItem]> = .loading
     /// The catalog entries that match the query, best match first.
@@ -28,6 +34,11 @@ nonisolated struct ExercisePickerState: Equatable, Sendable {
     var adding: Pick?
     /// Counts failed adds; each new value shows the "could not add" toast.
     var failures = 0
+
+    /// The suggestions to show: only while the search is blank.
+    var visibleSuggestions: [ExerciseItem] {
+        query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? suggested : []
+    }
 
     /// The library rows that match `query`; all of them when it is blank.
     var visibleLibrary: [ExerciseItem] {

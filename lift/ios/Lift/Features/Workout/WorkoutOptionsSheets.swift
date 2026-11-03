@@ -5,8 +5,8 @@ import SwiftUI
 extension View {
     /// The workout's pause button and "…" in the navigation bar, and the two options sheets: the workout's (Reorder
     /// exercises, Add or Edit note, Workout settings, Save as template, Discard workout) and one exercise's (Add set,
-    /// Add or Edit note, Move up, Move down, Remove). Every choice applies at once; removing and discarding offer Undo
-    /// in a toast instead of asking first (product rule).
+    /// Add or Edit note, Swap exercise, Move up, Move down, Remove). Every choice applies at once; removing and
+    /// discarding offer Undo in a toast instead of asking first (product rule).
     func workoutOptions(state: WorkoutState, send: @escaping (WorkoutAction) -> Void) -> some View {
         modifier(WorkoutOptionsSheets(state: state, send: send))
     }
@@ -86,6 +86,9 @@ private struct WorkoutOptionsSheets: ViewModifier {
                         ActionSheetItem("Add note", systemImage: "square.and.pencil") {
                             send(.exerciseNoteTapped(exercise.id))
                         }
+                    }
+                    ActionSheetItem("Swap exercise", systemImage: "arrow.left.arrow.right") {
+                        send(.exerciseSwapTapped(exercise.id))
                     }
                     ActionSheetItem("Move up", systemImage: "arrow.up", isEnabled: exercise.canMoveUp) {
                         send(.exerciseMoveUpTapped(exercise.id))
