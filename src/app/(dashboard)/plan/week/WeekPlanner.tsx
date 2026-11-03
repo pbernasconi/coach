@@ -3,23 +3,24 @@
 import { useEffect, useMemo, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Check, Loader2, RefreshCw, X } from 'lucide-react';
+import { ArrowRight, Check, Loader2, RefreshCw, Sparkles, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { Button, Dialog, DialogContent, DialogDescription, DialogTitle, cn } from '@kobo/web';
+import { Button, cn } from '@kobo/web';
 import CoachMark from '@/components/brand/CoachMark';
 import type { PlannerWeek } from '@/lib/plan/planner-week';
+import { STEPS, firstStep } from '@/lib/plan/planner-steps.mjs';
+import { addDays, mondayOf } from '@/lib/plan/week.mjs';
 import { acceptDraftAction, draftWeekAction, editDraftAction, plannerWeekAction, reviseDraftAction, undoDraftAction } from './actions';
 import WeekGrid from './WeekGrid';
-import { CoachPanel, Composer, LastWeekPanel, SessionPanel, ShapePanel, type Answers } from './PlannerPanels';
-import { addDays, mondayOf } from '@/lib/plan/week.mjs';
-import { clock, days, hm, sportVar, weekLabel, weekday } from './plannerUi';
+import { CoachPanel, Composer, SessionPanel, type Answers } from './PlannerPanels';
+import StepLastWeek from './StepLastWeek';
+import StepYourWeek from './StepYourWeek';
+import StepShape from './StepShape';
+import StepAccept from './StepAccept';
+import { hm, weekLabel } from './plannerUi';
 
-type Tab = 'last' | 'shape' | 'coach';
-const TABS: { id: Tab; label: string }[] = [
-  { id: 'last', label: 'Last week' },
-  { id: 'shape', label: 'Shape' },
-  { id: 'coach', label: 'Coach' },
-];
+type Step = (typeof STEPS)[number];
+const NAMES: Record<Step, string> = { last: 'Last week', week: 'Your week', shape: 'Priorities', draft: 'Draft', accept: 'Accept' };
 const POLL_MS = 10_000;
 
 function answersFrom(data: PlannerWeek): Answers {
@@ -31,22 +32,22 @@ function answersFrom(data: PlannerWeek): Answers {
     hard: r?.hard ?? null,
     longDay: r?.longDay ?? null,
     daysOff: r?.daysOff ?? [],
+    away: r?.away ?? [],
     lock: r?.lock ?? '',
   };
 }
 
 /**
- * The planning screen, full screen over the app: Coach's draft on Paolo's calendar, the side panel (Last week,
- * Shape, Coach, or one session), and one Accept. Changes are drags, the session panel, or a note to Coach; each
- * note or redraw is a new version with Undo.
+ * The planning screen, full screen over the app, in five steps: how last week went, the week on the calendar,
+ * what the week should do, Coach's draft on the calendar (tune it there), and Accept. Once there is a draft it opens
+ * on the draft; the steps before stay one click away.
  */
 export default function WeekPlanner({ initial }: { initial: PlannerWeek }) {
   const router = useRouter();
   const [data, setData] = useState(initial);
-  const [tab, setTab] = useState<Tab>(initial.proposal?.status === 'proposed' ? (initial.change ? 'coach' : 'last') : 'last');
+  const [step, setStep] = useState<Step>(() => firstStep(initial.proposal?.status) as Step);
   const [selected, setSelected] = useState<number | null>(null);
   const [answers, setAnswers] = useState<Answers>(() => answersFrom(initial));
-  const [accepting, setAccepting] = useState(false);
   const [pending, start] = useTransition();
   const p = data.proposal;
   const drafting = p?.status === 'requested' || p?.status === 'running';
@@ -68,10 +69,7 @@ export default function WeekPlanner({ initial }: { initial: PlannerWeek }) {
         const next = await plannerWeekAction(data.weekStart);
         if (!next) return;
         setData(next);
-        if (next.proposal?.status === 'proposed') {
-          setTab(next.change ? 'coach' : 'last');
-          toast.success(next.change ? `Draft v${next.proposal.version} is ready.` : 'Your draft is ready.');
-        }
+        if (next.proposal?.status === 'proposed') toast.success(next.change ? `Draft ${next.proposal.version} is ready.` : 'Your draft is ready.');
         if (next.proposal?.status === 'failed') toast.error(next.proposal.error ?? 'The draft failed. Try again.');
       } catch {
         // The next tick tries again.
@@ -80,15 +78,14 @@ export default function WeekPlanner({ initial }: { initial: PlannerWeek }) {
     return () => clearInterval(t);
   }, [drafting, data.weekStart]);
 
-  // Escape closes a session, then the screen.
+  // Escape closes an open session.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape' || accepting) return;
-      if (selected != null) setSelected(null);
+      if (e.key === 'Escape' && selected != null) setSelected(null);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [selected, accepting]);
+  }, [selected]);
 
   const run = (label: string, fn: () => Promise<{ ok: true } | { error: string }>, after?: () => void) =>
     start(async () => {
@@ -101,10 +98,11 @@ export default function WeekPlanner({ initial }: { initial: PlannerWeek }) {
       await refresh();
     });
 
+  const draft = () => run(ready ? 'Coach is redrawing the week.' : 'Coach is drafting your week.', () => draftWeekAction(data.weekStart, { ...answers }), () => setStep('draft'));
+
   const ask = (note: string) => {
     if (!p || !ready) return;
     setSelected(null);
-    setTab('coach');
     run('Coach is redrawing the week.', () => reviseDraftAction(p.id, note));
   };
 
@@ -115,6 +113,16 @@ export default function WeekPlanner({ initial }: { initial: PlannerWeek }) {
     run('', () => editDraftAction(p.id, { kind: 'move', index, date, time }));
   };
 
+  const accept = () => p && start(async () => {
+    const r = await acceptDraftAction(p.id);
+    if ('error' in r) {
+      toast.error(r.error);
+      return;
+    }
+    toast.success(`${weekLabel(r.weekStart)} is planned. ${r.note}`);
+    router.push(`/plan?week=${r.weekStart}`);
+  });
+
   const changed = useMemo(() => {
     const s = new Set<string>();
     if (!data.change) return s;
@@ -123,184 +131,173 @@ export default function WeekPlanner({ initial }: { initial: PlannerWeek }) {
   }, [data]);
 
   const total = data.events.reduce((n, e) => n + (e.minutes ?? 0), 0);
-  const lifts = data.events.filter((e) => e.sport === 'strength' && !/physio|stretch/i.test(e.title)).length;
-  const hard = data.events.filter((e) => e.hard).length;
-  const fails = p?.checks?.fails ?? 0;
-  const warns = p?.checks?.warns ?? 0;
   const event = selected != null ? data.events.find((e) => e.index === selected) ?? null : null;
+  const at = STEPS.indexOf(step);
+  const open = (s: Step) => s === 'accept' ? ready : s === 'draft' ? Boolean(p) : true;
+  const go = (s: Step) => {
+    if (!open(s)) return;
+    setSelected(null);
+    setStep(s);
+  };
 
   return (
     <div className="fixed inset-0 z-[60] flex flex-col bg-background" role="dialog" aria-modal="true" aria-label={`Plan ${weekLabel(data.weekStart)}`}>
-      <header className="flex h-16 shrink-0 items-center gap-4 border-b px-5">
-        <div className="flex items-center gap-2.5 text-base font-semibold">
-          <CoachMark />
-          Plan {weekLabel(data.weekStart)}
+      <header className="flex h-16 shrink-0 items-center gap-4 border-b bg-card px-6">
+        <div className="flex w-[320px] shrink-0 items-center gap-3">
+          <div className="flex items-center gap-2.5 text-base font-semibold whitespace-nowrap">
+            <CoachMark />
+            Plan {weekLabel(data.weekStart)}
+          </div>
+          <WeekSwitch weekStart={data.weekStart} today={data.today} />
         </div>
-        <WeekSwitch weekStart={data.weekStart} today={data.today} />
-        {ready && (
-          <span className="text-sm text-muted-foreground">
-            {hm(total)}{p?.request.hours ? ` of ${p.request.hours}h` : ''} · {lifts} lift{lifts === 1 ? '' : 's'} · {hard} hard
-          </span>
-        )}
-        {ready && p?.checks && (
-          <span className={cn('inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold',
-            fails ? 'bg-rose-500/12 text-rose-700 dark:text-rose-300' : warns ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300' : 'bg-emerald-500/12 text-emerald-700 dark:text-emerald-300')}>
-            {!fails && !warns && <Check aria-hidden className="size-3.5" />}
-            {fails ? `${fails} check${fails > 1 ? 's' : ''} failed` : warns ? `${warns} to watch` : 'Plan checks pass'}
-          </span>
-        )}
-        {ready && p && p.version > 1 && <span className="rounded-full bg-foreground px-2.5 py-0.5 text-xs font-semibold text-background">v{p.version}</span>}
-        <div className="ml-auto flex items-center gap-2">
+        <nav aria-label="Planning steps" className="mx-auto flex items-center gap-2.5 text-sm">
+          {STEPS.map((s, i) => {
+            const done = i < at;
+            const on = s === step;
+            return (
+              <div key={s} className="flex items-center gap-2.5">
+                {i > 0 && <span aria-hidden className={cn('h-0.5 w-7 rounded-full', i <= at ? 'bg-foreground' : 'bg-border')} />}
+                <button type="button" disabled={!open(s)} onClick={() => go(s)} aria-current={on ? 'step' : undefined}
+                  className={cn('flex items-center gap-2 rounded-full py-1 pr-1 whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-50', on ? 'font-semibold' : done ? '' : 'text-muted-foreground')}>
+                  <span className={cn('flex size-6 items-center justify-center rounded-full text-xs font-bold',
+                    on ? 'bg-brand text-on-brand' : done ? 'bg-foreground text-background' : 'border-[1.5px] border-border')}>
+                    {done ? <Check aria-hidden className="size-3" strokeWidth={3.4} /> : i + 1}
+                  </span>
+                  {NAMES[s]}
+                </button>
+              </div>
+            );
+          })}
+        </nav>
+        <div className="flex w-[320px] shrink-0 items-center justify-end gap-3 whitespace-nowrap">
           {drafting && <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground"><Loader2 aria-hidden className="size-4 animate-spin" />Coach is drafting…</span>}
-          <Button disabled={!ready || pending} onClick={() => setAccepting(true)}>Accept week</Button>
+          {!drafting && <span className="text-[13px] text-muted-foreground">Saved as you go</span>}
           <Link href="/plan" aria-label="Close" className="inline-flex size-9 items-center justify-center rounded-full bg-muted hover:bg-muted/70">
             <X aria-hidden className="size-4" />
           </Link>
         </div>
       </header>
 
-      <div className="flex min-h-0 flex-1">
-        <main className="relative min-w-0 flex-1 overflow-auto px-4 pb-6">
-          <WeekGrid
-            weekStart={data.weekStart}
-            events={ready ? data.events : []}
-            calendar={data.calendar}
-            selected={selected}
-            changed={changed}
-            today={data.today}
-            onSelect={(i) => setSelected(i)}
-            onMove={move}
-          />
-          {!ready && (
-            <div className="absolute inset-0 z-30 flex items-start justify-center bg-background/50 pt-40 backdrop-blur-[1px]">
-              <div className="pointer-events-auto flex max-w-sm flex-col items-center gap-3 rounded-2xl border bg-card px-6 py-5 text-center shadow-lg">
-                {drafting ? (
-                  <>
-                    <Loader2 aria-hidden className="size-6 animate-spin text-brand-ink" />
-                    <span className="font-semibold">Coach is drafting {weekLabel(data.weekStart)}</span>
-                    <span className="text-sm text-muted-foreground">Usually 2 to 3 minutes. You can close this and come back.</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="font-semibold">{p?.status === 'failed' ? 'The last draft failed' : `No draft for ${weekLabel(data.weekStart)} yet`}</span>
-                    <span className="text-sm text-muted-foreground">{p?.status === 'failed' ? p.error : (data.weekStart === mondayOf(data.today) ? 'Coach plans the days left, from today on. ' : '') + 'Check last week and the shape, then Coach drafts it on your calendar.'}</span>
-                    <Button size="compact" loading={pending} onClick={() => run('Coach is drafting your week.', () => draftWeekAction(data.weekStart, { ...answers }))}>
-                      <RefreshCw aria-hidden />{p?.status === 'failed' ? 'Try again' : 'Draft my week'}
-                    </Button>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
-        </main>
-
-        <aside className="flex w-[400px] shrink-0 flex-col border-l bg-card">
-          {event && ready ? (
-            <div className="flex-1 overflow-auto p-5">
-              <SessionPanel
-                key={event.index}
-                data={data}
-                event={event}
-                busy={pending}
-                onClose={() => setSelected(null)}
-                onMove={(date, time) => move(event.index, date, time)}
-                onLength={(minutes) => p && run('', () => editDraftAction(p.id, { kind: 'length', index: event.index, minutes }))}
-                onRemove={() => p && run('Removed.', () => editDraftAction(p.id, { kind: 'remove', index: event.index }), () => setSelected(null))}
-                onAsk={ask}
-              />
-            </div>
-          ) : (
-            <>
-              <div className="p-4 pb-0">
-                <div className="flex rounded-full bg-muted p-1" role="tablist">
-                  {TABS.map((t) => (
-                    <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)}
-                      className={cn('flex-1 rounded-full py-1.5 text-sm font-semibold', tab === t.id ? 'bg-background shadow-sm' : 'text-muted-foreground')}>
-                      {t.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="flex-1 overflow-auto p-5">
-                {tab === 'last' && <LastWeekPanel data={data} answers={answers} setAnswers={setAnswers} onNext={() => setTab('shape')} />}
-                {tab === 'shape' && (
-                  <ShapePanel data={data} answers={answers} setAnswers={setAnswers} busy={pending || drafting}
-                    onDraft={() => run(ready ? 'Coach is redrawing the week.' : 'Coach is drafting your week.', () => draftWeekAction(data.weekStart, { ...answers }), () => setTab('coach'))} />
-                )}
-                {tab === 'coach' && (
-                  <CoachPanel data={data} busy={pending} onAsk={ask}
-                    onUndo={() => p && run('Back to the version before.', () => undoDraftAction(p.id))} />
-                )}
-              </div>
-            </>
-          )}
-          <div className="border-t p-4">
-            <Composer disabled={!ready || pending} onSend={ask} />
-          </div>
-        </aside>
+      <div className={cn('flex min-h-0 flex-1 flex-col', step === 'draft' ? '' : 'overflow-auto px-10 py-7')}>
+        {step === 'last' && <StepLastWeek data={data} answers={answers} setAnswers={setAnswers} />}
+        {step === 'week' && <StepYourWeek data={data} answers={answers} setAnswers={setAnswers} />}
+        {step === 'shape' && <StepShape data={data} answers={answers} setAnswers={setAnswers} />}
+        {step === 'accept' && ready && <StepAccept data={data} />}
+        {step === 'draft' && (
+          <DraftStep data={data} ready={ready} drafting={drafting} pending={pending} changed={changed} selected={selected}
+            setSelected={setSelected} event={event} move={move} ask={ask} onDraft={draft}
+            onLength={(index, minutes) => p && run('', () => editDraftAction(p.id, { kind: 'length', index, minutes }))}
+            onRemove={(index) => p && run('Removed.', () => editDraftAction(p.id, { kind: 'remove', index }), () => setSelected(null))}
+            onUndo={() => p && run('Back to the version before.', () => undoDraftAction(p.id))} />
+        )}
       </div>
 
-      <Dialog open={accepting} onOpenChange={setAccepting}>
-        <DialogContent className="max-w-2xl">
-          <div className="flex flex-col gap-4 p-6">
-            <DialogTitle className="text-xl font-semibold">Accept {weekLabel(data.weekStart)} · {hm(total)}</DialogTitle>
-            <DialogDescription className="sr-only">The week, and where it goes.</DialogDescription>
-            <div className="grid grid-cols-[1.4fr_1fr] gap-6">
-              <div className="flex flex-col divide-y text-sm">
-                {days(data.weekStart).map((d) => {
-                  const items = data.events.filter((e) => e.date === d);
-                  return (
-                    <div key={d} className="flex gap-3 py-2">
-                      <span className="w-12 shrink-0 font-semibold">{weekday(d)}</span>
-                      <div className="flex min-w-0 flex-1 flex-col gap-1">
-                        {items.length === 0 && <span className="text-brand-ink">Off</span>}
-                        {items.map((e) => (
-                          <div key={e.index} className="flex items-center gap-2">
-                            <span className="size-2 shrink-0 rounded-full" style={{ background: sportVar(e) }} />
-                            <span className="w-11 shrink-0 tabular-nums text-muted-foreground">{clock(e.start)}</span>
-                            <span className="min-w-0 flex-1 truncate">{e.title}</span>
-                            <span className="text-muted-foreground">{hm(e.minutes)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="flex flex-col gap-2 text-sm">
-                <div className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">Always syncs to</div>
-                {['Google Calendar', 'Lift on iPhone', 'Garmin', 'Zwift'].map((s) => (
-                  <div key={s} className="flex items-center justify-between border-b py-1.5">
-                    <span>{s}</span>
-                    <RefreshCw aria-hidden className="size-3.5 text-emerald-600" />
-                  </div>
-                ))}
-                <span className="text-xs text-muted-foreground">Later changes sync again on their own. Moves on your calendar still win.</span>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="secondary" onClick={() => setAccepting(false)}>Back</Button>
-              <Button loading={pending} onClick={() => p && start(async () => {
-                const r = await acceptDraftAction(p.id);
-                if ('error' in r) {
-                  toast.error(r.error);
-                  return;
-                }
-                toast.success(`${weekLabel(r.weekStart)} is planned. ${r.note}`);
-                setAccepting(false);
-                router.push(`/plan?week=${r.weekStart}`);
-              })}><Check aria-hidden />Accept week</Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <footer className="flex h-[76px] shrink-0 items-center justify-between border-t bg-card px-10">
+        <span className="text-sm text-muted-foreground">
+          Step {at + 1} of 5
+          {step === 'draft' && ready ? ` · ${hm(total)} · click a session to change it, or drag it` : ''}
+          {step === 'shape' ? ' · Coach drafts in a minute or two' : ''}
+        </span>
+        <div className="flex items-center gap-3">
+          {at > 0 && <Button variant="secondary" onClick={() => go(STEPS[at - 1])}>Back</Button>}
+          {step === 'last' && ready && <Button variant="plain" onClick={() => go('draft')}>Skip to the draft</Button>}
+          {step === 'last' && <Button onClick={() => go('week')}>Next: your week<ArrowRight aria-hidden /></Button>}
+          {step === 'week' && <Button onClick={() => go('shape')}>Next: priorities<ArrowRight aria-hidden /></Button>}
+          {step === 'shape' && ready && <Button variant="secondary" onClick={() => go('draft')}>Keep this draft</Button>}
+          {step === 'shape' && (
+            <Button loading={pending} disabled={drafting} onClick={draft}>
+              <Sparkles aria-hidden />{ready ? 'Redraw with these answers' : drafting ? 'Coach is drafting' : 'Draft my week'}
+            </Button>
+          )}
+          {step === 'draft' && <Button disabled={!ready || pending} onClick={() => go('accept')}>Next: review<ArrowRight aria-hidden /></Button>}
+          {step === 'accept' && <Button loading={pending} onClick={accept}><Check aria-hidden />Accept and sync</Button>}
+        </div>
+      </footer>
     </div>
   );
 }
 
-/**
- * This week or next week. This week plans only the days left from today: Coach keeps what is done (a check-in).
- */
+/** Step 4: Coach's draft on the calendar with its checks; the side panel explains it, or opens one session. */
+function DraftStep({
+  data, ready, drafting, pending, changed, selected, setSelected, event, move, ask, onDraft, onLength, onRemove, onUndo,
+}: {
+  data: PlannerWeek; ready: boolean; drafting: boolean; pending: boolean; changed: Set<string>; selected: number | null;
+  setSelected: (i: number | null) => void; event: PlannerWeek['events'][number] | null;
+  move: (index: number, date: string, time: string) => void; ask: (note: string) => void; onDraft: () => void;
+  onLength: (index: number, minutes: number) => void; onRemove: (index: number) => void; onUndo: () => void;
+}) {
+  const p = data.proposal;
+  const total = data.events.reduce((n, e) => n + (e.minutes ?? 0), 0);
+  const lifts = data.events.filter((e) => e.sport === 'strength' && !/physio|stretch/i.test(e.title)).length;
+  const hard = data.events.filter((e) => e.hard).length;
+  const fails = p?.checks?.fails ?? 0;
+  const warns = p?.checks?.warns ?? 0;
+  const pills = ready
+    ? [
+        { ok: total >= 480 && total <= 600, text: `${hm(total)}${total >= 480 && total <= 600 ? ' in 8–10 h' : ''}` },
+        { ok: lifts >= 2, text: `${lifts} lift${lifts === 1 ? '' : 's'}` },
+        { ok: hard >= 1, text: `${hard} hard` },
+        { ok: !fails && !warns, text: fails ? `${fails} check${fails > 1 ? 's' : ''} failed` : warns ? `${warns} to watch` : 'Plan checks pass' },
+      ]
+    : [];
+  return (
+    <div className="flex min-h-0 flex-1">
+      <main className="relative flex min-w-0 flex-1 flex-col">
+        <div className="flex shrink-0 items-center gap-3 px-6 pt-5 pb-3">
+          <h1 className="text-2xl font-semibold tracking-tight">{ready ? `Coach's draft · ${hm(total)}` : drafting ? 'Coach is drafting' : 'No draft yet'}</h1>
+          {ready && p && p.version > 1 && <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold">Draft {p.version}</span>}
+          <div className="ml-2 flex flex-wrap gap-2">
+            {pills.map((x) => (
+              <span key={x.text} className={cn('inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold',
+                x.ok ? 'bg-emerald-500/12 text-emerald-700 dark:text-emerald-300' : 'bg-amber-500/15 text-amber-800 dark:text-amber-300')}>
+                {x.ok && <Check aria-hidden className="size-3" strokeWidth={3} />}{x.text}
+              </span>
+            ))}
+          </div>
+        </div>
+        <div className="relative min-h-0 flex-1 overflow-auto px-4 pb-6">
+          <WeekGrid weekStart={data.weekStart} events={ready ? data.events : []} calendar={data.calendar} selected={selected}
+            changed={changed} today={data.today} onSelect={(i) => setSelected(i)} onMove={move} />
+        </div>
+        {!ready && (
+          <div className="absolute inset-0 z-30 flex items-start justify-center bg-background/50 pt-40 backdrop-blur-[1px]">
+            <div className="pointer-events-auto flex max-w-sm flex-col items-center gap-3 rounded-2xl border bg-card px-6 py-5 text-center shadow-lg">
+              {drafting ? (
+                <>
+                  <Loader2 aria-hidden className="size-6 animate-spin text-brand-ink" />
+                  <span className="font-semibold">Coach is drafting {weekLabel(data.weekStart)}</span>
+                  <span className="text-sm text-muted-foreground">Usually 2 to 3 minutes. You can close this and come back.</span>
+                </>
+              ) : (
+                <>
+                  <span className="font-semibold">{p?.status === 'failed' ? 'The last draft failed' : `No draft for ${weekLabel(data.weekStart)} yet`}</span>
+                  <span className="text-sm text-muted-foreground">{p?.status === 'failed' ? p.error : 'Answer the steps before, then Coach drafts it on your calendar.'}</span>
+                  <Button size="compact" loading={pending} onClick={onDraft}><RefreshCw aria-hidden />{p?.status === 'failed' ? 'Try again' : 'Draft my week'}</Button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+      </main>
+      <aside className="flex w-[400px] shrink-0 flex-col border-l bg-card">
+        <div className="flex-1 overflow-auto p-5">
+          {event && ready ? (
+            <SessionPanel key={event.index} data={data} event={event} busy={pending} onClose={() => setSelected(null)}
+              onMove={(date, time) => move(event.index, date, time)} onLength={(m) => onLength(event.index, m)}
+              onRemove={() => onRemove(event.index)} onAsk={ask} />
+          ) : (
+            <CoachPanel data={data} busy={pending} onAsk={ask} onUndo={onUndo} />
+          )}
+        </div>
+        <div className="border-t p-4">
+          <Composer disabled={!ready || pending} onSend={ask} />
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+/** This week or next week. This week plans only the days left from today: Coach keeps what is done (a check-in). */
 function WeekSwitch({ weekStart, today }: { weekStart: string; today: string }) {
   const thisWeek = mondayOf(today);
   const weeks = [
@@ -308,17 +305,11 @@ function WeekSwitch({ weekStart, today }: { weekStart: string; today: string }) 
     { monday: addDays(thisWeek, 7), label: 'Next week' },
   ];
   return (
-    <nav aria-label="Week to plan" className="inline-flex rounded-full bg-muted p-0.5 text-sm">
+    <nav aria-label="Week to plan" className="inline-flex rounded-full bg-muted p-0.5 text-xs">
       {weeks.map((w) => (
-        <Link
-          key={w.monday}
-          href={`/plan/week?week=${w.monday}`}
-          aria-current={w.monday === weekStart ? 'page' : undefined}
-          className={cn(
-            'rounded-full px-3 py-1 font-medium transition-colors',
-            w.monday === weekStart ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
-          )}
-        >
+        <Link key={w.monday} href={`/plan/week?week=${w.monday}`} aria-current={w.monday === weekStart ? 'page' : undefined}
+          className={cn('rounded-full px-2.5 py-1 font-medium whitespace-nowrap transition-colors',
+            w.monday === weekStart ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground')}>
           {w.label}
         </Link>
       ))}

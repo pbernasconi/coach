@@ -166,7 +166,7 @@ export function plannerApp(w) {
     answers: p && state !== 'none'
       ? {
           feel: p.request.feel ?? null, hours: p.request.hours ?? null, gym: p.request.gym ?? null, hard: p.request.hard ?? null,
-          longDay: p.request.longDay ?? null, daysOff: p.request.daysOff ?? [], lock: p.request.lock ?? '',
+          longDay: p.request.longDay ?? null, daysOff: p.request.daysOff ?? [], away: p.request.away ?? [], lock: p.request.lock ?? '',
         }
       : null,
     longDays: [{ date: week[5], text: 'Sat' }, { date: week[6], text: 'Sun' }],

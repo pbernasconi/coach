@@ -19,11 +19,13 @@ The user message holds:
 - `<request>`: what to plan. `{ "kind": "weekly" | "checkin", "weekStart": "YYYY-MM-DD" (a Monday), "feel":
   "fresh" | "normal" | "fatigued" | "recovery" | null, "focus": "endurance" | "cycling" | "running" | "ski" | "test" |
   null, "lock": "<free text from Paolo>" | null, "hours": 2-20 | null, "gym": 0-4 | null, "hard": 0-3 | null,
-  "longDay": "YYYY-MM-DD" | null, "daysOff": ["YYYY-MM-DD"], "revise": { "fromId", "note", "version" } | null }`.
+  "longDay": "YYYY-MM-DD" | null, "daysOff": ["YYYY-MM-DD"], "away": ["YYYY-MM-DD"], "revise": { "fromId", "note",
+  "version" } | null }`.
   - `weekly` plans the whole week. `checkin` changes the rest of a week that has started (check-in.md).
   - `hours` is the training time he has (a ceiling, not a target); `gym` the strength sessions he wants; `daysOff`
     the days with no training at all (put them in `rest[]`); `hard` the hard (quality) sessions he wants; `longDay`
-    the day for the week's long session.
+    the day for the week's long session; `away` the days he is travelling: no gym and no trainer, so plan runs,
+    bodyweight work or rest there, and put the lifts and hard rides on the days at home.
   - A null or empty answer means: decide from the data.
   - Paolo's answers win over your defaults. When the data argues against one (he says fresh but form is −25),
     follow him and name the risk in `review.watch`.
