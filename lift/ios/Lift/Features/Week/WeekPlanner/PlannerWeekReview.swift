@@ -31,7 +31,7 @@ extension PlannerWeek {
     }
 }
 
-extension PlannerAnswers {
+nonisolated extension PlannerAnswers {
     /// What a day is for: free, busy (one short session), travelling (no gym), rest or sick (no training). Rest is
     /// `daysOff` and travelling `away` on the coach.
     nonisolated enum DayMode: String, CaseIterable, Identifiable, Sendable {

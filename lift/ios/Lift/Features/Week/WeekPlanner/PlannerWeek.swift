@@ -213,7 +213,7 @@ nonisolated struct PlannerAnswers: Codable, Equatable, Sendable {
     var lock: String = ""
 }
 
-extension PlannerAnswers {
+nonisolated extension PlannerAnswers {
     /// Answers from a coach that sent no busy, sick or notes yet read as empty.
     init(from decoder: any Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
