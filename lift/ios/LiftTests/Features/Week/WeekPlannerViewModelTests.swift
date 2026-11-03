@@ -23,13 +23,15 @@ import Testing
         let json = #"""
             { "weekStart": "2026-03-09", "titleText": "Plan Mar 9–15", "weekText": "Mar 9–15", "state": "\#(state)",
               "proposalId": "p1", "version": 2, "errorText": null, "totalsText": "1h30", "checks": null,
-              "days": [{ "date": "2026-03-14", "labelText": "Sat 14", "off": false, "totalText": "1h30",
+              "days": [{ "date": "2026-03-14", "labelText": "Sat 14", "past": false, "freeText": "Free 6:00–21:00",
+                         "off": false, "totalText": "1h30",
                          "sessions": [\#(state == "proposed" ? session : "")], "calendar": [] }],
               "change": null, "review": null, "summary": null, "issues": [], "quickAsks": ["Make it lighter"],
               "lastWeek": null, "facts": [], "feels": [{ "id": "fresh", "label": "Fresh" }],
               "suggested": { "feelText": null, "hours": 8, "hoursText": null },
-              "answers": { "feel": "normal", "hours": 7, "gym": 2, "hard": null, "longDay": null, "daysOff": [], "lock": "" },
-              "longDays": [], "planningAround": [], "syncsTo": ["Google Calendar"]\#(extra) }
+              "answers": { "feel": "normal", "hours": 7, "gym": 2, "hard": null, "longDay": null, "daysOff": [], "away": [], "lock": "" },
+              "longDays": [], "planningAround": [], "syncsTo": ["Google Calendar"],
+              "versusTitle": "Against last week", "versus": [], "keepers": []\#(extra) }
             """#
         return Data(json.utf8)
     }
@@ -77,13 +79,35 @@ import Testing
         #expect(vm.state.isProposed)
     }
 
-    @Test func tabChangedAndNextTappedSwitchTabs() async {
+    @Test func aDraftOpensOnTheDraftStep() async {
+        let (vm, _) = await loaded()
+        #expect(vm.state.step == .draft)
+
+        let (none, _) = await loaded("none")
+        #expect(none.state.step == .lastWeek)
+    }
+
+    @Test func stepChangedNextTappedAndBackTappedMoveThroughTheSteps() async {
         let (vm, _) = await loaded()
 
-        vm.send(.tabChanged(.lastWeek))
-        #expect(vm.state.tab == .lastWeek)
+        vm.send(.stepChanged(.lastWeek))
+        #expect(vm.state.step == .lastWeek)
         vm.send(.nextTapped)
-        #expect(vm.state.tab == .shape)
+        #expect(vm.state.step == .days)
+        vm.send(.nextTapped)
+        #expect(vm.state.step == .shape)
+        vm.send(.backTapped)
+        #expect(vm.state.step == .days)
+    }
+
+    @Test func reviewAndDraftStayClosedWithoutADraft() async {
+        let (vm, _) = await loaded("none")
+
+        vm.send(.stepChanged(.review))
+        #expect(vm.state.step == .lastWeek)
+        vm.send(.stepChanged(.shape))
+        vm.send(.nextTapped)
+        #expect(vm.state.step == .shape)
     }
 
     @Test func retryTappedAndRefreshPulledFetchAgain() async {
@@ -120,19 +144,23 @@ import Testing
         #expect(vm.state.answers.lock == "Away Friday")
     }
 
-    @Test func dayOffToggledAddsSortedAndRemoves() async {
+    @Test func dayModePickedKeepsADayInOneList() async {
         let (vm, _) = await loaded()
 
-        vm.send(.dayOffToggled("2026-03-13"))
-        vm.send(.dayOffToggled("2026-03-10"))
+        vm.send(.dayModePicked("2026-03-13", .off))
+        vm.send(.dayModePicked("2026-03-10", .off))
         #expect(vm.state.answers.daysOff == ["2026-03-10", "2026-03-13"])
-        vm.send(.dayOffToggled("2026-03-10"))
+        vm.send(.dayModePicked("2026-03-10", .away))
         #expect(vm.state.answers.daysOff == ["2026-03-13"])
+        #expect(vm.state.answers.away == ["2026-03-10"])
+        vm.send(.dayModePicked("2026-03-10", .free))
+        #expect(vm.state.answers.away == [])
+        #expect(vm.state.answers.mode(of: "2026-03-13") == .off)
     }
 
     @Test func draftTappedSendsTheAnswersAndShowsTheWeek() async {
         let (vm, data) = await loaded()
-        vm.send(.tabChanged(.shape))
+        vm.send(.stepChanged(.shape))
         vm.send(.hoursChanged(10))
 
         await vm.send(.draftTapped)?.value
@@ -141,7 +169,7 @@ import Testing
         #expect(data.puts.last?.path == "api/app/plan/week")
         #expect(body["action"] as? String == "draft")
         #expect((body["answers"] as? [String: Any])?["hours"] as? Int == 10)
-        #expect(vm.state.tab == .week)
+        #expect(vm.state.step == .draft)
         #expect(vm.state.write == .idle)
     }
 
@@ -181,14 +209,14 @@ import Testing
         #expect(lastPut(data)["action"] as? String == "undo")
     }
 
-    @Test func acceptTappedOpensTheSummaryOnlyForADraft() async {
+    @Test func acceptTappedOpensReviewOnlyForADraft() async {
         let (vm, _) = await loaded()
         vm.send(.acceptTapped)
-        #expect(vm.state.destination == .accept)
+        #expect(vm.state.step == .review)
 
         let (none, _) = await loaded("none")
         none.send(.acceptTapped)
-        #expect(none.state.destination == nil)
+        #expect(none.state.step == .lastWeek)
     }
 
     @Test func acceptConfirmedClosesWithTheCoachsLine() async {
@@ -201,6 +229,15 @@ import Testing
         #expect(lastPut(data)["action"] as? String == "accept")
         #expect(vm.state.acceptedNote == "On your calendar now")
         #expect(vm.state.destination == nil)
+    }
+
+    @Test func acceptTappedOnReviewAccepts() async {
+        let (vm, data) = await loaded()
+        vm.send(.acceptTapped)
+
+        await vm.send(.acceptTapped)?.value
+
+        #expect(lastPut(data)["action"] as? String == "accept")
     }
 
     @Test func aRefusedChangeSaysWhy() async {

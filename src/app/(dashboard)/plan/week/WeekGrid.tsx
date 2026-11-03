@@ -19,7 +19,7 @@ type Drag = { index: number; x0: number; y0: number; dx: number; dy: number; mov
  * session to another time or day (onMove), click it for its details (onSelect).
  */
 export default function WeekGrid({
-  weekStart, events, calendar, selected, changed, today, onSelect, onMove,
+  weekStart, events, calendar, selected, changed, today, onSelect, onMove, windows, modes,
 }: {
   weekStart: string;
   events: DraftEvent[];
@@ -30,6 +30,10 @@ export default function WeekGrid({
   today: string;
   onSelect: (index: number) => void;
   onMove: (index: number, date: string, time: string) => void;
+  /** Free windows to draw, by day (the Your week step). */
+  windows?: Record<string, { start: string; end: string }[]>;
+  /** Days marked off or away (the Your week step). */
+  modes?: Record<string, 'free' | 'off' | 'away'>;
 }) {
   const cols = useRef<HTMLDivElement>(null);
   const root = useRef<HTMLDivElement>(null);
@@ -77,6 +81,11 @@ export default function WeekGrid({
                 {weekday(d)} {dayNum(d)}
               </span>
               {drafted && <span className={cn('text-xs', total ? 'text-muted-foreground' : 'font-medium text-brand-ink')}>{total ? hm(total) : 'Off'}</span>}
+              {!drafted && modes?.[d] && modes[d] !== 'free' && (
+                <span className={cn('rounded-full px-2 text-[11px] font-semibold', modes[d] === 'off' ? 'bg-muted text-muted-foreground' : 'bg-amber-500/15 text-amber-800 dark:text-amber-300')}>
+                  {modes[d] === 'off' ? 'Off' : 'Away'}
+                </span>
+              )}
             </div>
           );
         })}
@@ -109,10 +118,21 @@ export default function WeekGrid({
             <div key={i} className="pointer-events-none absolute inset-x-0 border-t border-border/60" style={{ top: i * HOUR }} />
           ))}
           {week.map((d) => {
-            const off = drafted && !events.some((e) => e.date === d);
+            const off = (drafted && !events.some((e) => e.date === d)) || modes?.[d] === 'off';
+            const away = modes?.[d] === 'away';
             return (
-              <div key={d} className="relative border-r border-border/60"
+              <div key={d} className={cn('relative border-r border-border/60', away && 'bg-amber-500/8')}
                 style={off ? { backgroundImage: 'repeating-linear-gradient(135deg, transparent 0 7px, var(--color-border) 7px 8px)' } : undefined}>
+                {modes?.[d] === 'free' && (windows?.[d] ?? []).map((w) => {
+                  const top = ((minutesOf(w.start) - H0 * 60) / 60) * HOUR;
+                  const height = ((minutesOf(w.end) - minutesOf(w.start)) / 60) * HOUR;
+                  return (
+                    <div key={w.start} className="pointer-events-none absolute inset-x-1 rounded-md border-[1.5px] border-dashed border-emerald-600/60 bg-emerald-500/6 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-700 dark:border-emerald-400/50 dark:text-emerald-300"
+                      style={{ top: top + 1, height: height - 2 }}>
+                      Free {clock(w.start)}–{clock(w.end)}
+                    </div>
+                  );
+                })}
                 {calendar.filter((c) => c.date === d && !c.allDay && c.start).map((c, i) => {
                   const top = ((minutesOf(c.start!) - H0 * 60) / 60) * HOUR;
                   if (top + (c.minutes / 60) * HOUR < 0 || top > (H1 - H0) * HOUR) return null;

@@ -4,8 +4,9 @@ import Foundation
 nonisolated struct WeekPlannerState: Equatable, Sendable {
     /// The week from the coach: the draft, the calendar, last week and the shape.
     var week = AppResourceState<PlannerWeek>()
-    var tab: Tab = .week
-    /// The Last week and Shape answers; filled from the open draft's answers once it loads.
+    /// Where Paolo is in the five steps; an open draft starts on Draft.
+    var step: Step = .lastWeek
+    /// The answers of steps 1 to 3; filled from the open draft's answers once it loads.
     var answers = PlannerAnswers()
     /// The "Tell Coach what to change" box.
     var note = ""
@@ -14,8 +15,23 @@ nonisolated struct WeekPlannerState: Equatable, Sendable {
     /// Set once the week is accepted: the screen closes and the Week tab shows this line.
     var acceptedNote: String?
 
-    enum Tab: String, CaseIterable, Sendable {
-        case week, lastWeek, shape
+    /// The planning steps, in order: how last week went, the days (free, off, away), the priorities, Coach's draft,
+    /// and the review that accepts it.
+    enum Step: Int, CaseIterable, Sendable {
+        case lastWeek, days, shape, draft, review
+
+        var title: LocalizedStringResource {
+            switch self {
+            case .lastWeek: "Last week"
+            case .days: "Your week"
+            case .shape: "Priorities"
+            case .draft: "Draft"
+            case .review: "Review"
+            }
+        }
+
+        var next: Step? { Step(rawValue: rawValue + 1) }
+        var previous: Step? { Step(rawValue: rawValue - 1) }
     }
 
     /// A change on its way to the coach, or why the last one did not happen.
@@ -28,8 +44,6 @@ nonisolated struct WeekPlannerState: Equatable, Sendable {
     enum Destination: Equatable, Sendable {
         /// One session's sheet: why, move, length, remove, swap.
         case session(Int)
-        /// The Accept summary.
-        case accept
     }
 
     var loaded: PlannerWeek? { week.content.value }
@@ -43,8 +57,14 @@ nonisolated struct WeekPlannerState: Equatable, Sendable {
         return loaded?.session(index)
     }
 
-    /// The week whose Accept summary is open.
-    var acceptWeek: PlannerWeek? { destination == .accept ? loaded : nil }
+    /// Review needs a draft; the steps before it are always open.
+    func isOpen(_ step: Step) -> Bool {
+        switch step {
+        case .lastWeek, .days, .shape: true
+        case .draft: loaded.map { $0.state != .none } ?? false
+        case .review: isProposed
+        }
+    }
 
     var failureText: String? {
         guard case .failed(let text) = write else { return nil }

@@ -14,9 +14,15 @@ export type DraftEvent = {
   index: number; title: string; date: string; start: string | null; minutes: number | null; sport: string;
   hard: boolean; why: string | null; description: string | null; tss: number | null;
 };
-export type LastWeekDay = { date: string; items: { title: string; sport: string; level: string }[] };
+export type LastWeekDay = {
+  date: string;
+  items: { title: string; sport: string; level: string }[];
+  /** What Strava recorded that day (commutes left out). */
+  done: { name: string; sport: string; km: number; min: number }[];
+};
 export type LastWeek = {
-  monday: string; doneMin: number; plannedMin: number; planned: number; done: number; missed: number; skipped: number;
+  /** The week isn't over yet (planning next week mid-week): lifts and hard count only what was due by today. */
+  monday: string; ongoing: boolean; doneMin: number; plannedMin: number; runMin: number; planned: number; done: number; missed: number; skipped: number;
   lifts: { planned: number; done: number }; hard: { planned: number; done: number }; days: LastWeekDay[];
 };
 export type DraftChange = { changed: { what: string; how: string }[]; gaveUp: string | null; note: string | null };
@@ -63,12 +69,17 @@ async function loadLastWeek(userId: string, monday: string, today: string): Prom
   const workouts = range.workouts.filter((w) => w.date >= monday && w.date <= addDays(monday, 6) && w.sport !== 'rest');
   const levelOf = (w: (typeof workouts)[number]) => (w.state === 'skipped' ? 'skipped' : w.state === 'missed' ? 'missed' : w.compliance.level);
   const ok = (l: string) => ['good', 'done', 'partial'].includes(l);
-  const lifts = workouts.filter((w) => w.sport === 'strength');
-  const hard = workouts.filter((w) => HARD.test(`${w.title} ${w.workoutType ?? ''} ${w.intensity ?? ''}`));
+  // A session still ahead isn't missed yet: count it only once its day has passed or it's done.
+  const due = workouts.filter((w) => w.date < today || ok(levelOf(w)));
+  const lifts = due.filter((w) => w.sport === 'strength');
+  const hard = due.filter((w) => HARD.test(`${w.title} ${w.workoutType ?? ''} ${w.intensity ?? ''}`));
+  const acts = range.activities.filter((a) => a.date >= monday && a.date <= addDays(monday, 6) && !a.commute);
   return {
     monday,
+    ongoing: addDays(monday, 6) >= today,
     doneMin: Math.round(summary?.done.min ?? 0),
     plannedMin: Math.round(summary?.planned.min ?? 0),
+    runMin: acts.filter((a) => a.sport === 'run').reduce((n, a) => n + a.min, 0),
     planned: summary?.planned.count ?? workouts.length,
     done: summary?.planned.done ?? 0,
     missed: summary?.planned.missed ?? 0,
@@ -77,7 +88,11 @@ async function loadLastWeek(userId: string, monday: string, today: string): Prom
     hard: { planned: hard.length, done: hard.filter((w) => ok(levelOf(w))).length },
     days: Array.from({ length: 7 }, (_, i) => {
       const date = addDays(monday, i);
-      return { date, items: workouts.filter((w) => w.date === date).map((w) => ({ title: w.title, sport: w.sport, level: levelOf(w) })) };
+      return {
+        date,
+        items: workouts.filter((w) => w.date === date).map((w) => ({ title: w.title, sport: w.sport, level: levelOf(w) })),
+        done: acts.filter((a) => a.date === date).map((a) => ({ name: a.name, sport: a.sport, km: a.km, min: a.min })),
+      };
     }),
   };
 }

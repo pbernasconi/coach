@@ -2,7 +2,7 @@ import KoboComponents
 import KoboTokens
 import SwiftUI
 
-/// The Week tab: Coach's draft day by day, with the calendar it plans around in grey under each day. Above it, what
+/// Step 4, the draft: Coach's draft day by day, with the calendar it plans around in grey under each day. Above it, what
 /// the last change did (with Undo); under it, Coach's reasoning, what to watch, and the box to tell Coach what to
 /// change. Before a draft, a start card instead (SCR-2).
 struct PlannerWeekTab: View {
@@ -38,10 +38,10 @@ struct PlannerWeekTab: View {
         switch week.state {
         case .none:
             VStack(alignment: .leading, spacing: Space.md) {
-                Text("No plan for \(week.weekText) yet. Start with how last week went, then shape the week.")
+                Text("No plan for \(week.weekText) yet. Start with how last week went, then your week and priorities.")
                     .font(theme.font(.body))
                     .foregroundStyle(theme.palette.textSecondary)
-                Button("Start with last week", systemImage: "arrow.right") { send(.tabChanged(.lastWeek)) }
+                Button("Start with last week", systemImage: "arrow.right") { send(.stepChanged(.lastWeek)) }
                     .buttonStyle(.kobo(.primary, width: .full))
             }
             .koboCard()

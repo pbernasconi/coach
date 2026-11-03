@@ -16,7 +16,7 @@
             return try? JSONDecoder().decode(PlannerWeek.self, from: edited)
         }
 
-        private static func with(_ week: PlannerWeek?, tab: Tab = .week) -> Self {
+        private static func with(_ week: PlannerWeek?, step: Step = .draft) -> Self {
             var state = Self()
             if let week {
                 state.week.content = .loaded(week)
@@ -24,16 +24,23 @@
             } else {
                 state.week.content = .failed(message: "The demo week is missing.")
             }
-            state.tab = tab
+            state.step = step
             return state
         }
 
         /// The draft to review, with its last change and checks.
         static var fixtureProposed: Self { with(demoWeek()) }
 
-        static var fixtureLastWeek: Self { with(demoWeek(), tab: .lastWeek) }
+        static var fixtureLastWeek: Self { with(demoWeek(), step: .lastWeek) }
 
-        static var fixtureShape: Self { with(demoWeek(), tab: .shape) }
+        /// Your week: Fri away, the rest free.
+        static var fixtureDays: Self {
+            var state = with(demoWeek(), step: .days)
+            state.answers = state.answers.with("2026-11-13", as: .away)
+            return state
+        }
+
+        static var fixtureShape: Self { with(demoWeek(), step: .shape) }
 
         /// Coach drafting: the calendar only, and the drafting line.
         static var fixtureDrafting: Self {
@@ -73,11 +80,7 @@
             return state
         }
 
-        static var fixtureAccept: Self {
-            var state = fixtureProposed
-            state.destination = .accept
-            return state
-        }
+        static var fixtureReview: Self { with(demoWeek(), step: .review) }
 
         /// A change the coach did not make.
         static var fixtureRefused: Self {

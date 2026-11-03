@@ -2,9 +2,9 @@ import KoboComponents
 import KoboTokens
 import SwiftUI
 
-/// The Last week tab: what got done (time, lifts, hard sessions, a day strip), what Coach reads from the data, how
-/// Paolo feels, and anything Coach should know. Next goes to Shape (SCR-2).
-struct PlannerLastWeekTab: View {
+/// Step 1: how last week went (time, lifts, hard sessions), day by day from Strava and the plan, Coach's read of it,
+/// and how Paolo is coming into this week (SCR-2).
+struct PlannerLastWeekStep: View {
     @Environment(\.koboTheme) private var theme
     let week: PlannerWeek
     let answers: PlannerAnswers
@@ -13,29 +13,23 @@ struct PlannerLastWeekTab: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Space.section) {
             if let last = week.lastWeek {
+                SectionHeader(verbatim: last.titleText)
                 HStack(spacing: Space.sm) {
                     StatTile(verbatim: String(localized: "Time"), value: last.timeText, unit: last.timeNote)
                     StatTile(verbatim: String(localized: "Lifts"), value: last.liftsText, delta: short(last.liftsShort))
                     StatTile(verbatim: String(localized: "Hard"), value: last.hardText, delta: short(last.hardShort))
                 }
                 PlannerDayStrip(days: last.days)
+                if !last.read.isEmpty { PlannerReadCard(read: last.read) }
+                PlannerLastWeekDays(days: last.days)
             }
+            feel
             if !week.facts.isEmpty {
                 KeyValueList(
-                    "What Coach sees",
+                    "Going in",
                     items: week.facts.map { KeyValueItem(verbatim: $0.label, value: $0.value, id: $0.id) }
                 )
             }
-            feel
-            KoboTextArea(
-                "Anything Coach should know?",
-                text: .action(answers.lock) { send(.anythingChanged($0)) },
-                prompt: "Travelling Thu–Fri, gym closed Sunday",
-                lines: 2...5,
-                characterLimit: 500
-            )
-            Button("Next: shape the week", systemImage: "arrow.right") { send(.nextTapped) }
-                .buttonStyle(.kobo(.primary, width: .full))
         }
     }
 
@@ -45,7 +39,7 @@ struct PlannerLastWeekTab: View {
 
     private var feel: some View {
         VStack(alignment: .leading, spacing: Space.sm) {
-            SectionHeader("How do you feel?")
+            SectionHeader("How are you coming into this week?")
             FlowLayout {
                 ForEach(week.feels) { choice in
                     Chip(verbatim: choice.label, isSelected: answers.feel == choice.id) {
@@ -61,6 +55,64 @@ struct PlannerLastWeekTab: View {
             }
         }
     }
+}
+
+/// Coach's read of last week: the gym, the hard sessions and the volume, each with a dot for its tone.
+struct PlannerReadCard: View {
+    @Environment(\.koboTheme) private var theme
+    let read: [PlannerWeek.LastWeek.Read]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Space.md) {
+            Text("Coach's read")
+                .font(theme.font(.caption).weight(.semibold))
+                .textCase(.uppercase)
+                .foregroundStyle(theme.palette.accentText)
+            ForEach(Array(read.enumerated()), id: \.offset) { _, line in
+                VStack(alignment: .leading, spacing: Space.xxs) {
+                    Label {
+                        Text(verbatim: line.title).font(theme.font(.callout).weight(.semibold))
+                    } icon: {
+                        Circle()
+                            .fill(line.tone == "good" ? theme.palette.success.ink : theme.palette.warning.ink)
+                            .frame(width: Space.sm, height: Space.sm)
+                    }
+                    .foregroundStyle(theme.palette.textPrimary)
+                    Text(verbatim: line.text)
+                        .font(theme.font(.footnote))
+                        .foregroundStyle(theme.palette.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .accessibilityElement(children: .combine)
+            }
+        }
+        .koboCard()
+    }
+}
+
+/// Last week day by day: what Strava recorded, and what was missed.
+struct PlannerLastWeekDays: View {
+    @Environment(\.koboTheme) private var theme
+    let days: [PlannerWeek.LastWeek.Day]
+
+    var body: some View {
+        KeyValueList(
+            "Day by day",
+            items: days.map { day in
+                KeyValueItem(
+                    verbatim: day.labelText,
+                    value: [day.doneText, day.missedText].compactMap(\.self).joined(separator: "\n").nilIfEmpty
+                        ?? String(localized: "Nothing logged"),
+                    valueTone: day.missedText != nil && day.doneText == nil ? .danger : nil,
+                    id: day.date
+                )
+            }
+        )
+    }
+}
+
+extension String {
+    fileprivate var nilIfEmpty: String? { isEmpty ? nil : self }
 }
 
 /// Last week as seven squares, one per day, toned by its worst session: done green, partly yellow, missed red.

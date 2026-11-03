@@ -19,7 +19,7 @@ import { mondayOf } from '@/lib/plan/week.mjs';
 
 export type PlanRequest = {
   kind: 'weekly' | 'checkin'; weekStart: string; feel: string | null; focus: string | null; lock: string | null;
-  hours?: number | null; gym?: number | null; hard?: number | null; longDay?: string | null; daysOff?: string[];
+  hours?: number | null; gym?: number | null; hard?: number | null; longDay?: string | null; daysOff?: string[]; away?: string[];
   /** A change Paolo asked for on the plan `fromId` (a note, or new answers on the planning screen); `version` counts from 1. */
   revise?: { fromId: string; note: string; version: number } | null;
 };
