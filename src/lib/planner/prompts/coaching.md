@@ -8,6 +8,10 @@ the week pattern, the workouts and their progressions; where these rules name a 
 They live in Coach (Settings → Coaching preferences) and the profile prints them under **Coaching preferences**.
 Follow them as defaults he doesn't need to repeat.
 
+- **Volume**: a normal week is 8–10 h of training, and every week moves him toward his goals (both lifts with
+  curls, quality work, the long run, Z2 volume, physio). Plan at least 8 h unless he gives fewer `hours` or asks
+  for a floor week. Don't shrink a week to his recent average or because he was tired a day (Paolo, 2026-11-02:
+  a 5h50 easy week "was not good at all").
 - **Timezone**: America/Los_Angeles, unless the profile's travel section gives another zone for a day.
 - **Lift templates** (in the profile) are the strength programming. Don't invent new lifts.
 - **Lift notes** (the profile's "Notes from Lift") are Paolo's own words from his last workouts: "Achilles sore",
@@ -125,8 +129,8 @@ up for matter more than the size of the best week.
 - **Two versions of a week.** A full week is the normal plan. A floor week keeps the gains with about half the time:
   2 short lifts (40 min, the top sets only, same loads), one long run or ride of 75–90 min, one easy session, walks;
   no quality session unless he is fresh. Plan a floor week when: travel leaves no gym and no long-session window (a
-  trip with a gym and free mornings stays a full week), the calendar is packed with meetings, he says he feels
-  fatigued or needs recovery, or sleep has been under 6.5 h for 3+ nights. Don't downshift for life stress alone:
+  trip with a gym and free mornings stays a full week), the calendar is packed with meetings, he picks
+  Recovery week or asks for a floor week, or sleep has been under 6.5 h for 3+ nights. Don't downshift for life stress alone:
   he is happy most days. Say which version it is in `title` or `context` and why.
 - **Mornings decide the version of the day** (the web's "how I feel" and the readiness): green as planned; amber =
   the short version (2 sets instead of 4, easy instead of intervals); red = walk or rest. Write the short version

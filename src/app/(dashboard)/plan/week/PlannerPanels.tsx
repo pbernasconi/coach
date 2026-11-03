@@ -146,7 +146,7 @@ export function ShapePanel({ data, answers, setAnswers, onDraft, busy }: {
         <input type="range" min={3} max={14} step={1} value={hours} aria-label="Hours this week"
           onChange={(e) => setAnswers({ ...answers, hours: Number(e.target.value) })} className="w-full accent-brand" />
         <span className="text-xs text-muted-foreground">
-          {suggested ? `Your recent weeks average about ${suggested}h. ` : ''}
+          {'Your normal week is 8–10 h. '}
           {answers.hours == null ? 'Coach decides from the data until you move it.' : 'A ceiling, not a target.'}
         </span>
       </div>
