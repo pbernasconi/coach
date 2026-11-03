@@ -179,6 +179,8 @@ nonisolated struct PlannerWeek: Decodable, Equatable, Sendable, Identifiable {
         let feelText: String?
         let hours: Int?
         let hoursText: String?
+        /// Travel days on the calendar: Your week starts with them marked Away before a draft.
+        let away: [String]
     }
 
     struct LongDay: Decodable, Equatable, Sendable, Identifiable {

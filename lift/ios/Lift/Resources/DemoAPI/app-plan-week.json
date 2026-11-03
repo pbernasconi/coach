@@ -561,7 +561,10 @@
     "feel": "normal",
     "feelText": "Coach reads normal: sleep is back to normal and HRV is steady.",
     "hours": 8,
-    "hoursText": "Your recent weeks average about 8h."
+    "hoursText": "Your recent weeks average about 8h.",
+    "away": [
+      "2026-11-13"
+    ]
   },
   "answers": {
     "feel": "normal",

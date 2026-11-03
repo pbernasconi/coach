@@ -36,6 +36,24 @@ export function freeWindows(calendar, date, { from = 6 * 60, to = 21 * 60, min =
   return out.filter(([a, b]) => b - a >= min).map(([a, b]) => ({ start: hhmm(a), end: hhmm(b), minutes: b - a }));
 }
 
+const TRAVEL = /flight|fly(ing)? to|airport|✈|trip|travel|hotel|conference/i;
+const NOT_AWAY = /holiday|birthday|anniversary|day off|ooo|\bday$/i;
+
+/**
+ * Days Coach suggests as away, from the calendar: an all-day event (a city, a trip, a hold) or a flight, a trip or
+ * a hotel. Public holidays and birthdays are left out. Days before `today` are never suggested.
+ * @param {{ date: string, allDay: boolean, title: string }[]} calendar
+ * @param {string} monday
+ * @param {string} today
+ * @returns {string[]}
+ */
+export function suggestAway(calendar, monday, today) {
+  const week = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
+  return week.filter(
+    (d) => d >= today && calendar.some((c) => c.date === d && !NOT_AWAY.test(c.title) && (c.allDay || TRAVEL.test(c.title))),
+  );
+}
+
 /** Physio, stretching and mobility count as physio, whatever their sport. */
 const isPhysio = (/** @type {{ title: string }} */ e) => /physio|stretch|mobility/i.test(e.title);
 

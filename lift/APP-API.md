@@ -1347,7 +1347,8 @@ web's (`src/lib/plan/planner-ops.ts`). `week` is any day of the week (default: n
   that week is still going), `lastWeek.read` (Coach's read: `title`, `text`, `tone`), each last-week day's
   `labelText`, `doneText` (Strava, one line per activity) and `missedText`; each day's `past` and `freeText` (its free
   windows on the calendar); `versusTitle` and `versus` (`label`, `beforeText`, `afterText`) and `keepers` (`index`,
-  `title`, `sport`, `dayText`: the sessions to keep if the week goes sideways), both empty unless `proposed`.
+  `title`, `sport`, `dayText`: the sessions to keep if the week goes sideways), both empty unless `proposed`;
+  `suggested.away` (travel days on the calendar: start Your week with them marked Away when `answers` is `null`).
 
 PUT body `{ "action": …, "proposalId": …, … }`, answered with the week as GET plus `note` (Accept's line, else
 `null`) and `refusedText` (why the draft could not take it, shown as is, else `null`; still a `200`, so the phone

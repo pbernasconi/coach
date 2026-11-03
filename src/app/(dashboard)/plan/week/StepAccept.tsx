@@ -1,7 +1,7 @@
 'use client';
 
 import { RefreshCw } from 'lucide-react';
-import type { PlannerWeek } from '@/lib/plan/planner-week';
+import type { DraftEvent, PlannerWeek } from '@/lib/plan/planner-week';
 import { keepers, versusLastWeek } from '@/lib/plan/planner-steps.mjs';
 import { Card, StepTitle } from './StepLastWeek';
 import { clock, dayNum, days, hm, sportVar, weekday } from './plannerUi';
@@ -12,28 +12,28 @@ const SYNCS = 'Google Calendar, Lift, Garmin and Zwift';
  * Step 5: the week day by day, against last week, the sessions to keep if the week goes sideways, and where it
  * syncs. The footer's Accept and sync takes it.
  */
-export default function StepAccept({ data }: { data: PlannerWeek }) {
-  const total = data.events.reduce((n, e) => n + (e.minutes ?? 0), 0);
-  const lifts = data.events.filter((e) => e.sport === 'strength' && !/physio|stretch/i.test(e.title)).length;
-  const hard = data.events.filter((e) => e.hard).length;
-  const rows = versusLastWeek(data.lastWeek, data.events);
-  const keep = keepers(data.events);
-  const review = data.proposal?.review;
+export default function StepAccept({ data, events, onPlan = false }: { data: PlannerWeek; events: DraftEvent[]; onPlan?: boolean }) {
+  const total = events.reduce((n, e) => n + (e.minutes ?? 0), 0);
+  const lifts = events.filter((e) => e.sport === 'strength' && !/physio|stretch/i.test(e.title)).length;
+  const hard = events.filter((e) => e.hard).length;
+  const rows = versusLastWeek(data.lastWeek, events);
+  const keep = keepers(events);
+  const review = onPlan ? null : data.proposal?.review;
   const fmt = (v: number | null, unit: string) => (v == null ? '–' : unit === 'min' ? hm(v) : String(v));
   return (
     <div className="flex gap-7">
       <div className="flex min-w-0 flex-1 flex-col gap-4">
-        <StepTitle title="Your week, ready to go"
-          sub={`${hm(total)} · ${data.events.length} sessions · ${lifts} lift${lifts === 1 ? '' : 's'} · ${hard} hard`} />
+        <StepTitle title={onPlan ? 'Your week, on the plan' : 'Your week, ready to go'}
+          sub={`${hm(total)} · ${events.length} sessions · ${lifts} lift${lifts === 1 ? '' : 's'} · ${hard} hard`} />
         <Card className="flex flex-col py-1.5">
           {days(data.weekStart).map((d) => {
-            const items = data.events.filter((e) => e.date === d);
+            const items = events.filter((e) => e.date === d);
             const gone = d < data.today;
             return (
               <div key={d} className="flex gap-4 border-b py-3 last:border-b-0">
                 <span className="w-16 shrink-0 text-[15px] font-semibold">{weekday(d)} {dayNum(d)}</span>
                 <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                  {items.length === 0 && <span className="text-[15px] text-muted-foreground">{gone ? 'Already done' : 'Rest'}</span>}
+                  {items.length === 0 && <span className="text-[15px] text-muted-foreground">{gone && !onPlan ? 'Already done' : 'Rest'}</span>}
                   {items.map((e) => (
                     <div key={e.index} className="flex items-center gap-3 text-[15px]">
                       <span className="size-2.5 shrink-0 rounded-full" style={{ background: sportVar(e) }} />
@@ -51,7 +51,7 @@ export default function StepAccept({ data }: { data: PlannerWeek }) {
         </Card>
         <span className="flex items-center gap-2.5 text-sm text-muted-foreground">
           <RefreshCw aria-hidden className="size-4" />
-          Goes to {SYNCS}. Moving a workout later syncs it again; moves on your calendar win.
+          {onPlan ? `Synced to ${SYNCS}. Move a workout in Plan or on your calendar; calendar moves win.` : `Goes to ${SYNCS}. Moving a workout later syncs it again; moves on your calendar win.`}
         </span>
       </div>
 
@@ -81,7 +81,7 @@ export default function StepAccept({ data }: { data: PlannerWeek }) {
             </div>
           </Card>
         )}
-        {(review?.headline || data.proposal?.summary) && (
+        {!onPlan && (review?.headline || data.proposal?.summary) && (
           <section className="flex flex-col gap-1.5 rounded-2xl bg-brand/12 px-5 py-4">
             <span className="text-xs font-semibold tracking-wide text-brand-ink uppercase">Coach</span>
             <span className="text-[15px] leading-[22px]">{review?.headline ?? data.proposal?.summary?.split('\n')[0]}</span>

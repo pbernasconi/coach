@@ -45,12 +45,13 @@ export default function StepYourWeek({ data, answers, setAnswers }: { data: Plan
             const gone = m.date < data.today;
             const win = windows[m.date] ?? [];
             const longest = win.reduce((n, w) => Math.max(n, w.minutes), 0);
+            const trip = data.calendar.find((c) => c.date === m.date && (c.allDay || /flight|trip|travel|hotel/i.test(c.title)))?.title;
             return (
               <div key={m.date} className="flex items-center justify-between gap-3 border-b py-2 last:border-b-0">
                 <div className="flex min-w-0 flex-col">
                   <span className="text-sm font-semibold">{weekday(m.date)} {dayNum(m.date)}</span>
                   <span className="truncate text-xs text-muted-foreground">
-                    {gone ? 'Done, kept as it was' : m.mode === 'off' ? 'No training' : m.mode === 'away' ? 'No gym, runs only' : longest ? `Longest free window ${hm(longest)}` : 'Busy all day'}
+                    {gone ? 'Done, kept as it was' : m.mode === 'off' ? 'No training' : m.mode === 'away' ? (trip ? `${trip}: no gym, runs or rest` : 'No gym, runs or rest') : longest ? `Longest free window ${hm(longest)}` : 'Busy all day'}
                   </span>
                 </div>
                 {gone ? (
