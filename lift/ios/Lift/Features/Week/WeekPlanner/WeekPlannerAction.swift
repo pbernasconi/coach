@@ -17,8 +17,10 @@ nonisolated enum WeekPlannerAction: Equatable, Sendable {
     case liftsPicked(Int?)
     case hardPicked(Int?)
     case longDayPicked(String?)
-    /// Free, Off or Away for one day on Your week.
+    /// Free, Busy, Travelling, Rest or Sick for one day on Your week.
     case dayModePicked(String, PlannerAnswers.DayMode)
+    /// The note box under a day on Your week: the date and the text.
+    case dayNoteChanged(String, String)
     case anythingChanged(String)
     /// "Draft my week", "Try again", or "Redraw with these answers".
     case draftTapped

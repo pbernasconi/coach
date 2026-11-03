@@ -284,11 +284,17 @@ export function checkRules(sessions, { weekStart, request = null, context = null
     }
   }
 
-  // R7: days off stay empty; nothing on top of a meeting.
-  for (const off of Array.isArray(request?.daysOff) ? request.daysOff : []) {
+  // R7: days off and sick days stay empty, busy days hold one short session; nothing on top of a meeting.
+  const list = (/** @type {unknown} */ v) => (Array.isArray(v) ? v.map(String) : []);
+  for (const [off, what] of [...list(request?.daysOff).map((d) => [d, 'a day off']), ...list(request?.sick).map((d) => [d, 'a sick day'])]) {
     for (const s of byDay.get(off) ?? []) {
-      if (s.sport !== 'walk') add('R7', 'fail', off, `${label(off)} is a day off, but ${s.title} is on it.`);
+      if (s.sport !== 'walk') add('R7', 'fail', off, `${label(off)} is ${what}, but ${s.title} is on it.`);
     }
+  }
+  for (const busy of list(request?.busy)) {
+    const on = (byDay.get(busy) ?? []).filter((s) => BLOCK_SPORTS.has(s.sport));
+    const min = on.reduce((n, s) => n + (s.minutes || 0), 0);
+    if (on.length > 1 || min > 50) add('R7', 'warn', busy, `${label(busy)} is busy: one short session (45 min at most), not ${on.length > 1 ? `${on.length} sessions` : `${min} min`}.`);
   }
   if (context) {
     const meetings = meetingsOf(context, weekStart);

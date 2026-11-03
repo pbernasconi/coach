@@ -58,8 +58,8 @@ final class WeekPlannerViewModel {
             if state.step == .review { return sendWrite(.acceptConfirmed) }
             state.step = .review
         case .destinationDismissed: state.destination = nil
-        case .feelTapped, .hoursChanged, .liftsPicked, .hardPicked, .longDayPicked, .dayModePicked, .anythingChanged,
-            .noteChanged:
+        case .feelTapped, .hoursChanged, .liftsPicked, .hardPicked, .longDayPicked, .dayModePicked, .dayNoteChanged,
+            .anythingChanged, .noteChanged:
             answer(action)
         default: return sendWrite(action)
         }
@@ -89,6 +89,7 @@ final class WeekPlannerViewModel {
         case .hardPicked(let hard): state.answers.hard = hard
         case .longDayPicked(let day): state.answers.longDay = day
         case .dayModePicked(let day, let mode): state.answers = state.answers.with(day, as: mode)
+        case .dayNoteChanged(let day, let text): state.answers = state.answers.with(day, note: text)
         case .anythingChanged(let text): state.answers.lock = text
         case .noteChanged(let text): state.note = text
         default: break

@@ -26,6 +26,7 @@ const POLL_MS = 10_000;
 function answersFrom(data: PlannerWeek): Answers {
   const r = data.proposal?.request;
   const daysOff = r?.daysOff ?? [];
+  const sick = r?.sick ?? [];
   return {
     feel: r?.feel ?? null,
     hours: r?.hours ?? null,
@@ -35,6 +36,9 @@ function answersFrom(data: PlannerWeek): Answers {
     daysOff,
     // No draft yet: Coach suggests the travel days on the calendar as away.
     away: r ? r.away ?? [] : suggestAway(data.calendar, data.weekStart, data.today).filter((d) => !daysOff.includes(d)),
+    busy: r?.busy ?? [],
+    sick,
+    notes: r?.notes ?? {},
     lock: r?.lock ?? '',
   };
 }
@@ -265,7 +269,7 @@ function DraftStep({
         </div>
         <div className="relative min-h-0 flex-1 overflow-auto px-4 pb-6">
           <WeekGrid weekStart={data.weekStart} events={ready ? data.events : []} calendar={data.calendar} selected={selected}
-            changed={changed} today={data.today} onSelect={(i) => setSelected(i)} onMove={move} />
+            changed={changed} today={data.today} onSelect={(i) => setSelected(i)} onMove={move} notes={data.proposal?.request.notes} />
         </div>
         {!ready && (
           <div className="absolute inset-0 z-30 flex items-start justify-center bg-background/50 pt-40 backdrop-blur-[1px]">

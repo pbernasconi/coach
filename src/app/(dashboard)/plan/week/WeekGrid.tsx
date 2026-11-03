@@ -6,6 +6,17 @@ import type { DraftEvent } from '@/lib/plan/planner-week';
 import type { CalendarBlock } from '@/lib/plan/planning-context';
 import { clock, dayNum, days, hm, minutesOf, sportStyle, weekday } from './plannerUi';
 
+type DayType = 'free' | 'busy' | 'travel' | 'rest' | 'sick';
+const DAY_LABEL: Record<DayType, string> = { free: 'Free', busy: 'Busy', travel: 'Travel', rest: 'Rest', sick: 'Sick' };
+/** The header badge and the column tint of each day type (rest and sick are also hatched). */
+const DAY_STYLE: Record<DayType, { badge: string; column: string }> = {
+  free: { badge: '', column: '' },
+  busy: { badge: 'bg-sky-500/15 text-sky-800 dark:text-sky-300', column: 'bg-sky-500/5' },
+  travel: { badge: 'bg-amber-500/15 text-amber-800 dark:text-amber-300', column: 'bg-amber-500/8' },
+  rest: { badge: 'bg-muted text-muted-foreground', column: '' },
+  sick: { badge: 'bg-rose-500/15 text-rose-800 dark:text-rose-300', column: 'bg-rose-500/5' },
+};
+
 /** The grid runs 5:00 to 23:00, at least 44 px an hour and taller to fill the screen; a drag snaps to 15 minutes. */
 const H0 = 5;
 const H1 = 23;
@@ -19,7 +30,7 @@ type Drag = { index: number; x0: number; y0: number; dx: number; dy: number; mov
  * session to another time or day (onMove), click it for its details (onSelect).
  */
 export default function WeekGrid({
-  weekStart, events, calendar, selected, changed, today, onSelect, onMove, windows, modes,
+  weekStart, events, calendar, selected, changed, today, onSelect, onMove, windows, modes, notes,
 }: {
   weekStart: string;
   events: DraftEvent[];
@@ -32,8 +43,10 @@ export default function WeekGrid({
   onMove: (index: number, date: string, time: string) => void;
   /** Free windows to draw, by day (the Your week step). */
   windows?: Record<string, { start: string; end: string }[]>;
-  /** Days marked off or away (the Your week step). */
-  modes?: Record<string, 'free' | 'off' | 'away'>;
+  /** What each day is (the Your week step): busy, travelling, rest or sick are marked. */
+  modes?: Record<string, DayType>;
+  /** Paolo's note per day, shown with the all-day events. */
+  notes?: Record<string, string>;
 }) {
   const cols = useRef<HTMLDivElement>(null);
   const root = useRef<HTMLDivElement>(null);
@@ -58,6 +71,7 @@ export default function WeekGrid({
   const untimed = events.filter((e) => !e.start || !e.minutes);
   // Days off are marked only once there is a draft.
   const drafted = events.length > 0;
+  const allDay = calendar.filter((c) => c.allDay);
 
   const finish = (e: DraftEvent, d: Drag) => {
     if (!d.moved) return onSelect(e.index);
@@ -71,24 +85,42 @@ export default function WeekGrid({
 
   return (
     <div ref={root} className="flex min-w-[760px] flex-col">
-      <div className="sticky top-0 z-20 grid grid-cols-[48px_repeat(7,minmax(0,1fr))] border-b bg-background/95 backdrop-blur">
+      <div className="sticky top-0 z-20 border-b bg-background/95 backdrop-blur">
+      <div className="grid grid-cols-[48px_repeat(7,minmax(0,1fr))]">
         <span />
         {week.map((d) => {
           const total = events.filter((e) => e.date === d).reduce((n, e) => n + (e.minutes ?? 0), 0);
           return (
-            <div key={d} className="flex items-baseline justify-between px-2 py-2">
-              <span className={cn('text-sm font-semibold', d === today && 'text-brand-ink')}>
+            <div key={d} className="flex min-w-0 items-baseline justify-between gap-1 px-2 py-2">
+              <span className={cn('text-sm font-semibold whitespace-nowrap', d === today && 'text-brand-ink')}>
                 {weekday(d)} {dayNum(d)}
               </span>
               {drafted && <span className={cn('text-xs', total ? 'text-muted-foreground' : 'font-medium text-brand-ink')}>{total ? hm(total) : 'Off'}</span>}
               {!drafted && modes?.[d] && modes[d] !== 'free' && (
-                <span className={cn('rounded-full px-2 text-[11px] font-semibold', modes[d] === 'off' ? 'bg-muted text-muted-foreground' : 'bg-amber-500/15 text-amber-800 dark:text-amber-300')}>
-                  {modes[d] === 'off' ? 'Off' : 'Away'}
+                <span className={cn('min-w-0 truncate rounded-full px-2 text-[11px] font-semibold', DAY_STYLE[modes[d]].badge)}>
+                  {DAY_LABEL[modes[d]]}
                 </span>
               )}
             </div>
           );
         })}
+      </div>
+      {/* All-day events and Paolo's notes sit above the hours, as in Google Calendar. */}
+      {(allDay.length > 0 || week.some((d) => notes?.[d])) && (
+        <div className="grid grid-cols-[48px_repeat(7,minmax(0,1fr))] border-t border-border/60 py-1">
+          <span className="self-start pt-0.5 pr-2 text-right text-[11px] text-muted-foreground">All day</span>
+          {week.map((d) => (
+            <div key={d} className="flex min-w-0 flex-col gap-0.5 px-1">
+              {allDay.filter((c) => c.date === d).map((c, i) => (
+                <span key={i} title={c.title} className="truncate rounded bg-amber-500/15 px-1.5 py-px text-[11px] font-medium text-amber-900 dark:text-amber-200">{c.title}</span>
+              ))}
+              {notes?.[d] && (
+                <span title={notes[d]} className="truncate rounded border border-dashed border-brand/50 px-1.5 text-[11px] text-brand-ink">{notes[d]}</span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
       </div>
       {untimed.length > 0 && (
         <div className="grid grid-cols-[48px_repeat(7,minmax(0,1fr))] border-b py-1">
@@ -118,12 +150,12 @@ export default function WeekGrid({
             <div key={i} className="pointer-events-none absolute inset-x-0 border-t border-border/60" style={{ top: i * HOUR }} />
           ))}
           {week.map((d) => {
-            const off = (drafted && !events.some((e) => e.date === d)) || modes?.[d] === 'off';
-            const away = modes?.[d] === 'away';
+            const mode = modes?.[d];
+            const off = (drafted && !events.some((e) => e.date === d)) || mode === 'rest' || mode === 'sick';
             return (
-              <div key={d} className={cn('relative border-r border-border/60', away && 'bg-amber-500/8')}
+              <div key={d} className={cn('relative border-r border-border/60', mode && DAY_STYLE[mode].column)}
                 style={off ? { backgroundImage: 'repeating-linear-gradient(135deg, transparent 0 7px, var(--color-border) 7px 8px)' } : undefined}>
-                {modes?.[d] === 'free' && (windows?.[d] ?? []).map((w) => {
+                {(mode === 'free' || mode === 'busy') && (windows?.[d] ?? []).map((w) => {
                   const top = ((minutesOf(w.start) - H0 * 60) / 60) * HOUR;
                   const height = ((minutesOf(w.end) - minutesOf(w.start)) / 60) * HOUR;
                   return (
@@ -144,9 +176,6 @@ export default function WeekGrid({
                     </div>
                   );
                 })}
-                {calendar.filter((c) => c.date === d && c.allDay).slice(0, 1).map((c, i) => (
-                  <div key={`a${i}`} className="absolute inset-x-1 top-1 truncate rounded bg-muted px-1.5 text-[11px] text-muted-foreground">{c.title}</div>
-                ))}
                 {timed.filter((e) => e.date === d).map((e) => {
                   const dragging = drag?.index === e.index ? drag : null;
                   const top = ((minutesOf(e.start!) - H0 * 60) / 60) * HOUR;

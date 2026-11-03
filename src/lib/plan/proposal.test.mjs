@@ -5,6 +5,7 @@ import { checkPlan, cleanRequest } from './proposal.mjs';
 test('a request is cleaned to a Monday, and unknown answers become "decide from the data"', () => {
   assert.deepEqual(cleanRequest({ weekStart: '2026-10-29', feel: 'fresh', focus: 'dance', lock: '  keep bike club  ' }).value, {
     kind: 'weekly', weekStart: '2026-10-26', feel: 'fresh', focus: null, lock: 'keep bike club', hours: null, gym: null, hard: null, longDay: null, daysOff: [], away: [],
+    busy: [], sick: [], notes: {},
   });
   const v = cleanRequest({ weekStart: '2026-10-26', hours: 8, gym: 9, daysOff: ['2026-10-30', '2026-11-04', 'x', '2026-10-30'] }).value;
   assert.equal(v.hours, 8);
@@ -18,6 +19,12 @@ test('a request is cleaned to a Monday, and unknown answers become "decide from 
   const t = cleanRequest({ weekStart: '2026-10-26', daysOff: ['2026-10-26'], away: ['2026-10-30', '2026-10-26', '2026-11-09', '2026-10-29'] }).value;
   assert.deepEqual(t.away, ['2026-10-29', '2026-10-30'], 'away days stay in the week and never double as days off');
   assert.equal(cleanRequest({ kind: 'checkin', weekStart: '2026-10-26' }).value.kind, 'checkin');
+  const d = cleanRequest({
+    weekStart: '2026-10-26', sick: ['2026-10-27'], daysOff: ['2026-10-27', '2026-10-28'], busy: ['2026-10-28', '2026-10-29'],
+    notes: { '2026-10-29': '  Dinner at 7 ', '2026-11-09': 'next week', '2026-10-30': '  ' },
+  }).value;
+  assert.deepEqual([d.sick, d.daysOff, d.busy], [['2026-10-27'], ['2026-10-28'], ['2026-10-29']], 'one list per day, sick first');
+  assert.deepEqual(d.notes, { '2026-10-29': 'Dinner at 7' });
 });
 
 const event = (over = {}) => ({

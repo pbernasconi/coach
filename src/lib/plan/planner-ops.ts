@@ -26,8 +26,10 @@ function answersNote(a: PlanRequest): string {
     a.gym != null && `${a.gym} lifts`,
     a.hard != null && `${a.hard} hard`,
     a.longDay && `long day ${new Date(`${a.longDay}T12:00:00Z`).toLocaleDateString('en-US', { weekday: 'long', timeZone: 'UTC' })}`,
-    a.daysOff?.length && `${a.daysOff.length} day${a.daysOff.length > 1 ? 's' : ''} off`,
-    a.away?.length && `away ${a.away.length} day${a.away.length > 1 ? 's' : ''}`,
+    a.daysOff?.length && `${a.daysOff.length} rest day${a.daysOff.length > 1 ? 's' : ''}`,
+    a.away?.length && `travelling ${a.away.length} day${a.away.length > 1 ? 's' : ''}`,
+    a.busy?.length && `${a.busy.length} busy day${a.busy.length > 1 ? 's' : ''}`,
+    a.sick?.length && `sick ${a.sick.length} day${a.sick.length > 1 ? 's' : ''}`,
     a.lock && a.lock,
   ].filter(Boolean);
   return `New answers: ${parts.join(', ') || 'Coach decides from the data'}.`;
