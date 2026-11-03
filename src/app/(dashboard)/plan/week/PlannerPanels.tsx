@@ -8,7 +8,7 @@ import { freeSlots } from '@/lib/plan/planner-app.mjs';
 import { clock, dayNum, hm, sportVar, weekday } from './plannerUi';
 
 export type Answers = {
-  feel: string | null; hours: number | null; gym: number | null; hard: number | null; longDay: string | null; daysOff: string[]; away: string[]; lock: string;
+  feel: string | null; hours: number | null; gym: number | null; hard: number | null; longDay: string | null; daysOff: string[]; away: string[]; busy: string[]; sick: string[]; notes: Record<string, string>; lock: string;
 };
 
 export const FEELS = [

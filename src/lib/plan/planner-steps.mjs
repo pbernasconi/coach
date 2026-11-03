@@ -125,34 +125,74 @@ export function versusLastWeek(last, events) {
 }
 
 /**
- * What each day is for the week of `monday`: free, off (no training) or away (travel: no gym, runs only), from the
- * answers.
+ * What a day can be on step 2, in the order the controls show them. `free` trains as normal; `busy` fits one short
+ * session; `travel` has no gym or trainer; `rest` and `sick` have no training (sick also eases the next days in).
+ * The answers keep them as lists: `daysOff` (rest), `away` (travel), `busy` and `sick`.
+ */
+export const DAY_TYPES = /** @type {const} */ ([
+  { id: 'free', label: 'Free', hint: 'Train as normal' },
+  { id: 'busy', label: 'Busy', hint: 'One short session, 45 min at most' },
+  { id: 'travel', label: 'Travelling', hint: 'No gym: runs, bodyweight or rest' },
+  { id: 'rest', label: 'Rest', hint: 'No training' },
+  { id: 'sick', label: 'Sick', hint: 'No training, then ease back in' },
+]);
+
+/** @typedef {'free' | 'busy' | 'travel' | 'rest' | 'sick'} DayType */
+/** @typedef {{ daysOff: string[], away?: string[], busy?: string[], sick?: string[], notes?: Record<string, string> }} DayAnswers */
+
+/** The answers' list for each day type but free. */
+const LISTS = /** @type {const} */ ({ rest: 'daysOff', travel: 'away', busy: 'busy', sick: 'sick' });
+
+/**
+ * What each day is for the week of `monday`, and Paolo's note for it, from the answers.
  * @param {string} monday
- * @param {{ daysOff: string[], away?: string[] }} a
- * @returns {{ date: string, mode: 'free' | 'off' | 'away' }[]}
+ * @param {DayAnswers} a
+ * @returns {{ date: string, mode: DayType, note: string }[]}
  */
 export function dayModes(monday, a) {
   return Array.from({ length: 7 }, (_, i) => {
     const date = addDays(monday, i);
-    const mode = a.daysOff.includes(date) ? 'off' : (a.away ?? []).includes(date) ? 'away' : 'free';
-    return { date, mode: /** @type {'free' | 'off' | 'away'} */ (mode) };
+    /** @type {DayType} */
+    const mode = (a.sick ?? []).includes(date) ? 'sick'
+      : a.daysOff.includes(date) ? 'rest'
+        : (a.away ?? []).includes(date) ? 'travel'
+          : (a.busy ?? []).includes(date) ? 'busy' : 'free';
+    return { date, mode, note: a.notes?.[date] ?? '' };
   });
 }
 
 /**
- * The answers with one day set to `mode`: off and away are kept apart and sorted.
- * @template {{ daysOff: string[], away?: string[] }} A
+ * The answers with one day set to `mode`: a day is in at most one list, each kept sorted.
+ * @template {DayAnswers} A
  * @param {A} a
  * @param {string} date
- * @param {'free' | 'off' | 'away'} mode
+ * @param {DayType} mode
  * @returns {A}
  */
 export function withDayMode(a, date, mode) {
-  const daysOff = a.daysOff.filter((d) => d !== date);
-  const away = (a.away ?? []).filter((d) => d !== date);
-  if (mode === 'off') daysOff.push(date);
-  if (mode === 'away') away.push(date);
-  return { ...a, daysOff: daysOff.sort(), away: away.sort() };
+  /** @type {Record<string, string[]>} */
+  const next = {};
+  for (const [type, key] of Object.entries(LISTS)) {
+    const list = (/** @type {Record<string, string[] | undefined>} */ (/** @type {unknown} */ (a))[key] ?? []).filter((d) => d !== date);
+    if (type === mode) list.push(date);
+    next[key] = list.sort();
+  }
+  return { ...a, ...next };
+}
+
+/**
+ * The answers with Paolo's note for one day ("Dinner at 7", "Hotel has a gym"); an empty note is dropped.
+ * @template {DayAnswers} A
+ * @param {A} a
+ * @param {string} date
+ * @param {string} note
+ * @returns {A}
+ */
+export function withDayNote(a, date, note) {
+  const notes = { ...(a.notes ?? {}) };
+  if (note.trim()) notes[date] = note.slice(0, 200);
+  else delete notes[date];
+  return { ...a, notes };
 }
 
 /**

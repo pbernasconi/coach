@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { suggestAway, dayModes, firstStep, freeWindows, hourSplit, keepers, lastWeekRead, roughSplit, versusLastWeek, upcomingWeeks, withDayMode } from './planner-steps.mjs';
+import { suggestAway, dayModes, firstStep, freeWindows, hourSplit, keepers, lastWeekRead, roughSplit, versusLastWeek, upcomingWeeks, withDayMode, withDayNote } from './planner-steps.mjs';
 
 // A made-up week (TEST-8).
 const cal = [
@@ -51,16 +51,28 @@ test('versusLastWeek compares time, lifts, hard and running', () => {
   assert.equal(versusLastWeek(null, week)[0].before, null);
 });
 
-test('day modes round-trip through the answers', () => {
+test('day types round-trip through the answers, one list per day', () => {
   let a = { daysOff: [], away: [] };
-  a = withDayMode(a, '2026-03-12', 'away');
-  a = withDayMode(a, '2026-03-09', 'off');
-  a = withDayMode(a, '2026-03-13', 'away');
-  assert.deepEqual(a, { daysOff: ['2026-03-09'], away: ['2026-03-12', '2026-03-13'] });
-  assert.deepEqual(dayModes('2026-03-09', a).map((d) => d.mode), ['off', 'free', 'free', 'away', 'away', 'free', 'free']);
+  a = withDayMode(a, '2026-03-12', 'travel');
+  a = withDayMode(a, '2026-03-09', 'rest');
+  a = withDayMode(a, '2026-03-13', 'travel');
+  a = withDayMode(a, '2026-03-10', 'busy');
+  a = withDayMode(a, '2026-03-11', 'sick');
+  assert.deepEqual(a, { daysOff: ['2026-03-09'], away: ['2026-03-12', '2026-03-13'], busy: ['2026-03-10'], sick: ['2026-03-11'] });
+  assert.deepEqual(dayModes('2026-03-09', a).map((d) => d.mode), ['rest', 'busy', 'sick', 'travel', 'travel', 'free', 'free']);
   a = withDayMode(a, '2026-03-12', 'free');
+  a = withDayMode(a, '2026-03-10', 'rest');
   assert.deepEqual(a.away, ['2026-03-13']);
-  assert.deepEqual(dayModes('2026-03-09', { daysOff: [] })[0], { date: '2026-03-09', mode: 'free' });
+  assert.deepEqual(a.busy, []);
+  assert.deepEqual(a.daysOff, ['2026-03-09', '2026-03-10']);
+  assert.deepEqual(dayModes('2026-03-09', { daysOff: [] })[0], { date: '2026-03-09', mode: 'free', note: '' });
+});
+
+test('day notes: set, then dropped when emptied', () => {
+  let a = withDayNote({ daysOff: [] }, '2026-03-10', 'Dinner at 7');
+  assert.equal(dayModes('2026-03-09', a)[1].note, 'Dinner at 7');
+  a = withDayNote(a, '2026-03-10', '  ');
+  assert.deepEqual(a.notes, {});
 });
 
 test('firstStep opens the draft once Coach is on it', () => {

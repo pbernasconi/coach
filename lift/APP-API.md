@@ -1331,7 +1331,8 @@ web's (`src/lib/plan/planner-ops.ts`). `week` is any day of the week (default: n
   "facts": [{ "id": "ctl", "label": "Fitness", "value": "84 CTL", "note": null }],
   "feels": [{ "id": "fresh", "label": "Fresh" }, { "id": "normal", "label": "Normal" }, { "id": "fatigued", "label": "Tired" }, { "id": "recovery", "label": "Recovery week" }],
   "suggested": { "feel": "normal", "feelText": null, "hours": 8, "hoursText": "Your recent weeks average about 8h." },
-  "answers": { "feel": "normal", "hours": 7, "gym": 2, "hard": 1, "longDay": null, "daysOff": ["2026-11-13"], "lock": "" },
+  "answers": { "feel": "normal", "hours": 7, "gym": 2, "hard": 1, "longDay": null, "daysOff": ["2026-11-13"], "away": [], "busy": [],
+    "sick": [], "notes": { "2026-11-11": "Dinner at 7" }, "lock": "" },
   "longDays": [{ "date": "2026-11-14", "text": "Sat" }, { "date": "2026-11-15", "text": "Sun" }],
   "planningAround": ["Thu 9:00 Planning offsite"], "syncsTo": ["Google Calendar", "Lift on iPhone", "Garmin", "Zwift"]
 }
@@ -1361,7 +1362,7 @@ can read it); `400` for a malformed body:
 
 | action | body | what it does |
 | --- | --- | --- |
-| `draft` | `weekStart`, `answers` (`feel`, `hours`, `gym`, `hard`, `longDay`, `daysOff`, `away`, `lock`) | Draft the week, or redraw the open draft with these answers (a new version) |
+| `draft` | `weekStart`, `answers` (`feel`, `hours`, `gym`, `hard`, `longDay`, `daysOff` (rest), `away` (travelling), `busy`, `sick`, `notes` (date → text, 200 chars), `lock`) | Draft the week, or redraw the open draft with these answers (a new version) |
 | `revise` | `proposalId`, `note` | "Tell Coach what to change": a new version |
 | `undo` | `proposalId` | The version before is open again |
 | `edit` | `proposalId`, `op`: `{ kind: "move", index, date, time }`, `{ kind: "length", index, minutes }`, `{ kind: "remove", index }` | Changes the draft in place |

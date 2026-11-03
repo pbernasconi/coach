@@ -204,5 +204,30 @@ nonisolated struct PlannerAnswers: Codable, Equatable, Sendable {
     var daysOff: [String] = []
     /// Travel days: no gym, so Coach plans runs or rest there.
     var away: [String] = []
+    /// Days with time for one short session.
+    var busy: [String] = []
+    /// Sick days: no training, then easy days.
+    var sick: [String] = []
+    /// Paolo's note per day ("Dinner at 7"), by date.
+    var notes: [String: String] = [:]
     var lock: String = ""
+}
+
+nonisolated extension PlannerAnswers {
+    /// Answers from a coach that sent no busy, sick or notes yet read as empty.
+    init(from decoder: any Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        self.init()
+        feel = try values.decodeIfPresent(String.self, forKey: .feel)
+        hours = try values.decodeIfPresent(Int.self, forKey: .hours)
+        gym = try values.decodeIfPresent(Int.self, forKey: .gym)
+        hard = try values.decodeIfPresent(Int.self, forKey: .hard)
+        longDay = try values.decodeIfPresent(String.self, forKey: .longDay)
+        daysOff = try values.decodeIfPresent([String].self, forKey: .daysOff) ?? []
+        away = try values.decodeIfPresent([String].self, forKey: .away) ?? []
+        busy = try values.decodeIfPresent([String].self, forKey: .busy) ?? []
+        sick = try values.decodeIfPresent([String].self, forKey: .sick) ?? []
+        notes = try values.decodeIfPresent([String: String].self, forKey: .notes) ?? [:]
+        lock = try values.decodeIfPresent(String.self, forKey: .lock) ?? ""
+    }
 }

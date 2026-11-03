@@ -118,6 +118,9 @@ test('R6: no long run fails; 75–89 min warns on a full week and passes on a fl
 test('R7: a session on a day off fails; one on top of a meeting warns; Coach events and all-day events are ignored', () => {
   const r = checkProposal(good(), { weekStart: W, request: { daysOff: ['2026-11-07'] } });
   assert.ok(ids(r.issues).includes('R7:fail'));
+  assert.ok(ids(checkProposal(good(), { weekStart: W, request: { sick: ['2026-11-07'] } }).issues).includes('R7:fail'));
+  const busy = checkProposal(good(), { weekStart: W, request: { busy: ['2026-11-07'] } });
+  assert.ok(ids(busy.issues).includes('R7:warn'), 'a long session on a busy day warns');
   const context = {
     calendarByWeek: [{
       weekStart: W,

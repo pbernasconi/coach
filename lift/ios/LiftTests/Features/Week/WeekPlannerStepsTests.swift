@@ -57,7 +57,7 @@ import Testing
         await vm.run()
 
         #expect(vm.state.answers.away == ["2026-03-13"])
-        #expect(vm.state.answers.mode(of: "2026-03-13") == .away)
+        #expect(vm.state.answers.mode(of: "2026-03-13") == .travel)
     }
 
     @Test func stepChangedNextTappedAndBackTappedMoveThroughTheSteps() async {
@@ -86,15 +86,33 @@ import Testing
     @Test func dayModePickedKeepsADayInOneList() async {
         let (vm, _) = await loaded()
 
-        vm.send(.dayModePicked("2026-03-13", .off))
-        vm.send(.dayModePicked("2026-03-10", .off))
+        vm.send(.dayModePicked("2026-03-13", .rest))
+        vm.send(.dayModePicked("2026-03-10", .rest))
         #expect(vm.state.answers.daysOff == ["2026-03-10", "2026-03-13"])
-        vm.send(.dayModePicked("2026-03-10", .away))
+        vm.send(.dayModePicked("2026-03-10", .travel))
         #expect(vm.state.answers.daysOff == ["2026-03-13"])
         #expect(vm.state.answers.away == ["2026-03-10"])
-        vm.send(.dayModePicked("2026-03-10", .free))
+        vm.send(.dayModePicked("2026-03-10", .sick))
+        vm.send(.dayModePicked("2026-03-11", .busy))
         #expect(vm.state.answers.away == [])
-        #expect(vm.state.answers.mode(of: "2026-03-13") == .off)
+        #expect(vm.state.answers.sick == ["2026-03-10"])
+        #expect(vm.state.answers.mode(of: "2026-03-11") == .busy)
+        vm.send(.dayModePicked("2026-03-10", .free))
+        #expect(vm.state.answers.sick == [])
+        #expect(vm.state.answers.mode(of: "2026-03-13") == .rest)
+    }
+
+    @Test func dayNotesGoWithTheDraft() async {
+        let (vm, data) = await loaded("none")
+
+        vm.send(.dayNoteChanged("2026-03-11", "Dinner at 7"))
+        vm.send(.dayNoteChanged("2026-03-12", "Hotel has a gym"))
+        vm.send(.dayNoteChanged("2026-03-12", " "))
+        #expect(vm.state.answers.notes == ["2026-03-11": "Dinner at 7"])
+        await vm.send(.draftTapped)?.value
+
+        let answers = lastPut(data)["answers"] as? [String: Any]
+        #expect(answers?["notes"] as? [String: String] == ["2026-03-11": "Dinner at 7"])
     }
 
     @Test func acceptTappedOpensReviewOnlyForADraft() async {

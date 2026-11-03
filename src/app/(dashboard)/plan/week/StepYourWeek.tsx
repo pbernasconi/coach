@@ -1,80 +1,79 @@
 'use client';
 
 import { useMemo } from 'react';
+import { Input } from '@kobo/web';
 import type { PlannerWeek } from '@/lib/plan/planner-week';
-import { dayModes, freeWindows, withDayMode } from '@/lib/plan/planner-steps.mjs';
+import { DAY_TYPES, dayModes, freeWindows, withDayMode, withDayNote } from '@/lib/plan/planner-steps.mjs';
 import WeekGrid from './WeekGrid';
 import { Segmented, type Answers } from './PlannerPanels';
 import { Card, StepTitle } from './StepLastWeek';
-import { clock, dayNum, hm, weekday } from './plannerUi';
+import { dayNum, hm, weekday } from './plannerUi';
 
-type Mode = 'free' | 'off' | 'away';
-const MODES: { v: Mode; label: string }[] = [
-  { v: 'free', label: 'Free' },
-  { v: 'off', label: 'Off' },
-  { v: 'away', label: 'Away' },
-];
+type DayType = (typeof DAY_TYPES)[number]['id'];
+const OPTIONS = DAY_TYPES.map((t) => ({ v: t.id as DayType, label: t.label }));
+const HINT = Object.fromEntries(DAY_TYPES.map((t) => [t.id, t.hint])) as Record<DayType, string>;
 
 /**
- * Step 2: the week on Paolo's calendar, with the free windows Coach sees. He marks each day free, off (no training)
- * or away (travel: no gym), and Coach plans around the rest. Days already gone in this week are left as they were.
+ * Step 2: the week on Paolo's calendar, with the free windows Coach sees and the all-day events on top. He marks each
+ * day free, busy, travelling, rest or sick, can add a note for it, and Coach plans around that. Days already gone in
+ * this week are left as they were.
  */
 export default function StepYourWeek({ data, answers, setAnswers }: { data: PlannerWeek; answers: Answers; setAnswers: (a: Answers) => void }) {
   const modes = dayModes(data.weekStart, answers);
-  const byDate = Object.fromEntries(modes.map((m) => [m.date, m.mode])) as Record<string, Mode>;
+  const byDate = Object.fromEntries(modes.map((m) => [m.date, m.mode])) as Record<string, DayType>;
   const windows = useMemo(
     () => Object.fromEntries(modes.map((m) => [m.date, m.date < data.today ? [] : freeWindows(data.calendar, m.date, { min: 90 })])),
     [data.calendar, data.today, modes],
   );
-  const notes = data.calendar.filter((c) => c.allDay || c.minutes >= 180);
-  const free = modes.filter((m) => m.mode === 'free' && m.date >= data.today).length;
-  const away = modes.filter((m) => m.mode === 'away').length;
+  const open = modes.filter((m) => m.date >= data.today);
+  const count = (t: DayType) => open.filter((m) => m.mode === t).length;
+  const summary = DAY_TYPES.map((t) => [count(t.id), t.id === 'free' ? 'free' : t.id === 'travel' ? 'travelling' : t.label.toLowerCase()] as const)
+    .filter(([n], i) => n > 0 || i === 0)
+    .map(([n, w], i) => (i === 0 ? `${n} free day${n === 1 ? '' : 's'}` : `${n} ${w}`))
+    .join(', ');
   return (
     <div className="flex min-h-0 flex-1 gap-7">
       <div className="flex min-w-0 flex-1 flex-col gap-3">
-        <StepTitle title="What your week looks like" sub="From Google Calendar. Mark the days that are off or away, and Coach plans around the rest." />
+        <StepTitle title="What your week looks like" sub="From Google Calendar. Say what each day is, add a note if it helps, and Coach plans around it." />
         <div className="min-h-0 flex-1 overflow-auto rounded-2xl border bg-card">
           <WeekGrid weekStart={data.weekStart} events={[]} calendar={data.calendar} selected={null} changed={new Set()} today={data.today}
-            onSelect={() => {}} onMove={() => {}} windows={windows} modes={byDate} />
+            onSelect={() => {}} onMove={() => {}} windows={windows} modes={byDate} notes={answers.notes} />
         </div>
       </div>
-      <div className="flex w-[380px] shrink-0 flex-col gap-4 overflow-auto">
+      <div className="flex w-[400px] shrink-0 flex-col gap-3 overflow-auto">
         <Card className="flex flex-col">
-          <span className="mb-2 text-[17px] font-semibold">Each day</span>
+          <span className="mb-1 text-[17px] font-semibold">Each day</span>
           {modes.map((m) => {
             const gone = m.date < data.today;
-            const win = windows[m.date] ?? [];
-            const longest = win.reduce((n, w) => Math.max(n, w.minutes), 0);
+            const longest = (windows[m.date] ?? []).reduce((n, w) => Math.max(n, w.minutes), 0);
             const trip = data.calendar.find((c) => c.date === m.date && (c.allDay || /flight|trip|travel|hotel/i.test(c.title)))?.title;
+            const line = gone ? 'Done, kept as it was'
+              : m.mode === 'free' ? (longest ? `Longest free window ${hm(longest)}` : 'Busy all day')
+                : m.mode === 'travel' && trip ? `${trip}: no gym` : HINT[m.mode];
             return (
-              <div key={m.date} className="flex items-center justify-between gap-3 border-b py-2 last:border-b-0">
-                <div className="flex min-w-0 flex-col">
-                  <span className="text-sm font-semibold">{weekday(m.date)} {dayNum(m.date)}</span>
-                  <span className="truncate text-xs text-muted-foreground">
-                    {gone ? 'Done, kept as it was' : m.mode === 'off' ? 'No training' : m.mode === 'away' ? (trip ? `${trip}: no gym, runs or rest` : 'No gym, runs or rest') : longest ? `Longest free window ${hm(longest)}` : 'Busy all day'}
-                  </span>
+              <div key={m.date} className="flex flex-col gap-2 border-b py-3 last:border-b-0">
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="text-sm font-semibold whitespace-nowrap">{weekday(m.date)} {dayNum(m.date)}</span>
+                  <span className="truncate text-xs text-muted-foreground" title={line}>{line}</span>
                 </div>
-                {gone ? (
-                  <span className="text-xs text-muted-foreground">Past</span>
-                ) : (
-                  <Segmented value={m.mode} options={MODES} onChange={(v) => setAnswers(withDayMode(answers, m.date, v))} />
+                {!gone && (
+                  <>
+                    <Segmented value={m.mode} options={OPTIONS} onChange={(v) => setAnswers(withDayMode(answers, m.date, v))} />
+                    <Input
+                      aria-label={`Note for ${weekday(m.date)} ${dayNum(m.date)}`}
+                      placeholder="Add a note (dinner at 7, hotel has a gym…)"
+                      value={m.note}
+                      maxLength={200}
+                      onChange={(e) => setAnswers(withDayNote(answers, m.date, e.target.value))}
+                      className="h-8 text-sm"
+                    />
+                  </>
                 )}
               </div>
             );
           })}
         </Card>
-        {notes.length > 0 && (
-          <Card className="flex flex-col gap-2.5">
-            <span className="text-[17px] font-semibold">On your calendar</span>
-            {notes.slice(0, 6).map((c, i) => (
-              <div key={i} className="flex gap-2.5 text-sm leading-5">
-                <span className="mt-1.5 size-2 shrink-0 rounded-full bg-amber-500" />
-                <span>{weekday(c.date)} {dayNum(c.date)}: {c.title}{c.allDay ? '' : `, ${clock(c.start)} for ${hm(c.minutes)}`}</span>
-              </div>
-            ))}
-          </Card>
-        )}
-        <span className="px-1 text-sm text-muted-foreground">{free} free day{free === 1 ? '' : 's'}{away ? `, ${away} away` : ''}.</span>
+        <span className="px-1 text-sm text-muted-foreground">{summary}.</span>
       </div>
     </div>
   );

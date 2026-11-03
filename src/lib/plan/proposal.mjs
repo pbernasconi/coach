@@ -13,7 +13,8 @@ const DAY = /^\d{4}-\d{2}-\d{2}$/;
 /**
  * A clean planning request, or { error }. weekStart becomes the Monday of the given day. `hours` is the time Paolo
  * has for the week (2 to 20), `gym` the strength sessions he wants (0 to 4), `hard` the hard sessions he wants (0 to
- * 3), `longDay` the day of the long session (in the week), `daysOff` the days with no training (in the week), `away` the travel days (in the week, not off); null
+ * 3), `longDay` the day of the long session (in the week), `daysOff` the days with no training (rest), `away` the travel days, `busy` the days with time for one short session,
+ * `sick` the sick days (no training), each day in at most one; `notes` Paolo's note per day; null
  * or empty means Coach decides from the data.
  * @param {Record<string, unknown>} input
  */
@@ -31,13 +32,27 @@ export function cleanRequest(input) {
   const hard = n(input?.hard, 0, 3);
   const last = addDays(weekStart, 6);
   const longDay = DAY.test(String(input?.longDay)) && input.longDay >= weekStart && input.longDay <= last ? String(input.longDay) : null;
-  const daysOff = Array.isArray(input?.daysOff)
-    ? [...new Set(input.daysOff.map(String).filter((d) => DAY.test(d) && d >= weekStart && d <= last))].sort()
-    : [];
-  const away = Array.isArray(input?.away)
-    ? [...new Set(input.away.map(String).filter((d) => DAY.test(d) && d >= weekStart && d <= last && !daysOff.includes(d)))].sort()
-    : [];
-  return { value: { kind, weekStart, feel, focus, lock, hours, gym, hard, longDay, daysOff, away } };
+  // Each day is in at most one list: sick, then off (rest), then away (travel), then busy.
+  /** @type {string[]} */
+  const taken = [];
+  /** @param {unknown} v */
+  const days = (v) => {
+    const out = Array.isArray(v) ? [...new Set(v.map(String).filter((d) => DAY.test(d) && d >= weekStart && d <= last && !taken.includes(d)))].sort() : [];
+    taken.push(...out);
+    return out;
+  };
+  const sick = days(input?.sick);
+  const daysOff = days(input?.daysOff);
+  const away = days(input?.away);
+  const busy = days(input?.busy);
+  /** @type {Record<string, string>} */
+  const notes = {};
+  if (input?.notes && typeof input.notes === 'object') {
+    for (const [d, t] of Object.entries(/** @type {Record<string, unknown>} */ (input.notes))) {
+      if (DAY.test(d) && d >= weekStart && d <= last && typeof t === 'string' && t.trim()) notes[d] = t.trim().slice(0, 200);
+    }
+  }
+  return { value: { kind, weekStart, feel, focus, lock, hours, gym, hard, longDay, daysOff, away, busy, sick, notes } };
 }
 
 /**

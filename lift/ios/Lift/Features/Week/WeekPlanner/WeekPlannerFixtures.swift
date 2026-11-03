@@ -33,10 +33,11 @@
 
         static var fixtureLastWeek: Self { with(demoWeek(), step: .lastWeek) }
 
-        /// Your week: Fri away, the rest free.
+        /// Your week: Fri travelling, Wed busy with a note, the rest free.
         static var fixtureDays: Self {
             var state = with(demoWeek(), step: .days)
-            state.answers = state.answers.with("2026-11-13", as: .away)
+            state.answers = state.answers.with("2026-11-13", as: .travel).with("2026-11-11", as: .busy)
+            state.answers = state.answers.with("2026-11-11", note: "Dinner at 7")
             return state
         }
 
