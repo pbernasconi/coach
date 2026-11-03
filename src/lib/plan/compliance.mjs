@@ -8,7 +8,9 @@
 //   off     under 50 % or over 150 % (yellow, "Partly done": still a session done)
 //   done    done, but nothing to compare (green, no ratio)
 //   A strength workout with a Lift session compares working sets logged with sets planned instead: 80 % or more is
-//   good, less is partial ("Partly done"); extra sets never make it partial.
+//   good; extra sets never make it partial. Under 80 % it is still good when the watch time (or TSS) is on plan:
+//   sets left unticked (a swapped exercise, a set cut from the template mid-day) are not a short session.
+//   Otherwise it is partial ("Partly done").
 //   missed  a past day with no match (red, "Not done")
 //   skipped skipped on purpose       (red, "Not done"; the reason is kept, src/lib/plan/skip.mjs)
 //   rest, today, planned             (grey)
@@ -50,19 +52,26 @@ export function complianceOf(planned, state, actual, opts = {}) {
   if (opts.rest) return out('rest');
   if (state === 'missed') return out('missed');
   if (state !== 'done') return out(state === 'today' ? 'today' : 'planned');
+  const timed = byTime(planned, actual);
   const sets = opts.sets;
   if (sets && positive(sets.planned) && positive(sets.done)) {
     const ratio = sets.done / sets.planned;
-    return out(ratio >= 0.8 ? 'good' : 'partial', ratio, 'sets');
+    if (ratio >= 0.8) return out('good', ratio, 'sets');
+    return timed?.level === 'good' ? out('good', timed.ratio, timed.basis) : out('partial', ratio, 'sets');
   }
-  if (!actual) return out('done');
+  return timed ? out(timed.level, timed.ratio, timed.basis) : out('done');
+}
+
+/** Duration first, TSS when a duration is missing on either side; null when there is nothing to compare. */
+function byTime(planned, actual) {
+  if (!actual) return null;
   if (positive(planned.duration) && positive(actual.min)) {
     const ratio = actual.min / planned.duration;
-    return out(levelForRatio(ratio), ratio, 'duration');
+    return { level: levelForRatio(ratio), ratio, basis: 'duration' };
   }
   if (positive(planned.tss) && positive(actual.tss)) {
     const ratio = actual.tss / planned.tss;
-    return out(levelForRatio(ratio), ratio, 'tss');
+    return { level: levelForRatio(ratio), ratio, basis: 'tss' };
   }
-  return out('done');
+  return null;
 }

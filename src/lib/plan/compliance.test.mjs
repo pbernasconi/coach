@@ -62,3 +62,10 @@ test('a Lift session compares sets logged with sets planned', () => {
   assert.equal(complianceOf({}, 'done', null, { sets: { done: 0, planned: 6 } }).level, 'done');
   assert.equal(complianceOf({}, 'missed', null, { sets: { done: 0, planned: 6 } }).level, 'missed');
 });
+
+test('a Lift session with unticked sets is done when the watch time is on plan', () => {
+  // Heavy barbell 2026-11-03: 1:05 against 1:00 planned, some sets left unticked (a swapped curl, a trimmed RDL).
+  assert.deepEqual(complianceOf({ duration: 60, tss: 20 }, 'done', { min: 65, tss: 21 }, { sets: { done: 13, planned: 18 } }), { level: 'good', label: 'Done', ratio: 65 / 60, basis: 'duration' });
+  // A short session stays partly done, measured by its sets.
+  assert.deepEqual(complianceOf({ duration: 60 }, 'done', { min: 25 }, { sets: { done: 6, planned: 18 } }), { level: 'partial', label: 'Partly done', ratio: 6 / 18, basis: 'sets' });
+});
