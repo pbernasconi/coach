@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 
 @testable import Lift
@@ -41,5 +42,18 @@ import Testing
         tabs.show(.coach)
         tabs.leave(.coach, fallback: .today)
         #expect(tabs.selected == .week)
+    }
+
+    @Test func showsPushedPageFollowsTheSelectedTabsStack() {
+        let tabs = TabSwitcher(selected: .week)
+        #expect(!tabs.showsPushedPage)
+        let workout = AppRoute.workout(UUID())
+        tabs.stackChanged(.week, path: [workout])
+        #expect(tabs.showsPushedPage)  // the Workout screen: no workout bar over it
+        tabs.show(.lift)
+        #expect(!tabs.showsPushedPage)  // Lift's root, the bar shows to go back
+        tabs.show(.week)
+        tabs.stackChanged(.week, path: [])
+        #expect(!tabs.showsPushedPage)
     }
 }

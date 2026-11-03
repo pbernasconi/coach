@@ -28,6 +28,9 @@ final class TabSwitcher: TabSwitching {
     /// Each tab's pushed screens as its stack last reported them (`stackChanged`), so the workout bar can go back to the
     /// tab that has the workout open. Nothing draws from it.
     @ObservationIgnored private var stacks: [AppTab: [AppRoute]] = [:]
+    /// The tabs that show a pushed page over their root. Only changes when a stack goes from its root to a page or
+    /// back, so the shell redraws once per push, not on every step deeper.
+    private var pushedTabs: Set<AppTab> = []
 
     init(selected: AppTab = .week) {
         self.selected = selected
@@ -50,7 +53,16 @@ final class TabSwitcher: TabSwitching {
     /// A tab's stack now shows `path` over its root.
     func stackChanged(_ tab: AppTab, path: [AppRoute]) {
         stacks[tab] = path
+        let isPushed = !path.isEmpty
+        if pushedTabs.contains(tab) != isPushed {
+            if isPushed { pushedTabs.insert(tab) } else { pushedTabs.remove(tab) }
+        }
     }
+
+    /// The selected tab shows a pushed page (the Workout screen among them), where the tab bar is hidden. The workout
+    /// bar hides here too: iOS can bring the tab bar's accessory back over a pushed page, such as after Coach returns
+    /// from the background, while the tab bar itself stays hidden.
+    var showsPushedPage: Bool { pushedTabs.contains(selected) }
 
     /// Back to the workout under way (the bar above the tab bar). A tab that still has it open goes back down to it,
     /// closing what was pushed over it, so one Workout screen stays open; otherwise it opens over the selected tab's
