@@ -24,7 +24,7 @@ const week = (over = {}) => ({
   calendar: [{ date: '2026-11-11', title: 'OB appointment', allDay: false, start: '09:00', minutes: 60 }],
   context: { facts: [{ id: 'ctl', label: 'Fitness', value: '84 CTL' }, { id: 'calendar', label: 'Calendar', value: 'x' }], days: {}, suggested: { feel: 'normal', feelWhy: null, hours: 8 } },
   lastWeek: {
-    monday: '2026-11-02', doneMin: 43, plannedMin: 625, planned: 8, done: 1, missed: 0, skipped: 0,
+    monday: '2026-11-02', ongoing: true, doneMin: 43, plannedMin: 625, planned: 8, done: 1, missed: 0, skipped: 0,
     lifts: { planned: 2, done: 0 }, hard: { planned: 3, done: 0 },
     days: [{ date: '2026-11-02', items: [{ title: 'Easy run', sport: 'run', level: 'done' }, { title: 'Lower', sport: 'strength', level: 'missed' }] }],
   },
@@ -54,6 +54,11 @@ test('a proposed draft: totals, checks, days, change and last week', () => {
   assert.equal(a.lastWeek.days[0].tone, 'bad');
   assert.equal(a.answers.lock, 'Geneva Thu');
   assert.equal(a.issues.length, 1);
+  assert.equal(a.days[2].freeText, 'Free 6:00–9:00, 10:00–21:00');
+  assert.equal(a.lastWeek.titleText, 'This week so far');
+  assert.equal(a.lastWeek.days[0].missedText, 'Missed: Lower');
+  assert.deepEqual(a.versus[0], { label: 'Time', beforeText: '43 min', afterText: '3h30' });
+  assert.deepEqual(a.keepers.map((k) => `${k.title} ${k.dayText}`), ['Heavy barbell Mon', 'Threshold A Wed', 'Long run Sat']);
 });
 
 test('no draft and drafting show no sessions or off days', () => {

@@ -30,6 +30,10 @@ nonisolated struct PlannerWeek: Decodable, Equatable, Sendable, Identifiable {
     let longDays: [LongDay]
     let planningAround: [String]
     let syncsTo: [String]
+    /// Step 5: the draft against last week, and the sessions to keep if the week goes sideways (empty before a draft).
+    let versusTitle: String
+    let versus: [Versus]
+    let keepers: [Keeper]
     /// Accept's line ("On your calendar now…"), only in the answer to an accept.
     var note: String?
     /// Why the coach did not make a change ("Coach is already drafting this week."), only in the answer to a write.
@@ -51,6 +55,10 @@ nonisolated struct PlannerWeek: Decodable, Equatable, Sendable, Identifiable {
     struct Day: Decodable, Equatable, Sendable, Identifiable {
         let date: String
         let labelText: String
+        /// A day already gone this week: kept as it was.
+        let past: Bool
+        /// Step 2's line: its free windows on the calendar ("Free 6:00–9:30, 10:00–21:00").
+        let freeText: String
         let off: Bool
         let totalText: String?
         let sessions: [Session]
@@ -125,6 +133,10 @@ nonisolated struct PlannerWeek: Decodable, Equatable, Sendable, Identifiable {
     }
 
     struct LastWeek: Decodable, Equatable, Sendable {
+        /// "How last week went", or "This week so far" while that week is still going.
+        let titleText: String
+        /// Coach's read: the gym, the hard sessions and the volume, each with a tone.
+        let read: [Read]
         let timeText: String
         let timeNote: String?
         let liftsText: String
@@ -136,9 +148,19 @@ nonisolated struct PlannerWeek: Decodable, Equatable, Sendable, Identifiable {
         struct Day: Decodable, Equatable, Sendable, Identifiable {
             let date: String
             let letter: String
+            let labelText: String
             let title: String?
             let tone: String
+            /// What Strava recorded, one line per activity, and what was missed.
+            let doneText: String?
+            let missedText: String?
             var id: String { date }
+        }
+
+        struct Read: Decodable, Equatable, Sendable {
+            let title: String
+            let text: String
+            let tone: String
         }
     }
 
@@ -174,5 +196,7 @@ nonisolated struct PlannerAnswers: Codable, Equatable, Sendable {
     var hard: Int?
     var longDay: String?
     var daysOff: [String] = []
+    /// Travel days: no gym, so Coach plans runs or rest there.
+    var away: [String] = []
     var lock: String = ""
 }

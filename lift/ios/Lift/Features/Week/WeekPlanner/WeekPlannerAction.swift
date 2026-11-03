@@ -2,7 +2,11 @@ import Foundation
 
 /// Every user intent on the planning screen, named for what happened (SCR-1).
 nonisolated enum WeekPlannerAction: Equatable, Sendable {
-    case tabChanged(WeekPlannerState.Tab)
+    /// A step in the progress header, or "Start with last week".
+    case stepChanged(WeekPlannerState.Step)
+    /// Next and Back in the bottom bar.
+    case nextTapped
+    case backTapped
     case retryTapped
     case refreshPulled
     /// A feel chip: tapping the picked one clears it.
@@ -11,10 +15,9 @@ nonisolated enum WeekPlannerAction: Equatable, Sendable {
     case liftsPicked(Int?)
     case hardPicked(Int?)
     case longDayPicked(String?)
-    case dayOffToggled(String)
+    /// Free, Off or Away for one day on Your week.
+    case dayModePicked(String, PlannerAnswers.DayMode)
     case anythingChanged(String)
-    /// "Next: shape the week" on Last week.
-    case nextTapped
     /// "Draft my week", "Try again", or "Redraw with these answers".
     case draftTapped
     case noteChanged(String)
@@ -27,8 +30,9 @@ nonisolated enum WeekPlannerAction: Equatable, Sendable {
     case lengthChanged(Int)
     case removeTapped
     case swapTapped
-    /// "Accept week" in the bar: opens the summary.
+    /// "Accept" in the top bar: opens Review, or accepts once there.
     case acceptTapped
+    /// "Accept and sync" on Review.
     case acceptConfirmed
     case destinationDismissed
 }

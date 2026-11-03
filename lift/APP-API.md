@@ -1343,6 +1343,11 @@ web's (`src/lib/plan/planner-ops.ts`). `week` is any day of the week (default: n
 - `index` names a session in the actions. `start`/`minutes` place it on a time grid; `slots` are where it can move
   (no clash, one block a day, 6:00–20:30). `changed`: the last version touched it (draw it dashed).
 - `answers` is what the open draft was made with (`null` without one): start the Shape controls there, else empty.
+- The five steps (Last week, Your week, Priorities, Draft, Review): `lastWeek.titleText` ("This week so far" while
+  that week is still going), `lastWeek.read` (Coach's read: `title`, `text`, `tone`), each last-week day's
+  `labelText`, `doneText` (Strava, one line per activity) and `missedText`; each day's `past` and `freeText` (its free
+  windows on the calendar); `versusTitle` and `versus` (`label`, `beforeText`, `afterText`) and `keepers` (`index`,
+  `title`, `sport`, `dayText`: the sessions to keep if the week goes sideways), both empty unless `proposed`.
 
 PUT body `{ "action": …, "proposalId": …, … }`, answered with the week as GET plus `note` (Accept's line, else
 `null`) and `refusedText` (why the draft could not take it, shown as is, else `null`; still a `200`, so the phone
@@ -1350,7 +1355,7 @@ can read it); `400` for a malformed body:
 
 | action | body | what it does |
 | --- | --- | --- |
-| `draft` | `weekStart`, `answers` (`feel`, `hours`, `gym`, `hard`, `longDay`, `daysOff`, `lock`) | Draft the week, or redraw the open draft with these answers (a new version) |
+| `draft` | `weekStart`, `answers` (`feel`, `hours`, `gym`, `hard`, `longDay`, `daysOff`, `away`, `lock`) | Draft the week, or redraw the open draft with these answers (a new version) |
 | `revise` | `proposalId`, `note` | "Tell Coach what to change": a new version |
 | `undo` | `proposalId` | The version before is open again |
 | `edit` | `proposalId`, `op`: `{ kind: "move", index, date, time }`, `{ kind: "length", index, minutes }`, `{ kind: "remove", index }` | Changes the draft in place |

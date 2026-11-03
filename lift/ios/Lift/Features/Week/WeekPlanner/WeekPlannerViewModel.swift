@@ -46,21 +46,35 @@ final class WeekPlannerViewModel {
     @discardableResult
     func send(_ action: WeekPlannerAction) -> Task<Void, Never>? {
         switch action {
-        case .tabChanged(let tab): state.tab = tab
+        case .stepChanged, .nextTapped, .backTapped: navigate(action)
         case .retryTapped:
             state.week.content = .loading
             return Task { await load() }
         case .refreshPulled: return Task { await load() }
-        case .nextTapped: state.tab = .shape
         case .sessionTapped(let index): state.destination = .session(index)
-        case .acceptTapped: if state.isProposed { state.destination = .accept }
+        case .acceptTapped:
+            guard state.isProposed else { return nil }
+            if state.step == .review { return sendWrite(.acceptConfirmed) }
+            state.step = .review
         case .destinationDismissed: state.destination = nil
-        case .feelTapped, .hoursChanged, .liftsPicked, .hardPicked, .longDayPicked, .dayOffToggled, .anythingChanged,
+        case .feelTapped, .hoursChanged, .liftsPicked, .hardPicked, .longDayPicked, .dayModePicked, .anythingChanged,
             .noteChanged:
             answer(action)
         default: return sendWrite(action)
         }
         return nil
+    }
+
+    /// Moves between the steps; Draft and Review stay closed until there is a draft.
+    private func navigate(_ action: WeekPlannerAction) {
+        let target: WeekPlannerState.Step? =
+            switch action {
+            case .stepChanged(let step): step
+            case .nextTapped: state.step.next
+            case .backTapped: state.step.previous
+            default: nil
+            }
+        if let target, state.isOpen(target) { state.step = target }
     }
 
     /// The Last week and Shape controls, and the note box.
@@ -71,12 +85,7 @@ final class WeekPlannerViewModel {
         case .liftsPicked(let lifts): state.answers.gym = lifts
         case .hardPicked(let hard): state.answers.hard = hard
         case .longDayPicked(let day): state.answers.longDay = day
-        case .dayOffToggled(let day):
-            if state.answers.daysOff.contains(day) {
-                state.answers.daysOff.removeAll { $0 == day }
-            } else {
-                state.answers.daysOff = (state.answers.daysOff + [day]).sorted()
-            }
+        case .dayModePicked(let day, let mode): state.answers = state.answers.with(day, as: mode)
         case .anythingChanged(let text): state.answers.lock = text
         case .noteChanged(let text): state.note = text
         default: break
@@ -89,7 +98,7 @@ final class WeekPlannerViewModel {
         let id = week.proposalId ?? ""
         switch action {
         case .draftTapped:
-            state.tab = .week
+            state.step = .draft
             return write(.draft(week.weekStart, state.answers))
         case .noteSent:
             let note = state.note.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -144,7 +153,6 @@ final class WeekPlannerViewModel {
             state.week.content = .loaded(week)
             state.write = week.refusedText.map { .failed($0) } ?? .idle
             if request.action == "accept", week.refusedText == nil {
-                state.destination = nil
                 state.acceptedNote = week.note ?? String(localized: "Week accepted")
                 return
             }
@@ -164,11 +172,12 @@ final class WeekPlannerViewModel {
         fillAnswers()
     }
 
-    /// Starts the Shape controls at the open draft's answers, once.
+    /// Starts the controls at the open draft's answers, and on the Draft step when there is one, once.
     private func fillAnswers() {
         guard !answersFilled, let week = state.loaded else { return }
         answersFilled = true
         if let answers = week.answers { state.answers = answers }
+        if week.state == .drafting || week.state == .proposed { state.step = .draft }
     }
 
     /// Asks again every `pollEvery` while Coach drafts, up to `pollRounds` times.

@@ -3,6 +3,7 @@
 // (the web's session panel uses freeSlots too). Pure, so node --test runs it (planner-app.test.mjs).
 
 import { addDays } from './week.mjs';
+import { freeWindows, keepers, lastWeekRead, versusLastWeek } from './planner-steps.mjs';
 
 /** @param {string} t "HH:MM" */
 const minutesOf = (t) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
@@ -108,9 +109,13 @@ export function plannerApp(w) {
     days: week.map((d) => {
       const own = events.filter((e) => e.date === d);
       const mins = own.reduce((n, e) => n + (e.minutes ?? 0), 0);
+      const free = freeWindows(w.calendar, d, { min: 90 });
       return {
         date: d,
         labelText: `${weekday(d)} ${Number(d.slice(8))}`,
+        past: d < w.today,
+        // Step 2's line under the day: its free windows on the calendar.
+        freeText: d < w.today ? 'Done, kept as it was' : free.length ? `Free ${free.map((f) => `${clock(f.start)}–${clock(f.end)}`).join(', ')}` : 'Busy all day',
         off: ready && own.length === 0,
         totalText: ready ? (mins ? hm(mins) : 'Off') : null,
         sessions: own.map((e) => ({
@@ -140,15 +145,23 @@ export function plannerApp(w) {
     quickAsks: ready ? ['Make it lighter', 'Swap the hard day', 'Long ride instead of the long run', 'One more easy day'] : [],
     lastWeek: lw
       ? {
+          titleText: lw.ongoing ? 'This week so far' : 'How last week went',
           timeText: hm(lw.doneMin),
-          timeNote: lw.plannedMin ? `of ${hm(lw.plannedMin)} planned` : null,
+          timeNote: lw.ongoing ? 'so far' : lw.plannedMin ? `of ${hm(lw.plannedMin)} planned` : null,
+          read: lastWeekRead(lw, w.today).map((r) => ({ title: r.title, text: r.text, tone: r.tone })),
           liftsText: `${lw.lifts.done} of ${lw.lifts.planned}`,
           liftsShort: lw.lifts.done < lw.lifts.planned,
           hardText: `${lw.hard.done} of ${lw.hard.planned}`,
           hardShort: lw.hard.done < lw.hard.planned,
           days: lw.days.map((d) => {
             const worst = [...d.items].sort((a, b) => RANK.indexOf(a.level) - RANK.indexOf(b.level))[0];
-            return { date: d.date, letter: weekday(d.date).slice(0, 1), title: worst?.title ?? null, tone: worst ? TONE[worst.level] ?? 'neutral' : 'none' };
+            const done = (d.done ?? []).map((a) => `${a.name}${a.km ? ` ${a.km} km` : ''} · ${hm(a.min)}`);
+            return {
+              date: d.date, letter: weekday(d.date).slice(0, 1), labelText: `${weekday(d.date)} ${Number(d.date.slice(8))}`,
+              title: worst?.title ?? null, tone: worst ? TONE[worst.level] ?? 'neutral' : 'none',
+              doneText: done.length ? done.join('\n') : null,
+              missedText: d.items.filter((i) => ['missed', 'skipped'].includes(i.level)).map((i) => `Missed: ${i.title}`).join('\n') || null,
+            };
           }),
         }
       : null,
@@ -172,5 +185,15 @@ export function plannerApp(w) {
     longDays: [{ date: week[5], text: 'Sat' }, { date: week[6], text: 'Sun' }],
     planningAround: blocks.slice(0, 10).map((c) => `${weekday(c.date)} ${c.allDay ? '' : `${clock(c.start)} `}${c.title}`),
     syncsTo: ['Google Calendar', 'Lift on iPhone', 'Garmin', 'Zwift'],
+    // Step 5: the draft against last week, and the sessions to keep if the week goes sideways.
+    versusTitle: lw?.ongoing ? 'Against this week so far' : 'Against last week',
+    versus: ready
+      ? versusLastWeek(lw, events).map((r) => ({
+          label: r.label,
+          beforeText: r.before == null ? '–' : r.unit === 'min' ? hm(r.before) : String(r.before),
+          afterText: r.unit === 'min' ? hm(r.after) : String(r.after),
+        }))
+      : [],
+    keepers: ready ? keepers(events).map((e) => ({ index: e.index, title: e.title, sport: e.sport, dayText: weekday(e.date) })) : [],
   };
 }
