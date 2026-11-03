@@ -66,6 +66,8 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
         case todayEnd = "today-end"
         /// The Coach widget's faces on a made-up Home Screen, instead of the app (`HomeWidgetGallery`).
         case widgets
+        /// The weekly planner over Week, with the demo's draft (`DemoAPI/app-plan-week.json`).
+        case planner
 
         /// The Lift segment the screen belongs to; nil outside the Lift tab.
         var liftSegment: LiftSegment? {
@@ -79,7 +81,7 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
         /// The tab whose stack the screen is pushed on.
         var tab: AppTab {
             switch self {
-            case .workout, .summary, .activity, .ride, .activityPending: .week
+            case .workout, .summary, .activity, .ride, .activityPending, .planner: .week
             case .exercise, .catalog, .templates, .template, .templateLink, .importNotes, .progress, .liftSession: .lift
             case .plates: .settings
             case .todayTrends, .todayEnd, .widgets: .today
@@ -172,7 +174,7 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
         case .activityPending: return .activity(DemoActivities.pending)
         // A modal page (`opensImportSample`), a sheet (`opensTemplateLinkSample`), or a segment of History
         // (`historySegment`).
-        case .importNotes, .templateLink, .progress, .todayTrends, .todayEnd, .widgets: return nil
+        case .importNotes, .templateLink, .progress, .todayTrends, .todayEnd, .widgets, .planner: return nil
         }
     }
 

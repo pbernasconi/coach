@@ -103,8 +103,7 @@ final class WeekViewModel {
         case .calendarToggled:
             state.calendar = state.calendar == .week ? .month : .week
         case .refreshPulled:
-            let coachPlan = coachPlan
-            return Task { await coachPlan.refresh() }
+            return Task { [coachPlan] in await coachPlan.refresh() }
         case .sessionTapped(let id):
             router.open(WeekLinks.session(summary(id), id: id, coachIsOn: plan.status != .off))
         case .sessionOptionsTapped(let id):
@@ -134,8 +133,12 @@ final class WeekViewModel {
         case .changeWorkoutTapped(let id):
             state.destination = sessionRef(id).map { .change($0) }
         case .planItemTapped(let id):
-            guard let item = merge?.item(id) else { return nil }
-            if let route = WeekLinks.planItem(item) { router.open(route) }
+            if let item = merge?.item(id), let route = WeekLinks.planItem(item) { router.open(route) }
+        case .planWeekTapped: state.destination = .planner
+        case .plannerClosed(accepted: let note):
+            state.destination = nil
+            if let note { showToast(note, undo: nil) }
+            return note == nil ? nil : send(.refreshPulled)
         default:
             state.destination = nil
             let start = layout?.weekStart(offset: state.weekOffset)

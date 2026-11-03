@@ -3,21 +3,42 @@ import KoboPatterns
 import SwiftUI
 
 /// Owns the ViewModel; renders Content; starts reads (SCR-2, SCR-4). Shows the ViewModel's toasts through Kobo's
-/// `ToastCenter`, whose Undo action goes back through `send`.
+/// `ToastCenter`, whose Undo action goes back through `send`. Plan next week opens the planner full screen, made by
+/// `makePlanner`; `opensPlanner` opens it at launch (`-open planner` in the demo, for screenshots).
 struct WeekScreen: View {
     @State private var viewModel: WeekViewModel
     @State private var toasts = ToastCenter()
+    let makePlanner: () -> WeekPlannerViewModel
+    let opensPlanner: Bool
 
-    init(viewModel: @autoclosure @escaping () -> WeekViewModel) {
+    init(
+        viewModel: @autoclosure @escaping () -> WeekViewModel,
+        makePlanner: @escaping () -> WeekPlannerViewModel,
+        opensPlanner: Bool = false
+    ) {
         _viewModel = State(wrappedValue: viewModel())
+        self.makePlanner = makePlanner
+        self.opensPlanner = opensPlanner
     }
 
     var body: some View {
         WeekContent(state: viewModel.state, send: { viewModel.send($0) })
-            .task { await viewModel.run() }
+            .task {
+                if opensPlanner { viewModel.send(.planWeekTapped) }
+                await viewModel.run()
+            }
             .appRefreshable { await viewModel.send(.refreshPulled)?.value }
             .onChange(of: viewModel.state.toast) { _, toast in show(toast) }
             .toastHost(toasts)
+            .koboModalPage(
+                isPresented: .action(viewModel.state.destination == .planner) { isOn in
+                    if !isOn { viewModel.send(.plannerClosed(accepted: nil)) }
+                }
+            ) {
+                WeekPlannerScreen(viewModel: makePlanner()) { note in
+                    viewModel.send(.plannerClosed(accepted: note))
+                }
+            }
     }
 
     private func show(_ toast: WeekToast?) {

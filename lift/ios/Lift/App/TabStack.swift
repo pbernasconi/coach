@@ -108,7 +108,16 @@ struct TabRootScreen: View {
                     calendar: dependencies.calendar,
                     units: dependencies.units,
                     coachPlan: dependencies.coachPlan
-                )
+                ),
+                makePlanner: {
+                    WeekPlannerViewModel(
+                        data: dependencies.appData,
+                        clock: dependencies.clock,
+                        now: dependencies.now,
+                        calendar: dependencies.calendar
+                    )
+                },
+                opensPlanner: options.isDemo && options.opening == .planner
             )
         case .settings:
             SettingsScreen(

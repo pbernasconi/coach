@@ -1304,3 +1304,54 @@ day); a real body is smaller.
   category then name; `moreCount` the rest). `rangeText`: the reference range ("30–100", "≤ 90", "≥ 40") or `null`.
 - `emptyText`: one sentence when there is no health data at all (no Garmin samples, no weight, no DEXA scan, no lab
   result), else `null`. Show it in place of the sections.
+
+### Weekly planning: `GET /api/app/plan/week?week=&tz=`, `PUT /api/app/plan/week?tz=`
+
+The web's planning screen (`/plan/week`, COACH.md) for the phone's full-screen planner. Loader `loadPlannerWeek`
+(`src/lib/plan/planner-week.ts`), shape `plannerApp` (`src/lib/plan/planner-app.mjs`, tested); the actions are the
+web's (`src/lib/plan/planner-ops.ts`). `week` is any day of the week (default: next week). About 10 KB.
+
+```json
+{
+  "weekStart": "2026-11-09", "today": "2026-11-02", "titleText": "Plan Nov 9–15", "weekText": "Nov 9–15",
+  "state": "proposed", "proposalId": "x1", "version": 2, "errorText": null,
+  "totalsText": "7h of 7h · 2 lifts · 1 hard", "checks": { "tone": "bad", "text": "1 check failed" },
+  "days": [{
+    "date": "2026-11-09", "labelText": "Mon 9", "off": false, "totalText": "1h20",
+    "sessions": [{ "index": 1, "title": "Heavy barbell", "sport": "strength", "start": "07:20", "minutes": 60,
+      "timeText": "7:20", "lengthText": "1h", "tssText": "45 TSS", "hard": false, "why": "Arms first…",
+      "description": null, "changed": false, "slots": [{ "date": "2026-11-10", "time": "06:30", "text": "Tue 6:30" }] }],
+    "calendar": [{ "title": "Team standup", "allDay": false, "start": "09:30", "minutes": 30, "timeText": "9:30" }]
+  }],
+  "change": { "note": "Move the long run", "changed": [{ "what": "Long run", "how": "Sat → Sun" }], "gaveUp": null },
+  "review": { "headline": "…", "reasoning": ["…"], "decisions": [{ "title": "…", "why": "…", "tradeoff": "…" }], "watch": ["…"] },
+  "summary": null, "issues": [{ "level": "fail", "message": "…" }], "quickAsks": ["Make it lighter", "…"],
+  "lastWeek": { "timeText": "5h10", "timeNote": "of 7h planned", "liftsText": "1 of 2", "liftsShort": true,
+    "hardText": "1 of 1", "hardShort": false, "days": [{ "date": "2026-11-02", "letter": "M", "title": "Easy run", "tone": "good" }] },
+  "facts": [{ "id": "ctl", "label": "Fitness", "value": "84 CTL", "note": null }],
+  "feels": [{ "id": "fresh", "label": "Fresh" }, { "id": "normal", "label": "Normal" }, { "id": "fatigued", "label": "Tired" }, { "id": "recovery", "label": "Recovery week" }],
+  "suggested": { "feel": "normal", "feelText": null, "hours": 8, "hoursText": "Your recent weeks average about 8h." },
+  "answers": { "feel": "normal", "hours": 7, "gym": 2, "hard": 1, "longDay": null, "daysOff": ["2026-11-13"], "lock": "" },
+  "longDays": [{ "date": "2026-11-14", "text": "Sat" }, { "date": "2026-11-15", "text": "Sun" }],
+  "planningAround": ["Thu 9:00 Planning offsite"], "syncsTo": ["Google Calendar", "Lift on iPhone", "Garmin", "Zwift"]
+}
+```
+
+- `state`: `none` (no draft: show Draft my week), `drafting` (Coach is working, 1–3 minutes: poll GET every 10 s),
+  `proposed` (the draft), `failed` (`errorText`, Try again). Sessions, `off`, `totalText`, `checks`, `change`,
+  `review` and `issues` are empty or `null` unless `proposed`. `calendar` is Paolo's own events (Coach's are left out).
+- `index` names a session in the actions. `start`/`minutes` place it on a time grid; `slots` are where it can move
+  (no clash, one block a day, 6:00–20:30). `changed`: the last version touched it (draw it dashed).
+- `answers` is what the open draft was made with (`null` without one): start the Shape controls there, else empty.
+
+PUT body `{ "action": …, "proposalId": …, … }`, answered with the week as GET plus `note` (Accept's line, else
+`null`) and `refusedText` (why the draft could not take it, shown as is, else `null`; still a `200`, so the phone
+can read it); `400` for a malformed body:
+
+| action | body | what it does |
+| --- | --- | --- |
+| `draft` | `weekStart`, `answers` (`feel`, `hours`, `gym`, `hard`, `longDay`, `daysOff`, `lock`) | Draft the week, or redraw the open draft with these answers (a new version) |
+| `revise` | `proposalId`, `note` | "Tell Coach what to change": a new version |
+| `undo` | `proposalId` | The version before is open again |
+| `edit` | `proposalId`, `op`: `{ kind: "move", index, date, time }`, `{ kind: "length", index, minutes }`, `{ kind: "remove", index }` | Changes the draft in place |
+| `accept` | `proposalId` | Into Coach and Google Calendar now; Lift, Garmin and Zwift follow. Always syncs |

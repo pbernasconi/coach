@@ -1,3 +1,4 @@
+import { plannerApp } from '@/lib/plan/planner-app.mjs';
 import { loadPlannerWeek } from '@/lib/plan/planner-week';
 import { loadAppWorkout } from '@/lib/plan/app-workout';
 import { resolveCards } from '@/lib/coach-chat/cards';
@@ -86,6 +87,7 @@ export async function runChecks(now = new Date(), { migrations = true }: { migra
     check('past plans', () => loadPlanHistory(userId, today)),
     check('planning context', () => loadPlanningContext(userId, addDays(monday, 7), { strict: true })),
     check('planning screen', () => loadPlannerWeek(userId, addDays(monday, 7), { strict: true })),
+    check('app planning screen', async () => plannerApp(await loadPlannerWeek(userId, addDays(monday, 7), { strict: true }))),
     check('plan outlook', () => loadOutlook(userId, { weekStart: addDays(monday, 7), rows: [] } as unknown as Proposal)),
     check('fitness projection', () => loadPmc(userId, today)),
     check('peak performances', () => loadPeakPerformances(userId, today)),
