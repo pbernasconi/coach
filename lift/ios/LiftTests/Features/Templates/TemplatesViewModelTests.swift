@@ -26,7 +26,7 @@ import Testing
     )
 
     func loaded(_ templates: FakeTemplateRepository) async -> TemplatesViewModel {
-        let vm = TemplatesViewModel(templates: templates, router: router)
+        let vm = TemplatesViewModel(templates: templates, router: router, unit: .kg)
         await vm.run()
         return vm
     }
@@ -37,8 +37,15 @@ import Testing
         let item = TemplateItem(
             id: upper.id,
             name: "Upper A",
-            exercises: "Back squat",
-            size: TemplateText.size(exercises: 1, sets: 3)
+            size: TemplateText.size(exercises: 1, sets: 3),
+            slots: [
+                TemplateSlotItem(
+                    id: upper.exercises[0].id,
+                    number: 1,
+                    name: "Back squat",
+                    detail: TemplateText.slot(upper.exercises[0], unit: .kg)
+                )
+            ]
         )
         #expect(vm.state.templates == .loaded([item]))
     }

@@ -102,9 +102,9 @@ import Testing
     @Test func planningOpeningsPushTheirScreens() {
         let templateID = IDSequence.id(1, prefix: 0xD1)
         let sessionID = IDSequence.id(1, prefix: 0xA0)
-        #expect(
-            LaunchOptions(arguments: ["-demo", "-open", "templates"]).initialRoute(upcomingSessionID: nil) == .templates
-        )
+        let templates = LaunchOptions(arguments: ["-demo", "-open", "templates"])
+        #expect(templates.initialRoute(upcomingSessionID: nil) == nil)  // a segment of the Lift tab, not a pushed page
+        #expect(templates.initialTab == .lift && templates.liftSegment == .templates)
         let template = LaunchOptions(arguments: ["-demo", "-open", "template"])
         #expect(template.initialRoute(upcomingSessionID: nil, templateID: templateID) == .template(templateID))
         let summary = LaunchOptions(arguments: ["-demo", "-open", "summary"])
