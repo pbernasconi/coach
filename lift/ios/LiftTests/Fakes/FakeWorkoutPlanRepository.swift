@@ -10,6 +10,7 @@ nonisolated final class FakeWorkoutPlanRepository: WorkoutPlanRepository {
         case createSession(UUID, on: LocalDay, unit: WeightUnit)
         case createCoachSession(String, on: LocalDay, exercises: [CoachExercise])
         case addExercise(UUID, to: UUID)
+        case swapExercise(UUID, to: UUID)
         case changeTemplate(UUID, to: UUID)
         case undoChange(TemplateChangeUndo)
         case planNextWeek(LocalDay)
@@ -64,6 +65,18 @@ nonisolated final class FakeWorkoutPlanRepository: WorkoutPlanRepository {
         return SessionExerciseRecord(
             id: Self.sessionID,
             sessionID: sessionID,
+            slot: ExerciseSlot(exercise: exercise),
+            position: 0,
+            createdAt: ManualNow.start,
+            updatedAt: ManualNow.start
+        )
+    }
+
+    func swapExercise(_ id: UUID, to exercise: Exercise) async throws -> SessionExerciseRecord {
+        try record(.swapExercise(id, to: exercise.id))
+        return SessionExerciseRecord(
+            id: id,
+            sessionID: Self.sessionID,
             slot: ExerciseSlot(exercise: exercise),
             position: 0,
             createdAt: ManualNow.start,

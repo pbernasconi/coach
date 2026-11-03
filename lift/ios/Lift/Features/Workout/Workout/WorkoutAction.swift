@@ -45,6 +45,8 @@ nonisolated enum WorkoutAction: Equatable, Sendable {
     /// An exercise's "…": move it or remove it.
     case exerciseOptionsTapped(UUID)
     case optionsDismissed
+    /// "Swap exercise" in an exercise's "…": opens the picker to swap it for another, keeping its sets.
+    case exerciseSwapTapped(UUID)
     case exerciseMoveUpTapped(UUID)
     case exerciseMoveDownTapped(UUID)
     /// Removes the exercise at once and offers Undo (product rule).

@@ -32,6 +32,7 @@ final class ExercisePickerViewModel {
         self.templates = templates
         self.plans = plans
         self.router = router
+        state.isSwap = target.swapped != nil
     }
 
     /// Loads the catalog, then observes the library; started by the Screen's `.task` (SCR-4).
@@ -46,6 +47,10 @@ final class ExercisePickerViewModel {
             let live = list.filter { !$0.isArchived }
             library = Dictionary(live.map { ($0.id, $0) }) { first, _ in first }
             state.library = live.isEmpty ? .empty : .loaded(live.map { ExerciseItem(exercise: $0) })
+            if state.isSwap {
+                state.suggested = SwapSuggestions.library(live, like: swappedExercise).map(ExerciseItem.init(exercise:))
+                refreshCatalog()
+            }
         }
     }
 
@@ -73,11 +78,20 @@ final class ExercisePickerViewModel {
             state.catalog = .empty
             return
         }
-        let results = loaded.search(state.query)
+        var results = loaded.search(state.query)
+        if state.isSwap, state.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            results = SwapSuggestions.catalog(results, like: swappedExercise)
+        }
         state.catalog = .loaded(results.map(CatalogRow.init(entry:)))
     }
 
-    /// Adds the picked exercise to the template or session, then goes back to it. One pick at a time (SCR-5).
+    /// The library exercise being swapped out, once the library has loaded.
+    private var swappedExercise: Exercise? {
+        target.swapped?.exerciseID.flatMap { library[$0] }
+    }
+
+    /// Adds the picked exercise to the template or session (or swaps it in), then goes back. One pick at a time
+    /// (SCR-5).
     private func pick(_ pick: ExercisePickerState.Pick) -> Task<Void, Never>? {
         guard state.adding == nil else { return nil }
         state.adding = pick
@@ -88,6 +102,7 @@ final class ExercisePickerViewModel {
                 switch target {
                 case .template(let id): _ = try await templates.addExercise(exercise, to: id)
                 case .session(let id): _ = try await plans.addExercise(exercise, to: id)
+                case .swap(let id, _): _ = try await plans.swapExercise(id, to: exercise)
                 }
                 router.back()
             } catch {

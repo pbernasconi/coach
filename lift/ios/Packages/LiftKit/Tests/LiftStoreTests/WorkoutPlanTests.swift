@@ -133,6 +133,35 @@ import Testing
         #expect(item.sets.map(\.target) == Array(repeating: SetTarget(reps: 5, weight: .kg(102.5)), count: 2))
     }
 
+    @Test func swapExerciseKeepsTheLoggedSetsUnderTheNewExercise() async throws {
+        let store = try TestStore.make()
+        let session = try await store.loggedSquats(reps: [5, 5], weight: .kg(100))
+        let before = try #require(try await detail(session.id, store).items.first)
+
+        let swapped = try await store.plans.swapExercise(before.id, to: Fixtures.dumbbellBench)
+        let item = try #require(try await detail(session.id, store).items.first)
+        #expect(swapped.id == before.id)
+        #expect(item.id == before.id)
+        #expect(item.exercise.exerciseID == Fixtures.dumbbellBench.id)
+        #expect(item.exercise.displayName == Fixtures.dumbbellBench.name)
+        #expect(item.exercise.loadMode == .perHand)
+        #expect(item.exercise.position == before.exercise.position)
+        #expect(item.exercise.restSeconds == before.exercise.restSeconds)
+        #expect(item.sets == before.sets)
+        let entities = try await store.pendingOutbox().map(\.entity)
+        #expect(entities == [.sessionExercise])
+    }
+
+    @Test func swapExerciseToTheSameExerciseWritesNothing() async throws {
+        let store = try TestStore.make()
+        let session = try await store.loggedSquats(reps: [5], weight: .kg(100))
+        let item = try #require(try await detail(session.id, store).items.first)
+
+        _ = try await store.plans.swapExercise(item.id, to: Fixtures.squat)
+        let pending = try await store.pendingOutbox()
+        #expect(pending.isEmpty)
+    }
+
     @Test func changeTemplateSwapsTheExercisesAndUndoPutsThemBack() async throws {
         let store = try TestStore.make()
         let lower = try await lowerA(store)

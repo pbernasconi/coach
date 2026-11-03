@@ -194,6 +194,9 @@ final class WorkoutViewModel {
             state.isConfirmingFinish = false
             return sendSession(action)
         case .finishCancelled: state.isConfirmingFinish = false
+        case .exerciseSwapTapped:
+            state.options = nil  // the sheet closes as the picker opens
+            return sendSession(action)
         case .exerciseStartTapped(let setID): state.startedExerciseSetID = setID
         default: return sendSession(action)
         }

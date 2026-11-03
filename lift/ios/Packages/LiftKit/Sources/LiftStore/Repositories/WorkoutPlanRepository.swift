@@ -67,6 +67,11 @@ public protocol WorkoutPlanRepository: Sendable {
     /// progression suggests, or 3 × 8–12 when it was never logged.
     func addExercise(_ exercise: Exercise, to sessionID: UUID) async throws -> SessionExerciseRecord
 
+    /// Swaps the session exercise `id` for a library exercise, in place: it takes that exercise's name, load mode and
+    /// equipment and keeps its place, sets (logged ones too, so they count for the new exercise), rest and note. The
+    /// old exercise's next-time hint goes. A finished session can swap too, to fix what was logged.
+    func swapExercise(_ id: UUID, to exercise: Exercise) async throws -> SessionExerciseRecord
+
     /// Replaces a session's exercises with another template's and takes its name. A session with a logged set
     /// cannot change (`AppError(.conflict)`).
     func changeTemplate(of sessionID: UUID, to templateID: UUID) async throws -> TemplateChangeUndo

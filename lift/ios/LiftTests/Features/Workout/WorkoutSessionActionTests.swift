@@ -6,8 +6,8 @@ import Testing
 
 @testable import Lift
 
-/// The Workout screen's session-level Actions: add, move and remove exercises, finish, the summary, discard and Save
-/// as template. One test per Action case (TEST-2); writes are awaited through `send(...)?.value` (TEST-3).
+/// The Workout screen's session-level Actions: add, swap, move and remove exercises, finish, the summary, discard and
+/// Save as template. One test per Action case (TEST-2); writes are awaited through `send(...)?.value` (TEST-3).
 @MainActor
 @Suite struct WorkoutSessionActionTests {
     let router = RecordingNavigator()
@@ -62,6 +62,17 @@ import Testing
 
         #expect(vm.send(.addExerciseTapped) == nil)
         #expect(router.opened == [.exercisePicker(.session(detail.id))])
+    }
+
+    @Test func exerciseSwapTappedClosesTheOptionsAndOpensThePickerToSwapIt() async {
+        let (vm, _) = await loaded()
+        vm.send(.exerciseOptionsTapped(benchID))
+
+        #expect(vm.send(.exerciseSwapTapped(benchID)) == nil)
+        #expect(vm.state.options == nil)
+        #expect(
+            router.opened == [.exercisePicker(.swap(sessionExerciseID: benchID, exerciseID: Fixtures.dumbbellBench.id))]
+        )
     }
 
     @Test func workoutOptionsTappedOpensTheWorkoutsOptions() async {
