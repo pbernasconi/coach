@@ -49,7 +49,7 @@ private struct AppShell: View {
     var body: some View {
         Group {
             if isReady {
-                TabShell(tabs: tabs, selection: tabSelection, showsAccessory: underwayBar != nil) { tab in
+                TabShell(tabs: tabs, selection: tabSelection, showsAccessory: showsWorkoutBar) { tab in
                     TabStack(
                         tab: tab,
                         dependencies: dependencies,
@@ -57,8 +57,8 @@ private struct AppShell: View {
                         options: options
                     )
                 } accessory: {
-                    // The workout under way, to go back to it after leaving the Workout screen. The tab bar, and this
-                    // with it, hides on pushed pages, the Workout screen among them.
+                    // The workout under way, to go back to it after leaving the Workout screen. Hidden on pushed
+                    // pages, the Workout screen among them, like the tab bar (`showsWorkoutBar`).
                     if let bar = underwayBar {
                         ActiveWorkoutAccessory(bar: bar) { dependencies.tabs.openWorkout(bar.sessionID) }
                     }
@@ -132,6 +132,11 @@ private struct AppShell: View {
 
     /// The workout under way for the bar above the tab bar; nil while none is.
     private var underwayBar: ActiveWorkoutBar? { dependencies.workoutActivity.underway.bar }
+
+    /// The workout bar shows while a workout is under way and the selected tab shows its root. Hidden explicitly on
+    /// pushed pages: hiding the tab bar alone lets iOS bring the accessory back over the Workout screen after a return
+    /// to the app, stacked under the rest dock.
+    private var showsWorkoutBar: Bool { underwayBar != nil && !dependencies.tabs.showsPushedPage }
 
     /// The tab bar's selection: the shared `TabSwitcher`, so screens can switch tabs too.
     private var tabSelection: Binding<AppTab> {
