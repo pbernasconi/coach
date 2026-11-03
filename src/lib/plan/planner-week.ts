@@ -36,6 +36,8 @@ export type PlannerWeek = {
   calendar: CalendarBlock[];
   context: PlanningContext | null;
   lastWeek: LastWeek | null;
+  /** What is already on the plan for the week when no draft is open (an accepted week): Review shows it. */
+  planned: DraftEvent[];
 };
 
 const HARD = /threshold|vo2|tempo|interval|sweet ?spot|race|test|hill repeats|fartlek/i;
@@ -97,6 +99,26 @@ async function loadLastWeek(userId: string, monday: string, today: string): Prom
   };
 }
 
+/** The week's planned workouts as the screen's events, by date and start. */
+async function loadPlanned(userId: string, monday: string, today: string): Promise<DraftEvent[]> {
+  const range = await loadRange(userId, monday, monday, today);
+  return range.workouts
+    .filter((w) => w.date >= monday && w.date <= addDays(monday, 6) && w.sport !== 'rest')
+    .sort((a, b) => `${a.date} ${a.startTime ?? ''}`.localeCompare(`${b.date} ${b.startTime ?? ''}`))
+    .map((w, index) => ({
+      index,
+      title: w.title,
+      date: w.date,
+      start: w.startTime ? w.startTime.slice(0, 5) : null,
+      minutes: w.duration,
+      sport: w.sport,
+      hard: /hard|high|threshold|vo2/i.test(w.intensity ?? '') || HARD.test(`${w.title} ${w.workoutType ?? ''}`),
+      why: w.why,
+      description: w.description,
+      tss: w.tss,
+    }));
+}
+
 /** Each part that fails is left out (the screen still opens); `strict` (the health check) throws instead. */
 export async function loadPlannerWeek(userId: string, weekStart: string, { strict = false } = {}): Promise<PlannerWeek> {
   const today = todayIn(HOME_TZ);
@@ -128,10 +150,15 @@ export async function loadPlannerWeek(userId: string, weekStart: string, { stric
       }
     }
   }
+  const open = proposal && ['requested', 'running', 'proposed'].includes(proposal.status);
+  const planned = open
+    ? []
+    : await quiet('planned', () => loadPlanned(userId, monday, today), []);
   return {
     weekStart: monday,
     today,
     proposal,
+    planned,
     events,
     change,
     calendar: calendar.filter((c) => c.date >= monday && c.date <= addDays(monday, 6)),

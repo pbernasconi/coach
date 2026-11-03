@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { dayModes, firstStep, freeWindows, hourSplit, keepers, lastWeekRead, roughSplit, versusLastWeek, withDayMode } from './planner-steps.mjs';
+import { suggestAway, dayModes, firstStep, freeWindows, hourSplit, keepers, lastWeekRead, roughSplit, versusLastWeek, withDayMode } from './planner-steps.mjs';
 
 // A made-up week (TEST-8).
 const cal = [
@@ -93,4 +93,17 @@ test('lastWeekRead names the missed lift, the hard sessions and the short volume
   assert.deepEqual(lastWeekRead(null), []);
   const going = lastWeekRead({ ...lw, ongoing: true }, '2026-03-05');
   assert.equal(going[2].text, '6h37 so far. Nothing on Wed.');
+});
+
+test('suggestAway marks trips, flights and all-day holds, not holidays or past days', () => {
+  const cal = [
+    { date: '2026-11-10', allDay: false, title: 'Team standup' },
+    { date: '2026-11-11', allDay: true, title: 'NYC' },
+    { date: '2026-11-11', allDay: true, title: 'Veterans Day' },
+    { date: '2026-11-12', allDay: false, title: 'Flight to Geneva' },
+    { date: '2026-11-13', allDay: true, title: 'Zurich hold' },
+    { date: '2026-11-09', allDay: true, title: 'Trip to Tahoe' },
+  ];
+  assert.deepEqual(suggestAway(cal, '2026-11-09', '2026-11-10'), ['2026-11-11', '2026-11-12', '2026-11-13']);
+  assert.deepEqual(suggestAway([{ date: '2026-11-11', allDay: true, title: 'Veterans Day' }], '2026-11-09', '2026-11-01'), []);
 });

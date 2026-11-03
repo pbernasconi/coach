@@ -3,7 +3,7 @@
 // (the web's session panel uses freeSlots too). Pure, so node --test runs it (planner-app.test.mjs).
 
 import { addDays } from './week.mjs';
-import { freeWindows, keepers, lastWeekRead, versusLastWeek } from './planner-steps.mjs';
+import { freeWindows, keepers, lastWeekRead, suggestAway, versusLastWeek } from './planner-steps.mjs';
 
 /** @param {string} t "HH:MM" */
 const minutesOf = (t) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
@@ -174,6 +174,8 @@ export function plannerApp(w) {
       feelText: w.context?.suggested.feelWhy ? `Coach reads ${w.context.suggested.feel}: ${w.context.suggested.feelWhy}.` : null,
       hours: w.context?.suggested.hours ?? null,
       hoursText: 'Your normal week is 8–10 h.',
+      // Travel days on the calendar, marked away until Paolo changes them (only used before a draft).
+      away: suggestAway(w.calendar, w.weekStart, w.today),
     },
     // The answers the open draft was made with, so the Shape controls start where they were.
     answers: p && state !== 'none'

@@ -176,7 +176,11 @@ final class WeekPlannerViewModel {
     private func fillAnswers() {
         guard !answersFilled, let week = state.loaded else { return }
         answersFilled = true
-        if let answers = week.answers { state.answers = answers }
+        if let answers = week.answers {
+            state.answers = answers
+        } else {
+            state.answers.away = week.suggested.away
+        }
         if week.state == .drafting || week.state == .proposed { state.step = .draft }
     }
 

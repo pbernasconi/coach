@@ -56,6 +56,7 @@ test('a proposed draft: totals, checks, days, change and last week', () => {
   assert.equal(a.issues.length, 1);
   assert.equal(a.days[2].freeText, 'Free 6:00–9:00, 10:00–21:00');
   assert.equal(a.lastWeek.titleText, 'This week so far');
+  assert.deepEqual(a.suggested.away, []);
   assert.equal(a.lastWeek.days[0].missedText, 'Missed: Lower');
   assert.deepEqual(a.versus[0], { label: 'Time', beforeText: '43 min', afterText: '3h30' });
   assert.deepEqual(a.keepers.map((k) => `${k.title} ${k.dayText}`), ['Heavy barbell Mon', 'Threshold A Wed', 'Long run Sat']);

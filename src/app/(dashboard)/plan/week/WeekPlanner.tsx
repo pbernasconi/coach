@@ -5,10 +5,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, Check, Loader2, RefreshCw, Sparkles, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { Button, cn } from '@kobo/web';
+import { Button, buttonVariants, cn } from '@kobo/web';
 import CoachMark from '@/components/brand/CoachMark';
 import type { PlannerWeek } from '@/lib/plan/planner-week';
-import { STEPS, firstStep } from '@/lib/plan/planner-steps.mjs';
+import { STEPS, firstStep, suggestAway } from '@/lib/plan/planner-steps.mjs';
 import { addDays, mondayOf } from '@/lib/plan/week.mjs';
 import { acceptDraftAction, draftWeekAction, editDraftAction, plannerWeekAction, reviseDraftAction, undoDraftAction } from './actions';
 import WeekGrid from './WeekGrid';
@@ -20,19 +20,21 @@ import StepAccept from './StepAccept';
 import { hm, weekLabel } from './plannerUi';
 
 type Step = (typeof STEPS)[number];
-const NAMES: Record<Step, string> = { last: 'Last week', week: 'Your week', shape: 'Priorities', draft: 'Draft', accept: 'Accept' };
+const NAMES: Record<Step, string> = { last: 'Last week', week: 'Your week', shape: 'Priorities', draft: 'Draft', accept: 'Review' };
 const POLL_MS = 10_000;
 
 function answersFrom(data: PlannerWeek): Answers {
   const r = data.proposal?.request;
+  const daysOff = r?.daysOff ?? [];
   return {
     feel: r?.feel ?? null,
     hours: r?.hours ?? null,
     gym: r?.gym ?? null,
     hard: r?.hard ?? null,
     longDay: r?.longDay ?? null,
-    daysOff: r?.daysOff ?? [],
-    away: r?.away ?? [],
+    daysOff,
+    // No draft yet: Coach suggests the travel days on the calendar as away.
+    away: r ? r.away ?? [] : suggestAway(data.calendar, data.weekStart, data.today).filter((d) => !daysOff.includes(d)),
     lock: r?.lock ?? '',
   };
 }
@@ -45,13 +47,16 @@ function answersFrom(data: PlannerWeek): Answers {
 export default function WeekPlanner({ initial }: { initial: PlannerWeek }) {
   const router = useRouter();
   const [data, setData] = useState(initial);
-  const [step, setStep] = useState<Step>(() => firstStep(initial.proposal?.status) as Step);
+  // A week already on the plan with no draft open opens on Review, which shows what is planned.
+  const [step, setStep] = useState<Step>(() =>
+    initial.planned.length && !initial.proposal ? 'accept' : (firstStep(initial.proposal?.status) as Step));
   const [selected, setSelected] = useState<number | null>(null);
   const [answers, setAnswers] = useState<Answers>(() => answersFrom(initial));
   const [pending, start] = useTransition();
   const p = data.proposal;
   const drafting = p?.status === 'requested' || p?.status === 'running';
   const ready = p?.status === 'proposed';
+  const onPlan = !ready && !drafting && data.planned.length > 0;
 
   const refresh = async () => {
     const next = await plannerWeekAction(data.weekStart);
@@ -133,7 +138,7 @@ export default function WeekPlanner({ initial }: { initial: PlannerWeek }) {
   const total = data.events.reduce((n, e) => n + (e.minutes ?? 0), 0);
   const event = selected != null ? data.events.find((e) => e.index === selected) ?? null : null;
   const at = STEPS.indexOf(step);
-  const open = (s: Step) => s === 'accept' ? ready : s === 'draft' ? Boolean(p) : true;
+  const open = (s: Step) => s === 'accept' ? ready || onPlan : s === 'draft' ? Boolean(p) : true;
   const go = (s: Step) => {
     if (!open(s)) return;
     setSelected(null);
@@ -182,7 +187,7 @@ export default function WeekPlanner({ initial }: { initial: PlannerWeek }) {
         {step === 'last' && <StepLastWeek data={data} answers={answers} setAnswers={setAnswers} />}
         {step === 'week' && <StepYourWeek data={data} answers={answers} setAnswers={setAnswers} />}
         {step === 'shape' && <StepShape data={data} answers={answers} setAnswers={setAnswers} />}
-        {step === 'accept' && ready && <StepAccept data={data} />}
+        {step === 'accept' && (ready || onPlan) && <StepAccept data={data} events={ready ? data.events : data.planned} onPlan={!ready} />}
         {step === 'draft' && (
           <DraftStep data={data} ready={ready} drafting={drafting} pending={pending} changed={changed} selected={selected}
             setSelected={setSelected} event={event} move={move} ask={ask} onDraft={draft}
@@ -210,7 +215,10 @@ export default function WeekPlanner({ initial }: { initial: PlannerWeek }) {
             </Button>
           )}
           {step === 'draft' && <Button disabled={!ready || pending} onClick={() => go('accept')}>Next: review<ArrowRight aria-hidden /></Button>}
-          {step === 'accept' && <Button loading={pending} onClick={accept}><Check aria-hidden />Accept and sync</Button>}
+          {step === 'accept' && ready && <Button loading={pending} onClick={accept}><Check aria-hidden />Accept and sync</Button>}
+          {step === 'accept' && !ready && (
+            <Link href={`/plan?week=${data.weekStart}`} className={buttonVariants()}>Open in Plan<ArrowRight aria-hidden /></Link>
+          )}
         </div>
       </footer>
     </div>

@@ -130,7 +130,7 @@ export default function StepShape({ data, answers, setAnswers }: { data: Planner
           </div>
           <span className="border-t pt-3 text-[13px] text-muted-foreground">
             {split ? 'From the current draft. Redraw to change it.' : 'Coach sets the exact split when it drafts.'}
-            {data.lastWeek ? ` Last week: ${hm(data.lastWeek.doneMin)}.` : ''}
+            {data.lastWeek ? ` ${data.lastWeek.ongoing ? 'This week so far' : 'Last week'}: ${hm(data.lastWeek.doneMin)}.` : ''}
           </span>
         </Card>
         <Card className="flex flex-col gap-2.5">
