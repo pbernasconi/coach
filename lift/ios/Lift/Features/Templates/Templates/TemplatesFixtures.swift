@@ -4,18 +4,30 @@
 
     /// Named states for previews and snapshots. Fake data only (TEST-8).
     extension TemplatesState {
+        private static func slot(_ number: Int, _ name: String, _ detail: String, template: Int) -> TemplateSlotItem {
+            TemplateSlotItem(id: .fixture(UInt8(template * 10 + number)), number: number, name: name, detail: detail)
+        }
+
         static let fixtureItems = [
             TemplateItem(
                 id: .fixture(1),
                 name: "Upper A",
-                exercises: "Bench press, Barbell row, Lateral raise",
-                size: TemplateText.size(exercises: 3, sets: 8)
+                size: TemplateText.size(exercises: 3, sets: 9),
+                slots: [
+                    slot(1, "Bench press", "3 × 6–8 @ 70 kg · 2 min rest", template: 1),
+                    slot(2, "Barbell row", "3 × 8–10 @ 60 kg · 1:30 rest", template: 1),
+                    slot(3, "Dumbbell curl", "3 × 10–12 @ 12 kg · 1 min rest", template: 1),
+                ]
             ),
             TemplateItem(
                 id: .fixture(2),
                 name: "Lower A",
-                exercises: "Back squat, Romanian deadlift, Calf raise",
-                size: TemplateText.size(exercises: 3, sets: 8)
+                size: TemplateText.size(exercises: 3, sets: 8),
+                slots: [
+                    slot(1, "Back squat", "3 × 5 @ 100 kg · 3 min rest", template: 2),
+                    slot(2, "Romanian deadlift", "3 × 8 @ 80 kg · 2 min rest", template: 2),
+                    slot(3, "Calf raise", "2 × 12–15", template: 2),
+                ]
             ),
         ]
 
@@ -29,9 +41,18 @@
                 TemplateItem(
                     id: .fixture(3),
                     name: "Full body with a long name for the heavy week",
-                    exercises: "Single-arm half-kneeling landmine press, Rear-foot-elevated split squat, Pallof press",
-                    size: TemplateText.size(exercises: 3, sets: 9)
-                )
+                    size: TemplateText.size(exercises: 2, sets: 6),
+                    slots: [
+                        slot(1, "Single-arm half-kneeling landmine press", "3 × 8–10 @ 25 kg", template: 3),
+                        slot(2, "Rear-foot-elevated split squat", "3 × 8 @ 20 kg · 2 min rest", template: 3),
+                    ]
+                ),
+                TemplateItem(
+                    id: .fixture(4),
+                    name: "New template",
+                    size: TemplateText.size(exercises: 0, sets: 0),
+                    slots: []
+                ),
             ])
         )
     }

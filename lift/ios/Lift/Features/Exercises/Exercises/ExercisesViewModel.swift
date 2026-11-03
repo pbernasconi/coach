@@ -37,8 +37,6 @@ final class ExercisesViewModel {
             return loadThumbnail(catalogID)
         case .allExercisesTapped:
             router.open(.catalog)
-        case .templatesTapped:
-            router.open(.templates)
         }
         return nil
     }

@@ -2,8 +2,8 @@ import KoboComponents
 import KoboTokens
 import SwiftUI
 
-/// The Lift tab: a segment control over three screens that share the tab's navigation stack: the coach's Lift overview,
-/// the logged sessions (History) and the exercise library (Exercises). Each screen keeps its own header and actions.
+/// The Lift tab: a segment control over four screens that share the tab's navigation stack: the coach's Lift overview,
+/// the logged sessions (History), the workout templates (Templates) and the exercise library (Exercises). Each screen keeps its own header and actions.
 struct LiftTabScreen: View {
     @Environment(\.koboTheme) private var theme
     let dependencies: AppDependencies
@@ -40,6 +40,7 @@ struct LiftTabScreen: View {
     private static let options = [
         ChoiceOption(LiftSegment.overview, title: "Overview"),
         ChoiceOption(LiftSegment.history, title: "History"),
+        ChoiceOption(LiftSegment.templates, title: "Templates"),
         ChoiceOption(LiftSegment.exercises, title: "Exercises"),
     ]
 
@@ -58,6 +59,14 @@ struct LiftTabScreen: View {
                     calendar: dependencies.calendar,
                     segment: historySegment,
                     opensCoachSessions: dependencies.appData is LiveAppData
+                )
+            )
+        case .templates:
+            TemplatesScreen(
+                viewModel: TemplatesViewModel(
+                    templates: dependencies.templates,
+                    router: router,
+                    unit: dependencies.info.unit
                 )
             )
         case .exercises:
