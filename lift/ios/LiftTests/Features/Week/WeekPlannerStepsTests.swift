@@ -57,7 +57,7 @@ import Testing
         await vm.run()
 
         #expect(vm.state.answers.away == ["2026-03-13"])
-        #expect(vm.state.answers.mode(of: "2026-03-13") == .away)
+        #expect(vm.state.answers.mode(of: "2026-03-13") == .travel)
     }
 
     @Test func stepChangedNextTappedAndBackTappedMoveThroughTheSteps() async {
