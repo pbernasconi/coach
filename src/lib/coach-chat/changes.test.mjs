@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { addNote, checkProposalInput, cleanChanges, describeChanges, dropNote, fatigueIssues, isStale, basisOf, newRuleIssues, NOTES_HEADING, planText, simulate } from './changes.mjs';
+import { addNote, asReplacements, checkProposalInput, cleanChanges, describeChanges, dropNote, fatigueIssues, isStale, basisOf, newRuleIssues, NOTES_HEADING, planText, simulate } from './changes.mjs';
 
 // Mon 26 Oct 2026: the day Paolo asked to move the heavy lift to Tuesday and run easy with David instead.
 const today = '2026-10-26';
@@ -250,4 +250,16 @@ test('an added lift that copies a missed lift of the same template is refused; a
   const second = checkProposalInput({ title: 'Second heavy', why: 'x', changes: [add] }, { ...p, rows: planned }, 2);
   assert.equal(second.ok, true);
   assert.ok(second.value.warnings.some((w) => /already planned this week/.test(w)));
+});
+
+test('a skip a new workout replaces on its day is written as a delete, a lone skip stays a skip', () => {
+  const ops = [
+    { op: 'skip', id: 'vo2', reason: 'other' },
+    { op: 'add', date: '2026-10-27', sport: 'ride', startTime: '11:30', title: 'Long ride', duration: 180 },
+    { op: 'skip', id: 'upper', reason: 'busy' },
+  ];
+  assert.deepEqual(asReplacements(ops, rows), [{ op: 'remove', id: 'vo2' }, ops[1], ops[2]]);
+  // An add on another day replaces nothing.
+  const elsewhere = [ops[0], { ...ops[1], date: '2026-10-28' }];
+  assert.deepEqual(asReplacements(elsewhere, rows), elsewhere);
 });

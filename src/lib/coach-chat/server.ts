@@ -16,7 +16,7 @@ import { monthSpend as spendOn, recordAiUsage } from '@/lib/ai-usage/store';
 import { CHAT_FEATURES, usageOf } from '@/lib/ai-usage/usage.mjs';
 import { checkCard, type CardRef, type Question } from './cards.mjs';
 import { resolveCards, type Attachment } from './cards';
-import { checkProposalInput, isStale, landedIssues, planText, recheck, undoPlan, fingerprint, type Card, type Change, type Item } from './changes.mjs';
+import { asReplacements, checkProposalInput, isStale, landedIssues, planText, recheck, undoPlan, fingerprint, type Card, type Change, type Item } from './changes.mjs';
 import { chatMessages, chatRequest, chatWithClaude, EFFORT, MODEL, type ChatEvent, type Turn } from './chat.mjs';
 import { recentChangesText } from '@/lib/plan/change-log';
 import { ApplyError, applyAll, planRows, undoAll } from './writes';
@@ -448,7 +448,7 @@ export async function applyProposal(userId: string, id: string, today: string): 
   }
   const reopen = (status: 'open' | 'stale', result: string[] = []) =>
     sql`UPDATE coach_proposals SET status = ${status}, undo = ${JSON.stringify({ steps: [], result })}::jsonb, decided_at = NOW() WHERE id = ${id}`;
-  const { ops, basis } = p.changes as { ops: Change[]; basis: Record<string, string> };
+  const { ops: asked, basis } = p.changes as { ops: Change[]; basis: Record<string, string> };
   const warned = (p.warnings as string[]) ?? [];
   let rows;
   try {
@@ -457,12 +457,14 @@ export async function applyProposal(userId: string, id: string, today: string): 
     await reopen('open');
     throw error;
   }
-  const problems = isStale(basis, rows) ? ['a workout on this card changed after Coach suggested it'] : recheck(ops, { rows, today }, warned);
+  const problems = isStale(basis, rows) ? ['a workout on this card changed after Coach suggested it'] : recheck(asked, { rows, today }, warned);
   if (problems.length) {
     const result = [`Nothing changed: ${problems[0]}. Ask Coach again and it will plan from the week as it is now.`];
     await reopen('stale', result);
     return { status: 409, body: { error: result[0], proposal: proposalView({ ...p, status: 'stale', undo: { steps: [], result } }) } };
   }
+  // A workout the card replaces leaves the plan rather than showing as Not done.
+  const ops = asReplacements(asked, rows);
   let applied;
   try {
     applied = await applyAll(userId, ops, rows, today);

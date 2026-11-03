@@ -139,7 +139,7 @@ lift moves once) and plan-structure.md (cached).
 Paolo, 2026-10-29: the first card (a glyph, an emoji and struck-through times on every row) was cluttered, and scary to
 apply after Apply had made bugs. The card is the plan by day (`cardOf` in changes.mjs, `days` in APP-API.md): a header
 per day the card touches, each row as it will be after Apply with a sport icon, the time and length, and one quiet tag
-("From Sat", "Earlier", "Skipped", "New"). A skip and an add on the same day are one row ("replaces Long ride").
+("From Sat", "Earlier", "Skipped", "New"). A skip and an add on the same day are one row ("replaces Long ride"); on Apply the replaced workout is deleted, not skipped, so it never shows as Not done (`asReplacements`), and Undo puts it back.
 Concepts and the states after Apply: https://claude.ai/artifact/RPhYcmJgGfjG3Kmh8NYca2.
 
 ### Applying
