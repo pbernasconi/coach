@@ -65,11 +65,9 @@ final class WeekViewModel {
             group.addTask { await self.observeSessions(layout.stripRange) }
             group.addTask { await self.observeTemplates() }
             group.addTask { await self.observePlan() }
-            group.addTask { await self.showPlan(start) }
+            group.addTask { await self.coachPlan.show(weekStart: start) }
         }
     }
-
-    private func showPlan(_ start: LocalDay) async { await coachPlan.show(weekStart: start) }
 
     private func observePlan() async {
         for await snapshot in coachPlan.snapshots() {
@@ -136,6 +134,11 @@ final class WeekViewModel {
         case .planItemTapped(let id):
             guard let item = merge?.item(id) else { return nil }
             if let route = WeekLinks.planItem(item) { router.open(route) }
+        case .planWeekTapped: state.destination = .planner
+        case .plannerClosed(accepted: let note):
+            state.destination = nil
+            if let note { showToast(note, undo: nil) }
+            return note == nil ? nil : send(.refreshPulled)
         default:
             state.destination = nil
             let start = layout?.weekStart(offset: state.weekOffset)

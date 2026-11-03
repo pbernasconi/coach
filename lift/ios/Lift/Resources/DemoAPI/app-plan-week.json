@@ -1,0 +1,545 @@
+{
+  "weekStart": "2026-11-09",
+  "today": "2026-11-06",
+  "titleText": "Plan Nov 9–15",
+  "weekText": "Nov 9–15",
+  "state": "proposed",
+  "proposalId": "demo-proposal",
+  "version": 2,
+  "errorText": null,
+  "totalsText": "7h05 of 8h · 2 lifts · 2 hard",
+  "checks": {
+    "tone": "warn",
+    "text": "1 to watch"
+  },
+  "days": [
+    {
+      "date": "2026-11-09",
+      "labelText": "Mon 9",
+      "off": false,
+      "totalText": "1h",
+      "sessions": [
+        {
+          "index": 0,
+          "title": "Heavy barbell",
+          "sport": "strength",
+          "start": "07:00",
+          "minutes": 60,
+          "timeText": "7:00",
+          "lengthText": "1h",
+          "tssText": "45 TSS",
+          "hard": false,
+          "why": "Arm-first full body to start the week fresh.",
+          "description": "Back squat 4×5, bench 4×6, rows, curls 3×10–12.",
+          "changed": false,
+          "slots": [
+            {
+              "date": "2026-11-09",
+              "time": "06:30",
+              "text": "Mon 6:30"
+            },
+            {
+              "date": "2026-11-10",
+              "time": "11:15",
+              "text": "Tue 11:15"
+            },
+            {
+              "date": "2026-11-11",
+              "time": "11:15",
+              "text": "Wed 11:15"
+            },
+            {
+              "date": "2026-11-12",
+              "time": "06:00",
+              "text": "Thu 6:00"
+            }
+          ]
+        }
+      ],
+      "calendar": []
+    },
+    {
+      "date": "2026-11-10",
+      "labelText": "Tue 10",
+      "off": false,
+      "totalText": "1h05",
+      "sessions": [
+        {
+          "index": 1,
+          "title": "Easy spin",
+          "sport": "ride",
+          "start": "12:15",
+          "minutes": 45,
+          "timeText": "12:15",
+          "lengthText": "45 min",
+          "tssText": "35 TSS",
+          "hard": false,
+          "why": "Easy legs before Wednesday.",
+          "description": "Zone 2, cadence 90.",
+          "changed": false,
+          "slots": [
+            {
+              "date": "2026-11-10",
+              "time": "17:15",
+              "text": "Tue 17:15"
+            },
+            {
+              "date": "2026-11-09",
+              "time": "06:15",
+              "text": "Mon 6:15"
+            },
+            {
+              "date": "2026-11-11",
+              "time": "11:30",
+              "text": "Wed 11:30"
+            },
+            {
+              "date": "2026-11-12",
+              "time": "06:15",
+              "text": "Thu 6:15"
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "title": "Physio A: Achilles & calf",
+          "sport": "strength",
+          "start": "18:00",
+          "minutes": 20,
+          "timeText": "18:00",
+          "lengthText": "20 min",
+          "tssText": "5 TSS",
+          "hard": false,
+          "why": "Weekly rehab.",
+          "description": null,
+          "changed": false,
+          "slots": [
+            {
+              "date": "2026-11-10",
+              "time": "11:55",
+              "text": "Tue 11:55"
+            },
+            {
+              "date": "2026-11-09",
+              "time": "06:40",
+              "text": "Mon 6:40"
+            },
+            {
+              "date": "2026-11-11",
+              "time": "11:55",
+              "text": "Wed 11:55"
+            },
+            {
+              "date": "2026-11-12",
+              "time": "06:40",
+              "text": "Thu 6:40"
+            }
+          ]
+        }
+      ],
+      "calendar": [
+        {
+          "title": "Team standup",
+          "allDay": false,
+          "start": "09:30",
+          "minutes": 30,
+          "timeText": "9:30"
+        }
+      ]
+    },
+    {
+      "date": "2026-11-11",
+      "labelText": "Wed 11",
+      "off": false,
+      "totalText": "1h",
+      "sessions": [
+        {
+          "index": 3,
+          "title": "Threshold 3×10",
+          "sport": "ride",
+          "start": "12:15",
+          "minutes": 60,
+          "timeText": "12:15",
+          "lengthText": "1h",
+          "tssText": "75 TSS",
+          "hard": true,
+          "why": "The week's key bike session.",
+          "description": "15 min warm-up, 3×10 min at 95–100% FTP, 5 min easy between.",
+          "changed": false,
+          "slots": [
+            {
+              "date": "2026-11-11",
+              "time": "06:30",
+              "text": "Wed 6:30"
+            },
+            {
+              "date": "2026-11-09",
+              "time": "06:00",
+              "text": "Mon 6:00"
+            },
+            {
+              "date": "2026-11-10",
+              "time": "11:15",
+              "text": "Tue 11:15"
+            },
+            {
+              "date": "2026-11-12",
+              "time": "06:00",
+              "text": "Thu 6:00"
+            }
+          ]
+        }
+      ],
+      "calendar": [
+        {
+          "title": "Doctor appointment",
+          "allDay": false,
+          "start": "09:00",
+          "minutes": 60,
+          "timeText": "9:00"
+        }
+      ]
+    },
+    {
+      "date": "2026-11-12",
+      "labelText": "Thu 12",
+      "off": false,
+      "totalText": "50 min",
+      "sessions": [
+        {
+          "index": 4,
+          "title": "Upper + arms",
+          "sport": "strength",
+          "start": "07:00",
+          "minutes": 50,
+          "timeText": "7:00",
+          "lengthText": "50 min",
+          "tssText": "40 TSS",
+          "hard": false,
+          "why": "Second lift, arms first.",
+          "description": null,
+          "changed": false,
+          "slots": [
+            {
+              "date": "2026-11-12",
+              "time": "06:30",
+              "text": "Thu 6:30"
+            },
+            {
+              "date": "2026-11-09",
+              "time": "06:10",
+              "text": "Mon 6:10"
+            },
+            {
+              "date": "2026-11-10",
+              "time": "11:25",
+              "text": "Tue 11:25"
+            },
+            {
+              "date": "2026-11-11",
+              "time": "11:25",
+              "text": "Wed 11:25"
+            }
+          ]
+        }
+      ],
+      "calendar": []
+    },
+    {
+      "date": "2026-11-13",
+      "labelText": "Fri 13",
+      "off": true,
+      "totalText": "Off",
+      "sessions": [],
+      "calendar": [
+        {
+          "title": "Work trip",
+          "allDay": true,
+          "start": null,
+          "minutes": 0,
+          "timeText": "All day"
+        }
+      ]
+    },
+    {
+      "date": "2026-11-14",
+      "labelText": "Sat 14",
+      "off": false,
+      "totalText": "1h40",
+      "sessions": [
+        {
+          "index": 5,
+          "title": "Long run",
+          "sport": "run",
+          "start": "08:00",
+          "minutes": 100,
+          "timeText": "8:00",
+          "lengthText": "1h40",
+          "tssText": "95 TSS",
+          "hard": false,
+          "why": "Your long day.",
+          "description": "Easy, last 15 min at marathon effort.",
+          "changed": true,
+          "slots": [
+            {
+              "date": "2026-11-14",
+              "time": "06:30",
+              "text": "Sat 6:30"
+            },
+            {
+              "date": "2026-11-09",
+              "time": "08:00",
+              "text": "Mon 8:00"
+            },
+            {
+              "date": "2026-11-10",
+              "time": "10:35",
+              "text": "Tue 10:35"
+            },
+            {
+              "date": "2026-11-11",
+              "time": "10:35",
+              "text": "Wed 10:35"
+            }
+          ]
+        }
+      ],
+      "calendar": []
+    },
+    {
+      "date": "2026-11-15",
+      "labelText": "Sun 15",
+      "off": false,
+      "totalText": "1h30",
+      "sessions": [
+        {
+          "index": 6,
+          "title": "Endurance ride",
+          "sport": "ride",
+          "start": "09:00",
+          "minutes": 90,
+          "timeText": "9:00",
+          "lengthText": "1h30",
+          "tssText": "70 TSS",
+          "hard": true,
+          "why": "Tempo blocks in the second hour.",
+          "description": null,
+          "changed": true,
+          "slots": [
+            {
+              "date": "2026-11-15",
+              "time": "06:30",
+              "text": "Sun 6:30"
+            },
+            {
+              "date": "2026-11-09",
+              "time": "08:00",
+              "text": "Mon 8:00"
+            },
+            {
+              "date": "2026-11-10",
+              "time": "10:45",
+              "text": "Tue 10:45"
+            },
+            {
+              "date": "2026-11-11",
+              "time": "10:45",
+              "text": "Wed 10:45"
+            }
+          ]
+        }
+      ],
+      "calendar": [
+        {
+          "title": "Lunch with friends",
+          "allDay": false,
+          "start": "13:00",
+          "minutes": 120,
+          "timeText": "13:00"
+        }
+      ]
+    }
+  ],
+  "change": {
+    "note": "Moved the long run to Saturday",
+    "changed": [
+      {
+        "what": "Long run",
+        "how": "Sun → Sat 8:00"
+      },
+      {
+        "what": "Endurance ride",
+        "how": "Sat → Sun 9:00"
+      }
+    ],
+    "gaveUp": null
+  },
+  "review": {
+    "headline": "A steady build week after a tired one",
+    "reasoning": [
+      "Last week came in short, so this one adds back time slowly and keeps two hard days."
+    ],
+    "decisions": [
+      {
+        "title": "Threshold on Wednesday",
+        "why": "Two easy days before it, and the calendar is clear at lunch.",
+        "tradeoff": "Only one bike interval day this week."
+      },
+      {
+        "title": "Long run on Saturday",
+        "why": "You asked for Saturday, and Friday is off.",
+        "tradeoff": null
+      }
+    ],
+    "watch": [
+      "If sleep drops under 6 hours, make Wednesday easy."
+    ]
+  },
+  "summary": null,
+  "issues": [
+    {
+      "level": "warn",
+      "message": "Thursday lift is 20 hours after the threshold ride."
+    }
+  ],
+  "quickAsks": [
+    "Make it lighter",
+    "Swap the hard day",
+    "Long ride instead of the long run",
+    "One more easy day"
+  ],
+  "lastWeek": {
+    "timeText": "4h50",
+    "timeNote": "of 8h planned",
+    "liftsText": "1 of 2",
+    "liftsShort": true,
+    "hardText": "1 of 2",
+    "hardShort": true,
+    "days": [
+      {
+        "date": "2026-11-02",
+        "letter": "M",
+        "title": "Heavy barbell",
+        "tone": "good"
+      },
+      {
+        "date": "2026-11-03",
+        "letter": "T",
+        "title": "Easy spin",
+        "tone": "good"
+      },
+      {
+        "date": "2026-11-04",
+        "letter": "W",
+        "title": "Threshold",
+        "tone": "warn"
+      },
+      {
+        "date": "2026-11-05",
+        "letter": "T",
+        "title": "Upper",
+        "tone": "bad"
+      },
+      {
+        "date": "2026-11-06",
+        "letter": "F",
+        "title": null,
+        "tone": "none"
+      },
+      {
+        "date": "2026-11-07",
+        "letter": "S",
+        "title": "Long run",
+        "tone": "good"
+      },
+      {
+        "date": "2026-11-08",
+        "letter": "S",
+        "title": "Ride",
+        "tone": "bad"
+      }
+    ]
+  },
+  "facts": [
+    {
+      "id": "ctl",
+      "label": "Fitness",
+      "value": "62 CTL",
+      "note": null
+    },
+    {
+      "id": "tsb",
+      "label": "Form",
+      "value": "+4",
+      "note": null
+    },
+    {
+      "id": "sleep",
+      "label": "Sleep",
+      "value": "6h40 average",
+      "note": null
+    },
+    {
+      "id": "hrv",
+      "label": "HRV",
+      "value": "Normal",
+      "note": null
+    }
+  ],
+  "feels": [
+    {
+      "id": "fresh",
+      "label": "Fresh"
+    },
+    {
+      "id": "normal",
+      "label": "Normal"
+    },
+    {
+      "id": "fatigued",
+      "label": "Tired"
+    },
+    {
+      "id": "recovery",
+      "label": "Recovery week"
+    }
+  ],
+  "suggested": {
+    "feel": "normal",
+    "feelText": "Coach reads normal: sleep is back to normal and HRV is steady.",
+    "hours": 8,
+    "hoursText": "Your recent weeks average about 8h."
+  },
+  "answers": {
+    "feel": "normal",
+    "hours": 8,
+    "gym": 2,
+    "hard": 2,
+    "longDay": "2026-11-14",
+    "daysOff": [
+      "2026-11-13"
+    ],
+    "lock": "Away Friday for work"
+  },
+  "longDays": [
+    {
+      "date": "2026-11-14",
+      "text": "Sat"
+    },
+    {
+      "date": "2026-11-15",
+      "text": "Sun"
+    }
+  ],
+  "planningAround": [
+    "Wed 9:00 Doctor appointment",
+    "Fri Work trip",
+    "Sun 13:00 Lunch with friends"
+  ],
+  "syncsTo": [
+    "Google Calendar",
+    "Lift on iPhone",
+    "Garmin",
+    "Zwift"
+  ]
+}

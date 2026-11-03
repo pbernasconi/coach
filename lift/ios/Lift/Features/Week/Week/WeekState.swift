@@ -38,6 +38,8 @@ nonisolated struct WeekState: Equatable, Sendable {
         case add(WeekAddDay)
         /// The template picker for changing a planned session's workout.
         case change(WeekSessionRef)
+        /// The full-screen weekly planner.
+        case planner
     }
 
     /// The session the lift sheet is open for.

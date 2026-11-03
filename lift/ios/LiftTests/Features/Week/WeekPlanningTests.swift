@@ -39,7 +39,10 @@ import Testing
 
     let units = InMemoryUnitSettings(.kg)
 
-    func loaded(plans: FakeWorkoutPlanRepository = FakeWorkoutPlanRepository()) async -> WeekViewModel {
+    func loaded(
+        plans: FakeWorkoutPlanRepository = FakeWorkoutPlanRepository(),
+        coachPlan: any CoachPlanProviding = DisabledCoachPlan()
+    ) async -> WeekViewModel {
         let vm = WeekViewModel(
             sessions: FakeSessionRepository(emissions: [[planned]]),
             templates: FakeTemplateRepository(emissions: [[template(upperID, "Upper A"), template(lowerID, "Lower A")]]
@@ -49,7 +52,7 @@ import Testing
             now: SessionBuilder.now,
             calendar: calendar,
             units: units,
-            coachPlan: DisabledCoachPlan()
+            coachPlan: coachPlan
         )
         await vm.run()
         return vm
@@ -182,5 +185,37 @@ import Testing
 
         #expect(templates.calls == [.create("New template")])
         #expect(router.opened == [.template(FakeTemplateRepository.newID)])
+    }
+
+    @Test func planWeekTappedOpensThePlanner() async {
+        let vm = await loaded()
+
+        #expect(vm.send(.planWeekTapped) == nil)
+
+        #expect(vm.state.destination == .planner)
+    }
+
+    @Test func plannerClosedWithoutAcceptingChangesNothingElse() async {
+        let coachPlan = FakeCoachPlan([])
+        let vm = await loaded(coachPlan: coachPlan)
+        vm.send(.planWeekTapped)
+
+        #expect(vm.send(.plannerClosed(accepted: nil)) == nil)
+
+        #expect(vm.state.destination == nil)
+        #expect(vm.state.toast == nil)
+        #expect(coachPlan.refreshCount == 0)
+    }
+
+    @Test func plannerClosedAfterAcceptShowsTheLineAndRefreshesThePlan() async {
+        let coachPlan = FakeCoachPlan([])
+        let vm = await loaded(coachPlan: coachPlan)
+        vm.send(.planWeekTapped)
+
+        await vm.send(.plannerClosed(accepted: "On your calendar now"))?.value
+
+        #expect(vm.state.destination == nil)
+        #expect(vm.state.toast?.message == "On your calendar now")
+        #expect(coachPlan.refreshCount == 1)
     }
 }

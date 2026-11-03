@@ -33,14 +33,15 @@ struct WeekContent: View {
             }
     }
 
-    /// The calendar button switches the top between the week strip and the month calendar. Add workout plans the
-    /// selected day.
+    /// The calendar button switches the top between the week strip and the month calendar. Plan next week opens the
+    /// planner; Add workout plans the selected day.
     private var header: some View {
         AppHeader("Week") {
             Button(
                 state.calendar == .week ? "Show month" : "Show week",
                 systemImage: state.calendar == .week ? "calendar" : "rectangle.split.3x1"
             ) { send(.calendarToggled) }
+            Button("Plan next week", systemImage: "sparkles") { send(.planWeekTapped) }
             Button("Add workout", systemImage: "plus") { send(.addWorkoutTapped(nil)) }
         }
     }
