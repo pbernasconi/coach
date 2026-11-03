@@ -1349,8 +1349,13 @@ web's (`src/lib/plan/planner-ops.ts`). `week` is any day of the week (default: n
   windows on the calendar); `versusTitle` and `versus` (`label`, `beforeText`, `afterText`) and `keepers` (`index`,
   `title`, `sport`, `dayText`: the sessions to keep if the week goes sideways), both empty unless `proposed`;
   `suggested.away` (travel days on the calendar: start Your week with them marked Away when `answers` is `null`).
+- `weeks` (`weekStart`, `labelText`, `datesText`): the week picker, this week and the seven after it ("This week",
+  "Next week", then the dates). Picking one GETs it with `week=`. For a week two or more ahead, `lastWeek` is this
+  week so far. `onPlanText` ("On your plan: 9 sessions, 9h10.") when the week is already planned and no draft is
+  open, else `null`.
 
-PUT body `{ "action": …, "proposalId": …, … }`, answered with the week as GET plus `note` (Accept's line, else
+PUT body `{ "action": …, "weekStart": …, "proposalId": …, … }`, answered with the week as GET (`weekStart`'s week;
+next week without it) plus `note` (Accept's line, else
 `null`) and `refusedText` (why the draft could not take it, shown as is, else `null`; still a `200`, so the phone
 can read it); `400` for a malformed body:
 

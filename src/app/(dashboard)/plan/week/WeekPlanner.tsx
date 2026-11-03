@@ -3,13 +3,13 @@
 import { useEffect, useMemo, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, Check, Loader2, RefreshCw, Sparkles, X } from 'lucide-react';
+import { ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, Loader2, RefreshCw, Sparkles, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button, buttonVariants, cn } from '@kobo/web';
 import CoachMark from '@/components/brand/CoachMark';
 import type { PlannerWeek } from '@/lib/plan/planner-week';
-import { STEPS, firstStep, suggestAway } from '@/lib/plan/planner-steps.mjs';
-import { addDays, mondayOf } from '@/lib/plan/week.mjs';
+import { STEPS, firstStep, suggestAway, upcomingWeeks } from '@/lib/plan/planner-steps.mjs';
+import PlanWeekMenu from '@/components/plan/PlanWeekMenu';
 import { acceptDraftAction, draftWeekAction, editDraftAction, plannerWeekAction, reviseDraftAction, undoDraftAction } from './actions';
 import WeekGrid from './WeekGrid';
 import { CoachPanel, Composer, SessionPanel, type Answers } from './PlannerPanels';
@@ -305,22 +305,28 @@ function DraftStep({
   );
 }
 
-/** This week or next week. This week plans only the days left from today: Coach keeps what is done (a check-in). */
+/** ‹ Next week ▾ ›: step a week back or ahead, or pick any of the coming weeks (this week and the seven after it). */
 function WeekSwitch({ weekStart, today }: { weekStart: string; today: string }) {
-  const thisWeek = mondayOf(today);
-  const weeks = [
-    { monday: thisWeek, label: 'This week' },
-    { monday: addDays(thisWeek, 7), label: 'Next week' },
-  ];
+  const weeks = upcomingWeeks(today);
+  const at = weeks.findIndex((w) => w.monday === weekStart);
+  const step = (d: number) => weeks[at + d];
+  const arrow = 'flex size-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground';
+  const prev = step(-1);
+  const next = at === -1 ? weeks[0] : step(1);
   return (
-    <nav aria-label="Week to plan" className="inline-flex rounded-full bg-muted p-0.5 text-xs">
-      {weeks.map((w) => (
-        <Link key={w.monday} href={`/plan/week?week=${w.monday}`} aria-current={w.monday === weekStart ? 'page' : undefined}
-          className={cn('rounded-full px-2.5 py-1 font-medium whitespace-nowrap transition-colors',
-            w.monday === weekStart ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground')}>
-          {w.label}
-        </Link>
-      ))}
+    <nav aria-label="Week to plan" className="flex items-center">
+      {prev ? (
+        <Link href={`/plan/week?week=${prev.monday}`} aria-label={`Plan ${prev.label.toLowerCase()}`} className={arrow}><ChevronLeft aria-hidden className="size-4" /></Link>
+      ) : <span aria-hidden className={cn(arrow, 'opacity-30 hover:bg-transparent')}><ChevronLeft className="size-4" /></span>}
+      <PlanWeekMenu weekStart={weekStart} today={today}>
+        <button type="button" className="flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium whitespace-nowrap hover:text-foreground">
+          {at === -1 ? 'Pick a week' : weeks[at].label}
+          <ChevronDown aria-hidden className="size-3.5 text-muted-foreground" />
+        </button>
+      </PlanWeekMenu>
+      {next ? (
+        <Link href={`/plan/week?week=${next.monday}`} aria-label={`Plan ${next.label.toLowerCase()}`} className={arrow}><ChevronRight aria-hidden className="size-4" /></Link>
+      ) : <span aria-hidden className={cn(arrow, 'opacity-30 hover:bg-transparent')}><ChevronRight className="size-4" /></span>}
     </nav>
   );
 }

@@ -43,7 +43,7 @@ nonisolated enum WeekAction: Equatable, Sendable {
     case refreshPulled
     /// A row long-pressed and dropped on another day: it moves there.
     case rowDropped(WeekDrag, on: LocalDay)
-    /// "Plan next week" in the header: opens the full-screen planner.
+    /// "Plan a week" in the header: opens the full-screen planner on next week.
     case planWeekTapped
     /// The planner closed: with the coach's line once the week was accepted (a toast, then the plan refreshes).
     case plannerClosed(accepted: String?)

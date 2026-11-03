@@ -1,6 +1,8 @@
 'use client';
 
-import { Dumbbell } from 'lucide-react';
+import Link from 'next/link';
+import { Dumbbell, Sparkles } from 'lucide-react';
+import { addDays } from '@/lib/plan/week.mjs';
 import SportIcon from '@/components/SportIcon';
 import { sport } from '@/lib/sports';
 import { weekColumnMode } from '@/lib/plan/cells.mjs';
@@ -14,6 +16,12 @@ export function WeekColumn({ s, monday, today, pace = null }: { s: WeekSummary |
     return (
       <div className="border-l bg-[var(--viz-surface)] px-2 py-1.5 text-[12px] text-[var(--viz-muted)]">
         {monday > today ? 'No plan' : ''}
+        {/* This week and the ones ahead can be planned from here. */}
+        {addDays(monday, 6) >= today && (
+          <Link href={`/plan/week?week=${monday}`} className="mt-1 flex w-fit items-center gap-1 font-medium text-brand-ink hover:underline">
+            <Sparkles aria-hidden className="size-3" /> Plan week
+          </Link>
+        )}
       </div>
     );
   }

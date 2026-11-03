@@ -19,6 +19,9 @@ struct WeekPlannerContent: View {
             onConfirm: { send(.acceptTapped) }
         ) {
             VStack(alignment: .leading, spacing: Space.lg) {
+                if let week = state.loaded {
+                    PlannerWeekPicker(week: week, isWorking: state.isWorking, send: send)
+                }
                 PlannerStepHeader(step: state.step)
                 status
                 page
@@ -37,7 +40,7 @@ struct WeekPlannerContent: View {
         }
     }
 
-    /// Coach drafting, a refused or failed change, or nothing.
+    /// Coach drafting, a refused or failed change, what is already on the plan, or nothing.
     @ViewBuilder private var status: some View {
         if state.isDrafting, state.step == .draft {
             InlineNotice(
@@ -46,6 +49,8 @@ struct WeekPlannerContent: View {
             )
         } else if let failure = state.failureText, state.destination == nil {
             InlineNotice(verbatim: failure, tone: .warning)
+        } else if let onPlan = state.loaded?.onPlanText, state.step != .review {
+            InlineNotice(verbatim: onPlan, tone: .info)
         }
     }
 

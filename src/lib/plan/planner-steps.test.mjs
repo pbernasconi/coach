@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { suggestAway, dayModes, firstStep, freeWindows, hourSplit, keepers, lastWeekRead, roughSplit, versusLastWeek, withDayMode } from './planner-steps.mjs';
+import { suggestAway, dayModes, firstStep, freeWindows, hourSplit, keepers, lastWeekRead, roughSplit, versusLastWeek, upcomingWeeks, withDayMode } from './planner-steps.mjs';
 
 // A made-up week (TEST-8).
 const cal = [
@@ -106,4 +106,15 @@ test('suggestAway marks trips, flights and all-day holds, not holidays or past d
   ];
   assert.deepEqual(suggestAway(cal, '2026-11-09', '2026-11-10'), ['2026-11-11', '2026-11-12', '2026-11-13']);
   assert.deepEqual(suggestAway([{ date: '2026-11-11', allDay: true, title: 'Veterans Day' }], '2026-11-09', '2026-11-01'), []);
+});
+
+test('upcomingWeeks: this week, next week, then dates', () => {
+  const w = upcomingWeeks('2026-03-10');
+  assert.equal(w.length, 8);
+  assert.deepEqual(w[0], { monday: '2026-03-09', label: 'This week', datesText: 'Mar 9–15' });
+  assert.deepEqual(w[1], { monday: '2026-03-16', label: 'Next week', datesText: 'Mar 16–22' });
+  assert.equal(w[2].label, 'Mar 23–29');
+  assert.equal(w[3].label, 'Mar 30 – Apr 5');
+  // Sunday still belongs to its week.
+  assert.equal(upcomingWeeks('2026-03-15', 1)[0].monday, '2026-03-09');
 });

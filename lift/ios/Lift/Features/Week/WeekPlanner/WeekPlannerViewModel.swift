@@ -8,10 +8,11 @@ import Observation
 final class WeekPlannerViewModel {
     private(set) var state = WeekPlannerState()
 
-    private let resource: AppResource<PlannerWeek>
+    @ObservationIgnored private var resource: AppResource<PlannerWeek>
     private let data: any AppDataSource
     private let clock: any Clock<Duration>
-    @ObservationIgnored private var isLoading = false
+    /// The week of the load in flight ("" for the coach's default): a load for another week still starts.
+    @ObservationIgnored private var loadingWeek: String?
     @ObservationIgnored private var isPolling = false
     @ObservationIgnored private var answersFilled = false
 
@@ -46,7 +47,7 @@ final class WeekPlannerViewModel {
     @discardableResult
     func send(_ action: WeekPlannerAction) -> Task<Void, Never>? {
         switch action {
-        case .stepChanged, .nextTapped, .backTapped: navigate(action)
+        case .stepChanged, .nextTapped, .backTapped, .weekPicked: return navigate(action)
         case .retryTapped:
             state.week.content = .loading
             return Task { await load() }
@@ -65,8 +66,9 @@ final class WeekPlannerViewModel {
         return nil
     }
 
-    /// Moves between the steps; Draft and Review stay closed until there is a draft.
-    private func navigate(_ action: WeekPlannerAction) {
+    /// Moves between the steps, Draft and Review closed until there is a draft; or opens another week.
+    private func navigate(_ action: WeekPlannerAction) -> Task<Void, Never>? {
+        if case .weekPicked(let monday) = action { return pickWeek(monday) }
         let target: WeekPlannerState.Step? =
             switch action {
             case .stepChanged(let step): step
@@ -75,6 +77,7 @@ final class WeekPlannerViewModel {
             default: nil
             }
         if let target, state.isOpen(target) { state.step = target }
+        return nil
     }
 
     /// The Last week and Shape controls, and the note box.
@@ -130,9 +133,12 @@ final class WeekPlannerViewModel {
     }
 
     /// Sends one change; the answer is the week as it is now. A refusal says why on the screen.
-    private func write(_ request: PlannerRequest) -> Task<Void, Never>? {
+    private func write(_ change: PlannerRequest) -> Task<Void, Never>? {
         guard !state.isWorking else { return nil }  // double tap guard
         state.write = .working
+        // The answer is this week, not the coach's default (next week).
+        var request = change
+        request.weekStart = request.weekStart ?? state.loaded?.weekStart
         let data = data
         return Task {
             do {
@@ -164,14 +170,6 @@ final class WeekPlannerViewModel {
         await poll()
     }
 
-    private func load() async {
-        guard !isLoading else { return }
-        isLoading = true
-        defer { isLoading = false }
-        await resource.load(current: state.week) { state.week = $0 }
-        fillAnswers()
-    }
-
     /// Starts the controls at the open draft's answers, and on the Draft step when there is one, once.
     private func fillAnswers() {
         guard !answersFilled, let week = state.loaded else { return }
@@ -192,6 +190,34 @@ final class WeekPlannerViewModel {
         for _ in 0..<Self.pollRounds where state.isDrafting {
             do { try await clock.sleep(for: Self.pollEvery) } catch { return }
             await load()
+        }
+    }
+}
+
+extension WeekPlannerViewModel {
+    /// One read of the shown week. A read that ends after Paolo picked another week is dropped.
+    fileprivate func load() async {
+        let query = resource.query
+        let week = query.first?.value ?? ""
+        guard loadingWeek != week else { return }
+        loadingWeek = week
+        defer { if loadingWeek == week { loadingWeek = nil } }
+        let resource = resource
+        await resource.load(current: state.week) { answer in
+            if self.resource.query == query { state.week = answer }
+        }
+        if resource.query == query { fillAnswers() }
+    }
+
+    /// Opens another week: a fresh read, step 1, and that week's answers once it loads.
+    fileprivate func pickWeek(_ monday: String) -> Task<Void, Never>? {
+        guard monday != state.loaded?.weekStart, !state.isWorking else { return nil }
+        resource.query = [URLQueryItem(name: "week", value: monday)]
+        state = WeekPlannerState()
+        answersFilled = false
+        return Task {
+            await load()
+            await poll()
         }
     }
 }

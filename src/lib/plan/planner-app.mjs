@@ -3,7 +3,7 @@
 // (the web's session panel uses freeSlots too). Pure, so node --test runs it (planner-app.test.mjs).
 
 import { addDays } from './week.mjs';
-import { freeWindows, keepers, lastWeekRead, suggestAway, versusLastWeek } from './planner-steps.mjs';
+import { freeWindows, keepers, lastWeekRead, suggestAway, upcomingWeeks, versusLastWeek } from './planner-steps.mjs';
 
 /** @param {string} t "HH:MM" */
 const minutesOf = (t) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
@@ -98,6 +98,12 @@ export function plannerApp(w) {
     today: w.today,
     titleText: `Plan ${weekLabel(w.weekStart)}`,
     weekText: weekLabel(w.weekStart),
+    // A week already on the plan with no draft open: what is on it (the phone shows it over step 1).
+    onPlanText: state === 'none' && (w.planned ?? []).length
+      ? `On your plan: ${w.planned.length} session${w.planned.length === 1 ? '' : 's'}, ${hm(w.planned.reduce((n, e) => n + (e.minutes ?? 0), 0))}.`
+      : null,
+    // The week picker: this week and the next ones, any of them can be planned.
+    weeks: upcomingWeeks(w.today).map((u) => ({ weekStart: u.monday, labelText: u.label, datesText: u.datesText })),
     state,
     proposalId: p && state !== 'none' ? p.id : null,
     version: p?.version ?? null,
