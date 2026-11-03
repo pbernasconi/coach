@@ -36,6 +36,8 @@ export const MAX_TURNS = 8;
 export const MAX_READS = 6;
 /** The thread messages sent back to Claude: the recent ones are enough for a chat about this week. */
 export const HISTORY = 20;
+/** What a shown card answers: the words come next, as text. */
+const WRITE_AFTER_CARD = 'Shown under your reply. Once your cards are called, write your reply to Paolo in text, with no more tool calls.';
 
 
 /**
@@ -172,6 +174,10 @@ export async function chatWithClaude({ client, system, history, context, text, f
   let streamedThought = '';
   /** @type {{ name: string, input: any, ok: boolean, chars: number }[]} */
   const reads = [];
+  /** @type {string[]} */
+  const notes = [];
+  let wordsAsked = false;
+  const shown = () => Boolean(proposal || cards.length || replies.length || questions.length);
   const web = { searches: 0, fetches: 0 };
   /** @type {any[]} */
   const answered = [];
@@ -193,15 +199,22 @@ export async function chatWithClaude({ client, system, history, context, text, f
     if (message.stop_reason === 'refusal') return result('refusal');
     const content = message.content ?? [];
     answered.push(...content);
-    // Text blocks in a row are one paragraph: a cited answer comes split at each citation.
+    // Text blocks in a row are one paragraph: a cited answer comes split at each citation. Only text after the
+    // response's last tool call is the reply; a note before a tool call ("one more search") is working text, kept
+    // with the thought. (Sonnet 5.5 sends a longer note before a tool call as a thinking block anyway.)
+    let lastTool = -1;
+    content.forEach((/** @type {any} */ b, /** @type {number} */ i) => { if (b.type === 'tool_use' || b.type === 'server_tool_use') lastTool = i; });
     let run = '';
-    for (const b of content) {
-      if (b.type === 'text') { run += b.text; continue; }
-      if (run.trim()) said.push(run.trim());
+    const flush = (/** @type {boolean} */ final) => {
+      if (run.trim()) (final ? said : notes).push(run.trim());
       run = '';
+    };
+    content.forEach((/** @type {any} */ b, /** @type {number} */ i) => {
+      if (b.type === 'text') { run += b.text; return; }
+      flush(i > lastTool);
       if (b.type === 'thinking' && typeof b.thinking === 'string' && b.thinking.trim()) thoughts.push(b.thinking.trim());
-    }
-    if (run.trim()) said.push(run.trim());
+    });
+    flush(true);
     if (message.stop_reason === 'max_tokens') return result('max_tokens');
     // A long web search pauses; the same request with Claude's message so far goes on from there.
     if (message.stop_reason === 'pause_turn') {
@@ -209,7 +222,7 @@ export async function chatWithClaude({ client, system, history, context, text, f
       continue;
     }
     const calls = content.filter((/** @type {any} */ b) => b.type === 'tool_use');
-    if (!calls.length) return result('answered');
+    if (!calls.length) return result(proposal ? 'proposed' : shown() ? 'shown' : 'answered');
     messages.push({ role: 'assistant', content });
 
     /** @type {any[]} */
@@ -241,7 +254,7 @@ export async function chatWithClaude({ client, system, history, context, text, f
         const c = cards.length >= MAX_CARDS ? { ok: false, problems: [`at most ${MAX_CARDS} cards per answer`] } : checkCard(call.input ?? {});
         if (c.ok) {
           cards.push(c.value);
-          results.push({ type: 'tool_result', tool_use_id: call.id, content: 'Shown under your text.' });
+          results.push({ type: 'tool_result', tool_use_id: call.id, content: WRITE_AFTER_CARD });
         } else {
           results.push({ type: 'tool_result', tool_use_id: call.id, is_error: true, content: `Not shown: ${c.problems.join('; ')}` });
           retry = cards.length < MAX_CARDS;
@@ -252,13 +265,13 @@ export async function chatWithClaude({ client, system, history, context, text, f
         questions = cleanQuestions(call.input);
         results.push({
           type: 'tool_result', tool_use_id: call.id,
-          ...(questions.length ? { content: 'Shown as cards; his answers come as his next message. Stop here.' } : { is_error: true, content: 'No valid question: ask in your text instead.' }),
+          ...(questions.length ? { content: 'Shown as cards; his answers come as his next message. Write one short line to go above them, with no more tool calls.' } : { is_error: true, content: 'No valid question: ask in your text instead.' }),
         });
         continue;
       }
       if (call.name === REPLIES_TOOL.name) {
         replies = cleanReplies(call.input);
-        results.push({ type: 'tool_result', tool_use_id: call.id, content: 'Shown under your question.' });
+        results.push({ type: 'tool_result', tool_use_id: call.id, content: WRITE_AFTER_CARD });
         continue;
       }
       if (call.name !== PROPOSE_TOOL.name) {
@@ -275,7 +288,7 @@ export async function chatWithClaude({ client, system, history, context, text, f
       if (c.ok) {
         proposal = c.value;
         problems = null;
-        results.push({ type: 'tool_result', tool_use_id: call.id, content: 'Shown to Paolo with Apply and Dismiss. Stop here: no more text.' });
+        results.push({ type: 'tool_result', tool_use_id: call.id, content: 'Shown to Paolo with Apply and Not now. Now write your reply to him in text, with no more tool calls: it goes above the card.' });
       } else {
         problems = c.problems;
         const last = tries >= MAX_PROPOSALS;
@@ -290,6 +303,12 @@ export async function chatWithClaude({ client, system, history, context, text, f
       }
     }
     messages.push({ role: 'user', content: results });
+    // Cards are shown; the words come in one more short request, after them, so they arrive as text (Sonnet 5.5
+    // turns text written before a tool call into a thinking block, and Paolo saw only the card, 2026-11-03).
+    if (shown() && !retry && !problems && !said.length && !wordsAsked && now() < deadline) {
+      wordsAsked = true;
+      continue;
+    }
     if (proposal) return result('proposed');
     // Cards and quick replies are shown as they come; another request only to fix a broken card or proposal (or to
     // let Claude say in words what it couldn't change, after its last try).
@@ -301,8 +320,10 @@ export async function chatWithClaude({ client, system, history, context, text, f
   function result(stop) {
     const thought = (thoughts.length ? thoughts.join('\n\n') : streamedThought.trim()).slice(0, 4000);
     // A reply that used the web ends with the pages it leaned on.
-    const sources = (web.searches || web.fetches) && said.length ? sourcesOf(answered) : [];
-    const reply = [said.join('\n\n'), sourcesLine(sources)].filter(Boolean).join('\n\n');
+    // No words after the tools (a deadline, a refusal): the last working note is better than nothing.
+    const words = said.length ? said.join('\n\n') : (notes.at(-1) ?? '');
+    const sources = (web.searches || web.fetches) && words ? sourcesOf(answered) : [];
+    const reply = [words, sourcesLine(sources)].filter(Boolean).join('\n\n');
     return { reply, proposal, problems, turns, usage, model, stop, attempts, cards, replies, questions, thought, timing, reads, web: { ...web, sources } };
   }
 }
