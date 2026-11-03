@@ -585,10 +585,29 @@ async function seedLift(strengthActs) {
   const rowsOut = [];
   const add = (entity, id, payload, updatedAt = now) => rowsOut.push([entity, id, payload, updatedAt]);
   const exIds = {};
+  // The bundled catalog's pictures (src/lib/lift/catalog.ts), as Lift links them.
+  const catalogIds = { 'Back Squat': '0043', 'Romanian Deadlift': '0085', 'Bulgarian Split Squat': '0410', 'Standing Calf Raise': '1372', 'Bench Press': '0025', 'Pull-Up': '0652', 'Overhead Press': '0091', 'Barbell Curl': '0031' };
   for (const [name, equipment, primary, secondary] of ex) {
     const id = uuid(`ex-${name}`);
     exIds[name] = id;
-    add('exercise', id, { id: id.toUpperCase(), name, equipment, primaryMuscles: primary, secondaryMuscles: secondary, catalogID: null, deletedAt: null });
+    add('exercise', id, { id: id.toUpperCase(), name, equipment, primaryMuscles: primary, secondaryMuscles: secondary, catalogID: catalogIds[name] ?? null, deletedAt: null });
+  }
+  // Two templates (Lift → Templates): each slot's sets, rep range, load, rest and cue.
+  const templates = [
+    ['Lower A', [['Back Squat', 3, 5, 5, 115, 180, 'Brace, sit between the hips'], ['Romanian Deadlift', 3, 6, 8, 100, 150, null], ['Bulgarian Split Squat', 3, 8, 10, 22, 90, 'Each leg'], ['Standing Calf Raise', 3, 10, 12, 60, 60, 'Slow 3 s down']]],
+    ['Upper A', [['Bench Press', 4, 5, 6, 85, 180, null], ['Pull-Up', 3, 6, 8, null, 120, 'Full hang at the bottom'], ['Overhead Press', 3, 6, 8, 52.5, 120, null], ['Barbell Curl', 3, 10, 12, 35, 60, null]]],
+  ];
+  for (const [ti, [tname, slots]] of templates.entries()) {
+    const tid = uuid(`template-${tname}`);
+    add('template', tid, { id: tid.toUpperCase(), name: tname, position: ti, createdAt: now, updatedAt: now, deletedAt: null });
+    for (const [pos, [name, sets, repMin, repMax, weight, rest, note]] of slots.entries()) {
+      const sid = uuid(`slot-${tname}-${name}`);
+      add('templateExercise', sid, {
+        id: sid.toUpperCase(), templateID: tid.toUpperCase(), position: pos, exerciseID: exIds[name].toUpperCase(), displayName: name,
+        setCount: sets, repMin, repMax, weightValue: weight, weightUnit: weight == null ? null : 'kg', restSeconds: rest, kind: 'working', note,
+        createdAt: now, updatedAt: now, deletedAt: null,
+      });
+    }
   }
   const base = { 'Back Squat': 110, 'Romanian Deadlift': 100, 'Bulgarian Split Squat': 22, 'Standing Calf Raise': 60, 'Bench Press': 85, 'Pull-Up': 10, 'Overhead Press': 52.5, 'Barbell Curl': 35 };
   const byDay = new Map();
