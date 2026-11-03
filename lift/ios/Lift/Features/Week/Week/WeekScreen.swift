@@ -3,7 +3,7 @@ import KoboPatterns
 import SwiftUI
 
 /// Owns the ViewModel; renders Content; starts reads (SCR-2, SCR-4). Shows the ViewModel's toasts through Kobo's
-/// `ToastCenter`, whose Undo action goes back through `send`. Plan next week opens the planner full screen, made by
+/// `ToastCenter`, whose Undo action goes back through `send`. Plan a week opens the planner full screen (next week; it has a week picker), made by
 /// `makePlanner`; `opensPlanner` opens it at launch (`-open planner` in the demo, for screenshots).
 struct WeekScreen: View {
     @State private var viewModel: WeekViewModel

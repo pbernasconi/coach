@@ -10,6 +10,10 @@ nonisolated struct PlannerWeek: Decodable, Equatable, Sendable, Identifiable {
     let weekStart: String
     let titleText: String
     let weekText: String
+    /// The week picker: this week and the seven after it ("This week", "Next week", "Nov 23–29").
+    let weeks: [WeekChoice]
+    /// A week already on the plan with no draft open ("On your plan: 9 sessions, 9h10."), shown over step 1.
+    let onPlanText: String?
     let state: DraftState
     let proposalId: String?
     let version: Int?

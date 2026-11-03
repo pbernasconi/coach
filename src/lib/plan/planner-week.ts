@@ -119,6 +119,8 @@ async function loadPlanned(userId: string, monday: string, today: string): Promi
     }));
 }
 
+const minDay = (a: string, b: string) => (a < b ? a : b);
+
 /** Each part that fails is left out (the screen still opens); `strict` (the health check) throws instead. */
 export async function loadPlannerWeek(userId: string, weekStart: string, { strict = false } = {}): Promise<PlannerWeek> {
   const today = todayIn(HOME_TZ);
@@ -133,8 +135,9 @@ export async function loadPlannerWeek(userId: string, weekStart: string, { stric
     quiet('draft', () => weekProposal(userId, monday), null),
     quiet('calendar', () => loadWeekCalendar(userId, monday), []),
     quiet('context', () => loadPlanningContext(userId, monday, { strict }), null),
-    // The week before the one being planned: last week on a Sunday, the week just gone on Monday.
-    quiet('last week', () => loadLastWeek(userId, addDays(monday, -7), today), null),
+    // The week before the one being planned: last week on a Sunday, the week just gone on Monday. A week further
+    // ahead looks at this week so far, the latest real training.
+    quiet('last week', () => loadLastWeek(userId, minDay(addDays(monday, -7), mondayOf(today)), today), null),
   ]);
   let events: DraftEvent[] = [];
   let change: DraftChange | null = null;

@@ -1,6 +1,17 @@
 import Foundation
 
 extension PlannerWeek {
+    /// One week the planner can open.
+    nonisolated struct WeekChoice: Decodable, Equatable, Sendable, Identifiable {
+        let weekStart: String
+        let labelText: String
+        let datesText: String
+        var id: String { weekStart }
+
+        /// "Next week · Nov 9–15", or the dates alone for a week further ahead.
+        var menuText: String { labelText == datesText ? datesText : "\(labelText) · \(datesText)" }
+    }
+
     /// One row of "Against last week": Time, Lifts, Hard sessions, Running.
     nonisolated struct Versus: Decodable, Equatable, Sendable {
         let label: String

@@ -2,7 +2,7 @@ import KoboComponents
 import KoboTokens
 import SwiftUI
 
-/// Dumb view: the header with Plan next week and Add workout, the week strip pinned under it, the visible week's days
+/// Dumb view: the header with Plan a week and Add workout, the week strip pinned under it, the visible week's days
 /// below, the lift sheet, the day picker and the plan item sheet (SCR-2).
 struct WeekContent: View {
     let state: WeekState
@@ -33,7 +33,7 @@ struct WeekContent: View {
             }
     }
 
-    /// The calendar button switches the top between the week strip and the month calendar. Plan next week opens the
+    /// The calendar button switches the top between the week strip and the month calendar. Plan a week opens the
     /// planner; Add workout plans the selected day.
     private var header: some View {
         AppHeader("Week") {
@@ -41,7 +41,7 @@ struct WeekContent: View {
                 state.calendar == .week ? "Show month" : "Show week",
                 systemImage: state.calendar == .week ? "calendar" : "rectangle.split.3x1"
             ) { send(.calendarToggled) }
-            Button("Plan next week", systemImage: "sparkles") { send(.planWeekTapped) }
+            Button("Plan a week", systemImage: "sparkles") { send(.planWeekTapped) }
             Button("Add workout", systemImage: "plus") { send(.addWorkoutTapped(nil)) }
         }
     }

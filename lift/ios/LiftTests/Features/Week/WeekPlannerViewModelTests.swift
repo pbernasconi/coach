@@ -12,7 +12,12 @@ import Testing
     let clock = ImmediateClock()
 
     /// A made-up planning week: one day with one session that has one free slot.
-    static func week(_ state: String = "proposed", refused: String? = nil, note: String? = nil) -> Data {
+    static func week(
+        _ state: String = "proposed",
+        refused: String? = nil,
+        note: String? = nil,
+        monday: String = "2026-03-09"
+    ) -> Data {
         let session = #"""
             { "index": 4, "title": "Long run", "sport": "run", "minutes": 90, "timeText": "8:00", "lengthText": "1h30",
               "tssText": "80 TSS", "hard": false, "why": "Long day", "description": null, "changed": false,
@@ -21,7 +26,10 @@ import Testing
         let extra = [refused.map { #""refusedText": "\#($0)""# }, note.map { #""note": "\#($0)""# }]
             .compactMap(\.self).map { ", \($0)" }.joined()
         let json = #"""
-            { "weekStart": "2026-03-09", "titleText": "Plan Mar 9–15", "weekText": "Mar 9–15", "state": "\#(state)",
+            { "weekStart": "\#(monday)", "titleText": "Plan Mar 9–15", "weekText": "Mar 9–15", "state": "\#(state)",
+              "weeks": [{ "weekStart": "2026-03-09", "labelText": "This week", "datesText": "Mar 9–15" },
+                        { "weekStart": "2026-03-16", "labelText": "Next week", "datesText": "Mar 16–22" }],
+              "onPlanText": null,
               "proposalId": "p1", "version": 2, "errorText": null, "totalsText": "1h30", "checks": null,
               "days": [{ "date": "2026-03-14", "labelText": "Sat 14", "past": false, "freeText": "Free 6:00–21:00",
                          "off": false, "totalText": "1h30",

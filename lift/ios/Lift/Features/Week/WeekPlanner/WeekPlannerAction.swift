@@ -7,6 +7,8 @@ nonisolated enum WeekPlannerAction: Equatable, Sendable {
     /// Next and Back in the bottom bar.
     case nextTapped
     case backTapped
+    /// A week in the week picker (its Monday): the planner opens on it.
+    case weekPicked(String)
     case retryTapped
     case refreshPulled
     /// A feel chip: tapping the picked one clears it.

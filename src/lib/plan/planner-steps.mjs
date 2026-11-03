@@ -220,3 +220,33 @@ export function lastWeekRead(lw, today = '9999-12-31', normalMin = 480) {
   });
   return out;
 }
+
+/** @param {string} d @param {Intl.DateTimeFormatOptions} o */
+const fmtDay = (d, o) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { ...o, timeZone: 'UTC' });
+
+/** "Nov 9–15" or "Oct 26 – Nov 1". @param {string} monday */
+export function weekDates(monday) {
+  const end = addDays(monday, 6);
+  const a = fmtDay(monday, { month: 'short', day: 'numeric' });
+  return monday.slice(5, 7) === end.slice(5, 7) ? `${a}–${Number(end.slice(8))}` : `${a} – ${fmtDay(end, { month: 'short', day: 'numeric' })}`;
+}
+
+/** How many weeks the planner offers: this week and the seven after it. */
+export const PLAN_AHEAD = 8;
+
+/**
+ * The weeks Paolo can plan: this week (the days left of it) and the next ones. `label` is "This week", "Next week" or
+ * the dates; `datesText` is always the dates.
+ * @param {string} today
+ * @param {number} [count]
+ * @returns {{ monday: string, label: string, datesText: string }[]}
+ */
+export function upcomingWeeks(today, count = PLAN_AHEAD) {
+  const d = new Date(`${today}T12:00:00Z`);
+  const first = addDays(today, -((d.getUTCDay() + 6) % 7));
+  return Array.from({ length: count }, (_, i) => {
+    const monday = addDays(first, 7 * i);
+    const datesText = weekDates(monday);
+    return { monday, label: i === 0 ? 'This week' : i === 1 ? 'Next week' : datesText, datesText };
+  });
+}

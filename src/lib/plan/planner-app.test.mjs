@@ -81,3 +81,12 @@ test('free slots avoid the calendar and keep one block a day', () => {
   const mon = slots.find((s) => s.date === '2026-11-09');
   assert.ok(mon && (mon.time === '06:00' || mon.time === '08:00'));
 });
+
+test('the week picker and a week already on the plan', () => {
+  const a = plannerApp(week());
+  assert.equal(a.weeks.length, 8);
+  assert.equal(a.weeks[0].labelText, 'This week');
+  assert.equal(a.onPlanText, null);
+  const b = plannerApp(week({ proposal: null, planned: [ev(0, '2026-03-16', '07:00', 60), ev(1, '2026-03-17', '07:00', 90)] }));
+  assert.equal(b.onPlanText, 'On your plan: 2 sessions, 2h30.');
+});

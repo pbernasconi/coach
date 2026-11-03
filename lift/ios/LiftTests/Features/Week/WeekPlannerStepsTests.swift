@@ -115,4 +115,34 @@ import Testing
 
         #expect(lastPut(data)["action"] as? String == "accept")
     }
+
+    @Test func pickingAWeekLoadsItOnStepOne() async {
+        let data = FakeAppData([
+            .success(WeekPlannerViewModelTests.week()),
+            .success(WeekPlannerViewModelTests.week("none", monday: "2026-03-16")),
+        ])
+        let vm = WeekPlannerViewModel(
+            data: data,
+            clock: clock,
+            now: SessionBuilder.now,
+            calendar: SessionBuilder.calendar
+        )
+        await vm.run()
+        #expect(vm.state.step == .draft)
+
+        await vm.send(.weekPicked("2026-03-16"))?.value
+
+        #expect(data.fetched.last?.contains("week=2026-03-16") == true)
+        #expect(vm.state.loaded?.weekStart == "2026-03-16")
+        #expect(vm.state.step == .lastWeek)
+        #expect(vm.send(.weekPicked("2026-03-16")) == nil)  // the shown week: nothing to load
+    }
+
+    @Test func writesNameTheShownWeek() async {
+        let (vm, data) = await loaded()
+
+        await vm.send(.undoTapped)?.value
+
+        #expect(lastPut(data)["weekStart"] as? String == "2026-03-09")
+    }
 }
