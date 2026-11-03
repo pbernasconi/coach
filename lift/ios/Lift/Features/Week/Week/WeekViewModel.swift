@@ -65,9 +65,11 @@ final class WeekViewModel {
             group.addTask { await self.observeSessions(layout.stripRange) }
             group.addTask { await self.observeTemplates() }
             group.addTask { await self.observePlan() }
-            group.addTask { await self.coachPlan.show(weekStart: start) }
+            group.addTask { await self.showPlan(start) }
         }
     }
+
+    private func showPlan(_ start: LocalDay) async { await coachPlan.show(weekStart: start) }
 
     private func observePlan() async {
         for await snapshot in coachPlan.snapshots() {
@@ -101,8 +103,7 @@ final class WeekViewModel {
         case .calendarToggled:
             state.calendar = state.calendar == .week ? .month : .week
         case .refreshPulled:
-            let coachPlan = coachPlan
-            return Task { await coachPlan.refresh() }
+            return Task { [coachPlan] in await coachPlan.refresh() }
         case .sessionTapped(let id):
             router.open(WeekLinks.session(summary(id), id: id, coachIsOn: plan.status != .off))
         case .sessionOptionsTapped(let id):
@@ -132,8 +133,7 @@ final class WeekViewModel {
         case .changeWorkoutTapped(let id):
             state.destination = sessionRef(id).map { .change($0) }
         case .planItemTapped(let id):
-            guard let item = merge?.item(id) else { return nil }
-            if let route = WeekLinks.planItem(item) { router.open(route) }
+            if let item = merge?.item(id), let route = WeekLinks.planItem(item) { router.open(route) }
         case .planWeekTapped: state.destination = .planner
         case .plannerClosed(accepted: let note):
             state.destination = nil
