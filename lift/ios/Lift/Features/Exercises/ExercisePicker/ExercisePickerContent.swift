@@ -4,7 +4,8 @@ import LiftCore
 import SwiftUI
 
 /// Dumb view: a pinned search field and a switch between the person's exercises and the whole catalog, then the
-/// matching rows. A tap adds the exercise (SCR-2).
+/// matching rows. A tap adds the exercise, or swaps it in; a swap suggests exercises for the same muscles first
+/// (SCR-2).
 struct ExercisePickerContent: View {
     let state: ExercisePickerState
     let send: (ExercisePickerAction) -> Void
@@ -23,7 +24,7 @@ struct ExercisePickerContent: View {
         }
         .scrollDismissesKeyboard(.immediately)
         .screenCanvas()
-        .navigationTitle(Text("Add exercise"))
+        .navigationTitle(state.isSwap ? Text("Swap exercise") : Text("Add exercise"))
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaBar(edge: .top, spacing: 0) {
             VStack(alignment: .leading, spacing: Space.sm) {
@@ -61,25 +62,34 @@ private struct PickerLibraryList: View {
             ErrorState(title: "Exercises could not be loaded")
         case .loaded:
             let items = state.visibleLibrary
+            let suggested = state.visibleSuggestions
             if items.isEmpty {
                 PickerNoMatches(query: state.query)
+            } else if suggested.isEmpty {
+                ListSection { rows(items) }
+                    .listRowDensity(.compact)
             } else {
-                ListSection {
-                    LazyVStack(spacing: 0) {
-                        ForEach(items) { item in
-                            PickerRow(
-                                name: item.name,
-                                detail: item.detail,
-                                catalogID: item.catalogID,
-                                image: item.catalogID.map { state.thumbnails[$0] ?? .loading },
-                                isAdding: state.adding == .library(item.id),
-                                action: { send(.libraryTapped(item.id)) },
-                                send: send
-                            )
-                        }
-                    }
-                }
-                .listRowDensity(.compact)
+                ListSection("Same muscles") { rows(suggested) }
+                    .listRowDensity(.compact)
+                ListSection("All your exercises") { rows(items) }
+                    .listRowDensity(.compact)
+            }
+        }
+    }
+
+    private func rows(_ items: [ExerciseItem]) -> some View {
+        LazyVStack(spacing: 0) {
+            ForEach(items) { item in
+                PickerRow(
+                    name: item.name,
+                    detail: item.detail,
+                    catalogID: item.catalogID,
+                    image: item.catalogID.map { state.thumbnails[$0] ?? .loading },
+                    isAdding: state.adding == .library(item.id),
+                    isSwap: state.isSwap,
+                    action: { send(.libraryTapped(item.id)) },
+                    send: send
+                )
             }
         }
     }
@@ -110,6 +120,7 @@ private struct PickerCatalogList: View {
                             catalogID: row.id,
                             image: state.thumbnails[row.id] ?? .loading,
                             isAdding: state.adding == .catalog(row.id),
+                            isSwap: state.isSwap,
                             action: { send(.catalogTapped(row.id)) },
                             send: send
                         )
@@ -133,8 +144,8 @@ private struct PickerNoMatches: View {
     }
 }
 
-/// One compact row: the still (a figure symbol for an exercise without one), the name and its detail, and a plus;
-/// a spinner replaces the plus while the exercise is being added.
+/// One compact row: the still (a figure symbol for an exercise without one), the name and its detail, and a plus (two
+/// arrows when swapping); a spinner replaces it while the exercise is being added.
 private struct PickerRow: View {
     @Environment(\.koboTheme) private var theme
     let name: String
@@ -142,6 +153,7 @@ private struct PickerRow: View {
     let catalogID: String?
     let image: MediaImage?
     let isAdding: Bool
+    let isSwap: Bool
     let action: () -> Void
     let send: (ExercisePickerAction) -> Void
 
@@ -156,7 +168,7 @@ private struct PickerRow: View {
                     if isAdding {
                         ProgressView()
                     } else {
-                        Image(systemName: "plus.circle.fill")
+                        Image(systemName: isSwap ? "arrow.left.arrow.right.circle.fill" : "plus.circle.fill")
                             .font(theme.font(.title2))
                             .foregroundStyle(theme.palette.accent)
                     }
@@ -164,7 +176,7 @@ private struct PickerRow: View {
                 .accessibilityHidden(true)
             }
         )
-        .accessibilityHint(Text("Adds the exercise"))
+        .accessibilityHint(isSwap ? Text("Swaps to this exercise") : Text("Adds the exercise"))
         .onAppear {
             if let catalogID { send(.thumbnailNeeded(catalogID: catalogID)) }
         }

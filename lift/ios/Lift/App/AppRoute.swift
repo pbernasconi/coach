@@ -20,7 +20,8 @@ nonisolated enum AppRoute: Hashable, Sendable {
     case templates
     /// One template's name and exercise slots.
     case template(UUID)
-    /// Picks an exercise from the library or the catalog and adds it to a template or a session.
+    /// Picks an exercise from the library or the catalog and adds it to a template or a session, or swaps a session's
+    /// exercise for it.
     case exercisePicker(ExercisePickerTarget)
     /// A finished session's duration, sets, volume and new bests.
     case workoutSummary(UUID)
@@ -43,6 +44,9 @@ nonisolated enum AppRoute: Hashable, Sendable {
 nonisolated enum ExercisePickerTarget: Hashable, Sendable {
     case template(UUID)
     case session(UUID)
+    /// Swaps the session exercise `sessionExerciseID` (now the library exercise `exerciseID`, if any) for the pick;
+    /// exercises for the same muscles are suggested first.
+    case swap(sessionExerciseID: UUID, exerciseID: UUID?)
 }
 
 /// Opens routes. ViewModels take this protocol, so tests can record what they opened (SCR-3).

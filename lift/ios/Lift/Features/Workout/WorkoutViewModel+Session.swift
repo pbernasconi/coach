@@ -2,7 +2,7 @@ import Foundation
 import LiftCore
 import LiftStore
 
-/// The session-level actions: Start, add, move and remove exercises, finish, discard, Save as template. Each
+/// The session-level actions: Start, add, swap, move and remove exercises, finish, discard, Save as template. Each
 /// write goes through `WorkoutSessionEdits`; the toast it returns (or the failure) is shown here.
 extension WorkoutViewModel {
     /// One session write; it returns the toast to show, if any.
@@ -24,6 +24,9 @@ extension WorkoutViewModel {
         guard let detail else { return nil }
         switch action {
         case .addExerciseTapped: edits.router.open(.exercisePicker(.session(detail.id)))
+        case .exerciseSwapTapped(let id):
+            guard let item = detail.items.first(where: { $0.id == id }) else { return nil }
+            edits.router.open(.exercisePicker(.swap(sessionExerciseID: id, exerciseID: item.exercise.exerciseID)))
         case .summaryTapped: edits.router.open(.workoutSummary(detail.id))
         default: return sessionWrite(for: action, detail: detail).flatMap(perform)
         }
