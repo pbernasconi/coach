@@ -160,7 +160,7 @@ export function plannerApp(w) {
       feel: w.context?.suggested.feel ?? null,
       feelText: w.context?.suggested.feelWhy ? `Coach reads ${w.context.suggested.feel}: ${w.context.suggested.feelWhy}.` : null,
       hours: w.context?.suggested.hours ?? null,
-      hoursText: w.context?.suggested.hours ? `Your recent weeks average about ${w.context.suggested.hours}h.` : null,
+      hoursText: 'Your normal week is 8–10 h.',
     },
     // The answers the open draft was made with, so the Shape controls start where they were.
     answers: p && state !== 'none'

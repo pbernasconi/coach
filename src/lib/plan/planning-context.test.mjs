@@ -43,7 +43,7 @@ test('facts from the data, and a fresh suggestion when form and readiness are go
   assert.equal(byId.skips, undefined);
   assert.equal(planningContext({ ...base, feedback: base.feedback.slice(0, 1) }).facts.find((f) => f.id === 'feel'), undefined);
   assert.equal(c.suggested.feel, 'fresh');
-  assert.equal(c.suggested.hours, 7);
+  assert.equal(c.suggested.hours, 8); // a 7 h average still suggests his normal 8 h week
   assert.equal(c.days['2026-10-29'], '12:00 Dentist');
 });
 
@@ -60,5 +60,5 @@ test('no data gives no facts and no suggestion beyond normal', () => {
   const c = planningContext({ ...base, load: [], weeks: [], readiness: null, feedback: [], events: [], calendar: [] });
   assert.deepEqual(c.facts, []);
   assert.equal(c.suggested.feel, 'normal');
-  assert.equal(c.suggested.hours, null);
+  assert.equal(c.suggested.hours, 8);
 });
