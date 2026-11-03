@@ -91,7 +91,7 @@ one of three kinds:
 | Kind | Who runs it | Tools |
 | --- | --- | --- |
 | card | chat.mjs, by name | `propose_changes`, `show`, `suggest_replies`, `ask_questions` |
-| read | Coach's server (`tools.ts`, `READ_RUNNERS`), side by side, 6 per answer | `get_activity`, `find_activities`, `get_bests`, `get_load`, `get_lift_templates`, `get_exercise_history` |
+| read | Coach's server (`tools.ts`, `READ_RUNNERS`), side by side, 6 per answer | `get_activity`, `find_activities`, `get_bests`, `get_load`, `get_lift_templates`, `get_exercise_history`, `get_plan`, `get_calendar`, `get_health`, `get_labs`, `get_dexa` |
 | server | Anthropic | `web_search` (5 per answer, $0.01 each, counted in `ai_usage`), `web_fetch` (4 per answer, 20k tokens per page) |
 
 To add a tool: define it beside its feature (`data-tools.mjs`, `lift-tools.mjs`, `web-tools.mjs`), add it to
@@ -103,6 +103,10 @@ change card as a new `op` (changes.mjs checks it, writes.ts applies it and keeps
 - **The web.** A reply that searched or fetched ends with a "Sources:" line of the pages it cited. A long search
   stops with `pause_turn`; chat.mjs sends the message back as it is and the search goes on. Cited answers come split
   into text blocks at each citation: they are joined without a break, on the stream too.
+- **Context reads** (`context-tools.mjs`, `context-tools.ts`): the plan for up to 63 days and the calendar for up to
+  42, any dates (the context only has this week and the next); health days for up to 90 days (`health_samples`, one
+  HRV: Garmin RMSSD over Apple Watch SDNN, with the 60-day baselines); the labs (`loadLabs`); the DEXA scans
+  (`loadDexa`). Read tools get the request's time zone (`ReadContext`).
 - **Lift templates.** `{ op: "template", template, exercise, action?, sets?, reps?, rest?, weight?, note? }`
   changes one slot (update, add a library exercise, remove), checked against the templates in full
   (`loadLiftTemplates`); Apply pushes the templateExercise row through Lift sync (`applyTemplateChange`), then starts

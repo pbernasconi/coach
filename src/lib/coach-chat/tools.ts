@@ -4,11 +4,13 @@
  */
 
 import { READ_TOOL_NAMES } from './chat-tools.mjs';
+import { runContextTool } from './context-tools';
 import { runDataTool } from './data';
 import { runLiftTool } from './lift-tools';
 
 export type ToolAnswer = { ok: boolean; text: string };
-type Runner = (userId: string, today: string, name: string, input: unknown) => Promise<ToolAnswer>;
+export type ReadContext = { timeZone?: string };
+type Runner = (userId: string, today: string, name: string, input: unknown, ctx: ReadContext) => Promise<ToolAnswer>;
 
 export const READ_RUNNERS: Record<string, Runner> = {
   get_activity: runDataTool,
@@ -17,14 +19,19 @@ export const READ_RUNNERS: Record<string, Runner> = {
   get_load: runDataTool,
   get_lift_templates: runLiftTool,
   get_exercise_history: runLiftTool,
+  get_plan: runContextTool,
+  get_calendar: runContextTool,
+  get_health: runContextTool,
+  get_labs: runContextTool,
+  get_dexa: runContextTool,
 };
 
 /** Answers one read tool call. An unknown or failing tool answers with an error line, never a throw. */
-export async function runReadTool(userId: string, today: string, name: string, input: unknown): Promise<ToolAnswer> {
+export async function runReadTool(userId: string, today: string, name: string, input: unknown, ctx: ReadContext = {}): Promise<ToolAnswer> {
   const run = READ_RUNNERS[name];
   if (!run || !(READ_TOOL_NAMES as string[]).includes(name)) return { ok: false, text: `${name} is not a read tool.` };
   try {
-    return await run(userId, today, name, input);
+    return await run(userId, today, name, input, ctx);
   } catch (e) {
     console.error('[coach-chat] tool failed', name, e);
     return { ok: false, text: `The read failed (${String((e as Error)?.message ?? e).slice(0, 120)}).` };

@@ -327,7 +327,7 @@ export async function sendMessage(
       checkCard: (input) => checkCard(input, { rows, today }),
       deadline: started + BUDGET_MS,
       onEvent: emit,
-      readData: (name, input) => runReadTool(userId, today, name, input),
+      readData: (name, input) => runReadTool(userId, today, name, input, { timeZone }),
     });
     let proposal: ProposalView | null = null;
     if (result.proposal) {

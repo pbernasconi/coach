@@ -18,15 +18,20 @@ import { applyTemplateChange, undoTemplateChange } from './lift-tools';
 /** The workouts Coach sees: this week and the next two, as the web calendar has them (loadRange). */
 export async function planRows(userId: string, today: string): Promise<PlanRow[]> {
   const monday = mondayOf(today);
+  return planRowsBetween(userId, today, monday, addDays(monday, 20));
+}
+
+/** The workouts from `from` to `to` (whole weeks are read, then cut to the days), for get_plan. */
+export async function planRowsBetween(userId: string, today: string, from: string, to: string): Promise<PlanRow[]> {
   const [range, lifts] = await Promise.all([
-    loadRange(userId, monday, addDays(monday, 14), today),
+    loadRange(userId, mondayOf(from), mondayOf(to), today),
     sql`
       SELECT a.id, a.lift_template FROM training_plan_activities a JOIN training_plans p ON p.id = a.plan_id
       WHERE p.user_id = ${userId} AND a.lift_template IS NOT NULL
-        AND a.scheduled_date >= ${monday} AND a.scheduled_date <= ${addDays(monday, 20)}` as unknown as Promise<{ id: string; lift_template: string }[]>,
+        AND a.scheduled_date >= ${from} AND a.scheduled_date <= ${to}` as unknown as Promise<{ id: string; lift_template: string }[]>,
   ]);
   const template = new Map(lifts.map((r) => [String(r.id), r.lift_template]));
-  return range.workouts.map((w) => ({
+  return range.workouts.filter((w) => w.date >= from && w.date <= to).map((w) => ({
     id: String(w.id), date: w.date, startTime: w.startTime, title: w.title, sport: w.sport, workoutType: w.workoutType,
     intensity: w.intensity, duration: w.duration, description: w.description, status: w.status, skipReason: w.skipReason,
     state: w.state, liftTemplate: template.get(String(w.id)) ?? null,
