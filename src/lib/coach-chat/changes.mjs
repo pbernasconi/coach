@@ -8,6 +8,7 @@ import { checkRules, sessionsFromRows } from '../plan/rules.mjs';
 import { strengthExercises } from '../plan/strength-text.mjs';
 import { isFatigue, SKIP_REASONS } from '../plan/skip.mjs';
 import { addDays, isHard, mondayOf } from '../plan/week.mjs';
+import { cleanTemplateChange, templateChangeText } from './lift-tools.mjs';
 
 /** At most this many changes in one card: a bigger change is a new plan, from the Plan page. */
 export const MAX_CHANGES = 10;
@@ -16,7 +17,7 @@ export const HORIZON_DAYS = 21;
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
-const OPS = new Set(['move', 'skip', 'unskip', 'add', 'remove', 'update', 'remember']);
+const OPS = new Set(['move', 'skip', 'unskip', 'add', 'remove', 'update', 'remember', 'template']);
 /** A coaching preference Coach keeps (Settings → Coaching preferences), one line. */
 export const MAX_NOTE = 200;
 /**
@@ -64,7 +65,8 @@ export function liftNoteProblem(text) {
  *   | { op: 'update', id: string, title?: string, duration?: number, effort?: string, description?: string, startTime?: string | null }
  *   | { op: 'add', date: string, sport: string, startTime: string | null, title: string, duration: number | null,
  *       effort: string, description: string, liftTemplate?: string | null, workoutType?: string | null }
- *   | { op: 'remember', text: string }} Change
+ *   | { op: 'remember', text: string }
+ *   | import('./lift-tools.mjs').TemplateChange} Change  a template change edits a Lift template, not a workout
  */
 /** A row of the card, as Kobo's ChangeItem: added, removed or changed. @typedef {{ kind: 'added' | 'removed' | 'changed', title: string, detail: string }} Item */
 
@@ -81,11 +83,14 @@ const str = (/** @type {unknown} */ v, /** @type {number} */ max) => (typeof v =
  * to the horizon, a real time. Returns the clean changes, or the problems for the model to fix.
  * A strength workout it adds is a gym lift on one of Lift's `templates` (`liftTemplate`), or a home or physio session
  * whose numbered exercise lines are the session; a gym lift's description is a short coach's note.
+ * A template change is checked against `lift` (the templates in full); without it (Apply's recheck), one already
+ * checked goes through and lift-tools.ts finds out at Apply whether its slot is still there.
  * @param {unknown} raw  propose_changes' `changes`
- * @param {{ rows: PlanRow[], today: string, templates?: string[] }} plan
+ * @param {{ rows: PlanRow[], today: string, templates?: string[],
+ *   lift?: { templates: import('./lift-tools.mjs').LiftTemplate[], library: import('./lift-tools.mjs').LibraryExercise[] } | null }} plan
  * @returns {{ changes: Change[], problems: string[] }}
  */
-export function cleanChanges(raw, { rows, today, templates = [] }) {
+export function cleanChanges(raw, { rows, today, templates = [], lift = null }) {
   /** @type {string[]} */
   const problems = [];
   /** @type {Change[]} */
@@ -110,6 +115,20 @@ export function cleanChanges(raw, { rows, today, templates = [] }) {
       if (t == null || t === '') return { ok: true, value: null };
       return typeof t === 'string' && TIME.test(t) ? { ok: true, value: t } : { ok: false, value: null };
     };
+    if (op === 'template') {
+      if (!lift) {
+        if (typeof b.templateId === 'string' && typeof b.action === 'string' && b.set && typeof b.set === 'object') {
+          return changes.push(/** @type {Change} */ (/** @type {unknown} */ (b)));
+        }
+        return problems.push(`${at}: Lift templates are not available here`);
+      }
+      const t = cleanTemplateChange(b, lift);
+      if ('problem' in t) return problems.push(`${at}: ${t.problem}`);
+      if (changes.some((o) => o.op === 'template' && o.templateId === t.change.templateId && o.exercise === t.change.exercise)) {
+        return problems.push(`${at}: one change per exercise of a template: put everything for ${t.change.exercise} in one`);
+      }
+      return changes.push(t.change);
+    }
     if (op === 'remember') {
       const text = str(b.text, MAX_NOTE + 1).replace(/\s+/g, ' ');
       if (text.length < 3) return problems.push(`${at}: remember needs the preference as text`);
@@ -240,6 +259,9 @@ export function describeChanges(changes, rows) {
   const byId = new Map(rows.map((r) => [r.id, r]));
   return changes.map((c) => {
     if (c.op === 'remember') return { kind: 'added', title: 'Coaching preference', detail: c.text };
+    if (c.op === 'template') {
+      return { kind: c.action === 'add' ? 'added' : c.action === 'remove' ? 'removed' : 'changed', title: c.exercise, detail: templateChangeText(c) };
+    }
     if (c.op === 'add') {
       const bits = [when(c.date, c.startTime), c.duration ? `${c.duration} min` : null, c.liftTemplate ?? EFFORTS[/** @type {keyof typeof EFFORTS} */ (c.effort)]?.label];
       return { kind: 'added', title: c.title, detail: bits.filter(Boolean).join(' · ') };
@@ -273,7 +295,7 @@ export function describeChanges(changes, rows) {
 export function simulate(rows, changes) {
   let out = rows.map((r) => ({ ...r }));
   changes.forEach((c, i) => {
-    if (c.op === 'remember') return;
+    if (c.op === 'remember' || c.op === 'template') return;
     if (c.op === 'add') {
       out.push({
         id: `new-${i}`, date: c.date, startTime: c.startTime, title: c.title, sport: c.sport, workoutType: c.workoutType ?? null,
@@ -494,7 +516,7 @@ export function planText(rows, today) {
  * propose_changes' input, checked: the changes must be valid (else the model fixes them). Rules they newly break go
  * back to the model on its first try; on a later try (it kept them, or Paolo asked for it) they go on the card as
  * warnings.
- * @param {any} input @param {{ rows: PlanRow[], today: string, templates?: string[] }} plan @param {number} attempt  1 for the first try
+ * @param {any} input @param {Parameters<typeof cleanChanges>[1]} plan @param {number} attempt  1 for the first try
  * @returns {{ ok: true, value: { title: string, why: string, changes: Change[], items: Item[], card: Card, warnings: string[],
  *   basis: Record<string, string> } } | { ok: false, problems: string[] }}
  */
@@ -626,6 +648,8 @@ export function cardOf(changes, rows) {
   const days = new Map();
   /** @type {CardRow[]} */
   const notes = [];
+  /** @type {CardRow[]} */
+  const lifts = [];
   const put = (/** @type {string} */ day, /** @type {CardRow} */ row, /** @type {number} */ order) => {
     if (!days.has(day)) days.set(day, []);
     days.get(day)?.push({ ...row, order });
@@ -639,6 +663,12 @@ export function cardOf(changes, rows) {
   for (const [i, j] of pairs) replaces.set(i, /** @type {PlanRow} */ (byId.get(/** @type {{ id: string }} */ (changes[j]).id)));
   changes.forEach((c, i) => {
     if (c.op === 'remember') return notes.push({ title: c.text, sport: null, time: null, meta: 'Coach keeps this in mind', tag: 'Saved', tone: 'new' });
+    if (c.op === 'template') {
+      return lifts.push({
+        title: c.exercise, sport: 'strength', time: null, meta: templateChangeText(c),
+        tag: c.action === 'add' ? 'Added' : c.action === 'remove' ? 'Removed' : 'Changed', tone: c.action === 'add' ? 'new' : c.action === 'remove' ? 'skip' : 'move',
+      });
+    }
     if (c.op === 'add') {
       const gone = replaces.get(i);
       return put(c.date, {
@@ -685,6 +715,8 @@ export function cardOf(changes, rows) {
       .sort((a, b) => (a.time ?? '99').localeCompare(b.time ?? '99') || a.order - b.order)
       .map((r) => ({ title: r.title, sport: r.sport, time: r.time, meta: r.meta, tag: r.tag, tone: r.tone })),
   }));
+  // A template change is for every lift on it from now on, not one day.
+  if (lifts.length) out.push({ date: null, label: 'Lift template, next lifts on it', rows: lifts });
   if (notes.length) out.push({ date: null, label: 'Remember', rows: notes });
   const count = changes.length;
   const dated = out.filter((d) => d.date);
@@ -722,7 +754,7 @@ export function landedIssues(changes, added, rows) {
   /** @type {string[]} */
   const out = [];
   changes.forEach((c, i) => {
-    if (c.op === 'remember') return;
+    if (c.op === 'remember' || c.op === 'template') return;
     if (c.op === 'add') {
       const r = byId.get(added[i] ?? '');
       if (!r || r.date !== c.date) out.push(`${plainTitle(c.title)} isn't on ${dayLabel(c.date)}`);
@@ -762,7 +794,8 @@ export function undoPlan(steps, after, rows) {
   /** @type {string[]} */
   const kept = [];
   for (const s of steps) {
-    if (s.op === 'forget') { run.push(s); continue; }
+    // A preference and a Lift template aren't workouts: they always go back.
+    if (s.op === 'forget' || s.op === 'template') { run.push(s); continue; }
     if (s.op === 'restore') {
       // A deleted workout comes back unless something took its id since (it never does).
       if (!byId.has(String(s.row?.id ?? ''))) run.push(s);

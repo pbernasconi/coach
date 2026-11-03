@@ -23,7 +23,8 @@ import { ApplyError, applyAll, planRows, undoAll } from './writes';
 import { undoRecord, type UndoRecord } from './undo-record.mjs';
 import { fileBlock, fileNote, filesPhrase, filesToSend, type FileData, type FileRef } from './files.mjs';
 import { claimFiles, fileData, unclaimedFiles } from './files-store';
-import { runDataTool } from './data';
+import { runReadTool } from './tools';
+import { loadLiftTemplates } from './lift-tools';
 import { CHAT_MONTHLY_CAP_USD, PROMPTS, SUGGESTIONS, chatContext, chatSystemPrompt } from './prompt.mjs';
 
 type Row = Record<string, unknown>;
@@ -275,6 +276,8 @@ export async function sendMessage(
   const profileP = timed(buildProfile(sql, { userId, weeks: 2 }), reads, 'profileMs', started);
   // The change log is a nice-to-have: a failed read leaves it out instead of failing the answer.
   const changesP = timed(recentChangesText(userId, timeZone).catch(() => null), reads, 'changesMs', started);
+  // The Lift templates in full, for a { op: "template" } change; a failed read only turns those off.
+  const liftP = early(loadLiftTemplates().catch((e) => { console.error('[coach-chat] lift templates', e); return null; }));
   let threadId = await openThread(userId);
   if (!threadId) {
     threadId = createId();
@@ -309,7 +312,7 @@ export async function sendMessage(
 
   let context: string | null = null;
   try {
-    const [rows, profile, data, changes] = await Promise.all([rowsP, profileP, dataP, changesP]);
+    const [rows, profile, data, changes, lift] = await Promise.all([rowsP, profileP, dataP, changesP, liftP]);
     const system = chatSystemPrompt();
     context = chatContext({ today, time: clockIn(timeZone), timeZone, plan: planText(rows, today), profileMd: profile.md, changes });
     prepMs = Date.now() - started;
@@ -320,11 +323,11 @@ export async function sendMessage(
       context,
       text: text || `(Paolo sent ${filesPhrase(files)} with no words.)`,
       files: files.map((f): object => (data.has(f.id) ? fileBlock(data.get(f.id)!) : { type: 'text', text: fileNote(f) })),
-      check: (input, attempt) => checkProposalInput(input, { rows, today, templates: templateNames(profile) }, attempt),
+      check: (input, attempt) => checkProposalInput(input, { rows, today, templates: templateNames(profile), lift }, attempt),
       checkCard: (input) => checkCard(input, { rows, today }),
       deadline: started + BUDGET_MS,
       onEvent: emit,
-      readData: (name, input) => runDataTool(userId, today, name, input),
+      readData: (name, input) => runReadTool(userId, today, name, input),
     });
     let proposal: ProposalView | null = null;
     if (result.proposal) {
@@ -350,7 +353,7 @@ export async function sendMessage(
       meta: {
         stop: result.stop, turns: result.turns, usage: result.usage, attempts: result.attempts, cards: result.cards,
         replyFromModel: Boolean(result.reply), prompt: createHash('sha256').update(system).digest('hex').slice(0, 12),
-        timing: result.timing, effort: EFFORT, dataReads: result.reads,
+        timing: result.timing, effort: EFFORT, dataReads: result.reads, web: result.web,
       },
     }, { thought: result.thought, questions: result.questions as Question[] });
     await recordAiUsage(userId, {
@@ -490,7 +493,8 @@ export async function applyProposal(userId: string, id: string, today: string): 
   pushWeeks(userId, applied.dates);
   // A new gym lift gets its Lift session (exercises, sets, loads) now, as after an accepted plan; the hourly backstop
   // (/api/cron/lift-pending) catches it if the dispatch fails.
-  if (ops.some((c) => c.op === 'add' && c.liftTemplate)) {
+  // A changed template re-plans the lifts on it that haven't started.
+  if (ops.some((c) => (c.op === 'add' && c.liftTemplate) || c.op === 'template')) {
     const started = await dispatchWorkflow('plan-apply.yml').catch((e: unknown) => ({ error: String(e) }));
     if ('error' in started) console.error('Coach chat: Lift planning:', started.error);
   }

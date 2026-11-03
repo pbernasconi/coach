@@ -112,7 +112,7 @@ nonisolated struct CoachThreadSummary: Identifiable, Equatable, Sendable {
 /// Claude's thinking, and the words so far.
 nonisolated struct CoachProgress: Equatable, Sendable {
     enum Step: String, Equatable, Sendable {
-        case reading, thinking, writing, proposing, card, fixing
+        case reading, searching, thinking, writing, proposing, card, fixing
     }
 
     var step = Step.reading
@@ -125,6 +125,7 @@ nonisolated struct CoachProgress: Equatable, Sendable {
     var label: String {
         switch step {
         case .reading: String(localized: "Reading your week")
+        case .searching: String(localized: "Searching the web")
         case .thinking: String(localized: "Thinking")
         case .writing: String(localized: "Writing")
         case .proposing: String(localized: "Drafting the change")

@@ -83,6 +83,31 @@ request usually answers it:
   (`MAX_TURNS`). Each answer's `meta.dataReads` lists them. coach-chat.md "Looking things up" says to read before
   judging a session, test or load, and to explain the numbers.
 
+### Tools (2026-11-03)
+
+Every tool is one entry in `src/lib/coach-chat/chat-tools.mjs` (`CHAT_TOOLS`, built with `tool-registry.mjs`), in
+one of three kinds:
+
+| Kind | Who runs it | Tools |
+| --- | --- | --- |
+| card | chat.mjs, by name | `propose_changes`, `show`, `suggest_replies`, `ask_questions` |
+| read | Coach's server (`tools.ts`, `READ_RUNNERS`), side by side, 6 per answer | `get_activity`, `find_activities`, `get_bests`, `get_load`, `get_lift_templates`, `get_exercise_history` |
+| server | Anthropic | `web_search` (5 per answer, $0.01 each, counted in `ai_usage`), `web_fetch` (4 per answer, 20k tokens per page) |
+
+To add a tool: define it beside its feature (`data-tools.mjs`, `lift-tools.mjs`, `web-tools.mjs`), add it to
+`CHAT_TOOLS`, and for a read tool add its runner to `READ_RUNNERS` (tools.test.mjs fails until it is there). Name
+the phone's step with it (`reading`, `searching`); a phone that doesn't know a step keeps the last one. Then say when
+to use it in coach-chat.md and run `node scripts/planner-prompt.mjs`. A tool that changes something goes on the
+change card as a new `op` (changes.mjs checks it, writes.ts applies it and keeps its Undo), never as a direct write.
+
+- **The web.** A reply that searched or fetched ends with a "Sources:" line of the pages it cited. A long search
+  stops with `pause_turn`; chat.mjs sends the message back as it is and the search goes on. Cited answers come split
+  into text blocks at each citation: they are joined without a break, on the stream too.
+- **Lift templates.** `{ op: "template", template, exercise, action?, sets?, reps?, rest?, weight?, note? }`
+  changes one slot (update, add a library exercise, remove), checked against the templates in full
+  (`loadLiftTemplates`); Apply pushes the templateExercise row through Lift sync (`applyTemplateChange`), then starts
+  plan-apply.yml so every lift on the template that hasn't started is planned again. Undo pushes the old row back.
+
 The model never writes. The system prompt is coach-chat.md, coaching.md, check-in.md (skips by reason, a missed
 lift moves once) and plan-structure.md (cached).
 

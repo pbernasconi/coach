@@ -4,6 +4,7 @@
 /** The quiet status line while Coach answers (lift/APP-API.md, "Coach answer stream"). */
 export const STEP_TEXT = {
   reading: 'Reading your week',
+  searching: 'Searching the web',
   thinking: 'Thinking',
   writing: 'Writing',
   proposing: 'Checking the changes',

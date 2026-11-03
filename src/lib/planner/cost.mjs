@@ -9,19 +9,23 @@ export const PRICES = {
   'claude-haiku-5-5': { input: 0.1, output: 0.5, cacheRead: 0.01, cacheWrite: 0.125 },
 };
 
+/** A web search, on top of the tokens of its results ($10 per 1,000). Fetches cost only their tokens. */
+export const WEB_SEARCH_USD = 0.01;
+
 /** The planner stops using the API for the rest of the month at this spend (Settings shows it). */
 export const PLANNER_MONTHLY_CAP_USD = 25;
 
 /**
  * @param {{ input_tokens?: number | null, output_tokens?: number | null, cache_read_input_tokens?: number | null,
- *   cache_creation_input_tokens?: number | null }} usage
+ *   cache_creation_input_tokens?: number | null, server_tool_use?: { web_search_requests?: number | null } | null }} usage
  * @param {string} model
  */
 export function costOf(usage, model) {
   const p = PRICES[model] ?? PRICES['claude-opus-5-5'];
   const m = (/** @type {number | null | undefined} */ n, /** @type {number} */ price) => ((n ?? 0) / 1e6) * price;
   return m(usage.input_tokens, p.input) + m(usage.output_tokens, p.output) +
-    m(usage.cache_read_input_tokens, p.cacheRead) + m(usage.cache_creation_input_tokens, p.cacheWrite);
+    m(usage.cache_read_input_tokens, p.cacheRead) + m(usage.cache_creation_input_tokens, p.cacheWrite) +
+    (usage.server_tool_use?.web_search_requests ?? 0) * WEB_SEARCH_USD;
 }
 
 /**
