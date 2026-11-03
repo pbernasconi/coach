@@ -4,6 +4,7 @@
 // for a read tool add its runner to tools.ts. Pure.
 
 import { ASK_TOOL, REPLIES_TOOL, SHOW_TOOL } from './cards.mjs';
+import { CONTEXT_READ_TOOLS } from './context-tools.mjs';
 import { DATA_TOOLS } from './data-tools.mjs';
 import { LIFT_READ_TOOLS } from './lift-tools.mjs';
 import { cardTool, readTool, serverTool, toolbox } from './tool-registry.mjs';
@@ -51,6 +52,7 @@ export const CHAT_TOOLS = toolbox([
   cardTool(ASK_TOOL),
   ...DATA_TOOLS.map((t) => readTool(t)),
   ...LIFT_READ_TOOLS.map((t) => readTool(t)),
+  ...CONTEXT_READ_TOOLS.map((t) => readTool(t)),
   serverTool(WEB_SEARCH_TOOL, 'searching'),
   serverTool(WEB_FETCH_TOOL, 'searching'),
 ]);
