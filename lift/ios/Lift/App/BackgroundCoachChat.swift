@@ -6,6 +6,8 @@ import UIKit
 /// time to finish it. The server finishes the answer either way and pushes it (lift/PUSH.md).
 nonisolated struct BackgroundCoachChat: CoachChatting {
     let base: any CoachChatting
+    /// A card can set or take back a reminder: after Apply or Undo the phone schedules what the coach now has.
+    var reminders: CoachReminders?
 
     func thread() async throws -> CoachThread { try await base.thread() }
 
@@ -51,7 +53,11 @@ nonisolated struct BackgroundCoachChat: CoachChatting {
     func dismiss(_ proposalID: String) async throws -> ChatActionStatus { try await base.dismiss(proposalID) }
 
     func decide(_ decision: CoachDecision, on proposalID: String) async throws -> CoachProposalUpdate {
-        try await base.decide(decision, on: proposalID)
+        let update = try await base.decide(decision, on: proposalID)
+        if let reminders, update.status == .applied || update.status == .undone {
+            Task { await reminders.sync() }
+        }
+        return update
     }
 
     func rate(_ messageID: String, _ rating: ChatFeedbackRating?) async throws { try await base.rate(messageID, rating) }

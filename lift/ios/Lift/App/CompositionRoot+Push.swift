@@ -36,6 +36,12 @@ extension CompositionRoot {
             isConnected: { await sync.hasToken() },
             clock: ContinuousClock()
         )
-        return PushNotifications(registrar: registrar, devices: devices)
+        let api = URLSessionAppAPIClient(
+            session: URLSession(configuration: configuration),
+            baseURL: baseURL,
+            tokens: syncTokenStore(),
+            timeZone: { TimeZone.current.identifier }
+        )
+        return PushNotifications(registrar: registrar, devices: devices, reminders: CoachReminders(client: api))
     }
 }

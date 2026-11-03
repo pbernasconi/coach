@@ -118,6 +118,9 @@ change card as a new `op` (changes.mjs checks it, writes.ts applies it and keeps
   weekly planner for that week (this week to 7 ahead): Apply makes the plan request (or a new version of the open
   draft) and runs the planner after the answer (the apply route's maxDuration is 300 s); Paolo accepts the draft on
   Plan. Undo sets the draft aside, or brings back the version before.
+- **Reminders** (`reminder-tools.mjs`, `reminders.ts`). `{ op: "reminder", at: "YYYY-MM-DDTHH:MM", text }`, the
+  time on his clock (the request's zone), up to 30 days ahead. Apply adds it to `users.settings.reminders`; the iPhone
+  schedules it as a local notification (APP-API.md, "Reminders"). Undo takes it out, and the phone takes it off.
 
 The model never writes. The system prompt is coach-chat.md, coaching.md, check-in.md (skips by reason, a missed
 lift moves once) and plan-structure.md (cached).

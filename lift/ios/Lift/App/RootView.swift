@@ -95,6 +95,7 @@ private struct AppShell: View {
                 open(url)
             }
             attachPush()
+            syncReminders()
             isReady = true
             await syncCoordinator.launched()  // after the tabs show: logging never waits for the network
         }
@@ -105,9 +106,17 @@ private struct AppShell: View {
             guard phase == .active else { return }
             dependencies.incomingNotes.checkInbox()
             dependencies.push?.registrar.refresh()  // the permission may have changed in iOS Settings
+            syncReminders()
             Task { await syncCoordinator.sceneBecameActive() }
         }
         .onOpenURL { url in open(url) }
+    }
+
+    /// Schedules the Coach chat's reminders on this phone (`CoachReminders`); a reminder set on the web rings once Lift
+    /// has opened since.
+    private func syncReminders() {
+        guard let reminders = dependencies.push?.reminders else { return }
+        Task { await reminders.sync() }
     }
 
     /// Routes a `lift://` link. After a sync link, Settings shows, where the Sync row says how the first sync went.

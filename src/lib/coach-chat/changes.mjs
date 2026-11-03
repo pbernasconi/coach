@@ -9,6 +9,7 @@ import { strengthExercises } from '../plan/strength-text.mjs';
 import { isFatigue, SKIP_REASONS } from '../plan/skip.mjs';
 import { addDays, isHard, mondayOf } from '../plan/week.mjs';
 import { cleanTemplateChange, templateChangeText } from './lift-tools.mjs';
+import { cleanReminder, reminderText } from './reminder-tools.mjs';
 import { cleanEventChange, cleanGoalChange, cleanWeekPlan, eventChangeText, goalChangeText, goalTitle, weekLabel, weekPlanText } from './goal-tools.mjs';
 
 /** At most this many changes in one card: a bigger change is a new plan, from the Plan page. */
@@ -18,9 +19,9 @@ export const HORIZON_DAYS = 21;
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
-const OPS = new Set(['move', 'skip', 'unskip', 'add', 'remove', 'update', 'remember', 'template', 'event', 'goal', 'plan_week']);
+const OPS = new Set(['move', 'skip', 'unskip', 'add', 'remove', 'update', 'remember', 'template', 'event', 'goal', 'plan_week', 'reminder']);
 /** Changes that aren't workouts in the plan: the rule checks and the read-back skip them. */
-const OFF_PLAN = new Set(['remember', 'template', 'event', 'goal', 'plan_week']);
+const OFF_PLAN = new Set(['remember', 'template', 'event', 'goal', 'plan_week', 'reminder']);
 /** Whether a change edits something other than a planned workout. @param {{ op: string }} c */
 export const offPlan = (c) => OFF_PLAN.has(c.op);
 /** A coaching preference Coach keeps (Settings → Coaching preferences), one line. */
@@ -73,7 +74,7 @@ export function liftNoteProblem(text) {
  *   | { op: 'remember', text: string }
  *   | import('./lift-tools.mjs').TemplateChange
  *   | import('./goal-tools.mjs').EventChange | import('./goal-tools.mjs').GoalChange
- *   | import('./goal-tools.mjs').WeekPlanChange} Change  a template, event, goal or week plan isn't a workout
+ *   | import('./goal-tools.mjs').WeekPlanChange | import('./reminder-tools.mjs').ReminderChange} Change  a template, event, goal or week plan isn't a workout
  */
 /** A row of the card, as Kobo's ChangeItem: added, removed or changed. @typedef {{ kind: 'added' | 'removed' | 'changed', title: string, detail: string }} Item */
 
@@ -96,10 +97,11 @@ const str = (/** @type {unknown} */ v, /** @type {number} */ max) => (typeof v =
  * Events and goals are checked against `goals` the same way (without it, one already checked goes through).
  * @param {{ rows: PlanRow[], today: string, templates?: string[],
  *   lift?: { templates: import('./lift-tools.mjs').LiftTemplate[], library: import('./lift-tools.mjs').LibraryExercise[] } | null,
- *   goals?: { events: import('./goal-tools.mjs').CoachEvent[], goals: import('./goal-tools.mjs').Goal[] } | null }} plan
+ *   goals?: { events: import('./goal-tools.mjs').CoachEvent[], goals: import('./goal-tools.mjs').Goal[] } | null,
+ *   timeZone?: string, nowMs?: number }} plan  `timeZone`, `nowMs`: his clock, for a reminder's time
  * @returns {{ changes: Change[], problems: string[] }}
  */
-export function cleanChanges(raw, { rows, today, templates = [], lift = null, goals = null }) {
+export function cleanChanges(raw, { rows, today, templates = [], lift = null, goals = null, timeZone = 'America/Los_Angeles', nowMs = Date.now() }) {
   /** @type {string[]} */
   const problems = [];
   /** @type {Change[]} */
@@ -137,6 +139,16 @@ export function cleanChanges(raw, { rows, today, templates = [], lift = null, go
         return problems.push(`${at}: one change per exercise of a template: put everything for ${t.change.exercise} in one`);
       }
       return changes.push(t.change);
+    }
+    if (op === 'reminder') {
+      // Apply's recheck: a reminder checked when Coach wrote the card goes through as it is.
+      if (typeof b.id === 'string' && typeof b.local === 'string' && typeof b.at === 'string' && b.at.endsWith('Z')) {
+        return changes.push(/** @type {Change} */ (/** @type {unknown} */ (b)));
+      }
+      const r = cleanReminder(b, { timeZone, nowMs });
+      if ('problem' in r) return problems.push(`${at}: ${r.problem}`);
+      if (changes.filter((o) => o.op === 'reminder').length >= 3) return problems.push(`${at}: at most 3 reminders per card`);
+      return changes.push(r.change);
     }
     if (op === 'plan_week') {
       if (b.request && typeof b.request === 'object') return changes.push(/** @type {Change} */ (/** @type {unknown} */ (b)));
@@ -297,6 +309,7 @@ export function describeChanges(changes, rows) {
     if (c.op === 'goal') {
       return { kind: c.action === 'add' ? 'added' : c.action === 'remove' ? 'removed' : 'changed', title: goalTitle(c), detail: goalChangeText(c) };
     }
+    if (c.op === 'reminder') return { kind: 'added', title: `Remind you: ${c.text}`, detail: reminderText(c) };
     if (c.op === 'plan_week') return { kind: 'added', title: `Plan the ${weekLabel(c.request.weekStart).toLowerCase()}`, detail: weekPlanText(c) };
     if (c.op === 'add') {
       const bits = [when(c.date, c.startTime), c.duration ? `${c.duration} min` : null, c.liftTemplate ?? EFFORTS[/** @type {keyof typeof EFFORTS} */ (c.effort)]?.label];
@@ -331,7 +344,7 @@ export function describeChanges(changes, rows) {
 export function simulate(rows, changes) {
   let out = rows.map((r) => ({ ...r }));
   changes.forEach((c, i) => {
-    if (c.op === 'remember' || c.op === 'template' || c.op === 'event' || c.op === 'goal' || c.op === 'plan_week') return;
+    if (c.op === 'remember' || c.op === 'template' || c.op === 'event' || c.op === 'goal' || c.op === 'plan_week' || c.op === 'reminder') return;
     if (c.op === 'add') {
       out.push({
         id: `new-${i}`, date: c.date, startTime: c.startTime, title: c.title, sport: c.sport, workoutType: c.workoutType ?? null,
@@ -691,6 +704,8 @@ export function cardOf(changes, rows) {
   const goalRows = [];
   /** @type {CardDay[]} */
   const weeks = [];
+  /** @type {CardRow[]} */
+  const reminders = [];
   const tagOf = (/** @type {string} */ action) => (action === 'add' ? 'Added' : action === 'remove' ? 'Removed' : 'Changed');
   const toneOf = (/** @type {string} */ action) => /** @type {'new' | 'skip' | 'move'} */ (action === 'add' ? 'new' : action === 'remove' ? 'skip' : 'move');
   const put = (/** @type {string} */ day, /** @type {CardRow} */ row, /** @type {number} */ order) => {
@@ -716,6 +731,7 @@ export function cardOf(changes, rows) {
       return goalRows.push({ title: (c.event ?? c.was)?.name ?? 'Event', sport: (c.event ?? c.was)?.sport ?? null, time: null, meta: eventChangeText(c), tag: tagOf(c.action), tone: toneOf(c.action) });
     }
     if (c.op === 'goal') return goalRows.push({ title: goalTitle(c), sport: null, time: null, meta: goalChangeText(c), tag: tagOf(c.action), tone: toneOf(c.action) });
+    if (c.op === 'reminder') return reminders.push({ title: c.text, sport: null, time: c.local.slice(11), meta: reminderText(c), tag: 'Reminder', tone: 'new' });
     if (c.op === 'plan_week') {
       return weeks.push({
         date: null, label: weekLabel(c.request.weekStart),
@@ -772,6 +788,7 @@ export function cardOf(changes, rows) {
   if (lifts.length) out.push({ date: null, label: 'Lift template, next lifts on it', rows: lifts });
   out.push(...weeks);
   if (goalRows.length) out.push({ date: null, label: 'Races and goals', rows: goalRows });
+  if (reminders.length) out.push({ date: null, label: 'Reminders', rows: reminders });
   if (notes.length) out.push({ date: null, label: 'Remember', rows: notes });
   const count = changes.length;
   const dated = out.filter((d) => d.date);
@@ -809,7 +826,7 @@ export function landedIssues(changes, added, rows) {
   /** @type {string[]} */
   const out = [];
   changes.forEach((c, i) => {
-    if (c.op === 'remember' || c.op === 'template' || c.op === 'event' || c.op === 'goal' || c.op === 'plan_week') return;
+    if (c.op === 'remember' || c.op === 'template' || c.op === 'event' || c.op === 'goal' || c.op === 'plan_week' || c.op === 'reminder') return;
     if (c.op === 'add') {
       const r = byId.get(added[i] ?? '');
       if (!r || r.date !== c.date) out.push(`${plainTitle(c.title)} isn't on ${dayLabel(c.date)}`);
@@ -850,7 +867,7 @@ export function undoPlan(steps, after, rows) {
   const kept = [];
   for (const s of steps) {
     // A preference and a Lift template aren't workouts: they always go back.
-    if (s.op === 'forget' || s.op === 'template' || s.op === 'event' || s.op === 'goal' || s.op === 'plan_week') { run.push(s); continue; }
+    if (s.op === 'forget' || s.op === 'template' || s.op === 'event' || s.op === 'goal' || s.op === 'plan_week' || s.op === 'unremind') { run.push(s); continue; }
     if (s.op === 'restore') {
       // A deleted workout comes back unless something took its id since (it never does).
       if (!byId.has(String(s.row?.id ?? ''))) run.push(s);

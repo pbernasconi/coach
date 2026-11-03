@@ -76,3 +76,24 @@ test('Apply adds a race, changes a goal and asks for a week; Undo puts them back
     await sql`DELETE FROM users WHERE id = ${user}`;
   }
 });
+
+test('a reminder goes into his settings on Apply, the phone lists it, and Undo takes it out', async () => {
+  const { loadReminders } = await import('@/lib/coach-chat/reminders');
+  const id = 'user_coach_reminders';
+  await sql`DELETE FROM users WHERE id = ${id}`;
+  await sql`INSERT INTO users (id, email, settings) VALUES (${id}, 'coach-reminders@example.com', '{}'::jsonb)`;
+  try {
+    const nowMs = Date.parse('2026-11-03T23:00:00Z');
+    const checked = checkProposalInput(
+      { title: 'T', why: 'W', changes: [{ op: 'reminder', at: '2026-11-04T18:00', text: 'Physio A' }] },
+      { rows: [], today, timeZone: 'America/Los_Angeles', nowMs }, 1,
+    );
+    assert.ok(checked.ok);
+    const { undo } = await applyAll(id, checked.value.changes, [], today);
+    assert.deepEqual((await loadReminders(id, nowMs)).map((r) => [r.at, r.text]), [['2026-11-05T02:00:00Z', 'Physio A']]);
+    await undoAll(id, undo, today);
+    assert.deepEqual(await loadReminders(id, nowMs), []);
+  } finally {
+    await sql`DELETE FROM users WHERE id = ${id}`;
+  }
+});

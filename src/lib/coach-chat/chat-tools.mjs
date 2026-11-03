@@ -42,6 +42,8 @@ export const PROPOSE_TOOL = {
           'this week up to 7 weeks ahead; away/busy/sick/daysOff are lists of its days, each day in one list; hours 2-20, ' +
           'gym lifts 0-4, hard sessions 0-3, feel fresh | normal | fatigued | recovery; note is what to keep or plan ' +
           'around, in his words; one per card) | ' +
+          '{ op: "reminder", at, text } (a notification on his iPhone at that time: at is "YYYY-MM-DDTHH:MM" on ' +
+          'his clock (<now>), up to 30 days ahead; text is what to do, one short line, in his words) | ' +
           '{ op: "remember", text } (a ' +
           'lasting preference for his Coaching preferences, one line). Dates YYYY-MM-DD, times HH:MM, ' +
           'duration in minutes, effort recovery | easy | moderate | hard | very-hard, sport run | ride | swim | strength | ' +

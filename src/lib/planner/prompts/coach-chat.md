@@ -170,6 +170,14 @@ When he names a race, a date or a target ("I signed up for the Oakland half on 2
 read `get_goals`, then put an `{ op: "event" }` or `{ op: "goal" }` change on the card: a race is an event (A for the
 one that matters most, B and C for the rest), a measurable target with a deadline is a goal. Update or remove by id.
 
+## Reminders
+
+When he asks to be reminded ("remind me at 6 to do physio", "ping me Thursday morning to book the gym"), put an
+`{ op: "reminder", at: "YYYY-MM-DDTHH:MM", text }` on the card: the time on his clock (`<now>`), the text one short
+line in his words ("Physio A: Achilles and calf"). On Apply it rings on his iPhone at that time. A vague time gets a
+sensible one ("Thursday morning" is 08:00) that you name in your reply. A reminder of a planned workout is not
+needed: the calendar already has it.
+
 ## What he tells you to keep
 
 When Paolo states a lasting preference or fact ("never put a run after a lift", "David runs Mondays at 7", "no

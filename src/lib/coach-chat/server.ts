@@ -328,7 +328,7 @@ export async function sendMessage(
       context,
       text: text || `(Paolo sent ${filesPhrase(files)} with no words.)`,
       files: files.map((f): object => (data.has(f.id) ? fileBlock(data.get(f.id)!) : { type: 'text', text: fileNote(f) })),
-      check: (input, attempt) => checkProposalInput(input, { rows, today, templates: templateNames(profile), lift, goals }, attempt),
+      check: (input, attempt) => checkProposalInput(input, { rows, today, templates: templateNames(profile), lift, goals, timeZone, nowMs: Date.now() }, attempt),
       checkCard: (input) => checkCard(input, { rows, today }),
       deadline: started + BUDGET_MS,
       onEvent: emit,
