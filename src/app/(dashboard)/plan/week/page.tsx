@@ -34,7 +34,7 @@ export default async function PlanWeekPage({ searchParams }: { searchParams: Pro
   }
   return (
     <div data-smoke="plan-week">
-      <WeekPlanner initial={data.value} />
+      <WeekPlanner key={data.value.weekStart} initial={data.value} />
     </div>
   );
 }

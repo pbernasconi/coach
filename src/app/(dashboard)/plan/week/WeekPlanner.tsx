@@ -11,6 +11,7 @@ import type { PlannerWeek } from '@/lib/plan/planner-week';
 import { acceptDraftAction, draftWeekAction, editDraftAction, plannerWeekAction, reviseDraftAction, undoDraftAction } from './actions';
 import WeekGrid from './WeekGrid';
 import { CoachPanel, Composer, LastWeekPanel, SessionPanel, ShapePanel, type Answers } from './PlannerPanels';
+import { addDays, mondayOf } from '@/lib/plan/week.mjs';
 import { clock, days, hm, sportVar, weekLabel, weekday } from './plannerUi';
 
 type Tab = 'last' | 'shape' | 'coach';
@@ -135,6 +136,7 @@ export default function WeekPlanner({ initial }: { initial: PlannerWeek }) {
           <CoachMark />
           Plan {weekLabel(data.weekStart)}
         </div>
+        <WeekSwitch weekStart={data.weekStart} today={data.today} />
         {ready && (
           <span className="text-sm text-muted-foreground">
             {hm(total)}{p?.request.hours ? ` of ${p.request.hours}h` : ''} · {lifts} lift{lifts === 1 ? '' : 's'} · {hard} hard
@@ -181,7 +183,7 @@ export default function WeekPlanner({ initial }: { initial: PlannerWeek }) {
                 ) : (
                   <>
                     <span className="font-semibold">{p?.status === 'failed' ? 'The last draft failed' : `No draft for ${weekLabel(data.weekStart)} yet`}</span>
-                    <span className="text-sm text-muted-foreground">{p?.status === 'failed' ? p.error : 'Check last week and the shape, then Coach drafts it on your calendar.'}</span>
+                    <span className="text-sm text-muted-foreground">{p?.status === 'failed' ? p.error : (data.weekStart === mondayOf(data.today) ? 'Coach plans the days left, from today on. ' : '') + 'Check last week and the shape, then Coach drafts it on your calendar.'}</span>
                     <Button size="compact" loading={pending} onClick={() => run('Coach is drafting your week.', () => draftWeekAction(data.weekStart, { ...answers }))}>
                       <RefreshCw aria-hidden />{p?.status === 'failed' ? 'Try again' : 'Draft my week'}
                     </Button>
@@ -293,5 +295,33 @@ export default function WeekPlanner({ initial }: { initial: PlannerWeek }) {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+/**
+ * This week or next week. This week plans only the days left from today: Coach keeps what is done (a check-in).
+ */
+function WeekSwitch({ weekStart, today }: { weekStart: string; today: string }) {
+  const thisWeek = mondayOf(today);
+  const weeks = [
+    { monday: thisWeek, label: 'This week' },
+    { monday: addDays(thisWeek, 7), label: 'Next week' },
+  ];
+  return (
+    <nav aria-label="Week to plan" className="inline-flex rounded-full bg-muted p-0.5 text-sm">
+      {weeks.map((w) => (
+        <Link
+          key={w.monday}
+          href={`/plan/week?week=${w.monday}`}
+          aria-current={w.monday === weekStart ? 'page' : undefined}
+          className={cn(
+            'rounded-full px-3 py-1 font-medium transition-colors',
+            w.monday === weekStart ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+          )}
+        >
+          {w.label}
+        </Link>
+      ))}
+    </nav>
   );
 }
