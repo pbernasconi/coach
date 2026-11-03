@@ -125,7 +125,7 @@ test('a card and one-tap answers are shown in one request', async () => {
   assert.deepEqual(r.replies, ['Morning', 'Evening']);
   assert.equal(
     client.calls[0].tools.map((t) => t.name).join(),
-    'propose_changes,show,suggest_replies,ask_questions,get_activity,find_activities,get_bests,get_load,get_lift_templates,get_exercise_history,get_plan,get_calendar,get_health,get_labs,get_dexa,web_search,web_fetch',
+    'propose_changes,show,suggest_replies,ask_questions,get_activity,find_activities,get_bests,get_load,get_lift_templates,get_exercise_history,get_plan,get_calendar,get_health,get_labs,get_dexa,get_goals,web_search,web_fetch',
   );
 });
 

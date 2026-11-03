@@ -91,7 +91,7 @@ one of three kinds:
 | Kind | Who runs it | Tools |
 | --- | --- | --- |
 | card | chat.mjs, by name | `propose_changes`, `show`, `suggest_replies`, `ask_questions` |
-| read | Coach's server (`tools.ts`, `READ_RUNNERS`), side by side, 6 per answer | `get_activity`, `find_activities`, `get_bests`, `get_load`, `get_lift_templates`, `get_exercise_history`, `get_plan`, `get_calendar`, `get_health`, `get_labs`, `get_dexa` |
+| read | Coach's server (`tools.ts`, `READ_RUNNERS`), side by side, 6 per answer | `get_activity`, `find_activities`, `get_bests`, `get_load`, `get_lift_templates`, `get_exercise_history`, `get_plan`, `get_calendar`, `get_health`, `get_labs`, `get_dexa`, `get_goals` |
 | server | Anthropic | `web_search` (5 per answer, $0.01 each, counted in `ai_usage`), `web_fetch` (4 per answer, 20k tokens per page) |
 
 To add a tool: define it beside its feature (`data-tools.mjs`, `lift-tools.mjs`, `web-tools.mjs`), add it to
@@ -111,6 +111,13 @@ change card as a new `op` (changes.mjs checks it, writes.ts applies it and keeps
   changes one slot (update, add a library exercise, remove), checked against the templates in full
   (`loadLiftTemplates`); Apply pushes the templateExercise row through Lift sync (`applyTemplateChange`), then starts
   plan-apply.yml so every lift on the template that hasn't started is planned again. Undo pushes the old row back.
+- **Races, goals and week plans** (`goal-tools.mjs`, `goal-tools.ts`). `get_goals` reads Settings → Events and Settings
+  → Goals with their ids. `{ op: "event" }` adds, changes or removes a race or event day (the `events` table, as
+  Settings), `{ op: "goal" }` a milestone goal (`users.settings.goals`, through `saveGoals`), each with Undo.
+  `{ op: "plan_week", week, away?, busy?, sick?, daysOff?, hours?, gym?, hard?, longDay?, feel?, note? }` asks the
+  weekly planner for that week (this week to 7 ahead): Apply makes the plan request (or a new version of the open
+  draft) and runs the planner after the answer (the apply route's maxDuration is 300 s); Paolo accepts the draft on
+  Plan. Undo sets the draft aside, or brings back the version before.
 
 The model never writes. The system prompt is coach-chat.md, coaching.md, check-in.md (skips by reason, a missed
 lift moves once) and plan-structure.md (cached).
