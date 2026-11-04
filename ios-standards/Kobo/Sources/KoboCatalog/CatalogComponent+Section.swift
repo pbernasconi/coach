@@ -62,7 +62,7 @@ extension CatalogComponent {
         case .chatTranscript, .chatComposer, .chatMessageBubble, .chatReply, .chatTypingIndicator, .chatToolStatus,
             .chatActionCard, .chatChangeCard, .chatPromptSuggestions, .chatTimestamp, .chatErrorRow, .chatEmbedCard,
             .chatAttachmentStrip, .chatAttachSheet, .chatThoughtRow, .chatFeedbackRow, .chatQuestionCard,
-            .chatQuestions,
+            .chatQuestions, .chatQuickReplies,
             .chatBreakdownCard, .chatGreeting, .chatPromptCards, .chatGlow:
             .chat
         }

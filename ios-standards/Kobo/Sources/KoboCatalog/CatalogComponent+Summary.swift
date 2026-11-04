@@ -168,6 +168,7 @@ extension CatalogComponent {
         case .chatFeedbackRow: "Thumbs up, thumbs down and copy under a finished reply"
         case .chatQuestionCard: "A question as a card: chips, a field, or a confirm with Skip"
         case .chatQuestions: "Several question cards one at a time, with a 1 of N pager"
+        case .chatQuickReplies: "Suggested replies as chips that wrap under an answer, with no card"
         case .chatBreakdownCard: "A big total and its parts as rows with bars, plus buttons"
         case .chatGreeting: "An empty chat's mark and centred two-line greeting"
         case .chatPromptCards: "Starter prompts as stacked grey cards with a glyph"
