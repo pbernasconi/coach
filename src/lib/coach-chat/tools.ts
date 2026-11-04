@@ -7,6 +7,7 @@ import { READ_TOOL_NAMES } from './chat-tools.mjs';
 import { runContextTool } from './context-tools';
 import { runDataTool } from './data';
 import { runLiftTool } from './lift-tools';
+import { runGoalTool } from './goal-tools';
 
 export type ToolAnswer = { ok: boolean; text: string };
 export type ReadContext = { timeZone?: string };
@@ -24,6 +25,7 @@ export const READ_RUNNERS: Record<string, Runner> = {
   get_health: runContextTool,
   get_labs: runContextTool,
   get_dexa: runContextTool,
+  get_goals: (userId, today) => runGoalTool(userId, today),
 };
 
 /** Answers one read tool call. An unknown or failing tool answers with an error line, never a throw. */

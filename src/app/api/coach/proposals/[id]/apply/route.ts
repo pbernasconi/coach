@@ -10,6 +10,8 @@ import { COACH_ID, coachWebRoute } from '@/lib/coach-chat/web-route';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+/** A plan_week change runs the weekly planner after the answer (server.ts), up to 5 minutes. */
+export const maxDuration = 300;
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

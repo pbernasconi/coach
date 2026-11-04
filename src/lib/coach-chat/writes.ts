@@ -14,6 +14,9 @@ import { setSkipped } from '@/lib/plan/queries';
 import { addDays, matchActivityId, mondayOf } from '@/lib/plan/week.mjs';
 import { addNote, dropNote, type Change, type PlanRow } from './changes.mjs';
 import { applyTemplateChange, undoTemplateChange } from './lift-tools';
+import { applyEventChange, applyGoalChange, startWeekDraft, undoGoalStep, type GoalUndo } from './goal-tools';
+import { goalTitle, weekLabel } from './goal-tools.mjs';
+import { applyReminder, undoReminder } from './reminders';
 
 /** The workouts Coach sees: this week and the next two, as the web calendar has them (loadRange). */
 export async function planRows(userId: string, today: string): Promise<PlanRow[]> {
@@ -48,6 +51,8 @@ export type Undo = (
   | { op: 'restore'; row: Record<string, unknown> }
   | { op: 'forget'; text: string }
   | { op: 'template'; slotId: string; before: Record<string, unknown> | null }
+  | GoalUndo
+  | { op: 'unremind'; id: string }
 ) & { title?: string };
 
 /**
@@ -102,7 +107,15 @@ async function editNotes(userId: string, edit: (notes: string) => string) {
 
 async function applyOne(userId: string, c: Change, rows: PlanRow[], today: string): Promise<{ undo: Undo; dates: string[] }> {
   const done = await applyStep(userId, c, rows, today);
-  const title = c.op === 'add' ? c.title : c.op === 'remember' ? 'Coaching preference' : c.op === 'template' ? `${c.exercise} in ${c.template}` : rows.find((r) => r.id === c.id)?.title;
+  const title =
+    c.op === 'add' ? c.title
+      : c.op === 'remember' ? 'Coaching preference'
+        : c.op === 'template' ? `${c.exercise} in ${c.template}`
+          : c.op === 'event' ? (c.event ?? c.was)?.name
+            : c.op === 'goal' ? goalTitle(c)
+              : c.op === 'plan_week' ? weekLabel(String(c.request.weekStart))
+                : c.op === 'reminder' ? `Reminder: ${c.text}`
+                : rows.find((r) => r.id === c.id)?.title;
   return { ...done, undo: { ...done.undo, title } };
 }
 
@@ -115,6 +128,10 @@ async function applyStep(userId: string, c: Change, rows: PlanRow[], today: stri
     const done = await applyTemplateChange(c);
     return { undo: { op: 'template', slotId: done.slotId, before: done.before }, dates: [] };
   }
+  if (c.op === 'event') return { undo: await applyEventChange(userId, c), dates: [] };
+  if (c.op === 'goal') return { undo: await applyGoalChange(userId, c), dates: [] };
+  if (c.op === 'plan_week') return { undo: await startWeekDraft(userId, c, today), dates: [] };
+  if (c.op === 'reminder') return { undo: await applyReminder(userId, c), dates: [] };
   if (c.op === 'add') {
     const input = addInput({ sport: c.sport, date: c.date, startTime: c.startTime, title: c.title, duration: c.duration, effort: c.effort, description: c.description });
     if ('error' in input) throw new Error(input.error);
@@ -163,6 +180,8 @@ async function undoOne(userId: string, u: Undo, today: string): Promise<string[]
     case 'restore': { const day = await restoreWorkout(userId, u.row); return day ? [day] : []; }
     case 'forget': await editNotes(userId, (n) => dropNote(n, u.text)); return [];
     case 'template': await undoTemplateChange(u.slotId, u.before); return [];
+    case 'event': case 'goal': case 'plan_week': await undoGoalStep(userId, u); return [];
+    case 'unremind': await undoReminder(userId, u.id); return [];
   }
 }
 

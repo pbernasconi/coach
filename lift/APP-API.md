@@ -1047,6 +1047,15 @@ Every message has `files`, `[]` when none:
 
 `kind` is `image`, `pdf` or `text`.
 
+### Reminders: `GET /api/app/coach/reminders`
+
+The reminders Paolo set in the Coach chat (`{ op: "reminder" }` on a card) that are still to come, soonest first:
+`{ "reminders": [{ "id": "rk3j…", "at": "2026-11-05T02:00:00Z", "text": "Physio A" }] }`. `at` is UTC, without
+milliseconds. The app schedules each as a local notification with the id `coach.reminder.<id>` and takes off a
+pending one the list no longer has (Undo), when it opens or comes back and after a card is applied or undone
+(`CoachReminders`). A tap opens the Coach tab. Nothing is pushed: a reminder set on the web rings once the app has
+opened since.
+
 ### Workout: `GET /api/app/workouts/{ref}?tz=`
 
 One workout, planned and done as one: the phone's one workout page. `ref` is `plan-<plan workout id>` (a Week API item's

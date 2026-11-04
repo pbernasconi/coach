@@ -11,6 +11,8 @@ import { applyProposal } from '@/lib/coach-chat/server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+/** A plan_week change runs the weekly planner after the answer (server.ts), up to 5 minutes. */
+export const maxDuration = 300;
 
 const ID = /^[a-z0-9]{1,40}$/;
 

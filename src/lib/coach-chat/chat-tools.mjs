@@ -6,6 +6,7 @@
 import { ASK_TOOL, REPLIES_TOOL, SHOW_TOOL } from './cards.mjs';
 import { CONTEXT_READ_TOOLS } from './context-tools.mjs';
 import { DATA_TOOLS } from './data-tools.mjs';
+import { GOALS_TOOL } from './goal-tools.mjs';
 import { LIFT_READ_TOOLS } from './lift-tools.mjs';
 import { cardTool, readTool, serverTool, toolbox } from './tool-registry.mjs';
 import { WEB_FETCH_TOOL, WEB_SEARCH_TOOL } from './web-tools.mjs';
@@ -30,6 +31,19 @@ export const PROPOSE_TOOL = {
           '{ op: "template", template, exercise, action?, sets?, reps?, rest?, weight?, note? } (a Lift template ' +
           'slot: action update (default) | add | remove; reps 8 or "8-12", rest in seconds, weight in the slot\'s unit; ' +
           'every lift on the template that has not started is planned again) | ' +
+          '{ op: "event", action?, id?, name?, date?, priority?, sport?, target?, notes? } (a race or event day in ' +
+          'Settings → Events: action add (default without id) | update | remove; priority A | B | C; sport ride | run | ' +
+          'swim | triathlon | hike | strength | other; target free text like "sub 1:45") | ' +
+          '{ op: "goal", action?, id?, kind?, title?, target?, baseline?, start?, deadline? } (a milestone goal in ' +
+          'Settings → Goals: kind run_10k_pace | ski_4000m | vo2max | ride_km; target and baseline in its unit, pace as ' +
+          '"4:30"; a new goal needs baseline, where he is now) | ' +
+          '{ op: "plan_week", week, away?, busy?, sick?, daysOff?, hours?, gym?, hard?, longDay?, feel?, note? } (the ' +
+          'weekly planner drafts that whole week on Apply and Paolo accepts the draft on Plan: week is any day of it, ' +
+          'this week up to 7 weeks ahead; away/busy/sick/daysOff are lists of its days, each day in one list; hours 2-20, ' +
+          'gym lifts 0-4, hard sessions 0-3, feel fresh | normal | fatigued | recovery; note is what to keep or plan ' +
+          'around, in his words; one per card) | ' +
+          '{ op: "reminder", at, text } (a notification on his iPhone at that time: at is "YYYY-MM-DDTHH:MM" on ' +
+          'his clock (<now>), up to 30 days ahead; text is what to do, one short line, in his words) | ' +
           '{ op: "remember", text } (a ' +
           'lasting preference for his Coaching preferences, one line). Dates YYYY-MM-DD, times HH:MM, ' +
           'duration in minutes, effort recovery | easy | moderate | hard | very-hard, sport run | ride | swim | strength | ' +
@@ -53,6 +67,7 @@ export const CHAT_TOOLS = toolbox([
   ...DATA_TOOLS.map((t) => readTool(t)),
   ...LIFT_READ_TOOLS.map((t) => readTool(t)),
   ...CONTEXT_READ_TOOLS.map((t) => readTool(t)),
+  readTool(GOALS_TOOL),
   serverTool(WEB_SEARCH_TOOL, 'searching'),
   serverTool(WEB_FETCH_TOOL, 'searching'),
 ]);

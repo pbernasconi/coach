@@ -25,6 +25,9 @@ import { fileBlock, fileNote, filesPhrase, filesToSend, type FileData, type File
 import { claimFiles, fileData, unclaimedFiles } from './files-store';
 import { runReadTool } from './tools';
 import { loadLiftTemplates } from './lift-tools';
+import { loadGoalContext } from './goal-tools';
+import { runPlanner } from '@/lib/planner/run';
+import { after as afterResponse } from 'next/server';
 import { CHAT_MONTHLY_CAP_USD, PROMPTS, SUGGESTIONS, chatContext, chatSystemPrompt } from './prompt.mjs';
 
 type Row = Record<string, unknown>;
@@ -278,6 +281,8 @@ export async function sendMessage(
   const changesP = timed(recentChangesText(userId, timeZone).catch(() => null), reads, 'changesMs', started);
   // The Lift templates in full, for a { op: "template" } change; a failed read only turns those off.
   const liftP = early(loadLiftTemplates().catch((e) => { console.error('[coach-chat] lift templates', e); return null; }));
+  // His events and milestone goals, for an { op: "event" | "goal" } change; a failed read only turns those off.
+  const goalsP = early(loadGoalContext(userId).catch((e) => { console.error('[coach-chat] goals', e); return null; }));
   let threadId = await openThread(userId);
   if (!threadId) {
     threadId = createId();
@@ -312,7 +317,7 @@ export async function sendMessage(
 
   let context: string | null = null;
   try {
-    const [rows, profile, data, changes, lift] = await Promise.all([rowsP, profileP, dataP, changesP, liftP]);
+    const [rows, profile, data, changes, lift, goals] = await Promise.all([rowsP, profileP, dataP, changesP, liftP, goalsP]);
     const system = chatSystemPrompt();
     context = chatContext({ today, time: clockIn(timeZone), timeZone, plan: planText(rows, today), profileMd: profile.md, changes });
     prepMs = Date.now() - started;
@@ -323,7 +328,7 @@ export async function sendMessage(
       context,
       text: text || `(Paolo sent ${filesPhrase(files)} with no words.)`,
       files: files.map((f): object => (data.has(f.id) ? fileBlock(data.get(f.id)!) : { type: 'text', text: fileNote(f) })),
-      check: (input, attempt) => checkProposalInput(input, { rows, today, templates: templateNames(profile), lift }, attempt),
+      check: (input, attempt) => checkProposalInput(input, { rows, today, templates: templateNames(profile), lift, goals, timeZone, nowMs: Date.now() }, attempt),
       checkCard: (input) => checkCard(input, { rows, today }),
       deadline: started + BUDGET_MS,
       onEvent: emit,
@@ -486,6 +491,12 @@ export async function applyProposal(userId: string, id: string, today: string): 
   // What the plan looks like now: each change where the card said, and each touched workout's fingerprint for Undo.
   const now = await planRows(userId, today).catch(() => null);
   const result = now ? landedIssues(ops, applied.added, now).map((t) => `${t}. Check it on the Week tab.`) : [];
+  // A week to plan: the planner drafts it now (up to 5 minutes, the route's maxDuration); Paolo accepts it on Plan.
+  for (const u of applied.undo) {
+    if (u.op !== 'plan_week') continue;
+    afterResponse(() => runPlanner(userId, u.proposalId).then(() => undefined, (e: unknown) => console.error('Coach chat: week draft:', e)));
+    result.push(`Coach is drafting the ${String(u.title ?? 'week').toLowerCase()}. It takes a minute or two; review and accept it on Plan.`);
+  }
   const touched = new Set([...Object.keys(basis), ...applied.added.filter((x): x is string => Boolean(x))]);
   const after = now ? Object.fromEntries(now.filter((r) => touched.has(r.id)).map((r) => [r.id, fingerprint(r)])) : null;
   const record: UndoRecord = { steps: applied.undo, after, result };

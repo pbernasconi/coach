@@ -5,11 +5,14 @@ import LiftSync
 /// with the coach, and the report of a tapped notice. The shell routes the tap's link (`AppLink`).
 final class PushNotifications {
     let registrar: PushRegistrar
+    /// The chat's reminders, scheduled on this phone (`CoachReminders`).
+    let reminders: CoachReminders
     private let devices: any PushDeviceRegistering
 
-    init(registrar: PushRegistrar, devices: any PushDeviceRegistering) {
+    init(registrar: PushRegistrar, devices: any PushDeviceRegistering, reminders: CoachReminders) {
         self.registrar = registrar
         self.devices = devices
+        self.reminders = reminders
     }
 
     /// Tells the coach a notice was opened. Fire and forget: the person sees nothing either way.
