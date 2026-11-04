@@ -58,7 +58,7 @@ struct CoachMessageRow: View {
 }
 
 /// Coach's reply: the folded Thought, the steps it took, the text with no bubble, its cards and proposal, the question
-/// cards (latest reply only), then the thumbs and copy.
+/// cards (latest reply only), then the thumbs and copy (latest reply, or once rated).
 private struct CoachReplyRow: View {
     let id: String
     let reply: CoachReply
@@ -117,8 +117,12 @@ private struct CoachReplyRow: View {
                     if case .choices(let picked) = answer, let first = picked.first { send(.quickReplyTapped(first)) }
                 }
             }
-            ChatFeedbackRow(rating: reply.feedback, copying: reply.text) {
-                send(.feedbackTapped(messageID: id, rating: $0))
+            // Thumbs and copy on the newest reply (and on one already rated), as on the web: a row under every
+            // reply made the thread busy.
+            if isLatest || reply.feedback != nil {
+                ChatFeedbackRow(rating: reply.feedback, copying: reply.text) {
+                    send(.feedbackTapped(messageID: id, rating: $0))
+                }
             }
         }
     }

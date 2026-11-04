@@ -72,6 +72,13 @@ request usually answers it:
 - Two more tools: `show({ kind, ref })` puts a card under the text (workout, week, exercise, readiness, day; the
   server fills it, cards.ts) and `suggest_replies({ options })` adds up to 3 one-tap answers to a question.
 
+- Answer first (2026-11-04). Paolo asked "what happens if I skip a workout, short and long term, I keep missing
+  days" and twice got only "Pick one of the options below" with skip chips. The prompt now opens with "Answer what
+  he asked, first" (a question gets its answer in words; chips and cards are optional extras; never point at them;
+  a push-back means he was misread) and how skips and missed days work. The tool results after a card or question
+  cards ask for the answer, not a caption. If the reply still only points at its chips (`pointsAtChips`), chat.mjs
+  asks once more for the answer itself (`ANSWER_NUDGE`).
+
 - Read tools (2026-11-01, `data-tools.mjs`, run by `data.ts`). The chat told Paolo "my data has no splits" about a
   run whose splits, laps and best efforts were stored, and asked him for the time. Now it reads them:
   `get_activity({ ref })` (an activity id: `<plan>` shows it after DONE; "latest"; or a day) answers with km splits

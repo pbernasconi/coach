@@ -89,8 +89,12 @@ struct CoachCanvas: ViewModifier {
 }
 
 /// The floating top bar: no title; a round glass X at the leading edge (back to the tab before Coach), and one glass
-/// pill at the trailing edge with past chats and a new chat.
+/// pill at the trailing edge with past chats and a new chat. The chat's background sits behind it, up into the status
+/// bar and fading out under the pills, so messages scrolled up never show through the bar or the clock (2026-11-04:
+/// the first bubble ran under the pills and a thumbs row showed beside the clock).
 private struct CoachTopBar: View {
+    @Environment(\.koboTheme) private var theme
+    @Environment(\.colorScheme) private var colorScheme
     let onClose: () -> Void
     let send: (CoachAction) -> Void
 
@@ -105,6 +109,27 @@ private struct CoachTopBar: View {
         }
         .padding(.horizontal, Space.gutter)
         .padding(.bottom, Space.xs)
+        .background { CoachTopBackdrop(color: CoachCanvas.color(theme.palette, colorScheme)) }
+    }
+}
+
+/// The chat's background behind the top bar: solid through the status bar and the pills, then a short fade below them.
+private struct CoachTopBackdrop: View {
+    let color: Color
+
+    var body: some View {
+        LinearGradient(
+            stops: [
+                .init(color: color, location: 0),
+                .init(color: color, location: 0.75),
+                .init(color: color.opacity(0), location: 1),
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        .padding(.bottom, -Space.lg)
+        .ignoresSafeArea(edges: .top)
+        .allowsHitTesting(false)
     }
 }
 

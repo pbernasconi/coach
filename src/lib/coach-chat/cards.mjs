@@ -38,8 +38,9 @@ export const SHOW_TOOL = {
 export const REPLIES_TOOL = {
   name: 'suggest_replies',
   description:
-    'When your answer ends with a question, give Paolo up to 3 one-tap answers in his voice ("Tuesday 09:00", ' +
-    '"Wednesday 07:00"). A tap sends it as his message. Only with a question.',
+    'When your answer ends with a question to Paolo, give him up to 3 one-tap answers in his voice ("Tuesday 09:00", ' +
+    '"Wednesday 07:00"). A tap sends it as his message. Only with a question in your text, and never instead of ' +
+    'answering what he asked: your words must read complete without them, and never mention them ("pick one below").',
   input_schema: {
     type: 'object',
     properties: { options: { type: 'array', items: { type: 'string' }, description: 'Short answers, under 40 characters.' } },
@@ -158,7 +159,8 @@ export const ASK_TOOL = {
     '"single" (pick one option), "multi" (pick any; allowOther lets him type another), "text" (he types; give a ' +
     'placeholder), or "confirm" (a yes/no step: confirm.primary is the filled button, confirm.secondary the other; he ' +
     'can always skip). His answers come back as one message, a "title: answer" line per question. Use instead of ' +
-    'suggest_replies when there is more than one question or the answer needs choices; keep your text to one line.',
+    'suggest_replies when there is more than one question or the answer needs choices. Never use it to answer a ' +
+    'question he asked: answer that first in your text.',
   input_schema: {
     type: 'object',
     properties: {
