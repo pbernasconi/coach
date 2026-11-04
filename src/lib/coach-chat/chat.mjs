@@ -37,7 +37,27 @@ export const MAX_READS = 6;
 /** The thread messages sent back to Claude: the recent ones are enough for a chat about this week. */
 export const HISTORY = 20;
 /** What a shown card answers: the words come next, as text. */
-const WRITE_AFTER_CARD = 'Shown under your reply. Once your cards are called, write your reply to Paolo in text, with no more tool calls.';
+const WRITE_AFTER_CARD = 'Shown under your reply. Once your cards are called, write your reply to Paolo in text, with no more ' +
+  'tool calls: answer his message itself first (a question gets its answer); the cards and one-tap answers are extras ' +
+  'under it, so never point at them ("pick one below").';
+/** Questions are shown as cards: the words still answer his message first. */
+const WRITE_AFTER_QUESTIONS = 'Shown as cards; his answers come as his next message. Now write your reply in text, with no more ' +
+  'tool calls: answer what he asked first, then say in one line why you need these details. Never point at the cards.';
+/** Once, when a reply only points at its chips ("Pick one of the options below") instead of answering. */
+export const ANSWER_NUDGE = 'Your reply only points at the options. Answer my message itself in words: what I asked, ' +
+  'directly, with my numbers where they help. The options stay under it; don\'t mention them and call no tools.';
+
+/**
+ * A reply that is only a pointer at its chips or question cards ("Pick one of the options below, or tell me something
+ * else"): it answers nothing, and the chips go away when the chat moves on (Paolo, 2026-11-04).
+ * @param {string} words
+ */
+export function pointsAtChips(words) {
+  const t = words.trim();
+  if (!t) return false;
+  const pointer = /\b(pick|choose|select|tap)\b[^.?!]{0,40}\b(below|option|options|replies|reply|one)\b|\b(options|replies|choices) below\b|tell me something else/i;
+  return t.length < 220 && pointer.test(t);
+}
 
 
 /**
@@ -177,6 +197,7 @@ export async function chatWithClaude({ client, system, history, context, text, f
   /** @type {string[]} */
   const notes = [];
   let wordsAsked = false;
+  let nudged = false;
   const shown = () => Boolean(proposal || cards.length || replies.length || questions.length);
   const web = { searches: 0, fetches: 0 };
   /** @type {any[]} */
@@ -222,6 +243,14 @@ export async function chatWithClaude({ client, system, history, context, text, f
       continue;
     }
     const calls = content.filter((/** @type {any} */ b) => b.type === 'tool_use');
+    // A reply that only points at its chips answers nothing: ask once for the answer itself.
+    if (!calls.length && !nudged && said.length && pointsAtChips(said.join(' ')) && now() < deadline) {
+      nudged = true;
+      said.length = 0;
+      messages.push({ role: 'assistant', content }, { role: 'user', content: ANSWER_NUDGE });
+      emit({ type: 'status', step: 'writing' });
+      continue;
+    }
     if (!calls.length) return result(proposal ? 'proposed' : shown() ? 'shown' : 'answered');
     messages.push({ role: 'assistant', content });
 
@@ -265,7 +294,7 @@ export async function chatWithClaude({ client, system, history, context, text, f
         questions = cleanQuestions(call.input);
         results.push({
           type: 'tool_result', tool_use_id: call.id,
-          ...(questions.length ? { content: 'Shown as cards; his answers come as his next message. Write one short line to go above them, with no more tool calls.' } : { is_error: true, content: 'No valid question: ask in your text instead.' }),
+          ...(questions.length ? { content: WRITE_AFTER_QUESTIONS } : { is_error: true, content: 'No valid question: ask in your text instead.' }),
         });
         continue;
       }

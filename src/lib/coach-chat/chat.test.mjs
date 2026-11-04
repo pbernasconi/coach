@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { HISTORY, MAX_PROPOSALS, chatMessages, chatWithClaude, streamEventToChat } from './chat.mjs';
+import { ANSWER_NUDGE, HISTORY, MAX_PROPOSALS, chatMessages, chatWithClaude, pointsAtChips, streamEventToChat } from './chat.mjs';
 import { chatContext, chatSystemPrompt } from './prompt.mjs';
 import { costOf } from '../planner/cost.mjs';
 
@@ -356,4 +356,35 @@ test('with no words after the cards, the last note is the reply', async () => {
   assert.equal(client.calls.length, 1);
   assert.equal(r.stop, 'proposed');
   assert.equal(r.reply, 'Moving the lift to Tuesday.');
+});
+
+test('a reply that only points at its chips is spotted; a real answer is not', () => {
+  assert.equal(pointsAtChips("Pick one of the options below, or tell me what's getting in the way today."), true);
+  assert.equal(pointsAtChips('Pick one of the replies below, or tell me something else.'), true);
+  assert.equal(pointsAtChips('Tap a reply to choose.'), true);
+  assert.equal(pointsAtChips('One skip costs nothing: fitness falls about 2% a day off. Missing two or three a week stalls it.'), false);
+  assert.equal(pointsAtChips('Tuesday or Wednesday for the lift? Both are free at 09:00.'), false);
+  assert.equal(pointsAtChips(''), false);
+});
+
+test('a reply that only points at its chips is asked once for the answer itself (2026-11-04)', async () => {
+  const replies = { type: 'tool_use', id: 'r1', name: 'suggest_replies', input: { options: ['Skip ride, physio tonight', 'Skip both today'] } };
+  const client = fake([
+    reply([replies], 'tool_use'),
+    reply([say('Pick one of the replies below, or tell me something else.')]),
+    reply([say('Short term, one skip changes nothing. Long term, missing two a week stalls your fitness.')]),
+  ]);
+  const r = await chatWithClaude({ ...base, text: 'What happens long term if I keep missing days?', client, check: () => assert.fail('no card') });
+  assert.equal(r.reply, 'Short term, one skip changes nothing. Long term, missing two a week stalls your fitness.');
+  assert.deepEqual(r.replies, ['Skip ride, physio tonight', 'Skip both today']);
+  assert.equal(client.calls.length, 3);
+  assert.equal(client.calls[2].messages.at(-1).content, ANSWER_NUDGE);
+  // Only once: a second pointer is kept rather than looping.
+  const again = fake([
+    reply([say('Pick one of the options below.')]),
+    reply([say('Pick one of the options below.')]),
+  ]);
+  const r2 = await chatWithClaude({ ...base, client: again, check: () => assert.fail('no card') });
+  assert.equal(again.calls.length, 2);
+  assert.equal(r2.reply, 'Pick one of the options below.');
 });

@@ -2,6 +2,9 @@
 // linked, so the iPhone and the web open it as a workout to start, not a session that is gone (the App API answers
 // 404 for it). A new session can take the link's place. The stored link itself stays, so an un-skip can restore it.
 //
+// A fixed week long past: the other tests write Lift sessions near today (health.test.ts logs one yesterday), and
+// a session on the same day would link to these workouts by day.
+//
 // Needs DATABASE_URL to a database built by npm run db:migrate, and DATABASE_DRIVER=pg. Synthetic rows only.
 import assert from 'node:assert/strict';
 import { after, before, test } from 'node:test';
@@ -16,12 +19,12 @@ const client = new pg.Client({ connectionString: url });
 const USER = 'user_lift_deleted_link';
 const GONE = crypto.randomUUID().toUpperCase();
 const LIVE = crypto.randomUUID().toUpperCase();
-const T0 = '2026-11-02T16:20:00.000Z';
+const T0 = '2025-03-03T16:20:00.000Z';
 let deletedLink = '';
 let liveLink = '';
 
 async function session(id: string, deletedAt: string | null) {
-  const payload = { id, day: '2026-11-03', title: 'Upper', unitsAtLog: 'lb', startedAt: T0, finishedAt: null, updatedAt: T0, deletedAt };
+  const payload = { id, day: '2025-03-04', title: 'Upper', unitsAtLog: 'lb', startedAt: T0, finishedAt: null, updatedAt: T0, deletedAt };
   await client.query(`INSERT INTO lift_rows (entity, id, payload, updated_at, deleted_at) VALUES ('session', $1, $2, $3, $4)`, [
     id,
     JSON.stringify(payload),
@@ -36,7 +39,7 @@ before(async () => {
   await client.query(`INSERT INTO users (id, email, created_at) VALUES ($1, 'lift-deleted-link@example.com', now() + interval '1 day')`, [USER]);
   const plan = crypto.randomUUID();
   await client.query(
-    `INSERT INTO training_plans (id, user_id, week_start_date, week_end_date, plan_content, ai_model, status) VALUES ($1, $2, '2026-11-02', '2026-11-08', '', 'test', 'active')`,
+    `INSERT INTO training_plans (id, user_id, week_start_date, week_end_date, plan_content, ai_model, status) VALUES ($1, $2, '2025-03-03', '2025-03-09', '', 'test', 'active')`,
     [plan, USER]
   );
   deletedLink = crypto.randomUUID();
@@ -46,11 +49,11 @@ before(async () => {
     [liveLink, LIVE, 'Heavy barbell'],
   ]) {
     await client.query(
-      `INSERT INTO training_plan_activities (id, plan_id, activity_type, title, scheduled_date, lift_session_id) VALUES ($1, $2, 'strength', $3, '2026-11-03', $4)`,
+      `INSERT INTO training_plan_activities (id, plan_id, activity_type, title, scheduled_date, lift_session_id) VALUES ($1, $2, 'strength', $3, '2025-03-04', $4)`,
       [id, plan, title, link.toLowerCase()]
     );
   }
-  await session(GONE, '2026-11-03T19:37:16.517Z');
+  await session(GONE, '2025-03-04T19:37:16.517Z');
   await session(LIVE, null);
 });
 after(async () => {
@@ -58,7 +61,7 @@ after(async () => {
 });
 
 test('the calendar and the App API read a link to a deleted session as none', async () => {
-  const range = await loadRange(USER, '2026-11-02', '2026-11-02', '2026-11-04');
+  const range = await loadRange(USER, '2025-03-03', '2025-03-03', '2025-03-05');
   const byId = new Map(range.workouts.map((w) => [w.id, w]));
   assert.equal(byId.get(deletedLink)?.liftSessionId, null);
   assert.equal(byId.get(deletedLink)?.lift, null);
@@ -74,7 +77,7 @@ test('a new session replaces a link to a deleted one, but not a live link', asyn
 });
 
 test('the stored link stays: a session deleted and brought back (an un-skip) shows again', async () => {
-  const link = async () => (await loadRange(USER, '2026-11-02', '2026-11-02', '2026-11-04')).workouts.find((w) => w.id === liveLink)?.liftSessionId;
+  const link = async () => (await loadRange(USER, '2025-03-03', '2025-03-03', '2025-03-05')).workouts.find((w) => w.id === liveLink)?.liftSessionId;
   await client.query(`UPDATE lift_rows SET deleted_at = now() WHERE entity = 'session' AND id = $1`, [LIVE]);
   assert.equal(await link(), null);
   await client.query(`UPDATE lift_rows SET deleted_at = NULL WHERE entity = 'session' AND id = $1`, [LIVE]);
