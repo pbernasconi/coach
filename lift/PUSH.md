@@ -56,6 +56,8 @@ them; the tab and route are in `DeepLinkNavigator`.
 | `lift://activity/<stravaId>` | Activities | The activity (`GET /api/app/activities/{id}`) |
 | `lift://weigh-in/<YYYY-MM-DD>` | Today | The weigh-in (`GET /api/app/weigh-ins/{date}`, lift/APP-API.md) |
 | `lift://today` | Today | The tab's root |
+| `lift://week` | Week | The tab's root, the plan calendar (the home widget's tap) |
+| `lift://plan/<id>` | Week | The planned workout (`GET /api/app/plan/{id}`, a home widget row) |
 | `lift://coach` | Coach | The thread, read again (`GET /api/app/coach`) |
 
 A tap that arrives before the window exists (a cold start) is parked and opened as soon as the tab bar is up.

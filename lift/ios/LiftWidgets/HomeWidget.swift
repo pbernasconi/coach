@@ -58,7 +58,7 @@ struct HomeWidgetEntryView: View {
 
     var body: some View {
         face
-            .widgetURL(URL(string: "lift://today"))
+            .widgetURL(HomeWidgetSnapshot.weekLink)
             .containerBackground(for: .widget) {
                 if family == .accessoryRectangular {
                     Color.clear

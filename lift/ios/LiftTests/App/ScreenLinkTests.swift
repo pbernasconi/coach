@@ -19,6 +19,8 @@ import Testing
             ("lift://weigh-in/2026-10-22", .weighIn("2026-10-22")),
             ("lift://weigh-in/latest", .weighIn("latest")),
             ("lift://today", .today),
+            ("lift://week", .week),
+            ("lift://plan/42", .plan("42")),
             ("lift://coach", .coach),
         ]
         for (text, expected) in links {
@@ -30,7 +32,7 @@ import Testing
 
     @Test(arguments: [
         "lift://session/not-an-id", "lift://session", "lift://activity/12a", "lift://activity/",
-        "lift://weigh-in/2026-1-22", "lift://weigh-in/yesterday", "lift://today/extra", "https://example.com/today",
+        "lift://weigh-in/2026-1-22", "lift://weigh-in/yesterday", "lift://today/extra", "lift://week/extra", "lift://plan/", "lift://plan/4a", "https://example.com/today",
     ])
     func malformedScreenLinksNameNothing(text: String) throws {
         #expect(try link(text) == nil)
@@ -42,6 +44,8 @@ import Testing
         #expect(AppLink.weighIn("latest").destination == ScreenDestination(tab: .today, route: .weighIn("latest")))
         #expect(AppLink.today.destination == ScreenDestination(tab: .today, route: nil))
         #expect(AppLink.coach.destination == ScreenDestination(tab: .coach, route: nil))
+        #expect(AppLink.week.destination == ScreenDestination(tab: .week, route: nil))
+        #expect(AppLink.plan("42").destination == ScreenDestination(tab: .week, route: .plannedWorkout("42")))
         #expect(AppLink.syncCode("A").destination == nil)
     }
 
