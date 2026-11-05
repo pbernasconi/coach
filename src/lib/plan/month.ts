@@ -381,6 +381,10 @@ export async function updateWorkout(userId: string, id: string, w: WorkoutInput)
     UPDATE training_plan_activities SET
       plan_id = ${planId}, activity_type = ${w.sport}, title = ${w.title}, description = ${w.description},
       scheduled_date = ${w.date}, start_time = ${w.startTime}, duration = ${w.duration},
+      -- A new start or length ends at start + length (the calendar event too); the old end would be off, or before
+      -- the start. Postgres reads the old row on the right, so this compares with what was stored.
+      end_time = CASE WHEN start_time IS NOT DISTINCT FROM ${w.startTime} AND duration IS NOT DISTINCT FROM ${w.duration}::int
+                      THEN end_time END,
       distance = COALESCE(${w.distance}, distance), intensity = ${w.intensity}, tss = ${w.tss},
       steps = ${w.steps ? JSON.stringify(w.steps) : null}::jsonb,
       -- A bank workout's type comes from its steps. A workout without steps keeps a non-bank type (strength-heavy),

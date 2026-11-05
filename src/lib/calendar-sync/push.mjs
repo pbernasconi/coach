@@ -1,6 +1,8 @@
 // Puts a plan week's workouts on Google Calendar (the personal calendar of the active connection), purple.
-// The database is the source: an accepted plan, scripts/plan-edit.mjs and the web (move, skip, how I feel) both call
-// pushWeek. Each event carries the workout id, so a re-push updates, creates and deletes only what changed.
+// The database is the source. Every plan write pushes the weeks it touched right after it answers: the web (Plan
+// page), the iPhone (/api/app/plan), Coach chat's Apply, an accepted planner week, Lift moves, scripts/plan-edit.mjs.
+// Each event carries the workout id (and, since 2026-11, the workout's own event id, eventIdFor), so a re-push
+// updates, creates and deletes only what changed, and never makes a second event for a workout.
 // A workout moved on the calendar (another time or day) keeps that move: the push copies it into the database
 // first (adoptMove). Each event records the time Coach last wrote (coachTime), so a push can tell a move on the
 // calendar from a change in Coach. The calendar sync (/api/cron/calendar) runs the push every hour, so a
@@ -45,7 +47,8 @@ export function eventFor(w, weekStart = mondayOf(day(w.scheduled_date))) {
   };
   if (w.start_time) {
     const tz = w.time_zone || HOME_TZ;
-    const end = w.end_time ? { date, time: w.end_time } : addMinutes(date, w.start_time, w.duration || 60);
+    // An end at or before the start (an old end after a move) would be refused by Google: start + length then.
+    const end = w.end_time && w.end_time > w.start_time ? { date, time: w.end_time } : addMinutes(date, w.start_time, w.duration || 60);
     body.start = { dateTime: `${date}T${w.start_time}:00`, timeZone: tz };
     body.end = { dateTime: `${end.date}T${end.time}:00`, timeZone: tz };
     body.transparency = 'opaque';
@@ -138,6 +141,7 @@ function unchanged(e, body) {
   const p = e.extendedProperties?.private ?? {};
   const want = body.extendedProperties.private;
   return (
+    e.status !== 'cancelled' &&
     e.summary === body.summary &&
     (e.description ?? '') === body.description &&
     e.colorId === body.colorId &&
@@ -149,10 +153,28 @@ function unchanged(e, body) {
 }
 
 /**
+ * The calendar event id Coach gives a workout's event: the same id every time, so two pushes at once can't both
+ * create it (Google answers the second with 409), and a workout moved to another week keeps its event. Google
+ * allows a-v and 0-9; hex of the workout id fits. Pure; tested.
+ */
+export const eventIdFor = (workoutId) => `coach${Buffer.from(String(workoutId), 'utf8').toString('hex')}`;
+
+/** Whether a workout gets an event: not skipped, not a rest day. */
+const onCalendarAtAll = (w) => w.status !== 'skipped' && w.activity_type !== 'rest';
+
+/**
  * Makes the calendar match the plan week starting `weekStart` (a Monday), after copying any calendar moves into the
- * database. Rest days and skipped workouts get no event; an event already right is left alone. Returns counts and the
- * workouts moved on the calendar ({ id, from, to }), or { skipped } when there is no calendar connection or Google
- * credentials.
+ * database. Precise: it touches only events Coach wrote (tagged with a workout id), changes an event only when it
+ * differs from the workout, and never leaves two events for one workout.
+ *
+ * - A workout of the week with no event of this week: its event from another week (the workout was moved here)
+ *   moves along; else Coach creates one, under the workout's own event id (eventIdFor).
+ * - An event of this week whose workout is now in another week moves to that week; one whose workout is gone,
+ *   skipped or a rest day is deleted. A second event for one workout is deleted.
+ * - One event that Google refuses never stops the rest; the errors come back in `errors`.
+ *
+ * Returns counts and the workouts moved on the calendar ({ id, from, to }), or { skipped } when there is no
+ * calendar connection or Google credentials.
  */
 export async function pushWeek(sql, userId, weekStart, { env = process.env, dryRun = false, log = () => {} } = {}) {
   if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) return { skipped: 'no Google credentials' };
@@ -162,64 +184,129 @@ export async function pushWeek(sql, userId, weekStart, { env = process.env, dryR
   if (!conn) return { skipped: 'no calendar connection' };
   const token = await refreshAccessToken(sql, conn, env, log);
   if (!token) return { skipped: 'Google refused the token' };
-  const google = async (url, init = {}) => {
+  /** @returns {Promise<any>} */
+  const google = async (url, init = {}, okStatuses = []) => {
     const r = await fetch(url, { ...init, headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } });
+    if (okStatuses.includes(r.status)) return { status: r.status };
     if (!r.ok) throw new Error(`${init.method ?? 'GET'} calendar: ${r.status} ${await r.text()}`);
     return r.status === 204 ? null : r.json();
   };
+  const eventUrl = (id) => `${API}/${encodeURIComponent(id)}`;
+  const list = async (property) => {
+    const params = new URLSearchParams({ privateExtendedProperty: property, singleEvents: 'true', maxResults: '250' });
+    return (await google(`${API}?${params}`)).items ?? [];
+  };
 
   const workouts = await sql`
-    SELECT a.id, a.scheduled_date, a.start_time, a.end_time, a.time_zone, a.title, a.description, a.why,
-           a.workout_type, a.activity_type, a.duration, a.status, a.updated_at
+    SELECT a.id, a.scheduled_date, a.start_time, a.end_time, a.time_zone, a.title, a.description, a.why, a.workout_type,
+           a.activity_type, a.duration, a.status, a.updated_at, to_char(p.week_start_date, 'YYYY-MM-DD') AS week
     FROM training_plan_activities a JOIN training_plans p ON p.id = a.plan_id
     WHERE p.user_id = ${userId} AND p.week_start_date = ${weekStart}`;
-  const wanted = new Map(
-    workouts.filter((w) => w.status !== 'skipped' && w.activity_type !== 'rest').map((w) => [String(w.id), w])
-  );
+  const wanted = new Map(workouts.filter(onCalendarAtAll).map((w) => [String(w.id), w]));
 
   // No time window: an event moved on the calendar to another week still carries this week's tag.
-  const params = new URLSearchParams({
-    privateExtendedProperty: `coachPlanDate=${weekStart}`,
-    singleEvents: 'true',
-    maxResults: '250',
-  });
-  const existing = (await google(`${API}?${params}`)).items ?? [];
+  const existing = await list(`coachPlanDate=${weekStart}`);
+
+  // Events of this week for workouts that now live in another week (moved in Coach): they move along, not go.
+  const strayIds = [...new Set(existing.map((e) => e.extendedProperties?.private?.coachWorkoutId).filter((id) => id && !wanted.has(id)))];
+  const elsewhere = new Map();
+  if (strayIds.length) {
+    const rows = await sql`
+      SELECT a.id, a.scheduled_date, a.start_time, a.end_time, a.time_zone, a.title, a.description, a.why, a.workout_type,
+           a.activity_type, a.duration, a.status, a.updated_at, to_char(p.week_start_date, 'YYYY-MM-DD') AS week
+      FROM training_plan_activities a JOIN training_plans p ON p.id = a.plan_id
+      WHERE p.user_id = ${userId} AND a.id::text = ANY(${strayIds})`;
+    for (const w of rows) if (onCalendarAtAll(w)) elsewhere.set(String(w.id), w);
+  }
+
   /** @type {{ id: string, from: string, to: string }[]} */
   const moved = [];
-  const counts = { created: 0, updated: 0, deleted: 0, unchanged: 0, moved };
+  /** @type {string[]} */
+  const errors = [];
+  const counts = { created: 0, updated: 0, deleted: 0, unchanged: 0, moved, errors };
   const seen = new Set();
+
+  /** One event step; a refusal is logged and counted, the rest of the week still goes. */
+  const step = async (what, fn) => {
+    try {
+      await fn();
+    } catch (error) {
+      const message = `${what}: ${error instanceof Error ? error.message : String(error)}`;
+      log(message);
+      errors.push(message);
+    }
+  };
+  const remove = (e) =>
+    step(`delete ${e.summary}`, async () => {
+      log(`delete ${e.summary}`);
+      // 404/410: already gone (a push running at the same time deleted it first).
+      if (!dryRun) await google(eventUrl(e.id), { method: 'DELETE' }, [404, 410]);
+      counts.deleted++;
+    });
+
+  /** Brings one event in line with its workout: a calendar move goes into Coach first, then the event is rewritten. */
+  const settle = (e, w0, week0) =>
+    step(`update ${w0.title}`, async () => {
+      let w = w0;
+      let week = week0;
+      if (calendarWins(e, w, week)) {
+        const f = movedFields(wallOf(e));
+        log(`moved on the calendar: ${w.title} ${day(w.scheduled_date)} ${w.start_time ?? ''} → ${f.scheduled_date} ${f.start_time ?? ''}`);
+        moved.push({ id: String(w.id), from: day(w.scheduled_date), to: f.scheduled_date });
+        if (!dryRun) ({ week, ...w } = await adoptMove(sql, userId, w, f));
+        else week = mondayOf(f.scheduled_date);
+      }
+      const body = eventFor(w, week);
+      if (unchanged(e, body)) {
+        counts.unchanged++;
+        return;
+      }
+      log(`update ${w.title}`);
+      if (!dryRun) await google(eventUrl(e.id), { method: 'PUT', body: JSON.stringify({ ...body, status: 'confirmed' }) });
+      counts.updated++;
+    });
+
   for (const e of existing) {
     const id = e.extendedProperties?.private?.coachWorkoutId;
-    let w = id ? wanted.get(id) : undefined;
+    const w = id ? (wanted.get(id) ?? elsewhere.get(id)) : undefined;
     if (!w || seen.has(id)) {
-      log(`delete ${e.summary}`);
-      if (!dryRun) await google(`${API}/${encodeURIComponent(e.id)}`, { method: 'DELETE' });
-      counts.deleted++;
+      await remove(e);
       continue;
+    }
+    if (!wanted.has(id)) {
+      // Its workout moved to another week in Coach. When that week already has its event, this one goes.
+      const others = (await list(`coachWorkoutId=${id}`)).filter((o) => o.id !== e.id && o.status !== 'cancelled');
+      if (others.length) {
+        await remove(e);
+        continue;
+      }
     }
     seen.add(id);
-    let week = weekStart;
-    if (calendarWins(e, w, weekStart)) {
-      const f = movedFields(wallOf(e));
-      log(`moved on the calendar: ${w.title} ${day(w.scheduled_date)} ${w.start_time ?? ''} → ${f.scheduled_date} ${f.start_time ?? ''}`);
-      counts.moved.push({ id, from: day(w.scheduled_date), to: f.scheduled_date });
-      if (!dryRun) ({ week, ...w } = await adoptMove(sql, userId, w, f));
-      else week = mondayOf(f.scheduled_date);
-    }
-    const body = eventFor(w, week);
-    if (unchanged(e, body)) {
-      counts.unchanged++;
-      continue;
-    }
-    log(`update ${w.title}`);
-    if (!dryRun) await google(`${API}/${encodeURIComponent(e.id)}`, { method: 'PUT', body: JSON.stringify(body) });
-    counts.updated++;
+    await settle(e, w, wanted.has(id) ? weekStart : w.week);
   }
+
   for (const [id, w] of wanted) {
     if (seen.has(id)) continue;
-    log(`create ${w.title}`);
-    if (!dryRun) await google(API, { method: 'POST', body: JSON.stringify(eventFor(w, weekStart)) });
-    counts.created++;
+    await step(`create ${w.title}`, async () => {
+      // Its event may still sit in another week (moved here in Coach, that week not pushed yet): move it.
+      const found = (await list(`coachWorkoutId=${id}`)).filter((e) => e.status !== 'cancelled');
+      if (found.length) {
+        const [keep, ...extra] = [...found].sort((a, b) => Number(b.id === eventIdFor(id)) - Number(a.id === eventIdFor(id)));
+        for (const e of extra) await remove(e);
+        await settle(keep, w, weekStart);
+        return;
+      }
+      log(`create ${w.title}`);
+      if (!dryRun) {
+        const body = { ...eventFor(w, weekStart), id: eventIdFor(id) };
+        const r = await google(API, { method: 'POST', body: JSON.stringify(body) }, [409]);
+        // 409: the id is taken: a push at the same time made it, or Coach deleted it before (Undo). Rewrite it.
+        if (r?.status === 409) await google(eventUrl(body.id), { method: 'PUT', body: JSON.stringify({ ...eventFor(w, weekStart), status: 'confirmed' }) });
+      }
+      counts.created++;
+    });
   }
+  // Every caller runs after the answer: the server log is where a refusal shows. The hourly sync tries again.
+  if (errors.length) console.error(`Calendar push ${weekStart}: ${errors.length} event(s) failed: ${errors.join(' | ')}`);
   return counts;
 }
