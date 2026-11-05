@@ -87,3 +87,19 @@ test('a move to another day, and to all day', () => {
   assert.equal(movedFields(wallOf(e)).scheduled_date, '2026-10-24');
   assert.deepEqual(movedFields(wallOf({ start: { date: '2026-10-27' }, end: { date: '2026-10-28' } })), { scheduled_date: '2026-10-27', start_time: null, end_time: null, time_zone: null });
 });
+
+import { eventIdFor } from './push.mjs';
+
+test('an end at or before the start (left over from a move) falls back to start plus duration', () => {
+  const e = eventFor({ ...base, start_time: '10:40', end_time: '07:45', duration: 45 }, '2026-10-19');
+  assert.equal(e.end.dateTime, '2026-10-21T11:25:00');
+  assert.equal(eventFor({ ...base, start_time: '10:40', end_time: '10:40' }, '2026-10-19').end.dateTime, '2026-10-21T11:40:00');
+});
+
+test('each workout has one fixed event id that Google accepts (a-v, 0-9, 5 to 1024 long)', () => {
+  for (const id of ['wqwpuz7osgj81ql5gist37lh', '2900826e-1c1f-4a7b-9b55-1f2a3b4c5d6e']) {
+    assert.match(eventIdFor(id), /^[a-v0-9]{5,1024}$/);
+    assert.equal(eventIdFor(id), eventIdFor(id));
+  }
+  assert.notEqual(eventIdFor('a'), eventIdFor('b'));
+});
