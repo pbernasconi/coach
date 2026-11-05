@@ -25,11 +25,10 @@ import Testing
         #expect(snapshot.load == .init(fitness: 67, form: 19, fatigue: 42))
         #expect(snapshot.workouts.map(\.detail) == ["07:00 · 1:15", "18:00 · 45m"])
         #expect(snapshot.workouts.map(\.isDone) == [true, false])
-        #expect(
-            HomeWidgetSnapshot.link(for: snapshot.workouts[0])?.absoluteString
-                == "lift://session/ca4f651b-98c7-4765-83a9-07ab74435d69"
-        )
-        #expect(HomeWidgetSnapshot.link(for: snapshot.workouts[1])?.absoluteString == "lift://today")
+        #expect(HomeWidgetSnapshot.link(for: snapshot.workouts[0])?.absoluteString == "lift://plan/1")
+        #expect(HomeWidgetSnapshot.link(for: snapshot.workouts[1])?.absoluteString == "lift://plan/2")
+        #expect(HomeWidgetSnapshot.link(for: nil)?.absoluteString == "lift://week")
+        #expect(HomeWidgetSnapshot.weekLink?.absoluteString == "lift://week")
     }
 
     @Test func aFailedSectionLeavesOnlyItsPartEmpty() throws {

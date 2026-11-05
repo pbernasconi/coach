@@ -20,6 +20,8 @@ extension AppLink {
         case .activity(let id): ScreenDestination(tab: .week, route: .activity(id))
         case .weighIn(let day): ScreenDestination(tab: .today, route: .weighIn(day))
         case .today: ScreenDestination(tab: .today, route: nil)
+        case .week: ScreenDestination(tab: .week, route: nil)
+        case .plan(let id): ScreenDestination(tab: .week, route: .plannedWorkout(id))
         case .coach: ScreenDestination(tab: .coach, route: nil)
         case .importNote, .templates, .syncCode: nil
         }

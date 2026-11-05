@@ -59,12 +59,16 @@ nonisolated struct HomeWidgetSnapshot: Codable, Equatable, Sendable {
         HomeWidgetSnapshot(day: day, load: load, workouts: [], emptyText: note)
     }
 
-    /// Where a tap on a workout goes: its Lift session, else the Today tab.
+    /// Where a tap on the widget goes: the Week tab, the plan calendar (Paolo, 2026-11-05).
+    static let weekLink = URL(string: "lift://week")
+
+    /// Where a tap on a workout row goes: that workout on the Week tab (`lift://plan/<id>`, AppLink), else the Week
+    /// tab itself.
     static func link(for workout: Workout?) -> URL? {
-        if let id = workout?.liftSessionID, UUID(uuidString: id) != nil {
-            return URL(string: "lift://session/\(id)")
+        if let id = workout?.id, !id.isEmpty, id.count <= 20, id.utf8.allSatisfy({ (0x30...0x39).contains($0) }) {
+            return URL(string: "lift://plan/\(id)")
         }
-        return URL(string: "lift://today")
+        return weekLink
     }
 }
 

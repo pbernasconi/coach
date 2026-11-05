@@ -133,7 +133,7 @@ import Testing
         #expect(AppLink(url: try #require(URL(string: text))) == link)
     }
 
-    @Test(arguments: ["lift://", "lift://week", "liftx://import", "https://lift/import"])
+    @Test(arguments: ["lift://", "lift://nowhere", "liftx://import", "https://lift/import"])
     func ignores(text: String) throws {
         #expect(AppLink(url: try #require(URL(string: text))) == nil)
     }

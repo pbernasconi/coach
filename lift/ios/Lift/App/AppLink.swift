@@ -10,6 +10,8 @@ import Foundation
 ///     lift://activity/<id>      A Strava activity (a workout notice)
 ///     lift://weigh-in/<day>     A weigh-in, `YYYY-MM-DD` or `latest` (a weigh-in notice)
 ///     lift://today              The Today tab
+///     lift://week               The Week tab (the plan calendar)
+///     lift://plan/<id>          A planned workout on the Week tab, by its Week API id (the home widget's rows)
 ///
 /// Compiled into the app, which routes them (`IncomingNoteRouter`), and LiftShare, which builds them. A notice's tap
 /// opens the same links (`PushTap`), so a screen opens the same way from a notice, Safari or Shortcuts.
@@ -30,6 +32,10 @@ nonisolated enum AppLink: Equatable, Sendable {
     case weighIn(String)
     /// The Today tab's root.
     case today
+    /// The Week tab's root: the plan calendar.
+    case week
+    /// A planned workout by its Week API id (digits), over the Week tab.
+    case plan(String)
     /// The Coach tab's conversation (a Coach reply's notice).
     case coach
 
@@ -81,6 +87,11 @@ nonisolated enum AppLink: Equatable, Sendable {
             return isWeighInDay(argument) ? .weighIn(argument) : nil
         case "today":
             return argument.isEmpty ? .today : nil
+        case "week":
+            return argument.isEmpty ? .week : nil
+        case "plan":
+            guard argument.count <= 20, isDigits(argument) else { return nil }
+            return .plan(argument)
         case "coach":
             return argument.isEmpty ? .coach : nil
         default:
@@ -130,6 +141,11 @@ nonisolated enum AppLink: Equatable, Sendable {
             components.path = "/" + day
         case .today:
             components.host = "today"
+        case .week:
+            components.host = "week"
+        case .plan(let id):
+            components.host = "plan"
+            components.path = "/" + id
         case .coach:
             components.host = "coach"
         }
