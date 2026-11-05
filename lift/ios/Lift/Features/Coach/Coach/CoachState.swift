@@ -148,6 +148,11 @@ nonisolated struct CoachState: Equatable, Sendable {
         }
     }
 
+    /// How many messages Paolo has sent in this chat: when it grows, the transcript scrolls down to his new message.
+    var sentCount: Int {
+        messages.count { if case .mine = $0.body { true } else { false } }
+    }
+
     /// The last message Paolo sent, words and files, for Retry. A message of photos alone has no words, so Retry
     /// sends its files again rather than an empty message the server turns down.
     var lastSent: (text: String, files: [CoachFile])? {

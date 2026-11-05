@@ -111,11 +111,8 @@ private struct CoachReplyRow: View {
             if isLatest, !reply.questions.isEmpty {
                 ChatQuestions(reply.questions) { send(.questionsAnswered($0)) }
             } else if isLatest, !reply.quickReplies.isEmpty {
-                ChatQuestionCard(
-                    ChatQuestion(id: "quick-\(id)", title: "", kind: .single(options: reply.quickReplies))
-                ) { answer in
-                    if case .choices(let picked) = answer, let first = picked.first { send(.quickReplyTapped(first)) }
-                }
+                // Plain chips under the answer: a card with no title around them read as an empty form.
+                ChatQuickReplies(reply.quickReplies) { send(.quickReplyTapped($0)) }
             }
             // Thumbs and copy on the newest reply (and on one already rated), as on the web: a row under every
             // reply made the thread busy.

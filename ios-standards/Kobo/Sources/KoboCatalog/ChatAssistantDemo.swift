@@ -20,6 +20,8 @@ struct ChatAssistantDemo: View {
             ChatFeedbackRow(rating: rating, copying: "Moved the review to Thursday.") { rating = $0 }
         case .chatQuestionCard:
             ChatQuestionCard(ChatAssistantSamples.questions[1]) { answered = "\($0)" }
+        case .chatQuickReplies:
+            ChatQuickReplies(["Move it to Thursday", "Keep it on Friday", "Skip it this week"]) { answered = $0 }
         case .chatQuestions:
             VStack(alignment: .leading, spacing: Space.md) {
                 ChatQuestions(ChatAssistantSamples.questions) { answered = "\($0.count) answers" }

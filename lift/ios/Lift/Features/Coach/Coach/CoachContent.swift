@@ -62,12 +62,13 @@ struct CoachContent: View {
             } footer: {
                 switch state.phase {
                 case .idle: EmptyView()
-                case .waiting: ChatTypingIndicator(verbatim: String(localized: "Reading your week"))
+                case .waiting: ChatTypingIndicator(verbatim: String(localized: "Thinking"))
                 case .answering(let progress): CoachLiveReply(progress: progress)
                 case .failed(let reason): ChatErrorRow(verbatim: reason) { send(.retryTapped) }
                 }
             }
             .timestamps(\.sentAt)
+            .followsLatest(on: state.sentCount)
             .onTranscriptTap { isComposing = false }
         }
     }
@@ -113,21 +114,19 @@ private struct CoachTopBar: View {
     }
 }
 
-/// The chat's background behind the top bar: solid through the status bar and the pills, then a short fade below them.
+/// The chat's background behind the top bar: solid through the status bar and down to the pills' lower edge, then a
+/// short fade below them, so a line scrolled up is gone before it reaches the pills (a fade that began beside the
+/// pills left half-cut text between them).
 private struct CoachTopBackdrop: View {
     let color: Color
 
     var body: some View {
-        LinearGradient(
-            stops: [
-                .init(color: color, location: 0),
-                .init(color: color, location: 0.75),
-                .init(color: color.opacity(0), location: 1),
-            ],
-            startPoint: .top,
-            endPoint: .bottom
-        )
-        .padding(.bottom, -Space.lg)
+        VStack(spacing: 0) {
+            color
+            LinearGradient(colors: [color, color.opacity(0)], startPoint: .top, endPoint: .bottom)
+                .frame(height: Space.xl)
+        }
+        .padding(.bottom, -Space.xl)
         .ignoresSafeArea(edges: .top)
         .allowsHitTesting(false)
     }

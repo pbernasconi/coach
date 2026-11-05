@@ -80,6 +80,14 @@ private let proposalReply = CoachReply(
         #expect(vm.state.phase == .idle)
     }
 
+    @Test func sendTappedCountsTheSentMessageSoTheTranscriptScrollsToIt() async {
+        let vm = make(FakeCoach(.success(proposalReply)))
+        #expect(vm.state.sentCount == 0)
+        vm.send(.draftChanged("Move the lift"))
+        await vm.send(.sendTapped)?.value
+        #expect(vm.state.sentCount == 1)
+    }
+
     @Test func sendTappedIgnoresABlankDraft() {
         let vm = make(FakeCoach(.success(proposalReply)))
         vm.send(.draftChanged("   "))

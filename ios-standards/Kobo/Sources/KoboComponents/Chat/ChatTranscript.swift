@@ -21,6 +21,9 @@ where Data.Element: Identifiable {
     private let footer: Footer
     private var onTap: (() -> Void)?
     private var date: ((Data.Element) -> Date?)?
+    /// A value that changes when the reader sends: the transcript then pins to the bottom again, even if they had
+    /// scrolled up (`followsLatest(on:)`).
+    private var sendCount = 0
 
     public init(
         _ data: Data,
@@ -45,6 +48,14 @@ where Data.Element: Identifiable {
     public func timestamps(_ date: @escaping (Data.Element) -> Date?) -> ChatTranscript {
         var transcript = self
         transcript.date = date
+        return transcript
+    }
+
+    /// Scrolls to the bottom and follows again whenever `count` grows (pass how many messages the reader has sent):
+    /// a message sent while scrolled up to read must never land out of sight.
+    public func followsLatest(on count: Int) -> ChatTranscript {
+        var transcript = self
+        transcript.sendCount = count
         return transcript
     }
 
@@ -114,6 +125,11 @@ where Data.Element: Identifiable {
         }
         .onChange(of: data.count) { old, new in
             if new > old, follow.followsNewContent() { scrollToLatest(animated: true) }
+        }
+        .onChange(of: sendCount) { old, new in
+            guard new > old else { return }
+            follow.jumped()
+            scrollToLatest(animated: true)
         }
         .overlay(alignment: .bottom) {
             if follow.showsJumpButton {
