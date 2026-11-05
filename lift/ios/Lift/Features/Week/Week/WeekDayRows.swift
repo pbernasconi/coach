@@ -3,7 +3,8 @@ import KoboTokens
 import SwiftUI
 
 /// One day of the Week list: its date ("Today · Wednesday, 21 October") over one card holding a row per plan item and
-/// Lift session. A free day, or a planned rest day, has a short dashed slot instead that plans a workout on it. Today's
+/// Lift session. A planned rest day is one quiet line: "Rest day" with a moon beside the date, and a small "+" that plans
+/// a workout on it (no card: rest is not something to complete). A free day has a short dashed slot instead. Today's
 /// date is in the brand's text colour, the selected day's in ink. A workout not done yet can be long-pressed and dropped
 /// on another day; the day under it shows an outline in the brand colour.
 struct WeekDayRows: View {
@@ -15,13 +16,9 @@ struct WeekDayRows: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Space.xs) {
-            Text(verbatim: day.title)
-                .font(theme.font(.footnote).weight(.semibold))
-                .foregroundStyle(titleColor)
-                .padding(.leading, Space.xxs)
-                .accessibilityAddTraits(.isHeader)
+            header
             if workouts.isEmpty {
-                emptySlot
+                if !isRest { emptySlot }
             } else {
                 WeekDayGroup(statuses: workouts.map(\.cardStatus)) {
                     ForEach(Array(workouts.enumerated()), id: \.element.id) { index, entry in
@@ -54,6 +51,57 @@ struct WeekDayRows: View {
         }
     }
 
+    /// The date, and on a rest day "· Rest day" with a moon and, when nothing else is on the day, a "+" at the end.
+    private var header: some View {
+        HStack(spacing: Space.xs) {
+            Text(verbatim: day.title)
+                .font(theme.font(.footnote).weight(.semibold))
+                .foregroundStyle(titleColor)
+                .accessibilityAddTraits(.isHeader)
+            if let restTitle {
+                Label {
+                    Text(verbatim: restTitle)
+                } icon: {
+                    Image(systemName: Sport.rest.symbol).accessibilityHidden(true)
+                }
+                .labelStyle(RestTagStyle())
+                .font(theme.font(.footnote))
+                .foregroundStyle(theme.palette.textTertiary)
+                .lineLimit(1)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.leading, Space.xxs)
+        .overlay(alignment: .trailing) {
+            if isRest, workouts.isEmpty { addOnRestDay }
+        }
+    }
+
+    /// The rest item's title ("Rest day", "Rest · travel"), nil on a day without one.
+    private var restTitle: String? {
+        guard case .plan(let item)? = day.entries.first(where: \.isRest) else { return nil }
+        let title = item.title.trimmingCharacters(in: .whitespaces)
+        return title.isEmpty || title == "Rest" ? String(localized: "Rest day") : title
+    }
+
+    /// A small "+" at the end of a rest day's line: planning a workout there is possible, but not the point of the day.
+    /// Its touch area overhangs the line so the line stays one row tall.
+    private var addOnRestDay: some View {
+        Button {
+            send(.addWorkoutTapped(day.id))
+        } label: {
+            Image(systemName: "plus")
+                .font(theme.font(.footnote).weight(.semibold))
+                .foregroundStyle(theme.palette.textTertiary)
+                .frame(width: Size.minTouch, height: Size.minTouch)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.pressFeedback(.scale, in: Circle()))
+        .padding(.trailing, -Space.sm)
+        .accessibilityLabel(Text("Add workout"))
+        .accessibilityHint(Text("Plans a workout on this rest day"))
+    }
+
     private var titleColor: Color {
         if day.isToday { return theme.palette.accentText }
         return day.isSelected ? theme.palette.textPrimary : theme.palette.textSecondary
@@ -64,14 +112,14 @@ struct WeekDayRows: View {
 
     private var isRest: Bool { day.entries.contains(where: \.isRest) }
 
-    /// A free day's slot: a short dashed outline with "+" (and "Rest" on a planned rest day) that plans a workout.
+    /// A free day's slot: a short dashed outline with "+" that plans a workout.
     private var emptySlot: some View {
         Button {
             send(.addWorkoutTapped(day.id))
         } label: {
             HStack(spacing: Space.xs) {
                 Image(systemName: "plus").accessibilityHidden(true)
-                Text(isRest ? "Rest" : "Add workout")
+                Text("Add workout")
             }
             .font(theme.font(.subheadline))
             .foregroundStyle(theme.palette.textTertiary)
@@ -86,7 +134,18 @@ struct WeekDayRows: View {
             .contentShape(RoundedRectangle(cornerRadius: Radius.md, style: .continuous))
         }
         .buttonStyle(.pressFeedback(.scale, in: RoundedRectangle(cornerRadius: Radius.md, style: .continuous)))
-        .accessibilityLabel(Text(isRest ? "Rest" : "Nothing planned"))
+        .accessibilityLabel(Text("Nothing planned"))
         .accessibilityHint(Text("Plans a workout on this day"))
+    }
+}
+
+/// The rest tag beside a day's date: "·", the moon and the title, tight together.
+private struct RestTagStyle: LabelStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        HStack(spacing: Space.xxs) {
+            Text(verbatim: "·").accessibilityHidden(true)
+            configuration.icon
+            configuration.title
+        }
     }
 }
