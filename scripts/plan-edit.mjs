@@ -155,6 +155,8 @@ if (cmd === 'show') {
     const value = ['duration'].includes(key) ? parseInt(raw, 10) : key === 'tss' ? Number(raw) : raw;
     // Column names come from COLUMNS, never from input.
     await sql.query(`UPDATE training_plan_activities SET ${col} = $1, change_source = 'script', edited_at = NOW(), updated_at = NOW() WHERE id = $2`, [value, a]);
+    // A new start or length makes the old end wrong: the end is start + length again (end-time.mjs).
+    if (key === 'start_time' || key === 'duration') await sql`UPDATE training_plan_activities SET end_time = NULL WHERE id = ${a}`;
   }
   console.log(`updated ${w.title}`);
   await push([day(w.week_start_date)]);

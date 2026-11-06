@@ -103,3 +103,8 @@ test('each workout has one fixed event id that Google accepts (a-v, 0-9, 5 to 10
   }
   assert.notEqual(eventIdFor('a'), eventIdFor('b'));
 });
+
+test('the length wins over an old end left by a move (Fri 2026-11-06 ride showed 11:45–2:45)', () => {
+  const e = eventFor({ ...base, start_time: '11:45', end_time: '14:45', duration: 45 }, '2026-11-02');
+  assert.equal(e.end.dateTime, '2026-10-21T12:30:00');
+});

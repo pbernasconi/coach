@@ -6,6 +6,7 @@ import { toDay } from '@/lib/db-time.mjs';
 import { cleanReason, feelForSkip } from './skip.mjs';
 import { followWorkoutInLift } from '@/lib/lift/edit-store';
 import { planSource } from './change-source.mjs';
+import { endTimeOf } from './end-time.mjs';
 
 /** A structured workout (src/lib/workouts/steps.mjs). */
 export type StructuredWorkout = { version: 1; sport: 'ride' | 'run'; name: string; bank?: string; level?: number; notes?: string; steps: unknown[] };
@@ -106,7 +107,7 @@ function toWorkout(r: Row): Omit<Workout, 'state' | 'match'> {
     id: String(r.id),
     date: toDay(r.scheduled_date) ?? '',
     startTime: (r.start_time as string) ?? null,
-    endTime: (r.end_time as string) ?? null,
+    endTime: endTimeOf(r as never),
     title: String(r.title),
     sport: String(r.activity_type ?? 'other'),
     workoutType: (r.workout_type as string) ?? null,
