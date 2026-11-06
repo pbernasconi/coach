@@ -43,14 +43,17 @@ export async function loadPlanHistory(userId: string, today: string): Promise<Pl
              a.lift_template, a.intensity
       FROM training_plan_activities a JOIN training_plans p ON p.id = a.plan_id
       WHERE p.user_id = ${userId} AND p.week_start_date BETWEEN ${from} AND ${to}`,
-    // The plan without its long text (descriptions, steps): the rules need times, types and titles only.
+    // The plan without its long text (descriptions, steps): the rules need times, types, titles and the bank workout
+    // (R10), so `steps` stays only as a flag that it was there.
     sql`
       SELECT id, week_start, status, request, checks, created_at,
              plan->'review'->>'headline' AS headline, plan->>'title' AS title,
              CASE WHEN checks IS NULL THEN jsonb_build_object(
                'weekStart', plan->'weekStart', 'title', plan->'title', 'context', plan->'context',
                'completed', plan->'completed',
-               'events', (SELECT jsonb_agg(e - 'description' - 'why' - 'steps' - 'workout') FROM jsonb_array_elements(plan->'events') e))
+               'events', (SELECT jsonb_agg((e - 'description' - 'why' - 'steps')
+                                           || CASE WHEN e ? 'steps' THEN '{"steps": true}'::jsonb ELSE '{}'::jsonb END)
+                           FROM jsonb_array_elements(plan->'events') e))
              END AS slim
       FROM plan_proposals
       WHERE user_id = ${userId} AND plan IS NOT NULL AND status IN ('proposed', 'accepted', 'rejected')
