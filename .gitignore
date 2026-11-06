@@ -57,3 +57,23 @@ plans/.db-backup/
 
 # Vine worktrees
 /.worktrees/
+
+# Build output
+/lift/ios/build/
+.build/
+.pio/
+
+# Agent scratch output (screenshots, checks). Put it in .scratch/
+/.scratch/
+/.tmp-*
+/.verify*
+/tmp-verify/
+/.shots/
+/.screens/
+/.claude-shots/
+/.claude-screens/
+/.qa/
+
+# Data that belongs to other projects: never put it in this public repo
+/treuhand*
+/.mobbin*
