@@ -101,7 +101,8 @@ export function sessionsFromRows(rows) {
       const start = clock(`T${r.start_time ?? r.startTime ?? ''}`);
       const endRaw = clock(`T${r.end_time ?? r.endTime ?? ''}`);
       const minutes = Number(r.duration) || (start != null && endRaw != null && endRaw > start ? endRaw - start : 0);
-      const end = start != null ? (endRaw != null && endRaw > start ? endRaw : minutes ? start + minutes : null) : null;
+      // The length wins over a stored end, which a move can leave behind (end-time.mjs).
+      const end = start != null ? (minutes ? start + minutes : null) : null;
       const w = { title: r.title, workoutType: r.workout_type ?? r.workoutType };
       return {
         day,

@@ -6,6 +6,7 @@ import { richSession, type RichSession } from '@/lib/lift/session';
 import { followWorkoutInLift, removeFromLift } from '@/lib/lift/edit-store';
 import type { Workout } from './queries';
 import { complianceOf } from './compliance.mjs';
+import { endTimeOf } from './end-time.mjs';
 import { libraryFrom, monthWeeks, weekSummary } from './calendar.mjs';
 import { addDays, matchActivityId, matchWeek, mondayOf, sportOf, sportOfStrava } from './week.mjs';
 import { planSource } from './change-source.mjs';
@@ -82,7 +83,7 @@ function toWorkout(r: Row): Omit<Workout, 'state' | 'match'> {
     id: String(r.id),
     date: dayOf(r.scheduled_date),
     startTime: (r.start_time as string) ?? null,
-    endTime: (r.end_time as string) ?? null,
+    endTime: endTimeOf(r as never),
     title: String(r.title),
     sport: String(r.activity_type ?? 'other'),
     workoutType: (r.workout_type as string) ?? null,

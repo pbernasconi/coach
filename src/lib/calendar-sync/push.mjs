@@ -9,6 +9,7 @@
 // move reaches Coach, Zwift and the watch soon after.
 
 import { refreshAccessToken } from './sync.mjs';
+import { minutesOf } from '../plan/end-time.mjs';
 
 export const HOME_TZ = 'America/Los_Angeles';
 const COLOR_ID = '3'; // Grape (purple)
@@ -47,8 +48,8 @@ export function eventFor(w, weekStart = mondayOf(day(w.scheduled_date))) {
   };
   if (w.start_time) {
     const tz = w.time_zone || HOME_TZ;
-    // An end at or before the start (an old end after a move) would be refused by Google: start + length then.
-    const end = w.end_time && w.end_time > w.start_time ? { date, time: w.end_time } : addMinutes(date, w.start_time, w.duration || 60);
+    // Start + length: the length is the truth, a stored end can be left over from a move (minutesOf).
+    const end = addMinutes(date, w.start_time, minutesOf(w) ?? 60);
     body.start = { dateTime: `${date}T${w.start_time}:00`, timeZone: tz };
     body.end = { dateTime: `${end.date}T${end.time}:00`, timeZone: tz };
     body.transparency = 'opaque';
