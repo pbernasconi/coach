@@ -42,3 +42,15 @@ test('workout_type: <sport>-<bank> for a bank workout, so the rotation counts a 
   assert.equal(workoutTypeFor('rest', null), 'rest');
   assert.equal(cleanNewWorkout({ sport: 'rest', date: '2026-10-21' }).value.workoutType, 'rest');
 });
+
+test('withImpliedSteps: a chat-added ride gets bank steps and their TSS; a lift stays as it is', async () => {
+  const { withImpliedSteps } = await import('./create.mjs');
+  const base = { title: 'Easy Zwift ride + sprints', duration: 45, tss: 30, intensity: 'Easy', description: 'Z2, then 6 sprints', steps: null, workoutType: null };
+  const ride = withImpliedSteps({ ...base, sport: 'ride' });
+  assert.equal(ride.steps.bank, 'easy');
+  assert.equal(ride.workoutType, 'ride-z2');
+  assert.equal(ride.duration, 45);
+  const lift = withImpliedSteps({ ...base, sport: 'strength', title: 'Upper' });
+  assert.equal(lift.steps, null);
+  assert.equal(lift.tss, 30);
+});

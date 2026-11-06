@@ -191,3 +191,33 @@ test('connectionProblems and the client: Zwift link checks; create and update by
   assert.deepEqual(calls, [['https://intervals.icu/api/v1/athlete/i1/events', 'POST'], ['https://intervals.icu/api/v1/athlete/i1/events/7', 'PUT']]);
   assert.equal(intervalsClient({}), null);
 });
+
+test('impliedWorkout: the bank workout a run or ride stands for when it names none', async () => {
+  const { impliedWorkout, impliedSteps } = await import('./bank.mjs');
+  assert.deepEqual(impliedWorkout({ sport: 'ride', workoutType: 'ride-z2', title: 'Easy Zwift ride + sprints', description: 'Z2 spin, then 6 × 6–8 s sprints.' }), { bank: 'easy', level: 0, reps: 6 });
+  assert.deepEqual(impliedWorkout({ sport: 'ride', workoutType: 'ride-z2', title: 'Zwift easy' }), { bank: 'easy', level: 0, reps: 0 });
+  assert.deepEqual(impliedWorkout({ sport: 'run', workoutType: 'run-easy', title: 'Easy run + strides', description: '4 × 20 s strides' }), { bank: 'easy', level: 0, reps: 4 });
+  assert.deepEqual(impliedWorkout({ sport: 'ride', workoutType: 'recovery', title: 'Recovery spin' }), { bank: 'easy', level: 0, reps: 0, zone: 'Z1' });
+  assert.deepEqual(impliedWorkout({ sport: 'ride', workoutType: 'ride-threshold-b', title: 'x' }), { bank: 'threshold-b', level: 0 });
+  assert.deepEqual(impliedWorkout({ sport: 'run', workoutType: 'run-long', title: 'Long run' }), { bank: 'long', level: 0 });
+  assert.deepEqual(impliedWorkout({ sport: 'ride', workoutType: null, title: '🚴 VO2 B on Zwift' }), { bank: 'vo2-b', level: 0 });
+  assert.equal(impliedWorkout({ sport: 'strength', workoutType: 'strength-heavy', title: 'Heavy' }), null);
+  const w = impliedSteps({ sport: 'ride', workoutType: 'ride-z2', title: 'Easy Zwift ride + sprints', description: '6 × 6–8 s sprints', duration: 45 });
+  assert.deepEqual(validate(w), []);
+  assert.ok(Math.abs(totals(w).minutes - 45) <= 2);
+});
+
+test('stepFills: planned runs and rides without steps get them; others and skipped ones stay', async () => {
+  const { stepFills } = await import('./fill-steps.mjs');
+  const fills = stepFills([
+    { id: 'a', title: 'Easy Zwift ride + sprints', activity_type: 'ride', workout_type: 'ride-z2', description: 'Z2 spin, then 6 × 6–8 s sprints.', duration: 45, status: 'planned', steps: null },
+    { id: 'b', title: 'Upper', activity_type: 'strength', workout_type: 'strength-dumbbell', duration: 45, status: 'planned', steps: null },
+    { id: 'c', title: 'Easy run', activity_type: 'run', workout_type: 'run-easy', duration: 30, status: 'skipped', steps: null },
+    { id: 'd', title: 'Long ride', activity_type: 'ride', workout_type: null, duration: 180, status: 'planned', steps: null },
+  ]);
+  assert.deepEqual(fills.map((f) => f.id), ['a', 'd']);
+  assert.equal(fills[0].workoutType, 'ride-z2');
+  assert.ok(fills[0].tss < 60);
+  assert.equal(fills[1].steps.bank, 'long');
+  assert.equal(fills[1].workoutType, 'ride-long');
+});

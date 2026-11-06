@@ -25,7 +25,7 @@ test('past plans: rule baseline and verdicts', async () => {
       weekStart: week,
       review: { headline: 'Two lifts, long run Sunday.' },
       events: [
-        { title: '🏃 Long run', start: '2026-11-08T08:00:00', end: '2026-11-08T09:45:00', workoutType: 'run-long', description: 'Long text' },
+        { title: '🏃 Long run', start: '2026-11-08T08:00:00', end: '2026-11-08T09:45:00', workoutType: 'run-long', workout: { bank: 'long', level: 0 }, description: 'Long text' },
         { title: '🏋️ Heavy barbell', start: '2026-11-03T07:00:00', end: '2026-11-03T08:00:00', workoutType: 'strength-heavy', liftTemplate: 'Heavy barbell' },
         { title: '🏋️ Upper', start: '2026-11-05T07:00:00', end: '2026-11-05T07:45:00', workoutType: 'strength-dumbbell', liftTemplate: 'Upper (dumbbells)' },
       ],

@@ -230,3 +230,48 @@ export function bankWorkout(bank, sport, level = 0, totalMin = 60, opts = {}) {
   const name = b.title ? b.title(sport, opts) : `${b.name}: ${b.describe(l)}`;
   return { version: 1, sport, name, bank, level: l, steps: b.build(sport, l, totalMin, opts) };
 }
+
+const BANK_TYPES = ['threshold-a', 'threshold-b', 'vo2-a', 'vo2-b', 'tempo', 'test-10k'];
+const TITLE_BANKS = [
+  [/threshold\s*a\b/i, 'threshold-a'], [/threshold\s*b\b/i, 'threshold-b'], [/vo2\s*(max\s*)?a\b/i, 'vo2-a'],
+  [/vo2\s*(max\s*)?b\b/i, 'vo2-b'], [/\btempo\b/i, 'tempo'], [/10\s*k\s*test|test-10k/i, 'test-10k'],
+];
+
+/**
+ * The bank workout a run or ride stands for when nobody gave it one (`workout: { bank, … }` left out): from its
+ * workout type ("ride-vo2-a", "ride-z2", "run-long", "recovery"), else its title ("VO2 A", "Long ride"), else an
+ * aerobic day. Sprints or strides only when its text names them ("6 × 6–8 s sprints"). Null for other sports, so
+ * every planned run and ride can have steps for Zwift and Garmin. Pure.
+ * @param {{ sport: string, workoutType?: string | null, title?: string | null, description?: string | null, intensity?: string | null }} w
+ * @returns {{ bank: string, level: number, reps?: number, zone?: string } | null}
+ */
+export function impliedWorkout(w) {
+  if (w.sport !== 'ride' && w.sport !== 'run') return null;
+  const type = String(w.workoutType ?? '').toLowerCase();
+  const text = `${w.title ?? ''}\n${w.description ?? ''}\n${w.intensity ?? ''}`;
+  const typed = BANK_TYPES.find((b) => type === `${w.sport}-${b}` || type.endsWith(`-${b}`));
+  if (typed && (typed !== 'test-10k' || w.sport === 'run')) return { bank: typed, level: 0 };
+  if (/-long$/.test(type) || (!type && /\blong\b/i.test(w.title ?? ''))) return { bank: 'long', level: 0 };
+  if (!type || type === 'ride-z2' || type === 'run-easy' || type === 'recovery') {
+    const named = TITLE_BANKS.find(([re]) => re.test(w.title ?? ''))?.[1];
+    if (named && (named !== 'test-10k' || w.sport === 'run')) return { bank: named, level: 0 };
+  }
+  const recovery = type === 'recovery' || /\brecovery\b/i.test(w.title ?? '');
+  const word = w.sport === 'ride' ? 'sprints?' : 'strides?';
+  const count = new RegExp(`(\\d{1,2})\\s*(?:[x×]\\s*[\\d–-]+\\s*s(?:ec)?\\s*)?(?:hard\\s+)?${word}`, 'i').exec(text);
+  const any = new RegExp(`\\b(${w.sport === 'ride' ? 'sprint' : 'stride'})`, 'i').test(text);
+  const reps = count ? Math.min(10, Number(count[1])) : any ? 6 : 0;
+  return { bank: 'easy', level: 0, reps, ...(recovery ? { zone: 'Z1' } : {}) };
+}
+
+/**
+ * The structured workout of a run or ride that has none: impliedWorkout built for its planned time. Null for other
+ * sports.
+ * @param {{ sport: string, workoutType?: string | null, title?: string | null, description?: string | null, intensity?: string | null, duration?: number | null }} w
+ */
+export function impliedSteps(w) {
+  const implied = impliedWorkout(w);
+  if (!implied) return null;
+  const minutes = typeof w.duration === 'number' && w.duration > 0 ? w.duration : w.sport === 'ride' ? 60 : 45;
+  return bankWorkout(implied.bank, /** @type {'ride' | 'run'} */ (w.sport), implied.level, minutes, { reps: implied.reps, zone: implied.zone });
+}

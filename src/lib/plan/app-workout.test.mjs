@@ -113,3 +113,12 @@ test('a gym lift lists what Lift planned, with or without its session, and the t
   assert.deepEqual(fresh.exercises, template);
   assert.equal(fresh.notes, 'Squat first.');
 });
+
+test('a ride without steps lists no exercises: "6 × 6–8 s sprints" is not 6 sets (Nov 6 2026)', () => {
+  const page = appWorkout(workout({ steps: null, title: 'Easy Zwift ride + sprints', description: 'Z2 spin, then 6 × 6–8 s sprints. Lift follows straight after.' }), sports);
+  assert.deepEqual(page.exercises, []);
+  assert.match(page.notes, /6 × 6–8 s sprints/);
+  // A strength workout still reads its lines.
+  const home = appWorkout(workout({ steps: null, sport: 'strength', title: 'Physio A', description: '1) Calf raise 3x15: slow' }), sports);
+  assert.equal(home.exercises[0].name, 'Calf raise');
+});

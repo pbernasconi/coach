@@ -7,7 +7,7 @@
 import { sql } from '@/db';
 import { addInput, editForm, editInput } from '@/lib/plan/app-edit.mjs';
 import { loadPlanWorkout } from '@/lib/plan/app-workout';
-import { cleanNewWorkout } from '@/lib/plan/create.mjs';
+import { cleanNewWorkout, withImpliedSteps } from '@/lib/plan/create.mjs';
 import { createWorkout, loadRange, removeWorkout, restoreWorkout, updateWorkout, type WorkoutInput } from '@/lib/plan/month';
 import { planSource, withPlanSource } from '@/lib/plan/change-source.mjs';
 import { setSkipped } from '@/lib/plan/queries';
@@ -137,7 +137,9 @@ async function applyStep(userId: string, c: Change, rows: PlanRow[], today: stri
     if ('error' in input) throw new Error(input.error);
     const clean = cleanNewWorkout(input.value as never) as { value?: WorkoutInput; error?: string };
     if (!clean.value) throw new Error(clean.error ?? 'the workout is not valid');
-    const id = await createWorkout(userId, { ...clean.value, workoutType: c.workoutType ?? clean.value.workoutType });
+    // A run or ride is always a structured workout (Zwift, Garmin, the TSS): the bank workout its title implies.
+    const value = withImpliedSteps({ ...clean.value, workoutType: c.workoutType ?? clean.value.workoutType });
+    const id = await createWorkout(userId, value);
     // A gym lift names its Lift template, as the planner's do: Lift then plans its exercises and sets (lift-plan.mjs).
     if (c.liftTemplate) await sql`UPDATE training_plan_activities SET lift_template = ${c.liftTemplate}, change_source = ${planSource()} WHERE id = ${id}`;
     return { undo: { op: 'remove', id }, dates: [c.date] };

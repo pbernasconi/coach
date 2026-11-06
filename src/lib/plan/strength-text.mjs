@@ -11,8 +11,8 @@
  * A line with no sets × reps is not an exercise ("90 s rest."). Pure.
  */
 
-/** "3x15", "3 × 15", "3x8-10", "3×8–10". */
-const SETS_REPS = /(\d{1,2})\s*[x×]\s*(\d{1,3})(?:\s*[-–]\s*(\d{1,3}))?(?!\d)/i;
+/** "3x15", "3 × 15", "3x8-10", "3×8–10"; not a time or distance ("6 × 6–8 s sprints", "4 × 3 min", "5 × 1 km"). */
+const SETS_REPS = /(\d{1,2})\s*[x×]\s*(\d{1,3})(?:\s*[-–]\s*(\d{1,3}))?(?![\d'’"″–-]|\s*(?:s|sec|secs|seconds?|min|mins|minutes?|h|hr|hrs|hours?|m|km|mi|k)\b)/i;
 /** A part's number at its start: "1)", "2.", "3 -". */
 const NUMBER = /^\s*(?:\d{1,2}[).]|[-•*])\s*/;
 /** A numbered part inside one line: " 2) ". */

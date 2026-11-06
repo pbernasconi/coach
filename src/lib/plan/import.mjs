@@ -10,7 +10,7 @@
 import { createId } from '@paralleldrive/cuid2';
 import { LIFT_MARKER, pickTemplate } from './lift-plan.mjs';
 import { sportOf } from './week.mjs';
-import { bankWorkout } from '../workouts/bank.mjs';
+import { bankWorkout, impliedSteps } from '../workouts/bank.mjs';
 import { totals, validate } from '../workouts/steps.mjs';
 import { stackDays } from './day-blocks.mjs';
 import { toDay } from '../db-time.mjs';
@@ -22,7 +22,8 @@ function minutesBetween(start, end) {
 
 /**
  * The steps of a plan event: its own `steps` (a structured workout), or `workout: { bank, level }` built from the
- * coach's bank for the event's sport (from workoutType: ride-… or run-…) and planned time. Null for neither.
+ * coach's bank for the event's sport (from workoutType: ride-… or run-…) and planned time. A run or ride with
+ * neither takes the workout its type or title implies (impliedSteps); null for other sports.
  */
 export function stepsOf(e, duration) {
   if (e.steps) {
@@ -30,7 +31,12 @@ export function stepsOf(e, duration) {
     if (errors.length) throw new Error(`${e.title}: ${errors.join('; ')}`);
     return e.steps;
   }
-  if (!e.workout?.bank) return null;
+  // A run or ride the planner left without `workout` still gets steps (an aerobic day, or the bank workout its
+  // type names), so Zwift and Garmin always have a structured workout and the TSS comes from steps, not a guess.
+  if (!e.workout?.bank) {
+    const sport = sportOf(e);
+    return impliedSteps({ sport, workoutType: e.workoutType, title: e.title, description: e.description, intensity: e.intensity, duration });
+  }
   const sport = e.workout.sport ?? (/^run-/.test(e.workoutType ?? '') ? 'run' : 'ride');
   return bankWorkout(e.workout.bank, sport, e.workout.level ?? 0, e.workout.minutes ?? duration ?? 60, { reps: e.workout.reps, topMin: e.workout.topMin, zone: e.workout.zone });
 }

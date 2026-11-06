@@ -2,6 +2,7 @@
 // (create.test.mjs).
 
 import { totals, validate } from '../workouts/steps.mjs';
+import { impliedSteps } from '../workouts/bank.mjs';
 
 export const SPORT_IDS = ['run', 'ride', 'swim', 'strength', 'walk', 'hike', 'yoga', 'rest', 'other'];
 
@@ -81,4 +82,19 @@ export function cleanNewWorkout(input) {
       workoutType: workoutTypeFor(sport, /** @type {{ bank?: string } | null} */ (steps)),
     },
   };
+}
+
+/**
+ * A clean workout (cleanNewWorkout's value) with steps: a run or ride without them gets the bank workout its type or
+ * title implies (impliedSteps), with the TSS from the steps and the bank's workout type. Others stay as they are.
+ * @template {{ sport: string, title: string, duration: number | null, tss: number | null, intensity: string | null,
+ *   description: string | null, steps: any, workoutType: string | null }} T
+ * @param {T} w
+ * @returns {T}
+ */
+export function withImpliedSteps(w) {
+  if (w.steps) return w;
+  const steps = impliedSteps(w);
+  if (!steps) return w;
+  return { ...w, steps, tss: Math.round(totals(steps).tss), duration: w.duration ?? totals(steps).minutes, workoutType: w.workoutType ?? workoutTypeFor(w.sport, steps) };
 }
