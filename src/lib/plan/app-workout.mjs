@@ -158,7 +158,8 @@ export function appWorkout(w, sports) {
   // has not planned it) or the ones in the coach's text, so the phone can start a session with them.
   const planned = steps || w.state === 'done' ? [] : blockExercises(w.description);
   const template = steps || w.liftSessionId ? [] : (w.templateExercises ?? []);
-  const fromText = steps || w.liftSessionId || planned.length || template.length ? [] : strengthExercises(text);
+  // Only a strength workout's text holds exercises: a ride's "6 × 6–8 s sprints" is not 6 sets of 6–8.
+  const fromText = steps || w.liftSessionId || planned.length || template.length || sport !== 'strength' ? [] : strengthExercises(text);
   const exercises = planned.length ? planned : template.length ? template : fromText;
   const hero = [
     { label: 'Planned time', valueText: w.duration ? dur(w.duration) : '–', unit: null },

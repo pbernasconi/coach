@@ -25,6 +25,7 @@ export const RULES = {
   R7: 'Days off stay empty, and nothing on top of a meeting',
   R8: 'Within the hours he has',
   R9: 'Physio for the Achilles and knee: 2 a week (1 on a floor week)',
+  R10: 'Every run and ride is a structured workout',
   R17: 'A check-in leaves past days as they were',
 };
 
@@ -346,12 +347,37 @@ export function checkProposal(plan, opts) {
     completed: Array.isArray(plan?.completed) ? plan.completed : [],
     floor: /floor week/i.test(words),
   });
+  issues.push(...structuredIssues(plan));
   return {
     version: 1,
     issues,
     fails: issues.filter((i) => i.level === 'fail').length,
     warns: issues.filter((i) => i.level === 'warn').length,
   };
+}
+
+/**
+ * R10: every run and ride names its bank workout (`workout: { bank, level }`) or carries its own `steps`, so Coach
+ * builds the steps Zwift and Garmin get and the TSS comes from them. The import still gives one without a workout an
+ * aerobic day (impliedSteps), but the planner should pick it: an easy ride with sprints is `{ "bank": "easy", "reps": 6 }`.
+ * @param {any} plan
+ * @returns {Issue[]}
+ */
+export function structuredIssues(plan) {
+  const events = Array.isArray(plan?.events) ? plan.events : [];
+  /** @type {Issue[]} */
+  const issues = [];
+  for (const e of events) {
+    const sport = sportOfSession(e);
+    if (sport !== 'run' && sport !== 'ride') continue;
+    if (e?.steps || (e?.workout && typeof e.workout.bank === 'string' && e.workout.bank)) continue;
+    const day = String(e?.start ?? '').slice(0, 10);
+    issues.push({
+      id: 'R10', level: 'fail', day,
+      message: `${label(day)}: ${e?.title ?? 'a ' + sport} has no \`workout\`. Every ${sport} names its bank workout (${sport === 'ride' ? 'an easy ride with sprints is { "bank": "easy", "level": 0, "reps": 6 }' : 'an easy run with strides is { "bank": "easy", "level": 0, "reps": 6 }'}), so it gets structured steps.`,
+    });
+  }
+  return issues;
 }
 
 /** The check-in's day: the day the profile was made, in its home zone. @param {any} context */

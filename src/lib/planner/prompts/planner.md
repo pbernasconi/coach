@@ -98,7 +98,9 @@ When `submit_plan` says the plan is saved, stop. Never write the plan as text.
   profile's "Workout rotation" gives the last level and whether it was done (done → next level; not done → same or
   one lower). `easy` takes `reps` (strides or sprints, 0 for none) and `zone` ("Z1" for a recovery spin); `long`
   takes `topMin` (minutes at the top of Z2). The planned time comes from start/end. The description is the coach's
-  note only: the steps carry the numbers.
+  note only: the steps carry the numbers. No exceptions: an easy spin or aerobic day is a bank workout too (an easy
+  Zwift ride with 6 sprints is `{ "bank": "easy", "level": 0, "reps": 6 }`), and a run or ride without `workout` is
+  sent back (check R10).
 - **Strength.** A gym lift names its Lift template in `liftTemplate`; Lift plans the sets and loads, so the
   description holds only the coach's note (effort, what to cut when short on time). Write it to Paolo about the
   session, never about how Coach or Lift work: no "Lift sets the targets", templates, syncing or dates of past logs.

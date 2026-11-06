@@ -45,3 +45,12 @@ test('the notes keep the text around the exercises, without the exercise lines',
   assert.equal(strengthNotes('1) Push-up 3x10'), null);
   assert.equal(strengthNotes(null), null);
 });
+
+test('times and distances are not sets × reps', () => {
+  assert.deepEqual(strengthExercises('Z2 spin, then 6 × 6–8 s sprints. Lift follows straight after.'), []);
+  assert.deepEqual(strengthExercises('Ride 4 × 3 min hard'), []);
+  assert.deepEqual(strengthExercises("Run 5 × 1 km at 10k pace"), []);
+  assert.deepEqual(strengthExercises("Bike 8 × 30'' hard"), []);
+  assert.equal(strengthExercises('Curl 3 × 10-12, slow')[0].repsMax, 12);
+  assert.equal(strengthExercises('Copenhagen plank 3x8: each side')[0].sets, 3);
+});

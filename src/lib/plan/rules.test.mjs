@@ -4,7 +4,11 @@ import { checkProposal, checkRules, meetingsOf, sessionsFromPlan, sessionsFromRo
 
 // Week of Mon 2026-11-02 (block week 3, a full week).
 const W = '2026-11-02';
-const ev = (day, from, to, title, over = {}) => ({ title, start: `${day}T${from}:00`, end: `${day}T${to}:00`, ...over });
+// Runs and rides name a bank workout (R10), as the planner writes them.
+const ev = (day, from, to, title, over = {}) => ({
+  title, start: `${day}T${from}:00`, end: `${day}T${to}:00`,
+  ...(/^(run|ride)-/.test(over.workoutType ?? '') ? { workout: { bank: 'easy', level: 0 } } : {}), ...over,
+});
 const heavy = (day, from = '07:30', to = '08:30') => ev(day, from, to, '🏋️ Heavy barbell', { workoutType: 'strength-heavy', liftTemplate: 'Heavy barbell' });
 const upper = (day, from = '08:00', to = '08:45') => ev(day, from, to, '🏋️ Upper (dumbbells)', { workoutType: 'strength-dumbbell', liftTemplate: 'Upper (dumbbells)' });
 const easyRun = (day, from = '07:00', to = '07:20') => ev(day, from, to, '🏃 Easy run to the gym', { workoutType: 'run-easy' });
@@ -183,4 +187,19 @@ test('a week in Coach (training_plan_activities rows) gets the same checks', () 
 test('sessions keep the plan as written, before the import stacks the day', () => {
   const s = sessionsFromPlan({ events: [heavy('2026-11-03', '17:30', '18:30'), { title: 'Rest day', start: '2026-11-06' }] });
   assert.deepEqual(s.map((x) => [x.start, x.end, x.minutes]), [[1050, 1110, 60]]);
+});
+
+test('R10: a run or ride without a bank workout or steps fails; with either it passes', () => {
+  const ride = ev('2026-11-06', '11:45', '12:30', '🚴 Easy Zwift ride + sprints', { workoutType: 'ride-z2', workout: undefined, description: 'Z2 spin, then 6 × 6–8 s sprints.' });
+  const plan = { ...good(), rest: [], events: [...good().events, ride] };
+  const r10 = checkProposal(plan, { weekStart: W }).issues.filter((i) => i.id === 'R10');
+  assert.equal(r10.length, 1);
+  assert.equal(r10[0].level, 'fail');
+  assert.equal(r10[0].day, '2026-11-06');
+  assert.match(r10[0].message, /"bank": "easy"/);
+  const fixed = { ...plan, events: [...good().events, { ...ride, workout: { bank: 'easy', level: 0, reps: 6 } }] };
+  assert.deepEqual(checkProposal(fixed, { weekStart: W }).issues.filter((i) => i.id === 'R10'), []);
+  // Strength, physio and walks need no workout.
+  const lift = { ...good(), events: [heavy('2026-11-03'), ev('2026-11-04', '12:00', '12:30', '🚶 Walk', { workoutType: 'walk' })] };
+  assert.deepEqual(checkProposal(lift, { weekStart: W }).issues.filter((i) => i.id === 'R10'), []);
 });
