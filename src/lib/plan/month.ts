@@ -84,6 +84,7 @@ function toWorkout(r: Row): Omit<Workout, 'state' | 'match'> {
     date: dayOf(r.scheduled_date),
     startTime: (r.start_time as string) ?? null,
     endTime: endTimeOf(r as never),
+    timeZone: (r.time_zone as string) ?? null,
     title: String(r.title),
     sport: String(r.activity_type ?? 'other'),
     workoutType: (r.workout_type as string) ?? null,
@@ -111,7 +112,7 @@ export async function loadRange(userId: string, fromMonday: string, toMonday: st
   const end = addDays(to, 1);
   const [planRows, actRows, loadRows, lift] = await Promise.all([
     sql`
-      SELECT a.id, a.scheduled_date, a.start_time, a.end_time, a.title, a.activity_type, a.workout_type, a.intensity,
+      SELECT a.id, a.scheduled_date, a.start_time, a.end_time, a.time_zone, a.title, a.activity_type, a.workout_type, a.intensity,
              a.duration, a.distance, a.tss, a.why, a.description, a.status, a.skip_reason, a.adapted_from, a.sort_order, a.source_key,
              -- A link to a Lift session that was deleted (discarded on the phone, or removed with a skipped workout)
              -- reads as none: the workout opens as not started instead of a session that is gone (the App API's

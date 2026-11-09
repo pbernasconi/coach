@@ -3,7 +3,8 @@
 // (src/lib/planner/run.ts) builds it for each run. No file writes, no child processes.
 
 import { goalLine, loadGoals, measureGoals } from '../goals/goals.mjs';
-import { resolveTravel, dateKeysBetween, HOME_TZ } from '../../../scripts/travel.mjs';
+import { resolveTravel, dateKeysBetween, geocode, HOME_TZ } from '../../../scripts/travel.mjs';
+import { weekPlaces, zoneOf } from '../plan/where.mjs';
 import { label, loadRotation } from '../../../scripts/rotation.mjs';
 import { untrusted } from '../../../scripts/untrusted.mjs';
 import { noteLines, noteText, setExtras } from '../../../scripts/lift-notes.mjs';
@@ -188,6 +189,24 @@ export async function buildProfile(sql, { userId: USER_ID = OWNER_ID, weekOf: we
   } catch (e) {
     console.error('travel detection failed (assuming home):', e.message);
   }
+  // Where he is each day and its zone (where.mjs): flights from 3 weeks back (a trip begun earlier) and all-day
+  // holds like "NYC". The calendar below, the sessions' times and the R11 check all use it.
+  const weekKey = weekStart.toISOString().slice(0, 10);
+  let where = { days: [], zones: [], flights: [] };
+  try {
+    const travelRows = await sql`
+      SELECT ce.summary, ce.start_time, ce.end_time, ce.is_all_day, ce.location
+      FROM calendar_events ce JOIN calendar_connections cc ON cc.id = ce.connection_id
+      WHERE cc.user_id = ${USER_ID} AND ce.status <> 'cancelled'
+        AND ce.start_time >= ${new Date(weekStart.getTime() - 21 * 86400_000).toISOString()}
+        AND ce.start_time < ${horizonEnd.toISOString()}
+        AND (ce.is_all_day OR ce.summary ILIKE 'flight to %')
+      ORDER BY ce.start_time LIMIT 300`;
+    where = await weekPlaces(travelRows, weekKey, { geocode, days: 7 * WEEKS });
+  } catch (e) {
+    console.error('where-am-I failed (assuming home):', e.message);
+  }
+  const tzOn = (key) => zoneOf(where.days, key, HOME.tz);
 
   // ===== 7. Weather — one fetch per distinct place, following the itinerary =====
   const WX_CODES = { 0:'clear',1:'mostly clear',2:'partly cloudy',3:'overcast',45:'fog',48:'fog',51:'drizzle',53:'drizzle',55:'drizzle',61:'rain',63:'rain',65:'rain',71:'snow',73:'snow',75:'snow',80:'showers',81:'showers',82:'showers',95:'thunderstorm' };
@@ -411,21 +430,20 @@ export async function buildProfile(sql, { userId: USER_ID = OWNER_ID, weekOf: we
   md.push('');
 
   // Travel first — it reframes everything below it.
-  if (travel.away || travel.flights.length) {
-    md.push(`## ⚠️ Travel Detected in Horizon`);
+  if (where.days.some((d) => !d.home) || travel.flights.length) {
+    md.push(`## ⚠️ Travel: where Paolo is each day`);
     for (const f of travel.flights) {
-      md.push(`- ✈️ **${new Date(f.depart).toISOString().slice(0, 10)}** ${untrusted(f.summary)} — arrives ${new Date(f.arrive).toISOString().slice(0, 16).replace('T', ' ')}Z`);
+      md.push(`- ✈️ ${untrusted(f.summary)}: departs ${new Date(f.depart).toISOString().slice(0, 16).replace('T', ' ')}Z, lands ${new Date(f.arrive).toISOString().slice(0, 16).replace('T', ' ')}Z`);
     }
     for (const t of travel.trips) md.push(`- 🧳 ${untrusted(t.summary)} (${t.from.slice(0, 10)} → ${t.to.slice(0, 10)})`);
     md.push('');
-    md.push('| Date | Where | Timezone | Travel day? |');
+    md.push('| Date | Where | Timezone | Flight that day? |');
     md.push('|---|---|---|---|');
-    for (const key of dateKeysBetween(weekStart, horizonEnd)) {
-      const p = travel.placeByDate[key];
-      md.push(`| ${key} | ${p ? p.label : '_in transit_'} | ${p?.tz ?? '–'} | ${travel.travelDays.includes(key) ? '✈️ yes' : ''} |`);
+    for (const d of where.days) {
+      md.push(`| ${d.date} ${DOW_NAMES[new Date(`${d.date}T00:00:00Z`).getUTCDay()]} | ${untrusted(d.label)} | ${d.tz} | ${d.travel ? '✈️ yes' : ''} |`);
     }
     md.push('');
-    md.push(`**Planning implications**: stamp workout events with the local timezone above, not ${HOME.tz}. Travel days → rest or easy only. Days away from ${HOME.label} → no bike/barbell unless a gym is known; prefer running + hotel dumbbell work.`);
+    md.push(`**Local time, always.** Every time in the calendar below is already on the clock of where he is that day. Write each session's \`start\`/\`end\` on that local clock and stamp \`timeZone\` with the day's zone above (leave it out on ${HOME.tz} days). Plan at normal local hours for where he is (not ${HOME.label} hours): mornings 06:00–08:30 before the day's first meeting, or the evening gap; never during a flight, and not in the first ~3 h after landing. A flight day is rest or one short easy session at the departure city before leaving for the airport. The first day after flying east (jet lag): easy only. Days away from ${HOME.label}: no bike or barbell unless a gym is known; running, hotel dumbbell work and walks.`);
     md.push('');
   }
 
@@ -454,7 +472,7 @@ export async function buildProfile(sql, { userId: USER_ID = OWNER_ID, weekOf: we
         // The day comes from the local wall clock, not UTC: 18:00 in San Francisco is already the next day in UTC.
         const homeKey = localDateKey(s, HOME.tz);
         // Render each event in the timezone of wherever he actually is that day.
-        const tz = travel.placeByDate[homeKey]?.tz ?? HOME.tz;
+        const tz = tzOn(homeKey);
         // All-day events are stored at midnight UTC of their date.
         const key = e.is_all_day ? s.toISOString().slice(0, 10) : localDateKey(s, tz);
         const day = DOW_NAMES[new Date(`${key}T00:00:00Z`).getUTCDay()];
@@ -602,10 +620,12 @@ export async function buildProfile(sql, { userId: USER_ID = OWNER_ID, weekOf: we
         .filter((e) => new Date(e.start_time) >= w.start && new Date(e.start_time) < w.end)
         .map((e) => ({
           summary: e.summary, start: e.start_time, end: e.end_time, allDay: e.is_all_day, location: e.location, coach: e.coach, declined: e.declined,
-          tz: travel.placeByDate[localDateKey(new Date(e.start_time), HOME.tz)]?.tz ?? HOME.tz,
+          tz: tzOn(localDateKey(new Date(e.start_time), HOME.tz)),
         })),
     })),
     home: HOME,
+    // Where he is each day and its zone (R11 and the sessions' timeZone).
+    where: where.days,
     travel: {
       away: travel.away,
       flights: travel.flights,

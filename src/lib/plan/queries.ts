@@ -19,6 +19,8 @@ export type Workout = {
   date: string;
   startTime: string | null;
   endTime: string | null;
+  /** The zone of start and end when it isn't home (a session planned on a trip). */
+  timeZone?: string | null;
   title: string;
   sport: string;
   workoutType: string | null;

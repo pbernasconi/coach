@@ -22,6 +22,7 @@ import { MODEL, planWithClaude, type CheckResult } from './loop.mjs';
 import { buildProfile } from './profile.mjs';
 import { PROMPT_VERSION, systemPrompt, userMessage } from './prompt.mjs';
 import { expandRoutines, summaryOf } from './routines.mjs';
+import { stampZones } from '../plan/where.mjs';
 
 /** The last Claude request starts before this; the function stops at 300 s (maxDuration). */
 const BUDGET_MS = 170_000;
@@ -70,12 +71,20 @@ export async function loadPlannerStatus(userId: string): Promise<PlannerStatus> 
  * check-in's day (R17: past days stay as they were).
  */
 export function checkDraft(raw: unknown, opts: { weekStart: string; request: PlanRequest; context: unknown; today: string | null }): CheckResult {
-  const { plan, problems } = expandRoutines(raw);
+  const expanded = expandRoutines(raw);
+  const problems = expanded.problems;
+  const plan = stampZones(expanded.plan, whereOf(opts.context));
   const format = [...problems, ...checkPlan(plan, opts.weekStart).errors];
   if (format.length) return { ok: false, problems: format, saveable: false };
   const { issues } = checkProposal(plan, opts);
   const fails = issues.filter((i: { level: string }) => i.level === 'fail').map((i: { id: string; message: string }) => `${i.id}: ${i.message}`);
   return fails.length ? { ok: false, problems: fails, saveable: true } : { ok: true };
+}
+
+/** The profile's days with their zones (profile.mjs `where`). */
+function whereOf(context: unknown): { date: string; tz: string }[] {
+  const w = (context as { where?: unknown } | null)?.where;
+  return Array.isArray(w) ? (w as { date: string; tz: string }[]) : [];
 }
 
 const STOPS: Record<string, string> = {
@@ -116,7 +125,7 @@ export async function runPlanner(userId: string, proposalId: string): Promise<{ 
     const onDraft = (partial: unknown) => {
       if (busy) return;
       busy = true;
-      writing = saveDraftSoFar(userId, proposalId, expandRoutines(partial).plan)
+      writing = saveDraftSoFar(userId, proposalId, stampZones(expandRoutines(partial).plan, whereOf(context)))
         .catch((e) => console.error('Planner draft so far:', e instanceof Error ? e.message : e))
         .finally(() => { busy = false; });
     };
@@ -133,7 +142,7 @@ export async function runPlanner(userId: string, proposalId: string): Promise<{ 
       onDraft,
     });
     await writing;
-    const plan = result.plan ? expandRoutines(result.plan).plan : null;
+    const plan = result.plan ? stampZones(expandRoutines(result.plan).plan, whereOf(context)) : null;
     const saved = plan ? await submitPlan(userId, proposalId, plan, result.summary ?? summaryOf(plan), context) : null;
     const ok = Boolean(saved && !('error' in saved));
     await sql`

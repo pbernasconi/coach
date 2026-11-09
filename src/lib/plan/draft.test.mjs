@@ -58,3 +58,13 @@ test('diff names removed, longer and moved sessions, and what was given up', () 
   assert.equal(gaveUp(d), '35 min of the week and Easy run');
   assert.equal(gaveUp(diffPlans(plan, plan)), null);
 });
+
+test('a move takes the zone of the day it lands on', () => {
+  const plan = { weekStart: '2026-11-09', events: [{ title: 'Run', start: '2026-11-11T06:30:00', end: '2026-11-11T07:25:00', timeZone: 'America/New_York' }] };
+  const zurich = editPlan(plan, { kind: 'move', index: 0, date: '2026-11-14', time: '09:30', timeZone: 'Europe/Zurich' });
+  assert.equal(zurich.plan.events[0].timeZone, 'Europe/Zurich');
+  const home = editPlan(plan, { kind: 'move', index: 0, date: '2026-11-09', time: '06:30', timeZone: 'America/Los_Angeles' });
+  assert.equal('timeZone' in home.plan.events[0], false);
+  const kept = editPlan(plan, { kind: 'move', index: 0, date: '2026-11-12', time: '07:00' });
+  assert.equal(kept.plan.events[0].timeZone, 'America/New_York');
+});

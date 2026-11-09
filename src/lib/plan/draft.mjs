@@ -5,6 +5,7 @@
 import { addDays } from './week.mjs';
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
+const HOME_TZ = 'America/Los_Angeles';
 const TIME = /^\d{2}:\d{2}$/;
 
 /** @param {string} s "YYYY-MM-DDTHH:MM[:SS]" → minutes since midnight */
@@ -25,12 +26,13 @@ export function lengthOf(e) {
 
 /**
  * One change to the plan JSON's events, or { error }. `op` is one of:
- * - { kind: 'move', index, date, time }  the session starts on `date` at `time` (HH:MM), same length
+ * - { kind: 'move', index, date, time, timeZone? }  the session starts on `date` at `time` (HH:MM) on the clock of
+ *   `timeZone` (that day's zone; none or home = no zone on the event), same length
  * - { kind: 'length', index, minutes }   the session lasts `minutes` (10 to 360), same start
  * - { kind: 'remove', index }            the session goes
  * The plan's other fields stay as they are.
  * @param {any} plan
- * @param {{ kind: string, index: number, date?: string, time?: string, minutes?: number }} op
+ * @param {{ kind: string, index: number, date?: string, time?: string, minutes?: number, timeZone?: string }} op
  * @returns {{ plan: any } | { error: string }}
  */
 export function editPlan(plan, op) {
@@ -53,6 +55,10 @@ export function editPlan(plan, op) {
     const len = lengthOf(e) ?? 60;
     if (start < 4 * 60 || start + len > 23 * 60 + 59) return { error: 'Pick a time between 4:00 and the end of the day.' };
     next[i] = { ...e, start: at(date, start), end: at(date, start + len) };
+    if (typeof op.timeZone === 'string') {
+      if (op.timeZone && op.timeZone !== HOME_TZ) next[i].timeZone = op.timeZone;
+      else delete next[i].timeZone;
+    }
     return { plan: { ...plan, events: next } };
   }
   if (op.kind === 'length') {

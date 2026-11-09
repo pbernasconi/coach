@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import type { DraftEvent } from '@/lib/plan/planner-week';
-import type { CalendarBlock } from '@/lib/plan/planning-context';
+import type { CalendarBlock, WeekWhere } from '@/lib/plan/planning-context';
+import { convert } from '@/lib/plan/where.mjs';
 import { clock, dayNum, days, hm, minutesOf, sportStyle, weekday } from './plannerUi';
 
 type DayType = 'free' | 'busy' | 'travel' | 'rest' | 'sick';
@@ -22,6 +23,8 @@ const H0 = 5;
 const H1 = 23;
 const MIN_HOUR = 44;
 const SNAP = 15;
+/** The hour labels' column, one per time zone of the week. */
+const ZONE_COL = 46;
 
 type Drag = { index: number; x0: number; y0: number; dx: number; dy: number; moved: boolean };
 
@@ -30,7 +33,7 @@ type Drag = { index: number; x0: number; y0: number; dx: number; dy: number; mov
  * session to another time or day (onMove), click it for its details (onSelect).
  */
 export default function WeekGrid({
-  weekStart, events, calendar, selected, changed, today, onSelect, onMove, windows, modes, notes, writing = false,
+  weekStart, events, calendar, selected, changed, today, onSelect, onMove, windows, modes, notes, writing = false, where,
 }: {
   weekStart: string;
   events: DraftEvent[];
@@ -49,6 +52,8 @@ export default function WeekGrid({
   notes?: Record<string, string>;
   /** Coach is still writing the draft: a day with no session yet is not a day off. */
   writing?: boolean;
+  /** Where Paolo is each day: each day is drawn on its own clock, with a column of hours per zone of the week. */
+  where?: WeekWhere;
 }) {
   const cols = useRef<HTMLDivElement>(null);
   const root = useRef<HTMLDivElement>(null);
@@ -69,6 +74,24 @@ export default function WeekGrid({
   }, []);
   const bottom = (H1 - H0) * HOUR;
   const week = days(weekStart);
+  // Time zones, as Notion Calendar shows them: one column of hours per zone he is in this week. Each day runs on its
+  // own clock; the columns convert the hours of the day under the pointer (today, or Monday, otherwise).
+  const zones = where && where.zones.length > 1 ? where.zones : [];
+  const zoneOfDay = (d: string) => where?.days.find((x) => x.date === d)?.tz ?? zones[0]?.tz ?? '';
+  const [hover, setHover] = useState<string | null>(null);
+  const focus = hover ?? (week.includes(today) ? today : week[0]);
+  const focusTz = zoneOfDay(focus);
+  const gutter = zones.length ? zones.length * ZONE_COL : 48;
+  const columns = { gridTemplateColumns: `${gutter}px repeat(7, minmax(0, 1fr))` };
+  const placeOf = (d: string) => where?.days.find((x) => x.date === d);
+  /** The hour labels of one zone column: the focused day's hours on that zone's clock. */
+  const hourLabel = (i: number, tz: string) => {
+    const h = `${String(H0 + i).padStart(2, '0')}:00`;
+    if (!tz || tz === focusTz) return `${H0 + i}:00`;
+    const at = convert(focus, h, focusTz, tz);
+    const shift = at.date === focus ? '' : at.date > focus ? '⁺¹' : '⁻¹';
+    return `${Number(at.time.slice(0, 2))}:${at.time.slice(3, 5)}${shift}`;
+  };
   const timed = events.filter((e) => e.start && e.minutes);
   const untimed = events.filter((e) => !e.start || !e.minutes);
   // Days off are marked only once there is a draft.
@@ -88,12 +111,23 @@ export default function WeekGrid({
   return (
     <div ref={root} className="flex min-w-[760px] flex-col">
       <div className="sticky top-0 z-20 border-b bg-background/95 backdrop-blur">
-      <div className="grid grid-cols-[48px_repeat(7,minmax(0,1fr))]">
-        <span />
+      <div className="grid" style={columns}>
+        {zones.length ? (
+          <div className="flex items-end pb-2">
+            {zones.map((z) => (
+              <span key={z.tz} title={z.tz.replace(/_/g, ' ')}
+                className={cn('truncate pr-2 text-right text-[11px] font-semibold', z.tz === focusTz ? 'text-foreground' : 'text-muted-foreground')}
+                style={{ width: ZONE_COL }}>
+                {z.short}
+              </span>
+            ))}
+          </div>
+        ) : <span />}
         {week.map((d) => {
           const total = events.filter((e) => e.date === d).reduce((n, e) => n + (e.minutes ?? 0), 0);
+          const place = zones.length ? placeOf(d) : undefined;
           return (
-            <div key={d} className="flex min-w-0 items-baseline justify-between gap-1 px-2 py-2">
+            <div key={d} className={cn('flex min-w-0 flex-wrap items-baseline justify-between gap-x-1 px-2 py-2', zones.length && d === focus && hover && 'bg-muted/50')}>
               <span className={cn('text-sm font-semibold whitespace-nowrap', d === today && 'text-brand-ink')}>
                 {weekday(d)} {dayNum(d)}
               </span>
@@ -103,13 +137,19 @@ export default function WeekGrid({
                   {DAY_LABEL[modes[d]]}
                 </span>
               )}
+              {place && (
+                <span title={`${place.label} · ${place.tz.replace(/_/g, ' ')}`}
+                  className={cn('basis-full truncate text-[11px] font-medium', place.home ? 'text-muted-foreground' : 'text-sky-700 dark:text-sky-300')}>
+                  {place.travel ? '✈ ' : ''}{place.short}
+                </span>
+              )}
             </div>
           );
         })}
       </div>
       {/* All-day events and Paolo's notes sit above the hours, as in Google Calendar. */}
       {(allDay.length > 0 || week.some((d) => notes?.[d])) && (
-        <div className="grid grid-cols-[48px_repeat(7,minmax(0,1fr))] border-t border-border/60 py-1">
+        <div className="grid border-t border-border/60 py-1" style={columns}>
           <span className="self-start pt-0.5 pr-2 text-right text-[11px] text-muted-foreground">All day</span>
           {week.map((d) => (
             <div key={d} className="flex min-w-0 flex-col gap-0.5 px-1">
@@ -125,7 +165,7 @@ export default function WeekGrid({
       )}
       </div>
       {untimed.length > 0 && (
-        <div className="grid grid-cols-[48px_repeat(7,minmax(0,1fr))] border-b py-1">
+        <div className="grid border-b py-1" style={columns}>
           <span className="self-center pr-2 text-right text-[11px] text-muted-foreground">Any time</span>
           {week.map((d) => (
             <div key={d} className="flex flex-col gap-1 px-1">
@@ -139,15 +179,27 @@ export default function WeekGrid({
           ))}
         </div>
       )}
-      <div className="grid grid-cols-[48px_minmax(0,1fr)]">
-        <div className="relative" style={{ height: (H1 - H0) * HOUR }}>
-          {Array.from({ length: H1 - H0 }, (_, i) => (
-            <span key={i} className="absolute right-2 -translate-y-1/2 text-[11px] tabular-nums text-muted-foreground" style={{ top: i * HOUR }}>
-              {i ? `${H0 + i}:00` : ''}
-            </span>
+      <div className="grid" style={{ gridTemplateColumns: `${gutter}px minmax(0, 1fr)` }}>
+        <div className="flex">
+          {(zones.length ? zones : [{ tz: '', short: '' }]).map((z) => (
+            <div key={z.tz || 'local'} className="relative" style={{ height: (H1 - H0) * HOUR, width: zones.length ? ZONE_COL : 48 }}>
+              {Array.from({ length: H1 - H0 }, (_, i) => (
+                <span key={i} className={cn('absolute right-2 -translate-y-1/2 text-[11px] tabular-nums whitespace-nowrap',
+                  zones.length && z.tz === focusTz ? 'font-medium text-foreground/80' : 'text-muted-foreground')} style={{ top: i * HOUR }}>
+                  {i ? hourLabel(i, z.tz) : ''}
+                </span>
+              ))}
+            </div>
           ))}
         </div>
-        <div ref={cols} className="relative grid grid-cols-7 border-l" style={{ height: (H1 - H0) * HOUR }}>
+        <div ref={cols} className="relative grid grid-cols-7 border-l" style={{ height: (H1 - H0) * HOUR }}
+          onPointerMove={zones.length ? (ev) => {
+            const box = cols.current?.getBoundingClientRect();
+            if (!box) return;
+            const i = Math.min(6, Math.max(0, Math.floor(((ev.clientX - box.left) / box.width) * 7)));
+            if (week[i] !== hover) setHover(week[i]);
+          } : undefined}
+          onPointerLeave={zones.length ? () => setHover(null) : undefined}>
           {Array.from({ length: H1 - H0 }, (_, i) => (
             <div key={i} className="pointer-events-none absolute inset-x-0 border-t border-border/60" style={{ top: i * HOUR }} />
           ))}
@@ -155,7 +207,8 @@ export default function WeekGrid({
             const mode = modes?.[d];
             const off = (drafted && !writing && !events.some((e) => e.date === d)) || mode === 'rest' || mode === 'sick';
             return (
-              <div key={d} className={cn('relative border-r border-border/60', mode && DAY_STYLE[mode].column)}
+              <div key={d} className={cn('relative border-r border-border/60', mode && DAY_STYLE[mode].column,
+                zones.length > 0 && week.indexOf(d) > 0 && zoneOfDay(d) !== zoneOfDay(week[week.indexOf(d) - 1]) && 'border-l-2 border-l-sky-500/40')}
                 style={off ? { backgroundImage: 'repeating-linear-gradient(135deg, transparent 0 7px, var(--color-border) 7px 8px)' } : undefined}>
                 {(mode === 'free' || mode === 'busy') && (windows?.[d] ?? []).map((w) => {
                   const top = ((minutesOf(w.start) - H0 * 60) / 60) * HOUR;
