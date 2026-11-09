@@ -13,9 +13,11 @@ import {
 } from '@/lib/plan/proposals';
 import { plannerReady, runPlanner } from '@/lib/planner/run';
 import { mondayOf, todayIn } from '@/lib/plan/week.mjs';
+import { loadWeekView } from '@/lib/plan/planning-context';
+import { zoneOf } from '@/lib/plan/where.mjs';
 
 export type OpResult = { ok: true } | { error: string };
-export type EditOp = { kind: 'move' | 'length' | 'remove'; index: number; date?: string; time?: string; minutes?: number };
+export type EditOp = { kind: 'move' | 'length' | 'remove'; index: number; date?: string; time?: string; minutes?: number; timeZone?: string };
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 /** Words for the version list when Paolo redraws with new answers. */
@@ -80,7 +82,12 @@ export async function undoDraft(userId: string, id: string): Promise<OpResult> {
 
 /** Move, shorten or remove one session of the draft. */
 export async function editDraftSession(userId: string, id: string, op: EditOp): Promise<OpResult> {
-  const r = await editDraft(userId, String(id), op);
+  // A moved session takes the zone of the day it lands on: the time Paolo dropped it at is that day's local time.
+  const date = String(op?.date ?? '');
+  const zone = op?.kind === 'move' && DAY.test(date)
+    ? zoneOf((await loadWeekView(userId, mondayOf(date)).catch(() => null))?.where.days ?? [], date, HOME_TZ)
+    : undefined;
+  const r = await editDraft(userId, String(id), { ...op, timeZone: zone });
   return 'error' in r ? r : { ok: true };
 }
 

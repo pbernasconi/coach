@@ -92,6 +92,9 @@ export function plannerApp(w) {
   const week = Array.from({ length: 7 }, (_, i) => addDays(w.weekStart, i));
   const lw = w.lastWeek;
   const blocks = w.calendar.filter((c) => c.allDay || c.minutes >= 60);
+  // A week with a trip: each day says where he is (its times are on that place's clock).
+  const zones = w.where?.zones ?? [];
+  const placeOf = (/** @type {string} */ d) => (zones.length > 1 ? w.where.days.find((x) => x.date === d) ?? null : null);
 
   return {
     weekStart: w.weekStart,
@@ -118,7 +121,9 @@ export function plannerApp(w) {
       const free = freeWindows(w.calendar, d, { min: 90 });
       return {
         date: d,
-        labelText: `${weekday(d)} ${Number(d.slice(8))}`,
+        labelText: `${weekday(d)} ${Number(d.slice(8))}${placeOf(d) ? ` · ${placeOf(d).travel ? '✈ ' : ''}${placeOf(d).short}` : ''}`,
+        placeText: placeOf(d)?.short ?? null,
+        timeZone: placeOf(d)?.tz ?? null,
         past: d < w.today,
         // Step 2's line under the day: its free windows on the calendar.
         freeText: d < w.today ? 'Done, kept as it was' : free.length ? `Free ${free.map((f) => `${clock(f.start)}–${clock(f.end)}`).join(', ')}` : 'Busy all day',
@@ -181,7 +186,7 @@ export function plannerApp(w) {
       hours: w.context?.suggested.hours ?? null,
       hoursText: 'Your normal week is 8–10 h.',
       // Travel days on the calendar, marked away until Paolo changes them (only used before a draft).
-      away: suggestAway(w.calendar, w.weekStart, w.today),
+      away: suggestAway(w.calendar, w.weekStart, w.today, w.where),
     },
     // The answers the open draft was made with, so the Shape controls start where they were.
     answers: p && state !== 'none'

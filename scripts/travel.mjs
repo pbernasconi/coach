@@ -90,7 +90,8 @@ function detectTripEvents(events) {
 
 const geoCache = new Map();
 
-async function geocode(name) {
+/** The first Open-Meteo hit for a place name: { name, label, lat, lon, tz, population }, or null. */
+export async function geocode(name) {
   const key = name.trim().toLowerCase();
   if (geoCache.has(key)) return geoCache.get(key);
   let out = null;
@@ -100,11 +101,14 @@ async function geocode(name) {
     u.searchParams.set('count', '1');
     u.searchParams.set('language', 'en');
     u.searchParams.set('format', 'json');
-    const r = await fetch(u);
-    if (r.ok) {
+    const r = await fetch(u, { signal: AbortSignal.timeout(3000) });
+    if (!r.ok) return null; // not cached: try again next time
+    {
       const hit = (await r.json()).results?.[0];
       if (hit) {
         out = {
+          name: hit.name,
+          population: hit.population ?? null,
           label: [hit.name, hit.country_code].filter(Boolean).join(', '),
           lat: hit.latitude,
           lon: hit.longitude,
@@ -114,6 +118,7 @@ async function geocode(name) {
     }
   } catch (e) {
     console.error(`geocode("${name}") failed:`, e.message);
+    return null;
   }
   geoCache.set(key, out);
   return out;

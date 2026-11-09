@@ -37,13 +37,17 @@ export default function StepYourWeek({ data, answers, setAnswers }: { data: Plan
         <StepTitle title="What your week looks like" sub="From Google Calendar. Say what each day is, add a note if it helps, and Coach plans around it." />
         <div className="min-h-0 flex-1 overflow-auto rounded-2xl border bg-card">
           <WeekGrid weekStart={data.weekStart} events={[]} calendar={data.calendar} selected={null} changed={new Set()} today={data.today}
-            onSelect={() => {}} onMove={() => {}} windows={windows} modes={byDate} notes={answers.notes} />
+            onSelect={() => {}} onMove={() => {}} windows={windows} modes={byDate} notes={answers.notes} where={data.where} />
         </div>
       </div>
       <div className="flex w-[400px] shrink-0 flex-col gap-3 overflow-auto">
         <Card className="flex flex-col">
           <span className="mb-1 text-[17px] font-semibold">Each day</span>
           {modes.map((m) => {
+            const place = (d: string) => {
+              const p = data.where.zones.length > 1 ? data.where.days.find((x) => x.date === d) : null;
+              return p ? `${p.travel ? '✈ ' : ''}${p.short}` : null;
+            };
             const gone = m.date < data.today;
             const longest = (windows[m.date] ?? []).reduce((n, w) => Math.max(n, w.minutes), 0);
             const trip = data.calendar.find((c) => c.date === m.date && (c.allDay || /flight|trip|travel|hotel/i.test(c.title)))?.title;
@@ -53,7 +57,10 @@ export default function StepYourWeek({ data, answers, setAnswers }: { data: Plan
             return (
               <div key={m.date} className="flex flex-col gap-2 border-b py-3 last:border-b-0">
                 <div className="flex items-baseline justify-between gap-3">
-                  <span className="text-sm font-semibold whitespace-nowrap">{weekday(m.date)} {dayNum(m.date)}</span>
+                  <span className="text-sm font-semibold whitespace-nowrap">
+                    {weekday(m.date)} {dayNum(m.date)}
+                    {place(m.date) && <span className="ml-1.5 text-xs font-medium text-sky-700 dark:text-sky-300">{place(m.date)}</span>}
+                  </span>
                   <span className="truncate text-xs text-muted-foreground" title={line}>{line}</span>
                 </div>
                 {!gone && (

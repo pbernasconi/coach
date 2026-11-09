@@ -8,6 +8,7 @@
 
 import { addDays, isHard, sportOf } from './week.mjs';
 import { blockWeek } from './consistency.mjs';
+import { instantOf } from './where.mjs';
 
 /** A gap this short between two sessions still makes one block (the same 15 min as day-blocks.mjs). */
 export const GAP_MIN = 15;
@@ -26,13 +27,14 @@ export const RULES = {
   R8: 'Within the hours he has',
   R9: 'Physio for the Achilles and knee: 2 a week (1 on a floor week)',
   R10: 'Every run and ride is a structured workout',
+  R11: 'On the clock of where he is: local times, not on a flight or just off one',
   R17: 'A check-in leaves past days as they were',
 };
 
 /**
  * One planned session, from a plan JSON event or a training_plan_activities row.
  * @typedef {{ day: string, start: number | null, end: number | null, title: string, sport: string,
- *   workoutType: string | null, liftTemplate: string | null, intensity: string | null, minutes: number }} Session
+ *   workoutType: string | null, liftTemplate: string | null, intensity: string | null, minutes: number, tz?: string | null }} Session
  */
 
 /**
@@ -83,6 +85,7 @@ export function sessionsFromPlan(plan) {
         liftTemplate: e?.liftTemplate ?? null,
         intensity: e?.intensity ?? null,
         minutes: start != null && end != null ? end - start : 0,
+        tz: typeof e?.timeZone === 'string' && e.timeZone ? e.timeZone : null,
       };
     })
     .filter((/** @type {Session} */ s) => s.sport !== 'rest');
@@ -304,6 +307,34 @@ export function checkRules(sessions, { weekStart, request = null, context = null
       if (s.start == null || s.end == null || !BLOCK_SPORTS.has(s.sport)) continue;
       const clash = meetings.find((m) => m.day === s.day && m.start < Number(s.end) && Number(s.start) < m.end);
       if (clash) add('R7', 'warn', s.day, `${label(s.day)}: ${s.title} (${hhmm(Number(s.start))}) overlaps a calendar event at ${hhmm(clash.start)}.`);
+    }
+  }
+
+  // R11: each day on the clock of where he is (profile `where`), at normal local hours, never on a flight and not
+  // in the 3 hours after landing.
+  const where = Array.isArray(context?.where) ? context.where : [];
+  if (where.length) {
+    const homeTz = context?.home?.tz ?? 'America/Los_Angeles';
+    const flights = ((context?.calendarByWeek ?? []).flatMap((/** @type {any} */ w) => w?.events ?? []))
+      .filter((/** @type {any} */ e) => e && !e.allDay && /^\s*flight\s+to\b/i.test(String(e.summary ?? '')))
+      .map((/** @type {any} */ e) => ({ from: Date.parse(e.start), to: Date.parse(e.end), title: String(e.summary) }))
+      .filter((/** @type {{ from: number, to: number }} */ f) => Number.isFinite(f.from) && Number.isFinite(f.to));
+    for (const s of sessions) {
+      const place = where.find((/** @type {any} */ d) => d?.date === s.day);
+      if (!place || s.start == null) continue;
+      const tz = s.tz ?? homeTz;
+      const at = `${label(s.day)}: ${s.title}`;
+      if (tz !== place.tz) {
+        add('R11', 'fail', s.day, `${at} is on the ${tz} clock, but he is in ${place.short ?? place.label} that day: write its time on the ${place.tz} clock with timeZone ${place.tz}.`);
+        continue;
+      }
+      const end = s.end ?? Number(s.start) + s.minutes;
+      if (Number(s.start) < 5 * 60 + 30 || end > 22 * 60) add('R11', 'warn', s.day, `${at} at ${hhmm(Number(s.start))} in ${place.short ?? place.label} is outside normal hours there (05:30–22:00).`);
+      const a = instantOf(s.day, hhmm(Number(s.start)), tz);
+      const b = a + Math.max(end - Number(s.start), 1) * 60_000;
+      const on = flights.find((/** @type {{ from: number, to: number }} */ f) => a < f.to && f.from < b);
+      if (on) add('R11', 'fail', s.day, `${at} (${hhmm(Number(s.start))}) is during ${on.title}.`);
+      else if (flights.some((/** @type {{ to: number }} */ f) => a >= f.to && a < f.to + 3 * 3_600_000)) add('R11', 'warn', s.day, `${at} (${hhmm(Number(s.start))}) is less than 3 h after landing.`);
     }
   }
 

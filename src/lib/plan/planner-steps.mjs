@@ -37,7 +37,7 @@ export function freeWindows(calendar, date, { from = 6 * 60, to = 21 * 60, min =
 }
 
 const TRAVEL = /flight|fly(ing)? to|airport|✈|trip|travel|hotel|conference/i;
-const NOT_AWAY = /holiday|birthday|anniversary|day off|ooo|\bday$/i;
+const NOT_AWAY = /holiday|birthday|bday|anniversary|day off|ooo|\bday$/i;
 
 /**
  * Days Coach suggests as away, from the calendar: an all-day event (a city, a trip, a hold) or a flight, a trip or
@@ -45,10 +45,16 @@ const NOT_AWAY = /holiday|birthday|anniversary|day off|ooo|\bday$/i;
  * @param {{ date: string, allDay: boolean, title: string }[]} calendar
  * @param {string} monday
  * @param {string} today
+ * @param {{ days: { date: string, travel: boolean }[], zones: unknown[] }} [where] where he is each day (where.mjs):
+ *   when it knows the week has a trip, only the days with a flight are travelling. A day in New York or Zurich is a
+ *   day there, planned on its own clock, not a day without a gym.
  * @returns {string[]}
  */
-export function suggestAway(calendar, monday, today) {
+export function suggestAway(calendar, monday, today, where) {
   const week = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
+  if (where && (where.zones.length > 1 || where.days.some((d) => d.travel))) {
+    return week.filter((d) => d >= today && where.days.some((x) => x.date === d && x.travel));
+  }
   return week.filter(
     (d) => d >= today && calendar.some((c) => c.date === d && !NOT_AWAY.test(c.title) && (c.allDay || TRAVEL.test(c.title))),
   );

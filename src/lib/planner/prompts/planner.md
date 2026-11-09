@@ -89,8 +89,11 @@ When `submit_plan` says the plan is saved, stop. Never write the plan as text.
 ```
 
 - `weekStart` is the Monday from the request; `weekEnd` is the Sunday.
-- `start`/`end` are local wall-clock times. `timeZone` is the zone of that wall-clock, per event from the profile's
-  travel (`placeByDate`); leave it out when he is at home (America/Los_Angeles).
+- `start`/`end` are local wall-clock times on the clock of where he is that day, and `timeZone` is that day's zone
+  from the profile's "Travel: where Paolo is each day" table; leave it out when he is at home (America/Los_Angeles).
+  The calendar in the profile is already on each day's local clock, so plan around it as written. In New York or
+  Zurich a morning run is 06:30 there, not 06:30 in San Francisco. Never on a flight, not in the 3 hours after
+  landing, and easy only on the first day after flying east (check R11).
 - Sessions he already did this week go in `completed[]` with their actual values; plan only the days left.
 - **Structured workouts.** Every run and ride gets `workout`: the bank workout that Coach turns into steps (warm-up,
   repeats, targets in % of FTP or % of LTHR) for Zwift and Garmin. `level` is the step of its progression: the

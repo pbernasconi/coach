@@ -6,13 +6,16 @@
 import { HOME_TZ } from '@/lib/calendar-sync/push.mjs';
 import { diffPlans, gaveUp } from './draft.mjs';
 import { loadRange } from './month';
-import { loadPlanningContext, loadWeekCalendar, type CalendarBlock, type PlanningContext } from './planning-context';
+import { homeWeek, loadPlanningContext, loadWeekView, type CalendarBlock, type PlanningContext, type WeekWhere } from './planning-context';
+import { convert, zoneOf } from './where.mjs';
 import { planOf, weekProposal, type Proposal } from './proposals';
 import { addDays, mondayOf, sportOf, todayIn } from './week.mjs';
 
 export type DraftEvent = {
   index: number; title: string; date: string; start: string | null; minutes: number | null; sport: string;
   hard: boolean; why: string | null; description: string | null; tss: number | null;
+  /** The zone the session was planned in; `date` and `start` are already on the clock of the day it lands on. */
+  timeZone: string;
 };
 export type LastWeekDay = {
   date: string;
@@ -34,6 +37,8 @@ export type PlannerWeek = {
   events: DraftEvent[];
   change: DraftChange | null;
   calendar: CalendarBlock[];
+  /** Where Paolo is each day and the week's zones: each day's times are on its own clock. */
+  where: WeekWhere;
   context: PlanningContext | null;
   lastWeek: LastWeek | null;
   /** What is already on the plan for the week when no draft is open (an accepted week): Review shows it. */
@@ -43,13 +48,14 @@ export type PlannerWeek = {
 const HARD = /threshold|vo2|tempo|interval|sweet ?spot|race|test|hill repeats|fartlek/i;
 
 /** The draft's events for the screen. Rows from checkPlan carry sport and TSS; the plan JSON keeps the index. */
-function eventsOf(plan: unknown, proposal: Proposal): DraftEvent[] {
+function eventsOf(plan: unknown, proposal: Proposal, where: WeekWhere): DraftEvent[] {
   const events = ((plan as { events?: unknown[] } | null)?.events ?? []) as Record<string, unknown>[];
   return events.map((e, index) => {
     const row = proposal.rows.find((r) => r.id === `${proposal.weekStart}#${index}`);
     const start = String(e.start ?? '');
     const intensity = String(row?.intensity ?? e.intensity ?? '');
-    return {
+    return local(where, {
+      timeZone: typeof e.timeZone === 'string' && e.timeZone ? e.timeZone : HOME_TZ,
       index,
       title: String(e.title ?? ''),
       date: start.slice(0, 10),
@@ -60,8 +66,17 @@ function eventsOf(plan: unknown, proposal: Proposal): DraftEvent[] {
       why: (e.why as string) ?? null,
       description: (e.description as string) ?? null,
       tss: row?.tss ?? null,
-    };
+    });
   });
+}
+
+/** A session on the clock of the day it lands on: 07:00 in Zurich is shown at 07:00, on Zurich's day. */
+function local(where: WeekWhere, e: DraftEvent): DraftEvent {
+  if (!e.start) return e;
+  const tz = zoneOf(where.days, e.date, HOME_TZ);
+  if (tz === e.timeZone) return e;
+  const at = convert(e.date, e.start, e.timeZone, tz);
+  return { ...e, date: at.date, start: at.time };
 }
 
 /** A session's length from its start and end ("YYYY-MM-DDTHH:MM…" on the same day), for a draft still being written. */
@@ -108,12 +123,13 @@ async function loadLastWeek(userId: string, monday: string, today: string): Prom
 }
 
 /** The week's planned workouts as the screen's events, by date and start. */
-async function loadPlanned(userId: string, monday: string, today: string): Promise<DraftEvent[]> {
+async function loadPlanned(userId: string, monday: string, today: string, where: WeekWhere): Promise<DraftEvent[]> {
   const range = await loadRange(userId, monday, monday, today);
   return range.workouts
     .filter((w) => w.date >= monday && w.date <= addDays(monday, 6) && w.sport !== 'rest')
     .sort((a, b) => `${a.date} ${a.startTime ?? ''}`.localeCompare(`${b.date} ${b.startTime ?? ''}`))
-    .map((w, index) => ({
+    .map((w, index) => local(where, {
+      timeZone: w.timeZone || HOME_TZ,
       index,
       title: w.title,
       date: w.date,
@@ -139,9 +155,9 @@ export async function loadPlannerWeek(userId: string, weekStart: string, { stric
       return fallback;
     });
   const monday = mondayOf(weekStart);
-  const [proposal, calendar, context, lastWeek] = await Promise.all([
+  const [proposal, view, context, lastWeek] = await Promise.all([
     quiet('draft', () => weekProposal(userId, monday), null),
-    quiet('calendar', () => loadWeekCalendar(userId, monday), []),
+    quiet('calendar', () => loadWeekView(userId, monday), { calendar: [] as CalendarBlock[], where: homeWeek(monday) }),
     quiet('context', () => loadPlanningContext(userId, monday, { strict }), null),
     // The week before the one being planned: last week on a Sunday, the week just gone on Monday. A week further
     // ahead looks at this week so far, the latest real training.
@@ -152,11 +168,11 @@ export async function loadPlannerWeek(userId: string, weekStart: string, { stric
   if (proposal?.status === 'running') {
     // The sessions Coach has written so far (saveDraftSoFar), shown while it writes the rest.
     const plan = await quiet('draft so far', () => planOf(userId, proposal.id), null);
-    events = eventsOf(plan, proposal);
+    events = eventsOf(plan, proposal, view.where);
   }
   if (proposal?.status === 'proposed') {
     const plan = await quiet('plan', () => planOf(userId, proposal.id), null);
-    events = eventsOf(plan, proposal);
+    events = eventsOf(plan, proposal, view.where);
     const revise = proposal.request.revise;
     if (revise) {
       const before = await quiet('version before', () => planOf(userId, revise.fromId), null);
@@ -169,7 +185,7 @@ export async function loadPlannerWeek(userId: string, weekStart: string, { stric
   const open = proposal && ['requested', 'running', 'proposed'].includes(proposal.status);
   const planned = open
     ? []
-    : await quiet('planned', () => loadPlanned(userId, monday, today), []);
+    : await quiet('planned', () => loadPlanned(userId, monday, today, view.where), []);
   return {
     weekStart: monday,
     today,
@@ -177,7 +193,8 @@ export async function loadPlannerWeek(userId: string, weekStart: string, { stric
     planned,
     events,
     change,
-    calendar: calendar.filter((c) => c.date >= monday && c.date <= addDays(monday, 6)),
+    calendar: view.calendar.filter((c) => c.date >= monday && c.date <= addDays(monday, 6)),
+    where: view.where,
     context,
     lastWeek,
   };

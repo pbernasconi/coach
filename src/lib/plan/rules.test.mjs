@@ -203,3 +203,29 @@ test('R10: a run or ride without a bank workout or steps fails; with either it p
   const lift = { ...good(), events: [heavy('2026-11-03'), ev('2026-11-04', '12:00', '12:30', '🚶 Walk', { workoutType: 'walk' })] };
   assert.deepEqual(checkProposal(lift, { weekStart: W }).issues.filter((i) => i.id === 'R10'), []);
 });
+
+test('R11: sessions on the clock of where he is, never on a flight or just off one', () => {
+  const where = [
+    { date: '2026-11-12', tz: 'America/New_York', short: 'NYC', label: 'New York, US' },
+    { date: '2026-11-13', tz: 'Europe/Zurich', short: 'Zürich', label: 'Zürich, CH' },
+  ];
+  const context = {
+    home: { tz: 'America/Los_Angeles' },
+    where,
+    calendarByWeek: [{ weekStart: '2026-11-09', events: [{ summary: 'Flight to Geneva (UA 956)', start: '2026-11-12T22:35:00Z', end: '2026-11-13T06:25:00Z', allDay: false }] }],
+  };
+  const issues = (events) => checkRules(sessionsFromPlan({ events }), { weekStart: '2026-11-09', context }).filter((i) => i.id === 'R11');
+  // 07:00 in New York on Thursday, 17:30 in Zurich on Friday: fine.
+  assert.deepEqual(issues([
+    { title: '🏃 Easy run', start: '2026-11-12T07:00:00', end: '2026-11-12T07:45:00', timeZone: 'America/New_York', workoutType: 'run-easy' },
+    { title: '🩹 Physio A', start: '2026-11-13T17:30:00', end: '2026-11-13T18:00:00', timeZone: 'Europe/Zurich' },
+  ]), []);
+  // On the San Francisco clock on a Zurich day: sent back.
+  assert.equal(issues([{ title: '🏃 Run', start: '2026-11-13T17:30:00', end: '2026-11-13T18:00:00', workoutType: 'run-easy' }])[0].level, 'fail');
+  // Friday 07:00 in Zurich is 06:00 UTC: still on the plane.
+  assert.match(issues([{ title: '🏃 Run', start: '2026-11-13T07:00:00', end: '2026-11-13T07:30:00', timeZone: 'Europe/Zurich', workoutType: 'run-easy' }])[0].message, /during Flight/);
+  // 09:00 in Zurich, an hour and a half after landing: a warning.
+  assert.match(issues([{ title: '🏃 Run', start: '2026-11-13T09:00:00', end: '2026-11-13T09:30:00', timeZone: 'Europe/Zurich', workoutType: 'run-easy' }])[0].message, /after landing/);
+  // 04:30 in New York is outside normal hours.
+  assert.equal(issues([{ title: '🏃 Run', start: '2026-11-12T04:30:00', end: '2026-11-12T05:00:00', timeZone: 'America/New_York', workoutType: 'run-easy' }])[0].level, 'warn');
+});

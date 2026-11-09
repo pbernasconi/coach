@@ -262,7 +262,7 @@ export async function undoRevision(userId: string, id: string): Promise<{ id: st
  * Paolo moves, shortens or removes a session in a draft (draft.mjs). The plan checks run again on the changed week.
  */
 export async function editDraft(
-  userId: string, id: string, op: { kind: string; index: number; date?: string; time?: string; minutes?: number },
+  userId: string, id: string, op: { kind: string; index: number; date?: string; time?: string; minutes?: number; timeZone?: string },
 ): Promise<{ ok: true } | { error: string }> {
   const [r] = (await sql`
     SELECT week_start, request, plan, context FROM plan_proposals WHERE id = ${id} AND user_id = ${userId} AND status = 'proposed'`) as Row[];
