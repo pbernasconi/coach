@@ -117,7 +117,7 @@ export function planningContext(x) {
       id: 'skips',
       label: 'Skipped',
       value: `${x.skips.length} in 14 d`,
-      note: reasons.length ? reasons.join(', ') : null,
+      note: reasons.length ? `Reason: ${reasons.join(', ')}` : null,
       tone: x.skips.length >= 3 ? 'bad' : 'warn',
     });
   }
