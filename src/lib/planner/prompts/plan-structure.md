@@ -124,6 +124,8 @@ a lift when the week is short. No Lift template: the exercise lines below ARE th
 workout's `description` exactly in this form (`1) Name 3x8: cue`), one per line, so Coach can make the Lift session
 from them and every set can be logged (web "Log sets", phone Start workout). Holds and foam rolling stay plain lines
 (no `NxM`), so they are not counted as sets. `activityType` strength; `workoutType` `strength-home` or `mobility`.
+A week plan names the session in `routine` instead (`knee-calf-mini`, `arm-finisher`, `mobility-mini`,
+`running-knee-strength`, `mobility`) and Coach writes the lines.
 
 **Running Knee Strength** (coach's, ~40 min, 30 sets). Knees and calves for running.
 1) Dumbbell Bulgarian split squat 3x8: each leg.
@@ -191,7 +193,8 @@ clinic's latest sheets were given in person, so update these when he has a new o
   loads the same legs) and never before a run. Physio A, the heavy calf work, not the day before a run workout or the
   long run; the day after the long run is good. 15–25 min.
 - **Format.** As the home mini sessions: `activityType` strength, `workoutType` `strength-home`, the title starts with
-  "🩹 Physio" (the plan check counts sessions by that word), the numbered lines copied into `description` as written.
+  "🩹 Physio" (the plan check counts sessions by that word), the numbered lines copied into `description` as written
+  (a week plan names it in `routine` instead: `physio-a`, `physio-b`).
   The names are the bodyweight ones below, not the gym's ("Standing calf raise" is the calf machine in Lift), so these
   sets keep their own history.
 - **Load.** Tendon rehab is slow and heavy: add weight (a dumbbell in the hand on that side) when the last 2 reps of a
@@ -226,7 +229,7 @@ day until he says to stop; the coach checks with him on 2026-11-16.
 - **Where.** Straight after the day's session as one block (after the physio on a physio day), or alone on a rest
   day. Never hours apart from another session.
 - **Format.** `activityType` strength, `workoutType` `mobility`, title "🧘 Back & hip stretch", the lines below copied
-  into `description`. The holds stay plain lines, so only the moving drills are counted as sets.
+  into `description` (a week plan names it in `routine` instead: `back-hip-stretch`). The holds stay plain lines, so only the moving drills are counted as sets.
 - **Feel.** A stretch, never pain: mild tension that eases as he holds it. Anything sharp: stop that one.
 
 **Back & hip stretch** (10 min)

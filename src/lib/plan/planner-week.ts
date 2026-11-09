@@ -8,7 +8,7 @@ import { diffPlans, gaveUp } from './draft.mjs';
 import { loadRange } from './month';
 import { loadPlanningContext, loadWeekCalendar, type CalendarBlock, type PlanningContext } from './planning-context';
 import { planOf, weekProposal, type Proposal } from './proposals';
-import { addDays, mondayOf, todayIn } from './week.mjs';
+import { addDays, mondayOf, sportOf, todayIn } from './week.mjs';
 
 export type DraftEvent = {
   index: number; title: string; date: string; start: string | null; minutes: number | null; sport: string;
@@ -54,14 +54,22 @@ function eventsOf(plan: unknown, proposal: Proposal): DraftEvent[] {
       title: String(e.title ?? ''),
       date: start.slice(0, 10),
       start: row?.startTime ?? (start.length > 10 ? start.slice(11, 16) : null),
-      minutes: row?.duration ?? null,
-      sport: row?.activityType ?? 'other',
+      minutes: row?.duration ?? minutesBetween(start, String(e.end ?? '')),
+      sport: row?.activityType ?? sportOf(e),
       hard: /hard|high|threshold|vo2/i.test(intensity) || HARD.test(String(e.title ?? '')) || HARD.test(String(e.workoutType ?? '')),
       why: (e.why as string) ?? null,
       description: (e.description as string) ?? null,
       tss: row?.tss ?? null,
     };
   });
+}
+
+/** A session's length from its start and end ("YYYY-MM-DDTHH:MM…" on the same day), for a draft still being written. */
+function minutesBetween(start: string, end: string): number | null {
+  const m = (s: string) => (/T(\d{2}):(\d{2})/.exec(s) ? Number(s.slice(11, 13)) * 60 + Number(s.slice(14, 16)) : null);
+  const a = m(start);
+  const b = end.slice(0, 10) === start.slice(0, 10) ? m(end) : null;
+  return a != null && b != null && b > a ? b - a : null;
 }
 
 /** Last week, day by day, with what was done of the plan. */
@@ -141,6 +149,11 @@ export async function loadPlannerWeek(userId: string, weekStart: string, { stric
   ]);
   let events: DraftEvent[] = [];
   let change: DraftChange | null = null;
+  if (proposal?.status === 'running') {
+    // The sessions Coach has written so far (saveDraftSoFar), shown while it writes the rest.
+    const plan = await quiet('draft so far', () => planOf(userId, proposal.id), null);
+    events = eventsOf(plan, proposal);
+  }
   if (proposal?.status === 'proposed') {
     const plan = await quiet('plan', () => planOf(userId, proposal.id), null);
     events = eventsOf(plan, proposal);

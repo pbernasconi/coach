@@ -41,7 +41,7 @@ test('a check-in message names today and holds the current week', () => {
   assert.match(m, /<current_week>\nWeek of 2026-10-26\n<\/current_week>/);
 });
 
-test('submit_plan streams its input and needs a plan and summary', () => {
+test('submit_plan streams its input and needs only a plan', () => {
   assert.equal(SUBMIT_TOOL.eager_input_streaming, true);
-  assert.deepEqual(SUBMIT_TOOL.input_schema.required, ['plan', 'summary']);
+  assert.deepEqual(SUBMIT_TOOL.input_schema.required, ['plan']);
 });

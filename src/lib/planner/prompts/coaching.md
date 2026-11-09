@@ -100,7 +100,7 @@ Rehab for the right Achilles, knee and hip (Paolo, 2026-10-25).
   a floor, travel or newborn week. On top of the 2 lifts, never instead of one.
 - On a rest or easy day alone, or stacked straight after a ride. Not on a lift day, never before a run, and Physio A
   not the day before a run workout or the long run.
-- `workoutType` `strength-home`, title starting "🩹 Physio", its numbered lines copied into `description`.
+- `workoutType` `strength-home`, title starting "🩹 Physio", its numbered lines copied into `description` (a week plan names it in `routine` instead).
 - When a Lift note says the Achilles or knee is sore, keep the physio (it is the treatment) at the last load, and
   make the runs around it easy or a ride.
 
