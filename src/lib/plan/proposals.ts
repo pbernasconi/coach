@@ -132,8 +132,19 @@ export async function submitPlan(
 
 export async function failRequest(userId: string, id: string, error: string) {
   await sql`
-    UPDATE plan_proposals SET status = 'failed', error = ${error.slice(0, 500)}, updated_at = NOW()
+    UPDATE plan_proposals SET status = 'failed', error = ${error.slice(0, 500)}, updated_at = NOW(),
+      plan = CASE WHEN status = 'running' THEN NULL ELSE plan END
     WHERE id = ${id} AND user_id = ${userId} AND status IN ('requested', 'running')`;
+}
+
+/**
+ * The sessions the planner has written so far, while it writes the rest: the planning screen shows them as they
+ * come. Only a running request takes them, so a late write never covers the finished plan.
+ */
+export async function saveDraftSoFar(userId: string, id: string, plan: unknown) {
+  await sql`
+    UPDATE plan_proposals SET plan = ${JSON.stringify(plan)}::jsonb
+    WHERE id = ${id} AND user_id = ${userId} AND status = 'running'`;
 }
 
 /**
@@ -158,7 +169,7 @@ export async function openProposal(userId: string): Promise<Proposal | null> {
  */
 async function sweepServerRuns(userId: string) {
   await sql`
-    UPDATE plan_proposals p SET status = 'failed', error = 'The planner ran out of time. Try again.', updated_at = NOW()
+    UPDATE plan_proposals p SET status = 'failed', error = 'The planner ran out of time. Try again.', updated_at = NOW(), plan = NULL
     WHERE p.user_id = ${userId} AND p.status = 'running' AND EXISTS (
       SELECT 1 FROM plan_runs r WHERE r.proposal_id = p.id AND r.status = 'running' AND r.created_at < NOW() - INTERVAL '6 minutes')`;
   await sql`

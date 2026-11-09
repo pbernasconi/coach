@@ -104,3 +104,29 @@ test('a malformed submit gets an error result and does not count', async () => {
   assert.equal(r.submits, 1);
   assert.match(client.calls[1].messages.at(-1).content[0].content, /needs/);
 });
+
+test('hands on the sessions written so far while the plan streams in', async () => {
+  const drafts = [];
+  let t = 0;
+  const handlers = {};
+  const client = {
+    beta: { messages: { stream: () => ({
+      on: (name, fn) => { handlers[name] = fn; },
+      finalMessage: async () => {
+        const events = [{ title: 'a' }, { title: 'b' }, { title: 'c' }];
+        handlers.inputJson?.('', { plan: { weekStart: 'w', events: events.slice(0, 1) } });
+        t += 5000;
+        handlers.inputJson?.('', { plan: { weekStart: 'w', events: events.slice(0, 2) } });
+        t += 100;
+        handlers.inputJson?.('', { plan: { weekStart: 'w', events: events.slice(0, 3) } });
+        t += 5000;
+        handlers.inputJson?.('', { plan: { weekStart: 'w', events } });
+        return reply([submit({ v: 1 })]);
+      },
+    }) } },
+  };
+  const r = await planWithClaude({ client, system: 'S', user: 'U', check: okCheck, now: () => t, onDraft: (p) => drafts.push(p) });
+  assert.equal(r.stop, 'saved');
+  // The last session may be half written, so it waits; and at most one hand-on per DRAFT_EVERY_MS.
+  assert.deepEqual(drafts.map((d) => d.events.map((e) => e.title)), [['a'], ['a', 'b']]);
+});

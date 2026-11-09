@@ -30,7 +30,7 @@ type Drag = { index: number; x0: number; y0: number; dx: number; dy: number; mov
  * session to another time or day (onMove), click it for its details (onSelect).
  */
 export default function WeekGrid({
-  weekStart, events, calendar, selected, changed, today, onSelect, onMove, windows, modes, notes,
+  weekStart, events, calendar, selected, changed, today, onSelect, onMove, windows, modes, notes, writing = false,
 }: {
   weekStart: string;
   events: DraftEvent[];
@@ -47,6 +47,8 @@ export default function WeekGrid({
   modes?: Record<string, DayType>;
   /** Paolo's note per day, shown with the all-day events. */
   notes?: Record<string, string>;
+  /** Coach is still writing the draft: a day with no session yet is not a day off. */
+  writing?: boolean;
 }) {
   const cols = useRef<HTMLDivElement>(null);
   const root = useRef<HTMLDivElement>(null);
@@ -95,7 +97,7 @@ export default function WeekGrid({
               <span className={cn('text-sm font-semibold whitespace-nowrap', d === today && 'text-brand-ink')}>
                 {weekday(d)} {dayNum(d)}
               </span>
-              {drafted && <span className={cn('text-xs', total ? 'text-muted-foreground' : 'font-medium text-brand-ink')}>{total ? hm(total) : 'Off'}</span>}
+              {drafted && (total || !writing) && <span className={cn('text-xs', total ? 'text-muted-foreground' : 'font-medium text-brand-ink')}>{total ? hm(total) : 'Off'}</span>}
               {!drafted && modes?.[d] && modes[d] !== 'free' && (
                 <span className={cn('min-w-0 truncate rounded-full px-2 text-[11px] font-semibold', DAY_STYLE[modes[d]].badge)}>
                   {DAY_LABEL[modes[d]]}
@@ -151,7 +153,7 @@ export default function WeekGrid({
           ))}
           {week.map((d) => {
             const mode = modes?.[d];
-            const off = (drafted && !events.some((e) => e.date === d)) || mode === 'rest' || mode === 'sick';
+            const off = (drafted && !writing && !events.some((e) => e.date === d)) || mode === 'rest' || mode === 'sick';
             return (
               <div key={d} className={cn('relative border-r border-border/60', mode && DAY_STYLE[mode].column)}
                 style={off ? { backgroundImage: 'repeating-linear-gradient(135deg, transparent 0 7px, var(--color-border) 7px 8px)' } : undefined}>

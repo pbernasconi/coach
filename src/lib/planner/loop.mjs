@@ -10,6 +10,8 @@ export const MODEL = 'claude-opus-5-5';
 export const MAX_SUBMITS = 3;
 /** Requests to Claude in one run (submits plus a nudge when it answers without submitting). */
 export const MAX_TURNS = 5;
+/** How often a streaming draft is handed on (onDraft). */
+export const DRAFT_EVERY_MS = 2000;
 
 /**
  * @typedef {{ ok: true } | { ok: false, problems: string[], saveable: boolean }} CheckResult
@@ -20,13 +22,14 @@ export const MAX_TURNS = 5;
 
 /**
  * @param {{
- *   client: { beta: { messages: { stream: (params: any, opts?: any) => { finalMessage: () => Promise<any> } } } },
+ *   client: { beta: { messages: { stream: (params: any, opts?: any) => { finalMessage: () => Promise<any>, on?: Function } } } },
  *   system: string, user: string, check: (plan: any) => CheckResult,
  *   effort?: 'low' | 'medium' | 'high', deadline?: number, now?: () => number, model?: string,
- * }} p  deadline: epoch ms by which the last request must start
+ *   onDraft?: (partial: any) => void,
+ * }} p  deadline: epoch ms by which the last request must start; onDraft: the sessions written so far, while Claude writes
  * @returns {Promise<PlanResult>}
  */
-export async function planWithClaude({ client, system, user, check, effort = 'high', deadline = Infinity, now = Date.now, model = MODEL }) {
+export async function planWithClaude({ client, system, user, check, effort = 'high', deadline = Infinity, now = Date.now, model = MODEL, onDraft }) {
   /** @type {any[]} */
   const messages = [{ role: 'user', content: user }];
   let usage = NO_USAGE;
@@ -39,7 +42,7 @@ export async function planWithClaude({ client, system, user, check, effort = 'hi
 
   for (let turn = 1; turn <= MAX_TURNS; turn++) {
     if (now() > deadline) return result('deadline');
-    const message = await client.beta.messages
+    const stream = client.beta.messages
       .stream({
         model,
         max_tokens: 64000,
@@ -52,8 +55,21 @@ export async function planWithClaude({ client, system, user, check, effort = 'hi
         tools: [SUBMIT_TOOL],
         tool_choice: { type: 'auto' },
         messages,
-      })
-      .finalMessage();
+      });
+    if (onDraft && typeof stream.on === 'function') {
+      // The plan streams in as Claude writes the tool call: hand on the sessions written so far (the last one may be
+      // half written) every DRAFT_EVERY_MS, so the calendar fills while Claude works.
+      let last = 0;
+      let sent = 0;
+      stream.on('inputJson', (/** @type {string} */ _delta, /** @type {any} */ snapshot) => {
+        const events = snapshot?.plan?.events;
+        if (!Array.isArray(events) || events.length - 1 <= sent || now() - last < DRAFT_EVERY_MS) return;
+        last = now();
+        sent = events.length - 1;
+        onDraft({ ...snapshot.plan, events: events.slice(0, -1) });
+      });
+    }
+    const message = await stream.finalMessage();
     usage = addUsage(usage, message.usage, message.model ?? model);
 
     if (message.stop_reason === 'refusal') return result('refusal');
@@ -75,7 +91,7 @@ export async function planWithClaude({ client, system, user, check, effort = 'hi
     for (const call of calls) {
       const input = call.input ?? {};
       if (call.name !== 'submit_plan' || !input.plan || typeof input.plan !== 'object') {
-        results.push({ type: 'tool_result', tool_use_id: call.id, is_error: true, content: 'submit_plan needs { plan: {...}, summary: "..." }.' });
+        results.push({ type: 'tool_result', tool_use_id: call.id, is_error: true, content: 'submit_plan needs { plan: {...} }.' });
         continue;
       }
       submits++;

@@ -40,15 +40,13 @@ export const SUBMIT_TOOL = {
   name: 'submit_plan',
   description:
     'Hand in the week plan for Paolo to review. plan is the plan JSON from the system prompt (weekStart, weekEnd, title, ' +
-    'context, constraints, philosophy, completed, rest, events, review). summary is at most 8 lines. ' +
-    'Returns "Saved" or the list of problems to fix.',
+    'context, rest, events, review). Returns "Saved" or the list of problems to fix.',
   eager_input_streaming: true,
   input_schema: {
     type: 'object',
     properties: {
       plan: { type: 'object', description: 'The plan JSON, with its review object.' },
-      summary: { type: 'string', description: 'At most 8 lines: the review in plain text.' },
     },
-    required: ['plan', 'summary'],
+    required: ['plan'],
   },
 };

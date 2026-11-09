@@ -21,7 +21,8 @@ import { hm, weekLabel } from './plannerUi';
 
 type Step = (typeof STEPS)[number];
 const NAMES: Record<Step, string> = { last: 'Last week', week: 'Your week', shape: 'Priorities', draft: 'Draft', accept: 'Review' };
-const POLL_MS = 10_000;
+/** While Coach drafts, the sessions it has written so far come in this often. */
+const POLL_MS = 3_000;
 
 function answersFrom(data: PlannerWeek): Answers {
   const r = data.proposal?.request;
@@ -68,7 +69,8 @@ export default function WeekPlanner({ initial }: { initial: PlannerWeek }) {
     return next;
   };
 
-  // While Coach drafts, look again every 10 s for up to 6 minutes (the planner stops at 5).
+  // While Coach drafts, look again every few seconds for up to 6 minutes (the planner stops at 5): the sessions
+  // written so far fill the calendar.
   useEffect(() => {
     if (!drafting) return;
     const started = Date.now();
@@ -244,6 +246,8 @@ function DraftStep({
   const hard = data.events.filter((e) => e.hard).length;
   const fails = p?.checks?.fails ?? 0;
   const warns = p?.checks?.warns ?? 0;
+  // Coach is drafting and has written some sessions: they show on the calendar as they come.
+  const writing = drafting && data.events.length > 0;
   const pills = ready
     ? [
         { ok: total >= 480 && total <= 600, text: `${hm(total)}${total >= 480 && total <= 600 ? ' in 8–10 h' : ''}` },
@@ -257,6 +261,12 @@ function DraftStep({
       <main className="relative flex min-w-0 flex-1 flex-col">
         <div className="flex shrink-0 items-center gap-3 px-6 pt-5 pb-3">
           <h1 className="text-2xl font-semibold tracking-tight">{ready ? `Coach's draft · ${hm(total)}` : drafting ? 'Coach is drafting' : 'No draft yet'}</h1>
+          {writing && (
+            <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+              <Loader2 aria-hidden className="size-4 animate-spin" />
+              {data.events.length} session{data.events.length === 1 ? '' : 's'} so far · {hm(total)}
+            </span>
+          )}
           {ready && p && p.version > 1 && <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold">Draft {p.version}</span>}
           <div className="ml-2 flex flex-wrap gap-2">
             {pills.map((x) => (
@@ -268,17 +278,17 @@ function DraftStep({
           </div>
         </div>
         <div className="relative min-h-0 flex-1 overflow-auto px-4 pb-6">
-          <WeekGrid weekStart={data.weekStart} events={ready ? data.events : []} calendar={data.calendar} selected={selected}
-            changed={changed} today={data.today} onSelect={(i) => setSelected(i)} onMove={move} notes={data.proposal?.request.notes} />
+          <WeekGrid weekStart={data.weekStart} events={ready || writing ? data.events : []} calendar={data.calendar} selected={selected}
+            changed={changed} today={data.today} onSelect={(i) => setSelected(i)} onMove={move} notes={data.proposal?.request.notes} writing={writing} />
         </div>
-        {!ready && (
+        {!ready && !writing && (
           <div className="absolute inset-0 z-30 flex items-start justify-center bg-background/50 pt-40 backdrop-blur-[1px]">
             <div className="pointer-events-auto flex max-w-sm flex-col items-center gap-3 rounded-2xl border bg-card px-6 py-5 text-center shadow-lg">
               {drafting ? (
                 <>
                   <Loader2 aria-hidden className="size-6 animate-spin text-brand-ink" />
                   <span className="font-semibold">Coach is drafting {weekLabel(data.weekStart)}</span>
-                  <span className="text-sm text-muted-foreground">Usually 2 to 3 minutes. You can close this and come back.</span>
+                  <span className="text-sm text-muted-foreground">The sessions show up here as Coach writes them.</span>
                 </>
               ) : (
                 <>

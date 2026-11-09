@@ -13,7 +13,7 @@ import { sql } from '@/db';
 import { toIso } from '@/lib/db-time.mjs';
 import { checkPlan } from '@/lib/plan/proposal.mjs';
 import { checkProposal, todayOf } from '@/lib/plan/rules.mjs';
-import { claimRequest, failRequest, planOf, submitPlan, type PlanRequest } from '@/lib/plan/proposals';
+import { claimRequest, failRequest, planOf, saveDraftSoFar, submitPlan, type PlanRequest } from '@/lib/plan/proposals';
 import { monthSpend as spendOn, recordAiUsage } from '@/lib/ai-usage/store';
 import { PLANNER_FEATURES } from '@/lib/ai-usage/usage.mjs';
 import { PLANNER_MONTHLY_CAP_USD } from './cost.mjs';
@@ -21,11 +21,15 @@ import { currentWeekText } from './current-week.mjs';
 import { MODEL, planWithClaude, type CheckResult } from './loop.mjs';
 import { buildProfile } from './profile.mjs';
 import { PROMPT_VERSION, systemPrompt, userMessage } from './prompt.mjs';
+import { expandRoutines, summaryOf } from './routines.mjs';
 
 /** The last Claude request starts before this; the function stops at 300 s (maxDuration). */
 const BUDGET_MS = 170_000;
-/** How hard the planner thinks: a week plan is worth the wait. */
-const EFFORT = 'medium';
+/**
+ * How hard the planner thinks. Low: the rules are checked in code and sent back when broken, so the extra thinking
+ * of medium bought little and cost a minute or more of waiting.
+ */
+const EFFORT = 'low';
 
 type Row = Record<string, unknown>;
 
@@ -65,8 +69,9 @@ export async function loadPlannerStatus(userId: string): Promise<PlannerStatus> 
  * Checks a draft: the format first (a plan that fails it can't be saved), then Paolo's rules. `today` is the
  * check-in's day (R17: past days stay as they were).
  */
-export function checkDraft(plan: unknown, opts: { weekStart: string; request: PlanRequest; context: unknown; today: string | null }): CheckResult {
-  const format = checkPlan(plan, opts.weekStart).errors;
+export function checkDraft(raw: unknown, opts: { weekStart: string; request: PlanRequest; context: unknown; today: string | null }): CheckResult {
+  const { plan, problems } = expandRoutines(raw);
+  const format = [...problems, ...checkPlan(plan, opts.weekStart).errors];
   if (format.length) return { ok: false, problems: format, saveable: false };
   const { issues } = checkProposal(plan, opts);
   const fails = issues.filter((i: { level: string }) => i.level === 'fail').map((i: { id: string; message: string }) => `${i.id}: ${i.message}`);
@@ -105,6 +110,16 @@ export async function runPlanner(userId: string, proposalId: string): Promise<{ 
     const today = checkin ? todayOf(context) : null;
     // "Ask for changes": the plan Paolo commented on, so the planner keeps what he didn't mention.
     const revise = request.revise ? { note: request.revise.note, plan: await planOf(userId, request.revise.fromId) } : null;
+    // The sessions written so far go on the planning screen while Claude writes the rest (one write at a time).
+    let writing: Promise<unknown> = Promise.resolve();
+    let busy = false;
+    const onDraft = (partial: unknown) => {
+      if (busy) return;
+      busy = true;
+      writing = saveDraftSoFar(userId, proposalId, expandRoutines(partial).plan)
+        .catch((e) => console.error('Planner draft so far:', e instanceof Error ? e.message : e))
+        .finally(() => { busy = false; });
+    };
     const result = await planWithClaude({
       client: new Anthropic({ timeout: 280_000, maxRetries: 2 }),
       system: systemPrompt(),
@@ -115,8 +130,11 @@ export async function runPlanner(userId: string, proposalId: string): Promise<{ 
       check: (plan) => checkDraft(plan, { weekStart: request.weekStart, request, context, today }),
       effort: EFFORT,
       deadline: started + BUDGET_MS,
+      onDraft,
     });
-    const saved = result.plan ? await submitPlan(userId, proposalId, result.plan, result.summary, context) : null;
+    await writing;
+    const plan = result.plan ? expandRoutines(result.plan).plan : null;
+    const saved = plan ? await submitPlan(userId, proposalId, plan, result.summary ?? summaryOf(plan), context) : null;
     const ok = Boolean(saved && !('error' in saved));
     await sql`
       UPDATE plan_runs SET status = ${ok ? 'ok' : 'failed'}, stop = ${result.stop}, turns = ${result.turns}, submits = ${result.submits},

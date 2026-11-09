@@ -45,7 +45,8 @@ The user message holds:
 
 ## What you hand in
 
-Call `submit_plan` with `plan` (the JSON below) and `summary` (at most 8 lines: the review in plain text).
+Call `submit_plan` with `plan` (the JSON below). Paolo watches the week fill in as you write it, so write the events
+first (in day order), then `review`, and keep every field short.
 
 Coach checks it in code: first the format, then Paolo's rules (one session or one block a day, no run after a lift,
 no heavy lift on a quality day, 2 lifts not back to back with 1 as the floor, never miss twice, no back-to-back hard
@@ -64,10 +65,7 @@ When `submit_plan` says the plan is saved, stop. Never write the plan as text.
   "weekStart": "YYYY-MM-DD",
   "weekEnd": "YYYY-MM-DD",
   "title": "optional heading suffix, e.g. Lisbon travel week 🎂✈️",
-  "snapshotAtCreation": { "ctl": 0, "atl": 0, "tsb": 0, "weeklyTss": 0, "trend": "..." },
-  "context": ["bullets: travel, heat warnings, rotation note, full or floor week and why"],
-  "constraints": ["bullets: calendar constraints"],
-  "philosophy": ["bullets: the idea of this week"],
+  "context": ["1–3 short bullets: travel, full or floor week and why"],
   "completed": [{ "day": "YYYY-MM-DD", "session": "🏃 Run 10.2km", "detail": "HR 151", "tss": 142, "note": "Completed" }],
   "rest": [{ "day": "YYYY-MM-DD", "reason": "Travel home — long day." }],
   "events": [
@@ -82,6 +80,7 @@ When `submit_plan` says the plan is saved, stop. Never write the plan as text.
       "liftTemplate": "Heavy barbell | Upper (dumbbells) | Hotel gym (dumbbells): gym strength workouts only, the exact Lift template name",
       "workout": { "bank": "threshold-a|threshold-b|vo2-a|vo2-b|tempo|easy|long|test-10k", "level": 0, "reps": 6, "topMin": 45, "zone": "Z1" },
       "why": "≤60 chars: the reason for this session on this day",
+      "routine": "physio-a|physio-b|back-hip-stretch|knee-calf-mini|arm-finisher|mobility-mini|running-knee-strength|mobility",
       "description": "The coach's note: what lands in the calendar event body."
     }
   ],
@@ -104,9 +103,14 @@ When `submit_plan` says the plan is saved, stop. Never write the plan as text.
 - **Strength.** A gym lift names its Lift template in `liftTemplate`; Lift plans the sets and loads, so the
   description holds only the coach's note (effort, what to cut when short on time). Write it to Paolo about the
   session, never about how Coach or Lift work: no "Lift sets the targets", templates, syncing or dates of past logs.
-  Good: "Squat is the priority; cut the last accessory if short on time." Leave it empty rather than fill it. A home mini session or physio
-  (`strength-home`, no `liftTemplate`) copies its numbered lines from plan-structure.md into `description` as
-  written, so each set can be logged.
+  Good: "Squat is the priority; cut the last accessory if short on time." Leave it empty rather than fill it.
+- **Routines.** Physio, the back & hip stretch and the home mini sessions are fixed: name one in `routine` (physio-a,
+  physio-b, back-hip-stretch, knee-calf-mini, arm-finisher, mobility-mini, running-knee-strength, mobility) and
+  Coach writes its numbered lines, title and workoutType. Don't copy the lines from plan-structure.md (that is how
+  Coach chat writes them); give only `start`, `end`, `why` and, when it adds something, a one-line `description`
+  note. An event with a `routine` needs no `title`, `workoutType`, `intensity` or `tss` (0).
+- Keep it lean: write only the fields an event needs, no `liftTemplate`, `workout` or `timeZone` where they don't
+  apply, and no `intensity` on a lift.
 - Each session has a concrete time window, sport, duration, intensity (zone plus HR, power or pace targets), TSS
   and a `why`.
 
