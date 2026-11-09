@@ -113,7 +113,7 @@ export default function StepShape({ data, answers, setAnswers }: { data: Planner
         </Card>
       </div>
 
-      <div className="flex w-[400px] shrink-0 flex-col gap-4">
+      <div className="flex w-[380px] shrink-0 flex-col gap-4">
         <Card className="flex flex-col gap-3.5">
           <span className="text-[17px] font-semibold">{split ? `Where the ${hm(total)} goes` : `Where ${hours} h goes, roughly`}</span>
           <div className="flex h-4 gap-0.5 overflow-hidden rounded-full">

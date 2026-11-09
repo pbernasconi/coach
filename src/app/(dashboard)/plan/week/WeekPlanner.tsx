@@ -189,7 +189,7 @@ export default function WeekPlanner({ initial }: { initial: PlannerWeek }) {
         </div>
       </header>
 
-      <div className={cn('flex min-h-0 flex-1 flex-col', step === 'draft' ? '' : 'overflow-auto px-10 py-7')}>
+      <div className={cn('flex min-h-0 flex-1 flex-col', step === 'draft' ? '' : 'overflow-auto px-5 py-4')}>
         {step === 'last' && <StepLastWeek data={data} answers={answers} setAnswers={setAnswers} />}
         {step === 'week' && <StepYourWeek data={data} answers={answers} setAnswers={setAnswers} />}
         {step === 'shape' && <StepShape data={data} answers={answers} setAnswers={setAnswers} />}
@@ -203,7 +203,7 @@ export default function WeekPlanner({ initial }: { initial: PlannerWeek }) {
         )}
       </div>
 
-      <footer className="flex h-[76px] shrink-0 items-center justify-between border-t bg-card px-10">
+      <footer className="flex h-[76px] shrink-0 items-center justify-between border-t bg-card px-5">
         <span className="text-sm text-muted-foreground">
           Step {at + 1} of 5
           {step === 'draft' && ready ? ` · ${hm(total)} · click a session to change it, or drag it` : ''}

@@ -32,7 +32,7 @@ export default function StepYourWeek({ data, answers, setAnswers }: { data: Plan
     .map(([n, w], i) => (i === 0 ? `${n} free day${n === 1 ? '' : 's'}` : `${n} ${w}`))
     .join(', ');
   return (
-    <div className="flex min-h-0 flex-1 gap-7">
+    <div className="flex min-h-0 flex-1 gap-4">
       <div className="flex min-w-0 flex-1 flex-col gap-3">
         <StepTitle title="What your week looks like" sub="From Google Calendar. Say what each day is, add a note if it helps, and Coach plans around it." />
         <div className="min-h-0 flex-1 overflow-auto rounded-2xl border bg-card">
@@ -40,7 +40,7 @@ export default function StepYourWeek({ data, answers, setAnswers }: { data: Plan
             onSelect={() => {}} onMove={() => {}} windows={windows} modes={byDate} notes={answers.notes} where={data.where} />
         </div>
       </div>
-      <div className="flex w-[400px] shrink-0 flex-col gap-3 overflow-auto">
+      <div className="flex w-[360px] shrink-0 flex-col gap-3 overflow-auto">
         <Card className="flex flex-col">
           <span className="mb-1 text-[17px] font-semibold">Each day</span>
           {modes.map((m) => {
