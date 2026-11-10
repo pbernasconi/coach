@@ -15,7 +15,8 @@ test('past plans: rule baseline and verdicts', async () => {
     await sql`
       INSERT INTO training_plans (id, user_id, week_start_date, week_end_date, plan_content, ai_model, context_data, status)
       VALUES ('tp_history', ${user}, ${week}, '2026-11-08', 'x', 'test', ${JSON.stringify({ title: 'Full week' })}, 'active')`;
-    // A split day: an easy run in the morning, the heavy lift in the evening (R1), and no long run (R6).
+    // A split day: an easy run in the morning, the heavy lift in the evening (R1), no long run (R6), and 2 h 15 in all
+    // with 1 h 45 of lifting (R12 twice).
     await sql`
       INSERT INTO training_plan_activities (id, plan_id, source_key, scheduled_date, start_time, end_time, title, activity_type, workout_type, lift_template, duration, sort_order)
       VALUES ('tpa_h1', 'tp_history', 'k1', '2026-11-03', '07:00', '07:30', 'Easy run', 'run', 'run-easy', NULL, 30, 0),
@@ -38,10 +39,10 @@ test('past plans: rule baseline and verdicts', async () => {
     assert.equal(h.weeks, 1);
     assert.equal(h.proposals, 1);
     const wk = h.items.find((i) => i.kind === 'week')!;
-    assert.deepEqual(wk.issues.filter((i) => i.level === 'fail').map((i) => i.id).sort(), ['R1', 'R6']);
+    assert.deepEqual(wk.issues.filter((i) => i.level === 'fail').map((i) => i.id).sort(), ['R1', 'R12', 'R12', 'R6']);
     const pr = h.items.find((i) => i.kind === 'proposal')!;
     assert.equal(pr.title, 'Two lifts, long run Sunday.');
-    assert.deepEqual(pr.issues.map((i) => i.id), ['R7', 'R9'], 'the Thursday lift is on a day off; no physio');
+    assert.deepEqual(pr.issues.map((i) => i.id), ['R7', 'R12', 'R12', 'R9'], 'the Thursday lift is on a day off; 3 h 30, 1 h 45 of it lifting; no physio');
     assert.deepEqual(h.baseline.find((b) => b.id === 'R1')!.weeks, { fail: 1, warn: 0 });
 
     await saveVerdict(user, pr.key, week, 'bad', 'Lift on my day off');
