@@ -136,7 +136,7 @@ function loadNote(text) {
 /**
  * The Lift template a gym lift is for, among `names`: its `lift_template`, else the template its summary starts
  * with ("Heavy barbell · 9 exercises …"), else the longest template name in its title, else by its workout type
- * (strength-heavy → the "heavy" template, strength-dumbbell → the dumbbell one that is not the hotel's). null for
+ * (strength-heavy → the "heavy" template, strength-dumbbell → the dumbbell one that is not for travel). null for
  * anything else (a home session, physio), so those keep the exercises in their own text.
  * @param {{ sport?: string, workoutType?: string | null, liftTemplate?: string | null, intensity?: string | null, title?: string }} w
  * @param {string[]} names
@@ -153,7 +153,7 @@ export function pickTemplate(w, names) {
   const inTitle = names.filter((n) => key(n) && title.includes(key(n))).sort((a, b) => b.length - a.length)[0];
   if (inTitle) return inTitle;
   if (w.workoutType === 'strength-heavy') return names.find((n) => /heavy/i.test(n)) ?? null;
-  if (w.workoutType === 'strength-dumbbell') return names.find((n) => /dumbbell/i.test(n) && !/hotel/i.test(n)) ?? null;
+  if (w.workoutType === 'strength-dumbbell') return names.find((n) => /dumbbell/i.test(n) && !/hotel|travel/i.test(n)) ?? null;
   return null;
 }
 

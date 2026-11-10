@@ -26,7 +26,7 @@ const good = () => ({
     threshold('2026-11-02'),
     easyRun('2026-11-03', '07:10', '07:30'), heavy('2026-11-03', '07:40', '08:40'),
     vo2Run('2026-11-04'),
-    ev('2026-11-05', '07:00', '07:45', '🚴 Zwift easy', { workoutType: 'ride-z2' }), upper('2026-11-05', '07:45', '08:30'),
+    ev('2026-11-05', '07:00', '07:30', '🚴 Zwift easy', { workoutType: 'ride-z2' }), upper('2026-11-05', '07:30', '08:30'),
     physio('2026-11-02', '08:15', '08:35'), physio('2026-11-07', '11:00', '11:25', 'B — Knee & hip'),
     longRide('2026-11-07'),
     longRun('2026-11-08'),
@@ -181,7 +181,54 @@ test('a week in Coach (training_plan_activities rows) gets the same checks', () 
   const s = sessionsFromRows(rows);
   assert.equal(s.length, 2);
   const r = checkRules(s, { weekStart: W });
-  assert.deepEqual(ids(r).sort(), ['R1:fail', 'R4:warn', 'R6:fail', 'R9:warn']);
+  assert.deepEqual(ids(r).sort(), ['R1:fail', 'R12:fail', 'R12:fail', 'R4:warn', 'R6:fail', 'R9:warn'].sort());
+});
+
+test('R12: under 8 h or under 2 h of lifting fails; a floor week, fewer hours asked or a check-in is exempt', () => {
+  const short = good();
+  short.events = short.events.filter((e) => e.workoutType !== 'ride-long');
+  const r = checkProposal(short, { weekStart: W }).issues.filter((i) => i.id === 'R12');
+  assert.deepEqual(ids(r), ['R12:fail']);
+  assert.match(r[0].message, /7\.5 h of training/);
+  const thin = good();
+  thin.events = thin.events.map((e) => (e.liftTemplate === 'Upper (dumbbells)' ? upper('2026-11-05', '07:30', '08:10') : e));
+  const lift = checkProposal(thin, { weekStart: W }).issues.filter((i) => i.id === 'R12');
+  assert.deepEqual(ids(lift), ['R12:fail']);
+  assert.match(lift[0].message, /1\.7 h of lifting/);
+  assert.ok(!ids(checkProposal({ ...short, title: 'Floor week' }, { weekStart: W }).issues).includes('R12:fail'));
+  assert.ok(!ids(checkProposal(short, { weekStart: W, request: { hours: 6 } }).issues).includes('R12:fail'));
+  assert.ok(!ids(checkProposal(short, { weekStart: W, request: { kind: 'checkin' } }).issues).includes('R12:fail'));
+  const big = good();
+  big.events.push(ev('2026-11-06', '07:00', '08:30', '🚴 Zwift Z2', { workoutType: 'ride-z2' }));
+  assert.deepEqual(ids(checkProposal(big, { weekStart: W }).issues.filter((i) => i.id === 'R12')), ['R12:warn']);
+});
+
+test('R13: with the body clock 4 h+ behind, a hard session fails and an early one warns; midday is fine', () => {
+  const where = [...Array(7)].map((_, i) => ({ date: `2026-11-0${2 + i}`, tz: 'America/Los_Angeles', short: 'SF', home: true, lagH: 0 }));
+  where[0] = { ...where[0], lagH: 6 };
+  where[1] = { ...where[1], lagH: 5 };
+  const ctx = { where };
+  const r = checkProposal(good(), { weekStart: W, context: ctx }).issues.filter((i) => i.id === 'R13');
+  // Monday's threshold ride (hard) and 08:15 physio (early), and Tuesday's 07:10 easy run and 07:40 lift (early).
+  assert.deepEqual(r.map((i) => `${i.level}:${i.day}`).sort(), ['fail:2026-11-02', 'warn:2026-11-02', 'warn:2026-11-03', 'warn:2026-11-03']);
+  assert.match(r[0].message, /about 6 h behind/);
+  const noon = good();
+  noon.events = noon.events.filter((e) => !String(e.start).startsWith('2026-11-02') && !String(e.start).startsWith('2026-11-03'));
+  noon.events.push(easyRun('2026-11-03', '12:00', '12:40'));
+  assert.deepEqual(checkProposal(noon, { weekStart: W, context: ctx }).issues.filter((i) => i.id === 'R13'), []);
+});
+
+test('R14: away from home, a run before sunrise or after dark warns', () => {
+  const where = [...Array(7)].map((_, i) => ({ date: `2026-11-0${2 + i}`, tz: 'Europe/Zurich', short: 'Zurich', home: false, lagH: 0 }));
+  const weather = where.map((d) => ({ date: d.date, sunrise: '07:25', sunset: '16:52' }));
+  const tz = (e) => ({ ...e, timeZone: 'Europe/Zurich' });
+  const plan = { ...good(), events: good().events.map(tz) };
+  const r = checkProposal(plan, { weekStart: W, context: { where, weather } }).issues.filter((i) => i.id === 'R14');
+  // The 07:00 VO2 run (Wed) and the 07:10 easy run (Tue) start in the dark; the 08:00 long run is fine.
+  assert.deepEqual(r.map((i) => i.day).sort(), ['2026-11-03', '2026-11-04']);
+  assert.match(r[0].message, /before sunrise \(07:25\)/);
+  const home = where.map((d) => ({ ...d, tz: 'America/Los_Angeles', home: true }));
+  assert.deepEqual(checkProposal(good(), { weekStart: W, context: { where: home, weather } }).issues.filter((i) => i.id === 'R14'), []);
 });
 
 test('sessions keep the plan as written, before the import stacks the day', () => {

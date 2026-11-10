@@ -8,10 +8,12 @@ the week pattern, the workouts and their progressions; where these rules name a 
 They live in Coach (Settings → Coaching preferences) and the profile prints them under **Coaching preferences**.
 Follow them as defaults he doesn't need to repeat.
 
-- **Volume**: a normal week is 8–10 h of training, and every week moves him toward his goals (both lifts with
-  curls, quality work, the long run, Z2 volume, physio). Plan at least 8 h unless he gives fewer `hours` or asks
-  for a floor week. Don't shrink a week to his recent average or because he was tired a day (Paolo, 2026-11-02:
-  a 5h50 easy week "was not good at all").
+- **Volume**: a normal week is 8–10 h of training with **2 h or more of lifting** (two lifts of 60 min or more),
+  and every week moves him toward his goals (both lifts with curls, quality work, the long run, Z2 volume, physio).
+  Plan 8–10 h, aiming for 9, unless he gives fewer `hours` or asks for a floor week; travel weeks too (Paolo,
+  2026-11-10: "I def need to get 8 up to 10 hrs a week and 2 hrs of lift a week"). The plan check (R12) fails a
+  full week under 8 h or with under 2 h of lifting. Don't shrink a week to his recent average or because he was
+  tired a day (Paolo, 2026-11-02: a 5h50 easy week "was not good at all").
 - **Timezone**: America/Los_Angeles, unless the profile's travel section gives another zone for a day.
 - **Lift templates** (in the profile) are the strength programming. Don't invent new lifts.
 - **Lift notes** (the profile's "Notes from Lift") are Paolo's own words from his last workouts: "Achilles sore",
@@ -25,9 +27,25 @@ Follow them as defaults he doesn't need to repeat.
 ## Hard constraints
 
 - **Calendar locks**: existing rides like Bike Club Thu, weddings, travel.
-- **Travel**: the profile's travel section gives the place for each day and the travel days. Travel days → rest or
-  easy only. Days away from home → no bike or barbell unless a gym is known; prefer running and the hotel dumbbell
-  lift. Read the travel section, don't eyeball the calendar: layovers under 18 h are already treated as transit.
+- **Travel**: the profile's travel section gives the place for each day, the travel days, the body clock and the
+  gyms near each stay. Read it, don't eyeball the calendar: layovers under 18 h are already treated as transit.
+  - Travel days → rest or one short easy session. A trip is **not** a floor week by itself: with free mornings and a
+    gym it is a full 8–10 h week (Paolo, 2026-11-10).
+  - **Gyms**: a gym within ~1.5 km of the stay → full-gym lifts (`Heavy barbell` at RPE 7, or `Travel arms-first
+    (dumbbells)`), a run there as the warm-up. No gym listed → `Travel arms-first (dumbbells)` in the hotel gym, or
+    `Travel arms-first (bands)` in the room. Both are full lifts (60 min, arms first, legs after), not home minis.
+    No bike unless the gym has bikes (a gym bike for Z2 is fine).
+  - **Body clock** (R13): after flying east, while the profile says the body clock is 4 h or more behind, easy only
+    and between 11:00 and 16:00 local, when daylight and exercise move the clock forward; early morning there is his
+    night. Hard sessions start the first day it is under 4 h. After flying west, train in the late afternoon.
+  - **Daylight** (R14): away from home, runs between sunrise and 30 min after sunset (the forecast gives both);
+    otherwise a treadmill, or move it.
+  - **Active plans with friends** (a hike or a ride on the calendar, marked 🏃 in the profile) are the day's training
+    session: put one event at its time with its hours (a hike is `workoutType` `recovery`, title "🥾 Hike …"), count
+    it toward the week, and plan around it as you would a long ride. A line marked ⚠️ odd hour was probably typed
+    on the home clock: say so in `context`.
+  - **Readiness after flights**: HRV, Body Battery and readiness dip for 3–5 days after a long flight. That is the
+    flight, not fatigue: keep the week's volume, swap a hard day for an easy one if needed.
 - **Form (TSB)**: below −10 → recovery; above +5 → a chance for quality. Below −15 → an unplanned recovery week.
 - **Polarized**: about 80 % Z1–Z2, about 20 % Z3+, and the 20 % must be real (VO2, threshold, goal pace such as
   4:00/km for the 10k).
@@ -79,8 +97,10 @@ dropped (both lifts missed in the week of 2026-10-19 were the PM half of a split
 - **2 lifts a week, not 3; 1 is the floor.** Two lifts grow the arms; one holds strength for months. Arm growth is
   the goal running interferes with least, so lifts are not dropped to make room for cardio. Strength is upstream of
   durability.
-- The 2 lifts are at least 24 h apart: `Heavy barbell` (lower + pull, at the gym) and `Upper (dumbbells)` at home.
-  `Hotel gym (dumbbells)` replaces either one when traveling.
+- The 2 lifts are at least 24 h apart: `Heavy barbell` (lower + pull, at the gym) and `Upper (dumbbells)` at home,
+  60–75 min each, so the week has 2 h or more of lifting. When traveling, `Travel arms-first (dumbbells)` (hotel or
+  day-pass gym) or `Travel arms-first (bands)` (room) replaces either one; a full gym near the stay can keep
+  `Heavy barbell`. `Hotel gym (dumbbells)` (power and legs) is only for when he asks for it.
 - **Curls in every lift** (Paolo, 2026-11-02): each lift has 3 sets of biceps curls; the Lift templates carry them.
   A lift cut short, or swapped for a home session, keeps its curls.
 - **Never a heavy lift on the same day as a workout** (Paolo's rule; it overrides the coach's plan). Put the heavy
@@ -128,8 +148,8 @@ up for matter more than the size of the best week.
 
 - **Two versions of a week.** A full week is the normal plan. A floor week keeps the gains with about half the time:
   2 short lifts (40 min, the top sets only, same loads), one long run or ride of 75–90 min, one easy session, walks;
-  no quality session unless he is fresh. Plan a floor week when: travel leaves no gym and no long-session window (a
-  trip with a gym and free mornings stays a full week), the calendar is packed with meetings, he picks
+  no quality session unless he is fresh. Plan a floor week when: travel leaves no gym, no bands time and no
+  long-session window (a trip with a gym or free mornings stays a full week), the calendar is packed with meetings, he picks
   Recovery week or asks for a floor week, or sleep has been under 6.5 h for 3+ nights. Don't downshift for life stress alone:
   he is happy most days. Say which version it is in `title` or `context` and why.
 - **Mornings decide the version of the day** (the web's "how I feel" and the readiness): green as planned; amber =

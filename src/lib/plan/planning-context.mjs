@@ -166,6 +166,8 @@ function dayIndex(weekStart, date) {
 /** The answers the data points to; Paolo can change each. */
 /** The fewest hours the planning screen suggests: his normal week is 8-10 h. */
 export const MIN_WEEK_HOURS = 8;
+/** What it suggests with no recent data to go on: the middle of his 8-10 h (Paolo, 2026-11-10). */
+export const TARGET_WEEK_HOURS = 9;
 
 function suggest(x, { last, avgMin }) {
   const felt = x.feedback.filter((f) => f.feel != null);
@@ -188,6 +190,7 @@ function suggest(x, { last, avgMin }) {
     why.push(`form ${sign(last.tsb)}`, 'readiness good');
   }
   // Paolo's normal full week is 8-10 h (2026-11-02): never suggest less than 8 h from a light recent average.
-  const h = Math.min(14, Math.max(MIN_WEEK_HOURS, avgMin ? Math.round(avgMin / 60) : MIN_WEEK_HOURS));
+  // 2026-11-10: "I def need to get 8 up to 10 hrs a week", so a light average still suggests 9.
+  const h = Math.min(14, Math.max(TARGET_WEEK_HOURS, avgMin ? Math.round(avgMin / 60) : TARGET_WEEK_HOURS));
   return { feel, feelWhy: why.join(', ') || null, hours: h };
 }

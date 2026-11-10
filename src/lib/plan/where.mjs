@@ -87,7 +87,8 @@ function placeAt(segments, ms) {
 }
 
 /**
- * Each day of the week with where he is and its zone: [{ date, label, short, tz, home, travel }], and the week's
+ * Each day of the week with where he is and its zone: [{ date, label, short, tz, home, travel, lagH }] (lagH: the
+ * body clock's hours behind local time, bodyClock), and the week's
  * zones in order of first use: [{ tz, short }]. A day's place is where he is at noon on that day's clock (on a
  * flight, where it lands): Tuesday with an afternoon flight east is still home, the day he lands in Europe is there.
  * @param {any[]} events calendar rows { summary, start_time, end_time, is_all_day, location } from 3 weeks before the week on
@@ -137,12 +138,21 @@ export async function weekPlaces(events, weekStart, { geocode, home = HOME, days
     }
   }
 
+  // The week before, for the body clock: a trip begun last week still shows its jet lag this week.
+  let leadTz = home.tz;
+  const lead = Array.from({ length: 7 }, (_, i) => addDay(weekStart, i - 7)).map((date) => {
+    const place = placeAt(segments, instantOf(date, '12:00', leadTz)) ?? home;
+    leadTz = place.tz || home.tz;
+    return { date, tz: leadTz };
+  });
   const rows = out.map(({ date, place }) => {
     const p = rename.get(place) ?? place;
     const tzOf = p.tz || home.tz;
     const short = shortName(p.label ?? home.label);
-    return { date, label: String(p.label ?? home.label), short, tz: tzOf, home: tzOf === home.tz && short === shortName(home.label), travel: flewOn.has(date) };
+    return { date, label: String(p.label ?? home.label), short, tz: tzOf, home: tzOf === home.tz && short === shortName(home.label), travel: flewOn.has(date), lagH: 0 };
   });
+  const lag = new Map(bodyClock([...lead, ...rows]).map((d) => [d.date, d.lagH]));
+  for (const r of rows) r.lagH = lag.get(r.date) ?? 0;
   /** @type {{ tz: string, short: string }[]} */
   const zones = [];
   for (const r of rows) if (!zones.some((z) => z.tz === r.tz)) zones.push({ tz: r.tz, short: r.short });
@@ -199,4 +209,33 @@ export function stampZones(plan, days, homeTz = HOME.tz) {
     return { ...e, timeZone: tz };
   });
   return { ...plan, events };
+}
+
+/** How fast the body clock catches up, in hours a day: about 1 going east, 1.5 going west. */
+export const SHIFT_EAST_H = 1;
+export const SHIFT_WEST_H = 1.5;
+
+/**
+ * The body clock on each day of a run of days: how many hours it is behind the local clock (positive after flying
+ * east, negative after flying west), if it moves about 1 h a day east and 1.5 h a day west. The first day is taken as
+ * settled. A difference of more than 12 h is taken the short way round.
+ * @param {{ date: string, tz: string }[]} days in order
+ * @returns {{ date: string, lagH: number }[]}
+ */
+export function bodyClock(days) {
+  const out = [];
+  let body = null;
+  for (const d of days ?? []) {
+    const local = offsetMin(instantOf(d.date, '12:00', d.tz), d.tz) / 60;
+    if (body == null) body = local;
+    let gap = local - body;
+    if (gap > 12) gap -= 24;
+    if (gap < -12) gap += 24;
+    // The body moves on the day itself, so the day after landing already shows a day's catch-up.
+    const step = gap > 0 ? Math.min(gap, SHIFT_EAST_H) : Math.max(gap, -SHIFT_WEST_H);
+    const lagH = Math.round(gap * 10) / 10;
+    out.push({ date: d.date, lagH });
+    body += step;
+  }
+  return out;
 }

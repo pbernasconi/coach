@@ -97,3 +97,12 @@ test('sessions on days away get that day\'s zone; at home none', async () => {
   ] }, w.days);
   assert.deepEqual(plan.events.map((e) => e.timeZone ?? null), [null, 'America/New_York', 'Europe/Zurich']);
 });
+
+test('body clock: about 1 h a day east and 1.5 h a day west', async () => {
+  const { bodyClock } = await import('./where.mjs');
+  const d = (date, tz) => ({ date, tz });
+  const east = bodyClock([d('2026-11-10', 'America/Los_Angeles'), d('2026-11-11', 'America/New_York'), d('2026-11-12', 'America/New_York'), d('2026-11-13', 'Europe/Zurich'), d('2026-11-14', 'Europe/Zurich')]);
+  assert.deepEqual(east.map((x) => x.lagH), [0, 3, 2, 7, 6]);
+  const west = bodyClock([d('2026-12-02', 'Europe/London'), d('2026-12-03', 'America/Los_Angeles'), d('2026-12-04', 'America/Los_Angeles')]);
+  assert.deepEqual(west.map((x) => x.lagH), [0, -8, -6.5]);
+});
