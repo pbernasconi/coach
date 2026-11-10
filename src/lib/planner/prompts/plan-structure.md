@@ -109,6 +109,19 @@ Every lift has a biceps curl: dumbbell curl 3 × 10–12, slow 3 s down (one exe
 history and progression are shared). The Lift templates carry it, so a gym lift gets it from its template. A shortened lift
 keeps its curls, and so does a home lift in place of a gym one (the Arm finisher's dumbbell curl counts).
 
+### Travel arms-first lifts (Paolo, 2026-11-10)
+
+The travel lifts, 60 min, arms first and legs after, each set to 1–2 reps in reserve (light dumbbells and bands build
+muscle when sets go close to failure; slow the lowering to 3–4 s when the weights are light). Lift templates
+`Travel arms-first (dumbbells)` (hotel or day-pass gym) and `Travel arms-first (bands)` (the room: a light and a
+heavy loop band and a door-anchor tube band).
+- Dumbbells: dumbbell curl 3 × 10–12 (3 s down) · overhead dumbbell triceps extension 3 × 12 · hammer curl 3 × 12 ·
+  dumbbell bench press 3 × 8–12 · one-arm dumbbell row 3 × 10 · Bulgarian split squat 3 × 8–10 · single-leg Romanian
+  deadlift 3 × 8 · dumbbell lateral raise 2 × 15.
+- Bands: band curl 4 × 15 · band overhead triceps extension 3 × 15 · push-up (feet raised) 3 × 12–20 · band row
+  3 × 15 · band pushdown 3 × 20 · rear-foot-elevated split squat 3 × 12 · single-leg hip thrust 3 × 12 · band
+  lateral raise 2 × 20.
+
 ### Hotel Lift (power focus)
 - ~50% 1RM, explosive intent, 60–90 s rest, not to failure
 - Same warm-up circuit × 3

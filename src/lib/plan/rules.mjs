@@ -14,6 +14,12 @@ import { instantOf } from './where.mjs';
 export const GAP_MIN = 15;
 export const LONG_RUN_MIN = 90;
 export const FLOOR_LONG_RUN_MIN = 75;
+/** Paolo's week (2026-11-10): 8 h at least, up to 10, and 2 h or more of lifting. */
+export const MIN_WEEK_MIN = 8 * 60;
+export const MAX_WEEK_MIN = 10 * 60;
+export const MIN_LIFT_MIN = 120;
+/** The body clock this many hours behind local time is jet lag that changes the plan (R13). */
+export const LAG_H = 4;
 
 /** What each rule checks, in Paolo's words, for the review and the baseline. */
 export const RULES = {
@@ -28,6 +34,9 @@ export const RULES = {
   R9: 'Physio for the Achilles and knee: 2 a week (1 on a floor week)',
   R10: 'Every run and ride is a structured workout',
   R11: 'On the clock of where he is: local times, not on a flight or just off one',
+  R12: '8–10 h a week, with 2 h or more of lifting',
+  R13: 'After a long flight east: easy, and at midday, until the body clock catches up',
+  R14: 'Runs away from home in daylight',
   R17: 'A check-in leaves past days as they were',
 };
 
@@ -336,6 +345,44 @@ export function checkRules(sessions, { weekStart, request = null, context = null
       if (on) add('R11', 'fail', s.day, `${at} (${hhmm(Number(s.start))}) is during ${on.title}.`);
       else if (flights.some((/** @type {{ to: number }} */ f) => a >= f.to && a < f.to + 3 * 3_600_000)) add('R11', 'warn', s.day, `${at} (${hhmm(Number(s.start))}) is less than 3 h after landing.`);
     }
+  }
+
+  // R13: after a long flight east, while the body clock is 4 h or more behind: no quality session, and train at
+  // midday (11:00–16:00), when daylight and exercise move the clock forward. Early morning there is the body's night.
+  for (const s of sessions) {
+    const place = where.find((/** @type {any} */ d) => d?.date === s.day);
+    const lag = Number(place?.lagH ?? 0);
+    if (lag < LAG_H || s.sport === 'walk') continue;
+    const at = `${label(s.day)}: ${s.title}`;
+    if (isQuality(s)) add('R13', 'fail', s.day, `${at} is a hard session, but his body clock is about ${Math.round(lag)} h behind ${place.short ?? place.label} time. Easy only until it is within ${LAG_H} h.`);
+    else if (s.start != null && (Number(s.start) < 11 * 60 || Number(s.start) > 16 * 60)) add('R13', 'warn', s.day, `${at} at ${hhmm(Number(s.start))}: his body clock is about ${Math.round(lag)} h behind, so ${hhmm(Number(s.start))} there is his night. Train between 11:00 and 16:00.`);
+  }
+
+  // R14: away from home, runs in daylight (sunrise to 30 min after sunset, from the forecast for where he is).
+  const sun = new Map((Array.isArray(context?.weather) ? context.weather : []).filter((/** @type {any} */ w) => w?.sunrise && w?.sunset).map((/** @type {any} */ w) => [w.date, w]));
+  for (const s of sessions) {
+    if (s.sport !== 'run' || s.start == null || /treadmill/i.test(s.title)) continue;
+    const place = where.find((/** @type {any} */ d) => d?.date === s.day);
+    const w = sun.get(s.day);
+    if (!place || place.home || !w) continue;
+    const rise = clock(`T${w.sunrise}`);
+    const set = clock(`T${w.sunset}`);
+    if (rise == null || set == null) continue;
+    const end = s.end ?? Number(s.start) + s.minutes;
+    if (Number(s.start) < rise) add('R14', 'warn', s.day, `${label(s.day)}: ${s.title} at ${hhmm(Number(s.start))} starts before sunrise (${w.sunrise}) in ${place.short ?? place.label}. Start after it, or run on a treadmill.`);
+    else if (end > set + 30) add('R14', 'warn', s.day, `${label(s.day)}: ${s.title} ends at ${hhmm(end)}, after dark (sunset ${w.sunset}) in ${place.short ?? place.label}. Move it earlier, or run on a treadmill.`);
+  }
+
+  // R12: 8–10 h a week with 2 h or more of lifting (Paolo, 2026-11-10). Not on a floor or recovery week, a week he
+  // gave fewer hours for, a week with sick days, or a check-in (its done sessions have no length).
+  const lighter = floor || request?.feel === 'recovery' || (typeof request?.hours === 'number' && request.hours * 60 < MIN_WEEK_MIN) || list(request?.sick).length > 0 || request?.kind === 'checkin';
+  if (!lighter) {
+    const total = sessions.filter((s) => s.sport !== 'walk').reduce((n, s) => n + s.minutes, 0);
+    const lift = sessions.filter(isLift).reduce((n, s) => n + s.minutes, 0);
+    const h = (/** @type {number} */ m) => `${Math.round(m / 6) / 10} h`;
+    if (total < MIN_WEEK_MIN) add('R12', 'fail', null, `${h(total)} of training planned; his week is 8–10 h. Add time to the long sessions and the lifts.`);
+    else if (total > MAX_WEEK_MIN + 30 && typeof request?.hours !== 'number') add('R12', 'warn', null, `${h(total)} planned, over his 8–10 h.`);
+    if (lift < MIN_LIFT_MIN) add('R12', 'fail', null, `${lift ? h(lift) : 'No time'} of lifting planned; he wants 2 h or more a week (two lifts of 60 min or more).`);
   }
 
   // R8: within the hours he has.

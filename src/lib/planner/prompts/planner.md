@@ -77,7 +77,7 @@ When `submit_plan` says the plan is saved, stop. Never write the plan as text.
       "workoutType": "ride-threshold-a|ride-threshold-b|ride-vo2-a|ride-vo2-b|ride-tempo|run-threshold-a|run-threshold-b|run-vo2-a|run-vo2-b|run-tempo|run-test-10k|strength-heavy|strength-dumbbell|strength-home|mobility|run-easy|run-long|ride-z2|ride-long|ski-tour|recovery|swim|yoga",
       "tss": 0,
       "intensity": "VO2 A: 5×3 min Z5 @ 300–320 W",
-      "liftTemplate": "Heavy barbell | Upper (dumbbells) | Hotel gym (dumbbells): gym strength workouts only, the exact Lift template name",
+      "liftTemplate": "Heavy barbell | Upper (dumbbells) | Travel arms-first (dumbbells) | Travel arms-first (bands) | Hotel gym (dumbbells): gym strength workouts only, the exact Lift template name",
       "workout": { "bank": "threshold-a|threshold-b|vo2-a|vo2-b|tempo|easy|long|test-10k", "level": 0, "reps": 6, "topMin": 45, "zone": "Z1" },
       "why": "≤60 chars: the reason for this session on this day",
       "routine": "physio-a|physio-b|back-hip-stretch|knee-calf-mini|arm-finisher|mobility-mini|running-knee-strength|mobility",
@@ -93,7 +93,7 @@ When `submit_plan` says the plan is saved, stop. Never write the plan as text.
   from the profile's "Travel: where Paolo is each day" table; leave it out when he is at home (America/Los_Angeles).
   The calendar in the profile is already on each day's local clock, so plan around it as written. In New York or
   Zurich a morning run is 06:30 there, not 06:30 in San Francisco. Never on a flight, not in the 3 hours after
-  landing, and easy only on the first day after flying east (check R11).
+  landing, and easy at midday while the body clock is 4 h or more behind after flying east (check R11, R13).
 - Sessions he already did this week go in `completed[]` with their actual values; plan only the days left.
 - **Structured workouts.** Every run and ride gets `workout`: the bank workout that Coach turns into steps (warm-up,
   repeats, targets in % of FTP or % of LTHR) for Zwift and Garmin. `level` is the step of its progression: the

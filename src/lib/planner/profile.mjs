@@ -5,6 +5,7 @@
 import { goalLine, loadGoals, measureGoals } from '../goals/goals.mjs';
 import { resolveTravel, dateKeysBetween, geocode, HOME_TZ } from '../../../scripts/travel.mjs';
 import { weekPlaces, zoneOf } from '../plan/where.mjs';
+import { gymsNear, staysOf, walk } from '../plan/stay-gyms.mjs';
 import { label, loadRotation } from '../../../scripts/rotation.mjs';
 import { untrusted } from '../../../scripts/untrusted.mjs';
 import { noteLines, noteText, setExtras } from '../../../scripts/lift-notes.mjs';
@@ -14,6 +15,29 @@ import { blockWeek, liftConsistency } from '../plan/consistency.mjs';
 
 export const OWNER_ID = 'user_33cD9CNNEIECAQkXy0z1I2jpgw5';
 const HOME = { lat: 37.7749, lon: -122.4194, label: 'San Francisco, CA', tz: HOME_TZ };
+
+/** Calendar plans that are training (a hike or a ride with a friend): the planner counts them as the day's session. */
+const ACTIVE = /\b(hike|hiking|mtb|mnt bike|mountain bik\w*|bike ride|ride with|run with|trail run|long run|ski(ing)?|ski tour|climb(ing)?|surf(ing)?|tennis|padel|swim(ming)?)\b/i;
+/** Not a meeting: travel and transport rows land at any hour. */
+const TRANSIT = /\b(flight|train|commute|drive|taxi|uber|transfer|check[- ]?in|layover|airport)\b/i;
+
+/**
+ * Notes after a calendar line for the planner: an active plan is a session to count, and a meeting at night on the
+ * local clock of a trip was probably typed on the home clock.
+ * @param {{ summary?: string, start_time: any, end_time: any, is_all_day?: boolean }} e @param {string} tz the day's zone
+ */
+export function eventFlags(e, tz) {
+  if (e.is_all_day) return '';
+  const out = [];
+  const title = String(e.summary ?? '');
+  const mins = Math.round((new Date(e.end_time).getTime() - new Date(e.start_time).getTime()) / 60000);
+  if (ACTIVE.test(title) && mins >= 45) out.push(`🏃 active plan (${Math.round(mins / 6) / 10} h): count it as the day's training session`);
+  if (tz !== HOME.tz && !TRANSIT.test(title)) {
+    const h = Number(new Date(e.start_time).toLocaleTimeString('en-GB', { timeZone: tz, hour: '2-digit', hourCycle: 'h23' }));
+    if (h >= 23 || h < 6 || (ACTIVE.test(title) && h >= 16)) out.push('⚠️ odd hour here: maybe typed on the home clock; say so in `context`, and plan as if it is at a normal local hour');
+  }
+  return out.length ? ` — ${out.join('; ')}` : '';
+}
 
 /**
  * @param {any} sql  a tagged-template SQL client (src/db or src/db/neon.mjs)
@@ -208,6 +232,25 @@ export async function buildProfile(sql, { userId: USER_ID = OWNER_ID, weekOf: we
   }
   const tzOn = (key) => zoneOf(where.days, key, HOME.tz);
 
+  // Stays on the calendar ("Stay at …" holds with an address) and the gyms near each (stay-gyms.mjs), so a trip with
+  // a gym down the road plans full-gym lifts. OpenStreetMap is slow and rate-limited, so a few stays at most.
+  /** @type {{ title: string, address: string, from: string, to: string, gyms: { name: string, m: number }[] }[]} */
+  const stays = [];
+  try {
+    const stayRows = await sql`
+      SELECT ce.summary, ce.start_time, ce.end_time, ce.is_all_day, ce.location
+      FROM calendar_events ce JOIN calendar_connections cc ON cc.id = ce.connection_id
+      WHERE cc.user_id = ${USER_ID} AND ce.status <> 'cancelled' AND ce.location IS NOT NULL
+        AND ce.end_time > ${weekStart.toISOString()} AND ce.start_time < ${horizonEnd.toISOString()}
+      ORDER BY ce.start_time LIMIT 400`;
+    for (const st of staysOf(stayRows).slice(0, 4)) {
+      const near = await gymsNear(st.address).catch((e) => (console.error(`gyms near ${st.address}:`, e.message), null));
+      stays.push({ ...st, gyms: (near?.gyms ?? []).map((g) => ({ name: g.name, m: g.m })) });
+    }
+  } catch (e) {
+    console.error('stays and gyms failed:', e.message);
+  }
+
   // ===== 7. Weather — one fetch per distinct place, following the itinerary =====
   const WX_CODES = { 0:'clear',1:'mostly clear',2:'partly cloudy',3:'overcast',45:'fog',48:'fog',51:'drizzle',53:'drizzle',55:'drizzle',61:'rain',63:'rain',65:'rain',71:'snow',73:'snow',75:'snow',80:'showers',81:'showers',82:'showers',95:'thunderstorm' };
 
@@ -222,7 +265,7 @@ export async function buildProfile(sql, { userId: USER_ID = OWNER_ID, weekOf: we
     const u = new URL('https://api.open-meteo.com/v1/forecast');
     u.searchParams.set('latitude', String(place.lat));
     u.searchParams.set('longitude', String(place.lon));
-    u.searchParams.set('daily', 'temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,weather_code,wind_speed_10m_max');
+    u.searchParams.set('daily', 'temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,weather_code,wind_speed_10m_max,sunrise,sunset');
     u.searchParams.set('timezone', place.tz ?? 'UTC');
     u.searchParams.set('start_date', keys[0]);
     u.searchParams.set('end_date', keys.at(-1));
@@ -241,6 +284,9 @@ export async function buildProfile(sql, { userId: USER_ID = OWNER_ID, weekOf: we
       precipMm: Math.round((wx.daily.precipitation_sum[i] ?? 0) * 10) / 10,
       windKph: Math.round(wx.daily.wind_speed_10m_max[i]),
       conditions: WX_CODES[wx.daily.weather_code[i]] ?? `code ${wx.daily.weather_code[i]}`,
+      // Local wall-clock times (the request's timezone is the place's): R14 keeps runs away from home in daylight.
+      sunrise: wx.daily.sunrise?.[i]?.slice(11, 16) ?? null,
+      sunset: wx.daily.sunset?.[i]?.slice(11, 16) ?? null,
     })).filter((w) => keys.includes(w.date));
   }
 
@@ -437,13 +483,23 @@ export async function buildProfile(sql, { userId: USER_ID = OWNER_ID, weekOf: we
     }
     for (const t of travel.trips) md.push(`- 🧳 ${untrusted(t.summary)} (${t.from.slice(0, 10)} → ${t.to.slice(0, 10)})`);
     md.push('');
-    md.push('| Date | Where | Timezone | Flight that day? |');
-    md.push('|---|---|---|---|');
+    md.push('| Date | Where | Timezone | Flight that day? | Body clock |');
+    md.push('|---|---|---|---|---|');
     for (const d of where.days) {
-      md.push(`| ${d.date} ${DOW_NAMES[new Date(`${d.date}T00:00:00Z`).getUTCDay()]} | ${untrusted(d.label)} | ${d.tz} | ${d.travel ? '✈️ yes' : ''} |`);
+      const lag = Number(d.lagH ?? 0);
+      const body = lag >= 4 ? `⚠️ ${Math.round(lag)} h behind: easy, 11:00–16:00` : lag <= -4 ? `${Math.round(-lag)} h ahead: train late afternoon` : Math.abs(lag) >= 1 ? `${Math.round(Math.abs(lag))} h ${lag > 0 ? 'behind' : 'ahead'}` : 'settled';
+      md.push(`| ${d.date} ${DOW_NAMES[new Date(`${d.date}T00:00:00Z`).getUTCDay()]} | ${untrusted(d.label)} | ${d.tz} | ${d.travel ? '✈️ yes' : ''} | ${body} |`);
     }
     md.push('');
-    md.push(`**Local time, always.** Every time in the calendar below is already on the clock of where he is that day. Write each session's \`start\`/\`end\` on that local clock and stamp \`timeZone\` with the day's zone above (leave it out on ${HOME.tz} days). Plan at normal local hours for where he is (not ${HOME.label} hours): mornings 06:00–08:30 before the day's first meeting, or the evening gap; never during a flight, and not in the first ~3 h after landing. A flight day is rest or one short easy session at the departure city before leaving for the airport. The first day after flying east (jet lag): easy only. Days away from ${HOME.label}: no bike or barbell unless a gym is known; running, hotel dumbbell work and walks.`);
+    if (stays.length) {
+      md.push('### Stays and the gyms near them');
+      for (const st of stays) {
+        const g = st.gyms.length ? st.gyms.map((x) => `${untrusted(x.name)} ${walk(x.m)}`).join(', ') : 'no gym found within 2 km (hotel gym or bands)';
+        md.push(`- ${st.from} → ${st.to}: ${untrusted(st.title)} (${untrusted(st.address)}): ${g}`);
+      }
+      md.push('');
+    }
+    md.push(`**Local time, always.** Every time in the calendar below is already on the clock of where he is that day. Write each session's \`start\`/\`end\` on that local clock and stamp \`timeZone\` with the day's zone above (leave it out on ${HOME.tz} days). Plan at normal local hours for where he is (not ${HOME.label} hours): mornings 06:00–08:30 before the day's first meeting, or the evening gap; never during a flight, and not in the first ~3 h after landing. A flight day is rest or one short easy session at the departure city before leaving for the airport. **Body clock** (R13): while it is 4 h or more behind after flying east, easy sessions only, between 11:00 and 16:00 local (daylight and exercise then move the clock forward; early morning there is his night); hard sessions from the first day it is under 4 h. **Gyms away** (Paolo, 2026-11-10: travel is not a floor week): a stay with a gym within ~1.5 km above → full-gym lifts there (\`Heavy barbell\`, or \`Travel arms-first (dumbbells)\`); no gym listed → \`Travel arms-first (dumbbells)\` in the hotel gym, or \`Travel arms-first (bands)\` in the room. No bike unless a gym with bikes is near (a gym bike or treadmill works for Z2). Runs in daylight (sunrise and sunset in the forecast below).`);
     md.push('');
   }
 
@@ -478,7 +534,7 @@ export async function buildProfile(sql, { userId: USER_ID = OWNER_ID, weekOf: we
         const day = DOW_NAMES[new Date(`${key}T00:00:00Z`).getUTCDay()];
         const fmt = (d) => d.toLocaleTimeString('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit' });
         const tzTag = tz === HOME.tz ? '' : ` _(${tz})_`;
-        md.push(`> - **${day} ${key.slice(5)}** ${e.is_all_day ? '(all-day)' : `${fmt(s)}–${fmt(eend)}`} · ${untrusted(e.summary)}${tzTag}`);
+        md.push(`> - **${day} ${key.slice(5)}** ${e.is_all_day ? '(all-day)' : `${fmt(s)}–${fmt(eend)}`} · ${untrusted(e.summary)}${tzTag}${eventFlags(e, tz)}`);
       }
     }
     md.push('');
@@ -486,10 +542,10 @@ export async function buildProfile(sql, { userId: USER_ID = OWNER_ID, weekOf: we
     md.push('### Weather forecast');
     const wx = weather.filter((x) => x.date >= w.key && x.date < w.end.toISOString().slice(0, 10));
     if (wx.length) {
-      md.push('| Date | Where | Lo–Hi | Conditions | Precip | Wind |');
-      md.push('|---|---|---|---|---|---|');
+      md.push('| Date | Where | Lo–Hi | Conditions | Precip | Wind | Daylight |');
+      md.push('|---|---|---|---|---|---|---|');
       for (const x of wx) {
-        md.push(`| ${x.date} | ${x.location} | ${x.tempMin}–${x.tempMax}°C | ${x.conditions} | ${x.precipPct}% / ${x.precipMm}mm | ${x.windKph} kph |`);
+        md.push(`| ${x.date} | ${x.location} | ${x.tempMin}–${x.tempMax}°C | ${x.conditions} | ${x.precipPct}% / ${x.precipMm}mm | ${x.windKph} kph | ${x.sunrise && x.sunset ? `${x.sunrise}–${x.sunset}` : ''} |`);
       }
       const missing = dateKeysBetween(w.start, w.end).filter((k) => !wx.some((x) => x.date === k));
       if (missing.length) md.push(`\n_No forecast for: ${missing.join(', ')} (beyond 16-day range or in transit)._`);
@@ -637,6 +693,7 @@ export async function buildProfile(sql, { userId: USER_ID = OWNER_ID, weekOf: we
     },
     rotation,
     weather,
+    stays,
     liftTemplates,
     liftSessions,
     goals: goals ?? null,

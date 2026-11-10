@@ -1,0 +1,219 @@
+[
+  {
+    "name": "Travel arms-first (dumbbells)",
+    "exercises": [
+      {
+        "name": "Dumbbell curl",
+        "sets": 3,
+        "reps": [
+          10,
+          12
+        ],
+        "weight": null,
+        "rest": 60,
+        "note": "Superset with the triceps extension. Slow 3 s down; light dumbbells: 4 s down, 1 rep in reserve.",
+        "load": "hand",
+        "equipment": "dumbbell"
+      },
+      {
+        "name": "Overhead dumbbell triceps extension",
+        "sets": 3,
+        "reps": [
+          10,
+          12
+        ],
+        "weight": null,
+        "rest": 90,
+        "note": "One dumbbell, both hands, deep stretch at the bottom.",
+        "equipment": "dumbbell"
+      },
+      {
+        "name": "Hammer curl",
+        "sets": 3,
+        "reps": [
+          10,
+          12
+        ],
+        "weight": null,
+        "rest": 60,
+        "note": "Superset with the press.",
+        "load": "hand",
+        "equipment": "dumbbell"
+      },
+      {
+        "name": "Dumbbell bench press",
+        "sets": 3,
+        "reps": [
+          8,
+          12
+        ],
+        "weight": null,
+        "rest": 90,
+        "note": "No bench: deficit push-ups on two dumbbells.",
+        "load": "hand",
+        "equipment": "dumbbell"
+      },
+      {
+        "name": "One-arm dumbbell row",
+        "sets": 3,
+        "reps": [
+          10,
+          12
+        ],
+        "weight": null,
+        "rest": 60,
+        "note": "Each arm.",
+        "load": "hand",
+        "equipment": "dumbbell"
+      },
+      {
+        "name": "Bulgarian split squat",
+        "sets": 3,
+        "reps": [
+          8,
+          10
+        ],
+        "weight": null,
+        "rest": 90,
+        "note": "Each leg, dumbbells in hand, 2-3 s down.",
+        "load": "hand",
+        "equipment": "dumbbell"
+      },
+      {
+        "name": "Single-leg Romanian deadlift",
+        "sets": 3,
+        "reps": [
+          8,
+          10
+        ],
+        "weight": null,
+        "rest": 60,
+        "note": "Each leg, hips level.",
+        "load": "hand",
+        "equipment": "dumbbell"
+      },
+      {
+        "name": "Dumbbell lateral raise",
+        "sets": 2,
+        "reps": [
+          12,
+          15
+        ],
+        "weight": null,
+        "rest": 60,
+        "note": null,
+        "load": "hand",
+        "equipment": "dumbbell"
+      }
+    ]
+  },
+  {
+    "name": "Travel arms-first (bands)",
+    "exercises": [
+      {
+        "name": "Band curl",
+        "sets": 4,
+        "reps": [
+          12,
+          15
+        ],
+        "weight": null,
+        "rest": 60,
+        "note": "Stand on the band. Slow 3 s down, 1-2 reps in reserve.",
+        "load": "bw",
+        "equipment": "other"
+      },
+      {
+        "name": "Band overhead triceps extension",
+        "sets": 3,
+        "reps": [
+          12,
+          15
+        ],
+        "weight": null,
+        "rest": 60,
+        "note": "Band under the back foot or in the door anchor.",
+        "load": "bw",
+        "equipment": "other"
+      },
+      {
+        "name": "Push-up",
+        "sets": 3,
+        "reps": [
+          12,
+          20
+        ],
+        "weight": null,
+        "rest": 90,
+        "note": "Feet on the bed; stop 2 reps short of failure.",
+        "load": "bw",
+        "equipment": "bodyweight"
+      },
+      {
+        "name": "Band row",
+        "sets": 3,
+        "reps": [
+          12,
+          15
+        ],
+        "weight": null,
+        "rest": 60,
+        "note": "Door anchor at chest height.",
+        "load": "bw",
+        "equipment": "other"
+      },
+      {
+        "name": "Band pushdown",
+        "sets": 3,
+        "reps": [
+          15,
+          20
+        ],
+        "weight": null,
+        "rest": 60,
+        "note": "Door anchor high.",
+        "load": "bw",
+        "equipment": "other"
+      },
+      {
+        "name": "Rear-foot-elevated split squat",
+        "sets": 3,
+        "reps": [
+          10,
+          12
+        ],
+        "weight": null,
+        "rest": 60,
+        "note": "Each leg, back foot on the bed, 3 s down. Backpack for load.",
+        "load": "bw",
+        "equipment": "bodyweight"
+      },
+      {
+        "name": "Single-leg hip thrust",
+        "sets": 3,
+        "reps": [
+          10,
+          12
+        ],
+        "weight": null,
+        "rest": 60,
+        "note": "Each leg, shoulders on the bed.",
+        "load": "bw",
+        "equipment": "bodyweight"
+      },
+      {
+        "name": "Band lateral raise",
+        "sets": 2,
+        "reps": [
+          15,
+          20
+        ],
+        "weight": null,
+        "rest": 60,
+        "note": null,
+        "load": "bw",
+        "equipment": "other"
+      }
+    ]
+  }
+]

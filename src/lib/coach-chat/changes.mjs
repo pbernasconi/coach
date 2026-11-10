@@ -403,8 +403,10 @@ export function newRuleIssues(rows, changes, today) {
   /** @type {string[]} */
   const out = [];
   for (const week of [...touched].sort()) {
-    const before = new Set(weekIssues(rows, week, today).map((i) => i.message));
-    for (const i of weekIssues(after, week, today)) if (!before.has(i.message)) out.push(`${i.id}: ${i.message}`);
+    // The week's hours (R12) change with every edit: it is new only when the week wasn't already short.
+    const key = (/** @type {{ id: string, message: string }} */ i) => (i.id === 'R12' ? i.message.replace(/^(No time|[\d.]+ h)/, '') : i.message);
+    const before = new Set(weekIssues(rows, week, today).map(key));
+    for (const i of weekIssues(after, week, today)) if (!before.has(key(i))) out.push(`${i.id}: ${i.message}`);
   }
   return out;
 }

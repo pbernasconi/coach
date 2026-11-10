@@ -1,5 +1,5 @@
-# Edits Lift templates from a file in lift/tools/LiftSeed/edits/ (LiftSeed --add: Lift's own repositories and sync, so
-# the iPhone gets the change on its next sync). A dry run prints the templates and what would change; with push, it
+# Edits Lift templates from a file in lift/tools/LiftSeed/edits/ (LiftSeed --add, or --templates to create new
+# templates: Lift's own repositories and sync, so the iPhone gets the change on its next sync). A dry run prints the templates and what would change; with push, it
 # writes the change and starts Plan apply, so upcoming Lift sessions that were not started get the new slots.
 # Secrets: LIFT_SYNC_TOKEN.
 name: Lift templates
@@ -11,6 +11,11 @@ on:
         description: File in lift/tools/LiftSeed/edits/
         required: true
         default: curls.json
+      mode:
+        description: add (one slot in each template) or templates (create the templates in the file)
+        type: choice
+        options: [add, templates]
+        default: add
       push:
         description: Write the change (otherwise a dry run)
         type: boolean
@@ -34,11 +39,12 @@ jobs:
         env:
           LIFT_SYNC_TOKEN: ${{ secrets.LIFT_SYNC_TOKEN }}
           EDITS: ${{ inputs.edits }}
+          MODE: ${{ inputs.mode == 'templates' && '--templates' || '--add' }}
           PUSH: ${{ inputs.push && '--push' || '' }}
         run: |
           case "$EDITS" in */*|..*) echo "edits must be a file name in lift/tools/LiftSeed/edits/"; exit 1;; esac
           swift run -q --package-path lift/tools/LiftSeed LiftSeed --db "$RUNNER_TEMP/lift.sqlite" \
-            --server https://coach.paolobernasconi.com --add "lift/tools/LiftSeed/edits/$EDITS" $PUSH
+            --server https://coach.paolobernasconi.com $MODE "lift/tools/LiftSeed/edits/$EDITS" $PUSH
       - name: Plan the upcoming lifts again
         if: inputs.push
         env:
