@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ANSWER_NUDGE, HISTORY, MAX_PROPOSALS, chatMessages, chatWithClaude, pointsAtChips, streamEventToChat } from './chat.mjs';
+import { ANSWER_NUDGE, HISTORY, MAX_PROPOSALS, STANDALONE_NUDGE, chatMessages, chatWithClaude, pointsAtChips, refersToHidden, streamEventToChat } from './chat.mjs';
 import { chatContext, chatSystemPrompt } from './prompt.mjs';
 import { costOf } from '../planner/cost.mjs';
 
@@ -387,4 +387,28 @@ test('a reply that only points at its chips is asked once for the answer itself 
   const r2 = await chatWithClaude({ ...base, client: again, check: () => assert.fail('no card') });
   assert.equal(again.calls.length, 2);
   assert.equal(r2.reply, 'Pick one of the options below.');
+});
+
+test('a reply that leans on words Paolo never saw is asked once to stand alone (2026-11-10)', async () => {
+  assert.equal(refersToHidden('Everything else is as I described above.'), true);
+  assert.equal(refersToHidden('The first version fell short of your 8–10 h, so I made two adjustments.'), true);
+  assert.equal(refersToHidden("I'm not fully confident, for the reasons above."), true);
+  assert.equal(refersToHidden('Physio goes straight after the lift, above the stretch.'), false);
+  const client = fake([
+    reply([propose({ title: 'Easy Wed' })], 'tool_use'),
+    reply([say('Done. Everything else is as I described above.')]),
+    reply([say('Wednesday is a 50 min easy run, Friday the lift at Erik\'s gym, Saturday the long run.')]),
+  ]);
+  const r = await chatWithClaude({ ...base, client, check: (input) => ({ ok: true, value: input }) });
+  assert.equal(r.reply, 'Wednesday is a 50 min easy run, Friday the lift at Erik\'s gym, Saturday the long run.');
+  assert.equal(client.calls[2].messages.at(-1).content, STANDALONE_NUDGE);
+});
+
+test('no words after a card: the card\'s why, never a working note (2026-11-04 "Not useful; one more search.")', async () => {
+  const client = fake([
+    reply([say('Not useful; one more search.'), propose({ title: 'RDL: 3 sets', why: 'Based on your request and a 2016 trial: 3 min rest beat 1 min.' })], 'tool_use'),
+    reply([]),
+  ]);
+  const r = await chatWithClaude({ ...base, client, check: (input) => ({ ok: true, value: input }) });
+  assert.equal(r.reply, 'Based on your request and a 2016 trial: 3 min rest beat 1 min.');
 });

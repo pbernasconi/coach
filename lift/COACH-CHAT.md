@@ -79,6 +79,20 @@ request usually answers it:
   cards ask for the answer, not a caption. If the reply still only points at its chips (`pointsAtChips`), chat.mjs
   asks once more for the answer itself (`ANSWER_NUDGE`).
 
+- Do what he asked (2026-11-10, from a review of two weeks of chats). Paolo laid out his travel week (easy run Wed,
+  early run Thu, Erik's gym Fri, long run Sat, long MTB Sun) and the card added a hotel lift and physio to Sunday:
+  R12 (8–10 h, 2 h of lifting) sent the first card back and the model "fixed" the hours with sessions he hadn't asked
+  for, never adding the MTB ride he named. On 5 Nov he had to say "don't shorten Saturday" and "don't change
+  tomorrow's run" as each new card brought changes back. Now: the prompt's "Do what he asked" (every session he names
+  goes on the card, nothing else changes, what he keeps stays kept, a missed target is one line and an offer) and
+  "Your reply stands alone"; R12 only warns on a chat card and never sends it back; the bounce text says to keep his
+  request. A reply that refers to text he never saw ("as I described above", "the first version", `refersToHidden`)
+  is asked once to stand alone (`STANDALONE_NUDGE`). With no words after a card, the reply is the card's `why`, not a
+  working note ("Not useful; one more search."). A missed workout on a past day can be skipped or removed as well as
+  moved ("yesterday was a rest day", "can you remove it"). An unknown id comes back with the closest plan ids
+  (`nearIds`; 2026-10-30 it mistyped one id six times and no card showed). "Finding a place": search the web near
+  where his calendar says he is, before asking for the hotel.
+
 - Read tools (2026-11-01, `data-tools.mjs`, run by `data.ts`). The chat told Paolo "my data has no splits" about a
   run whose splits, laps and best efforts were stored, and asked him for the time. Now it reads them:
   `get_activity({ ref })` (an activity id: `<plan>` shows it after DONE; "latest"; or a day) answers with km splits
