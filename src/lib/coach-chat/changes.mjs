@@ -20,6 +20,8 @@ export const HORIZON_DAYS = 21;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 const OPS = new Set(['move', 'skip', 'unskip', 'add', 'remove', 'update', 'remember', 'template', 'event', 'goal', 'plan_week', 'reminder']);
+/** What a missed workout on a past day can still get. */
+const PAST_OPS = new Set(['move', 'skip', 'remove']);
 /** Changes that aren't workouts in the plan: the rule checks and the read-back skip them. */
 const OFF_PLAN = new Set(['remember', 'template', 'event', 'goal', 'plan_week', 'reminder']);
 /** Whether a change edits something other than a planned workout. @param {{ op: string }} c */
@@ -85,6 +87,38 @@ export function hm(t) {
 }
 
 const str = (/** @type {unknown} */ v, /** @type {number} */ max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
+
+/**
+ * The plan's ids closest to a mistyped one, for the problem the model fixes: it once failed three times on
+ * "jrxyy3q97gpgpzmtr7k4l3bq" and Paolo got no card (2026-10-30). Same first characters or a few typos away.
+ * @param {string} id @param {PlanRow[]} rows
+ */
+export function nearIds(id, rows) {
+  if (!id) return '';
+  const score = (/** @type {string} */ other) => {
+    let p = 0;
+    while (p < id.length && p < other.length && id[p] === other[p]) p++;
+    return p >= 3 ? 100 + p : -editDistance(id, other);
+  };
+  const near = rows
+    .map((r) => ({ r, s: score(r.id) }))
+    .filter((x) => x.s > 0 || x.s >= -6)
+    .sort((a, b) => b.s - a.s)
+    .slice(0, 3);
+  if (!near.length) return '';
+  return `. Copy the id exactly from <plan>; did you mean ${near.map(({ r }) => `"${r.id}" (${plainTitle(r.title)}, ${r.date})`).join(' or ')}?`;
+}
+
+/** Levenshtein distance, for nearIds. @param {string} a @param {string} b */
+function editDistance(a, b) {
+  let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= b.length; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    prev = cur;
+  }
+  return prev[b.length];
+}
 
 /**
  * The model's changes, checked against the plan: each names a workout that exists and isn't done, a day from today
@@ -196,12 +230,14 @@ export function cleanChanges(raw, { rows, today, templates = [], lift = null, go
     }
     const id = String(b.id ?? '');
     const row = byId.get(id);
-    if (!row) return problems.push(`${at}: no workout with id ${id || '(none)'} in the plan`);
+    if (!row) return problems.push(`${at}: no workout with id ${id || '(none)'} in the plan${nearIds(id, rows)}`);
     if (seen.has(id)) return problems.push(`${at}: ${row.title} has more than one change; merge them into one`);
     seen.add(id);
     if (row.state === 'done') return problems.push(`${at}: ${row.title} is done; a done workout stays as it is`);
-    // A missed workout can be moved to today or later (catching it up); nothing else changes the past.
-    if (row.date < today && op !== 'move') return problems.push(`${at}: ${row.title} is on ${row.date}, in the past; only a move to today or later can change it`);
+    // A missed workout can be moved to today or later (catching it up), skipped (it was a rest or travel day, so it
+    // isn't left as not done) or removed (Paolo, 2026-10-28 and 2026-11-10: "can you remove it"). Nothing else
+    // changes the past.
+    if (row.date < today && !PAST_OPS.has(op)) return problems.push(`${at}: ${row.title} is on ${row.date}, in the past; only a move to today or later, a skip or a remove can change it`);
     if (op === 'move') {
       const date = dayIn(b.date, 'date');
       if (!date) return;
@@ -582,12 +618,17 @@ export function checkProposalInput(input, plan, attempt) {
   if (!problems.length) problems.push(...moveAsAddIssues(plan.rows, changes));
   if (problems.length) return { ok: false, problems };
   const warnings = [...newRuleIssues(plan.rows, changes, plan.today), ...fatigueIssues(plan.rows, changes, plan.today), ...copies.soft];
-  if (warnings.length && attempt <= 1) {
+  // The week's hours (R12) only go on the card: fixing them sent the model adding a lift to the day Paolo had for a
+  // long mountain bike ride with a friend (2026-11-10). What he asks for wins over the volume target.
+  const bounce = warnings.filter((w) => !w.startsWith('R12:'));
+  if (bounce.length && attempt <= 1) {
     return {
       ok: false,
       problems: [
-        ...warnings,
-        "These break Paolo's rules. Fix them, or, if he asked for this on purpose, call propose_changes again with the same changes and say so in why.",
+        ...bounce,
+        "These break Paolo's rules. If a change he asked for causes one, keep it: call propose_changes again with the " +
+          'same changes and say so in why. Fix only what your own extra changes broke, and never add or lengthen a ' +
+          "session he didn't ask for to fix a rule.",
       ],
     };
   }

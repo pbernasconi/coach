@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { addNote, asReplacements, checkProposalInput, cleanChanges, describeChanges, dropNote, fatigueIssues, isStale, basisOf, newRuleIssues, NOTES_HEADING, planText, simulate } from './changes.mjs';
+import { addNote, asReplacements, checkProposalInput, cleanChanges, nearIds, describeChanges, dropNote, fatigueIssues, isStale, basisOf, newRuleIssues, NOTES_HEADING, planText, simulate } from './changes.mjs';
 
 // Mon 26 Oct 2026: the day Paolo asked to move the heavy lift to Tuesday and run easy with David instead.
 const today = '2026-10-26';
@@ -97,7 +97,7 @@ test('a proposal that breaks a rule goes back once, then shows with the warning'
   const input = { title: 'Lift tomorrow', why: 'Based on your note', changes: [{ op: 'move', id: 'heavy', date: '2026-10-27', startTime: '10:30' }] };
   const first = checkProposalInput(input, plan, 1);
   assert.equal(first.ok, false);
-  assert.match(first.problems.at(-1), /on purpose/);
+  assert.match(first.problems.at(-1), /If a change he asked for causes one, keep it/);
   const second = checkProposalInput(input, plan, 2);
   assert.equal(second.ok, true);
   assert.ok(second.value.warnings.length);
@@ -241,7 +241,10 @@ test('an added lift that copies a missed lift of the same template is refused; a
   // What it should have done: move the missed lift itself to Wednesday (a past workout can move to today or later).
   const moved = checkProposalInput({ title: 'Heavy lift Wed', why: 'x', changes: [{ op: 'move', id: 'heavy', date: '2026-10-28', startTime: '11:00' }] }, p, 2);
   assert.equal(moved.ok, true);
-  assert.equal(checkProposalInput({ title: 'x', why: 'x', changes: [{ op: 'skip', id: 'heavy', reason: 'busy' }] }, p, 2).ok, false);
+  // A past missed workout can also be skipped (it was a travel day) or removed, but not edited.
+  assert.equal(checkProposalInput({ title: 'x', why: 'x', changes: [{ op: 'skip', id: 'heavy', reason: 'travel' }] }, p, 2).ok, true);
+  assert.equal(checkProposalInput({ title: 'x', why: 'x', changes: [{ op: 'remove', id: 'heavy' }] }, p, 2).ok, true);
+  assert.match(checkProposalInput({ title: 'x', why: 'x', changes: [{ op: 'update', id: 'heavy', duration: 30 }] }, p, 2).problems[0], /in the past/);
   // A planned copy later in the week: back to the model once, then a warning on the card.
   const planned = [{ ...lifts[0], date: '2026-10-30', state: 'planned' }, lifts[1]];
   const first = checkProposalInput({ title: 'Second heavy', why: 'x', changes: [add] }, { ...p, rows: planned }, 1);
@@ -262,4 +265,26 @@ test('a skip a new workout replaces on its day is written as a delete, a lone sk
   // An add on another day replaces nothing.
   const elsewhere = [ops[0], { ...ops[1], date: '2026-10-28' }];
   assert.deepEqual(asReplacements(elsewhere, rows), elsewhere);
+});
+
+test('a mistyped id comes back with the closest ids from the plan', () => {
+  // 2026-10-30: "jrxyy3q97gpgpzmtr7k4l3bq" came back as jrxyq3gpgpzmtr7k4l3bq, jrxyl3q, jrxyl… and no card was shown.
+  const real = [row('jrxyy3q97gpgpzmtr7k4l3bq', '2026-10-30', '07:30:00', '🏃 10k test', 'run', 'run-test'), ...rows];
+  const { problems } = cleanChanges([{ op: 'move', id: 'jrxyl3q', date: '2026-10-31' }], { rows: real, today });
+  assert.match(problems[0], /did you mean "jrxyy3q97gpgpzmtr7k4l3bq" \(10k test, 2026-10-30\)/);
+  assert.equal(nearIds('zzzzzzzz', rows), '');
+});
+
+test('the week\'s hours (R12) go on the card as a warning and never send the card back', () => {
+  // 2026-11-10: R12 sent the card back and the model added a lift to Sunday, the day Paolo had for a long MTB ride.
+  const week = [
+    row('lift1', '2026-11-11', '07:00:00', 'Travel arms-first', 'strength', 'strength-upper'),
+    row('lift2', '2026-11-13', '13:30:00', 'Hotel gym', 'strength', 'strength-upper'),
+    row('long', '2026-11-14', '09:00:00', 'Long run', 'run', 'run-long', { duration: 105 }),
+    row('ride', '2026-11-15', '09:00:00', 'Long ride', 'ride', 'ride-long', { duration: 300 }),
+  ];
+  const input = { title: 'One lift', why: 'He asked', changes: [{ op: 'remove', id: 'lift2' }] };
+  const first = checkProposalInput(input, { rows: week, today: '2026-11-10' }, 1);
+  assert.equal(first.ok, true, JSON.stringify(first));
+  assert.match(first.value.warnings.join('\n'), /^R12: .*lifting/m);
 });

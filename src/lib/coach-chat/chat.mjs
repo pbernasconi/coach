@@ -60,6 +60,20 @@ export function pointsAtChips(words) {
 }
 
 
+/** Once, when a reply leans on words Paolo never saw (a working note, a first card the server sent back). */
+export const STANDALONE_NUDGE = 'Your reply points at something I never saw ("above", "as I described", "the first version"): ' +
+  'I only see this reply and the cards. Write it again so it stands alone: what you changed and why, in full. Call no tools.';
+
+/**
+ * A reply that refers to text Paolo never saw: only the words after the last tool call reach him, and a card the
+ * server sent back to fix is never shown. "Everything else is as I described above", "the first version fell short",
+ * "for the reasons above" (2026-11-05, 2026-11-10).
+ * @param {string} words
+ */
+export function refersToHidden(words) {
+  return /\b(as I (described|said|explained|mentioned|laid out)( it)? above|(described|said|listed|explained|mentioned|outlined) above|the reasons above|as above\b|see above|the (first|earlier|previous) (version|draft|card)|my first (version|draft|card))/i.test(words);
+}
+
 /**
  * @typedef {{ role: 'user' | 'assistant', text: string, blocks?: any[] }} Turn  `blocks`: a message's photos and files
  * @typedef {{ ok: true, value: any } | { ok: false, problems: string[] }} ProposalCheck
@@ -244,10 +258,13 @@ export async function chatWithClaude({ client, system, history, context, text, f
     }
     const calls = content.filter((/** @type {any} */ b) => b.type === 'tool_use');
     // A reply that only points at its chips answers nothing: ask once for the answer itself.
-    if (!calls.length && !nudged && said.length && pointsAtChips(said.join(' ')) && now() < deadline) {
+    const nudge = !calls.length && !nudged && said.length && now() < deadline
+      ? (pointsAtChips(said.join(' ')) ? ANSWER_NUDGE : refersToHidden(said.join(' ')) ? STANDALONE_NUDGE : null)
+      : null;
+    if (nudge) {
       nudged = true;
       said.length = 0;
-      messages.push({ role: 'assistant', content }, { role: 'user', content: ANSWER_NUDGE });
+      messages.push({ role: 'assistant', content }, { role: 'user', content: nudge });
       emit({ type: 'status', step: 'writing' });
       continue;
     }
@@ -349,8 +366,9 @@ export async function chatWithClaude({ client, system, history, context, text, f
   function result(stop) {
     const thought = (thoughts.length ? thoughts.join('\n\n') : streamedThought.trim()).slice(0, 4000);
     // A reply that used the web ends with the pages it leaned on.
-    // No words after the tools (a deadline, a refusal): the last working note is better than nothing.
-    const words = said.length ? said.join('\n\n') : (notes.at(-1) ?? '');
+    // No words after the tools (a deadline, a refusal): a card's own why says more than a working note, which once
+    // reached Paolo as the whole reply ("Not useful; one more search.", 2026-11-04). Without a card, the last note.
+    const words = said.length ? said.join('\n\n') : proposal?.why ? String(proposal.why) : (notes.at(-1) ?? '');
     const sources = (web.searches || web.fetches) && words ? sourcesOf(answered) : [];
     const reply = [words, sourcesLine(sources)].filter(Boolean).join('\n\n');
     return { reply, proposal, problems, turns, usage, model, stop, attempts, cards, replies, questions, thought, timing, reads, web: { ...web, sources } };
