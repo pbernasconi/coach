@@ -5,7 +5,7 @@
 // goal-tools.ts reads and writes.
 
 import { EVENT_SPORTS, PRIORITIES, countdown, parseEvent } from '../performance/events.mjs';
-import { GOAL_KINDS, cleanGoals, describe, formatValue, goalLine, parseValue } from '../goals/goals.mjs';
+import { GOAL_KINDS, cleanGoals, describe, formatValue, goalLine, isRaceTime, parseValue } from '../goals/goals.mjs';
 import { cleanRequest } from '../plan/proposal.mjs';
 import { addDays, mondayOf } from '../plan/week.mjs';
 
@@ -59,6 +59,8 @@ export function goalsText(events, goals, today) {
 }
 
 const ACTIONS = ['add', 'update', 'remove'];
+/** How to write a value of the kind, for a problem message. @param {string} kind */
+const valueHint = (kind) => (kind === 'run_10k_pace' ? ' ("4:30")' : isRaceTime(kind) ? ' ("1:45:00")' : '');
 const pick = (/** @type {CoachEvent} */ e) => ({ name: e.name, date: e.date, priority: e.priority, sport: e.sport, notes: e.notes, target: e.target });
 
 /**
@@ -106,7 +108,7 @@ export function eventChangeText(c) {
 }
 
 /**
- * A goal value from the model: a number, or "4:30" for a pace.
+ * A goal value from the model: a number, "4:30" for a pace, or "1:45:00" for a race time.
  * @param {string} kind @param {unknown} v
  */
 function goalValue(kind, v) {
@@ -134,7 +136,7 @@ export function cleanGoalChange(b, { goals, today }) {
     for (const k of ['target', 'baseline']) if (b[k] !== undefined) next[k] = goalValue(g.kind, b[k]);
     for (const k of ['start', 'deadline']) if (b[k] !== undefined) next[k] = b[k];
     const [clean] = cleanGoals([next]);
-    if (!clean) return { problem: `that goal isn't valid: target and baseline are numbers in ${GOAL_KINDS[g.kind].unit}${g.kind === 'run_10k_pace' ? ' ("4:30")' : ''}, dates YYYY-MM-DD, start before deadline` };
+    if (!clean) return { problem: `that goal isn't valid: target and baseline are numbers in ${GOAL_KINDS[g.kind].unit}${valueHint(g.kind)}, dates YYYY-MM-DD, start before deadline` };
     if (JSON.stringify(clean) === JSON.stringify(g)) return { problem: `the goal update names nothing to change for ${g.title ?? describe(g)}` };
     return { change: { op: 'goal', action: 'update', id, goal: clean, was: g } };
   }
@@ -146,7 +148,7 @@ export function cleanGoalChange(b, { goals, today }) {
   if (!Number.isFinite(baseline)) return { problem: `a new goal needs its baseline, where he is now, in ${GOAL_KINDS[k].unit} (read his data first)` };
   const id = `chat${Math.random().toString(36).slice(2, 8)}`;
   const [clean] = cleanGoals([{ id, kind: k, title: b.title, target, baseline, start: b.start ?? today, deadline: b.deadline }]);
-  if (!clean) return { problem: `that goal isn't valid: target in ${GOAL_KINDS[k].unit}${k === 'run_10k_pace' ? ' ("4:30")' : ''}, deadline YYYY-MM-DD after the start` };
+  if (!clean) return { problem: `that goal isn't valid: target in ${GOAL_KINDS[k].unit}${valueHint(k)}, deadline YYYY-MM-DD after the start` };
   if (clean.deadline < today) return { problem: 'a new goal\'s deadline is in the past' };
   return { change: { op: 'goal', action: 'add', id, goal: clean, was: null } };
 }

@@ -5,21 +5,20 @@ import { toast } from 'sonner';
 import { Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { saveGoalsAction } from './actions';
-import { GOAL_KINDS, describe, pace, parseValue, type Goal, type GoalKind } from '@/lib/goals/goals.mjs';
+import { GOAL_KINDS, describe, inputText, parseValue, type Goal, type GoalKind } from '@/lib/goals/goals.mjs';
 
 type Row = { id: string; kind: GoalKind; title: string; target: string; baseline: string; start: string; deadline: string };
 
 const KINDS = Object.entries(GOAL_KINDS) as [GoalKind, (typeof GOAL_KINDS)[GoalKind]][];
-const text = (kind: GoalKind, v: number) => (kind === 'run_10k_pace' ? pace(v) : String(v));
 const toRow = (g: Goal): Row => ({
-  id: g.id, kind: g.kind, title: g.title ?? '', target: text(g.kind, g.target), baseline: text(g.kind, g.baseline), start: g.start, deadline: g.deadline,
+  id: g.id, kind: g.kind, title: g.title ?? '', target: inputText(g.kind, g.target), baseline: inputText(g.kind, g.baseline), start: g.start, deadline: g.deadline,
 });
 // 16 px text on a phone: iOS zooms the page into a smaller input on focus.
 const input = 'h-10 w-full min-w-0 rounded-md border bg-background px-2 text-base md:h-8 md:text-sm';
 // Kind, title, baseline, target, unit, start, deadline, remove.
 const COLS = 'lg:grid-cols-[13rem_minmax(0,1fr)_4.5rem_4.5rem_4.5rem_8.5rem_8.5rem_2rem]';
 
-/** Edits the milestone goals. Pace is "m:ss" per km; the other kinds are numbers in their unit. */
+/** Edits the milestone goals. Pace is "m:ss" per km, a race time "h:mm:ss"; the other kinds are numbers in their unit. */
 export default function GoalsForm({ goals }: { goals: Goal[] }) {
   const [saved, setSaved] = useState<Row[]>(goals.map(toRow));
   const [rows, setRows] = useState<Row[]>(saved);
@@ -31,7 +30,7 @@ export default function GoalsForm({ goals }: { goals: Goal[] }) {
     const out = rows.map((r) => ({ ...r, target: parseValue(r.kind, r.target), baseline: parseValue(r.kind, r.baseline) }));
     const bad = out.findIndex((g) => !Number.isFinite(g.target) || g.target <= 0 || !Number.isFinite(g.baseline) || !g.start || !g.deadline || g.start > g.deadline);
     if (bad >= 0) {
-      toast.error(`Goal ${bad + 1}: fill in the target, the baseline and the dates (start before deadline). Pace is m:ss.`);
+      toast.error(`Goal ${bad + 1}: fill in the target, the baseline and the dates (start before deadline). Pace is m:ss, a race time h:mm:ss.`);
       return;
     }
     start(async () => {
