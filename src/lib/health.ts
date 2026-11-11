@@ -18,6 +18,7 @@ import { exerciseResponse, failedSections, sessionResponse, weeklyResponse } fro
 import { richSession } from '@/lib/lift/session';
 import { sql } from '@/db';
 import { loadLiftModel } from '@/lib/lift-dashboard/queries';
+import { loadTemplateLibrary } from '@/lib/lift/templates';
 import { exerciseDetail, exerciseList, muscleSets, sessionDetail, sessionSummaries, topLifts, weeklyVolume } from '@/lib/lift-dashboard/stats.mjs';
 import { liftOverview } from '@/lib/lift-dashboard/overview.mjs';
 import { loadPerformance } from '@/lib/performance/queries';
@@ -135,6 +136,7 @@ export async function runChecks(now = new Date(), { migrations = true }: { migra
       if (missing.length) throw new Error(`cards not filled: ${missing.join(', ')}`);
     }),
     // GET /api/lift/week (the Lift app's Week tab): this week and the next three.
+    check('lift templates', () => loadTemplateLibrary(userId, today)),
     check('lift week', () => loadLiftWeeks(userId, monday, 4, today, 'America/Los_Angeles', now)),
     check('activity (latest)', async () => {
       const v = await loadActivity(userId, 'latest');

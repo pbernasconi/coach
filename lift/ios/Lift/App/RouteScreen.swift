@@ -80,7 +80,7 @@ struct RouteScreen: View {
             )
         case .activity, .liftSession, .liftExercise, .liftWeekly, .weighIn, .plannedWorkout:
             AppAPIRouteScreen(route: route, dependencies: dependencies, router: router, toasts: toasts)
-        case .templates, .template, .exercisePicker, .workoutSummary:
+        case .template, .exercisePicker, .workoutSummary:
             PlanRouteScreen(route: route, dependencies: dependencies, router: router)
         }
     }

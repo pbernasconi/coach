@@ -17,7 +17,8 @@ A personal training app for one athlete (the owner is the first row in `users`; 
 pages and loaders). It plans endurance and strength training and shows what was done. Live at
 https://coach.paolobernasconi.com (Vercel Hobby, Neon Postgres with hard monthly quotas, Clerk sign-in).
 
-- **Pages** (`src/app/(dashboard)/`): Performance (`/`), Plan (`/plan`, the month calendar; `/plan/week`, weekly planning), Lift, Goals, Health
+- **Pages** (`src/app/(dashboard)/`): Performance (`/`), Plan (`/plan`, the month calendar; `/plan/week`, weekly planning), Lift
+  (`/lift/templates` browses and edits the Lift templates, `src/lib/lift/templates.ts`, shared with Coach chat), Goals, Health
   (vitals, labs, DEXA at `/health/dexa`), Settings, and an activity page (`/activities/[id]`).
 - **Data in**: Strava (webhook and `sync.yml`), Garmin (`garmin.yml`, a Python job), the Lift iPhone app
   (`lift/`, its own sync), Google Calendar, Function Health (`function.yml`, by hand), the bathroom scale

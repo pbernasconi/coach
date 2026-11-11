@@ -10,28 +10,36 @@ nonisolated struct TemplatesState: Equatable, Sendable {
     var toast: TemplatesToast?
 }
 
-/// One template as the list shows it.
+/// One template as the list shows it: its name and size over every exercise with its sets, reps, load and rest.
 nonisolated struct TemplateItem: Equatable, Sendable, Identifiable {
     var id: UUID
     var name: String
-    /// "Back squat, Romanian deadlift, Calf raise".
-    var exercises: String
     /// "3 exercises · 8 sets".
     var size: String
+    /// The exercises in workout order, as the template editor lists them.
+    var slots: [TemplateSlotItem]
 
-    init(id: UUID, name: String, exercises: String, size: String) {
+    init(id: UUID, name: String, size: String, slots: [TemplateSlotItem]) {
         self.id = id
         self.name = name
-        self.exercises = exercises
         self.size = size
+        self.slots = slots
     }
 
-    init(template: DayTemplate) {
+    /// Loads in `unit`, as the editor shows them.
+    init(template: DayTemplate, unit: WeightUnit) {
         self.init(
             id: template.id,
             name: template.name,
-            exercises: TemplateText.exercises(template),
-            size: TemplateText.size(exercises: template.exercises.count, sets: template.totalSets)
+            size: TemplateText.size(exercises: template.exercises.count, sets: template.totalSets),
+            slots: template.exercises.enumerated().map { index, slot in
+                TemplateSlotItem(
+                    id: slot.id,
+                    number: index + 1,
+                    name: slot.displayName,
+                    detail: TemplateText.slot(slot, unit: unit)
+                )
+            }
         )
     }
 }

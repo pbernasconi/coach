@@ -16,9 +16,7 @@ nonisolated enum AppRoute: Hashable, Sendable {
     case acknowledgements
     /// The gym's bars, plates and collars, from Settings.
     case plates
-    /// The day templates ("Upper A"), to plan workouts from.
-    case templates
-    /// One template's name and exercise slots.
+    /// One template's name and exercise slots, to edit. The templates themselves are a segment of the Lift tab.
     case template(UUID)
     /// Picks an exercise from the library or the catalog and adds it to a template or a session, or swaps a session's
     /// exercise for it.

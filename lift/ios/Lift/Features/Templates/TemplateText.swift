@@ -33,12 +33,6 @@ nonisolated enum TemplateText {
         return "\(SessionText.exercises(exercises)) · \(setText)"
     }
 
-    /// The exercise names in order, "Back squat, Romanian deadlift", or a note that there are none yet.
-    static func exercises(_ template: DayTemplate) -> String {
-        guard !template.exercises.isEmpty else { return String(localized: "No exercises yet") }
-        return template.exercises.map(\.displayName).joined(separator: ", ")
-    }
-
     /// The name a new template gets: "New template", or "New template 2" and up when that is taken.
     static func newName(taken: [String]) -> String {
         let base = String(localized: "New template")
