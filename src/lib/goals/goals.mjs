@@ -4,7 +4,7 @@ import { toDay } from '../db-time.mjs';
 // They live in users.settings.goals. The web (Performance, Settings) and the planner (src/lib/planner/profile.mjs) use this file.
 
 /**
- * @typedef {'run_10k_pace' | 'ski_4000m' | 'vo2max' | 'ride_km'} GoalKind
+ * @typedef {'run_10k_pace' | 'run_half_time' | 'run_marathon_time' | 'ski_4000m' | 'vo2max' | 'ride_km'} GoalKind
  * @typedef {{ id: string; kind: GoalKind; title?: string; target: number; baseline: number; start: string; deadline: string }} Goal
  * @typedef {'done' | 'open' | 'on_track' | 'behind' | 'not_started' | 'missed'} GoalStatus
  * @typedef {Goal & { title: string; current: number | null; progress: number; status: GoalStatus; daysLeft: number; detail: string[] }} GoalProgress
@@ -16,10 +16,25 @@ import { toDay } from '../db-time.mjs';
  */
 export const GOAL_KINDS = {
   run_10k_pace: { label: '10k pace', unit: 'min/km', lower: true, linear: false },
+  run_half_time: { label: 'Half marathon time', unit: 'h:mm:ss', lower: true, linear: false },
+  run_marathon_time: { label: 'Marathon time', unit: 'h:mm:ss', lower: true, linear: false },
   ski_4000m: { label: '4000 m peaks on skis', unit: 'peaks', lower: false, linear: false },
   vo2max: { label: 'VO2 max', unit: 'mL/kg/min', lower: false, linear: false },
   ride_km: { label: 'Ride distance', unit: 'km', lower: false, linear: true },
 };
+
+/** Race distance in metres of the race time kinds. */
+export const RACE_METRES = { run_half_time: 21097.5, run_marathon_time: 42195 };
+
+/** True for a kind whose value is a race time in seconds. */
+export const isRaceTime = (kind) => kind in RACE_METRES;
+
+/** Seconds as "1:45:00". */
+export function duration(sec) {
+  if (sec == null || !Number.isFinite(sec)) return '-';
+  const s = Math.round(sec);
+  return `${Math.floor(s / 3600)}:${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+}
 
 /** Seconds per km as "4:00". */
 export function pace(sec) {
@@ -32,17 +47,32 @@ export function pace(sec) {
 export function formatValue(kind, v) {
   if (v == null || !Number.isFinite(v)) return '-';
   if (kind === 'run_10k_pace') return `${pace(v)}/km`;
+  if (isRaceTime(kind)) return duration(v);
   if (kind === 'ride_km') return `${Math.round(v).toLocaleString('en-US')} km`;
   if (kind === 'ski_4000m') return String(Math.round(v));
   return String(Math.round(v * 10) / 10);
 }
 
-/** Form text to a value: "4:00" → 240 for pace; a number for the other kinds. NaN when the text is not valid. */
+/** A value as the form shows it: "4:00" for pace, "1:45:00" for a race time, a number for the other kinds. */
+export function inputText(kind, v) {
+  if (kind === 'run_10k_pace') return pace(v);
+  if (isRaceTime(kind)) return duration(v);
+  return String(v);
+}
+
+/**
+ * Form text to a value: "4:00" → 240 for pace; "1:45:00" or "1:45" (h:mm) → seconds for a race time; a number for
+ * the other kinds. NaN when the text is not valid.
+ */
 export function parseValue(kind, text) {
   const t = String(text ?? '').trim();
   if (kind === 'run_10k_pace') {
     const m = /^(\d{1,2}):([0-5]\d)$/.exec(t);
     return m ? Number(m[1]) * 60 + Number(m[2]) : NaN;
+  }
+  if (isRaceTime(kind)) {
+    const m = /^(\d{1,2}):([0-5]\d)(?::([0-5]\d))?$/.exec(t);
+    return m ? Number(m[1]) * 3600 + Number(m[2]) * 60 + Number(m[3] ?? 0) : NaN;
   }
   return t === '' ? NaN : Number(t.replace(/,/g, ''));
 }
@@ -50,6 +80,8 @@ export function parseValue(kind, text) {
 /** The goal as a short sentence, for a goal without a title. */
 export function describe(g) {
   if (g.kind === 'run_10k_pace') return `Run 10k at ${pace(g.target)}/km`;
+  if (g.kind === 'run_half_time') return `Half marathon in ${duration(g.target)}`;
+  if (g.kind === 'run_marathon_time') return `Marathon in ${duration(g.target)}`;
   if (g.kind === 'ski_4000m') return `Ski ${g.target} × 4000 m peaks`;
   if (g.kind === 'vo2max') return `VO2 max ${g.target}`;
   return `Ride ${Math.round(g.target).toLocaleString('en-US')} km`;
@@ -106,6 +138,8 @@ const minDate = (a, b) => (a < b ? a : b);
 /**
  * Measures every goal. `sql` is the Neon tagged template (the web's `@/db` sql, or neon() in a script).
  * - run_10k_pace: the fastest average pace of a run of 10 km or more in the last 12 months.
+ * - run_half_time, run_marathon_time: the fastest run of the race distance or more (98%, for GPS) since the goal's
+ *   start, as the time at its average pace over the race distance. The Garmin race prediction is in the detail.
  * - ski_4000m: backcountry ski days with a high point of 4000 m or more, from start to deadline.
  * - vo2max: the newest Garmin VO2 max, the higher of the running and the cycling value.
  * - ride_km: all rides (outdoor, virtual, commute) from start to deadline.
@@ -137,6 +171,23 @@ export async function measureGoals(sql, userId, goals, today) {
         detail.push(`Best 10k+ run in 12 months: ${pace(current)}/km (${best.name}, ${dayText(best.d)})`);
       } else detail.push('No run of 10 km or more in 12 months');
       if (pred) detail.push(`Garmin 10k prediction: ${pace(Number(pred.value) / 10)}/km`);
+    } else if (g.kind === 'run_half_time' || g.kind === 'run_marathon_time') {
+      const metres = RACE_METRES[g.kind];
+      const metric = g.kind === 'run_half_time' ? 'race_pred_half_s' : 'race_pred_marathon_s';
+      const [[best], [pred]] = await Promise.all([
+        sql`
+          SELECT to_char(start_date_local, 'YYYY-MM-DD') AS d, name, moving_time * ${metres} / distance AS sec
+          FROM strava_activities
+          WHERE user_id = ${userId} AND sport_type IN ('Run', 'VirtualRun') AND distance >= ${metres * 0.98} AND moving_time > 0
+            AND start_date_local >= ${g.start} AND start_date_local < ${end}::date + 1
+          ORDER BY sec LIMIT 1`,
+        sql`SELECT value FROM health_samples WHERE user_id = ${userId} AND metric = ${metric} ORDER BY health_samples.date DESC LIMIT 1`,
+      ]);
+      if (best) {
+        current = Number(best.sec);
+        detail.push(`Best run since ${g.start}: ${duration(current)} (${best.name}, ${dayText(best.d)})`);
+      } else detail.push(`No run of the full distance since ${g.start}`);
+      if (pred) detail.push(`Garmin prediction: ${duration(Number(pred.value))}`);
     } else if (g.kind === 'ski_4000m') {
       const rows = await sql`
         SELECT DISTINCT ON (start_date_local::date, name) to_char(start_date_local, 'YYYY-MM-DD') AS d, name, elev_high

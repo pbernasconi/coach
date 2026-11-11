@@ -12,6 +12,17 @@ test('pace text and values', () => {
   assert.equal(describe(g('ski_4000m', 3, 0)), 'Ski 3 × 4000 m peaks');
 });
 
+test('race time text and values', () => {
+  assert.equal(parseValue('run_half_time', '1:45:00'), 6300);
+  assert.equal(parseValue('run_marathon_time', '3:30'), 12600);
+  assert.ok(Number.isNaN(parseValue('run_half_time', '1:75:00')));
+  assert.equal(formatValue('run_marathon_time', 12599.6), '3:30:00');
+  assert.equal(describe(g('run_half_time', 5940, 6513)), 'Half marathon in 1:39:00');
+  const m = g('run_marathon_time', 12600, 14578, '2026-11-10', '2027-12-05');
+  assert.equal(judge(m, 12500, '2027-12-05').status, 'done');
+  assert.equal(judge(m, null, '2027-01-01').progress, 0);
+});
+
 test('a lower pace counts as progress, and the target pace is done', () => {
   const run = g('run_10k_pace', 240, 277, '2026-10-19', '2027-06-01');
   const half = judge(run, 258.5, '2027-01-01');

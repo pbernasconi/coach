@@ -35,8 +35,8 @@ export const PROPOSE_TOOL = {
           'Settings → Events: action add (default without id) | update | remove; priority A | B | C; sport ride | run | ' +
           'swim | triathlon | hike | strength | other; target free text like "sub 1:45") | ' +
           '{ op: "goal", action?, id?, kind?, title?, target?, baseline?, start?, deadline? } (a milestone goal in ' +
-          'Settings → Goals: kind run_10k_pace | ski_4000m | vo2max | ride_km; target and baseline in its unit, pace as ' +
-          '"4:30"; a new goal needs baseline, where he is now) | ' +
+          'Settings → Goals: kind run_10k_pace | run_half_time | run_marathon_time | ski_4000m | vo2max | ride_km; target and baseline in its ' +
+          'unit, pace as "4:30", a race time as "1:45:00"; a new goal needs baseline, where he is now) | ' +
           '{ op: "plan_week", week, away?, busy?, sick?, daysOff?, hours?, gym?, hard?, longDay?, feel?, note? } (the ' +
           'weekly planner drafts that whole week on Apply and Paolo accepts the draft on Plan: week is any day of it, ' +
           'this week up to 7 weeks ahead; away/busy/sick/daysOff are lists of its days, each day in one list; hours 2-20, ' +
