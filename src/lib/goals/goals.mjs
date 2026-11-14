@@ -176,9 +176,9 @@ export async function measureGoals(sql, userId, goals, today) {
       const metric = g.kind === 'run_half_time' ? 'race_pred_half_s' : 'race_pred_marathon_s';
       const [[best], [pred]] = await Promise.all([
         sql`
-          SELECT to_char(start_date_local, 'YYYY-MM-DD') AS d, name, moving_time * ${metres} / distance AS sec
+          SELECT to_char(start_date_local, 'YYYY-MM-DD') AS d, name, moving_time * ${metres}::float8 / distance AS sec
           FROM strava_activities
-          WHERE user_id = ${userId} AND sport_type IN ('Run', 'VirtualRun') AND distance >= ${metres * 0.98} AND moving_time > 0
+          WHERE user_id = ${userId} AND sport_type IN ('Run', 'VirtualRun') AND distance >= ${metres * 0.98}::float8 AND moving_time > 0
             AND start_date_local >= ${g.start} AND start_date_local < ${end}::date + 1
           ORDER BY sec LIMIT 1`,
         sql`SELECT value FROM health_samples WHERE user_id = ${userId} AND metric = ${metric} ORDER BY health_samples.date DESC LIMIT 1`,
