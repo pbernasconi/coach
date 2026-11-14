@@ -95,6 +95,27 @@ test('a done lift takes its minutes from the Lift session; a rest day has no com
   assert.equal(weekItem(workout({ sport: 'cycling', title: 'Zwift ride', workoutType: null }), sports).sport, 'ride');
 });
 
+test('a swap shows what was done: the activity sport and name, the plan in the subtitle', () => {
+  const item = weekItem(
+    workout({
+      title: 'Recovery spin', sport: 'ride', duration: 45, tss: 35, state: 'done',
+      match: { source: 'strava', id: '7', name: 'Afternoon Run', swapped: true, sport: 'run' },
+      actual: { min: 47, tss: 60, km: 8.3 }, compliance: { level: 'good', label: 'Done', ratio: 1, basis: 'duration' },
+    }),
+    sports
+  );
+  assert.equal(item.sport, 'run');
+  assert.equal(item.title, 'Afternoon Run');
+  assert.equal(item.insteadOf, 'Recovery spin');
+  assert.equal(item.subtitle, 'Instead of Recovery spin · 45 min · 35 TSS');
+  assert.equal(item.done.activityId, '7');
+  // Not a swap: the plan's own title and sport.
+  const plain = weekItem(workout({ title: 'Recovery spin', sport: 'ride', state: 'done', match: { source: 'strava', id: '8', name: 'Spin' }, actual: { min: 45, tss: 30 } }), sports);
+  assert.equal(plain.title, 'Recovery spin');
+  assert.equal(plain.sport, 'ride');
+  assert.equal(plain.insteadOf, null);
+});
+
 test('totals text: done / planned for a started week, planned only ahead, nothing for an empty week', () => {
   const s = (monday, done, planned) => ({ monday, done: { min: 0, km: 0, tss: 0, count: 0, liftSessions: 0, bySport: {}, ...done }, planned: { min: 0, tss: 0, count: 0, done: 0, missed: 0, ...planned }, fitness: null });
   assert.equal(totalsText(s('2026-10-19', { min: 130, tss: 140, count: 2 }, { min: 540, tss: 520, count: 9, done: 2 }), '2026-10-20'), '2/9 done · 2:10 of 9:00 · 140 of 520 TSS');

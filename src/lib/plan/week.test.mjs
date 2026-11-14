@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { adaptForFeel, addDays, isHard, matchActivityId, matchWeek, mondayOf, sportOf, sportOfStrava, undoAdapts } from './week.mjs';
+import { adaptForFeel, addDays, isHard, matchActivityId, canStandIn, matchWeek, mondayOf, sportOf, sportOfStrava, undoAdapts } from './week.mjs';
 
 const MON = '2026-10-19';
 const day = (n) => addDays(MON, n);
@@ -77,6 +77,50 @@ test('matchWeek: a run instead of the spin and the lift counts for the spin only
   });
   assert.equal(result.get('heavy').status, 'missed'); // a run never counts as a lift
   assert.equal(matchActivityId(result.get('spin').match), 'r1');
+});
+
+test('matchWeek: a hike never counts for the planned long run (Sat Nov 14, Zurich)', () => {
+  const ws = [
+    w('long', 0, 'Long run (Zurich)', { sport: 'run', workoutType: 'long-run', duration: 100, tss: 90 }),
+    w('stretch', 0, 'Back & hip stretch', { sport: 'yoga', duration: 10, tss: 7 }),
+  ];
+  const acts = [{ id: 'h1', date: day(0), sport: 'hike', name: 'Afternoon Hike' }];
+  const today = matchWeek(ws, acts, [], day(0));
+  assert.equal(today.get('long').status, 'today'); // still open: the hike is its own activity
+  assert.equal(today.get('long').match, null);
+  assert.equal(matchWeek(ws, acts, [], day(1)).get('long').status, 'missed');
+  // A run that day still counts, with the hike left over as its own activity.
+  const both = matchWeek(ws, [...acts, { id: 'r1', date: day(0), sport: 'run', name: 'Evening Run' }], [], day(1));
+  assert.deepEqual(both.get('long').match, { source: 'strava', id: 'r1', name: 'Evening Run' });
+});
+
+test('canStandIn: training sports swap with each other, a hike or walk only with a hike or walk', () => {
+  for (const planned of ['run', 'ride', 'swim']) {
+    for (const done of ['run', 'ride', 'swim']) assert.equal(canStandIn(planned, done), true, `${done} for ${planned}`);
+    for (const done of ['hike', 'walk', 'strength', 'yoga', 'other']) assert.equal(canStandIn(planned, done), false, `${done} for ${planned}`);
+  }
+  assert.equal(canStandIn('hike', 'walk'), true);
+  assert.equal(canStandIn('walk', 'hike'), true);
+  assert.equal(canStandIn('hike', 'run'), false); // a run is not the hike that was planned either
+  assert.equal(canStandIn('strength', 'run'), false);
+  assert.equal(canStandIn('rest', 'walk'), false);
+});
+
+test('matchWeek: a walk never counts for a ride or a swim, a walk counts for a planned hike', () => {
+  const ws = [
+    w('ride', 0, 'Easy ride', { sport: 'ride', duration: 60 }),
+    w('swim', 1, 'Easy swim', { sport: 'swim', duration: 30 }),
+    w('hike', 2, 'Hike with Nico', { sport: 'hike', duration: 120 }),
+  ];
+  const acts = [
+    { id: 'w1', date: day(0), sport: 'walk', name: 'Morning Walk' },
+    { id: 'w2', date: day(1), sport: 'walk', name: 'Walk' },
+    { id: 'w3', date: day(2), sport: 'walk', name: 'Long Walk' },
+  ];
+  const result = matchWeek(ws, acts, [], day(3));
+  assert.equal(result.get('ride').status, 'missed');
+  assert.equal(result.get('swim').status, 'missed');
+  assert.deepEqual(result.get('hike').match, { source: 'strava', id: 'w3', name: 'Long Walk', swapped: true, sport: 'walk' });
 });
 
 test('sportOf: the sport the plan names wins over the words of the title', () => {
