@@ -102,11 +102,15 @@ const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
  * @param {{ known: Set<string>, label: (id: string) => string }} sports  ids and labels of design/sports.json
  */
 export function weekItem(w, sports) {
-  const sport = sportId(w, sports.known);
+  const match0 = w.state === 'done' ? w.match : null;
+  // A swap (a run instead of the planned spin) shows what was done, as the web card does: the activity's sport and
+  // name, with the plan in the subtitle. So the phone never shows a ride under a run's title and icon.
+  const swap = match0?.swapped && sports.known.has(match0.sport) ? match0 : null;
+  const sport = swap ? swap.sport : sportId(w, sports.known);
   const steps = w.steps && Array.isArray(w.steps.steps) ? w.steps : null;
   const duration = num(w.duration);
   const tss = num(w.tss);
-  const match = w.state === 'done' ? w.match : null;
+  const match = match0;
   const doneMinutes = match ? (num(w.actual?.min) ?? (match.source === 'lift' ? num(w.lift?.minutes) : null)) : null;
   const doneTss = match ? num(w.actual?.tss) : null;
   const planned = loadText(duration, tss);
@@ -115,13 +119,16 @@ export function weekItem(w, sports) {
     date: w.date,
     startTime: w.startTime ?? null,
     endTime: w.endTime ?? null,
-    title: plainTitle(w.title),
+    title: swap ? swap.name || sports.label(sport) : plainTitle(w.title),
     sport,
     workoutType: w.workoutType ?? null,
     intensity: w.intensity ?? null,
     durationMinutes: duration,
     tss,
-    subtitle: [w.startTime, planned].filter(Boolean).join(' · ') || sports.label(sport),
+    subtitle: swap
+      ? [`Instead of ${plainTitle(w.title)}`, planned].filter(Boolean).join(' · ')
+      : [w.startTime, planned].filter(Boolean).join(' · ') || sports.label(sport),
+    insteadOf: swap ? plainTitle(w.title) : null,
     state: w.state,
     stateLabel: w.compliance?.label ?? w.state,
     compliance: w.state === 'done' && RATED.has(w.compliance?.level) ? w.compliance.level : null,

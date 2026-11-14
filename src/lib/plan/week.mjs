@@ -75,8 +75,24 @@ export function isHard(w) {
   return /vo2|threshold|interval|tempo|race|sweet.?spot|test-10k|10k test/i.test(`${w.workoutType ?? ''} ${w.title ?? ''}`);
 }
 
-/** Endurance sports: one can stand in for another on the day (a run instead of a spin). */
+/** Endurance sports. */
 const CARDIO = new Set(['run', 'ride', 'hike', 'walk', 'swim']);
+
+/** Which done sports can stand in for a planned one on the day. Training sessions stand in for each other (a run
+ * instead of the spin); a hike or a walk only for a planned hike or walk. A hike is never a run: it stays its own
+ * activity and the planned run stays open (missed once the day is over), on the web and the phone alike. */
+const STANDS_IN = {
+  run: new Set(['run', 'ride', 'swim']),
+  ride: new Set(['run', 'ride', 'swim']),
+  swim: new Set(['run', 'ride', 'swim']),
+  hike: new Set(['hike', 'walk']),
+  walk: new Set(['hike', 'walk']),
+};
+
+/** Whether an activity of sport `done` can count for a planned workout of sport `planned` as a swap. */
+export function canStandIn(planned, done) {
+  return Boolean(STANDS_IN[planned]?.has(done));
+}
 
 /** The Strava activity a match holds: the match itself, or the watch activity next to a Lift session. */
 export function matchActivityId(match) {
@@ -86,7 +102,7 @@ export function matchActivityId(match) {
 
 /**
  * Status for each workout: done (an activity or Lift session on that day matches its sport, or cardio of another
- * sport stands in for it: `swapped`), skipped,
+ * training sport stands in for it: `swapped`, see canStandIn), skipped,
  * missed (a past day with no match), today, or planned. Each activity matches at most one workout. A strength
  * workout matches its Lift session and also the day's Strava strength activity (the watch), as `activityId`.
  *
@@ -148,7 +164,8 @@ export function matchWeek(workouts, activities, liftSessions, today) {
   // every same-sport match, so a run never takes a planned run's activity. Never for a lift or a rest day.
   for (const w of ordered) {
     if (matches.get(w.id) || w.status === 'skipped' || w.status === 'done' || !CARDIO.has(sportOf(w))) continue;
-    const act = activities.find((a) => a.date === w.date && CARDIO.has(a.sport) && !used.has(`strava:${a.id}`));
+    const planned = sportOf(w);
+    const act = activities.find((a) => a.date === w.date && canStandIn(planned, a.sport) && !used.has(`strava:${a.id}`));
     if (act) {
       used.add(`strava:${act.id}`);
       matches.set(w.id, { source: 'strava', id: act.id, name: act.name, swapped: true, sport: act.sport });
