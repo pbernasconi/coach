@@ -7,6 +7,7 @@ import { loadFeedback } from '@/lib/plan/feedback';
 import { addDays, matchActivityId, mondayOf } from '@/lib/plan/week.mjs';
 import { stravaTypeLabel } from '@/lib/sports';
 import { loadActivity, loadActivityContext } from './queries';
+import { loadReviewSection } from './review';
 import { detailResponse, listResponse, parseDetailQuery } from './app-api.mjs';
 
 type Row = Record<string, unknown>;
@@ -77,7 +78,10 @@ export async function loadAppActivity(userId: string, id: string, today: string,
   const item = `strava:${v.stravaId}`;
   const row = await load('app activity: feedback', () => loadFeedback(userId, [item], plannedId));
   const feedback = row.ok ? feedbackBlock({ item, date: v.day, title: v.name, planActivityId: plannedId, row: row.value }) : null;
-  const body = { ...detailResponse({ v, context, timeZone, today, now, typeLabel: stravaTypeLabel }), feedback };
+  // The coach's review (plan versus done, step by step, and Claude's words): null without a structured plan.
+  const reviewed = await load('app activity: review', () => loadReviewSection(userId, v, context.ok ? context.value : null));
+  const review = reviewed.ok ? (reviewed.value ? { ok: true, ...reviewed.value } : null) : { ok: false };
+  const body = { ...detailResponse({ v, context, timeZone, today, now, typeLabel: stravaTypeLabel }), feedback, review };
   return { body, rowId: v.id };
 }
 

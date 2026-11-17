@@ -89,8 +89,9 @@ used inside `Loadable`.
   finish, with its title; no energy (Lift cannot estimate it honestly). The first summary asks before the system sheet
   does, never at launch; Settings has the switch. `session.healthWorkoutID` (schema v5) keeps it saved once, and a
   discard deletes the workout Lift saved. Demo and `-fresh` data never touch Health.
-- **No generated commentary.** No AI summaries or "insights" text. Show numbers and plain labels. The one exception is
-  the Coach tab (`COACH-CHAT.md`): a chat where Coach answers and proposes plan changes that Paolo applies.
+- **No generated commentary.** No AI summaries or "insights" text. Show numbers and plain labels. The exceptions are
+  the Coach tab (`COACH-CHAT.md`): a chat where Coach answers and proposes plan changes that Paolo applies, and the
+  workout review on a done run or ride (lift/APP-API.md, "Workout review"), which Paolo asked for on 2026-11-17.
 - **Rescheduling** uses the lift sheet: move to another day, push to next week, change the workout, or
   remove it. Each action offers Undo instead of a confirmation dialog.
 - **Real data stays out of the repo.** Fixtures and tests use made-up sessions, never imported notes. A person's own

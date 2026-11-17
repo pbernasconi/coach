@@ -9,6 +9,10 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { detailResponse, listResponse } from '../../../src/lib/activity/app-api.mjs';
 import { trendsResponse } from '../../../src/lib/performance/trends-api.mjs';
+import { analyzeAdherence, plannedSteps } from '../../../src/lib/activity/adherence.mjs';
+import { reviewView } from '../../../src/lib/activity/review-view.mjs';
+import { bankWorkout } from '../../../src/lib/workouts/bank.mjs';
+import { stepSeconds } from '../../../src/lib/workouts/steps.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const out = join(here, '../Lift/Resources/DemoAPI');
@@ -101,7 +105,41 @@ const CONTEXT = {
   },
 };
 
-write('app-activities-id', detailResponse({ v: runView(), context: CONTEXT, timeZone: TZ, today: TODAY, now: NOW, typeLabel }));
+/**
+ * The workout review of a made-up VO2 run (lift/APP-API.md, "Workout review"): one lap per planned step, the first rep
+ * jogged and the clearance run hot, through the server's own analysis and view, with invented coach words.
+ */
+function demoReview() {
+  const workout = bankWorkout('vo2-a', 'run', 1, 60);
+  const plan = plannedSteps(workout);
+  const pick = { warmup: [2.95, 140], work: [3.6, 168], recovery: [2.65, 150], cooldown: [2.8, 140] };
+  const t = [], speed = [], hr = [], d = [], laps = [];
+  let time = 0, dist = 0;
+  plan.forEach(({ step, label }, i) => {
+    const secs = stepSeconds(step);
+    let [sp, h] = pick[step.kind] ?? [2.9, 145];
+    if (label === 'Rep 1/5') [sp, h] = [3.0, 152];
+    if (label === 'Lactate clearance') [sp, h] = [3.05, 158];
+    const startIndex = t.length;
+    for (let k = 0; k < secs / 4; k++) {
+      t.push(time + k * 4); speed.push(sp); d.push(dist + sp * k * 4); hr.push(Math.round(h - 6 + (12 * k * 4) / secs));
+    }
+    laps.push({ index: i + 1, elapsed: secs, moving: secs, distance: sp * secs, speed: sp, gapSpeed: sp, hr: h, maxHr: h + 6, watts: null, startIndex, endIndex: t.length - 1 });
+    time += secs; dist += sp * secs;
+  });
+  const series = { full: t.length, bucketStart: t.map((_, i) => i), t, d, speed, gap: speed, hr, watts: null };
+  const analysis = analyzeAdherence({ workout, series, laps, anchors: { lthr: 168, paceS: 270 } });
+  return { ok: true, ...reviewView(analysis, { status: 'ready', review: {
+    headline: 'Four strong reps after a soft first one: the VO2 work landed.',
+    rating: 'solid',
+    trainingEffect: 'About 12 minutes near VO2 max across reps 2 to 5, the stimulus this session is for.',
+    wentWell: ['Reps 2 to 5 were even, all within 5 s/km of each other.', 'The recoveries were truly easy, at 6:17/km.'],
+    toImprove: ['Rep 1 was jogged, so the set had four hard reps, not five.', 'The clearance ran hot, above its 144–153 bpm target.'],
+    nextTime: ['Start rep 1 at 4:40/km, not by feel.', 'Keep the clearance under 153 bpm, slow down if needed.'],
+  } }) };
+}
+
+write('app-activities-id', { ...detailResponse({ v: runView(), context: CONTEXT, timeZone: TZ, today: TODAY, now: NOW, typeLabel }), review: demoReview() });
 write('app-activities-9000000103', detailResponse({ v: rideView(), context: { ok: true, value: { ...CONTEXT.value, planned: null, sameRoute: [] } }, timeZone: TZ, today: TODAY, now: NOW, typeLabel }));
 write('app-activities-9000000104', detailResponse({
   v: { ...runView(), stravaId: '9000000104', name: 'Lunch walk', sportType: 'Walk', sport: 'walk', series: null, splits: [], laps: [], route: [], weather: null,

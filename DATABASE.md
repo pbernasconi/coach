@@ -44,7 +44,7 @@ migration fails there. The `db:push` script is gone for that reason; use the ste
 ## What Claude costs
 
 Every Claude API call Coach makes writes one row to `ai_usage` (`src/db/usage-schema.ts`, written by
-`src/lib/ai-usage/store.ts`): the feature (`chat`, `chat_warmup`, `planner`, `planner_eval`), the model and effort,
+`src/lib/ai-usage/store.ts`): the feature (`chat`, `chat_warmup`, `planner`, `planner_eval`, `activity_review`), the model and effort,
 the tokens (input, output, cache read, cache write), `cost_usd` priced by `src/lib/planner/cost.mjs`, how long it took,
 whether it worked, and `ref_id`, the `coach_messages` or `plan_runs` row it belongs to. The chat's $10 and the
 planner's $25 monthly caps add up this table. Rows from before 2026-10-27 were copied from those two tables.
@@ -59,6 +59,10 @@ FROM ai_usage GROUP BY 1, 2, 3 ORDER BY 1 DESC, usd DESC;
 
 A new Claude call adds its feature to `FEATURES` (`src/lib/ai-usage/usage.mjs`) and to the table's check in a
 migration, and calls `recordAiUsage` once per answer.
+
+`activity_reviews` keeps one workout review per Strava activity (`src/lib/activity/review.ts`): the analysis, Claude's
+review, its `key` (a hash of what it was written from: a new feel or plan writes it again), and its cost. The reviews
+have their own $5 monthly cap.
 
 ## Plan change log
 

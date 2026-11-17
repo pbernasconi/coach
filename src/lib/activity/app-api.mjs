@@ -440,7 +440,9 @@ export function detailResponse({ v, context, timeZone, today, now, typeLabel }) 
       ? { ok: false }
       : section("coach's view", () => {
           const load = loadView(v, c.load);
-          const planned = c.planned ? { ...c.planned, title: plainTitle(c.planned.title), ...plannedTexts(c.planned) } : null;
+          // The steps and the plan's words are on the plan half of the workout page (and in `review`), not here.
+          const p = c.planned ? { id: c.planned.id, title: c.planned.title, duration: c.planned.duration, tss: c.planned.tss, date: c.planned.date, compliance: c.planned.compliance } : null;
+          const planned = p ? { ...p, title: plainTitle(p.title), ...plannedTexts(p) } : null;
           return {
             planned,
             plannedEmptyText: planned ? null : 'Not matched to a planned workout.',

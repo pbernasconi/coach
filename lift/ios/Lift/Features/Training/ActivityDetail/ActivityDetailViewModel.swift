@@ -11,6 +11,7 @@ final class ActivityDetailViewModel {
 
     private let resource: AppResource<WorkoutDetail>
     private let feedbackSaver: WorkoutFeedbackSaver
+    private let reviewWriter: ActivityReviewWriter
     /// Nil where a Lift session cannot be started (demo pages, previews).
     private let starter: PlannedSessionStarter?
     private let data: any AppDataSource
@@ -44,6 +45,7 @@ final class ActivityDetailViewModel {
         )
         self.router = router
         self.feedbackSaver = WorkoutFeedbackSaver(data: data)
+        self.reviewWriter = ActivityReviewWriter(data: data)
         self.starter = starter
         self.data = data
         self.coachPlan = coachPlan
@@ -54,6 +56,7 @@ final class ActivityDetailViewModel {
     /// Started by the Screen's `.task`; cancelled when the view goes away (SCR-4).
     func run() async {
         await load()
+        if let review = await reviewWriter.write(state.workout.content.value?.activity) { state.writtenReview = review }
     }
 
     /// Writes return their Task so tests can await them (SCR-5).

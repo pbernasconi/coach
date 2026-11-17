@@ -5,7 +5,8 @@
 import { addUsage, NO_USAGE } from '../planner/cost.mjs';
 
 /** What Coach calls Claude for. The chat cap counts chat and its warm-ups; the planner cap counts planner runs. */
-export const FEATURES = /** @type {const} */ (['chat', 'chat_warmup', 'planner', 'planner_eval']);
+export const FEATURES = /** @type {const} */ (['chat', 'chat_warmup', 'planner', 'planner_eval', 'activity_review']);
+export const REVIEW_FEATURES = ['activity_review'];
 export const CHAT_FEATURES = ['chat', 'chat_warmup'];
 export const PLANNER_FEATURES = ['planner'];
 
