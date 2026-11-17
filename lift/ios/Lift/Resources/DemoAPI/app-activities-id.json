@@ -5646,5 +5646,327 @@
     "detail": "Nothing left."
    }
   ]
+ },
+ "review": {
+  "ok": true,
+  "score": 76,
+  "level": "partial",
+  "scoreWord": "Partly on plan",
+  "workoutName": "VO2 A: 5×3 min hard",
+  "alignedText": "Steps from your watch's laps",
+  "extraText": null,
+  "steps": [
+   {
+    "index": 0,
+    "label": "Warm-up",
+    "kind": "warmup",
+    "zone": "Z1",
+    "inRepeat": false,
+    "plannedText": "15:00 · 101–121 bpm",
+    "doneText": "15:00 · 5:39/km",
+    "hrText": "140 · max 146",
+    "inTargetText": null,
+    "verdict": "close",
+    "verdictLabel": "Close",
+    "plannedSeconds": 900,
+    "doneSeconds": 900,
+    "fromBucket": 0,
+    "toBucket": 224
+   },
+   {
+    "index": 1,
+    "label": "Rep 1/5",
+    "kind": "work",
+    "zone": "Z5",
+    "inRepeat": true,
+    "plannedText": "3:00 · Hard",
+    "doneText": "3:00 · 5:33/km",
+    "hrText": "152 · max 158",
+    "inTargetText": null,
+    "verdict": "close",
+    "verdictLabel": "Close",
+    "plannedSeconds": 180,
+    "doneSeconds": 180,
+    "fromBucket": 225,
+    "toBucket": 269
+   },
+   {
+    "index": 2,
+    "label": "Easy 1/5",
+    "kind": "recovery",
+    "zone": "Z1",
+    "inRepeat": true,
+    "plannedText": "3:00 · Easy",
+    "doneText": "3:00 · 6:17/km",
+    "hrText": "150 · max 156",
+    "inTargetText": null,
+    "verdict": "hit",
+    "verdictLabel": "On target",
+    "plannedSeconds": 180,
+    "doneSeconds": 180,
+    "fromBucket": 270,
+    "toBucket": 314
+   },
+   {
+    "index": 3,
+    "label": "Rep 2/5",
+    "kind": "work",
+    "zone": "Z5",
+    "inRepeat": true,
+    "plannedText": "3:00 · Hard",
+    "doneText": "3:00 · 4:38/km",
+    "hrText": "168 · max 174",
+    "inTargetText": null,
+    "verdict": "hit",
+    "verdictLabel": "On target",
+    "plannedSeconds": 180,
+    "doneSeconds": 180,
+    "fromBucket": 315,
+    "toBucket": 359
+   },
+   {
+    "index": 4,
+    "label": "Easy 2/5",
+    "kind": "recovery",
+    "zone": "Z1",
+    "inRepeat": true,
+    "plannedText": "3:00 · Easy",
+    "doneText": "3:00 · 6:17/km",
+    "hrText": "150 · max 156",
+    "inTargetText": null,
+    "verdict": "hit",
+    "verdictLabel": "On target",
+    "plannedSeconds": 180,
+    "doneSeconds": 180,
+    "fromBucket": 360,
+    "toBucket": 404
+   },
+   {
+    "index": 5,
+    "label": "Rep 3/5",
+    "kind": "work",
+    "zone": "Z5",
+    "inRepeat": true,
+    "plannedText": "3:00 · Hard",
+    "doneText": "3:00 · 4:38/km",
+    "hrText": "168 · max 174",
+    "inTargetText": null,
+    "verdict": "hit",
+    "verdictLabel": "On target",
+    "plannedSeconds": 180,
+    "doneSeconds": 180,
+    "fromBucket": 405,
+    "toBucket": 449
+   },
+   {
+    "index": 6,
+    "label": "Easy 3/5",
+    "kind": "recovery",
+    "zone": "Z1",
+    "inRepeat": true,
+    "plannedText": "3:00 · Easy",
+    "doneText": "3:00 · 6:17/km",
+    "hrText": "150 · max 156",
+    "inTargetText": null,
+    "verdict": "hit",
+    "verdictLabel": "On target",
+    "plannedSeconds": 180,
+    "doneSeconds": 180,
+    "fromBucket": 450,
+    "toBucket": 494
+   },
+   {
+    "index": 7,
+    "label": "Rep 4/5",
+    "kind": "work",
+    "zone": "Z5",
+    "inRepeat": true,
+    "plannedText": "3:00 · Hard",
+    "doneText": "3:00 · 4:38/km",
+    "hrText": "168 · max 174",
+    "inTargetText": null,
+    "verdict": "hit",
+    "verdictLabel": "On target",
+    "plannedSeconds": 180,
+    "doneSeconds": 180,
+    "fromBucket": 495,
+    "toBucket": 539
+   },
+   {
+    "index": 8,
+    "label": "Easy 4/5",
+    "kind": "recovery",
+    "zone": "Z1",
+    "inRepeat": true,
+    "plannedText": "3:00 · Easy",
+    "doneText": "3:00 · 6:17/km",
+    "hrText": "150 · max 156",
+    "inTargetText": null,
+    "verdict": "hit",
+    "verdictLabel": "On target",
+    "plannedSeconds": 180,
+    "doneSeconds": 180,
+    "fromBucket": 540,
+    "toBucket": 584
+   },
+   {
+    "index": 9,
+    "label": "Rep 5/5",
+    "kind": "work",
+    "zone": "Z5",
+    "inRepeat": true,
+    "plannedText": "3:00 · Hard",
+    "doneText": "3:00 · 4:38/km",
+    "hrText": "168 · max 174",
+    "inTargetText": null,
+    "verdict": "hit",
+    "verdictLabel": "On target",
+    "plannedSeconds": 180,
+    "doneSeconds": 180,
+    "fromBucket": 585,
+    "toBucket": 629
+   },
+   {
+    "index": 10,
+    "label": "Easy 5/5",
+    "kind": "recovery",
+    "zone": "Z1",
+    "inRepeat": true,
+    "plannedText": "3:00 · Easy",
+    "doneText": "3:00 · 6:17/km",
+    "hrText": "150 · max 156",
+    "inTargetText": null,
+    "verdict": "hit",
+    "verdictLabel": "On target",
+    "plannedSeconds": 180,
+    "doneSeconds": 180,
+    "fromBucket": 630,
+    "toBucket": 674
+   },
+   {
+    "index": 11,
+    "label": "Lactate clearance",
+    "kind": "work",
+    "zone": "Z2",
+    "inRepeat": false,
+    "plannedText": "15:00 · 144–153 bpm",
+    "doneText": "15:00 · 5:28/km",
+    "hrText": "158 · max 164",
+    "inTargetText": "0 % in target",
+    "verdict": "hard",
+    "verdictLabel": "Too hard",
+    "plannedSeconds": 900,
+    "doneSeconds": 900,
+    "fromBucket": 675,
+    "toBucket": 899
+   }
+  ],
+  "sets": [
+   {
+    "title": "5 × 3:00 hard, 3:00 easy",
+    "summary": "4 of 5 reps on target",
+    "reps": [
+     {
+      "label": "Rep 1/5",
+      "verdict": "close",
+      "text": "5:33",
+      "hrText": "max 158"
+     },
+     {
+      "label": "Rep 2/5",
+      "verdict": "hit",
+      "text": "4:38",
+      "hrText": "max 174"
+     },
+     {
+      "label": "Rep 3/5",
+      "verdict": "hit",
+      "text": "4:38",
+      "hrText": "max 174"
+     },
+     {
+      "label": "Rep 4/5",
+      "verdict": "hit",
+      "text": "4:38",
+      "hrText": "max 174"
+     },
+     {
+      "label": "Rep 5/5",
+      "verdict": "hit",
+      "text": "4:38",
+      "hrText": "max 174"
+     }
+    ],
+    "stats": [
+     {
+      "label": "Hard reps",
+      "value": "4:49/km"
+     },
+     {
+      "label": "First → last",
+      "value": "16.5 % faster"
+     },
+     {
+      "label": "Spread",
+      "value": "8.5 %"
+     },
+     {
+      "label": "HR drop per recovery",
+      "value": "-10 bpm"
+     },
+     {
+      "label": "Peak HR",
+      "value": "174 bpm"
+     }
+    ]
+   }
+  ],
+  "flags": [
+   "Lactate clearance ran above its 144–153 bpm target (5:28/km, 158 bpm, max 164).",
+   "5 × 3:00 hard, 3:00 easy: 4 of 5 reps on target.",
+   "The reps got 16.5 % faster from first to last.",
+   "The reps were uneven (8.5 % spread).",
+   "Heart rate did not come down during the recoveries."
+  ],
+  "ai": {
+   "status": "ready",
+   "note": null,
+   "headline": "Four strong reps after a soft first one: the VO2 work landed.",
+   "rating": "solid",
+   "ratingLabel": "Solid",
+   "sections": [
+    {
+     "key": "effect",
+     "title": "What it did for you",
+     "items": [
+      "About 12 minutes near VO2 max across reps 2 to 5, the stimulus this session is for."
+     ]
+    },
+    {
+     "key": "well",
+     "title": "Went well",
+     "items": [
+      "Reps 2 to 5 were even, all within 5 s/km of each other.",
+      "The recoveries were truly easy, at 6:17/km."
+     ]
+    },
+    {
+     "key": "improve",
+     "title": "To improve",
+     "items": [
+      "Rep 1 was jogged, so the set had four hard reps, not five.",
+      "The clearance ran hot, above its 144–153 bpm target."
+     ]
+    },
+    {
+     "key": "next",
+     "title": "Next time",
+     "items": [
+      "Start rep 1 at 4:40/km, not by feel.",
+      "Keep the clearance under 153 bpm, slow down if needed."
+     ]
+    }
+   ]
+  }
  }
 }

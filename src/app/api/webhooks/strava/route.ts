@@ -8,7 +8,8 @@
  *
  * A new activity is stored in full here (ingestActivity: detail, streams, weather, TSS, load, peaks), in a few
  * seconds, and only then does the "workout completed" notice go out, so the page it opens is complete. Then it
- * starts garmin.yml for the watch's own numbers, which arrive about a minute later.
+ * starts garmin.yml for the watch's own numbers, which arrive about a minute later, and writes the coach's review of a
+ * planned run or ride (up to a minute of Claude).
  */
 
 import { after } from 'next/server';
@@ -19,10 +20,13 @@ import { clearCache } from '@/lib/data-cache';
 import { prefillWatchFeedback } from '@/lib/activity/watch-feedback.mjs';
 import { notifyStravaWorkouts } from '@/lib/notifications';
 import { dispatchWorkflow } from '@/lib/plan/proposals';
+import { generateReview } from '@/lib/activity/review';
+import { HOME_TZ } from '@/lib/calendar-sync/push.mjs';
+import { todayIn } from '@/lib/plan/week.mjs';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60;
+export const maxDuration = 180;
 
 // An edit that arrives while the activity's create event is still storing it waits this long, so the two do not
 // both insert the row.
@@ -53,7 +57,7 @@ export async function POST(request: Request) {
     return Response.json({ error: 'bad json' }, { status: 400 });
   }
 
-  const [conn] = await sql`SELECT athlete_id FROM strava_connections WHERE is_active = true LIMIT 1`;
+  const [conn] = await sql`SELECT athlete_id, user_id FROM strava_connections WHERE is_active = true LIMIT 1`;
   if (!conn || Number(event.owner_id) !== Number(conn.athlete_id)) return Response.json({ ignored: true });
 
   after(async () => {
@@ -78,6 +82,13 @@ export async function POST(request: Request) {
         if (create && process.env.VERCEL_ENV === 'production') {
           const d = await dispatchWorkflow('garmin.yml', { activities: 'true' });
           if ('error' in d) console.error('Garmin activities job not started:', d.error);
+        }
+        // The coach's review of a planned run or ride (src/lib/activity/review.ts), so the page finds it ready. Null
+        // (nothing to do) for an activity without a structured plan.
+        if (r.created) {
+          await generateReview(String(conn.user_id), String(event.object_id), todayIn(HOME_TZ)).catch((e: unknown) =>
+            console.error('Workout review failed:', e instanceof Error ? e.message : e)
+          );
         }
       }
     } catch (error) {

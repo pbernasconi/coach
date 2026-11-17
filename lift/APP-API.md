@@ -820,8 +820,38 @@ Field rules:
 - `segments.rows`: the top 15 (PRs and top-10 ranks first, then ride order); `count` is the total. The web's
   "All segments" list is not sent.
 - `feedback`: see "Feedback" (item `strava:<id>`, with the plan workout it completed); `null` when it did not load.
+- `review`: see "Workout review"; `null` for an activity that completed no structured run or ride.
 - Not sent: the web's range highlights (a lap or segment on the charts and the map), the map's crosshair dot, links
   to Strava segments, and the Health day link.
+
+#### Workout review: `review` in the detail, `PUT /api/app/activities/{id}/review`
+
+The planned workout against what was done, step by step (`src/lib/activity/adherence.mjs`), and Claude's coaching on
+it (`src/lib/activity/review.ts`, prompt `src/lib/planner/prompts/review.md`), as the web's "Workout review" card shows
+it (`src/lib/activity/review-view.mjs`). Only for a run or ride that completed a plan workout with steps.
+
+```json
+"review": { "ok": true, "score": 74, "level": "partial", "scoreWord": "Partly on plan", "workoutName": "VO2 A: 5×3 min hard",
+  "alignedText": "Steps from your watch's laps", "extraText": "5:04 after the plan",
+  "steps": [{ "index": 1, "label": "Rep 1/5", "kind": "work", "zone": "Z5", "inRepeat": true, "plannedText": "3:00 · Hard",
+    "doneText": "2:59 · 5:41/km", "hrText": "153 · max 158", "inTargetText": null, "verdict": "easy", "verdictLabel": "Too easy",
+    "plannedSeconds": 180, "doneSeconds": 179, "fromBucket": 229, "toBucket": 273 }],
+  "sets": [{ "title": "5 × 3:00 hard, 3:00 easy", "summary": "4 of 5 reps on target",
+    "reps": [{ "label": "Rep 1/5", "verdict": "easy", "text": "5:41", "hrText": "max 158" }],
+    "stats": [{ "label": "Hard reps", "value": "4:51/km" }] }],
+  "flags": ["Rep 1 was easy (5:41/km)."],
+  "ai": { "status": "ready", "note": null, "headline": "…", "rating": "solid", "ratingLabel": "Solid",
+    "sections": [{ "key": "effect", "title": "What it did for you", "items": ["…"] }] } }
+```
+
+- `level`: `good` (85 and up), `partial` (60 and up), `off`. `verdict`: `hit`, `close`, `easy`, `hard`, `short`,
+  `missed`. `zone`: `Z1`…`Z5`. `fromBucket`/`toBucket`: the step's span in the web's chart points.
+- `ai.status`: `ready`; `pending` (not written yet, or the plan, the steps or the feel changed since); `failed` (the
+  last try failed, `note` says so; the last good words stay); `off` (the month's $5 cap is spent). `sections` (keys
+  `effect`, `well`, `improve`, `next`) leave out an empty list.
+- The Strava webhook writes it for a new activity, and Sync's hourly "Workout reviews" step catches what it missed.
+  When the page still says `pending`, the app sends `PUT /api/app/activities/{id}/review` (body `{}`), once: it writes
+  the review (up to a minute of Claude) and answers with the section above; 404 when the activity has none.
 
 ### Planned workout: `GET /api/app/plan/{id}?tz=`
 

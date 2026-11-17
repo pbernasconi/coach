@@ -93,6 +93,7 @@ private struct ActivityScrollPage: View {
                         detail: activity,
                         plan: workout.plan,
                         feedback: state.shownFeedback,
+                        review: state.shownReview,
                         save: state.feedback.save,
                         send: send
                     )

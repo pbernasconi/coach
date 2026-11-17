@@ -15,6 +15,8 @@ import { load } from '@/lib/safe';
 import { sport, stravaTypeLabel } from '@/lib/sports';
 import { ActivityHoverProvider } from './ActivityHover';
 import { ActivityBody, sectionsFor } from './Sections';
+import WorkoutReview, { type ReviewSection } from './WorkoutReview';
+import { loadReviewSection } from '@/lib/activity/review';
 
 export const metadata: Metadata = { title: 'Activity' };
 
@@ -66,8 +68,11 @@ export default async function ActivityPage({ params }: { params: Promise<{ id: s
   }
   const context = await load("Coach's view", () => loadActivityContext(userId, v, today));
   const s = sport(v.sport);
-  const sections = sectionsFor(v);
   const planned = context.ok ? context.value.planned : null;
+  // The coach's review (plan versus done, step by step): only for a planned run or ride with steps.
+  const review = await load('Workout review', () => loadReviewSection(userId, v, context.ok ? context.value : null));
+  const sections = sectionsFor(v);
+  if (review.ok && review.value) sections.splice(1, 0, { id: 'review', label: 'Workout review' });
   const plan = planVsDone(v, planned);
 
   return (
@@ -132,6 +137,12 @@ export default async function ActivityPage({ params }: { params: Promise<{ id: s
               <p role="status" className="text-xs text-muted-foreground">{v.fetch.note ?? NOT_LOADED_NOTE}</p>
             )}
           </header>
+
+          {review.ok ? (
+            review.value && <WorkoutReview activityId={v.stravaId} initial={review.value as ReviewSection} />
+          ) : (
+            <SectionError label="Workout review" />
+          )}
 
           <ActivityBody v={v} context={context.ok ? context.value : null} contextFailed={!context.ok} color={s.color} />
         </div>

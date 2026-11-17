@@ -13,6 +13,8 @@ struct ActivitySections: View {
     var plan: AppPlannedWorkout?
     /// "How did it feel", under the numbers; nil hides it.
     let feedback: WorkoutFeedback?
+    /// The workout review, under the numbers; nil hides it (no structured plan).
+    var review: AppSection<ActivityReview>?
     let save: WorkoutFeedbackSaveState
     let send: (ActivityDetailAction) -> Void
     @State private var showsAll = false
@@ -25,6 +27,7 @@ struct ActivitySections: View {
             OptionalSection(nil, detail.overview) { overview in
                 ActivityStatGrid(overview: overview) { send(.panelTapped(.stats)) }
             }
+            OptionalSection(nil, review) { review in ActivityReviewCard(review: review) }
             if let feedback {
                 WorkoutFeedbackCard(feedback: feedback, save: save) { send(.feedback($0)) }
             }

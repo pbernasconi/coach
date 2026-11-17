@@ -25,6 +25,9 @@ nonisolated struct ActivityDetail: Decodable, Equatable, Sendable {
     var laps: AppSection<ActivityLaps>?
     var bestEfforts: AppSection<ActivityBestEfforts>?
     var segments: AppSection<ActivitySegments>?
+    /// The workout review: plan against done, and the coach's words. Nil without a structured plan or from an older
+    /// server.
+    var review: AppSection<ActivityReview>?
     /// "How did it feel"; nil when it did not load (or an older server).
     var feedback: WorkoutFeedback?
 

@@ -86,6 +86,8 @@ nonisolated struct ActivityDetailState: Equatable, Sendable {
     var feedback = WorkoutFeedbackEdit()
     /// "Start workout" and "Mark done" on a planned workout.
     var planWrite = PlanWrite.idle
+    /// The review the page asked for while the body's was still pending; shown in its place.
+    var writtenReview: ActivityReview?
 
     init(ref: String, seed: ActivitySeed? = nil, detail: AppResourceState<ActivityDetail>? = nil) {
         self.ref = ref
@@ -137,6 +139,13 @@ nonisolated struct ActivityDetailState: Equatable, Sendable {
     var isPlanOnly: Bool {
         guard let w = workout.content.value else { return false }
         return w.activity == nil && w.plan != nil
+    }
+
+    /// The workout review: the one just written while the body's is pending, else the body's.
+    var shownReview: AppSection<ActivityReview>? {
+        let loaded = workout.content.value?.activity?.review
+        if let writtenReview, loaded?.value?.isPending == true { return .ok(writtenReview) }
+        return loaded
     }
 
     /// The card's feedback: the edited copy, else the body's.
