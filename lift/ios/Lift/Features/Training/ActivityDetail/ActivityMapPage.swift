@@ -107,6 +107,7 @@ struct ActivityMapPage: View {
                     detail: detail,
                     plan: state.plan,
                     feedback: state.shownFeedback,
+                    review: state.shownReview,
                     save: state.feedback.save,
                     send: send
                 )
