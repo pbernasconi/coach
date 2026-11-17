@@ -37,6 +37,8 @@ bank and Paolo's zones are in the coach's plan below.
 
 Write to Paolo ("you"), in plain words a runner uses, with the numbers that matter (paces as 4:49/km, heart rates in
 bpm, watts). No fluff, no cheering, no filler sentences; every sentence tells him something. Short sentences.
+Say faster or slower for a pace, never above, below, higher or lower (a lower pace number is faster, so those words
+confuse).
 
 - `headline`: one sentence, the verdict of the session with its key number ("Four strong reps at 4:31–4:58/km after a
   jogged first one; the clearance ran too hard.").

@@ -112,19 +112,22 @@ const CONTEXT = {
 function demoReview() {
   const workout = bankWorkout('vo2-a', 'run', 1, 60);
   const plan = plannedSteps(workout);
-  const pick = { warmup: [2.95, 140], work: [3.6, 168], recovery: [2.65, 150], cooldown: [2.8, 140] };
+  // Rep 1 jogged, reps 2-5 a little uneven, recoveries easy with heart rate falling, the clearance run hot.
+  const reps = { 'Rep 1/5': [3.0, 150], 'Rep 2/5': [3.55, 166], 'Rep 3/5': [3.5, 167], 'Rep 4/5': [3.58, 168], 'Rep 5/5': [3.66, 171] };
   const t = [], speed = [], hr = [], d = [], laps = [];
-  let time = 0, dist = 0;
+  let time = 0, dist = 0, lastMax = 140;
   plan.forEach(({ step, label }, i) => {
     const secs = stepSeconds(step);
-    let [sp, h] = pick[step.kind] ?? [2.9, 145];
-    if (label === 'Rep 1/5') [sp, h] = [3.0, 152];
-    if (label === 'Lactate clearance') [sp, h] = [3.05, 158];
+    const [sp, h] = reps[label] ?? (step.kind === 'recovery' ? [2.65, 148] : label === 'Lactate clearance' ? [3.05, 158] : [2.95, 140]);
+    // Heart rate climbs through a hard step and falls from the last step's peak through a recovery.
+    const from = step.kind === 'recovery' ? lastMax : h - 8;
+    const to = step.kind === 'recovery' ? lastMax - 30 : h + 8;
     const startIndex = t.length;
     for (let k = 0; k < secs / 4; k++) {
-      t.push(time + k * 4); speed.push(sp); d.push(dist + sp * k * 4); hr.push(Math.round(h - 6 + (12 * k * 4) / secs));
+      t.push(time + k * 4); speed.push(sp); d.push(dist + sp * k * 4); hr.push(Math.round(from + ((to - from) * k * 4) / secs));
     }
-    laps.push({ index: i + 1, elapsed: secs, moving: secs, distance: sp * secs, speed: sp, gapSpeed: sp, hr: h, maxHr: h + 6, watts: null, startIndex, endIndex: t.length - 1 });
+    lastMax = Math.max(from, to);
+    laps.push({ index: i + 1, elapsed: secs, moving: secs, distance: sp * secs, speed: sp, gapSpeed: sp, hr: h, maxHr: Math.max(from, to), watts: null, startIndex, endIndex: t.length - 1 });
     time += secs; dist += sp * secs;
   });
   const series = { full: t.length, bucketStart: t.map((_, i) => i), t, d, speed, gap: speed, hr, watts: null };
@@ -133,7 +136,7 @@ function demoReview() {
     headline: 'Four strong reps after a soft first one: the VO2 work landed.',
     rating: 'solid',
     trainingEffect: 'About 12 minutes near VO2 max across reps 2 to 5, the stimulus this session is for.',
-    wentWell: ['Reps 2 to 5 were even, all within 5 s/km of each other.', 'The recoveries were truly easy, at 6:17/km.'],
+    wentWell: ['Reps 2 to 5 held 4:33–4:46/km, the last the fastest.', 'Heart rate fell about 25 bpm in each recovery.'],
     toImprove: ['Rep 1 was jogged, so the set had four hard reps, not five.', 'The clearance ran hot, above its 144–153 bpm target.'],
     nextTime: ['Start rep 1 at 4:40/km, not by feel.', 'Keep the clearance under 153 bpm, slow down if needed.'],
   } }) };

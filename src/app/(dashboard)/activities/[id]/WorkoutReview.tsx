@@ -112,8 +112,9 @@ function AiPart({ ai, busy }: { ai: ReviewSection['ai']; busy: boolean }) {
 function Sections({ ai, stale = false }: { ai: ReviewSection['ai']; stale?: boolean }) {
   return (
     <div className={`grid gap-x-8 gap-y-5 md:grid-cols-2 ${stale ? 'opacity-60' : ''}`}>
-      {ai.sections.map((s) => (
-        <div key={s.key} className={s.key === 'effect' ? 'md:col-span-2' : ''}>
+      {ai.sections.map((s, i, all) => (
+        // The effect spans the row; so does a last list that would sit alone in its row.
+        <div key={s.key} className={s.key === 'effect' || (i === all.length - 1 && all.filter((x) => x.key !== 'effect').length % 2 === 1) ? 'md:col-span-2' : ''}>
           <h3 className="mb-1.5 text-sm font-semibold">{s.title}</h3>
           {s.key === 'effect' ? (
             <p className="text-sm leading-relaxed text-[var(--viz-ink-2)]">{s.items[0]}</p>

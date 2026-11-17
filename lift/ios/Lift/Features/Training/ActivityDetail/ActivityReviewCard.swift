@@ -120,7 +120,7 @@ struct ActivityReviewCard: View {
                         .accessibilityHidden(true)
                 }
                 .font(theme.font(.body))
-                .frame(minHeight: Size.minTouch)
+                .frame(maxWidth: .infinity, minHeight: Size.minTouch, alignment: .leading)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -130,7 +130,6 @@ struct ActivityReviewCard: View {
                 }
             }
         }
-        .padding(.bottom, -Space.sm)
     }
 }
 

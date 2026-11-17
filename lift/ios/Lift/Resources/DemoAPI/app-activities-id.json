@@ -5664,7 +5664,7 @@
     "inRepeat": false,
     "plannedText": "15:00 · 101–121 bpm",
     "doneText": "15:00 · 5:39/km",
-    "hrText": "140 · max 146",
+    "hrText": "140 · max 148",
     "inTargetText": null,
     "verdict": "close",
     "verdictLabel": "Close",
@@ -5681,7 +5681,7 @@
     "inRepeat": true,
     "plannedText": "3:00 · Hard",
     "doneText": "3:00 · 5:33/km",
-    "hrText": "152 · max 158",
+    "hrText": "150 · max 158",
     "inTargetText": null,
     "verdict": "close",
     "verdictLabel": "Close",
@@ -5698,7 +5698,7 @@
     "inRepeat": true,
     "plannedText": "3:00 · Easy",
     "doneText": "3:00 · 6:17/km",
-    "hrText": "150 · max 156",
+    "hrText": "148 · max 158",
     "inTargetText": null,
     "verdict": "hit",
     "verdictLabel": "On target",
@@ -5714,8 +5714,8 @@
     "zone": "Z5",
     "inRepeat": true,
     "plannedText": "3:00 · Hard",
-    "doneText": "3:00 · 4:38/km",
-    "hrText": "168 · max 174",
+    "doneText": "3:00 · 4:42/km",
+    "hrText": "166 · max 174",
     "inTargetText": null,
     "verdict": "hit",
     "verdictLabel": "On target",
@@ -5732,7 +5732,7 @@
     "inRepeat": true,
     "plannedText": "3:00 · Easy",
     "doneText": "3:00 · 6:17/km",
-    "hrText": "150 · max 156",
+    "hrText": "148 · max 174",
     "inTargetText": null,
     "verdict": "hit",
     "verdictLabel": "On target",
@@ -5748,8 +5748,8 @@
     "zone": "Z5",
     "inRepeat": true,
     "plannedText": "3:00 · Hard",
-    "doneText": "3:00 · 4:38/km",
-    "hrText": "168 · max 174",
+    "doneText": "3:00 · 4:46/km",
+    "hrText": "167 · max 175",
     "inTargetText": null,
     "verdict": "hit",
     "verdictLabel": "On target",
@@ -5766,7 +5766,7 @@
     "inRepeat": true,
     "plannedText": "3:00 · Easy",
     "doneText": "3:00 · 6:17/km",
-    "hrText": "150 · max 156",
+    "hrText": "148 · max 175",
     "inTargetText": null,
     "verdict": "hit",
     "verdictLabel": "On target",
@@ -5782,8 +5782,8 @@
     "zone": "Z5",
     "inRepeat": true,
     "plannedText": "3:00 · Hard",
-    "doneText": "3:00 · 4:38/km",
-    "hrText": "168 · max 174",
+    "doneText": "3:00 · 4:39/km",
+    "hrText": "168 · max 176",
     "inTargetText": null,
     "verdict": "hit",
     "verdictLabel": "On target",
@@ -5800,7 +5800,7 @@
     "inRepeat": true,
     "plannedText": "3:00 · Easy",
     "doneText": "3:00 · 6:17/km",
-    "hrText": "150 · max 156",
+    "hrText": "148 · max 176",
     "inTargetText": null,
     "verdict": "hit",
     "verdictLabel": "On target",
@@ -5816,8 +5816,8 @@
     "zone": "Z5",
     "inRepeat": true,
     "plannedText": "3:00 · Hard",
-    "doneText": "3:00 · 4:38/km",
-    "hrText": "168 · max 174",
+    "doneText": "3:00 · 4:33/km",
+    "hrText": "171 · max 179",
     "inTargetText": null,
     "verdict": "hit",
     "verdictLabel": "On target",
@@ -5834,7 +5834,7 @@
     "inRepeat": true,
     "plannedText": "3:00 · Easy",
     "doneText": "3:00 · 6:17/km",
-    "hrText": "150 · max 156",
+    "hrText": "148 · max 179",
     "inTargetText": null,
     "verdict": "hit",
     "verdictLabel": "On target",
@@ -5851,8 +5851,8 @@
     "inRepeat": false,
     "plannedText": "15:00 · 144–153 bpm",
     "doneText": "15:00 · 5:28/km",
-    "hrText": "158 · max 164",
-    "inTargetText": "0 % in target",
+    "hrText": "158 · max 166",
+    "inTargetText": "10 % in target",
     "verdict": "hard",
     "verdictLabel": "Too hard",
     "plannedSeconds": 900,
@@ -5875,58 +5875,58 @@
      {
       "label": "Rep 2/5",
       "verdict": "hit",
-      "text": "4:38",
+      "text": "4:42",
       "hrText": "max 174"
      },
      {
       "label": "Rep 3/5",
       "verdict": "hit",
-      "text": "4:38",
-      "hrText": "max 174"
+      "text": "4:46",
+      "hrText": "max 175"
      },
      {
       "label": "Rep 4/5",
       "verdict": "hit",
-      "text": "4:38",
-      "hrText": "max 174"
+      "text": "4:39",
+      "hrText": "max 176"
      },
      {
       "label": "Rep 5/5",
       "verdict": "hit",
-      "text": "4:38",
-      "hrText": "max 174"
+      "text": "4:33",
+      "hrText": "max 179"
      }
     ],
     "stats": [
      {
       "label": "Hard reps",
-      "value": "4:49/km"
+      "value": "4:51/km"
      },
      {
       "label": "First → last",
-      "value": "16.5 % faster"
+      "value": "18 % faster"
      },
      {
       "label": "Spread",
-      "value": "8.5 %"
+      "value": "8.3 %"
      },
      {
       "label": "HR drop per recovery",
-      "value": "-10 bpm"
+      "value": "26 bpm"
      },
      {
       "label": "Peak HR",
-      "value": "174 bpm"
+      "value": "179 bpm"
      }
     ]
    }
   ],
   "flags": [
-   "Lactate clearance ran above its 144–153 bpm target (5:28/km, 158 bpm, max 164).",
+   "Lactate clearance ran above its 144–153 bpm target (5:28/km, 158 bpm, max 166).",
    "5 × 3:00 hard, 3:00 easy: 4 of 5 reps on target.",
-   "The reps got 16.5 % faster from first to last.",
-   "The reps were uneven (8.5 % spread).",
-   "Heart rate did not come down during the recoveries."
+   "The reps got 18 % faster from first to last.",
+   "The reps were uneven (8.3 % spread).",
+   "Heart rate dropped 26 bpm on average over each recovery."
   ],
   "ai": {
    "status": "ready",
@@ -5946,8 +5946,8 @@
      "key": "well",
      "title": "Went well",
      "items": [
-      "Reps 2 to 5 were even, all within 5 s/km of each other.",
-      "The recoveries were truly easy, at 6:17/km."
+      "Reps 2 to 5 held 4:33–4:46/km, the last the fastest.",
+      "Heart rate fell about 25 bpm in each recovery."
      ]
     },
     {
