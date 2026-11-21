@@ -49,6 +49,9 @@
             scrollView.showsVerticalScrollIndicator = false
             scrollView.alwaysBounceVertical = true
             scrollView.scrollsToTop = false
+            // The page draws its own bar over the docked sheet; the system's soft edge under the bar would leave a
+            // lighter band where the sheet meets it.
+            scrollView.topEdgeEffect.isHidden = true
             scrollView.delegate = self
             scrollView.frame = view.bounds
             scrollView.autoresizingMask = [.flexibleWidth, .flexibleHeight]

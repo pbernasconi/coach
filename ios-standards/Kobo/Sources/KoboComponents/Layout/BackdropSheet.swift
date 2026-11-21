@@ -96,7 +96,11 @@ private struct BackdropClip<Content: View>: View {
     @ViewBuilder let content: Content
 
     var body: some View {
-        let top = model.state.sheetTop
+        let state = model.state
+        let top = state.sheetTop
+        // Docked under the bar, the corners square off and the shadow goes: no strip of backdrop is left above the sheet.
+        let radius = Radius.lg * (1 - state.dock)
+        let shadow = Self.shadow * (1 - state.dock)
         content
             .frame(width: model.frame.size.width, height: model.frame.size.height)
             .frame(height: max(0, top + Radius.lg), alignment: .top)
@@ -104,18 +108,18 @@ private struct BackdropClip<Content: View>: View {
             .overlay(alignment: .bottom) {
                 VStack(spacing: 0) {
                     LinearGradient(
-                        colors: [theme.palette.scrim.opacity(0), theme.palette.scrim.opacity(Self.shadow)],
+                        colors: [theme.palette.scrim.opacity(0), theme.palette.scrim.opacity(shadow)],
                         startPoint: .top,
                         endPoint: .bottom
                     )
                     .frame(height: Space.md)
                     // Beside the sheet's round corners.
-                    theme.palette.scrim.opacity(Self.shadow).frame(height: Radius.lg)
+                    theme.palette.scrim.opacity(shadow).frame(height: Radius.lg)
                 }
                 .allowsHitTesting(false)
             }
-            .clipShape(AboveSheetShape(sheetTop: top, radius: Radius.lg))
-            .contentShape(AboveSheetShape(sheetTop: top, radius: Radius.lg))
+            .clipShape(AboveSheetShape(sheetTop: top, radius: radius))
+            .contentShape(AboveSheetShape(sheetTop: top, radius: radius))
             .opacity(model.isPlaced ? 1 : 0)
     }
 }
@@ -165,11 +169,26 @@ private struct BackdropSheetBody<Content: View>: View {
         }
         .padding(.bottom, model.frame.bottomInset)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background {
-            UnevenRoundedRectangle(topLeadingRadius: Radius.lg, topTrailingRadius: Radius.lg, style: .continuous)
-                .fill(theme.palette.canvas)
-                .shadow(color: theme.palette.scrim.opacity(0.35), radius: Space.sm, y: -Size.hairline * 2)
-        }
+        .background { BackdropSheetSurface(model: model) }
+    }
+}
+
+/// The sheet's canvas. It reads the sheet's position on its own, so docking under the bar (corners squaring off, shadow
+/// fading) redraws only this shape, never the sheet's content.
+private struct BackdropSheetSurface: View {
+    @Environment(\.koboTheme) private var theme
+    let model: BackdropSheetModel
+
+    var body: some View {
+        let open = 1 - model.state.dock
+        let radius = Radius.lg * open
+        UnevenRoundedRectangle(topLeadingRadius: radius, topTrailingRadius: radius, style: .continuous)
+            .fill(theme.palette.canvas)
+            .shadow(
+                color: theme.palette.scrim.opacity(0.35 * open),
+                radius: Space.sm,
+                y: -Size.hairline * 2
+            )
     }
 }
 

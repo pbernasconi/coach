@@ -9,6 +9,10 @@ nonisolated public struct BackdropSheetState: Equatable, Sendable {
     public var expansion: Double
     /// 0 at medium or higher, 1 with the sheet fully down.
     public var collapse: Double
+    /// 0 until the sheet nears the bar, 1 with it docked under the bar (square corners, no shadow).
+    public var dock: Double = 0
+    /// 0 until the docked sheet's content scrolls under the bar, then 1: the bar's bottom line, as with scroll edges.
+    public var underBar: Double = 0
     /// The detent the sheet rests at; nil while it moves.
     public var resting: BackdropSheetDetent?
     /// The screen's size and its safe area at the top (the bar's bottom edge).
@@ -71,6 +75,8 @@ final class BackdropSheetModel {
             sheetTop: CGFloat(math.sheetTop(offset: value)),
             expansion: math.expansion(offset: value),
             collapse: math.collapse(offset: value),
+            dock: math.dock(offset: value),
+            underBar: math.underBar(offset: value),
             resting: resting,
             size: frame.size,
             topInset: frame.topInset

@@ -170,7 +170,10 @@ private struct ActivityMapOverlay: View {
         theme.palette.canvas
             .frame(height: sheet.topInset)
             .overlay(alignment: .bottom) {
+                // Docked, the sheet's canvas runs straight on from the bar's; the line comes in only once the content
+                // scrolls under the bar.
                 theme.palette.separator.frame(height: Size.hairline)
+                    .opacity(sheet.underBar)
             }
             .opacity(BackdropSheetMath.unit(Double(sheet.sheetTop), from: Double(sheet.topInset + Space.xxl), to: Double(sheet.topInset)))
             .frame(maxWidth: .infinity, alignment: .top)

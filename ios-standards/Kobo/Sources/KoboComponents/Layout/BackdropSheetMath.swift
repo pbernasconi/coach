@@ -19,6 +19,11 @@ nonisolated public struct BackdropSheetMath: Equatable, Sendable {
     public static let flick: Double = 24
     /// A fling this fast (points per second) may skip a detent, as with Apple's sheets; slower ones move one step.
     public static let skipSpeed: Double = 2000
+    /// How close to its expanded top the sheet starts to dock under the bar: its corners square off and its shadow
+    /// fades over this last stretch, so the sheet meets the bar with no strip of backdrop between them.
+    public static let dockDistance: Double = 48
+    /// How far the content scrolls under the bar before the bar's bottom line is fully in.
+    public static let scrollEdge: Double = 12
 
     public let collapsedTop: Double
     public let mediumTop: Double
@@ -94,6 +99,21 @@ nonisolated public struct BackdropSheetMath: Equatable, Sendable {
     /// 0 with the sheet at medium or lower, 1 with it fully up.
     public func expansion(offset: Double) -> Double {
         Self.unit(offset, from: self.offset(.medium), to: self.offset(.expanded))
+    }
+
+    /// 0 while the sheet is more than `dockDistance` below its expanded top, 1 with it fully up; eased, so the corners
+    /// square off softly at the start and settle gently at the bar.
+    public func dock(offset: Double) -> Double {
+        let expanded = self.offset(.expanded)
+        let t = Self.unit(offset, from: expanded - Self.dockDistance, to: expanded)
+        return t * t * (3 - 2 * t)
+    }
+
+    /// 0 until the sheet's content scrolls under the bar, 1 once it has scrolled `scrollEdge` points: how strongly a bar
+    /// over the docked sheet shows its bottom line, which a sheet at rest under it does not need.
+    public func underBar(offset: Double) -> Double {
+        let expanded = self.offset(.expanded)
+        return Self.unit(offset, from: expanded, to: expanded + Self.scrollEdge)
     }
 
     /// 0 with the sheet at medium or higher, 1 with it fully down.

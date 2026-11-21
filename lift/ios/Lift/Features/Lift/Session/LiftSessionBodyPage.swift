@@ -70,7 +70,8 @@ private struct SessionBodyOverlay: View {
         theme.palette.canvas
             .frame(height: sheet.topInset)
             .overlay(alignment: .bottom) {
-                theme.palette.separator.frame(height: Size.hairline)
+                // Docked, the sheet runs straight on from the bar; the line comes in once the content scrolls under it.
+                theme.palette.separator.frame(height: Size.hairline).opacity(sheet.underBar)
             }
             .opacity(
                 BackdropSheetMath.unit(
