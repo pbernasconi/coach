@@ -181,9 +181,14 @@ private struct BackdropSheetSurface: View {
 
     var body: some View {
         let open = 1 - model.state.dock
-        UnevenRoundedRectangle(topLeadingRadius: Radius.lg * open, topTrailingRadius: Radius.lg * open, style: .continuous)
+        let radius = Radius.lg * open
+        UnevenRoundedRectangle(topLeadingRadius: radius, topTrailingRadius: radius, style: .continuous)
             .fill(theme.palette.canvas)
-            .shadow(color: theme.palette.scrim.opacity(0.35 * open), radius: Space.sm, y: -Size.hairline * 2)
+            .shadow(
+                color: theme.palette.scrim.opacity(0.35 * open),
+                radius: Space.sm,
+                y: -Size.hairline * 2
+            )
     }
 }
 
