@@ -68,4 +68,22 @@ import Testing
         #expect(BackdropSheetMath.unit(-5, from: 0, to: 10) == 0)
         #expect(BackdropSheetMath.unit(3, from: 3, to: 3) == 1)
     }
+
+    @Test func docksOnlyOverTheLastStretchUnderTheBar() {
+        let expanded = math.offset(.expanded)
+        #expect(math.dock(offset: math.offset(.medium)) == 0)
+        #expect(math.dock(offset: expanded - BackdropSheetMath.dockDistance) == 0)
+        #expect(math.dock(offset: expanded - BackdropSheetMath.dockDistance / 2) == 0.5)
+        #expect(math.dock(offset: expanded) == 1)
+        // Content scrolling under the bar keeps the sheet docked.
+        #expect(math.dock(offset: expanded + 200) == 1)
+    }
+
+    @Test func barLineShowsOnlyOnceContentScrollsUnder() {
+        let expanded = math.offset(.expanded)
+        #expect(math.underBar(offset: expanded - 10) == 0)
+        #expect(math.underBar(offset: expanded) == 0)
+        #expect(math.underBar(offset: expanded + BackdropSheetMath.scrollEdge / 2) == 0.5)
+        #expect(math.underBar(offset: expanded + 300) == 1)
+    }
 }
