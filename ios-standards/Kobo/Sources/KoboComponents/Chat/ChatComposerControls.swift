@@ -36,7 +36,7 @@ struct ChatRoundButton: View {
 
     @Environment(\.koboTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @ScaledMetric(relativeTo: .body) private var circle = Size.buttonHeightCompact
+    @ScaledMetric(relativeTo: .body) private var circle = Size.buttonHeightCompact + Space.xs
     let systemImage: String
     let label: Text
     let look: Look
@@ -101,7 +101,7 @@ struct ChatRoundGlyph: View {
 /// circle turns to the accent with a stop glyph. The release of a hold is tracked by `ChatComposer`, which stays put
 /// while this button moves from the capsule into the card.
 struct ChatMicButton: View {
-    @ScaledMetric(relativeTo: .body) private var circle = Size.buttonHeightCompact
+    @ScaledMetric(relativeTo: .body) private var circle = Size.buttonHeightCompact + Space.xs
     let phase: ChatVoiceInput.Phase
     /// In the open card's toolbar: a filled round button; in the capsule: a bare glyph.
     var isFilled = false
