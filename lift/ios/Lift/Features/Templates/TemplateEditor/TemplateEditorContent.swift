@@ -86,8 +86,8 @@ private struct TemplateSlotList: View {
 }
 
 /// The slot's place in the workout on a tile the size of the exercise thumbnails, so every row's text starts on one
-/// keyline. Decorative: the row's order already says it.
-private struct SlotNumber: View {
+/// keyline. Decorative: the row's order already says it. The Templates list uses it too.
+struct SlotNumber: View {
     @Environment(\.koboTheme) private var theme
     let number: Int
 

@@ -72,7 +72,8 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
         /// The Lift segment the screen belongs to; nil outside the Lift tab.
         var liftSegment: LiftSegment? {
             switch self {
-            case .exercise, .catalog, .templates, .template, .templateLink: .exercises
+            case .templates, .template: .templates
+            case .exercise, .catalog, .templateLink: .exercises
             case .importNotes, .progress: .history
             default: nil
             }
@@ -154,14 +155,13 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
     }
 
     /// The route `opening.tab` starts on in demo mode: the given session for `-open workout`, the Back squat detail
-    /// for `-open exercise`, the catalog browse for `-open catalog`, the templates, the given template's editor, the
+    /// for `-open exercise`, the catalog browse for `-open catalog`, the given template's editor, the
     /// given logged session's summary, or Plates and bars for `-open plates`. Nil without demo data, so a real launch
     /// never opens a screen by itself.
     func initialRoute(upcomingSessionID: UUID?, templateID: UUID? = nil, loggedSessionID: UUID? = nil) -> AppRoute? {
         guard isDemo, let opening else { return nil }
         switch opening {
         case .workout: return upcomingSessionID.map(AppRoute.workout)
-        case .templates: return .templates
         case .template: return templateID.map(AppRoute.template)
         case .summary: return loggedSessionID.map(AppRoute.workoutSummary)
         // The session in DemoAPI/app-lift-sessions.json.
@@ -172,9 +172,9 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
         case .activity: return .activity(DemoActivities.run)
         case .ride: return .activity(DemoActivities.ride)
         case .activityPending: return .activity(DemoActivities.pending)
-        // A modal page (`opensImportSample`), a sheet (`opensTemplateLinkSample`), or a segment of History
-        // (`historySegment`).
-        case .importNotes, .templateLink, .progress, .todayTrends, .todayEnd, .widgets, .planner: return nil
+        // A modal page (`opensImportSample`), a sheet (`opensTemplateLinkSample`), a segment of History
+        // (`historySegment`), or the Templates segment of Lift (`liftSegment`).
+        case .templates, .importNotes, .templateLink, .progress, .todayTrends, .todayEnd, .widgets, .planner: return nil
         }
     }
 

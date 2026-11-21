@@ -9,6 +9,4 @@ nonisolated enum ExercisesAction: Equatable, Sendable {
     case thumbnailNeeded(catalogID: String)
     /// "All exercises": opens the catalog browse.
     case allExercisesTapped
-    /// "Templates": opens the workout templates.
-    case templatesTapped
 }

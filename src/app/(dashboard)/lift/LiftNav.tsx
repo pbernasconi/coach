@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 
 const LINKS = [
   { href: '/lift', label: 'Overview' },
+  { href: '/lift/templates', label: 'Templates' },
   { href: '/lift/weekly', label: 'Weekly volume' },
 ];
 

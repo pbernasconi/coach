@@ -2,7 +2,9 @@ import KoboComponents
 import KoboTokens
 import SwiftUI
 
-/// Dumb view: "New template", then the templates as flat rows, each with a "…" button for its options (SCR-2).
+/// Dumb view: the Templates segment of the Lift tab. Each template is a section, its name and size over every exercise
+/// with its sets, reps, load and rest, so a template reads without opening it; a row or the pencil opens the editor,
+/// and "…" its options (SCR-2).
 struct TemplatesContent: View {
     let state: TemplatesState
     let send: (TemplatesAction) -> Void
@@ -12,7 +14,7 @@ struct TemplatesContent: View {
             VStack(alignment: .leading, spacing: Space.section) {
                 switch state.templates {
                 case .loading:
-                    ListLoadingSkeleton(rows: 4, showsLeading: false)
+                    ListLoadingSkeleton(rows: 6)
                 case .empty:
                     EmptyState(
                         symbol: "list.bullet.rectangle",
@@ -25,11 +27,8 @@ struct TemplatesContent: View {
                 case .failed:
                     ErrorState(title: "Templates could not be loaded")
                 case .loaded(let items):
-                    NewTemplateRow(send: send)
-                    ListSection("Your templates") {
-                        ForEach(items) { item in
-                            TemplateRow(item: item, send: send)
-                        }
+                    ForEach(items) { item in
+                        TemplateSection(item: item, send: send)
                     }
                 }
             }
@@ -38,55 +37,80 @@ struct TemplatesContent: View {
             .padding(.bottom, Space.xxl)
         }
         .screenCanvas()
-        .navigationTitle(Text("Templates"))
-        .navigationBarTitleDisplayMode(.inline)
+        .tabRootHeader {
+            AppHeader("Templates") {
+                Button("New template", systemImage: "plus") { send(.newTemplateTapped) }
+            }
+        }
         .templateOptions(target: state.options, send: send)
     }
 }
 
-/// "New template" as a tiled row, like "All exercises" on the Exercises tab.
-private struct NewTemplateRow: View {
+/// One template: its header, then its exercises numbered in workout order. Every row opens the editor.
+private struct TemplateSection: View {
+    let item: TemplateItem
     let send: (TemplatesAction) -> Void
 
     var body: some View {
         ListSection {
-            ListRow("New template", subtitle: "Name it, then add exercises", action: { send(.newTemplateTapped) }) {
-                Thumbnail(systemName: "plus", tone: .accent, side: ExerciseThumbnail.compactSide)
+            if item.slots.isEmpty {
+                ListRow(
+                    "Add exercises",
+                    subtitle: "From your exercises or the catalog",
+                    action: { send(.templateTapped(item.id)) }
+                ) {
+                    Thumbnail(systemName: "plus", tone: .accent, side: ExerciseThumbnail.compactSide)
+                }
+            } else {
+                ForEach(item.slots) { slot in
+                    ListRow(verbatim: slot.name, subtitle: slot.detail, action: { send(.templateTapped(item.id)) }) {
+                        SlotNumber(number: slot.number)
+                    }
+                }
             }
+        } header: {
+            TemplateHeader(item: item, send: send)
         }
         .listRowDensity(.compact)
     }
 }
 
-/// One template: its name, size and exercises, and a "…" button over the row's reserved trailing slot, outside the
-/// row's own button so the buttons never nest.
-private struct TemplateRow: View {
+/// The template's name and size, with Edit and "…" buttons. The buttons sit beside the text, never inside a row's
+/// own button, so the buttons never nest.
+private struct TemplateHeader: View {
+    @Environment(\.koboTheme) private var theme
     let item: TemplateItem
     let send: (TemplatesAction) -> Void
 
     var body: some View {
-        ListRow(
-            verbatim: item.name,
-            subtitle: "\(item.size)\n\(item.exercises)",
-            action: { send(.templateTapped(item.id)) },
-            leading: { Thumbnail(systemName: "list.bullet", tone: .neutral, side: ExerciseThumbnail.compactSide) },
-            trailing: { Color.clear.frame(width: Size.minTouch) }
-        )
-        .overlay(alignment: .trailing) {
+        HStack(alignment: .center, spacing: Space.sm) {
+            VStack(alignment: .leading, spacing: Space.xxs) {
+                Text(verbatim: item.name)
+                    .font(theme.font(.title2))
+                    .foregroundStyle(theme.palette.textPrimary)
+                Text(verbatim: item.size)
+                    .font(theme.font(.footnote))
+                    .foregroundStyle(theme.palette.textSecondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            IconButton(
+                "pencil",
+                verbatimAccessibilityLabel: String(localized: "Edit \(item.name)"),
+                style: .glass,
+                size: .small
+            ) { send(.templateTapped(item.id)) }
             IconButton(
                 "ellipsis",
                 verbatimAccessibilityLabel: String(localized: "Options for \(item.name)"),
                 style: .glass,
                 size: .small
             ) { send(.optionsTapped(item.id)) }
-            .frame(width: Size.minTouch)
-            .padding(.trailing, Space.gutter)
         }
     }
 }
 
 extension View {
-    /// The options for a template: Remove, which applies at once with Undo in a toast (product rule).
+    /// The options for a template: Edit, and Remove, which applies at once with Undo in a toast (product rule).
     fileprivate func templateOptions(target: TemplateItem?, send: @escaping (TemplatesAction) -> Void) -> some View {
         modifier(TemplateOptions(target: target, send: send))
     }

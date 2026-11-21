@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import { GripVertical, Plus, X } from 'lucide-react';
 import SportIcon from '@/components/SportIcon';
 import { Button } from '@/components/ui/button';
@@ -40,7 +41,12 @@ export default function WorkoutLibrary({
       <div className="flex items-start justify-between gap-2 px-3 py-2">
         <span>
           <span className="block text-sm font-semibold">Workout library</span>
-          <span className="block text-xs text-muted-foreground">Drag onto a day</span>
+          <span className="block text-xs text-muted-foreground">
+            Drag onto a day ·{' '}
+            <Link href="/lift/templates" className="underline-offset-2 hover:text-foreground hover:underline">
+              Edit lift templates
+            </Link>
+          </span>
         </span>
         <button
           type="button"

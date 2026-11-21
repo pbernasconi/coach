@@ -2,7 +2,7 @@ import Foundation
 
 /// Every user intent on the Templates screen, named for what happened (SCR-1).
 nonisolated enum TemplatesAction: Equatable, Sendable {
-    /// A row: opens the template's editor.
+    /// A template's exercise row or its Edit button: opens the template's editor.
     case templateTapped(UUID)
     /// "New template": makes an empty template and opens its editor.
     case newTemplateTapped

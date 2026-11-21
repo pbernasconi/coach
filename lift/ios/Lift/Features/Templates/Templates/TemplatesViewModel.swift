@@ -9,20 +9,24 @@ final class TemplatesViewModel {
 
     private let templates: any TemplateRepository
     private let router: any Navigating
+    /// The unit loads are shown in.
+    private let unit: WeightUnit
     /// True while "New template" is creating one, so a double tap makes one template (SCR-5).
     @ObservationIgnored private var isCreating = false
     @ObservationIgnored private var serial = 0
 
     /// Protocols only, no defaults, no work (SCR-3).
-    init(templates: any TemplateRepository, router: any Navigating) {
+    init(templates: any TemplateRepository, router: any Navigating, unit: WeightUnit) {
         self.templates = templates
         self.router = router
+        self.unit = unit
     }
 
     /// Observes the templates; started by the Screen's `.task` (SCR-4).
     func run() async {
         for await list in templates.observeTemplates() {
-            state.templates = list.isEmpty ? .empty : .loaded(list.map(TemplateItem.init(template:)))
+            let unit = unit
+            state.templates = list.isEmpty ? .empty : .loaded(list.map { TemplateItem(template: $0, unit: unit) })
             if let shown = state.options {
                 state.options = items.first { $0.id == shown.id }
             }
