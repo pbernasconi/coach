@@ -63,3 +63,12 @@ extension Array where Element == ChatChangeSection {
     /// How many rows the sections hold: the "Apply 5 changes" count.
     nonisolated public var rowCount: Int { reduce(0) { $0 + $1.rows.count } }
 }
+
+extension Array where Element == ChatChangeSection {
+    /// Whether the only section's heading just repeats the summary ("2 changes · Sun 22 Nov" over "Sun 22 Nov"), so
+    /// the card can leave the heading out.
+    nonisolated public func headingRepeats(summary: String?) -> Bool {
+        guard count == 1, let title = first?.title, !title.isEmpty, let summary else { return false }
+        return summary.contains(title)
+    }
+}
