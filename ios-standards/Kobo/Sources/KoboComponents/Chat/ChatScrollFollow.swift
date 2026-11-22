@@ -1,24 +1,33 @@
 import Foundation
 
 /// When a chat transcript follows new content to the bottom. The transcript is pinned while the reader is within
-/// `threshold` of the bottom; it then follows every new message and every line a streamed reply adds. A reader who
-/// scrolls up to read is never pulled down, and gets the jump-to-latest button instead.
+/// `threshold` of the bottom; it then follows every new message and every line a streamed reply adds. Only the reader
+/// unpins it, by scrolling up: content that grows under a pinned reader (a reply streaming, a card arriving) never
+/// does. A reader who scrolls up to read is never pulled down, and gets the jump-to-latest button once far enough up.
 nonisolated struct ChatScrollFollow: Equatable, Sendable {
     /// How close to the bottom still counts as "at the bottom", in points.
     static let threshold: Double = 48
     /// The jump-to-latest button needs the latest content at least this far below, in points.
-    static let farDistance: Double = 400
+    static let farDistance: Double = 600
+    /// ... and at least this many screens below.
+    static let farScreens: Double = 1.5
 
     private(set) var isPinned = true
-    /// The reader scrolled up by hand to more than one and a half screens (and at least `farDistance`) above the
-    /// latest: only then does the jump-to-latest button show.
+    /// The latest content is more than one and a half screens (and at least `farDistance`) below what shows. Worked
+    /// out afresh on every change, so it never outlives a scroll back down (2026-11-22: a stale value showed the
+    /// button just above the composer while a reply streamed).
     private(set) var isFar = false
 
-    /// The reader's distance from the bottom changed (a scroll, or the content grew under a reader who scrolled up).
-    /// `visibleHeight` is the scroll view's height; without it, any distance past the threshold counts as far.
-    mutating func scrolled(distanceFromBottom: Double, visibleHeight: Double = 0) {
-        isPinned = distanceFromBottom <= Self.threshold
-        isFar = distanceFromBottom > max(Self.farDistance, visibleHeight * 1.5)
+    /// The reader's distance from the bottom changed. `byReader` is true only when the reader moved the transcript up
+    /// themselves; growth under the reader, or a programmatic scroll, leaves a pinned transcript pinned. `visibleHeight`
+    /// is the scroll view's height; without it, `farDistance` alone decides what is far.
+    mutating func scrolled(distanceFromBottom: Double, visibleHeight: Double = 0, byReader: Bool = true) {
+        if distanceFromBottom <= Self.threshold {
+            isPinned = true
+        } else if byReader {
+            isPinned = false
+        }
+        isFar = distanceFromBottom > max(Self.farDistance, visibleHeight * Self.farScreens)
     }
 
     /// The visible height changed (the keyboard came or went): the distance jumps for a moment, so the button hides
