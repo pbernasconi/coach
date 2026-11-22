@@ -16,6 +16,8 @@ where Data.Element: Identifiable {
     @State private var follow = ChatScrollFollow()
     /// The scroll view's height inside its bars and margins: the content fills at least this much.
     @State private var visibleHeight = 0.0
+    /// The last content offset seen: the reader leaves the bottom only by moving it up.
+    @State private var offsetY = 0.0
     private let data: Data
     private let row: (Data.Element) -> Row
     private let footer: Footer
@@ -96,7 +98,7 @@ where Data.Element: Identifiable {
         // Soft at both ends, as in the Claude app: lines scroll up under a floating top bar and fade and blur away only
         // as they near the status bar, so more of the conversation shows behind the bar.
         .scrollEdgeEffectStyle(.soft, for: .vertical)
-        // A little room under the last row; the jump button shows only half a screen up, so it never covers it.
+        // A little room under the last row; the jump button shows only well up the thread, so it never covers it.
         .contentMargins(.bottom, Space.lg, for: .scrollContent)
         .onScrollGeometryChange(for: [Double].self) { geometry in
             [
@@ -109,15 +111,20 @@ where Data.Element: Identifiable {
                 ),
                 geometry.containerSize.height,
                 geometry.containerSize.height - geometry.contentInsets.top - geometry.contentInsets.bottom,
+                geometry.contentOffset.y,
             ]
         } action: { _, values in
             let distance = values[0]
             let resized = abs(visibleHeight - max(0, values[2])) > 1
+            let movedUp = values[3] < offsetY - 0.5
             visibleHeight = max(0, values[2])
+            offsetY = values[3]
             if resized {
                 follow.resized()  // the keyboard moves the bottom: no jump button while it animates
-            } else if position.isPositionedByUser || distance <= ChatScrollFollow.threshold {
-                follow.scrolled(distanceFromBottom: distance, visibleHeight: values[1])
+            } else {
+                // Only the reader's own scroll up unpins; a streamed reply growing below a pinned reader never does.
+                let byReader = position.isPositionedByUser && movedUp
+                follow.scrolled(distanceFromBottom: distance, visibleHeight: values[1], byReader: byReader)
             }
         }
         .onScrollGeometryChange(for: Double.self) {

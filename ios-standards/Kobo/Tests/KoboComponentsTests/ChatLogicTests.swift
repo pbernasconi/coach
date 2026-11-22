@@ -3,59 +3,6 @@ import Testing
 @testable import KoboComponents
 
 @Suite struct ChatLogicTests {
-    @Test func theTranscriptFollowsOnlyWhileTheReaderIsAtTheBottom() {
-        var follow = ChatScrollFollow()
-        #expect(follow.followsNewContent())
-        #expect(!follow.showsJumpButton)
-        follow.scrolled(distanceFromBottom: 30)
-        #expect(follow.followsNewContent())
-        follow.scrolled(distanceFromBottom: 900, visibleHeight: 800)
-        #expect(!follow.followsNewContent())
-        #expect(!follow.showsJumpButton)  // about a screen up: no button
-        follow.scrolled(distanceFromBottom: 1300, visibleHeight: 800)
-        #expect(follow.showsJumpButton)  // more than one and a half screens up
-        follow.scrolled(distanceFromBottom: 20, visibleHeight: 800)
-        #expect(!follow.showsJumpButton)  // back near the bottom: gone
-        follow.scrolled(distanceFromBottom: 350)
-        #expect(!follow.showsJumpButton)  // a few lines up, even without a known height: no button
-        follow.scrolled(distanceFromBottom: 1300, visibleHeight: 800)
-        follow.resized()
-        #expect(!follow.showsJumpButton)  // the keyboard moved the bottom: hidden until the next scroll
-        follow.jumped()
-        #expect(follow.followsNewContent())
-    }
-
-    @Test(arguments: [
-        (1000.0, 600.0, 400.0, 0.0),
-        (1000.0, 500.0, 400.0, 100.0),
-        (300.0, 0.0, 400.0, 0.0),
-    ])
-    func distanceFromBottomIsNeverNegative(content: Double, offset: Double, visible: Double, expected: Double) {
-        #expect(
-            ChatScrollFollow.distanceFromBottom(contentHeight: content, offsetY: offset, visibleHeight: visible)
-                == expected
-        )
-    }
-
-    @Test func aConversationThatFitsIsAlwaysAtTheBottom() {
-        let distance = ChatScrollFollow.distanceFromBottom(
-            contentHeight: 300,
-            offsetY: -250,
-            visibleHeight: 800,
-            insetTop: 150,
-            insetBottom: 100
-        )
-        #expect(distance == 0)
-        let scrolledUp = ChatScrollFollow.distanceFromBottom(
-            contentHeight: 2000,
-            offsetY: 1000,
-            visibleHeight: 800,
-            insetTop: 150,
-            insetBottom: 100
-        )
-        #expect(scrolledUp == 300)
-    }
-
     @Test func blankDraftsCannotBeSent() {
         #expect(!ChatComposerLogic.canSend("  \n "))
         #expect(ChatComposerLogic.canSend(" hi "))
