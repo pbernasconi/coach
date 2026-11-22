@@ -100,11 +100,17 @@ export function matchActivityId(match) {
   return match.source === 'strava' ? match.id : match.activityId ?? null;
 }
 
+/** A workout's `pinnedActivityId` that says no recording counts for it (Coach chat's unlink). */
+export const NO_ACTIVITY = 'none';
+
 /**
  * Status for each workout: done (an activity or Lift session on that day matches its sport, or cardio of another
  * training sport stands in for it: `swapped`, see canStandIn), skipped,
  * missed (a past day with no match), today, or planned. Each activity matches at most one workout. A strength
  * workout matches its Lift session and also the day's Strava strength activity (the watch), as `activityId`.
+ * A workout with `pinnedActivityId` (training_plan_activities.strava_activity_id, set from Coach chat) takes that
+ * Strava activity before anything else matches (`pinned: true`), whatever its day or sport; NO_ACTIVITY ('none')
+ * means nothing counts for it. A pinned workout never matches by day, so a wrong guess can be put right for good.
  *
  * @param {Array<object>} workouts
  * @param {Array<{ id: string, date: string, sport: string, name: string }>} activities  Strava, by local day
@@ -132,7 +138,20 @@ export function matchWeek(workouts, activities, liftSessions, today) {
     (a, b) => a.date.localeCompare(b.date) || (a.liftSessionId ? 1 : 0) - (b.liftSessionId ? 1 : 0) || (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
   );
   const matches = new Map();
+  const pinOf = (w) => (w.pinnedActivityId ? String(w.pinnedActivityId) : null);
+  // Pinned first: a pinned activity is that workout's, so no guess by day takes it.
   for (const w of ordered) {
+    const pin = pinOf(w);
+    if (!pin) continue;
+    const act = pin === NO_ACTIVITY ? null : activities.find((a) => String(a.id) === pin && !used.has(`strava:${a.id}`));
+    if (act) {
+      used.add(`strava:${act.id}`);
+      const swapped = act.sport !== sportOf(w);
+      matches.set(w.id, { source: 'strava', id: act.id, name: act.name, pinned: true, ...(swapped ? { swapped: true, sport: act.sport } : {}) });
+    } else matches.set(w.id, null);
+  }
+  for (const w of ordered) {
+    if (pinOf(w)) continue;
     const sport = sportOf(w);
     let match = null;
     if (w.status !== 'skipped' && sport !== 'rest') {
@@ -163,7 +182,7 @@ export function matchWeek(workouts, activities, liftSessions, today) {
   // A swap: cardio of another sport counts for the day's open cardio workout (a run instead of the spin). Only after
   // every same-sport match, so a run never takes a planned run's activity. Never for a lift or a rest day.
   for (const w of ordered) {
-    if (matches.get(w.id) || w.status === 'skipped' || w.status === 'done' || !CARDIO.has(sportOf(w))) continue;
+    if (matches.get(w.id) || pinOf(w) || w.status === 'skipped' || w.status === 'done' || !CARDIO.has(sportOf(w))) continue;
     const planned = sportOf(w);
     const act = activities.find((a) => a.date === w.date && canStandIn(planned, a.sport) && !used.has(`strava:${a.id}`));
     if (act) {

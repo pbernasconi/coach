@@ -27,6 +27,11 @@ export const PROPOSE_TOOL = {
         description:
           'Each change is one of: { op: "move", id, date, startTime? } | { op: "skip", id, reason } | { op: "unskip", id } | ' +
           '{ op: "remove", id } | { op: "update", id, title?, duration?, effort?, description?, startTime? } | ' +
+          '{ op: "link", id, activity } (that recorded activity, an id from <activities>, counts for this workout instead ' +
+          'of whatever it counted for: fixes a wrong match, also on a done or past workout of its week) | { op: "unlink", id } ' +
+          '(its recording no longer counts for it) | { op: "done", id } (done today or before without a recording) | ' +
+          '{ op: "feel", id, feel?, rpe?, comment? } (how a done or past workout felt, as he logs it on its page: feel 1 very ' +
+          'weak to 5 very strong, rpe 1-10, comment in his words; fields left out stay as logged) | ' +
           '{ op: "add", date, sport, startTime?, title, duration, effort?, description?, liftTemplate?, workoutType? } | ' +
           '{ op: "template", template, exercise, action?, sets?, reps?, rest?, weight?, note? } (a Lift template ' +
           'slot: action update (default) | add | remove; reps 8 or "8-12", rest in seconds, weight in the slot\'s unit; ' +

@@ -10,22 +10,35 @@ import { loadPlanWorkout } from '@/lib/plan/app-workout';
 import { cleanNewWorkout, withImpliedSteps } from '@/lib/plan/create.mjs';
 import { createWorkout, loadRange, removeWorkout, restoreWorkout, updateWorkout, type WorkoutInput } from '@/lib/plan/month';
 import { planSource, withPlanSource } from '@/lib/plan/change-source.mjs';
-import { setSkipped } from '@/lib/plan/queries';
-import { addDays, matchActivityId, mondayOf } from '@/lib/plan/week.mjs';
-import { addNote, dropNote, type Change, type PlanRow } from './changes.mjs';
+import { setDone, setSkipped } from '@/lib/plan/queries';
+import { loadFeedback, saveFeedback } from '@/lib/plan/feedback';
+import { addDays, matchActivityId, mondayOf, NO_ACTIVITY } from '@/lib/plan/week.mjs';
+import { addNote, dropNote, type Change, type PlanActivity, type PlanRow } from './changes.mjs';
 import { applyTemplateChange, undoTemplateChange } from './lift-tools';
 import { applyEventChange, applyGoalChange, startWeekDraft, undoGoalStep, type GoalUndo } from './goal-tools';
 import { goalTitle, weekLabel } from './goal-tools.mjs';
 import { applyReminder, undoReminder } from './reminders';
 
-/** The workouts Coach sees: this week and the next two, as the web calendar has them (loadRange). */
-export async function planRows(userId: string, today: string): Promise<PlanRow[]> {
+/**
+ * The workouts Coach sees: last week, this week and the next two, as the web calendar has them (loadRange), and the
+ * activities recorded in them (a wrong match from last week can still be put right).
+ */
+export async function planView(userId: string, today: string): Promise<{ rows: PlanRow[]; activities: PlanActivity[] }> {
   const monday = mondayOf(today);
-  return planRowsBetween(userId, today, monday, addDays(monday, 20));
+  return planViewBetween(userId, today, addDays(monday, -7), addDays(monday, 20));
+}
+
+/** The workouts Coach sees (planView's rows). */
+export async function planRows(userId: string, today: string): Promise<PlanRow[]> {
+  return (await planView(userId, today)).rows;
 }
 
 /** The workouts from `from` to `to` (whole weeks are read, then cut to the days), for get_plan. */
 export async function planRowsBetween(userId: string, today: string, from: string, to: string): Promise<PlanRow[]> {
+  return (await planViewBetween(userId, today, from, to)).rows;
+}
+
+async function planViewBetween(userId: string, today: string, from: string, to: string): Promise<{ rows: PlanRow[]; activities: PlanActivity[] }> {
   const [range, lifts] = await Promise.all([
     loadRange(userId, mondayOf(from), mondayOf(to), today),
     sql`
@@ -34,12 +47,70 @@ export async function planRowsBetween(userId: string, today: string, from: strin
         AND a.scheduled_date >= ${from} AND a.scheduled_date <= ${to}` as unknown as Promise<{ id: string; lift_template: string }[]>,
   ]);
   const template = new Map(lifts.map((r) => [String(r.id), r.lift_template]));
-  return range.workouts.filter((w) => w.date >= from && w.date <= to).map((w) => ({
+  const rows: PlanRow[] = range.workouts.filter((w) => w.date >= from && w.date <= to).map((w) => ({
     id: String(w.id), date: w.date, startTime: w.startTime, title: w.title, sport: w.sport, workoutType: w.workoutType,
     intensity: w.intensity, duration: w.duration, description: w.description, status: w.status, skipReason: w.skipReason,
     state: w.state, liftTemplate: template.get(String(w.id)) ?? null,
     activityId: w.state === 'done' ? matchActivityId(w.match) : null,
+    ...(w.match?.pinned ? { pinned: true } : {}),
   }));
+  const owner = new Map(range.workouts.flatMap((w) => {
+    const id = matchActivityId(w.match);
+    return id ? [[id, String(w.id)] as const] : [];
+  }));
+  const activities: PlanActivity[] = range.activities.filter((a) => a.date >= from && a.date <= to).map((a) => ({
+    id: String(a.id), date: a.date, sport: a.sport, name: a.name, min: a.min || null, km: a.km || null, workoutId: owner.get(String(a.id)) ?? null,
+  }));
+  return { rows, activities };
+}
+
+/** A workout's hand-set recording (matched_activity_id) and status, for a link's Undo. */
+type MatchState = { id: string; matched: string | null; status: string; skipReason: string | null };
+
+async function matchStates(userId: string, where: { ids?: string[]; activity?: string }): Promise<MatchState[]> {
+  const rows = (await sql`
+    SELECT a.id, a.matched_activity_id, a.status, a.skip_reason
+    FROM training_plan_activities a JOIN training_plans p ON p.id = a.plan_id
+    WHERE p.user_id = ${userId}
+      AND (a.id = ANY(${where.ids ?? []}::text[]) OR (${where.activity ?? null}::text IS NOT NULL AND a.matched_activity_id = ${where.activity ?? null}))`) as Record<string, unknown>[];
+  return rows.map((r) => ({ id: String(r.id), matched: (r.matched_activity_id as string) ?? null, status: String(r.status), skipReason: (r.skip_reason as string) ?? null }));
+}
+
+async function putMatch(id: string, m: Partial<Omit<MatchState, 'id'>>) {
+  const [r] = (await sql`
+    UPDATE training_plan_activities SET
+      matched_activity_id = CASE WHEN ${'matched' in m} THEN ${m.matched ?? null}::text ELSE matched_activity_id END,
+      status = COALESCE(${m.status ?? null}::text, status),
+      skip_reason = CASE WHEN ${m.status != null} THEN ${m.skipReason ?? null}::text ELSE skip_reason END,
+      change_source = ${planSource()}, updated_at = NOW()
+    WHERE id = ${id} RETURNING id`) as Record<string, unknown>[];
+  if (!r) throw new Error('workout not found');
+}
+
+/**
+ * Which recording counts for a workout (a link, unlink or done change). Returns the Undo: every touched workout's
+ * hand-set recording and status as they were.
+ */
+async function applyMatch(userId: string, c: Extract<Change, { op: 'link' | 'unlink' | 'done' }>): Promise<MatchState[]> {
+  if (c.op === 'done') {
+    const before = await matchStates(userId, { ids: [c.id] });
+    if (!before.length) throw new Error('workout not found');
+    await setDone(userId, c.id, true);
+    return before;
+  }
+  if (c.op === 'unlink') {
+    const before = await matchStates(userId, { ids: [c.id] });
+    if (!before.length) throw new Error('workout not found');
+    await putMatch(c.id, { matched: NO_ACTIVITY });
+    return before;
+  }
+  // A link: the workout takes the activity (a skipped one comes back), and any other workout pinned to it lets go.
+  const before = await matchStates(userId, { ids: [c.id], activity: c.activity });
+  const me = before.find((b) => b.id === c.id);
+  if (!me) throw new Error('workout not found');
+  for (const o of before) if (o.id !== c.id) await putMatch(o.id, { matched: null });
+  await putMatch(c.id, me.status === 'skipped' ? { matched: c.activity, status: 'planned', skipReason: null } : { matched: c.activity });
+  return before;
 }
 
 /** One step that puts a change back. `title` names the workout to Paolo when the step can't run. */
@@ -53,6 +124,8 @@ export type Undo = (
   | { op: 'template'; slotId: string; before: Record<string, unknown> | null }
   | GoalUndo
   | { op: 'unremind'; id: string }
+  | { op: 'match'; before: MatchState[] }
+  | { op: 'feel'; item: string; date: string; was: { feel: number | null; rpe: number | null; comment: string | null } }
 ) & { title?: string };
 
 /**
@@ -146,6 +219,21 @@ async function applyStep(userId: string, c: Change, rows: PlanRow[], today: stri
   }
   const row = rows.find((r) => r.id === c.id);
   if (!row) throw new Error('workout not found');
+  if (c.op === 'feel') {
+    // Saved on the item that already holds his feel for this workout (the phone and the web do the same), with the
+    // fields Coach didn't name kept.
+    const old = await loadFeedback(userId, [c.item], c.id);
+    const item = old?.item ?? c.item;
+    await saveFeedback(userId, {
+      item, date: c.date, feel: c.feel ?? old?.feel ?? null, rpe: c.rpe ?? old?.rpe ?? null, comment: c.comment ?? old?.comment ?? null,
+      title: row.title, planActivityId: c.id,
+    });
+    return { undo: { op: 'feel', item, date: c.date, was: { feel: old?.feel ?? null, rpe: old?.rpe ?? null, comment: old?.comment ?? null } }, dates: [] };
+  }
+  if (c.op === 'link' || c.op === 'unlink' || c.op === 'done') {
+    const before = await applyMatch(userId, c);
+    return { undo: { op: 'match', before }, dates: [row.date] };
+  }
   switch (c.op) {
     case 'move': {
       const e = await editWorkout(userId, c.id, { date: c.date, startTime: c.startTime }, today);
@@ -184,6 +272,14 @@ async function undoOne(userId: string, u: Undo, today: string): Promise<string[]
     case 'template': await undoTemplateChange(u.slotId, u.before); return [];
     case 'event': case 'goal': case 'plan_week': await undoGoalStep(userId, u); return [];
     case 'unremind': await undoReminder(userId, u.id); return [];
+    case 'feel': {
+      await saveFeedback(userId, { item: u.item, date: u.date, ...u.was, title: u.title ?? null, planActivityId: null });
+      return [];
+    }
+    case 'match': {
+      for (const b of u.before) await putMatch(b.id, { matched: b.matched, status: b.status, skipReason: b.skipReason });
+      return [];
+    }
   }
 }
 

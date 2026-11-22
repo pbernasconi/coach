@@ -16,12 +16,14 @@ export function chatSystemPrompt() {
 
 /**
  * The context sent with Paolo's message: the time, the plan with ids, the last week's plan changes, and the profile.
- * @param {{ today: string, time: string, timeZone: string, plan: string, profileMd: string, changes?: string | null }} p
+ * @param {{ today: string, time: string, timeZone: string, plan: string, profileMd: string, changes?: string | null, activities?: string | null }} p
  */
-export function chatContext({ today, time, timeZone, plan, profileMd, changes = null }) {
+export function chatContext({ today, time, timeZone, plan, profileMd, changes = null, activities = null }) {
   return [
     `<now>\nToday is ${today}, ${time} (${timeZone}).\n</now>`,
     `<plan>\n${plan}\n</plan>`,
+    // What he recorded and which workout each counts for: so Coach can see a wrong match and link the right one.
+    ...(activities ? [`<activities>\n${activities}\n</activities>`] : []),
     // Who changed the plan lately (plan_changes): so Coach can answer "didn't we move that?".
     ...(changes ? [`<plan_changes>\n${changes}\n</plan_changes>`] : []),
     `<profile>\n${profileMd}\n</profile>`,

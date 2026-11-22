@@ -42,7 +42,7 @@ export type Workout = {
   // Derived for display
   state: 'done' | 'skipped' | 'missed' | 'today' | 'planned';
   /** For a Lift match, `activityId` is the day's Strava strength activity (the watch), when there is one. */
-  match: { source: 'strava' | 'lift'; id: string; name: string; activityId?: string | null; swapped?: boolean; sport?: string } | null;
+  match: { source: 'strava' | 'lift'; id: string; name: string; activityId?: string | null; swapped?: boolean; sport?: string; pinned?: boolean } | null;
 };
 
 export type DayActivity = { id: string; date: string; sport: string; sportType: string; name: string; km: number; min: number };
@@ -94,7 +94,7 @@ async function planRow(userId: string, weekStart: string) {
 async function workoutRows(planId: string) {
   return (await sql`
     SELECT a.id, a.scheduled_date, a.start_time, a.end_time, a.title, a.activity_type, a.workout_type, a.intensity, a.duration, a.tss,
-           a.why, a.description, a.status, a.skip_reason, a.adapted_from, a.sort_order,
+           a.why, a.description, a.status, a.skip_reason, a.adapted_from, a.sort_order, a.matched_activity_id,
            -- A link to a Lift session the phone deleted reads as none (loadRange in month.ts says why).
            CASE WHEN EXISTS (
              SELECT 1 FROM lift_rows l
@@ -165,7 +165,8 @@ export async function loadWeek(userId: string, weekStart: string, today: string)
   const rows = plan ? await workoutRows(String(plan.id)) : [];
   const base = rows.map(toWorkout);
   const linked = new Map(rows.map((r) => [String(r.id), r.lift_session_id ? String(r.lift_session_id) : null]));
-  const matched = matchWeek(base.map((w) => ({ ...w, liftSessionId: linked.get(w.id) })), activities, lifts, today);
+  const pins = new Map(rows.map((r) => [String(r.id), r.matched_activity_id ? String(r.matched_activity_id) : null]));
+  const matched = matchWeek(base.map((w) => ({ ...w, liftSessionId: linked.get(w.id), pinnedActivityId: pins.get(w.id) })), activities, lifts, today);
   const workouts: Workout[] = base.map((w) => {
     const m = matched.get(w.id) as { status: Workout['state']; match: Workout['match'] };
     return { ...w, state: m.status, match: m.match };
