@@ -113,7 +113,7 @@ export async function loadRange(userId: string, fromMonday: string, toMonday: st
   const [planRows, actRows, loadRows, lift] = await Promise.all([
     sql`
       SELECT a.id, a.scheduled_date, a.start_time, a.end_time, a.time_zone, a.title, a.activity_type, a.workout_type, a.intensity,
-             a.duration, a.distance, a.tss, a.why, a.description, a.status, a.skip_reason, a.adapted_from, a.sort_order, a.source_key,
+             a.duration, a.distance, a.tss, a.why, a.description, a.status, a.skip_reason, a.adapted_from, a.sort_order, a.source_key, a.matched_activity_id,
              -- A link to a Lift session that was deleted (discarded on the phone, or removed with a skipped workout)
              -- reads as none: the workout opens as not started instead of a session that is gone (the App API's
              -- /lift/sessions/{id} answers 404 for it). The stored link stays, so an un-skip brings the session back.
@@ -162,7 +162,8 @@ export async function loadRange(userId: string, fromMonday: string, toMonday: st
   const base = planRows.map(toWorkout);
   const imported = new Set(planRows.filter((r) => r.source_key).map((r) => String(r.id)));
   const linkedIds = new Map(planRows.map((r) => [String(r.id), r.lift_session_id ? String(r.lift_session_id) : null]));
-  const matched = matchWeek(base.map((w) => ({ ...w, liftSessionId: linkedIds.get(w.id) })), activities, lifts, today) as Map<string, { status: Workout['state']; match: Workout['match'] }>;
+  const pins = new Map(planRows.map((r) => [String(r.id), r.matched_activity_id ? String(r.matched_activity_id) : null]));
+  const matched = matchWeek(base.map((w) => ({ ...w, liftSessionId: linkedIds.get(w.id), pinnedActivityId: pins.get(w.id) })), activities, lifts, today) as Map<string, { status: Workout['state']; match: Workout['match'] }>;
   const byStrava = new Map(activities.map((a) => [a.id, a]));
   const linked = new Map(planRows.map((r) => [String(r.id), r.lift_session_id ? String(r.lift_session_id) : null]));
   const syncOf = new Map(

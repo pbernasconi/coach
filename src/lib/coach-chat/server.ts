@@ -16,10 +16,10 @@ import { monthSpend as spendOn, recordAiUsage } from '@/lib/ai-usage/store';
 import { CHAT_FEATURES, usageOf } from '@/lib/ai-usage/usage.mjs';
 import { checkCard, type CardRef, type Question } from './cards.mjs';
 import { resolveCards, type Attachment } from './cards';
-import { asReplacements, checkProposalInput, isStale, landedIssues, planText, recheck, undoPlan, fingerprint, type Card, type Change, type Item } from './changes.mjs';
+import { activitiesText, asReplacements, checkProposalInput, isStale, landedIssues, planText, recheck, undoPlan, fingerprint, type Card, type Change, type Item } from './changes.mjs';
 import { chatMessages, chatRequest, chatWithClaude, EFFORT, MODEL, type ChatEvent, type Turn } from './chat.mjs';
 import { recentChangesText } from '@/lib/plan/change-log';
-import { ApplyError, applyAll, planRows, undoAll } from './writes';
+import { ApplyError, applyAll, planRows, planView, undoAll } from './writes';
 import { undoRecord, type UndoRecord } from './undo-record.mjs';
 import { fileBlock, fileNote, filesPhrase, filesToSend, type FileData, type FileRef } from './files.mjs';
 import { claimFiles, fileData, unclaimedFiles } from './files-store';
@@ -275,7 +275,7 @@ export async function sendMessage(
   // Claude starts).
   const reads: Record<string, number> = {};
   const readyP = timed(chatReady(userId), reads, 'readyMs', started);
-  const rowsP = timed(planRows(userId, today), reads, 'planMs', started);
+  const viewP = timed(planView(userId, today), reads, 'planMs', started);
   const profileP = timed(buildProfile(sql, { userId, weeks: 2 }), reads, 'profileMs', started);
   // The change log is a nice-to-have: a failed read leaves it out instead of failing the answer.
   const changesP = timed(recentChangesText(userId, timeZone).catch(() => null), reads, 'changesMs', started);
@@ -317,9 +317,9 @@ export async function sendMessage(
 
   let context: string | null = null;
   try {
-    const [rows, profile, data, changes, lift, goals] = await Promise.all([rowsP, profileP, dataP, changesP, liftP, goalsP]);
+    const [{ rows, activities }, profile, data, changes, lift, goals] = await Promise.all([viewP, profileP, dataP, changesP, liftP, goalsP]);
     const system = chatSystemPrompt();
-    context = chatContext({ today, time: clockIn(timeZone), timeZone, plan: planText(rows, today), profileMd: profile.md, changes });
+    context = chatContext({ today, time: clockIn(timeZone), timeZone, plan: planText(rows, today), activities: activitiesText(activities, rows, today), profileMd: profile.md, changes });
     prepMs = Date.now() - started;
     const result = await chatWithClaude({
       client: new Anthropic({ timeout: 100_000, maxRetries: 1 }),
@@ -328,7 +328,7 @@ export async function sendMessage(
       context,
       text: text || `(Paolo sent ${filesPhrase(files)} with no words.)`,
       files: files.map((f): object => (data.has(f.id) ? fileBlock(data.get(f.id)!) : { type: 'text', text: fileNote(f) })),
-      check: (input, attempt) => checkProposalInput(input, { rows, today, templates: templateNames(profile), lift, goals, timeZone, nowMs: Date.now() }, attempt),
+      check: (input, attempt) => checkProposalInput(input, { rows, today, templates: templateNames(profile), activities, lift, goals, timeZone, nowMs: Date.now() }, attempt),
       checkCard: (input) => checkCard(input, { rows, today }),
       deadline: started + BUDGET_MS,
       onEvent: emit,
@@ -459,13 +459,14 @@ export async function applyProposal(userId: string, id: string, today: string): 
   const { ops: asked, basis } = p.changes as { ops: Change[]; basis: Record<string, string> };
   const warned = (p.warnings as string[]) ?? [];
   let rows;
+  let activities;
   try {
-    rows = await planRows(userId, today);
+    ({ rows, activities } = await planView(userId, today));
   } catch (error) {
     await reopen('open');
     throw error;
   }
-  const problems = isStale(basis, rows) ? ['a workout on this card changed after Coach suggested it'] : recheck(asked, { rows, today }, warned);
+  const problems = isStale(basis, rows) ? ['a workout on this card changed after Coach suggested it'] : recheck(asked, { rows, today, activities }, warned);
   if (problems.length) {
     const result = [`Nothing changed: ${problems[0]}. Ask Coach again and it will plan from the week as it is now.`];
     await reopen('stale', result);

@@ -11,6 +11,7 @@ test('describeChange: insert, delete, move, skip, link, edits', () => {
   );
   assert.equal(describeChange({ op: 'update', title: 'VO2', before: { status: 'planned' }, after: { status: 'skipped', skip_reason: 'tired' } }), 'skipped VO2 (tired)');
   assert.equal(describeChange({ op: 'update', title: 'Lift', before: { lift_session_id: null }, after: { lift_session_id: 'x' } }), 'linked a Lift session to Lift');
+  assert.equal(describeChange({ op: 'update', title: 'Long run', before: { matched_activity_id: null }, after: { matched_activity_id: '99' } }), 'linked activity 99 to Long run');
   assert.equal(describeChange({ op: 'update', title: 'Run', before: { duration: 30, tss: 20 }, after: { duration: 45, tss: 30 } }), 'changed duration, TSS of Run');
   assert.equal(describeChange({ op: 'update', title: 'Run 2', before: { title: 'Run' }, after: { title: 'Run 2' } }), 'renamed Run to Run 2');
 });

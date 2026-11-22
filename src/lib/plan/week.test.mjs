@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { adaptForFeel, addDays, isHard, matchActivityId, canStandIn, matchWeek, mondayOf, sportOf, sportOfStrava, undoAdapts } from './week.mjs';
+import { adaptForFeel, addDays, isHard, matchActivityId, canStandIn, matchWeek, mondayOf, sportOf, sportOfStrava, undoAdapts, NO_ACTIVITY } from './week.mjs';
 
 const MON = '2026-10-19';
 const day = (n) => addDays(MON, n);
@@ -302,4 +302,26 @@ test('matchWeek: a fresh session goes to the workout with no session of its own,
   const result = matchWeek(ws, [], [{ id: 'up', date: day(0), name: 'Upper A', setsLogged: 18 }], day(2));
   assert.equal(result.get('upper').match.id, 'up');
   assert.equal(result.get('calf').match, null);
+});
+
+test('matchWeek: a pinned activity wins over the guess by day (Paris long run, Wed 18 Nov)', () => {
+  const ws = [
+    { id: 'gym', date: '2026-11-18', title: 'Run to the gym', sport: 'run', status: 'planned', sortOrder: 0 },
+    { id: 'long', date: '2026-11-18', title: 'Long run, Paris', sport: 'run', status: 'planned', sortOrder: 1 },
+  ];
+  const acts = [{ id: '99', date: '2026-11-18', sport: 'run', name: 'Morning Run' }];
+  const guess = matchWeek(ws, acts, [], '2026-11-22');
+  assert.equal(guess.get('gym').match.id, '99');
+  assert.equal(guess.get('long').status, 'missed');
+  const pinned = matchWeek([ws[0], { ...ws[1], pinnedActivityId: '99' }], acts, [], '2026-11-22');
+  assert.deepEqual(pinned.get('long'), { status: 'done', match: { source: 'strava', id: '99', name: 'Morning Run', pinned: true } });
+  assert.equal(pinned.get('gym').status, 'missed');
+  // A pin on another day and sport counts as a swap; 'none' keeps a workout from matching anything.
+  const ride = matchWeek([{ ...ws[0], date: '2026-11-17', pinnedActivityId: '99' }], acts, [], '2026-11-22');
+  assert.equal(ride.get('gym').status, 'done');
+  const none = matchWeek([{ ...ws[0], pinnedActivityId: NO_ACTIVITY }, ws[1]], acts, [], '2026-11-22');
+  assert.equal(none.get('gym').status, 'missed');
+  assert.equal(none.get('long').match.id, '99');
+  // A skipped workout pinned to a recording is done.
+  assert.equal(matchWeek([{ ...ws[1], status: 'skipped', pinnedActivityId: '99' }], acts, [], '2026-11-22').get('long').status, 'done');
 });

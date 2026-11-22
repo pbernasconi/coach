@@ -232,6 +232,11 @@ export const trainingPlanActivities = pgTable('training_plan_activities', {
   liftTemplate: text('lift_template'),
   liftSessionId: text('lift_session_id'), // lower-case UUID of the lift_rows 'session' row
 
+  // The Strava activity that counts for this workout, set by hand from Coach chat (src/lib/plan/week.mjs matchWeek):
+  // it wins over the guess by day and sport. 'none': no recording counts for it. Null: matched by day as usual.
+  // (strava_activity_id above is an old column nothing reads.)
+  matchedActivityId: text('matched_activity_id'),
+
   // Cardio: the workout as steps (src/lib/workouts/steps.mjs). The source for the chart, planned time and TSS, and
   // the copies on Zwift and the Garmin watch (scripts/workout-sync.mjs).
   steps: jsonb('steps').$type<Record<string, unknown> | null>(),

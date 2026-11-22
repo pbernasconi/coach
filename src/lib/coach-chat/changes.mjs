@@ -7,6 +7,7 @@ import { SPORT_IDS, EFFORTS } from '../plan/create.mjs';
 import { checkRules, sessionsFromRows } from '../plan/rules.mjs';
 import { strengthExercises } from '../plan/strength-text.mjs';
 import { isFatigue, SKIP_REASONS } from '../plan/skip.mjs';
+import { feedbackLine } from '../plan/feedback.mjs';
 import { addDays, isHard, mondayOf } from '../plan/week.mjs';
 import { cleanTemplateChange, templateChangeText } from './lift-tools.mjs';
 import { cleanReminder, reminderText } from './reminder-tools.mjs';
@@ -19,9 +20,11 @@ export const HORIZON_DAYS = 21;
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
-const OPS = new Set(['move', 'skip', 'unskip', 'add', 'remove', 'update', 'remember', 'template', 'event', 'goal', 'plan_week', 'reminder']);
-/** What a missed workout on a past day can still get. */
-const PAST_OPS = new Set(['move', 'skip', 'remove']);
+const OPS = new Set(['move', 'skip', 'unskip', 'add', 'remove', 'update', 'link', 'unlink', 'done', 'feel', 'remember', 'template', 'event', 'goal', 'plan_week', 'reminder']);
+/** What a workout on a past day can still get: a missed one moved, skipped or removed, and any one's recording put right. */
+const PAST_OPS = new Set(['move', 'skip', 'remove', 'link', 'unlink', 'done', 'feel']);
+/** Changes to which recording counts for a workout, and how it felt: they work on done and past workouts too. */
+const MATCH_OPS = new Set(['link', 'unlink', 'done', 'feel']);
 /** Changes that aren't workouts in the plan: the rule checks and the read-back skip them. */
 const OFF_PLAN = new Set(['remember', 'template', 'event', 'goal', 'plan_week', 'reminder']);
 /** Whether a change edits something other than a planned workout. @param {{ op: string }} c */
@@ -62,7 +65,13 @@ export function liftNoteProblem(text) {
  * @typedef {{ id: string, date: string, startTime: string | null, title: string, sport: string,
  *   workoutType: string | null, intensity: string | null, duration: number | null, description?: string | null,
  *   status: string, skipReason?: string | null, state: string, liftTemplate?: string | null,
- *   activityId?: string | null }} PlanRow  `activityId`: the Strava activity a done workout matched (get_activity reads it)
+ *   activityId?: string | null, pinned?: boolean }} PlanRow  `activityId`: the Strava activity a done workout matched (get_activity
+ *   reads it); `pinned`: Paolo (through Coach) chose it, so it stays whatever the day's guess would be
+ */
+/**
+ * A recorded Strava activity in the plan's weeks, and the workout it counts for now (`workoutId`), for a link.
+ * @typedef {{ id: string, date: string, sport: string, name: string, min: number | null, km: number | null,
+ *   workoutId: string | null }} PlanActivity
  */
 /**
  * One checked change.
@@ -73,6 +82,11 @@ export function liftNoteProblem(text) {
  *   | { op: 'update', id: string, title?: string, duration?: number, effort?: string, description?: string, startTime?: string | null }
  *   | { op: 'add', date: string, sport: string, startTime: string | null, title: string, duration: number | null,
  *       effort: string, description: string, liftTemplate?: string | null, workoutType?: string | null }
+ *   | { op: 'link', id: string, activity: string, name: string, date: string, min: number | null, km: number | null,
+ *       from: { id: string, title: string } | null }
+ *   | { op: 'unlink', id: string, activity: string, name: string }
+ *   | { op: 'done', id: string }
+ *   | { op: 'feel', id: string, item: string, date: string, feel: number | null, rpe: number | null, comment: string | null }
  *   | { op: 'remember', text: string }
  *   | import('./lift-tools.mjs').TemplateChange
  *   | import('./goal-tools.mjs').EventChange | import('./goal-tools.mjs').GoalChange
@@ -129,13 +143,14 @@ function editDistance(a, b) {
  * checked goes through and lift-tools.ts finds out at Apply whether its slot is still there.
  * @param {unknown} raw  propose_changes' `changes`
  * Events and goals are checked against `goals` the same way (without it, one already checked goes through).
- * @param {{ rows: PlanRow[], today: string, templates?: string[],
+ * A link names a recorded activity from `activities` (without it, Apply's recheck, one already checked goes through).
+ * @param {{ rows: PlanRow[], today: string, templates?: string[], activities?: PlanActivity[] | null,
  *   lift?: { templates: import('./lift-tools.mjs').LiftTemplate[], library: import('./lift-tools.mjs').LibraryExercise[] } | null,
  *   goals?: { events: import('./goal-tools.mjs').CoachEvent[], goals: import('./goal-tools.mjs').Goal[] } | null,
  *   timeZone?: string, nowMs?: number }} plan  `timeZone`, `nowMs`: his clock, for a reminder's time
  * @returns {{ changes: Change[], problems: string[] }}
  */
-export function cleanChanges(raw, { rows, today, templates = [], lift = null, goals = null, timeZone = 'America/Los_Angeles', nowMs = Date.now() }) {
+export function cleanChanges(raw, { rows, today, templates = [], activities = null, lift = null, goals = null, timeZone = 'America/Los_Angeles', nowMs = Date.now() }) {
   /** @type {string[]} */
   const problems = [];
   /** @type {Change[]} */
@@ -233,7 +248,14 @@ export function cleanChanges(raw, { rows, today, templates = [], lift = null, go
     if (!row) return problems.push(`${at}: no workout with id ${id || '(none)'} in the plan${nearIds(id, rows)}`);
     if (seen.has(id)) return problems.push(`${at}: ${row.title} has more than one change; merge them into one`);
     seen.add(id);
-    if (row.state === 'done') return problems.push(`${at}: ${row.title} is done; a done workout stays as it is`);
+    if (MATCH_OPS.has(op)) {
+      const m = cleanMatch(op, b, row, { rows, today, activities, changes });
+      if ('problem' in m) return problems.push(`${at}: ${m.problem}`);
+      return changes.push(m.change);
+    }
+    if (row.state === 'done') {
+      return problems.push(`${at}: ${row.title} is done, so only which recording counts for it can change ({ op: "link" } or { op: "unlink" })`);
+    }
     // A missed workout can be moved to today or later (catching it up), skipped (it was a rest or travel day, so it
     // isn't left as not done) or removed (Paolo, 2026-10-28 and 2026-11-10: "can you remove it"). Nothing else
     // changes the past.
@@ -283,6 +305,78 @@ export function cleanChanges(raw, { rows, today, templates = [], lift = null, go
     return changes.push(u);
   });
   return { changes, problems };
+}
+
+/** "felt strong · RPE 7 (very hard)". @param {{ feel: number | null, rpe: number | null, comment: string | null }} c */
+const feelText = (c) => feedbackLine(c);
+
+/** "88 min · 15.2 km". @param {{ min?: number | null, km?: number | null }} a */
+const actSize = (a) => [a.min ? `${a.min} min` : null, a.km ? `${a.km} km` : null].filter(Boolean).join(' · ');
+
+/**
+ * A change to which recording counts for a workout (Paolo, 2026-11-22: the Paris long run's 88 min run counted for
+ * the 20 min "Run to the gym" and Coach said it couldn't fix it):
+ * - link: this recorded activity counts for this workout, whatever the day's guess (the workout it counted for
+ *   before loses it); a skipped workout comes back as done. Same week only: a week is matched on its own.
+ * - unlink: the activity no longer counts for it; it shows as missed (or not done yet) until he links another.
+ * - done: done without a recording (the watch was off).
+ * @param {string} op @param {Record<string, unknown>} b @param {PlanRow} row
+ * @param {{ rows: PlanRow[], today: string, activities: PlanActivity[] | null, changes: Change[] }} ctx
+ * @returns {{ change: Change } | { problem: string }}
+ */
+function cleanMatch(op, b, row, { rows, today, activities, changes }) {
+  const title = row.title;
+  if (op === 'feel') {
+    if (row.date > today) return { problem: `${title} is on ${row.date}, still ahead; log how it felt once it's done` };
+    const int = (/** @type {unknown} */ v, /** @type {number} */ lo, /** @type {number} */ hi) =>
+      v == null || v === '' ? null : Number.isInteger(Number(v)) && Number(v) >= lo && Number(v) <= hi ? Number(v) : undefined;
+    const feel = int(b.feel, 1, 5);
+    const rpe = int(b.rpe, 1, 10);
+    if (feel === undefined) return { problem: 'feel is 1 (very weak) to 5 (very strong)' };
+    if (rpe === undefined) return { problem: 'rpe is 1 to 10' };
+    const comment = str(b.comment, 500) || null;
+    if (feel == null && rpe == null && !comment) return { problem: 'feel needs a feel, an rpe or a comment' };
+    // Logged where the workout's page logs it: on its recording, else on the planned workout.
+    const item = row.activityId ? `strava:${row.activityId}` : `plan:${row.id}`;
+    return { change: { op: 'feel', id: row.id, item, date: row.date, feel, rpe, comment } };
+  }
+  if (op === 'done') {
+    if (row.state === 'done') return { problem: `${title} is already done` };
+    if (row.date > today) return { problem: `${title} is on ${row.date}, still ahead; only a workout from today or before can be marked done` };
+    if (row.sport === 'rest') return { problem: `${title} is a rest day` };
+    return { change: { op: 'done', id: row.id } };
+  }
+  if (op === 'unlink') {
+    if (!row.activityId) return { problem: `${title} has no recorded activity to unlink` };
+    const act = activities?.find((a) => a.id === row.activityId);
+    const name = act?.name ?? (typeof b.name === 'string' ? b.name : 'its activity');
+    return { change: { op: 'unlink', id: row.id, activity: row.activityId, name } };
+  }
+  const activity = String(b.activity ?? b.activityId ?? '').trim();
+  if (!/^\d+$/.test(activity)) return { problem: 'link needs activity: the Strava activity id (from <activities> or find_activities)' };
+  if (row.sport === 'rest') return { problem: `${title} is a rest day; nothing to link to it` };
+  if (row.activityId === activity) return { problem: `${title} already counts that activity` };
+  if (changes.some((c) => c.op === 'link' && c.activity === activity)) return { problem: `activity ${activity} is linked twice on this card` };
+  if (!activities) {
+    // Apply's recheck: checked when Coach wrote the card.
+    if (typeof b.name === 'string' && typeof b.date === 'string') return { change: /** @type {Change} */ (/** @type {unknown} */ ({ ...b, id: row.id, activity })) };
+    return { problem: 'recorded activities are not available here' };
+  }
+  const act = activities.find((a) => a.id === activity);
+  if (!act) {
+    const days = activities.filter((a) => mondayOf(a.date) === mondayOf(row.date)).map((a) => `${a.id} (${a.name}, ${a.date}, ${actSize(a)})`);
+    return { problem: `no recorded activity ${activity} in the plan's weeks${days.length ? `; that week has ${days.join(', ')}` : ''}` };
+  }
+  if (mondayOf(act.date) !== mondayOf(row.date)) {
+    return { problem: `${act.name} (${act.date}) is in another week than ${title} (${row.date}); link it to a workout of its own week, moving the workout there first if needed` };
+  }
+  const owner = act.workoutId && act.workoutId !== row.id ? rows.find((r) => r.id === act.workoutId) : null;
+  return {
+    change: {
+      op: 'link', id: row.id, activity, name: act.name, date: act.date, min: act.min, km: act.km,
+      from: owner ? { id: owner.id, title: owner.title } : null,
+    },
+  };
 }
 
 /**
@@ -359,6 +453,10 @@ export function describeChanges(changes, rows) {
       case 'skip': return { kind: 'removed', title, detail: `Skip · ${was} · ${c.reason}` };
       case 'unskip': return { kind: 'added', title, detail: `Back in the plan · ${was}` };
       case 'remove': return { kind: 'removed', title, detail: `Delete · ${was}` };
+      case 'link': return { kind: 'changed', title, detail: [`Counts ${c.name}`, dayLabel(c.date), actSize(c), c.from ? `was on ${plainTitle(c.from.title)}` : null].filter(Boolean).join(' · ') };
+      case 'unlink': return { kind: 'removed', title, detail: `${c.name} no longer counts for it · not done until another recording does` };
+      case 'done': return { kind: 'changed', title, detail: `Done without a recording · ${was}` };
+      case 'feel': return { kind: 'changed', title, detail: `Felt: ${feelText(c)}` };
       default: {
         const bits = [];
         if (c.title != null && c.title !== row?.title) bits.push(`renamed "${c.title}"`);
@@ -398,6 +496,14 @@ export function simulate(rows, changes) {
     if (c.op === 'move') Object.assign(r, { date: c.date, startTime: c.startTime });
     else if (c.op === 'skip') Object.assign(r, { status: 'skipped', state: 'skipped', skipReason: c.reason });
     else if (c.op === 'unskip') Object.assign(r, { status: 'planned', state: 'planned', skipReason: null });
+    else if (c.op === 'done') Object.assign(r, { status: 'done', state: 'done' });
+    else if (c.op === 'unlink') Object.assign(r, { state: r.status === 'skipped' ? 'skipped' : 'planned', activityId: null, pinned: true });
+    else if (c.op === 'link') {
+      for (const o of out) {
+        if (o !== r && o.activityId === c.activity) Object.assign(o, { state: o.status === 'skipped' ? 'skipped' : 'planned', activityId: null });
+      }
+      Object.assign(r, { status: r.status === 'skipped' ? 'planned' : r.status, state: 'done', skipReason: null, activityId: c.activity, pinned: true });
+    }
     else if (c.op === 'update') {
       if (c.title) r.title = c.title;
       if (c.duration != null) r.duration = c.duration;
@@ -564,10 +670,17 @@ export function basisOf(changes, rows) {
   const out = {};
   for (const c of changes) {
     const row = 'id' in c && !offPlan(c) ? rows.find((r) => r.id === c.id) : null;
-    if (row) out[row.id] = fingerprint(row);
+    if (row) out[row.id] = MATCH_OPS.has(c.op) ? matchPrint(row) : fingerprint(row);
   }
   return out;
 }
+
+/**
+ * What a link, unlink or done card depends on: the workout's state and recording (it may be done, unlike a workout
+ * any other change touches).
+ * @param {PlanRow} r
+ */
+export const matchPrint = (r) => `match|${r.state}|${r.activityId ?? ''}`;
 
 /**
  * Whether the plan still looks as it did when Coach proposed: every touched workout is there, unchanged, not done.
@@ -577,6 +690,7 @@ export function isStale(basis, rows) {
   const byId = new Map(rows.map((r) => [r.id, r]));
   return Object.entries(basis).some(([id, print]) => {
     const r = byId.get(id);
+    if (r && print.startsWith('match|')) return matchPrint(r) !== print;
     return !r || r.state === 'done' || printOf(r, print) !== print;
   });
 }
@@ -589,13 +703,31 @@ export function planText(rows, today) {
   if (!rows.length) return 'No workouts planned.';
   return rows
     .map((r) => {
-      const flag = r.state === 'done' ? `DONE${r.activityId ? `, activity ${r.activityId}` : ''}` : r.status === 'skipped' ? `SKIPPED${r.skipReason ? ` (${r.skipReason})` : ''}` : r.date < today ? 'MISSED' : r.date === today ? 'TODAY' : 'planned';
+      const flag = r.state === 'done' ? `DONE${r.activityId ? `, activity ${r.activityId}${r.pinned ? ' (linked by hand)' : ''}` : r.status === 'done' ? ', marked done' : ''}` : r.status === 'skipped' ? `SKIPPED${r.skipReason ? ` (${r.skipReason})` : ''}` : r.date < today ? 'MISSED' : r.date === today ? 'TODAY' : 'planned';
       // A lift says what kind it is: a gym lift's template, or a home/physio session.
       const kind = r.sport !== 'strength' ? null : r.liftTemplate ? `Lift template ${r.liftTemplate}` : r.workoutType;
       const what = [r.sport, kind, r.duration ? `${r.duration} min` : null, r.intensity]
         .filter(Boolean)
         .join(', ');
       return `${r.id}  ${r.date} ${dayLabel(r.date).slice(0, 3)} ${hm(r.startTime) ?? '--:--'}  ${r.title} (${what})  [${flag}]`;
+    })
+    .join('\n');
+}
+
+/**
+ * The recorded activities of the plan's weeks up to today, newest last, each with the workout it counts for, so Coach
+ * can see a wrong match and fix it with a link.
+ * @param {PlanActivity[]} activities @param {PlanRow[]} rows @param {string} today
+ */
+export function activitiesText(activities, rows, today) {
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  const shown = activities.filter((a) => a.date <= today);
+  if (!shown.length) return 'No recorded activities.';
+  return shown
+    .map((a) => {
+      const w = a.workoutId ? byId.get(a.workoutId) : null;
+      const counts = w ? `counts for ${w.title} (${w.id}${w.date !== a.date ? `, ${w.date}` : ''})` : 'counts for no workout';
+      return `${a.id}  ${a.date} ${dayLabel(a.date).slice(0, 3)}  ${a.name} (${[a.sport, actSize(a)].filter(Boolean).join(', ')})  [${counts}]`;
     })
     .join('\n');
 }
@@ -807,6 +939,13 @@ export function cardOf(changes, rows) {
       case 'skip': return put(row.date, { title, sport: row.sport, time: was, meta: meta([was, durationText(row.duration)]), tag: 'Skipped', tone: 'skip' }, i);
       case 'remove': return put(row.date, { title, sport: row.sport, time: was, meta: meta([was, durationText(row.duration)]), tag: 'Deleted', tone: 'skip' }, i);
       case 'unskip': return put(row.date, { title, sport: row.sport, time: was, meta: meta([was, durationText(row.duration)]), tag: 'Back on', tone: 'new' }, i);
+      case 'link': {
+        const lose = c.from ? `from ${plainTitle(c.from.title)}` : null;
+        return put(row.date, { title, sport: row.sport, time: was, meta: meta([c.name, actSize(c), c.date !== row.date ? dayLabel(c.date) : null, lose]), tag: 'Linked', tone: 'new' }, i);
+      }
+      case 'unlink': return put(row.date, { title, sport: row.sport, time: was, meta: meta([`${c.name} unlinked`, 'not done']), tag: 'Unlinked', tone: 'skip' }, i);
+      case 'done': return put(row.date, { title, sport: row.sport, time: was, meta: meta([durationText(row.duration), 'no recording']), tag: 'Done', tone: 'new' }, i);
+      case 'feel': return put(row.date, { title, sport: row.sport, time: was, meta: feelText(c), tag: 'Logged', tone: 'new' }, i);
       default: {
         const bits = [];
         if (c.startTime !== undefined) bits.push(`${c.startTime ?? 'no time'}, was ${was ?? 'no time'}`);
@@ -843,13 +982,13 @@ export function cardOf(changes, rows) {
  * Apply's last check, on the plan as it is at the tap (not as it was when Coach wrote the card): every change is still
  * valid (no day now in the past, every workout still there and not done), no new copy of a lift, nothing that
  * breaks a rule the card didn't warn about. Returns what is wrong, in Paolo's words; empty when Apply can go.
- * @param {Change[]} changes @param {{ rows: PlanRow[], today: string }} plan @param {string[]} warned  the card's warnings
+ * @param {Change[]} changes @param {{ rows: PlanRow[], today: string, activities?: PlanActivity[] | null }} plan @param {string[]} warned  the card's warnings
  * @returns {string[]}
  */
-export function recheck(changes, { rows, today }, warned) {
+export function recheck(changes, { rows, today, activities = null }, warned) {
   const templates = [...new Set(changes.flatMap((c) => (c.op === 'add' && c.liftTemplate ? [c.liftTemplate] : [])))];
   const raw = changes.map((c) => ({ ...c }));
-  const { problems } = cleanChanges(raw, { rows, today, templates });
+  const { problems } = cleanChanges(raw, { rows, today, templates, activities });
   if (problems.length) return problems.map((p) => p.replace(/^change \d+: /, ''));
   const copies = duplicateLiftIssues(rows, changes);
   const known = new Set(warned);
@@ -885,6 +1024,9 @@ export function landedIssues(changes, added, rows) {
     if (c.op === 'move' && (r.date !== c.date || hm(r.startTime) !== c.startTime)) out.push(`${name} isn't at ${when(c.date, c.startTime)}`);
     if (c.op === 'skip' && r.status !== 'skipped') out.push(`${name} isn't skipped`);
     if (c.op === 'unskip' && r.status === 'skipped') out.push(`${name} is still skipped`);
+    if (c.op === 'link' && r.activityId !== c.activity) out.push(`${c.name} doesn't count for ${name}`);
+    if (c.op === 'unlink' && r.activityId === c.activity) out.push(`${c.name} still counts for ${name}`);
+    if (c.op === 'done' && r.state !== 'done') out.push(`${name} isn't done`);
     if (c.op === 'update') {
       if (c.duration != null && r.duration !== c.duration) out.push(`${name} isn't ${c.duration} min`);
       if (c.startTime !== undefined && hm(r.startTime) !== c.startTime) out.push(`${name} isn't at ${c.startTime ?? 'no time'}`);
@@ -910,7 +1052,8 @@ export function undoPlan(steps, after, rows) {
   const kept = [];
   for (const s of steps) {
     // A preference and a Lift template aren't workouts: they always go back.
-    if (s.op === 'forget' || s.op === 'template' || s.op === 'event' || s.op === 'goal' || s.op === 'plan_week' || s.op === 'unremind') { run.push(s); continue; }
+    // Which recording counts goes back as it was: nothing else writes it.
+    if (s.op === 'forget' || s.op === 'template' || s.op === 'event' || s.op === 'goal' || s.op === 'plan_week' || s.op === 'unremind' || s.op === 'match' || s.op === 'feel') { run.push(s); continue; }
     if (s.op === 'restore') {
       // A deleted workout comes back unless something took its id since (it never does).
       if (!byId.has(String(s.row?.id ?? ''))) run.push(s);

@@ -69,6 +69,15 @@ request usually answers it:
   lines. Apply of a new gym lift starts plan-apply.yml, so Lift plans its session (exercises, sets, warm-up sets)
   right away; the hourly backstop catches a failed start.
 
+- Which recording counts, and how it felt (2026-11-22). Paolo: "can you fix the long run Paris, you matched the
+  wrong one", and the chat said done workouts were locked. A workout's match is a guess by day and sport
+  (`matchWeek`); `training_plan_activities.matched_activity_id` now pins it (a Strava id wins over the guess, `none`
+  matches nothing). Card ops: `link { id, activity }` (also on a done or past workout, same week as the activity; the
+  workout it counted for lets go, a skipped one comes back), `unlink { id }`, `done { id }` (done without a recording,
+  setDone) and `feel { id, feel?, rpe?, comment? }` (workout_feedback, on its recording's item). `<plan>` starts last
+  Monday and `<activities>` lists every recording with the workout it counts for (`activitiesText`). Undo puts the
+  pins, status and feel back. Card tags: Linked, Unlinked, Done, Logged.
+
 - Two more tools: `show({ kind, ref })` puts a card under the text (workout, week, exercise, readiness, day; the
   server fills it, cards.ts) and `suggest_replies({ options })` adds up to 3 one-tap answers to a question.
 

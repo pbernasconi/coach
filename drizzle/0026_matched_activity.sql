@@ -1,0 +1,1 @@
+ALTER TABLE "training_plan_activities" ADD COLUMN "matched_activity_id" text;

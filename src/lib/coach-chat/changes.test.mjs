@@ -288,3 +288,71 @@ test('the week\'s hours (R12) go on the card as a warning and never send the car
   assert.equal(first.ok, true, JSON.stringify(first));
   assert.match(first.value.warnings.join('\n'), /^R12: .*lifting/m);
 });
+
+// Sun 22 Nov 2026: the Paris long run's 88 min run counted for the 20 min "Run to the gym" on Wed 18 Nov.
+const paris = (() => {
+  const today = '2026-11-22';
+  const rows = [
+    row('gym', '2026-11-18', '08:30:00', 'Run to the gym', 'run', 'run-easy', { duration: 20, state: 'done', activityId: '99' }),
+    row('long', '2026-11-18', '09:30:00', 'Long run, Paris', 'run', 'run-long', { duration: 100, state: 'missed' }),
+    row('easy', '2026-11-20', null, 'Easy run', 'run', 'run-easy', { duration: 40, state: 'missed' }),
+    row('next', '2026-11-24', null, 'Easy run', 'run', 'run-easy', { duration: 40 }),
+  ];
+  const activities = [
+    { id: '99', date: '2026-11-18', sport: 'run', name: 'Morning Run', min: 88, km: 15.2, workoutId: 'gym' },
+    { id: '77', date: '2026-11-12', sport: 'run', name: 'Zurich run', min: 40, km: 8, workoutId: null },
+  ];
+  return { rows, today, activities };
+})();
+
+test('link moves a recording to the right workout, on a past day, and names the one that loses it', () => {
+  const { changes, problems } = cleanChanges([{ op: 'link', id: 'long', activity: '99' }], paris);
+  assert.deepEqual(problems, []);
+  assert.deepEqual(changes[0], { op: 'link', id: 'long', activity: '99', name: 'Morning Run', date: '2026-11-18', min: 88, km: 15.2, from: { id: 'gym', title: 'Run to the gym' } });
+  assert.match(describeChanges(changes, paris.rows)[0].detail, /Counts Morning Run · Wed 18 Nov · 88 min · 15.2 km · was on Run to the gym/);
+  const after = simulate(paris.rows, changes);
+  assert.equal(after.find((r) => r.id === 'long').state, 'done');
+  assert.equal(after.find((r) => r.id === 'gym').activityId, null);
+  // The card checks against the workout's recording, not its edits: a done workout is fine.
+  const basis = basisOf(changes, paris.rows);
+  assert.equal(isStale(basis, paris.rows), false);
+  assert.equal(isStale(basis, paris.rows.map((r) => (r.id === 'long' ? { ...r, state: 'done', activityId: '5' } : r))), true);
+});
+
+test('link refuses an unknown activity, another week, the same one and a rest day', () => {
+  const { problems } = cleanChanges([
+    { op: 'link', id: 'long', activity: '123' },
+    { op: 'link', id: 'easy', activity: '77' },
+    { op: 'link', id: 'gym', activity: '99' },
+  ], paris);
+  assert.equal(problems.length, 3);
+  assert.match(problems[0], /no recorded activity 123.*that week has 99 \(Morning Run/);
+  assert.match(problems[1], /another week/);
+  assert.match(problems[2], /already counts/);
+});
+
+test('unlink, done and feel work on done and past workouts; done refuses the future', () => {
+  const { changes, problems } = cleanChanges([
+    { op: 'unlink', id: 'gym' },
+    { op: 'done', id: 'easy' },
+    { op: 'feel', id: 'long', feel: 2, rpe: 7, comment: 'heavy legs' },
+    { op: 'done', id: 'next' },
+  ], paris);
+  assert.equal(problems.length, 1);
+  assert.match(problems[0], /still ahead/);
+  assert.deepEqual(changes[0], { op: 'unlink', id: 'gym', activity: '99', name: 'Morning Run' });
+  assert.deepEqual(changes[2], { op: 'feel', id: 'long', item: 'plan:long', date: '2026-11-18', feel: 2, rpe: 7, comment: 'heavy legs' });
+  assert.match(describeChanges(changes, paris.rows)[2].detail, /felt weak · RPE 7/);
+  // A done workout's feel goes on its recording.
+  assert.equal(cleanChanges([{ op: 'feel', id: 'gym', rpe: 3 }], paris).changes[0].item, 'strava:99');
+  // Other changes to a done workout still go back, with what can change instead.
+  assert.match(cleanChanges([{ op: 'update', id: 'gym', title: 'x' }], paris).problems[0], /op: "link"/);
+});
+
+test('planText says which recordings were linked by hand; the activities show what each counts for', async () => {
+  const { activitiesText } = await import('./changes.mjs');
+  const text = activitiesText(paris.activities, paris.rows, paris.today);
+  assert.match(text, /99 {2}2026-11-18 Wed {2}Morning Run \(run, 88 min · 15\.2 km\) {2}\[counts for Run to the gym \(gym\)\]/);
+  assert.match(text, /\[counts for no workout\]/);
+  assert.match(planText([{ ...paris.rows[1], state: 'done', activityId: '99', pinned: true }], paris.today), /DONE, activity 99 \(linked by hand\)/);
+});

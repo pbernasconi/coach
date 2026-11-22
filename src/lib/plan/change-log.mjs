@@ -67,8 +67,12 @@ export function describeChange(c) {
   if ('lift_session_id' in after) {
     parts.push(after.lift_session_id ? `linked a Lift session to ${title}` : `unlinked the Lift session of ${title}`);
   }
+  if ('matched_activity_id' in after) {
+    const a = after.matched_activity_id;
+    parts.push(!a ? `let ${title} match its activity by day again` : a === 'none' ? `unlinked the recorded activity from ${title}` : `linked activity ${a} to ${title}`);
+  }
   // A new week's plan for a moved workout is part of the move.
-  const skip = new Set(['scheduled_date', 'status', 'skip_reason', 'lift_session_id', 'plan_id', 'id']);
+  const skip = new Set(['scheduled_date', 'status', 'skip_reason', 'lift_session_id', 'matched_activity_id', 'plan_id', 'id']);
   const others = Object.keys(after).filter((k) => !skip.has(k)).map((k) => FIELD[k] ?? k.replace(/_/g, ' '));
   if ('title' in after && before.title) parts.push(`renamed ${before.title} to ${after.title}`);
   const rest = others.filter((f) => f !== 'title');
