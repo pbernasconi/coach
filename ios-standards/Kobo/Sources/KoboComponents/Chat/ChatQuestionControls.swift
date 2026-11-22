@@ -4,6 +4,7 @@ import SwiftUI
 /// One option of a question card: an outlined capsule, or, picked, a grey fill with a check before the label.
 struct ChatChoiceChip: View {
     @Environment(\.koboTheme) private var theme
+    @Environment(\.colorScheme) private var colorScheme
     let title: String
     var systemImage: String?
     let isPicked: Bool
@@ -24,7 +25,7 @@ struct ChatChoiceChip: View {
             .padding(.horizontal, Space.md + Space.xxs)
             .padding(.vertical, Space.sm)
             .frame(minHeight: Size.buttonHeightCompact)
-            .background(isPicked ? theme.palette.surfaceRaised : .clear, in: Capsule())
+            .background(isPicked ? theme.palette.chatCardInset(colorScheme) : .clear, in: Capsule())
             .overlay {
                 Capsule().strokeBorder(isPicked ? .clear : theme.palette.separator, lineWidth: Size.hairline * 2)
             }
@@ -40,6 +41,7 @@ struct ChatChoiceChip: View {
 /// A grey capsule with a text field and a clear button, then the round arrow that submits it (grey while empty).
 struct ChatQuestionField: View {
     @Environment(\.koboTheme) private var theme
+    @Environment(\.colorScheme) private var colorScheme
     @FocusState private var isFocused: Bool
     @Binding var text: String
     let placeholder: String
@@ -74,7 +76,7 @@ struct ChatQuestionField: View {
             .padding(.leading, Space.md + Space.xxs)
             .padding(.trailing, Space.xs)
             .frame(minHeight: Size.minTouch)
-            .background(theme.palette.surfaceRaised, in: Capsule())
+            .background(theme.palette.chatCardInset(colorScheme), in: Capsule())
             ChatSubmitArrow(isEnabled: ChatQuestionLogic.typed(text) != nil, action: onSubmit)
         }
         .onAppear { if focusesAtOnce { isFocused = true } }
@@ -99,6 +101,7 @@ struct ChatSubmitArrow: View {
 /// "‹ 1 of 5 ›": where the reader is among several questions, with small round arrows to move between them.
 struct ChatQuestionPager: View {
     @Environment(\.koboTheme) private var theme
+    @Environment(\.colorScheme) private var colorScheme
     let index: Int
     let count: Int
     let onMove: (Int) -> Void
@@ -123,7 +126,7 @@ struct ChatQuestionPager: View {
                 .font(theme.font(.caption).weight(.semibold))
                 .foregroundStyle(isEnabled ? theme.palette.textSecondary : theme.palette.textTertiary)
                 .frame(width: Size.iconLg, height: Size.iconLg)
-                .background(theme.palette.surfaceRaised, in: Circle())
+                .background(theme.palette.chatCardInset(colorScheme), in: Circle())
                 .frame(minWidth: Size.minTouch - Space.sm, minHeight: Size.minTouch)
                 .contentShape(Rectangle())
         }

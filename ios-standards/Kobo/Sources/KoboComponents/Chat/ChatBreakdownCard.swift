@@ -100,13 +100,14 @@ extension ChatBreakdownCard where Footer == EmptyView {
 /// A rounded bar on a light grey track; never shorter than its own height, so a small part still shows.
 private struct ChatBreakdownBar: View {
     @Environment(\.koboTheme) private var theme
+    @Environment(\.colorScheme) private var colorScheme
     let fraction: Double
     let tint: Color
     let height: CGFloat
 
     var body: some View {
         Capsule()
-            .fill(theme.palette.surfaceRaised)
+            .fill(theme.palette.chatCardInset(colorScheme))
             .frame(maxWidth: .infinity)
             .frame(height: height)
             .overlay(alignment: .leading) {

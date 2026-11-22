@@ -2,11 +2,13 @@ import KoboTokens
 import SwiftUI
 
 /// Changes an assistant proposes, shown as they will be: a title and summary, then sections (usually days), each row
-/// with a small glyph, its caption and one quiet tag ("From Sat", "Skipped", "New"). Under them the warnings, an optional
-/// check line ("Checked against your plan"), and Not now / Apply N changes. After Apply the card says so with Undo;
-/// `result` lines say what didn't go as shown. When Undo can put back only part, `undoConfirm` asks first. Calm on
-/// purpose and compact, so a week of changes fits one screen: no struck-through text, no coloured change glyphs, one
-/// filled button.
+/// with a small glyph, its caption and one quiet tag ("From Sat", "Skipped", "New"). Under them the warnings and an
+/// optional check line ("Checked against your plan"), each one short line with a toned glyph, and small Not now /
+/// Apply N changes buttons at the trailing edge. After Apply the card says so, with Undo on the summary line; `result`
+/// lines say what didn't go as shown. When Undo can put back only part, `undoConfirm` asks first. Calm on purpose and
+/// dense, so a week of changes fits one screen: no boxed notices, no struck-through text, no coloured change glyphs,
+/// one filled button.
+/// A single section whose heading the summary already says ("2 changes · Sun 22 Nov") drops the heading.
 ///
 ///     ChatChangeCard(verbatim: "Move the review", summary: "2 changes · Tue to Wed", sections: days,
 ///                    status: status, onApply: apply, onDismiss: dismiss, onUndo: undo)
@@ -62,16 +64,22 @@ public struct ChatChangeCard: View {
         VStack(alignment: .leading, spacing: Space.md) {
             header
             VStack(alignment: .leading, spacing: Space.md) {
-                ForEach(sections) { ChatChangeSectionView(section: $0, dimmed: !status.isCurrent) }
+                ForEach(sections) {
+                    ChatChangeSectionView(section: $0, showsTitle: !hidesSectionTitle, dimmed: !status.isCurrent)
+                }
             }
-            ForEach(Array(notes.enumerated()), id: \.offset) { _, note in
-                InlineNotice(verbatim: note, tone: .warning)
-            }
-            ForEach(Array(result.enumerated()), id: \.offset) { _, line in
-                InlineNotice(verbatim: line, tone: status == .expired ? .warning : .info)
-            }
-            if status == .pending, let checked {
-                ChatChangeChecked(text: checked)
+            if !notes.isEmpty || !result.isEmpty || showsChecked {
+                VStack(alignment: .leading, spacing: Space.xs) {
+                    ForEach(Array(notes.enumerated()), id: \.offset) { _, note in
+                        ChatChangeNote(text: note, tone: .warning)
+                    }
+                    ForEach(Array(result.enumerated()), id: \.offset) { _, line in
+                        ChatChangeNote(text: line, tone: status == .expired ? .warning : .info)
+                    }
+                    if showsChecked, let checked {
+                        ChatChangeNote(text: checked, tone: .success)
+                    }
+                }
             }
             ChatChangeFooter(
                 status: status,
@@ -87,21 +95,35 @@ public struct ChatChangeCard: View {
         .accessibilityElement(children: .contain)
     }
 
+    private var showsChecked: Bool { status == .pending && checked != nil }
+    private var hidesSectionTitle: Bool { sections.headingRepeats(summary: summary) }
+    /// Undo sits on the summary line once applied, so the applied card spends no row on it.
+    private var inlineUndo: (() -> Void)? { status == .applied && undoConfirm == nil ? actions.undo : nil }
+
     private var header: some View {
-        HStack(alignment: .firstTextBaseline, spacing: Space.sm) {
-            VStack(alignment: .leading, spacing: Space.xxs) {
+        VStack(alignment: .leading, spacing: Space.xxs) {
+            HStack(alignment: .firstTextBaseline, spacing: Space.sm) {
                 Text(verbatim: title)
-                    .font(theme.font(.headline))
+                    .font(theme.font(.subheadline).weight(.semibold))
                     .foregroundStyle(theme.palette.textPrimary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: true)
                     .accessibilityAddTraits(.isHeader)
-                if let summary {
-                    Text(verbatim: summary)
-                        .font(theme.font(.subheadline))
-                        .foregroundStyle(theme.palette.textSecondary)
+                ChatChangeStatusPill(status: status)
+            }
+            if summary != nil || inlineUndo != nil {
+                HStack(alignment: .firstTextBaseline, spacing: Space.sm) {
+                    if let summary {
+                        Text(verbatim: summary)
+                            .font(theme.font(.footnote))
+                            .foregroundStyle(theme.palette.textSecondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    } else {
+                        Spacer(minLength: 0)
+                    }
+                    if let undo = inlineUndo { ChatChangeUndoButton(action: undo) }
                 }
             }
-            Spacer(minLength: Space.sm)
-            ChatChangeStatusPill(status: status)
         }
     }
 }
@@ -119,14 +141,17 @@ struct ChatChangeActions {
 private struct ChatChangeSectionView: View {
     @Environment(\.koboTheme) private var theme
     let section: ChatChangeSection
+    let showsTitle: Bool
     let dimmed: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: Space.xs) {
-            Text(verbatim: section.title)
-                .font(theme.font(.footnote).weight(.semibold))
-                .foregroundStyle(theme.palette.textSecondary)
-                .accessibilityAddTraits(.isHeader)
+            if showsTitle {
+                Text(verbatim: section.title)
+                    .font(theme.font(.caption).weight(.semibold))
+                    .foregroundStyle(theme.palette.textSecondary)
+                    .accessibilityAddTraits(.isHeader)
+            }
             VStack(alignment: .leading, spacing: Space.sm) {
                 ForEach(section.rows) { ChatChangeRowView(row: $0) }
             }

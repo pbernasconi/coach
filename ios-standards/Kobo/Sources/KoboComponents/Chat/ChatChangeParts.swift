@@ -35,9 +35,11 @@ struct ChatChangeRowView: View {
     }
 }
 
-/// The row's one tag: soft fill, ink text. The words say what happens; the tint only helps.
+/// The row's one tag: soft fill, ink text. The words say what happens; the tint only helps. The neutral tag takes the
+/// card's inset fill, since the neutral soft grey would melt into the card.
 private struct ChatChangeTag: View {
     @Environment(\.koboTheme) private var theme
+    @Environment(\.colorScheme) private var colorScheme
     let text: String
     let tone: ChatChangeRow.Tone
 
@@ -48,7 +50,7 @@ private struct ChatChangeTag: View {
             .foregroundStyle(colors.ink)
             .padding(.horizontal, Space.sm)
             .padding(.vertical, Space.xxs)
-            .background(colors.soft, in: Capsule())
+            .background(tone == .removed ? theme.palette.chatCardInset(colorScheme) : colors.soft, in: Capsule())
             .fixedSize()
     }
 }
@@ -63,25 +65,48 @@ extension ChatChangeRow.Tone {
     }
 }
 
-/// "Checked against your plan: no clashes, no doubles": one quiet line with a small check.
-struct ChatChangeChecked: View {
+/// One short line under the rows: a warning, what happened after Apply, or "Checked against your plan". A small toned
+/// glyph carries the meaning and the words stay quiet, so a note costs a line, not a boxed notice.
+struct ChatChangeNote: View {
     @Environment(\.koboTheme) private var theme
     let text: String
+    let tone: Tone
 
     var body: some View {
-        Label {
-            Text(verbatim: text).foregroundStyle(theme.palette.textSecondary)
-        } icon: {
-            Image(systemName: "checkmark").foregroundStyle(theme.palette.success.ink)
+        HStack(alignment: .firstTextBaseline, spacing: Space.xs) {
+            Image(systemName: tone == .success ? "checkmark" : tone.feedbackSymbol)
+                .font(theme.font(.caption).weight(.semibold))
+                .foregroundStyle(theme.palette.status(tone).ink)
+                .accessibilityHidden(true)
+            Text(verbatim: text)
+                .font(theme.font(.footnote))
+                .foregroundStyle(tone == .warning ? theme.palette.textPrimary : theme.palette.textSecondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .font(theme.font(.footnote))
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
     }
 }
 
-/// The card's buttons: Not now / Apply N changes while pending, Undo once applied, Keep / Undo N while asking.
+/// The applied card's Undo: small accent ink on the summary line.
+struct ChatChangeUndoButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Label {
+                Text("Undo", bundle: .module)
+            } icon: {
+                Image(systemName: "arrow.uturn.backward")
+            }
+        }
+        .buttonStyle(.kobo(.plain, size: .compact, width: .inline))
+    }
+}
+
+/// The card's buttons, small and at the trailing edge: Not now / Apply N changes while pending, Keep / Undo N while
+/// asking. Full width and stacked (primary first) at accessibility sizes.
 struct ChatChangeFooter: View {
-    @Environment(\.koboTheme) private var theme
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let status: ChatActionStatus
     let count: Int
@@ -92,48 +117,40 @@ struct ChatChangeFooter: View {
         if status.showsActions {
             pair {
                 Button(action: actions.dismiss) { Text("Not now", bundle: .module) }
-                    .buttonStyle(.kobo(.outlined, width: .full))
+                    .buttonStyle(.kobo(.outlined, size: .compact, width: width))
                     .disabled(status == .applying)
             } primary: {
                 Button(action: actions.apply) { applyLabel }
-                    .buttonStyle(.kobo(.primary, width: .full, isLoading: status == .applying))
+                    .buttonStyle(.kobo(.primary, size: .compact, width: width, isLoading: status == .applying))
             }
         } else if status == .applied, let undoConfirm {
-            VStack(alignment: .leading, spacing: Space.md) {
-                InlineNotice(verbatim: undoConfirm.message, tone: .neutral)
+            VStack(alignment: .leading, spacing: Space.sm) {
+                ChatChangeNote(text: undoConfirm.message, tone: .info)
                 pair {
                     Button {
                         actions.cancelUndo?()
                     } label: {
                         Text("Keep", bundle: .module)
                     }
-                    .buttonStyle(.kobo(.outlined, width: .full))
+                    .buttonStyle(.kobo(.outlined, size: .compact, width: width))
                 } primary: {
                     Button {
                         actions.confirmUndo?()
                     } label: {
                         Text("Undo \(undoConfirm.count)", bundle: .module)
                     }
-                    .buttonStyle(.kobo(.primary, width: .full))
+                    .buttonStyle(.kobo(.primary, size: .compact, width: width))
                 }
             }
-        } else if status == .applied, let undo = actions.undo {
-            Button(action: undo) {
-                Label {
-                    Text("Undo", bundle: .module)
-                } icon: {
-                    Image(systemName: "arrow.uturn.backward")
-                }
-            }
-            .buttonStyle(.kobo(.plain, size: .compact))
         }
     }
+
+    private var width: KoboButtonStyle.Width { dynamicTypeSize.isAccessibilitySize ? .full : .hug }
 
     private var applyLabel: Text {
         count > 1 ? Text("Apply \(count) changes", bundle: .module) : Text("Apply", bundle: .module)
     }
 
-    /// Two buttons side by side, the primary wider; stacked (primary first) at accessibility sizes.
     @ViewBuilder
     private func pair(@ViewBuilder secondary: () -> some View, @ViewBuilder primary: () -> some View) -> some View {
         if dynamicTypeSize.isAccessibilitySize {
@@ -143,9 +160,8 @@ struct ChatChangeFooter: View {
             }
         } else {
             HStack(spacing: Space.sm) {
-                // The secondary button hugs its label; the primary fills the rest (a layout priority alone
-                // squeezed the secondary to nothing).
-                secondary().fixedSize(horizontal: true, vertical: false)
+                Spacer(minLength: 0)
+                secondary()
                 primary()
             }
         }
