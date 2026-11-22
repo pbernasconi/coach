@@ -302,8 +302,11 @@ as thumbnails with a remove button (`ChatAttachmentStrip`) and upload at once; S
 The tab follows Ramp's assistant chat, in Coach's orange. No navigation title: a glass pill at the top right holds
 Settings (the Settings tab), past chats (a sheet; a tap reopens that chat, `POST /api/app/coach/threads/{id}`) and
 New chat (`POST /api/app/coach/threads`). An empty chat shows Coach's ring, "Hi Paolo," / "How can Coach help?" and
-three starter cards (`prompts` from the server, else the built-in ones). The composer is a glass capsule that opens
-into a card once there is a draft; Send is always there (grey, orange, or a stop square). Paolo's messages are warm
+three starter cards (`prompts` from the server, else the built-in ones). The composer matches the Claude app
+(2026-11-22): at rest a 52 pt capsule ("Type or hold to talk", round +, mic and Send), focused a card, both on the
+page gutter like the messages; warm off-white fill, bright 1 pt edge, soft shadow (Kobo `palette.composer`). Send is always there
+(washed-out orange, orange, or a stop square). The top bar has no backdrop: the conversation shows behind the pills
+and fades only near the status bar. Paolo's messages are warm
 grey bubbles; Coach's replies are plain text with a folded "Thought" row above (`thought`), cards under it (a
 `breakdown` card shows training time by sport), question cards on the latest reply (`questions`, sent back as one
 message of `title: answer` lines; quick replies show as a one-tap chip card), and thumbs and copy under every reply

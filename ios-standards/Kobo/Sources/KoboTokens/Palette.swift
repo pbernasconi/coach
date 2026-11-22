@@ -36,6 +36,9 @@ public struct Palette: Sendable, Equatable {
     public var info: StatusColors
     public var neutral: StatusColors
 
+    /// The chat composer's own colours (`ComposerColors`).
+    public var composer: ComposerColors
+
     public init(
         accent: Color,
         onAccent: Color,
@@ -56,7 +59,8 @@ public struct Palette: Sendable, Equatable {
         warning: StatusColors,
         danger: StatusColors,
         info: StatusColors,
-        neutral: StatusColors
+        neutral: StatusColors,
+        composer: ComposerColors = .standard
     ) {
         self.accent = accent; self.onAccent = onAccent; self.accentSoft = accentSoft; self.accentText = accentText
         self.accentWash = accentWash; self.accentWashSeparator = accentWashSeparator
@@ -64,6 +68,7 @@ public struct Palette: Sendable, Equatable {
         self.surfaceSunken = surfaceSunken; self.separator = separator; self.scrim = scrim
         self.textPrimary = textPrimary; self.textSecondary = textSecondary; self.textTertiary = textTertiary
         self.success = success; self.warning = warning; self.danger = danger; self.info = info; self.neutral = neutral
+        self.composer = composer
     }
 
     public func status(_ tone: Tone) -> StatusColors {
@@ -83,6 +88,25 @@ public struct StatusColors: Sendable, Equatable {
     public var ink: Color
     public var soft: Color
     public init(ink: Color, soft: Color) { self.ink = ink; self.soft = soft }
+}
+
+/// The chat composer, sampled from the Claude iPhone app: a warm off-white fill a shade off the page, a bright 1 pt
+/// edge that catches the light, a soft wide shadow, warm grey round buttons, and Send before there is anything to send
+/// (the accent washed out, with a pale arrow). Dark mode keeps the same depth with a lifted fill and a faint edge.
+public struct ComposerColors: Sendable, Equatable {
+    public var fill: Color
+    public var edge: Color
+    public var shadow: Color
+    /// The round + , microphone and stop buttons.
+    public var control: Color
+    /// Send before there is anything to send: the fill, laid over `fill`, and its arrow.
+    public var sendIdleOpacity: Double
+    public var sendIdleInk: Color
+
+    public init(fill: Color, edge: Color, shadow: Color, control: Color, sendIdleOpacity: Double, sendIdleInk: Color) {
+        self.fill = fill; self.edge = edge; self.shadow = shadow; self.control = control
+        self.sendIdleOpacity = sendIdleOpacity; self.sendIdleInk = sendIdleInk
+    }
 }
 
 /// The closed set of tones a component can take. Meaning never relies on colour alone:

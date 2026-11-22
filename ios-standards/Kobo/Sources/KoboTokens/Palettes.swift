@@ -30,6 +30,22 @@ extension Palette {
         surfaceSunken: Color(light: Color(hex: 0xE7E5E2), dark: Color(hex: 0x363432))
     )
 
+}
+
+extension ComposerColors {
+    /// Every palette's composer. Light values are the Claude app's own pixels: fill #F9F9F8, edge #FFFFFF, buttons
+    /// #EFEFEC, a black shadow at 10%.
+    public static let standard = ComposerColors(
+        fill: Color(light: Color(hex: 0xF9F9F8), dark: Color(hex: 0x262624)),
+        edge: Color(light: Color(hex: 0xFFFFFF), dark: Color(hex: 0xFFFFFF, opacity: 0.08)),
+        shadow: Color(light: Color(hex: 0x000000, opacity: 0.10), dark: Color(hex: 0x000000, opacity: 0.5)),
+        control: Color(light: Color(hex: 0xEFEFEC), dark: Color(hex: 0x353532)),
+        sendIdleOpacity: 0.4,
+        sendIdleInk: Color(light: Color(hex: 0xFFFFFF, opacity: 0.65), dark: Color(hex: 0xFFFFFF, opacity: 0.45))
+    )
+}
+
+extension Palette {
     /// Builds a full palette from an accent. Surfaces, text and status colours are shared iOS-native values;
     /// only the brand roles change between apps. `accentSoft` defaults to the accent at 18%; without a wash,
     /// `accentWash` is the canvas and `accentWashSeparator` the separator; `surfaceRaised` and `surfaceSunken` default
