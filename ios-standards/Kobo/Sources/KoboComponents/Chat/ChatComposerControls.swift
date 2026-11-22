@@ -28,9 +28,9 @@ public struct ChatVoice {
     }
 }
 
-/// A round button of the composer: a solid circle (the accent for a send that can go, grey for an idle send or a
-/// stop), or a bare glyph (the + and the microphone at rest). Never glass. The visible circle is 40 pt; the target
-/// stays at least 44 pt.
+/// A round button of the composer: a solid circle (the accent for a send that can go, the washed-out accent before
+/// there is anything to send, warm grey for the + , the microphone and stop), or a bare glyph. Never glass. The
+/// visible circle is 36 pt; the target stays at least 44 pt.
 struct ChatRoundButton: View {
     enum Look { case accent, quiet, dimmed, bare, muted }
 
@@ -70,10 +70,11 @@ struct ChatRoundGlyph: View {
             .contentShape(Rectangle())
     }
 
-    /// The bare glyphs are light and large; the filled circles' glyphs regular (quiet) or semibold.
+    /// The bare glyphs are light and large; the circles' glyphs thin like the Claude app's (regular), the send
+    /// arrow a touch firmer (medium).
     private var glyphFont: Font {
         if look == .bare { return theme.font(.title2).weight(.light) }
-        return theme.font(.body).weight(look == .quiet ? .regular : .semibold)
+        return theme.font(.body).weight(look == .accent || look == .muted ? .medium : .regular)
     }
 
     private var ink: Color {
@@ -82,17 +83,17 @@ struct ChatRoundGlyph: View {
         case .quiet: theme.palette.textPrimary
         case .dimmed: theme.palette.textTertiary
         case .bare: theme.palette.textSecondary
-        case .muted: theme.palette.accentText.opacity(0.55)
+        case .muted: theme.palette.composer.sendIdleInk
         }
     }
 
     private var fill: Color {
         switch look {
         case .accent: theme.palette.accent
-        case .quiet: theme.palette.surfaceRaised
+        case .quiet: theme.palette.composer.control
         case .dimmed: theme.palette.surfaceSunken
         case .bare: .clear
-        case .muted: theme.palette.accentSoft
+        case .muted: theme.palette.accent.opacity(theme.palette.composer.sendIdleOpacity)
         }
     }
 }
@@ -103,8 +104,8 @@ struct ChatRoundGlyph: View {
 struct ChatMicButton: View {
     @ScaledMetric(relativeTo: .body) private var circle = Size.buttonHeightCompact
     let phase: ChatVoiceInput.Phase
-    /// In the open card's toolbar: a filled round button; in the capsule: a bare glyph.
-    var isFilled = false
+    /// A filled round button (the composer's look); false leaves a bare glyph.
+    var isFilled = true
     let onTap: () -> Void
     let onHoldBegan: () -> Void
 

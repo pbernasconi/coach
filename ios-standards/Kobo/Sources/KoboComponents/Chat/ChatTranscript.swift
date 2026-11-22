@@ -93,7 +93,9 @@ where Data.Element: Identifiable {
         .scrollPosition($position)
         .defaultScrollAnchor(.bottomLeading)  // leading: a bottom anchor also centres the column sideways
         .scrollDismissesKeyboard(.interactively)
-        .scrollEdgeEffectStyle(.soft, for: .bottom)
+        // Soft at both ends, as in the Claude app: lines scroll up under a floating top bar and fade and blur away only
+        // as they near the status bar, so more of the conversation shows behind the bar.
+        .scrollEdgeEffectStyle(.soft, for: .vertical)
         // A little room under the last row; the jump button shows only half a screen up, so it never covers it.
         .contentMargins(.bottom, Space.lg, for: .scrollContent)
         .onScrollGeometryChange(for: [Double].self) { geometry in

@@ -177,6 +177,8 @@ import Testing
         #expect(ChatComposerLogic.isExpanded(draft: "", isListening: true))
         #expect(ChatComposerLogic.isExpanded(draft: "hi", isListening: false))
         #expect(!ChatComposerLogic.isExpanded(draft: "", isListening: false))
+        // Focus alone opens the card, as in the Claude app; at rest and empty it is the capsule.
+        #expect(ChatComposerLogic.isExpanded(draft: "", isListening: false, isFocused: true))
     }
 
     @Test func aTapStartsAndAnotherTapStopsKeepingTheWords() {

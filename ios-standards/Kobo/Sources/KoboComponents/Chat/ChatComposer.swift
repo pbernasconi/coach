@@ -1,11 +1,12 @@
 import KoboTokens
 import SwiftUI
 
-/// The message field at the bottom of a chat. Empty, it is a raised single-line capsule: the + at the leading edge, the
-/// placeholder, the microphone, and the send button, a grey circle until there is something to send. With a draft,
-/// while the microphone listens, or with attachments, it opens into a rounded card: the field on top, growing to eight
-/// lines, and a toolbar under it with the + on the left and the microphone and Send (an accent circle) on the right.
-/// While a reply runs, Send turns into a grey stop square. Return adds a line; Send sends. Place it with
+/// The message field at the bottom of a chat, matched to the Claude iPhone app. At rest it is a raised single-line
+/// capsule, 52 pt tall: a round + at the leading edge, the placeholder, a round microphone, and Send, the accent washed
+/// out until there is something to send. Focused, with a draft, while the microphone listens, or with attachments, it
+/// opens into a card with 24 pt corners, 8 pt from the screen's edges: the field on top, growing to eight lines, and a
+/// toolbar under it with the + on the left and the microphone and Send on the right. While a reply runs, Send turns
+/// into a grey stop square. Colours come from `palette.composer`. Return adds a line; Send sends. Place it with
 /// `.safeAreaBar(edge: .bottom)`; `.backdrop(_:)` paints a fade of the screen's colour behind it, so text scrolls under
 /// cleanly. `voice` adds the microphone (`ChatVoice`); `attach` adds the + and the attached photos and files above the
 /// field (`ChatAttach`), and Send waits for their uploads.
@@ -26,6 +27,7 @@ public struct ChatComposer: View {
     private var focus: FocusState<Bool>.Binding?
     private var backdrop: Color?
     private var restsAsCard = false
+    private var restingPrompt: Text?
 
     /// A composer. `onStop` adds the stop button while `isResponding`; without it the send button waits, disabled.
     public init(
@@ -94,13 +96,21 @@ public struct ChatComposer: View {
         return composer
     }
 
+    /// A shorter placeholder for the capsule at rest ("Type or hold to talk"); the card shows the main prompt.
+    public func restingPrompt(_ prompt: LocalizedStringKey) -> ChatComposer {
+        var composer = self
+        composer.restingPrompt = Text(prompt)
+        return composer
+    }
+
     private var isListening: Bool { voice?.phase == .listening || voice?.phase == .holding }
     private var isExpanded: Bool {
         let hasAttachments = !(attach?.items.isEmpty ?? true)
         let opens = ChatComposerLogic.isExpanded(
             draft: text.wrappedValue,
             isListening: isListening,
-            hasAttachments: hasAttachments
+            hasAttachments: hasAttachments,
+            isFocused: isFocused
         )
         return restsAsCard || opens
     }
@@ -111,7 +121,7 @@ public struct ChatComposer: View {
             if voice?.phase == .unavailable, let open = voice?.onOpenSettings {
                 ChatVoiceDeniedRow(openSettings: open)
             }
-            VStack(alignment: .leading, spacing: isExpanded ? Space.xs : 0) {
+            VStack(alignment: .leading, spacing: 0) {
                 if let attach, !attach.items.isEmpty {
                     ChatAttachmentStrip(
                         attach.items,
@@ -120,12 +130,11 @@ public struct ChatComposer: View {
                         onRetry: attach.onRetry
                     )
                     .padding(.top, Space.sm)
+                    .padding(.horizontal, Space.sm)
                 }
                 HStack(alignment: .center, spacing: 0) {
                     if !isExpanded, let attach { attachButton(attach) }
                     field
-                        // Open, the toolbar holds the buttons: the text keeps the same room on both sides.
-                        .padding(.trailing, isExpanded ? Space.lg - Space.xs : 0)
                     if !isExpanded {
                         if let voice { micButton(voice) }
                         sendButton
@@ -133,14 +142,14 @@ public struct ChatComposer: View {
                 }
                 if isExpanded { toolbar }
             }
-            .padding(.leading, attach != nil && !isExpanded ? Space.xxs : Space.md + Space.xxs)
-            .padding(.trailing, isExpanded ? Space.xs + Space.xxs : Space.xs)
-            .padding(.top, isExpanded ? Space.xxs : Space.xxs + Space.xxs)
-            .padding(.bottom, isExpanded ? Space.xxs : Space.xxs + Space.xxs)
+            // The circles sit 8 pt in from the edge: 4 pt here, 4 pt inside their 44 pt targets.
+            .padding(Space.xs)
             .modifier(ChatComposerSurface(isExpanded: isExpanded))
         }
-        .padding(.horizontal, Space.gutter)
-        .padding(.vertical, Space.xs)
+        // At rest the capsule keeps the page gutter; open, the card widens to 8 pt from the screen's edges.
+        .padding(.horizontal, isExpanded ? Space.sm : Space.gutter)
+        .padding(.top, Space.xs)
+        .padding(.bottom, Space.sm)
         .background { ChatComposerBackdrop(color: backdrop) }
         .koboAnimation(.present, value: isExpanded)
         // The finger that holds the microphone lifts here: the button itself moved when listening began.
@@ -162,17 +171,25 @@ public struct ChatComposer: View {
         }
     }
 
+    /// The placeholder: the shorter resting one in the capsule, when there is one.
+    private var shownPrompt: Text { isExpanded ? prompt : (restingPrompt ?? prompt) }
+
     private var field: some View {
-        TextField(text: text, prompt: prompt.foregroundStyle(theme.palette.textSecondary), axis: .vertical) { prompt }
-            .labelsHidden()
-            .lineLimit(1...8)
-            .focused($isFocused)
-            .font(theme.font(.body))
-            .foregroundStyle(theme.palette.textPrimary)
-            .tint(theme.palette.accent)
-            .padding(.top, isExpanded ? Space.sm : Space.sm + Space.xxs)
-            .padding(.bottom, isExpanded ? 0 : Space.sm + Space.xxs)
-            .frame(maxWidth: .infinity, minHeight: isExpanded ? 0 : Size.minTouch, alignment: .leading)
+        TextField(text: text, prompt: shownPrompt.foregroundStyle(theme.palette.textSecondary), axis: .vertical) {
+            prompt
+        }
+        .labelsHidden()
+        .lineLimit(1...8)
+        .focused($isFocused)
+        .font(theme.font(.body))
+        .foregroundStyle(theme.palette.textPrimary)
+        .tint(theme.palette.accent)
+        // Open: 15 pt above the first line and 13 pt down to the buttons' circles (98 pt in all at one line).
+        .padding(.top, isExpanded ? Space.sm + Space.xxs + ChatComposerMetrics.edge : 0)
+        .padding(.bottom, isExpanded ? Space.md + ChatComposerMetrics.edge - Space.xs : 0)
+        // The text starts 13 pt in from the card's edge (13 pt after the + in the capsule), as in the Claude app.
+        .padding(.horizontal, Space.sm + ChatComposerMetrics.edge)
+        .frame(maxWidth: .infinity, minHeight: isExpanded ? 0 : Size.minTouch, alignment: .leading)
     }
 
     /// Send (grey until there is something to send, then the accent), or the grey stop square while a reply runs.
@@ -184,33 +201,29 @@ public struct ChatComposer: View {
             isResponding: isResponding,
             canStop: onStop != nil
         ) {
-        case .send(let isEnabled): sendButton(look: isEnabled ? .accent : (isExpanded ? .muted : .dimmed))
+        case .send(let isEnabled): sendButton(look: isEnabled ? .accent : .muted)
         case .stop: stopButton
-        case .waiting: sendButton(look: .dimmed)
+        case .waiting: sendButton(look: .muted)
         }
     }
 
     private var toolbar: some View {
-        HStack(spacing: Space.xs) {
-            if let attach {
-                // The + lines up with the card's edge as the send button does on the other side.
-                attachButton(attach, isFilled: true).padding(.leading, Space.xs - Space.md)
-            }
+        HStack(spacing: ChatComposerMetrics.buttonGap) {
+            if let attach { attachButton(attach) }
             if isListening, let voice { ChatVoiceLevel(phase: voice.phase, level: voice.level) }
             Spacer(minLength: 0)
-            if let voice { micButton(voice, isFilled: true) }
+            if let voice { micButton(voice) }
             sendButton
         }
     }
 
-    private func attachButton(_ attach: ChatAttach, isFilled: Bool = false) -> some View {
-        ChatAttachButton(isEnabled: attach.canAdd, isFilled: isFilled, action: attach.onAdd)
+    private func attachButton(_ attach: ChatAttach) -> some View {
+        ChatAttachButton(isEnabled: attach.canAdd, action: attach.onAdd)
     }
 
-    private func micButton(_ voice: ChatVoice, isFilled: Bool = false) -> some View {
+    private func micButton(_ voice: ChatVoice) -> some View {
         ChatMicButton(
             phase: voice.phase,
-            isFilled: isFilled,
             onTap: { if endedHold { endedHold = false } else { voice.onTap() } },
             onHoldBegan: voice.onHoldBegan
         )

@@ -43,9 +43,15 @@ nonisolated enum ChatComposerLogic {
         return .send(isEnabled: canSend(draft, attachments: attachments))
     }
 
-    /// The composer opens into a card with a toolbar once there is a draft, while the microphone listens, or while
-    /// something is attached (the thumbnails sit above the field); empty, it is a single-line capsule.
-    static func isExpanded(draft: String, isListening: Bool, hasAttachments: Bool = false) -> Bool {
-        !draft.isEmpty || isListening || hasAttachments
+    /// The composer opens into a card with a toolbar while the field has focus, once there is a draft, while the
+    /// microphone listens, or while something is attached (the thumbnails sit above the field); at rest and empty, it
+    /// is a single-line capsule, as in the Claude app.
+    static func isExpanded(
+        draft: String,
+        isListening: Bool,
+        hasAttachments: Bool = false,
+        isFocused: Bool = false
+    ) -> Bool {
+        isFocused || !draft.isEmpty || isListening || hasAttachments
     }
 }

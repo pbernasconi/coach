@@ -35,12 +35,12 @@ public struct ChatAttach {
     var readiness: ChatComposerLogic.Attachments { ChatAttachmentLogic.readiness(items) }
 }
 
-/// The composer's + : a bare glyph, like the microphone.
+/// The composer's + : a warm grey circle, like the microphone.
 struct ChatAttachButton: View {
     @ScaledMetric(relativeTo: .body) private var circle = Size.buttonHeightCompact
     let isEnabled: Bool
-    /// In the open card's toolbar: a filled round button; in the capsule: a bare glyph.
-    var isFilled = false
+    /// A filled round button (the composer's look); false leaves a bare glyph.
+    var isFilled = true
     let action: () -> Void
 
     var body: some View {

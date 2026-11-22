@@ -90,12 +90,10 @@ struct CoachCanvas: ViewModifier {
 }
 
 /// The floating top bar: no title; a round glass X at the leading edge (back to the tab before Coach), and one glass
-/// pill at the trailing edge with past chats and a new chat. The chat's background sits behind it, up into the status
-/// bar and fading out under the pills, so messages scrolled up never show through the bar or the clock (2026-11-04:
-/// the first bubble ran under the pills and a thumbs row showed beside the clock).
+/// pill at the trailing edge with past chats and a new chat. Nothing solid sits behind it: as in the Claude app, the
+/// conversation scrolls up behind the pills and only fades and blurs away near the status bar (the transcript's soft
+/// top edge, Kobo's default).
 private struct CoachTopBar: View {
-    @Environment(\.koboTheme) private var theme
-    @Environment(\.colorScheme) private var colorScheme
     let onClose: () -> Void
     let send: (CoachAction) -> Void
 
@@ -110,25 +108,6 @@ private struct CoachTopBar: View {
         }
         .padding(.horizontal, Space.gutter)
         .padding(.bottom, Space.xs)
-        .background { CoachTopBackdrop(color: CoachCanvas.color(theme.palette, colorScheme)) }
-    }
-}
-
-/// The chat's background behind the top bar: solid through the status bar and down to the pills' lower edge, then a
-/// short fade below them, so a line scrolled up is gone before it reaches the pills (a fade that began beside the
-/// pills left half-cut text between them).
-private struct CoachTopBackdrop: View {
-    let color: Color
-
-    var body: some View {
-        VStack(spacing: 0) {
-            color
-            LinearGradient(colors: [color, color.opacity(0)], startPoint: .top, endPoint: .bottom)
-                .frame(height: Space.xl)
-        }
-        .padding(.bottom, -Space.xl)
-        .ignoresSafeArea(edges: .top)
-        .allowsHitTesting(false)
     }
 }
 
@@ -165,8 +144,8 @@ private struct CoachComposerBar: View {
                 canAdd: state.attachments.count < CoachState.attachmentLimit
             )
         )
+        .restingPrompt("Type or hold to talk")
         .focused(by: isComposing)
-        .restsAsCard()
         .backdrop(isEmpty ? nil : CoachCanvas.color(theme.palette, colorScheme))
     }
 }

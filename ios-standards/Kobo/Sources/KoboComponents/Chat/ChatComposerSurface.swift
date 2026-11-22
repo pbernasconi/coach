@@ -1,38 +1,33 @@
 import KoboTokens
 import SwiftUI
 
-/// A raised, calm surface in both shapes: the plain surface fill (white in light mode, one step above the background
-/// in dark), a light hairline and a soft wide shadow (light mode only). At rest a capsule, open a rounded card. One
-/// modifier chain for both shapes: a branch would rebuild the field and drop focus.
+/// The composer's surface, matched to the Claude iPhone app: a warm off-white fill (`palette.composer`), a bright 1 pt
+/// edge that catches the light and a soft, wide shadow, dropped a little. At rest a capsule, open a card with 24 pt
+/// corners. One modifier chain for both shapes: a branch would rebuild the field and drop focus.
 struct ChatComposerSurface: ViewModifier {
     @Environment(\.koboTheme) private var theme
-    @Environment(\.colorScheme) private var colorScheme
     let isExpanded: Bool
 
     func body(content: Content) -> some View {
-        let shape = RoundedRectangle(cornerRadius: isExpanded ? Radius.xl : Radius.pill, style: .continuous)
+        let colors = theme.palette.composer
+        let shape = RoundedRectangle(cornerRadius: isExpanded ? ChatComposerMetrics.cardRadius : Radius.pill)
         content
             .background {
                 shape
-                    .fill(theme.palette.surface)
-                    .shadow(color: shadow, radius: Space.lg, y: Space.xs)
+                    .fill(colors.fill)
+                    .shadow(color: colors.shadow, radius: Space.xxl, y: Space.xs)
             }
-            .overlay {
-                shape.strokeBorder(
-                    theme.palette.textPrimary.opacity(colorScheme == .dark ? 0.1 : 0.08),
-                    lineWidth: Size.hairline
-                )
-            }
-    }
-
-    private var shadow: Color {
-        colorScheme == .dark ? .clear : theme.palette.textPrimary.opacity(ChatComposerShadow.opacity)
+            .overlay { shape.strokeBorder(colors.edge, lineWidth: ChatComposerMetrics.edge) }
     }
 }
 
-/// The composer's shadow strength (a maths constant, not a colour).
-enum ChatComposerShadow {
-    static let opacity: Double = 0.05
+/// The composer's measures, taken from the Claude app at 3x: the edge, the card's corners, and the gap left between
+/// the round buttons once their 44 pt targets touch (9 pt between the circles).
+enum ChatComposerMetrics {
+    /// The bright edge: one point, drawn inside.
+    static let edge: CGFloat = 1
+    static let cardRadius: CGFloat = Space.xxl
+    static let buttonGap: CGFloat = 1
 }
 
 /// The screen's colour behind the composer, fading in over its top edge and running under the home indicator.
