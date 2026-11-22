@@ -4,7 +4,7 @@ import SwiftUI
 /// The message field at the bottom of a chat, matched to the Claude iPhone app. At rest it is a raised single-line
 /// capsule, 52 pt tall: a round + at the leading edge, the placeholder, a round microphone, and Send, the accent washed
 /// out until there is something to send. Focused, with a draft, while the microphone listens, or with attachments, it
-/// opens into a card with 24 pt corners, 8 pt from the screen's edges: the field on top, growing to eight lines, and a
+/// opens into a card with 24 pt corners, on the same gutter as the messages: the field on top, growing to eight lines, and a
 /// toolbar under it with the + on the left and the microphone and Send on the right. While a reply runs, Send turns
 /// into a grey stop square. Colours come from `palette.composer`. Return adds a line; Send sends. Place it with
 /// `.safeAreaBar(edge: .bottom)`; `.backdrop(_:)` paints a fade of the screen's colour behind it, so text scrolls under
@@ -146,8 +146,8 @@ public struct ChatComposer: View {
             .padding(Space.xs)
             .modifier(ChatComposerSurface(isExpanded: isExpanded))
         }
-        // At rest the capsule keeps the page gutter; open, the card widens to 8 pt from the screen's edges.
-        .padding(.horizontal, isExpanded ? Space.sm : Space.gutter)
+        // Both shapes sit on the page gutter, lined up with the messages above (as the Claude app's text and pill do).
+        .padding(.horizontal, Space.gutter)
         .padding(.top, Space.xs)
         .padding(.bottom, Space.sm)
         .background { ChatComposerBackdrop(color: backdrop) }

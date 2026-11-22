@@ -303,8 +303,8 @@ The tab follows Ramp's assistant chat, in Coach's orange. No navigation title: a
 Settings (the Settings tab), past chats (a sheet; a tap reopens that chat, `POST /api/app/coach/threads/{id}`) and
 New chat (`POST /api/app/coach/threads`). An empty chat shows Coach's ring, "Hi Paolo," / "How can Coach help?" and
 three starter cards (`prompts` from the server, else the built-in ones). The composer matches the Claude app
-(2026-11-22): at rest a 52 pt capsule ("Type or hold to talk", round +, mic and Send), focused a card 8 pt from the
-screen's edges; warm off-white fill, bright 1 pt edge, soft shadow (Kobo `palette.composer`). Send is always there
+(2026-11-22): at rest a 52 pt capsule ("Type or hold to talk", round +, mic and Send), focused a card, both on the
+page gutter like the messages; warm off-white fill, bright 1 pt edge, soft shadow (Kobo `palette.composer`). Send is always there
 (washed-out orange, orange, or a stop square). The top bar has no backdrop: the conversation shows behind the pills
 and fades only near the status bar. Paolo's messages are warm
 grey bubbles; Coach's replies are plain text with a folded "Thought" row above (`thought`), cards under it (a
