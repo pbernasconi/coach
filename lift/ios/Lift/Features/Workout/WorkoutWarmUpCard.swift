@@ -99,5 +99,7 @@ private struct WarmUpItemRow: View {
             .transformEnvironment(\.koboTheme) { $0.surfaceStyle = .solid }
         }
         .frame(minHeight: Size.minTouch)
+        .padding(.horizontal, SetGridWidth.inset)  // the set grid's inset, so the card lines up with the set tables
+        .padding(.vertical, Space.xxs)
     }
 }

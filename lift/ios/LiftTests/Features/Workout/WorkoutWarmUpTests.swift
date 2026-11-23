@@ -66,7 +66,7 @@ import Testing
         #expect(sessions.calls == [.saveWarmUpNote(detail.id, expected)])
     }
 
-    @Test func aWarmUpSetRestsAMinuteAtMost() {
+    @Test func aWarmUpSetRestsHalfAMinuteAtMost() {
         let detail = withWarmUp
         #expect(detail.restSeconds(afterLogging: detail.items[0].sets[0].id) == RestTimer.warmUpSeconds)
         #expect(detail.restSeconds(afterLogging: detail.items[0].sets[1].id) == RestTimer.defaultSeconds)
