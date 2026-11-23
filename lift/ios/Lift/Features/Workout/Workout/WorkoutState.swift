@@ -108,8 +108,6 @@ nonisolated struct WorkoutSetItem: Equatable, Sendable, Identifiable {
     var status: SetStatus
     /// The set badge: "1" for working sets, "W", "D" or "F" for warm-up, drop and failure sets.
     var badge: String = ""
-    /// A warm-up set: a short rest after it, and it is left out of the set count.
-    var isWarmUp = false
     /// The weight pill: the saved or logged weight, otherwise the target ("87.5"), or "—".
     var weight: String = "—"
     /// The reps pill: the saved or logged reps, otherwise the target ("5", "8–10"), or "—".
@@ -120,6 +118,8 @@ nonisolated struct WorkoutSetItem: Equatable, Sendable, Identifiable {
     var note: String?
     /// The set's effort ("RPE 8.5"); nil when it was not recorded.
     var rpe: String?
+    /// A warm-up set: a short rest after it, and it is left out of the set count.
+    var isWarmUp = false
 }
 
 /// The weight, reps, RPE and note editor for one set. Done saves them; it never logs the set.
