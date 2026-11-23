@@ -175,6 +175,18 @@ final class AppDependencies {
         } catch {
             AppLog.launch.error("Preparing data failed: \(String(describing: error), privacy: .private)")
         }
+        await matchOpenWorkoutsToUnit()
+    }
+
+    /// An open workout in the other unit (the switch was made before the app could convert it, or a workout planned on
+    /// the server came in that unit) moves to the unit in Settings, as a switch does. Logged sets keep theirs.
+    private func matchOpenWorkoutsToUnit() async {
+        let yesterday = LocalDay(now(), calendar: calendar).adding(days: -1)
+        do {
+            try await sessions.switchOpenSessions(to: units.unit, from: yesterday, gym: gym.setup)
+        } catch {
+            AppLog.launch.error("Matching open workouts to the unit failed: \(String(describing: error), privacy: .private)")
+        }
     }
 
     /// The first session from today on that still has planned sets (or else the first one), for `-open workout`.

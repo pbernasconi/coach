@@ -222,6 +222,20 @@ import Testing
         #expect(sets.calls == [.addSet(sessionExerciseID: exerciseID, kind: .working, target: Fixtures.fiveAt100)])
     }
 
+    @Test func addSetTappedAfterAUnitSwitchCopiesALoadThePlatesMake() async {
+        var switched = planned
+        switched.session.unitsAtLog = .lb  // the last set is still 100 kg
+        let sets = recorder(switched)
+        let vm = makeViewModel(switched, sets: sets)
+        await vm.run()
+        let exerciseID = switched.items[0].id
+
+        await vm.send(.addSetTapped(exerciseID: exerciseID))?.value
+
+        // 220.5 lb, to the 5 lb a barbell step makes.
+        #expect(sets.calls == [.addSet(sessionExerciseID: exerciseID, kind: .working, target: SetTarget(reps: 5, weight: .lb(220)))])
+    }
+
     @Test func restExtendTappedAddsThirtySeconds() async {
         let vm = makeViewModel(planned, sets: recorder(planned))
         await vm.run()

@@ -19,7 +19,7 @@ final class WorkoutViewModel {
     /// Each library exercise's sets last time, read once when the session first loads.
     private let previousSets: PreviousSetsLoader
     /// The gym's bars and plates, for plates per side, warm-ups and the weight step; read each time the session shows.
-    private let gym: any GymPreference
+    let gym: any GymPreference
     /// The defaults for every workout (Workout settings): rest after each set, its length, alerts, the screen.
     private let preferences: any WorkoutPreferenceStore
     private let days: DayCalendar
