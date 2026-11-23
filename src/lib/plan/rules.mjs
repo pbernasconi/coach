@@ -10,6 +10,9 @@ import { addDays, isHard, sportOf } from './week.mjs';
 import { blockWeek } from './consistency.mjs';
 import { instantOf } from './where.mjs';
 
+/** An all-day hold that makes the day a holiday or a family day (profile.mjs flags it for the planner too). */
+export const HOLIDAY = /thanksgiving|christmas|xmas|new year|easter|holiday|no calls|\booo\b|out of office|day off|wedding|family day/i;
+
 /** A gap this short between two sessions still makes one block (the same 15 min as day-blocks.mjs). */
 export const GAP_MIN = 15;
 export const LONG_RUN_MIN = 90;
@@ -384,6 +387,21 @@ export function checkRules(sessions, { weekStart, request = null, context = null
     else if (total > MAX_WEEK_MIN + 30 && typeof request?.hours !== 'number') add('R12', 'warn', null, `${h(total)} planned, over his 8–10 h.`);
     if (lift < MIN_LIFT_MIN) add('R12', 'fail', null, `${lift ? h(lift) : 'No time'} of lifting planned; he wants 2 h or more a week (two lifts of 60 min or more).`);
   }
+  // R12 on a check-in: the days left keep their share of the 8 h (a Monday check-in is a full week), and the lifts
+  // still reach 2 h with the ones done (60 min each). Fails while 5 or more days are left, warns after.
+  const checkinShare = request?.kind === 'checkin' && today && !floorWeek && request?.feel !== 'recovery' && list(request?.sick).length === 0
+    && !(typeof request?.hours === 'number');
+  if (checkinShare) {
+    const left = days.filter((d) => d >= today).length;
+    const ahead = sessions.filter((s) => s.day >= today && s.sport !== 'walk');
+    const total = ahead.reduce((n, s) => n + s.minutes, 0);
+    const lift = ahead.filter(isLift).reduce((n, s) => n + s.minutes, 0) + doneLift.length * 60;
+    const want = Math.round((MIN_WEEK_MIN * left) / 7);
+    const level = left >= 5 ? 'fail' : 'warn';
+    const h = (/** @type {number} */ m) => `${Math.round(m / 6) / 10} h`;
+    if (total < want - 30) add('R12', level, null, `${h(total)} planned for the ${left} days left; his 8–10 h week needs about ${h(want)} of them. Add time to the long sessions and the lifts.`);
+    if (left >= 4 && lift < MIN_LIFT_MIN) add('R12', level, null, `${h(lift)} of lifting this week with the ones done; he wants 2 h or more (two lifts of 60 min or more).`);
+  }
 
   // R8: within the hours he has.
   if (typeof request?.hours === 'number') {
@@ -406,10 +424,35 @@ export function checkRules(sessions, { weekStart, request = null, context = null
     if (sessions.some((l) => l.day === s.day && isLift(l))) add('R9', 'warn', s.day, `${label(s.day)}: ${s.title} is on a lift day. Put it on a rest or easy day.`);
   }
 
-  // R17: a check-in plans only today and the days after it (done sessions go in completed[]).
+  // R7 on holidays: an all-day "Thanksgiving – no calls" or "Christmas" hold makes the day a family day: one short easy
+  // session at most (60 min, no lift, nothing hard).
+  // All-day rows are stored at midnight UTC of their first day; the end is the day after the last one.
+  const isoDay = (/** @type {any} */ v) => (v instanceof Date ? v.toISOString() : String(v ?? '')).slice(0, 10);
+  const holidays = new Set(((context?.calendarByWeek ?? []).flatMap((/** @type {any} */ w) => w?.events ?? []))
+    .filter((/** @type {any} */ e) => e?.allDay && HOLIDAY.test(String(e.summary ?? '')))
+    .flatMap((/** @type {any} */ e) => {
+      const first = isoDay(e.start);
+      const end = isoDay(e.end);
+      return days.filter((d) => d === first || (d > first && d < end));
+    }));
+  for (const day of days.filter((d) => holidays.has(d))) {
+    const on = (byDay.get(day) ?? []).filter((s) => s.sport !== 'walk' && s.sport !== 'yoga');
+    const min = on.reduce((n, s) => n + s.minutes, 0);
+    const heavy = on.find((s) => isLift(s) || isQuality(s));
+    if (heavy) add('R7', 'fail', day, `${label(day)} is a holiday on his calendar: no ${heavy.title}; one short easy session at most.`);
+    else if (min > 60) add('R7', 'warn', day, `${label(day)} is a holiday on his calendar: ${min} min planned; keep it to one easy session of 60 min or less.`);
+  }
+
+  // R17: a check-in plans only today and the days after it (done sessions go in completed[]), and today only from now on.
+  const now = Date.parse(String(context?.generatedAt ?? ''));
   if (request?.kind === 'checkin' && today) {
     for (const s of sessions) {
       if (s.day < today) add('R17', 'fail', s.day, `${label(s.day)} is in the past, but the check-in planned ${s.title} on it.`);
+      else if (s.start != null && now != null) {
+        // Today counts on the clock of where he is: 10:00 in Geneva has passed when he plans at 14:00 there.
+        const at = instantOf(s.day, hhmm(Number(s.start)), s.tz ?? context?.home?.tz ?? 'America/Los_Angeles');
+        if (Number.isFinite(at) && at < now + 30 * 60_000) add('R17', 'fail', s.day, `${label(s.day)}: ${s.title} at ${hhmm(Number(s.start))} has already passed (or starts within 30 min). Plan it later today or on another day.`);
+      }
     }
   }
   return issues;

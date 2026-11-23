@@ -12,8 +12,12 @@ Follow them as defaults he doesn't need to repeat.
   and every week moves him toward his goals (both lifts with curls, quality work, the long run, Z2 volume, physio).
   Plan 8–10 h, aiming for 9, unless he gives fewer `hours` or asks for a floor week; travel weeks too (Paolo,
   2026-11-10: "I def need to get 8 up to 10 hrs a week and 2 hrs of lift a week"). The plan check (R12) fails a
-  full week under 8 h or with under 2 h of lifting. Don't shrink a week to his recent average or because he was
-  tired a day (Paolo, 2026-11-02: a 5h50 easy week "was not good at all").
+  full week under 8 h or with under 2 h of lifting, and flags one over 10 h 30. Add the week up before you submit:
+  9 h, not 11. Don't shrink a week to his recent average or because he was tired a day (Paolo, 2026-11-02: a 5h50
+  easy week "was not good at all").
+- **Holidays**: an all-day calendar hold the profile marks 🎉 (Thanksgiving, Christmas, "no calls", OOO) is a family
+  day: one short easy session at most (60 min or less, early, no lift, nothing hard), or rest. Move that day's lift
+  or quality session to another day of the week (R7 fails a lift or a hard session on it).
 - **Timezone**: America/Los_Angeles, unless the profile's travel section gives another zone for a day.
 - **Lift templates** (in the profile) are the strength programming. Don't invent new lifts.
 - **Lift notes** (the profile's "Notes from Lift") are Paolo's own words from his last workouts: "Achilles sore",

@@ -5,7 +5,7 @@ import { ArrowUp, Undo2, X } from 'lucide-react';
 import { Button, cn } from '@kobo/web';
 import type { DraftEvent, PlannerWeek } from '@/lib/plan/planner-week';
 import { freeSlots } from '@/lib/plan/planner-app.mjs';
-import { clock, dayNum, hm, sportVar, weekday } from './plannerUi';
+import { clock, dayNum, daysToCome, hm, sportVar, weekday } from './plannerUi';
 
 export type Answers = {
   feel: string | null; hours: number | null; gym: number | null; hard: number | null; longDay: string | null; daysOff: string[]; away: string[]; busy: string[]; sick: string[]; notes: Record<string, string>; lock: string;
@@ -45,6 +45,16 @@ export function Segmented<T extends string | number | null>({ value, options, on
 }
 
 /** Why the week looks like this, the last change, quick asks, and the plan checks. */
+/** What Coach is doing while it drafts: how far it got, what comes next, and that the why follows. */
+function draftingText(data: PlannerWeek): string {
+  const n = data.events.length;
+  if (!n) return 'Coach is reading your week (calendar, travel, last week, recovery) and starts writing in a few seconds. A draft takes about 2 minutes.';
+  const min = data.events.reduce((t, e) => t + (e.minutes ?? 0), 0);
+  const next = daysToCome(data.weekStart, data.events);
+  return `Coach has written ${n} session${n === 1 ? '' : 's'} (${hm(min)}) so far.${next ? ` ${next} come${next.includes('–') ? '' : 's'} next.` : ''} `
+    + 'Then Coach checks the week against your rules (8–10 h, 2 lifts, travel) and explains it here.';
+}
+
 export function CoachPanel({ data, onAsk, onUndo, busy }: { data: PlannerWeek; onAsk: (note: string) => void; onUndo: () => void; busy: boolean }) {
   const p = data.proposal;
   const review = p?.review;
@@ -74,7 +84,7 @@ export function CoachPanel({ data, onAsk, onUndo, busy }: { data: PlannerWeek; o
       {!review && !p?.summary && (
         <p className="leading-relaxed text-muted-foreground">
           {p?.status === 'requested' || p?.status === 'running'
-            ? 'Coach is drafting. Why the week looks the way it does shows here when it is ready.'
+            ? draftingText(data)
             : 'Once Coach drafts the week, this is where it explains why: the reasoning, the trade-offs and what to watch. Then ask for changes below.'}
         </p>
       )}

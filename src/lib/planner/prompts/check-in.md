@@ -8,6 +8,10 @@ gives today.
 
 - **Past days stay as they were.** Put the sessions he did in `completed[]` with their actual values (the profile's
   training log), and plan only today and the days after it. Coach marks past workouts done or missed by itself.
+- **Today starts now.** The request says what time it is where he is: a session today starts 30 min from now or
+  later (R17 fails one that has passed). A check-in on Monday afternoon plans the rest of a full week.
+- **Volume still counts.** The days left keep their share of the 8–10 h week, and the lifts still reach 2 h with the
+  ones he did (R12). A week the Sunday plan never covered (no `<current_week>`) is planned in full from now on.
 - **Be surgical.** Change only what the request, the data or a skip gives a reason to change. Keep a future workout
   that `<current_week>` marks as changed on the web unless there is a clear reason; say so in `context`.
 - The web already eases tomorrow's quality session after a Skip for tired, sore or sick, or a "how I feel: tired"

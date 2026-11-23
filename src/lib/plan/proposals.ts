@@ -7,7 +7,7 @@
 import { createId } from '@paralleldrive/cuid2';
 import { sql } from '@/db';
 import { toDay, toIso } from '@/lib/db-time.mjs';
-import { pushWeek } from '@/lib/calendar-sync/push.mjs';
+import { HOME_TZ, pushWeek } from '@/lib/calendar-sync/push.mjs';
 import { followWorkoutInLift, removeFromLift } from '@/lib/lift/edit-store';
 import { importPlan } from '@/lib/plan/import.mjs';
 import { checkPlan } from '@/lib/plan/proposal.mjs';
@@ -15,7 +15,7 @@ import { checkProposal, todayOf } from '@/lib/plan/rules.mjs';
 import { editPlan } from '@/lib/plan/draft.mjs';
 import { cleanReview } from '@/lib/plan/review.mjs';
 import type { StructuredWorkout } from '@/lib/plan/queries';
-import { mondayOf } from '@/lib/plan/week.mjs';
+import { mondayOf, todayIn } from '@/lib/plan/week.mjs';
 
 export type PlanRequest = {
   kind: 'weekly' | 'checkin'; weekStart: string; feel: string | null; focus: string | null; lock: string | null;
@@ -223,7 +223,8 @@ export async function reviseRequest(
   if (!r) return { error: 'This draft is no longer open.' };
   const old = r.request as PlanRequest;
   const newId = await createRequest(userId, {
-    ...old, ...answers, kind: old.kind, weekStart: old.weekStart, revise: { fromId: id, note: text, version: (old.revise?.version ?? 1) + 1 },
+    // A week that has started by now is a check-in, even when the draft was made the Sunday before.
+    ...old, ...answers, kind: old.weekStart <= mondayOf(todayIn(HOME_TZ)) ? 'checkin' : old.kind, weekStart: old.weekStart, revise: { fromId: id, note: text, version: (old.revise?.version ?? 1) + 1 },
   });
   await sql`
     UPDATE plan_proposals SET status = 'rejected', decided_at = NOW(), updated_at = NOW(), error = 'Changed on request.'

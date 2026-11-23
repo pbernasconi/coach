@@ -36,3 +36,15 @@ export function weekLabel(monday: string): string {
 }
 
 export const days = (monday: string) => Array.from({ length: 7 }, (_, i) => addDays(monday, i));
+
+/**
+ * While Coach writes: the days it has not reached yet ("Thu–Sun"), or null once the last day has a session. Claude
+ * writes the week in day order, so the days after the latest one written are still to come, not days off.
+ */
+export function daysToCome(monday: string, events: Pick<DraftEvent, 'date'>[]): string | null {
+  const last = events.reduce((m, e) => (e.date > m ? e.date : m), '');
+  const sunday = addDays(monday, 6);
+  if (last >= sunday) return null;
+  const next = last ? addDays(last, 1) : monday;
+  return next === sunday ? weekday(sunday) : `${weekday(next)}–${weekday(sunday)}`;
+}

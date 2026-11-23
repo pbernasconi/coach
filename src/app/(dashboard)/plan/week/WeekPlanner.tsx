@@ -17,10 +17,17 @@ import StepLastWeek from './StepLastWeek';
 import StepYourWeek from './StepYourWeek';
 import StepShape from './StepShape';
 import StepAccept from './StepAccept';
-import { hm, weekLabel } from './plannerUi';
+import { daysToCome, hm, weekLabel } from './plannerUi';
 
 type Step = (typeof STEPS)[number];
 const NAMES: Record<Step, string> = { last: 'Last week', week: 'Your week', shape: 'Priorities', draft: 'Draft', accept: 'Review' };
+/** A failed draft's reason in one line: older runs stored the SDK's whole error, broken plan JSON and all. */
+function shortError(error: string | null | undefined): string {
+  if (!error) return 'The draft failed. Try again.';
+  if (/Unable to parse tool parameter JSON/i.test(error)) return "Coach's plan came back garbled. Try again.";
+  return error.length > 200 ? `${error.slice(0, 200)}…` : error;
+}
+
 /** While Coach drafts, the sessions it has written so far come in this often. */
 const POLL_MS = 3_000;
 
@@ -69,19 +76,22 @@ export default function WeekPlanner({ initial }: { initial: PlannerWeek }) {
     return next;
   };
 
-  // While Coach drafts, look again every few seconds for up to 6 minutes (the planner stops at 5): the sessions
-  // written so far fill the calendar.
+  // While Coach drafts, look again every few seconds until the draft is ready or failed: the sessions written so far
+  // fill the calendar. A run the server lost is marked failed after 6 minutes (proposals.ts sweep), so this never
+  // spins for good; it slows down after 4 minutes.
   useEffect(() => {
     if (!drafting) return;
     const started = Date.now();
+    let last = 0;
     const t = setInterval(async () => {
-      if (Date.now() - started > 6 * 60_000) return clearInterval(t);
+      if (Date.now() - started > 4 * 60_000 && Date.now() - last < 10_000) return;
+      last = Date.now();
       try {
         const next = await plannerWeekAction(data.weekStart);
         if (!next) return;
         setData(next);
         if (next.proposal?.status === 'proposed') toast.success(next.change ? `Draft ${next.proposal.version} is ready.` : 'Your draft is ready.');
-        if (next.proposal?.status === 'failed') toast.error(next.proposal.error ?? 'The draft failed. Try again.');
+        if (next.proposal?.status === 'failed') toast.error(shortError(next.proposal.error));
       } catch {
         // The next tick tries again.
       }
@@ -248,6 +258,7 @@ function DraftStep({
   const warns = p?.checks?.warns ?? 0;
   // Coach is drafting and has written some sessions: they show on the calendar as they come.
   const writing = drafting && data.events.length > 0;
+  const toCome = writing ? daysToCome(data.weekStart, data.events) : null;
   const pills = ready
     ? [
         { ok: total >= 480 && total <= 600, text: `${hm(total)}${total >= 480 && total <= 600 ? ' in 8–10 h' : ''}` },
@@ -265,6 +276,7 @@ function DraftStep({
             <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
               <Loader2 aria-hidden className="size-4 animate-spin" />
               {data.events.length} session{data.events.length === 1 ? '' : 's'} so far · {hm(total)}
+              {toCome && <> · writing {toCome} next</>}
             </span>
           )}
           {ready && p && p.version > 1 && <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold">Draft {p.version}</span>}
@@ -293,7 +305,7 @@ function DraftStep({
               ) : (
                 <>
                   <span className="font-semibold">{p?.status === 'failed' ? 'The last draft failed' : `No draft for ${weekLabel(data.weekStart)} yet`}</span>
-                  <span className="text-sm text-muted-foreground">{p?.status === 'failed' ? p.error : 'Answer the steps before, then Coach drafts it on your calendar.'}</span>
+                  <span className="text-sm text-muted-foreground">{p?.status === 'failed' ? shortError(p.error) : 'Answer the steps before, then Coach drafts it on your calendar.'}</span>
                   <Button size="compact" loading={pending} onClick={onDraft}><RefreshCw aria-hidden />{p?.status === 'failed' ? 'Try again' : 'Draft my week'}</Button>
                 </>
               )}

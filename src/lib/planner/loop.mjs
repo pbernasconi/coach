@@ -12,6 +12,28 @@ export const MAX_SUBMITS = 3;
 export const MAX_TURNS = 5;
 /** How often a streaming draft is handed on (onDraft). */
 export const DRAFT_EVERY_MS = 2000;
+/** Requests sent again when the plan came back as broken JSON (eager input streaming does not check it). */
+export const MAX_BAD_JSON = 2;
+
+/** Whether `text` is one complete, valid JSON value. @param {string} text */
+function strictJson(text) {
+  try {
+    JSON.parse(text);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The SDK's error for a tool call whose input is not valid JSON. With `eager_input_streaming` the API streams the plan
+ * as Claude writes it and does not check it, so a stray character or a cut-off plan throws from `finalMessage()`.
+ * Only that error: the typed API errors (rate limit, auth, 5xx) are not bad JSON.
+ * @param {unknown} e
+ */
+export function isBadToolJson(e) {
+  return e instanceof Error && !('status' in e) && /Unable to parse tool parameter JSON/i.test(e.message);
+}
 
 /**
  * @typedef {{ ok: true } | { ok: false, problems: string[], saveable: boolean }} CheckResult
@@ -25,11 +47,12 @@ export const DRAFT_EVERY_MS = 2000;
  *   client: { beta: { messages: { stream: (params: any, opts?: any) => { finalMessage: () => Promise<any>, on?: Function } } } },
  *   system: string, user: string, check: (plan: any) => CheckResult,
  *   effort?: 'low' | 'medium' | 'high', deadline?: number, now?: () => number, model?: string,
- *   onDraft?: (partial: any) => void,
- * }} p  deadline: epoch ms by which the last request must start; onDraft: the sessions written so far, while Claude writes
+ *   onDraft?: (partial: any) => void, stopAt?: number,
+ * }} p  deadline: epoch ms by which the last request must start; stopAt: epoch ms by which every request must have ended
+ *   (the server function stops soon after); onDraft: the sessions written so far, while Claude writes
  * @returns {Promise<PlanResult>}
  */
-export async function planWithClaude({ client, system, user, check, effort = 'high', deadline = Infinity, now = Date.now, model = MODEL, onDraft }) {
+export async function planWithClaude({ client, system, user, check, effort = 'high', deadline = Infinity, stopAt = Infinity, now = Date.now, model = MODEL, onDraft }) {
   /** @type {any[]} */
   const messages = [{ role: 'user', content: user }];
   let usage = NO_USAGE;
@@ -39,8 +62,9 @@ export async function planWithClaude({ client, system, user, check, effort = 'hi
   /** @type {{ plan: any, summary: string | null, problems?: number } | null} */
   let best = null;
   let nudged = false;
+  let badJson = 0;
 
-  for (let turn = 1; turn <= MAX_TURNS; turn++) {
+  for (let turn = 1; turn <= MAX_TURNS + MAX_BAD_JSON; turn++) {
     if (now() > deadline) return result('deadline');
     const stream = client.beta.messages
       .stream({
@@ -55,7 +79,18 @@ export async function planWithClaude({ client, system, user, check, effort = 'hi
         tools: [SUBMIT_TOOL],
         tool_choice: { type: 'auto' },
         messages,
+      }, Number.isFinite(stopAt) ? { timeout: Math.max(20_000, stopAt - now()) } : undefined);
+    // The raw JSON of each tool call as it streams: the SDK reads it with a tolerant parser, so an unescaped quote can
+    // cut a title short with no error. It is parsed strictly once the call is complete (below).
+    /** @type {Map<number, string>} */
+    const raw = new Map();
+    if (typeof stream.on === 'function') {
+      stream.on('streamEvent', (/** @type {any} */ ev) => {
+        if (ev?.type === 'content_block_delta' && ev.delta?.type === 'input_json_delta') {
+          raw.set(ev.index, (raw.get(ev.index) ?? '') + String(ev.delta.partial_json ?? ''));
+        }
       });
+    }
     if (onDraft && typeof stream.on === 'function') {
       // The plan streams in as Claude writes the tool call: hand on the sessions written so far (the last one may be
       // half written) every DRAFT_EVERY_MS, so the calendar fills while Claude works.
@@ -69,7 +104,17 @@ export async function planWithClaude({ client, system, user, check, effort = 'hi
         onDraft({ ...snapshot.plan, events: events.slice(0, -1) });
       });
     }
-    const message = await stream.finalMessage();
+    /** @type {any} */
+    let message;
+    try {
+      message = await stream.finalMessage();
+    } catch (e) {
+      // The plan came back as broken JSON: there is no tool call to answer, so ask again (the same messages).
+      if (!isBadToolJson(e)) throw e;
+      badJson++;
+      if (badJson > MAX_BAD_JSON) return result('bad_json');
+      continue;
+    }
     usage = addUsage(usage, message.usage, message.model ?? model);
 
     if (message.stop_reason === 'refusal') return result('refusal');
@@ -89,6 +134,13 @@ export async function planWithClaude({ client, system, user, check, effort = 'hi
     const results = [];
     let saved = false;
     for (const call of calls) {
+      const json = raw.get((message.content ?? []).indexOf(call));
+      if (json != null && !strictJson(json)) {
+        badJson++;
+        submits++;
+        results.push({ type: 'tool_result', tool_use_id: call.id, is_error: true, content: 'The plan was not valid JSON (an unescaped quote, a trailing comma or a stray character). Call submit_plan again with valid JSON.' });
+        continue;
+      }
       const input = call.input ?? {};
       if (call.name !== 'submit_plan' || !input.plan || typeof input.plan !== 'object') {
         results.push({ type: 'tool_result', tool_use_id: call.id, is_error: true, content: 'submit_plan needs { plan: {...} }.' });

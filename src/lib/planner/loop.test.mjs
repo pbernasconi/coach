@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { MAX_SUBMITS, planWithClaude } from './loop.mjs';
+import { isBadToolJson, MAX_BAD_JSON, MAX_SUBMITS, planWithClaude } from './loop.mjs';
 
 const usage = { input_tokens: 1000, output_tokens: 500, cache_read_input_tokens: 10000, cache_creation_input_tokens: 0 };
 const submit = (plan, id = 't1') => ({ type: 'tool_use', id, name: 'submit_plan', input: { plan, summary: 'sum' } });
@@ -129,4 +129,68 @@ test('hands on the sessions written so far while the plan streams in', async () 
   assert.equal(r.stop, 'saved');
   // The last session may be half written, so it waits; and at most one hand-on per DRAFT_EVERY_MS.
   assert.deepEqual(drafts.map((d) => d.events.map((e) => e.title)), [['a'], ['a', 'b']]);
+});
+
+/** A client whose first `n` requests throw the SDK's broken tool JSON error, then answers with `replies`. */
+function garbled(n, replies) {
+  const calls = [];
+  return {
+    calls,
+    beta: { messages: { stream: (params) => {
+      calls.push(structuredClone(params));
+      if (calls.length <= n) return { finalMessage: async () => { throw new Error('Unable to parse tool parameter JSON from model. Please retry your request or adjust your prompt. Error: SyntaxError. JSON: {"plan":{"events":[{"title":"x}'); } };
+      const r = replies.shift();
+      return { finalMessage: async () => r };
+    } } },
+  };
+}
+
+test('asks again when the plan comes back as broken JSON, and saves the next one', async () => {
+  const client = garbled(1, [reply([submit({ v: 1 })])]);
+  const r = await planWithClaude({ client, system: 'S', user: 'U', check: okCheck });
+  assert.equal(r.stop, 'saved');
+  assert.equal(client.calls.length, 2);
+  assert.deepEqual(client.calls[1].messages, client.calls[0].messages);
+});
+
+test('stops with bad_json after the broken-JSON retries, and never throws', async () => {
+  const client = garbled(MAX_BAD_JSON + 1, []);
+  const r = await planWithClaude({ client, system: 'S', user: 'U', check: okCheck });
+  assert.equal(r.stop, 'bad_json');
+  assert.equal(r.plan, null);
+});
+
+test('an API error is not broken JSON: it still throws', async () => {
+  const err = Object.assign(new Error('Overloaded'), { status: 529 });
+  assert.equal(isBadToolJson(err), false);
+  const client = { beta: { messages: { stream: () => ({ finalMessage: async () => { throw err; } }) } } };
+  await assert.rejects(planWithClaude({ client, system: 'S', user: 'U', check: okCheck }), /Overloaded/);
+});
+
+test('a plan whose raw JSON is invalid (an unescaped quote the SDK read as a short title) goes back to be fixed', async () => {
+  const calls = [];
+  const streams = [
+    { json: '{"plan":{"title":"the "easy" run"}}', input: { plan: { title: 'the ' } } },
+    { json: '{"plan":{"v":2}}', input: { plan: { v: 2 } } },
+  ];
+  const client = {
+    beta: { messages: { stream: (params) => {
+      calls.push(structuredClone(params));
+      const s = streams.shift();
+      const handlers = {};
+      return {
+        on: (name, fn) => { handlers[name] = fn; },
+        finalMessage: async () => {
+          handlers.streamEvent?.({ type: 'content_block_delta', index: 0, delta: { type: 'input_json_delta', partial_json: s.json } });
+          return reply([{ type: 'tool_use', id: `t${calls.length}`, name: 'submit_plan', input: s.input }]);
+        },
+      };
+    } } },
+  };
+  const r = await planWithClaude({ client, system: 'S', user: 'U', check: okCheck });
+  assert.equal(r.stop, 'saved');
+  assert.deepEqual(r.plan, { v: 2 });
+  const back = calls[1].messages.at(-1).content[0];
+  assert.equal(back.is_error, true);
+  assert.match(back.content, /not valid JSON/);
 });

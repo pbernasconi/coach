@@ -18,7 +18,7 @@ import { monthSpend as spendOn, recordAiUsage } from '@/lib/ai-usage/store';
 import { PLANNER_FEATURES } from '@/lib/ai-usage/usage.mjs';
 import { PLANNER_MONTHLY_CAP_USD } from './cost.mjs';
 import { currentWeekText } from './current-week.mjs';
-import { MODEL, planWithClaude, type CheckResult } from './loop.mjs';
+import { isBadToolJson, MODEL, planWithClaude, type CheckResult } from './loop.mjs';
 import { buildProfile } from './profile.mjs';
 import { PROMPT_VERSION, systemPrompt, userMessage } from './prompt.mjs';
 import { expandRoutines, summaryOf } from './routines.mjs';
@@ -26,6 +26,8 @@ import { stampZones } from '../plan/where.mjs';
 
 /** The last Claude request starts before this; the function stops at 300 s (maxDuration). */
 const BUDGET_MS = 170_000;
+/** Every Claude request has ended by this, with time left to save the plan before the 300 s stop. */
+const STOP_MS = 280_000;
 /**
  * How hard the planner thinks. Low: the rules are checked in code and sent back when broken, so the extra thinking
  * of medium bought little and cost a minute or more of waiting.
@@ -81,6 +83,16 @@ export function checkDraft(raw: unknown, opts: { weekStart: string; request: Pla
   return fails.length ? { ok: false, problems: fails, saveable: true } : { ok: true };
 }
 
+/** "14:05 in Geneva (Europe/Zurich), Mon 23 Nov": the time now where he is today, for a check-in. */
+function nowWhere(context: unknown, today: string | null): string | null {
+  const days = (context as { where?: { date: string; tz: string; label?: string; short?: string }[] } | null)?.where ?? [];
+  const home = (context as { home?: { tz?: string } } | null)?.home?.tz ?? 'America/Los_Angeles';
+  const d = days.find((x) => x.date === today);
+  const tz = d?.tz ?? home;
+  const at = new Date().toLocaleString('en-GB', { timeZone: tz, weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+  return `${at} in ${d?.short ?? d?.label ?? tz} (${tz})`;
+}
+
 /** The profile's days with their zones (profile.mjs `where`). */
 function whereOf(context: unknown): { date: string; tz: string }[] {
   const w = (context as { where?: unknown } | null)?.where;
@@ -94,7 +106,19 @@ const STOPS: Record<string, string> = {
   no_submit: 'Claude answered without a plan',
   repairs_used: 'the plan still broke a format rule after 3 tries',
   turns_used: 'it used all its turns',
+  bad_json: 'Claude\'s plan came back garbled three times',
 };
+
+/**
+ * The words Paolo sees when a run fails: one short sentence. An SDK error can carry the whole plan it could not
+ * read (the broken JSON), which must never reach the screen.
+ */
+export function failureWords(error: unknown): string {
+  if (error instanceof Anthropic.APIError) return `Claude API error ${error.status ?? ''}`.trim();
+  if (isBadToolJson(error)) return 'Claude\'s plan came back garbled';
+  const m = error instanceof Error ? error.message : 'unknown error';
+  return m.split(/[.\n]/)[0].slice(0, 120) || 'unknown error';
+}
 
 /** Plans the request `proposalId`. Never throws: a run that can't plan marks the request failed, with the reason. */
 export async function runPlanner(userId: string, proposalId: string): Promise<{ ok: boolean; stop: string }> {
@@ -130,15 +154,18 @@ export async function runPlanner(userId: string, proposalId: string): Promise<{ 
         .finally(() => { busy = false; });
     };
     const result = await planWithClaude({
-      client: new Anthropic({ timeout: 280_000, maxRetries: 2 }),
+      // One retry at most, and every request ends by stopAt: the function stops at 300 s (maxDuration), and a run
+      // cut off there would leave the screen drafting until the 6-minute sweep.
+      client: new Anthropic({ timeout: 280_000, maxRetries: 1 }),
       system: systemPrompt(),
       user: userMessage({
-        request, profileMd: profile.md, today, revise,
+        request, profileMd: profile.md, today, revise, now: checkin ? nowWhere(context, today) : null,
         currentWeek: checkin ? await currentWeekText(sql, userId, request.weekStart) : null,
       }),
       check: (plan) => checkDraft(plan, { weekStart: request.weekStart, request, context, today }),
       effort: EFFORT,
       deadline: started + BUDGET_MS,
+      stopAt: started + STOP_MS,
       onDraft,
     });
     await writing;
@@ -160,10 +187,11 @@ export async function runPlanner(userId: string, proposalId: string): Promise<{ 
     if (!saved) await failRequest(userId, proposalId, `The planner stopped: ${STOPS[result.stop] ?? result.stop}. Try again.`);
     return { ok, stop: result.stop };
   } catch (error) {
-    const message = error instanceof Anthropic.APIError ? `Claude API error ${error.status ?? ''}`.trim() : error instanceof Error ? error.message : 'unknown error';
-    console.error('Planner failed:', message);
+    const message = failureWords(error);
+    const detail = error instanceof Error ? error.message : String(error);
+    console.error('Planner failed:', detail.slice(0, 2000));
     await sql`
-      UPDATE plan_runs SET status = 'failed', error = ${message.slice(0, 500)}, duration_ms = ${Date.now() - started}
+      UPDATE plan_runs SET status = 'failed', error = ${detail.slice(0, 500)}, duration_ms = ${Date.now() - started}
       WHERE id = ${runId}`;
     await recordAiUsage(userId, { feature: 'planner', model: MODEL, effort: EFFORT, durationMs: Date.now() - started, ok: false, refId: runId });
     await failRequest(userId, proposalId, `The planner failed (${message}). Try again.`);

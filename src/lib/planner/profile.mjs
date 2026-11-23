@@ -12,6 +12,7 @@ import { noteLines, noteText, setExtras } from '../../../scripts/lift-notes.mjs'
 import { healthProfileMarkdown } from '../../../scripts/health-profile.mjs';
 import { feedbackLine } from '../plan/feedback.mjs';
 import { blockWeek, liftConsistency } from '../plan/consistency.mjs';
+import { HOLIDAY } from '../plan/rules.mjs';
 
 export const OWNER_ID = 'user_33cD9CNNEIECAQkXy0z1I2jpgw5';
 const HOME = { lat: 37.7749, lon: -122.4194, label: 'San Francisco, CA', tz: HOME_TZ };
@@ -27,7 +28,7 @@ const TRANSIT = /\b(flight|train|commute|drive|taxi|uber|transfer|check[- ]?in|l
  * @param {{ summary?: string, start_time: any, end_time: any, is_all_day?: boolean }} e @param {string} tz the day's zone
  */
 export function eventFlags(e, tz) {
-  if (e.is_all_day) return '';
+  if (e.is_all_day) return HOLIDAY.test(String(e.summary ?? '')) ? ' — 🎉 holiday or family day: one short easy session at most (≤ 60 min, early, no lift, nothing hard), or rest' : '';
   const out = [];
   const title = String(e.summary ?? '');
   const mins = Math.round((new Date(e.end_time).getTime() - new Date(e.start_time).getTime()) / 60000);
