@@ -331,11 +331,24 @@ export function setVolume(set, unit) {
 }
 
 /**
- * The unit most logged sets use (kg on a tie or with no data), used to display mixed-unit history.
+ * The unit to show Lift data in: the unit of the latest workout that was started or has a logged set, so switching
+ * kg/lb in Lift (which converts the workout in progress) switches the web too. With no such workout, or without
+ * `sessions`, the unit most logged sets use (kg on a tie or with no data).
  * @param {FlatSet[]} sets
+ * @param {Map<string, { day: string, startedAt: string | null, unit: Unit }>} [sessions]
  * @returns {Unit}
  */
-export function displayUnit(sets) {
+export function displayUnit(sets, sessions) {
+  if (sessions) {
+    const logged = new Set(sets.filter(isCountedSet).map((s) => s.sessionId));
+    let latest = null;
+    for (const [id, s] of sessions) {
+      if (!s.startedAt && !logged.has(id)) continue;
+      const key = `${s.day} ${s.startedAt ?? ''}`;
+      if (!latest || key > latest.key) latest = { key, unit: s.unit };
+    }
+    if (latest) return latest.unit;
+  }
   let kg = 0;
   let lb = 0;
   for (const s of sets) {

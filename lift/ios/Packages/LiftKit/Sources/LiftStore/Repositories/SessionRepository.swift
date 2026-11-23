@@ -92,4 +92,10 @@ public protocol SessionRepository: Sendable {
 
     /// Puts a rescheduled session back on its previous day and clears any tombstone.
     func undo(_ change: RescheduleUndo) async throws
+
+    /// The kg/lb switch: every live, unfinished session on or after `day` that is not in `unit` moves to it. Its sets
+    /// not yet logged or skipped are converted and rounded to loads `gym` can make; logged and skipped sets keep the unit
+    /// they were logged in. One transaction. Returns how many sessions changed.
+    @discardableResult
+    func switchOpenSessions(to unit: WeightUnit, from day: LocalDay, gym: GymSetup) async throws -> Int
 }
