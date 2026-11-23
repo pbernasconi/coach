@@ -33,7 +33,7 @@ test('sessionDetail gives the exercises and sets in order, with totals', () => {
   assert.equal(d.minutes, 55);
   assert.equal(d.note, 'Felt good');
   assert.equal(d.volume, 400); // 5 x 80; the warm-up does not count
-  assert.deepEqual([d.setsLogged, d.setsTotal], [3, 4]);
+  assert.deepEqual([d.setsLogged, d.setsTotal], [2, 3]); // warm-ups are not counted
   assert.deepEqual(d.exercises.map((e) => [e.name, e.key]), [['Bench press', `id-${BENCH.toLowerCase()}`], ['Plank', 'name-plank']]);
   const bench = d.exercises[0];
   assert.deepEqual(bench.sets.map((s) => [s.label, s.status, s.reps, s.weight]), [['W', 'done', 10, 40], ['1', 'done', 5, 80], ['2', 'planned', null, null]]);

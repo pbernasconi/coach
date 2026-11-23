@@ -11,6 +11,7 @@ import Synchronization
 nonisolated final class FakeSessionDetailRepository: SessionRepository {
     enum Call: Equatable, Sendable {
         case saveNote(UUID, String?)
+        case saveWarmUpNote(UUID, String?)
         case saveExerciseNote(UUID, String?)
         case removeExercise(UUID)
         case restoreExercise(UUID)
@@ -70,6 +71,22 @@ nonisolated final class FakeSessionDetailRepository: SessionRepository {
             throw AppError(.notFound)
         }
         return session
+    }
+
+    func saveWarmUpNote(sessionID: UUID, note: String?) async throws -> SessionRecord {
+        try record(.saveWarmUpNote(sessionID, note))
+        guard let session = emissions.compactMap(\.self).last(where: { $0.id == sessionID })?.session else {
+            throw AppError(.notFound)
+        }
+        return session
+    }
+
+    /// Sessions whose warm-up was asked for, kept apart from `calls`: the Workout screen asks for it as it loads.
+    var warmUpsPlanned: [UUID] { plannedWarmUps.withLock { $0 } }
+    private let plannedWarmUps = Mutex<[UUID]>([])
+
+    func planWarmUp(sessionID: UUID, gym _: GymSetup) async throws {
+        plannedWarmUps.withLock { $0.append(sessionID) }
     }
 
     func saveExerciseNote(id: UUID, note: String?) async throws -> SessionExerciseRecord {

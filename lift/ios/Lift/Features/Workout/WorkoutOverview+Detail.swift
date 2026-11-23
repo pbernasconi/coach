@@ -15,12 +15,14 @@ extension WorkoutOverview {
         today: LocalDay? = nil
     ) {
         let sets = detail.items.flatMap(\.sets)
+        let counted = sets.filter { $0.kind != .warmUp }
+        let checklist = WarmUpChecklist(note: detail.session.warmUpNote)
         let startedAt = detail.session.startedAt ?? sets.filter { $0.status == .done }.compactMap(\.completedAt).min()
         self.init(
             title: detail.session.title,
             dayTitle: days.longTitle(of: detail.session.day),
-            loggedSets: sets.count(where: { $0.status == .done }),
-            totalSets: sets.count,
+            loggedSets: counted.count(where: { $0.status == .done }),
+            totalSets: counted.count,
             exercises: detail.items.map { item in
                 let last = item.exercise.exerciseID.flatMap { previous[$0] }
                 return WorkoutExercise(
@@ -32,7 +34,8 @@ extension WorkoutOverview {
                 )
             },
             note: detail.session.note,
-            warmUpNote: detail.session.warmUpNote,
+            warmUpNote: checklist == nil ? detail.session.warmUpNote : nil,
+            warmUp: checklist,
             started: startedAt.map(days.started(at:)),
             startedAt: startedAt,
             finishedAt: detail.session.finishedAt,
@@ -54,7 +57,9 @@ extension WorkoutExercise {
         let heaviest = working.filter { $0.unit == shown }.compactMap(\.target.weight).max { $0.value < $1.value }
         let plateSet = gym[heaviest?.unit ?? shown].plateSet
         let isBarbell = exercise.equipment == .barbell && exercise.loadMode == .total
-        let barbellWeight = isBarbell && !isFinished ? heaviest : nil
+        // Planned warm-up sets replace the ramp hint.
+        let hasWarmUpSets = item.sets.contains { $0.kind == .warmUp }
+        let barbellWeight = isBarbell && !isFinished && !hasWarmUpSets ? heaviest : nil
         let shared = working.first.map(\.target).flatMap { first in
             working.allSatisfy { $0.target == first } ? first : nil
         }
@@ -109,7 +114,8 @@ extension WorkoutExercise {
                 previous: last.flatMap { WorkoutText.previous($0, unit: set.unit) },
                 note: set.note,
                 rpe: set.rpe.map(WorkoutText.rpe),
-                unit: set.unit == unit ? nil : set.unit
+                unit: set.unit == unit ? nil : set.unit,
+                isWarmUp: set.kind == .warmUp
             )
         }
     }
@@ -120,8 +126,9 @@ extension SessionDetail {
     /// other planned set is left in the session, since the workout is done.
     func restSeconds(afterLogging setID: UUID, defaultSeconds: Int = RestTimer.defaultSeconds) -> Int {
         let isLast = !items.contains { item in item.sets.contains { $0.status == .planned && $0.id != setID } }
-        guard !isLast, case (let item, _)? = find(setID: setID) else { return 0 }
-        return item.exercise.restSeconds ?? defaultSeconds
+        guard !isLast, case (let item, let set)? = find(setID: setID) else { return 0 }
+        let rest = item.exercise.restSeconds ?? defaultSeconds
+        return set.kind == .warmUp ? min(rest, RestTimer.warmUpSeconds) : rest
     }
 
     /// The rest after logging `setID` as Workout settings have it: none when rests do not start after each set.

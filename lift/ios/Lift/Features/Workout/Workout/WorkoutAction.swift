@@ -23,6 +23,10 @@ nonisolated enum WorkoutAction: Equatable, Sendable {
     case editorDismissed
     /// "Add note" or the note under the header: opens the note editor for the whole session.
     case sessionNoteTapped
+    /// An item of the warm-up card (easy cardio, a prep move): ticks it, or unticks a ticked one.
+    case warmUpItemTapped(Int)
+    /// The folded warm-up card's header: opens it again, or folds it.
+    case warmUpHeaderTapped
     /// "Add note" or "Edit note" in an exercise's options: opens the note editor for that exercise.
     case exerciseNoteTapped(UUID)
     case noteTextChanged(String)

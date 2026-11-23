@@ -10,6 +10,7 @@
 // - Estimated 1RM uses Epley, w x (1 + reps / 30), for 1-12 reps; a single is its own max (as LiftCore).
 
 import { toDate, toDay } from '../db-time.mjs';
+import { warmUpChecklist } from '../lift/warm-up.mjs';
 
 export const LB_PER_KG = 1 / 0.45359237;
 export const MAX_RELIABLE_REPS = 12;
@@ -143,6 +144,8 @@ export function buildModel(data) {
       // Seconds the workout was paused (Lift schema v9); older rows have none.
       pausedSeconds: Math.max(0, num(s.pausedSeconds) ?? 0),
       note: sessionNote(s.note),
+      // The warm-up checklist Lift plans into every workout (../lift/warm-up.mjs); null without one.
+      warmUp: warmUpChecklist(s.warmUpNote),
       unit: /** @type {Unit} */ (s.unitsAtLog === 'lb' ? 'lb' : 'kg'),
     });
   }
@@ -370,8 +373,11 @@ export function sessionSummaries(model, unit, { planned = false } = {}) {
   }
   for (const set of model.sets) {
     const summary = byId.get(set.sessionId);
-    summary.setsTotal += 1;
-    if (set.status === 'done') summary.setsLogged += 1;
+    // Warm-up sets stay out of the count, as in Lift.
+    if (set.kind !== 'warmUp') {
+      summary.setsTotal += 1;
+      if (set.status === 'done') summary.setsLogged += 1;
+    }
     summary.volume += setVolume(set, unit);
   }
   return [...byId.values()]
@@ -601,6 +607,7 @@ export function sessionDetail(model, id, unit) {
     day: summary.day,
     title: summary.title,
     note: session.note,
+    warmUp: session.warmUp ?? null,
     startedAt: started?.toISOString() ?? null,
     finishedAt: finished?.toISOString() ?? null,
     minutes,

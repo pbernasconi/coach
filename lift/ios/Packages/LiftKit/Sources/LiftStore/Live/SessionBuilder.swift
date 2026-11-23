@@ -11,7 +11,7 @@ struct SessionBuilder {
     let stamp: Date
     let gym: GymSetup
 
-    /// Inserts a session named after `template` on `day` with the template's exercises and planned sets.
+    /// Inserts a session named after `template` on `day` with the template's exercises, planned sets and warm-up.
     func session(from template: TemplateRecord, on day: LocalDay, unit: WeightUnit) throws -> SessionRecord {
         let session = SessionRecord(
             id: store.makeID(),
@@ -24,7 +24,13 @@ struct SessionBuilder {
         )
         try store.insertRow(session, at: stamp, db)
         try append(TemplateQueries.liveSlots(db, templateID: template.id).map(\.slot), to: session)
-        return session
+        return try planWarmUp(session)
+    }
+
+    /// Plans the warm-up of a session just built: warm-up sets before the working sets and the checklist
+    /// (`WarmUpWriter`). Returns the session as saved.
+    func planWarmUp(_ session: SessionRecord) throws -> SessionRecord {
+        try WarmUpWriter(store: store, db: db, stamp: stamp, gym: gym).plan(sessionID: session.id) ?? session
     }
 
     /// Appends `slots` to `session` after its existing exercises. Returns the new session exercises.

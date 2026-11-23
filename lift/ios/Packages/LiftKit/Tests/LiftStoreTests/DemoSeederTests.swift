@@ -51,7 +51,7 @@ import Testing
     @Test func loadsRiseWeekOverWeek() async throws {
         let (_, details) = try await seeded()
         let squatLoads = details.compactMap { detail in
-            detail.items.first { $0.exercise.exerciseID == Fixtures.squat.id }?.sets.first?.target.weight?.value
+            detail.items.first { $0.exercise.exerciseID == Fixtures.squat.id }?.sets.first { $0.kind == .working }?.target.weight?.value
         }
         #expect(squatLoads == [65, 67.5, 67.5, 70, 72.5, 72.5, 75, 77.5, 77.5, 80, 82.5, 85, 87.5])
     }

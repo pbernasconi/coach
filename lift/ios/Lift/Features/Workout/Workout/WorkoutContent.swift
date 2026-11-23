@@ -53,6 +53,7 @@ struct WorkoutContent: View {
                     thumbnails: state.thumbnails,
                     rest: state.setRowRest,
                     offersFinish: state.listOffersFinish,
+                    isWarmUpOpen: state.isWarmUpOpen,
                     send: send
                 )
             }
@@ -163,6 +164,8 @@ private struct WorkoutBody: View {
     let rest: SetRowRest?
     /// The list offers Finish workout (`WorkoutState.listOffersFinish`).
     let offersFinish: Bool
+    /// The warm-up card was opened again after it folded.
+    let isWarmUpOpen: Bool
     let send: (WorkoutAction) -> Void
 
     var body: some View {
@@ -181,6 +184,10 @@ private struct WorkoutBody: View {
                 }
                 SegmentedProgress(done: workout.loggedSets, goal: workout.totalSets, accessibilityLabel: "Sets logged")
                 WorkoutSessionNotes(note: workout.note, warmUpNote: workout.warmUpNote) { send(.sessionNoteTapped) }
+            }
+            // A finished workout shows what was done, not a warm-up to tick.
+            if let warmUp = workout.warmUp, !workout.isFinished {
+                WorkoutWarmUpCard(checklist: warmUp, isOpen: isWarmUpOpen, send: send)
             }
             ForEach(workout.exercises) { exercise in
                 WorkoutExerciseSection(

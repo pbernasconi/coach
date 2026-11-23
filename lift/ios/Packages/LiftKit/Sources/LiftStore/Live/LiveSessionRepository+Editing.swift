@@ -11,6 +11,25 @@ extension LiveSessionRepository {
         .after
     }
 
+    public func saveWarmUpNote(sessionID: UUID, note: String?) async throws -> SessionRecord {
+        try await store.change(SessionRecord.self, id: sessionID) { session, _ in
+            session.warmUpNote = NoteText.normalized(note)
+        }
+        .after
+    }
+
+    public func planWarmUp(sessionID: UUID, gym: GymSetup) async throws {
+        let store = store
+        try await store.transaction { db, stamp in
+            guard let detail = try SessionQueries.detail(db, id: sessionID), detail.session.finishedAt == nil,
+                NoteText.normalized(detail.session.warmUpNote) == nil
+            else { return }
+            let sets = detail.items.flatMap(\.sets)
+            guard !sets.contains(where: { $0.kind == .warmUp || $0.status != .planned }) else { return }
+            try WarmUpWriter(store: store, db: db, stamp: stamp, gym: gym).plan(sessionID: sessionID)
+        }
+    }
+
     public func saveExerciseNote(id: UUID, note: String?) async throws -> SessionExerciseRecord {
         try await store.change(SessionExerciseRecord.self, id: id) { exercise, _ in
             exercise.note = NoteText.normalized(note)

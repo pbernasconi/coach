@@ -61,6 +61,14 @@ public protocol SessionRepository: Sendable {
     /// Saves what was written for the whole session. The note is trimmed; an empty one clears it.
     func saveNote(sessionID: UUID, note: String?) async throws -> SessionRecord
 
+    /// Saves the warm-up note: the warm-up checklist as `WarmUpChecklist.note` keeps it. An empty one clears it.
+    func saveWarmUpNote(sessionID: UUID, note: String?) async throws -> SessionRecord
+
+    /// Plans the warm-up (`WarmUpRecipe`) of a session that never had one: warm-up sets before the working sets and the
+    /// checklist in the warm-up note. Nothing changes once the session has a warm-up note or a warm-up set, has a
+    /// logged set, or is finished. Loads round to what `gym` can make.
+    func planWarmUp(sessionID: UUID, gym: GymSetup) async throws
+
     /// Saves what was written about one exercise of a session. The note is trimmed; an empty one clears it.
     func saveExerciseNote(id: UUID, note: String?) async throws -> SessionExerciseRecord
 
