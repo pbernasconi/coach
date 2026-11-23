@@ -133,7 +133,7 @@ test('liftResponse: main lifts, muscles, sessions, consistency, records', () => 
   assert.deepEqual(body.sessions.upcoming.map((u) => [u.sessionId, u.badge]), [['plan', 'Planned']]);
   const s3 = body.sessions.logged[0];
   assert.equal(s3.sessionId, 's3');
-  assert.equal(s3.meta, '2 exercises · 3 sets · 58 min');
+  assert.equal(s3.meta, '2 exercises · 2 sets · 58 min');
   assert.equal(s3.volumeText, '475');
   assert.equal(s3.relative, 1);
   assert.equal(s3.prText, '2 PRs'); // curl and pull-up
@@ -204,8 +204,8 @@ test('sessionResponse: hero and exercise cards, as the session page', () => {
   assert.equal(h.kicker, 'Strength · Tue, Oct 20, 2026 · 1:32 PM');
   assert.equal(h.state, 'done');
   assert.equal(h.stateLabel, 'Done');
-  assert.deepEqual(h.ring, { logged: 3, total: 4, progress: 0.75, text: '3/4', caption: 'sets logged' });
-  assert.deepEqual(h.stats.map((s) => s.value), ['2', '3 / 4', '710 kg', '475 kg', '58 min']);
+  assert.deepEqual(h.ring, { logged: 2, total: 3, progress: 0.667, text: '2/3', caption: 'sets logged' });
+  assert.deepEqual(h.stats.map((s) => s.value), ['2', '2 / 3', '710 kg', '475 kg', '58 min']);
   assert.equal(h.muscles[0].muscle, 'biceps');
 
   const [curl, pull] = body.exercises.items;

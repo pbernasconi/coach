@@ -4,6 +4,8 @@
 // exercise per line with sets × reps, each found in the Lift library by name, else added to it. The changes go through
 // the Lift sync push code, so the iPhone pulls them. Pure; node --test (plan-session.test.mjs).
 
+import { LIGHT_WARM_UP, warmUpNote } from './warm-up.mjs';
+
 /** @typedef {Record<string, any>} Row a lift_rows payload */
 /** @typedef {{ name: string, sets: number, reps: number, repsMax: number | null, note: string | null }} PlanExercise */
 
@@ -113,7 +115,8 @@ export function planSessionChanges(input) {
     templateID: null,
     startedAt: null,
     finishedAt: null,
-    warmUpNote: null,
+    // The light warm-up checklist Lift plans into every workout (home sessions carry no loads for warm-up sets).
+    warmUpNote: warmUpNote(LIGHT_WARM_UP),
     note: null,
     unitsAtLog: unit === 'kg' ? 'kg' : 'lb',
     healthWorkoutID: null,

@@ -6,6 +6,7 @@ import SectionError from '@/components/SectionError';
 import LinkHotkeys from '@/components/hotkeys/LinkHotkeys';
 import ExerciseCard from '@/components/lift/ExerciseCard';
 import ExerciseThumb from '@/components/lift/ExerciseThumb';
+import WarmUpCard from '@/components/lift/WarmUpCard';
 import { muscleLabel, num } from '@/components/lift/format';
 import { SESSION_STATE_LABEL, clockText, sessionStats } from '@/lib/lift-dashboard/text.mjs';
 import { loadLiftModel } from '@/lib/lift-dashboard/queries';
@@ -93,6 +94,7 @@ export default async function LiftSessionPage({ params }: { params: Promise<{ id
         <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">This session has no exercises.</p>
       ) : (
         <div className="space-y-4">
+          {d.warmUp && sessionState(d) !== 'done' && <WarmUpCard items={d.warmUp} />}
           {d.exercises.map((e, i) => (
             <ExerciseCard key={e.id} e={e} unit={d.unit} index={i} />
           ))}

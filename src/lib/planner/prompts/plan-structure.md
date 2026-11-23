@@ -97,7 +97,8 @@ Zones: prescribe by HR for all but Z5 (HR needs ~5 min at wattage to settle); ca
 - 30–90 min Z1/Z2 (bike mostly Z2; run Z1/low Z2) + strides/sprints. Recover for the next workout.
 
 ### Gym Lift (heavy)
-- Warm up circuit × 3: 15 stair climbers, 5 air squats, 5 burpees, 10 split jumps, 60 s rest
+- Warm-up: Lift plans it into every lift (Paolo, 2026-11-23): 5 min easy cardio (the run to the gym counts), 4 prep
+  moves (no jumps while the Achilles is sore), then warm-up sets up to the first working weight. Don't write it out.
 - 3 × 5: squat, Bulgarian split squats, single-leg RDL, weighted calf raises, [optional] pullups
 - 3–5 reps, work to 3 × 5 at a weight then add weight, 3–5 min rest
 - Short on time: squat + calf raise + curls only
@@ -124,7 +125,7 @@ heavy loop band and a door-anchor tube band).
 
 ### Hotel Lift (power focus)
 - ~50% 1RM, explosive intent, 60–90 s rest, not to failure
-- Same warm-up circuit × 3
+- The warm-up Lift plans (easy cardio, prep moves, a light feeler set)
 - Explosive: box split jump 3 × 5, box jump from seated × 3 (unweighted)
 - Main: hamstring curl (ball) or single-leg DB RDL 3 × 8; pistol squat 3 × 8 (band-assisted OK); single-leg calf raise 3 × 8
 - Dumbbell curl 3 × 10–12

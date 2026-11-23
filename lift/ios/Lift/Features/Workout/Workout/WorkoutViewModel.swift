@@ -41,6 +41,8 @@ final class WorkoutViewModel {
     @ObservationIgnored private var serial = 0
     /// The latest timeline write; each waits for the one before, so moments are stored in order.
     @ObservationIgnored var recording: Task<Void, Never>?
+    /// The warm-up was asked for once while this screen is open (`planWarmUpIfNeeded`).
+    @ObservationIgnored private var hasPlannedWarmUp = false
 
     /// Protocols only, no defaults, no work (SCR-3).
     init(
@@ -95,6 +97,7 @@ final class WorkoutViewModel {
                 continue
             }
             show(detail)
+            await planWarmUpIfNeeded(detail)
             if !hasReadPrevious {
                 hasReadPrevious = true
                 state.previous = await previousSets.load(for: detail)
@@ -154,6 +157,8 @@ final class WorkoutViewModel {
             state.editor = state.editor?.applying(action)
         case .editorDoneTapped: return saveEditor()
         case .sessionNoteTapped, .exerciseNoteTapped: openNote(action)
+        case .warmUpItemTapped(let index): return toggleWarmUp(index)
+        case .warmUpHeaderTapped: state.isWarmUpOpen.toggle()
         case .noteTextChanged, .noteDismissed: state.noteEditor = state.noteEditor?.applying(action)
         case .noteDoneTapped:
             defer { state.noteEditor = nil }
@@ -295,6 +300,33 @@ final class WorkoutViewModel {
 
     /// Today on the screen's calendar.
     var today: LocalDay { days.day(of: now()) }
+
+    /// A workout of today that never had a warm-up (one made before warm-ups were planned, or on the web) gets one the
+    /// first time it shows: warm-up sets before the working sets and the checklist. Once a set is logged it is left
+    /// alone; the store checks that too. A failure is left alone: the workout works without it.
+    private func planWarmUpIfNeeded(_ detail: SessionDetail) async {
+        guard !hasPlannedWarmUp, detail.session.day == today, detail.session.finishedAt == nil,
+            detail.session.warmUpNote == nil,
+            !detail.items.contains(where: { $0.sets.contains { $0.kind == .warmUp || $0.status != .planned } })
+        else { return }
+        hasPlannedWarmUp = true
+        try? await sessions.planWarmUp(sessionID: detail.id, gym: gym.setup)
+    }
+
+    /// Ticks or unticks one warm-up item and saves the checklist in the session's warm-up note.
+    private func toggleWarmUp(_ index: Int) -> Task<Void, Never>? {
+        guard let detail, let checklist = WarmUpChecklist(note: detail.session.warmUpNote) else { return nil }
+        let toggled = checklist.toggling(index)
+        if toggled.isComplete { state.isWarmUpOpen = false }  // the card folds once every item is ticked
+        let sessions = sessions
+        return Task {
+            do {
+                _ = try await sessions.saveWarmUpNote(sessionID: detail.id, note: toggled.note)
+            } catch {
+                showToast(.failed)
+            }
+        }
+    }
 
     func showToast(_ kind: WorkoutToast.Kind) {
         serial += 1

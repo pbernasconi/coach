@@ -32,6 +32,8 @@ nonisolated struct WorkoutState: Equatable, Sendable {
     var isConfirmingFinish = false
     /// The first set of the exercise whose "Next exercise" Start was tapped; the dock then offers Log set for it.
     var startedExerciseSetID: UUID?
+    /// The warm-up card was opened after it folded (every item ticked).
+    var isWarmUpOpen = false
 }
 
 /// The session header and its exercises in order.
@@ -44,8 +46,11 @@ nonisolated struct WorkoutOverview: Equatable, Sendable {
     var exercises: [WorkoutExercise]
     /// What was written for the whole session ("Short on time"); nil when nothing was.
     var note: String?
-    /// What was written about the session's warm-up ("5 min rower"); nil when nothing was.
+    /// What was written about the session's warm-up ("5 min rower"); nil when nothing was, or when it is a checklist
+    /// (`warmUp` shows that).
     var warmUpNote: String?
+    /// The warm-up checklist at the top of the workout (easy cardio and prep moves); nil when the session has none.
+    var warmUp: WarmUpChecklist?
     /// "Started 9:05": the start, or the first logged set's time; nil before anything was logged.
     var started: String?
     /// When the workout started: the stamped start, or the first logged set's time; nil before either. The header
@@ -103,6 +108,8 @@ nonisolated struct WorkoutSetItem: Equatable, Sendable, Identifiable {
     var status: SetStatus
     /// The set badge: "1" for working sets, "W", "D" or "F" for warm-up, drop and failure sets.
     var badge: String = ""
+    /// A warm-up set: a short rest after it, and it is left out of the set count.
+    var isWarmUp = false
     /// The weight pill: the saved or logged weight, otherwise the target ("87.5"), or "—".
     var weight: String = "—"
     /// The reps pill: the saved or logged reps, otherwise the target ("5", "8–10"), or "—".

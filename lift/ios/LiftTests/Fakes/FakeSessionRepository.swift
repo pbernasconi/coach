@@ -111,6 +111,12 @@ nonisolated final class FakeSessionRepository: SessionRepository {
         throw AppError(.unknown, detail: "not used")
     }
 
+    func saveWarmUpNote(sessionID _: UUID, note _: String?) async throws -> SessionRecord {
+        throw AppError(.unknown, detail: "not used")
+    }
+
+    func planWarmUp(sessionID _: UUID, gym _: GymSetup) async throws {}
+
     func saveExerciseNote(id _: UUID, note _: String?) async throws -> SessionExerciseRecord {
         throw AppError(.unknown, detail: "not used")
     }

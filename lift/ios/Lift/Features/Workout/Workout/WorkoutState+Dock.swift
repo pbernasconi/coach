@@ -109,7 +109,10 @@ extension WorkoutState {
             let exercise = workout.exercises.first(where: { $0.sets.contains { $0.id == setID } })
         else { return 0 }
         let othersPlanned = workout.exercises.flatMap(\.sets).contains { $0.status == .planned && $0.id != setID }
-        return othersPlanned ? exercise.restSeconds ?? preferences.defaultRestSeconds : 0
+        guard othersPlanned else { return 0 }
+        let rest = exercise.restSeconds ?? preferences.defaultRestSeconds
+        let isWarmUp = exercise.sets.contains { $0.id == setID && $0.isWarmUp }
+        return isWarmUp ? min(rest, RestTimer.warmUpSeconds) : rest
     }
 
     /// The dock shows Finish: every set is done, or the workout is paused.
@@ -127,10 +130,10 @@ extension WorkoutState {
         return !dockFinishes
     }
 
-    /// Sets still planned, for "Finish workout?".
+    /// Working sets still planned, for "Finish workout?" (a warm-up set left planned does not count).
     var plannedSetsLeft: Int {
         guard case .loaded(let workout) = workout else { return 0 }
-        return workout.exercises.flatMap(\.sets).count(where: { $0.status == .planned })
+        return workout.exercises.flatMap(\.sets).count(where: { $0.status == .planned && !$0.isWarmUp })
     }
 }
 

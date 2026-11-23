@@ -59,8 +59,9 @@ public struct LiveWorkoutPlanRepository: WorkoutPlanRepository {
                     note: item.note
                 )
             }
-            try SessionBuilder(store: store, db: db, stamp: stamp, gym: gym).append(slots, to: session)
-            return session
+            let builder = SessionBuilder(store: store, db: db, stamp: stamp, gym: gym)
+            try builder.append(slots, to: session)
+            return try builder.planWarmUp(session)
         }
     }
 
@@ -114,7 +115,9 @@ public struct LiveWorkoutPlanRepository: WorkoutPlanRepository {
             session.templateID = template.id
             session = try store.updateRow(session, at: stamp, db)
             let slots = try TemplateQueries.liveSlots(db, templateID: templateID).map(\.slot)
-            let added = try SessionBuilder(store: store, db: db, stamp: stamp, gym: gym).append(slots, to: session)
+            let builder = SessionBuilder(store: store, db: db, stamp: stamp, gym: gym)
+            let added = try builder.append(slots, to: session)
+            _ = try builder.planWarmUp(session)
             return TemplateChangeUndo(
                 sessionID: sessionID,
                 previousTitle: detail.session.title,

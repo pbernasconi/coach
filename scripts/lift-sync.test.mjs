@@ -434,7 +434,7 @@ test('dashboard: Epley, week starts, and session/weekly/exercise summaries', () 
     sessions.map((s) => [s.title, s.setsLogged, s.setsTotal, s.volume]),
     [
       ['Upper B', 1, 1, 330],
-      ['Upper A', 2, 4, 500],
+      ['Upper A', 1, 3, 500], // the warm-up set is not counted
     ]
   );
   const weeks = weeklyVolume(model, 'kg');

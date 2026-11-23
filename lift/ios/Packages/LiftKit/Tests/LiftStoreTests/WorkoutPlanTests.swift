@@ -41,14 +41,20 @@ import Testing
         #expect(detail.items.map(\.exercise.displayName) == [Fixtures.squat.name, Fixtures.dumbbellBench.name])
         #expect(detail.items.map(\.exercise.loadMode) == [.total, .perHand])
         #expect(detail.items.map(\.exercise.restSeconds) == [120, 120])
-        #expect(detail.items.map(\.sets.count) == [3, 2])
-        #expect(detail.items[0].sets.allSatisfy { $0.target == SetTarget(reps: 5, weight: .kg(80)) })
-        #expect(detail.items[1].sets.allSatisfy { $0.target == SetTarget(repRange: 8...12) })
+        let working = detail.items.map { $0.sets.filter { $0.kind == .working } }
+        #expect(working.map(\.count) == [3, 2])
+        #expect(working[0].allSatisfy { $0.target == SetTarget(reps: 5, weight: .kg(80)) })
+        #expect(working[1].allSatisfy { $0.target == SetTarget(repRange: 8...12) })
         #expect(detail.items.flatMap(\.sets).allSatisfy { $0.status == .planned })
+        // The squat's warm-up ramp comes first; the dumbbell bench has no load, so no warm-up set.
+        let ramp = detail.items[0].sets.prefix { $0.kind == .warmUp }
+        #expect(ramp.map(\.target.weight) == [.kg(20), .kg(40), .kg(55), .kg(67.5)])
+        #expect(detail.items[0].sets.map(\.position) == Array(0..<7))
+        #expect(WarmUpChecklist(note: detail.session.warmUpNote) == WarmUpChecklist(items: WarmUpRecipe.heavyChecklist))
         let entities = try await store.pendingOutbox().map(\.entity)
-        #expect(entities.filter { $0 == .session }.count == 1)
+        #expect(entities.filter { $0 == .session }.count == 2)  // inserted, then its warm-up note
         #expect(entities.filter { $0 == .sessionExercise }.count == 2)
-        #expect(entities.filter { $0 == .set }.count == 5)
+        #expect(entities.filter { $0 == .set }.count == 5 + 4 + 3)  // the squat's working sets move down for the ramp
     }
 
     @Test func aSessionFromACoachsListHasItsExercisesSetsAndRepsAndNoTemplate() async throws {
@@ -80,7 +86,7 @@ import Testing
         let template = try await lowerA(store)
         let session = try await store.plans.createSession(from: template.id, on: Self.thursday, unit: .kg)
         let squat = try #require(try await detail(session.id, store).items.first)
-        #expect(squat.sets.map(\.target.weight) == Array(repeating: .kg(expected), count: 3))
+        #expect(squat.sets.filter { $0.kind == .working }.map(\.target.weight) == Array(repeating: .kg(expected), count: 3))
     }
 
     @Test(arguments: [
@@ -93,7 +99,7 @@ import Testing
         let template = try await lowerA(store)
         let session = try await store.plans.createSession(from: template.id, on: day, unit: .kg)
         let squat = try #require(try await detail(session.id, store).items.first)
-        #expect(squat.sets.map(\.target) == Array(repeating: SetTarget(reps: 5, weight: .kg(expected)), count: 3))
+        #expect(squat.sets.filter { $0.kind == .working }.map(\.target) == Array(repeating: SetTarget(reps: 5, weight: .kg(expected)), count: 3))
     }
 
     @Test func theIncreaseIsAStepThePlatesCanMake() async throws {
@@ -106,7 +112,7 @@ import Testing
         let template = try await lowerA(store)
         let session = try await store.plans.createSession(from: template.id, on: Self.thursday, unit: .kg)
         let squat = try #require(try await detail(session.id, store).items.first)
-        #expect(squat.sets.map(\.target.weight) == Array(repeating: .kg(110), count: 3))
+        #expect(squat.sets.filter { $0.kind == .working }.map(\.target.weight) == Array(repeating: .kg(110), count: 3))
     }
 
     @Test func aRemovedTemplateCannotPlanASession() async throws {

@@ -5,6 +5,7 @@ import { HelpTooltip } from '@kobo/web';
 import { Info, Pencil } from 'lucide-react';
 import ExerciseCard from '@/components/lift/ExerciseCard';
 import ExerciseThumb from '@/components/lift/ExerciseThumb';
+import WarmUpCard from '@/components/lift/WarmUpCard';
 import { loadText, muscleLabel, repsText } from '@/components/lift/format';
 import { plannedVolume, sessionMuscles, sessionState, type RichExercise, type RichSession } from '@/lib/lift/session';
 import LiftEditor from './LiftEditor';
@@ -75,6 +76,7 @@ export default function LiftView({ lift, extra, onChanged, onUnlog, unlogging = 
                 </button>
               </div>
             )}
+            {lift.warmUp && sessionState(lift) !== 'done' && <WarmUpCard items={lift.warmUp} />}
             {lift.exercises.length === 0 && <p className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">No exercises in this session.</p>}
             {lift.exercises.map((e, i) => (
               <ExerciseCard key={e.id} e={e} unit={unit} index={i} onUnlog={onUnlog} unlogging={unlogging} />

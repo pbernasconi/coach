@@ -43,7 +43,7 @@ extension WorkoutActivityAttributes.ContentState {
         let index = currentSetID.flatMap { id in exercises.firstIndex { $0.sets.contains { $0.id == id } } }
         let exercise = index.map { exercises[$0] } ?? exercises.last
         let set = exercise?.sets.first { $0.id == currentSetID }
-        let sets = exercises.flatMap(\.sets)
+        let sets = exercises.flatMap(\.sets).filter { !$0.isWarmUp }
         self.init(
             current: exercise.flatMap { exercise in set.map { WorkoutActivitySet(set: $0, in: exercise) } },
             exerciseNumber: (index ?? max(0, exercises.count - 1)) + 1,

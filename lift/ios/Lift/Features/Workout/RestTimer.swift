@@ -5,6 +5,8 @@ import Foundation
 nonisolated struct RestTimer: Equatable, Sendable {
     /// The rest used when an exercise has no rest time of its own.
     static let defaultSeconds = 90
+    /// The rest after a warm-up set, at most: just long enough to load the bar.
+    static let warmUpSeconds = 60
     /// What +30s adds, here and on the Lock Screen.
     static let extensionSeconds = RestSnapshot.extensionSeconds
 
