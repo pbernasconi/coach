@@ -30,7 +30,7 @@ struct WorkoutExerciseSection: View {
                 ForEach(exercise.sets) { item in
                     SetRow(
                         item: item,
-                        unit: exercise.unit,
+                        unit: item.unit ?? exercise.unit,
                         rest: rest?.ringSetID == item.id ? rest?.timer : nil,
                         onLog: { send(.setLogTapped(item.id)) },
                         onEdit: { send(.setValuesTapped(item.id)) },

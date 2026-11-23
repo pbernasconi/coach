@@ -16,6 +16,17 @@ nonisolated final class FakeSessionRepository: SessionRepository {
     private let reschedules = Mutex<[Reschedule]>([])
     private let undos = Mutex<[RescheduleUndo]>([])
     private let creations = Mutex<[SessionRecord]>([])
+    private let switches = Mutex<[UnitSwitch]>([])
+
+    /// One `switchOpenSessions` call.
+    struct UnitSwitch: Equatable, Sendable {
+        let unit: WeightUnit
+        let from: LocalDay
+        let gym: GymSetup
+    }
+
+    /// Every `switchOpenSessions` call, in order.
+    var unitSwitches: [UnitSwitch] { switches.withLock { $0 } }
 
     /// The id `createSession` hands out.
     static let createdID = IDSequence.id(1, prefix: 0xC4)
@@ -125,6 +136,11 @@ nonisolated final class FakeSessionRepository: SessionRepository {
     func undo(_ change: RescheduleUndo) async throws {
         undos.withLock { $0.append(change) }
         if let undoError { throw undoError }
+    }
+
+    func switchOpenSessions(to unit: WeightUnit, from day: LocalDay, gym: GymSetup) async throws -> Int {
+        switches.withLock { $0.append(UnitSwitch(unit: unit, from: day, gym: gym)) }
+        return 0
     }
 
     func createImportedSession(_: Session) async throws -> SessionRecord {

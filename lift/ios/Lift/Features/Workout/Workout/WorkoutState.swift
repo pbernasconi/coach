@@ -113,6 +113,8 @@ nonisolated struct WorkoutSetItem: Equatable, Sendable, Identifiable {
     var note: String?
     /// The set's effort ("RPE 8.5"); nil when it was not recorded.
     var rpe: String?
+    /// The set's own unit when it differs from the exercise's: a set logged in lb before a switch to kg keeps lb.
+    var unit: WeightUnit?
 }
 
 /// The weight, reps, RPE and note editor for one set. Done saves them; it never logs the set.

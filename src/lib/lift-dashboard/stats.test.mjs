@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildModel, exerciseHistory, muscleSets, sessionDetail, sessionSummaries, topLifts, weeklyVolume } from './stats.mjs';
+import { buildModel, displayUnit, exerciseHistory, muscleSets, sessionDetail, sessionSummaries, topLifts, weeklyVolume } from './stats.mjs';
 
 const SQUAT = 'AAAAAAAA-0000-0000-0000-000000000001';
 const ROW = 'AAAAAAAA-0000-0000-0000-000000000002';
@@ -113,4 +113,19 @@ test('buildModel folds catalog muscle names into the app muscles', () => {
     sessions: [], sessionExercises: [], sets: [], exercises: [{ id: SQUAT, name: 'Squat', primaryMuscles: ['Quadriceps', 'quads'], secondaryMuscles: ['lower back'], deletedAt: null }],
   });
   assert.deepEqual(m.muscles.get(`id-${SQUAT.toLowerCase()}`), { primary: ['quads'], secondary: ['back'] });
+});
+
+test('displayUnit follows the latest started workout, so a kg switch mid-workout switches the web', () => {
+  const d = data();
+  for (const s of d.sessions) s.unitsAtLog = 'lb';
+  for (const s of d.sets) s.unit = 'lb';
+  assert.equal(displayUnit(buildModel(d).sets), 'lb');
+  // Started today in kg with nothing logged yet: the web shows kg.
+  d.sessions.push({ id: 's3', day: '2026-10-27', title: 'Heavy', startedAt: '2026-10-27T13:00:00Z', unitsAtLog: 'kg', deletedAt: null });
+  const m = buildModel(d);
+  assert.equal(displayUnit(m.sets, m.sessions), 'kg');
+  // A workout planned ahead and not started does not count.
+  d.sessions.push({ id: 's4', day: '2026-11-03', title: 'Heavy', startedAt: null, unitsAtLog: 'lb', deletedAt: null });
+  const later = buildModel(d);
+  assert.equal(displayUnit(later.sets, later.sessions), 'kg');
 });

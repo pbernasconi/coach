@@ -1,4 +1,6 @@
 import Foundation
+import LiftCore
+import LiftStore
 import LiftSync
 import Observation
 
@@ -15,6 +17,11 @@ final class SettingsViewModel {
     private let units: any UnitPreference
     /// Opens practice data or the log; the app starts over on it.
     private let practice: any PracticeModeSwitching
+    /// Moves the workout in progress (and any open one ahead) to the unit picked.
+    private let sessions: any SessionRepository
+    /// The plates and bars, so converted loads are ones the gym can make.
+    private let gym: any GymPreference
+    private let days: DayCalendar
     /// The connections and the coach's side, from the server.
     private let remote: AppResource<AppSettings>
     @ObservationIgnored private var isLoading = false
@@ -29,6 +36,8 @@ final class SettingsViewModel {
         health: any WorkoutHealthRecording,
         units: any UnitPreference,
         practice: any PracticeModeSwitching,
+        sessions: any SessionRepository,
+        gym: any GymPreference,
         data: any AppDataSource,
         now: @escaping @Sendable () -> Date,
         calendar: Calendar,
@@ -44,6 +53,9 @@ final class SettingsViewModel {
         self.health = health
         self.units = units
         self.practice = practice
+        self.sessions = sessions
+        self.gym = gym
+        days = DayCalendar(calendar: calendar)
         self.now = now
     }
 
@@ -93,6 +105,7 @@ final class SettingsViewModel {
         case .unitSelected(let unit):
             units.unit = unit  // saved; new sessions and templates, and screens opened from now, use it
             state.unit = unit
+            return switchOpenWorkouts(to: unit)
         case .platesTapped:
             router.open(.plates)
         case .acknowledgementsTapped:
@@ -215,4 +228,17 @@ final class SettingsViewModel {
             return .available(SyncSummary(status: status, isSyncing: false, hasToken: false))
         }
     }
+
+    /// The workout in progress follows the switch: its sets not yet logged convert to `unit` in loads the gym can make,
+    /// and logged sets keep their unit. Yesterday's still count, for a workout started before midnight.
+    private func switchOpenWorkouts(to unit: WeightUnit) -> Task<Void, Never> {
+        let sessions = sessions
+        let gym = gym.setup
+        let from = days.day(of: now()).adding(days: -1)
+        return Task {
+            // A failure leaves the workout in its old unit, as before; the preference is saved either way.
+            _ = try? await sessions.switchOpenSessions(to: unit, from: from, gym: gym)
+        }
+    }
+
 }

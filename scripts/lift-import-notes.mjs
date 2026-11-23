@@ -287,7 +287,7 @@ async function check() {
     else if (r.entity === 'set') data.sets.push(r.payload);
   }
   const model = buildModel(data);
-  const unit = displayUnit(model.sets);
+  const unit = displayUnit(model.sets, model.sessions);
   const counts = await q('SELECT entity, count(*)::int AS n FROM lift_rows GROUP BY entity ORDER BY entity');
   console.log('lift_rows:', counts.map((c) => `${c.entity} ${c.n}`).join(', '));
   console.log(`model: ${model.sessions.size} sessions, ${model.sets.length} sets joined (of ${data.sets.length} set rows), display unit ${unit}`);

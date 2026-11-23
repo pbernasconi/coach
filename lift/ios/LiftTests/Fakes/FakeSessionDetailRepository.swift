@@ -127,6 +127,10 @@ nonisolated final class FakeSessionDetailRepository: SessionRepository {
 
     func undo(_ change: RescheduleUndo) async throws { try record(.undo(change)) }
 
+    func switchOpenSessions(to _: WeightUnit, from _: LocalDay, gym _: GymSetup) async throws -> Int {
+        throw AppError(.unknown, detail: "not used")
+    }
+
     private func record(_ call: Call) throws {
         recorded.withLock { $0.append(call) }
         if let writeError { throw writeError }

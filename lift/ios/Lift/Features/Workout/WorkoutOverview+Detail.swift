@@ -49,8 +49,10 @@ extension WorkoutExercise {
     init(item: SessionDetail.Item, unit: WeightUnit, previous: PreviousSets?, gym: GymSetup, isFinished: Bool = false) {
         let exercise = item.exercise
         let working = item.sets.filter { $0.kind == .working }
-        let heaviest = working.compactMap(\.target.weight).max { $0.value < $1.value }
-        let plateSet = gym[heaviest?.unit ?? unit].plateSet
+        // The unit the sets still to do are in: after a kg/lb switch mid-workout, logged sets keep the old one.
+        let shown = (item.sets.first { $0.status == .planned } ?? item.sets.last)?.unit ?? unit
+        let heaviest = working.filter { $0.unit == shown }.compactMap(\.target.weight).max { $0.value < $1.value }
+        let plateSet = gym[heaviest?.unit ?? shown].plateSet
         let isBarbell = exercise.equipment == .barbell && exercise.loadMode == .total
         let barbellWeight = isBarbell && !isFinished ? heaviest : nil
         let shared = working.first.map(\.target).flatMap { first in
@@ -65,10 +67,10 @@ extension WorkoutExercise {
                 return WorkoutText.warmUp(steps, unit: plateSet.unit)
             },
             progression: Self.progression(item: item, working: working, gym: gym),
-            sets: Self.rows(item.sets, previous: previous),
+            sets: Self.rows(item.sets, unit: shown, previous: previous),
             libraryID: exercise.exerciseID,
             catalogID: item.catalogID,
-            unit: item.sets.first?.unit ?? unit,
+            unit: shown,
             note: WorkoutText.exerciseNote(exercise.note, hasHint: exercise.nextTimeHint != nil),
             restSeconds: exercise.restSeconds
         )
@@ -89,7 +91,7 @@ extension WorkoutExercise {
     }
 
     /// Set rows, numbered within each kind ("Warm-up 1", "Set 1", "Set 2"), each with the same set last time.
-    private static func rows(_ sets: [SetRecord], previous: PreviousSets?) -> [WorkoutSetItem] {
+    private static func rows(_ sets: [SetRecord], unit: WeightUnit, previous: PreviousSets?) -> [WorkoutSetItem] {
         var counts: [SetKind: Int] = [:]
         return sets.map { set in
             let number = (counts[set.kind] ?? 0) + 1
@@ -106,7 +108,8 @@ extension WorkoutExercise {
                 reps: WorkoutText.pill(reps: set.actualReps, target: set.target),
                 previous: last.flatMap { WorkoutText.previous($0, unit: set.unit) },
                 note: set.note,
-                rpe: set.rpe.map(WorkoutText.rpe)
+                rpe: set.rpe.map(WorkoutText.rpe),
+                unit: set.unit == unit ? nil : set.unit
             )
         }
     }
