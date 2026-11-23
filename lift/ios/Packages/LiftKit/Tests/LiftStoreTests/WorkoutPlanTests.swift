@@ -54,7 +54,9 @@ import Testing
         let entities = try await store.pendingOutbox().map(\.entity)
         #expect(entities.filter { $0 == .session }.count == 2)  // inserted, then its warm-up note
         #expect(entities.filter { $0 == .sessionExercise }.count == 2)
-        #expect(entities.filter { $0 == .set }.count == 5 + 4 + 3)  // the squat's working sets move down for the ramp
+        // 5 sets and 4 warm-up sets inserted, then the squat's 3 working sets moved down for the ramp.
+        let setEntries: Int = entities.filter { $0 == .set }.count
+        #expect(setEntries == 12)
     }
 
     @Test func aSessionFromACoachsListHasItsExercisesSetsAndRepsAndNoTemplate() async throws {
