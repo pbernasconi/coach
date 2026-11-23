@@ -8,7 +8,7 @@ import { weekPlaces, zoneOf } from '../plan/where.mjs';
 import { gymsNear, staysOf, walk } from '../plan/stay-gyms.mjs';
 import { label, loadRotation } from '../../../scripts/rotation.mjs';
 import { untrusted } from '../../../scripts/untrusted.mjs';
-import { noteLines, noteText, setExtras } from '../../../scripts/lift-notes.mjs';
+import { exerciseLine, noteLines, noteText } from '../../../scripts/lift-notes.mjs';
 import { healthProfileMarkdown } from '../../../scripts/health-profile.mjs';
 import { feedbackLine } from '../plan/feedback.mjs';
 import { blockWeek, liftConsistency } from '../plan/consistency.mjs';
@@ -362,20 +362,8 @@ export async function buildProfile(sql, { userId: USER_ID = OWNER_ID, weekOf: we
       if (!ses.exercises.has(r.pos)) ses.exercises.set(r.pos, { name: r.ex, loadMode: r.lm, note: r.enote, sets: [] });
       ses.exercises.get(r.pos).sets.push(r);
     }
-    const wt = (w, lm) => (w == null ? (lm === 'bodyweight' ? 'bw' : '-') : `${lm === 'bodyweight' ? '+' : ''}${Number(w)}`);
     for (const ses of bySession.values()) {
-      const lines = [...ses.exercises.values()].map((e) => {
-        const work = e.sets.filter((x) => x.kind !== 'warmUp');
-        const sets = ses.day < todayLocal
-          ? work.filter((x) => x.status === 'done').map((x) => {
-            const extras = setExtras(x.rpe, x.stnote);
-            return `${x.ar ?? '?'}×${wt(x.aw, e.loadMode)}${extras ? ` (${extras})` : ''}`;
-          })
-          : work.map((x) => `${x.tr ?? '?'}×${wt(x.tw, e.loadMode)}`);
-        const unit = e.sets.find((x) => x.unit)?.unit ?? 'lb';
-        const note = noteText(e.note);
-        return `${e.name}${e.loadMode === 'perHand' ? ' (each hand)' : ''}: ${sets.join(', ') || 'nothing logged'} ${unit}${note ? ` — note: ${note}` : ''}`;
-      });
+      const lines = [...ses.exercises.values()].map((e) => exerciseLine(e, ses.day < todayLocal));
       const exercises = [...ses.exercises.values()].map((e) => ({ name: e.name, note: e.note }));
       (ses.day < todayLocal ? liftSessions.logged : liftSessions.planned)
         .push({ day: ses.day, title: ses.title, note: noteText(ses.note), exercises, lines });

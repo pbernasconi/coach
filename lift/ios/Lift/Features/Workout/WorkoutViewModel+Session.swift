@@ -139,7 +139,12 @@ extension WorkoutViewModel {
     func addSet(to exerciseID: UUID) -> Task<Void, Never>? {
         guard let item = detail?.items.first(where: { $0.id == exerciseID }) else { return nil }
         let last = item.sets.last { $0.kind == .working } ?? item.sets.last
-        let target = last?.target ?? .none
+        var target = last?.target ?? .none
+        // After a kg/lb switch the last set can be a logged one in the old unit: copy its load as one the plates make.
+        if let unit = detail?.session.unitsAtLog, let weight = target.weight, weight.unit != unit {
+            target.weight = weight.converted(to: unit)
+                .rounded(to: gym.setup.increment(for: item.exercise.equipment, in: unit))
+        }
         return write { _ = try await $0.addSet(to: exerciseID, kind: .working, target: target) }
     }
 

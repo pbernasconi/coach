@@ -36,3 +36,28 @@ export function noteLines(sessions) {
   }
   return lines;
 }
+
+/**
+ * One exercise of a Lift session as the planner reads it: "Back squat: 5×100, 5×100 kg — note: ...". A past session
+ * lists its done sets (with RPE and set notes), a planned one its targets; warm-ups are left out. After a kg/lb switch
+ * mid-workout the sets are in two units, and then each set names its own instead of the line taking the first set's.
+ * @param {{ name: string, loadMode: string | null, note: string | null, sets: { kind: string, status: string, unit: string | null, ar: number | null, aw: number | null, tr: number | null, tw: number | null, rpe: number | null, stnote: string | null }[] }} e
+ * @param {boolean} past
+ */
+export function exerciseLine(e, past) {
+  const wt = (w, lm) => (w == null ? (lm === 'bodyweight' ? 'bw' : '-') : `${lm === 'bodyweight' ? '+' : ''}${Number(w)}`);
+  const work = e.sets.filter((x) => x.kind !== 'warmUp');
+  const shown = past ? work.filter((x) => x.status === 'done') : work;
+  const units = new Set(shown.map((x) => x.unit).filter(Boolean));
+  const mixed = units.size > 1;
+  const own = (x) => (mixed ? ` ${x.unit ?? 'lb'}` : '');
+  const sets = past
+    ? shown.map((x) => {
+      const extras = setExtras(x.rpe, x.stnote);
+      return `${x.ar ?? '?'}×${wt(x.aw, e.loadMode)}${own(x)}${extras ? ` (${extras})` : ''}`;
+    })
+    : shown.map((x) => `${x.tr ?? '?'}×${wt(x.tw, e.loadMode)}${own(x)}`);
+  const unit = mixed ? '' : ` ${[...units][0] ?? e.sets.find((x) => x.unit)?.unit ?? 'lb'}`;
+  const note = noteText(e.note);
+  return `${e.name}${e.loadMode === 'perHand' ? ' (each hand)' : ''}: ${sets.join(', ') || 'nothing logged'}${unit}${note ? ` — note: ${note}` : ''}`;
+}
