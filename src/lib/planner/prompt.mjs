@@ -14,14 +14,15 @@ export function systemPrompt() {
 /**
  * The user message: the request, Paolo's note for a revision, the current week for a check-in, and the profile.
  * @param {{ request: any, profileMd: string, today?: string | null, currentWeek?: string | null,
- *   revise?: { note: string, plan: any } | null }} p
+ *   revise?: { note: string, plan: any } | null, now?: string | null }} p  now: the local time where he is, for a check-in
  */
-export function userMessage({ request, profileMd, today = null, currentWeek = null, revise = null }) {
+export function userMessage({ request, profileMd, today = null, currentWeek = null, revise = null, now = null }) {
   const checkin = request.kind === 'checkin';
   const parts = [
     `<request>\n${JSON.stringify(request, null, 2)}\n</request>`,
     checkin
       ? `Check in on the week of ${request.weekStart} (weekStart must be that Monday). Today is ${today}: leave the days before it as they were.`
+        + (now ? ` It is ${now} now: today's sessions start 30 min from now or later (R17), so a morning that has passed gets nothing.` : '')
       : `Plan the week of ${request.weekStart} (weekStart must be that Monday).`,
   ];
   if (revise) {

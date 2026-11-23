@@ -48,7 +48,9 @@ export async function draftWeek(userId: string, weekStart: string, input: Record
   if (!ready.ready) return { error: ready.reason };
   const open = await weekProposal(userId, monday);
   if (open && (open.status === 'requested' || open.status === 'running')) return { error: 'Coach is already drafting this week.' };
-  const kind = open?.request.kind ?? (monday <= mondayOf(todayIn(HOME_TZ)) ? 'checkin' : 'weekly');
+  // A week that has started is a check-in, whatever the last request was: the Sunday plan is 'weekly', and a redraw
+  // of it on Monday afternoon must not put sessions on the morning that has passed.
+  const kind = monday <= mondayOf(todayIn(HOME_TZ)) ? 'checkin' : 'weekly';
   const clean = cleanRequest({ ...(input ?? {}), weekStart: monday, kind }) as { value?: PlanRequest; error?: string };
   if (!clean.value) return { error: clean.error ?? 'Those answers are not valid.' };
   let id: string;

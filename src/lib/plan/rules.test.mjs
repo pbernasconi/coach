@@ -132,7 +132,7 @@ test('R7: a session on a day off fails; one on top of a meeting warns; Coach eve
         // 07:00–08:00 PST on Wed 4 Nov (UTC−8): on top of the VO2 run.
         { summary: 'Call', start: '2026-11-04T15:00:00.000Z', end: '2026-11-04T16:00:00.000Z', allDay: false, tz: 'America/Los_Angeles' },
         { summary: 'Threshold A', start: '2026-11-02T15:00:00.000Z', end: '2026-11-02T16:15:00.000Z', allDay: false, coach: true },
-        { summary: 'Holiday', start: '2026-11-05T00:00:00.000Z', end: '2026-11-06T00:00:00.000Z', allDay: true },
+        { summary: 'Mom visiting', start: '2026-11-05T00:00:00.000Z', end: '2026-11-06T00:00:00.000Z', allDay: true },
       ],
     }],
   };
@@ -140,6 +140,22 @@ test('R7: a session on a day off fails; one on top of a meeting warns; Coach eve
   const m = checkProposal(good(), { weekStart: W, context });
   assert.deepEqual(ids(m.issues), ['R7:warn']);
   assert.equal(m.issues[0].day, '2026-11-04');
+});
+
+test('R7: a holiday hold (Thanksgiving – no calls) allows one short easy session, no lift or hard session', () => {
+  const ctx = (start, end) => ({ calendarByWeek: [{ weekStart: W, events: [{ summary: 'Thanksgiving – no calls', start, end, allDay: true }] }] });
+  const plan = good();
+  const days = new Set(plan.events.map((e) => e.start.slice(0, 10)));
+  // Every day of good() that has a lift or a hard session fails when it is a holiday.
+  for (const day of days) {
+    const next = new Date(`${day}T00:00:00Z`); next.setUTCDate(next.getUTCDate() + 1);
+    const r = checkProposal(plan, { weekStart: W, context: ctx(`${day}T00:00:00.000Z`, next.toISOString()) });
+    const heavy = plan.events.some((e) => e.start.startsWith(day) && /lift|barbell|threshold|vo2|tempo|interval/i.test(`${e.title} ${e.workoutType ?? ''}`));
+    if (heavy) assert.ok(r.issues.some((i) => i.id === 'R7' && i.level === 'fail' && i.day === day), day);
+  }
+  // A two-day hold covers both days (the end is the day after the last one).
+  const two = checkProposal(plan, { weekStart: W, context: ctx('2026-11-02T00:00:00.000Z', '2026-11-09T00:00:00.000Z') });
+  assert.ok(two.issues.filter((i) => i.id === 'R7').length >= 2);
 });
 
 test('R8: over the hours he has fails', () => {
@@ -170,6 +186,29 @@ test('R17: a check-in never plans a past day', () => {
   const r = checkProposal(good(), { weekStart: W, request: { kind: 'checkin' }, today: '2026-11-04' });
   assert.equal(r.issues.filter((i) => i.id === 'R17').length, 4); // Mon ride and physio, Tue run and lift
   assert.equal(todayOf({ generatedAt: '2026-11-04T05:00:00.000Z', home: { tz: 'America/Los_Angeles' } }), '2026-11-03');
+});
+
+test('R17: a check-in never plans today\'s sessions that have already passed on the local clock', () => {
+  // 13:52 in Geneva on Mon 2 Nov (12:52 UTC): Monday's 07:00 ride has passed; Tuesday's run has not.
+  const context = { generatedAt: '2026-11-02T12:52:00.000Z', home: { tz: 'America/Los_Angeles' } };
+  const plan = good();
+  for (const e of plan.events) e.timeZone = 'Europe/Zurich';
+  const r = checkProposal(plan, { weekStart: W, request: { kind: 'checkin' }, context, today: '2026-11-02' });
+  const past = r.issues.filter((i) => i.id === 'R17');
+  assert.deepEqual([...new Set(past.map((i) => i.day))], ['2026-11-02']);
+  assert.match(past[0].message, /already passed/);
+});
+
+test('R12 on a check-in: the days left keep their share of 8 h, and the lifts reach 2 h', () => {
+  const short = { weekStart: W, events: [easyRun('2026-11-03', '07:10', '07:40'), heavy('2026-11-03', '07:40', '08:40')] };
+  const r = checkProposal(short, { weekStart: W, request: { kind: 'checkin' }, today: '2026-11-02' });
+  assert.ok(r.issues.some((i) => i.id === 'R12' && i.level === 'fail' && /days left/.test(i.message)));
+  assert.ok(r.issues.some((i) => i.id === 'R12' && /lifting/.test(i.message)));
+  // Late in the week it only warns.
+  const late = checkProposal({ weekStart: W, events: [longRun('2026-11-08')] }, { weekStart: W, request: { kind: 'checkin' }, today: '2026-11-07' });
+  assert.ok(late.issues.filter((i) => i.id === 'R12').every((i) => i.level === 'warn'));
+  // A full good week on a Monday check-in passes R12.
+  assert.ok(!checkProposal(good(), { weekStart: W, request: { kind: 'checkin' }, today: '2026-11-02' }).issues.some((i) => i.id === 'R12'));
 });
 
 test('a week in Coach (training_plan_activities rows) gets the same checks', () => {
