@@ -127,6 +127,8 @@ struct TabRootScreen: View {
                     health: dependencies.health,
                     units: dependencies.units,
                     practice: dependencies.practice,
+                    sessions: dependencies.sessions,
+                    gym: dependencies.gym,
                     data: dependencies.appData,
                     now: dependencies.now,
                     calendar: dependencies.calendar,

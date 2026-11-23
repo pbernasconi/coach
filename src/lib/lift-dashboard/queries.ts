@@ -33,5 +33,5 @@ export const loadLiftModel = cache(async () => {
     else if (row.entity === 'set') data.sets.push(row.payload);
   }
   const model = buildModel(data);
-  return { model, unit: displayUnit(model.sets) };
+  return { model, unit: displayUnit(model.sets, model.sessions) };
 });

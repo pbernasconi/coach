@@ -15,6 +15,7 @@ import Testing
     let now = ManualNow()
     let health = RecordingHealthRecorder(status: .notSaved)
     let units = InMemoryUnitSettings(.kg)
+    let sessions = FakeSessionRepository(emissions: [])
 
     func makeViewModel(
         _ dataSource: AppInfo.DataSource = .device,
@@ -28,6 +29,8 @@ import Testing
             health: health,
             units: units,
             practice: RecordingPracticeModeSwitch(),
+            sessions: sessions,
+            gym: InMemoryGymSettings(.standard),
             data: data,
             now: { now() },
             calendar: SessionBuilder.calendar,
@@ -134,14 +137,16 @@ import Testing
         #expect(vm.state.sync == .available(SyncSummary(status: "Syncing…", isSyncing: true, hasToken: true)))
     }
 
-    @Test func unitSelectedChangesTheUnit() {
+    @Test func unitSelectedChangesTheUnitAndTheOpenWorkouts() async {
         let vm = makeViewModel()
 
-        let task = vm.send(.unitSelected(.lb))
+        await vm.send(.unitSelected(.lb))?.value
 
-        #expect(task == nil)
         #expect(vm.state.unit == .lb)
         #expect(units.unit == .lb)  // saved, so new sessions and templates use it
+        // The workout in progress follows, from yesterday on (one started before midnight).
+        let today = DayCalendar(calendar: SessionBuilder.calendar).day(of: now())
+        #expect(sessions.unitSwitches == [.init(unit: .lb, from: today.adding(days: -1), gym: .standard)])
     }
 
     @Test func platesTappedOpensPlatesAndBars() {

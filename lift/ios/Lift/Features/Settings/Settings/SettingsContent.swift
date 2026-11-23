@@ -14,7 +14,7 @@ struct SettingsContent: View {
             VStack(alignment: .leading, spacing: Space.section) {
                 SettingsCoachSections(remote: state.remote, send: send)
                 SettingsPhoneSection(section: state.sync, health: state.health, send: send)
-                ListSection("Training", footer: "Past workouts keep the unit they were logged in.") {
+                ListSection("Training", footer: "The workout in progress switches too. Logged sets keep the unit they were logged in.") {
                     SegmentedPicker(
                         "Weight unit",
                         selection: .action(state.unit) { send(.unitSelected($0)) },
