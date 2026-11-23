@@ -37,21 +37,40 @@ public enum WarmUpRecipe {
     static let feeler: (fraction: Double, reps: Int) = (0.5, 8)
 
     /// The heavy day's checklist: easy cardio (the run to the gym counts), then prep moves with no long holds and no
-    /// jumps. The slow calf raise is the Achilles check.
+    /// jumps. The slow calf raise is the Achilles check. Every move is in the exercise catalog (`catalogID(for:)`), so
+    /// the card can show how it is done.
     public static let heavyChecklist = [
         "Easy cardio · 5 min",
-        "90-90 hip switches · 5 / side",
-        "Hip flexor rock · 8 / side",
-        "Bird dog · 5 / side",
+        "World's greatest stretch · 3 / side",
+        "Glute bridge · 10",
+        "Dead bug · 5 / side",
         "Slow calf raise · 10",
     ]
 
     /// The light day's checklist.
     public static let lightChecklist = [
         "Easy cardio · 2–3 min",
-        "Band pull-aparts · 15",
-        "Arm circles · 10",
+        "Band pull-apart · 15",
+        "Chest opener · 10",
     ]
+
+    /// The catalog entry that shows each prep move, by the name before " · ".
+    static let catalogIDs: [String: String] = [
+        "world's greatest stretch": "1604",
+        "glute bridge": "3013",
+        "dead bug": "0276",
+        "slow calf raise": "1373",
+        "band pull-apart": "0993",
+        "band pull-aparts": "0993",
+        "chest opener": "1167",
+    ]
+
+    /// The catalog entry (animation and steps) for a checklist item ("Dead bug · 5 / side"); nil for easy cardio or a
+    /// move the catalog does not have.
+    public static func catalogID(for text: String) -> String? {
+        let name = text.components(separatedBy: " · ").first ?? text
+        return catalogIDs[name.trimmingCharacters(in: .whitespaces).lowercased()]
+    }
 
     /// The warm-up for `exercises`, loads rounded to what `gym` can make.
     public static func plan(_ exercises: [Exercise], gym: GymSetup = .standard) -> Plan {
@@ -98,12 +117,14 @@ public enum WarmUpRecipe {
     }
 }
 
-/// The warm-up's checklist, kept in the session's warm-up note as one line per item: "[ ] Bird dog · 5 / side" while
-/// it is to do, "[x] Bird dog · 5 / side" once ticked. A line without a box (an imported "5 min rower") counts as done.
+/// The warm-up's checklist, kept in the session's warm-up note as one line per item: "[ ] Dead bug · 5 / side" while
+/// it is to do, "[x] Dead bug · 5 / side" once ticked. A line without a box (an imported "5 min rower") counts as done.
 public struct WarmUpChecklist: Sendable, Equatable {
     public struct Item: Sendable, Equatable {
         public var text: String
         public var isDone: Bool
+        /// The catalog entry that shows the move; nil when there is none.
+        public var catalogID: String? { WarmUpRecipe.catalogID(for: text) }
 
         public init(text: String, isDone: Bool) {
             self.text = text

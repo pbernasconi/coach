@@ -42,8 +42,8 @@ import Testing
     }
 
     @Test func theChecklistRoundTripsThroughTheNote() {
-        let checklist = WarmUpChecklist(items: ["Easy cardio · 5 min", "Bird dog · 5 / side"]).toggling(0)
-        #expect(checklist.note == "[x] Easy cardio · 5 min\n[ ] Bird dog · 5 / side")
+        let checklist = WarmUpChecklist(items: ["Easy cardio · 5 min", "Dead bug · 5 / side"]).toggling(0)
+        #expect(checklist.note == "[x] Easy cardio · 5 min\n[ ] Dead bug · 5 / side")
         #expect(WarmUpChecklist(note: checklist.note) == checklist)
         #expect(checklist.doneCount == 1)
         #expect(!checklist.isComplete)
@@ -53,7 +53,19 @@ import Testing
     @Test func aPlainNoteIsNoChecklistAndUnboxedLinesCountAsDone() {
         #expect(WarmUpChecklist(note: "5 min rower") == nil)
         #expect(WarmUpChecklist(note: nil) == nil)
-        let mixed = WarmUpChecklist(note: "5 min rower\n[ ] Band pull-aparts · 15")
+        let mixed = WarmUpChecklist(note: "5 min rower\n[ ] Band pull-apart · 15")
         #expect(mixed?.items.map(\.isDone) == [true, false])
+    }
+
+    @Test func everyPrepMoveHasACatalogPageAndCardioHasNone() {
+        let moves = (WarmUpRecipe.heavyChecklist + WarmUpRecipe.lightChecklist).filter { !$0.hasPrefix("Easy cardio") }
+        #expect(moves.allSatisfy { WarmUpRecipe.catalogID(for: $0) != nil })
+        #expect(WarmUpRecipe.catalogID(for: "Easy cardio · 5 min") == nil)
+        #expect(WarmUpChecklist.Item(text: "Dead bug · 5 / side", isDone: false).catalogID == "0276")
+    }
+
+    @Test func everyCatalogIDIsInTheBundledCatalog() throws {
+        let ids = Set(try ExerciseCatalog.bundled().entries.map(\.id))
+        #expect(Set(WarmUpRecipe.catalogIDs.values).isSubset(of: ids))
     }
 }

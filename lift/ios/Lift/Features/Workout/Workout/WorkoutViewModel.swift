@@ -159,6 +159,7 @@ final class WorkoutViewModel {
         case .sessionNoteTapped, .exerciseNoteTapped: openNote(action)
         case .warmUpItemTapped(let index): return toggleWarmUp(index)
         case .warmUpHeaderTapped: state.isWarmUpOpen.toggle()
+        case .warmUpHowToTapped(let catalogID): router.open(.catalogExercise(catalogID))
         case .noteTextChanged, .noteDismissed: state.noteEditor = state.noteEditor?.applying(action)
         case .noteDoneTapped:
             defer { state.noteEditor = nil }
