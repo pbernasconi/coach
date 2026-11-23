@@ -107,7 +107,7 @@ private struct WarmUpItemRow: View {
         }
         .frame(minHeight: Size.minTouch)
         .padding(.horizontal, SetGridWidth.inset)  // the set grid's inset, so the card lines up with the set tables
-        .padding(.vertical, Space.xxs)
+        .padding(.vertical, Space.xs)
     }
 
     /// The still and the text; a button to the move's page when the catalog has it.
@@ -132,7 +132,8 @@ private struct WarmUpItemRow: View {
                     .onAppear { send(.thumbnailNeeded(catalogID: catalogID)) }
                     .accessibilityHidden(true)
             }
-            Text(verbatim: item.text)
+            // The dose wraps as one piece: "· 3 / side" never leaves its dot at the end of the line above.
+            Text(verbatim: item.text.replacingOccurrences(of: " · ", with: " ·\u{00A0}"))
                 .font(theme.font(.body))
                 .foregroundStyle(item.isDone ? theme.palette.textSecondary : theme.palette.textPrimary)
                 .multilineTextAlignment(.leading)
