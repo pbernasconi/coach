@@ -70,6 +70,8 @@ import Testing
             health: RecordingHealthRecorder(status: .notSaved),
             units: InMemoryUnitSettings(.kg),
             practice: RecordingPracticeModeSwitch(),
+            sessions: FakeSessionRepository(emissions: []),
+            gym: InMemoryGymSettings(.standard),
             data: FakeAppData(),
             now: { ManualNow.start },
             calendar: SessionBuilder.calendar,
