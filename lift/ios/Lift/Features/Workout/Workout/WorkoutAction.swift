@@ -27,6 +27,8 @@ nonisolated enum WorkoutAction: Equatable, Sendable {
     case warmUpItemTapped(Int)
     /// The folded warm-up card's header: opens it again, or folds it.
     case warmUpHeaderTapped
+    /// A warm-up move's picture or name: opens its catalog page (the animation and the steps).
+    case warmUpHowToTapped(catalogID: String)
     /// "Add note" or "Edit note" in an exercise's options: opens the note editor for that exercise.
     case exerciseNoteTapped(UUID)
     case noteTextChanged(String)

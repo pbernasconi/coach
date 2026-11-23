@@ -1,11 +1,11 @@
-// The warm-up checklist Lift keeps in a session's warm-up note (LiftCore WarmUpChecklist): one item per line, "[ ] Bird
-// dog · 5 / side" to do and "[x] Bird dog · 5 / side" ticked. A line without a box (an imported "5 min rower") counts
+// The warm-up checklist Lift keeps in a session's warm-up note (LiftCore WarmUpChecklist): one item per line, "[ ] Dead
+// bug · 5 / side" to do and "[x] Dead bug · 5 / side" ticked. A line without a box (an imported "5 min rower") counts
 // as done; a note with no box on any line is a plain note, not a checklist. Pure; node --test (warm-up.test.mjs).
 
 /** @typedef {{ text: string, done: boolean }} WarmUpItem */
 
 /** The light day's checklist, as Lift's WarmUpRecipe.lightChecklist has it (a home or dumbbell session). */
-export const LIGHT_WARM_UP = ['Easy cardio · 2–3 min', 'Band pull-aparts · 15', 'Arm circles · 10'];
+export const LIGHT_WARM_UP = ['Easy cardio · 2–3 min', 'Band pull-apart · 15', 'Chest opener · 10'];
 
 /** @param {string} line */
 function box(line) {

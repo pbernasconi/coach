@@ -187,7 +187,7 @@ private struct WorkoutBody: View {
             }
             // A finished workout shows what was done, not a warm-up to tick.
             if let warmUp = workout.warmUp, !workout.isFinished {
-                WorkoutWarmUpCard(checklist: warmUp, isOpen: isWarmUpOpen, send: send)
+                WorkoutWarmUpCard(checklist: warmUp, isOpen: isWarmUpOpen, thumbnails: thumbnails, send: send)
             }
             ForEach(workout.exercises) { exercise in
                 WorkoutExerciseSection(
