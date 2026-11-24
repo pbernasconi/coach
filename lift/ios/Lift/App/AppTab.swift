@@ -21,9 +21,11 @@ nonisolated enum AppTab: String, CaseIterable, Hashable, Sendable {
     }
 }
 
-/// The segments of the Lift tab: the coach's Lift overview, the logged sessions, and the exercise library.
+/// The segments of the Lift tab: the coach's Lift overview, the logged sessions, the workout templates, and the
+/// exercise library.
 nonisolated enum LiftSegment: String, CaseIterable, Hashable, Sendable {
     case overview
     case history
+    case templates
     case exercises
 }

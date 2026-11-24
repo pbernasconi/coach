@@ -3,7 +3,8 @@
  *
  * After the changes are stored, a planned session the phone moved to another day takes its plan workout along
  * (src/lib/lift/plan-follow.ts), and Google Calendar follows after the response. A session the push finished gets a
- * "Workout completed!" push after the response (src/lib/notifications).
+ * "Workout completed!" push after the response (src/lib/notifications). A template changed on the phone starts
+ * plan-apply.yml after the response, so the lifts planned on it that have not started take the new sets and rest.
  */
 
 import { after } from 'next/server';
@@ -16,6 +17,7 @@ import { drizzleLiftRepository } from '@/lib/lift-sync/drizzle-repository';
 import { followSessionsInPlan } from '@/lib/lift/plan-follow';
 import { notifyLiftWorkouts } from '@/lib/notifications';
 import { mondayOf } from '@/lib/plan/week.mjs';
+import { dispatchWorkflow } from '@/lib/plan/proposals';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -42,6 +44,13 @@ async function followInPlan(applied: ValidChange[]) {
   }
 }
 
+/** Re-plans the lifts that have not started after a template change (the workflow queues, so a burst runs once more). */
+async function replanAfterTemplateEdit(applied: ValidChange[]) {
+  if (!applied.some((c) => c.entity === 'template' || c.entity === 'templateExercise')) return;
+  const started = await dispatchWorkflow('plan-apply.yml').catch((e: unknown) => ({ error: String(e) }));
+  if ('error' in started) console.error('Re-plan after a template edit failed:', started.error);
+}
+
 export async function POST(request: Request) {
   try {
     const applied: ValidChange[] = [];
@@ -56,7 +65,10 @@ export async function POST(request: Request) {
       return pushed;
     });
     // A session finished on the phone: "Workout completed!" with a link to it (src/lib/notifications).
-    if (result.status === 200 && applied.length) after(() => notifyLiftWorkouts(applied));
+    if (result.status === 200 && applied.length) {
+      after(() => notifyLiftWorkouts(applied));
+      after(() => replanAfterTemplateEdit(applied));
+    }
     return Response.json(result.body, { status: result.status, headers: { 'Server-Timing': serverTiming } });
   } catch (error) {
     console.error('Lift sync push failed:', error);

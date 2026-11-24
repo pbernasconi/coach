@@ -20,6 +20,7 @@ const PAGES = [
   ['/settings', 'settings'],
   ['/lift', 'lift'],
   ['/lift/weekly', 'lift-weekly'],
+  ['/lift/templates', 'lift-templates'],
   ['/lift/sessions/latest', 'lift-session'],
   ['/plan?week=2026-01-05', 'plan'],
   ['/plan/history', 'plan-history'],
